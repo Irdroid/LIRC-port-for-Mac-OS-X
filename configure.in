@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.14 2000/01/18 19:10:08 columbus Exp $
+dnl $Id: configure.in,v 5.15 2000/02/12 12:29:46 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -66,7 +66,7 @@ possible_drivers="(none) (remotemaster) (logitech)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) \
-	(lirc_aver) (lirc_haup) (lirc_fly98) (lirc_pixview)"
+	(lirc_aver) (lirc_haup) (lirc_haup_new) (lirc_fly98) (lirc_pixview)"
 fi
 
 AC_CHECK_LIB(irman, ir_strerror,
@@ -82,9 +82,10 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, serial, animax, packard_bell,
-			  parallel, irman, remotemaster, comX, lptX, 
-			  avermedia, hauppauge, fly98, pixelview, logitech],
+                          none, serial, animax, packard_bell, parallel,
+                          irman, remotemaster, comX, lptX, avermedia,
+                          hauppauge, hauppauge_new, fly98, pixelview,
+                          logitech],
 driver=${withval},
 driver="unset"
 )
@@ -156,6 +157,13 @@ if test "$driver" = "hauppauge"; then
   lirc_driver=lirc_haup;
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+  test -f "${kerneldir}/include/linux/i2c-old.h" && AC_DEFINE(LIRC_OLD_I2C_LAYER)
+fi
+if test "$driver" = "hauppauge_new"; then
+  lirc_driver=lirc_haup;
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+  AC_DEFINE(LIRC_NEW_I2C_LAYER)
 fi
 if test "$driver" = "fly98"; then
   lirc_driver=lirc_fly98;
@@ -179,6 +187,8 @@ fi
 if test "$driver" = "remotemaster"; then
   lirc_driver="none"
   hw_module="hw_pixelview.o serial.o"
+  lircd_conf="pixelview/lircd.conf.remotemaster"
+  lircmd_conf="pixelview/lircmd.conf.remotemaster"
 fi
 if test "$driver" = "logitech"; then
   lirc_driver="none"

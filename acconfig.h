@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.4 2000/02/02 20:23:19 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.5 2000/02/12 12:29:46 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -87,6 +87,12 @@
 
 /* Define if the software needs to generate the carrier frequency */
 #undef LIRC_SERIAL_SOFTCARRIER
+
+/* Define to use the new I2C layer introduced in 2.3.x */
+#undef LIRC_NEW_I2C_LAYER
+
+/* Define to use the old I2C layer although new layer is present */
+#undef LIRC_OLD_I2C_LAYER
 
 /* system configuration directory */
 #define SYSCONFDIR		"/etc"

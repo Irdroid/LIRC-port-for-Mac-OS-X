@@ -3,6 +3,23 @@
 #error "--- Sorry, this driver needs kernel version 2.2.0 or higher. ---"
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifdef LIRC_NEW_I2C_LAYER
+
+#include "lirc_haup_new.c"
+
+#else
+
+#if LINUX_VERSION_CODE >= 0x020400
+
+#warning "overriding user selection and using new I2C layer!!!"
+#include "lirc_haup_new.c"
+
+#else
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -15,15 +32,14 @@
 #include <linux/poll.h>
 #include <linux/kmod.h>
 
-/*#include <linux/i2c-old.h>*/ /*-- use this after applying the lm_sensors
-                                patches to kernel!*/
+#ifdef LIRC_OLD_I2C_LAYER
+#include <linux/i2c-old.h> /* use this after applying the lm_sensors
+			      patches to kernel! */
+#else
 #include <linux/i2c.h>
+#endif
 
 #include "drivers/lirc.h"
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #include "lirc_haup.h"
 
@@ -477,6 +493,9 @@ void cleanup_module(void)
 		printk("Error in i2c_unregister_driver: %d\n", ret);
 
 }
+
+#endif /* !LINUX_KERNEL_VERSION >= 0x020400 */
+#endif /* !LIRC_NEW_I2C_LAYER */
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.
