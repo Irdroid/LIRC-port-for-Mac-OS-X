@@ -11,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.29 2004/08/07 08:14:53 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.30 2004/08/07 08:44:21 lirc Exp $
  */
 
 /*
@@ -661,21 +661,21 @@ static void __exit usb_remote_exit(void)
 module_init(usb_remote_init);
 module_exit(usb_remote_exit);
 
-MODULE_AUTHOR (DRIVER_AUTHOR);
-MODULE_DESCRIPTION (DRIVER_DESC);
-MODULE_LICENSE ("GPL");
-MODULE_DEVICE_TABLE (usb, usb_remote_id_table);
+MODULE_DESCRIPTION(DRIVER_DESC);
+MODULE_AUTHOR(DRIVER_AUTHOR);
+MODULE_LICENSE("GPL");
+MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
 
-MODULE_PARM(debug, "i");
-MODULE_PARM_DESC(debug, "enable driver debug mode");
-MODULE_PARM(mask, "i");
-MODULE_PARM_DESC(mask, "set channel acceptance bit mask");
-MODULE_PARM(unique, "i");
-MODULE_PARM_DESC(unique, "enable channel-specific codes");
-MODULE_PARM(repeat, "i");
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Debug enabled or not");
+
+module_param(mask, int, 0444);
+MODULE_PARM_DESC(mask, "Set channel acceptance bit mask");
+
+module_param(unique, int, 0444);
+MODULE_PARM_DESC(unique, "Enable channel-specific codes");
+
+module_param(repeat, int, 0444);
 MODULE_PARM_DESC(repeat, "repeat timeout (1/100 sec)");
 
-#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
-#endif
-

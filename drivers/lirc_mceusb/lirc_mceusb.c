@@ -114,6 +114,7 @@
 	static int debug;
 #endif
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
@@ -129,10 +130,6 @@
 #define DRIVER_DESC "USB Microsoft IR Transceiver Driver"
 #define DRIVER_NAME "lirc_mceusb"
 
-/* Module paramaters */
-MODULE_PARM(debug, "i");
-MODULE_PARM_DESC(debug, "Debug enabled or not");
-
 /* Define these values to match your device */
 #define USB_MCEUSB_VENDOR_ID	0x045e
 #define USB_MCEUSB_PRODUCT_ID	0x006d
@@ -142,8 +139,6 @@ static struct usb_device_id mceusb_table [] = {
 	{ USB_DEVICE(USB_MCEUSB_VENDOR_ID, USB_MCEUSB_PRODUCT_ID) },
 	{ }					/* Terminating entry */
 };
-
-MODULE_DEVICE_TABLE (usb, mceusb_table);
 
 /* we can have up to this number of device plugged in at once */
 #define MAX_DEVICES		16
@@ -1017,10 +1012,15 @@ static void __exit usb_mceusb_exit(void)
 	usb_deregister(&mceusb_driver);
 }
 
-
 module_init (usb_mceusb_init);
 module_exit (usb_mceusb_exit);
 
-MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
+MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
+MODULE_DEVICE_TABLE (usb, mceusb_table);
+
+module_param(debug, int, 0644);
+MODULE_PARM_DESC(debug, "Debug enabled or not");
+
+EXPORT_NO_SYMBOLS

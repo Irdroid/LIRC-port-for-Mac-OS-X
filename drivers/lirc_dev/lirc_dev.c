@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.32 2004/08/07 07:57:30 lirc Exp $
+ * $Id: lirc_dev.c,v 1.33 2004/08/07 08:44:22 lirc Exp $
  *
  */
 
@@ -71,8 +71,6 @@
 #include "lirc_dev.h"
 
 static int debug = 0;
-
-MODULE_PARM(debug,"i");
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
 #define SUCCESS           0
@@ -774,12 +772,6 @@ int lirc_dev_init(void)
 
 #ifdef MODULE
 
-MODULE_DESCRIPTION("LIRC base driver module");
-MODULE_AUTHOR("Artur Lipowski");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
 /*
  *
  */
@@ -811,7 +803,16 @@ void cleanup_module(void)
 		dprintk("lirc_dev: module successfully unloaded\n");
 	}
 }
-#endif
+
+MODULE_DESCRIPTION("LIRC base driver module");
+MODULE_AUTHOR("Artur Lipowski");
+MODULE_LICENSE("GPL");
+MODULE_ALIAS_CHARDEV_MAJOR(IRCTL_DEV_MAJOR);
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+#endif /* MODULE */
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.

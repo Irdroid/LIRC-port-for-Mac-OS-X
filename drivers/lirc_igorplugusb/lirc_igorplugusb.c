@@ -681,15 +681,12 @@ module_exit(usb_remote_exit);
 MODULE_INFO(vermagic, VERMAGIC_STRING);
 #endif
 
-MODULE_AUTHOR (DRIVER_AUTHOR);
-MODULE_DESCRIPTION (DRIVER_DESC);
-MODULE_LICENSE ("GPL");
-MODULE_DEVICE_TABLE (usb, usb_remote_id_table);
+MODULE_DESCRIPTION(DRIVER_DESC);
+MODULE_AUTHOR(DRIVER_AUTHOR);
+MODULE_LICENSE("GPL");
+MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
 
-
-#if !defined(KERNEL_2_5)
 EXPORT_NO_SYMBOLS;
-#endif
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.

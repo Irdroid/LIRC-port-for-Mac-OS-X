@@ -35,12 +35,6 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-
-
-MODULE_AUTHOR("Froenchenko Leonid");
-MODULE_DESCRIPTION("IR remote driver for bt829 based TV cards");
-
-
 int poll_main(void);
 int atir_init_start(void);
 
@@ -379,6 +373,11 @@ void write_index(unsigned char index,unsigned int reg_val)
 	writel(reg_val,addr);
 }
 
+MODULE_AUTHOR("Froenchenko Leonid");
+MODULE_DESCRIPTION("IR remote driver for bt829 based TV cards");
+MODULE_LICENSE("GPL");
+
+EXPORT_NO_SYMBOLS;
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.

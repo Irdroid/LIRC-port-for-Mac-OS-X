@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.37 2004/04/27 06:08:24 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.38 2004/08/07 08:44:22 lirc Exp $
  *
  */
 
@@ -36,6 +36,7 @@
 #error "*******************************************************"
 #endif
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/sched.h>
@@ -63,6 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
+/* insmod parameters */
 static int debug = 0;
 static int card = 0;
 static int minor = -1;
@@ -71,18 +73,8 @@ static unsigned long gpio_mask = 0;
 static unsigned long gpio_enable = 0;
 static unsigned long gpio_lock_mask = 0;
 static unsigned long gpio_xor_mask = 0;
-static unsigned int soft_gap = 0;
-static unsigned char sample_rate = 10;
-
-MODULE_PARM(debug,"i");
-MODULE_PARM(card,"i");
-MODULE_PARM(minor,"i");
-MODULE_PARM(gpio_mask,"l");
-MODULE_PARM(gpio_lock_mask,"l");
-MODULE_PARM(gpio_xor_mask,"l");
-MODULE_PARM(soft_gap,"i");
-MODULE_PARM(sample_rate,"b");
-MODULE_PARM(bttv_id,"i");
+static int soft_gap = 0;
+static int sample_rate = 10;
 
 #undef dprintk
 #define dprintk  if (debug) printk
@@ -94,8 +86,8 @@ struct rcv_info {
 	unsigned long gpio_enable;
 	unsigned long gpio_lock_mask;
 	unsigned long gpio_xor_mask;
-	unsigned int soft_gap;
-	unsigned char sample_rate;
+	int soft_gap;
+	int sample_rate;
 	unsigned char code_length;
 };
 
@@ -433,19 +425,7 @@ int gpio_remote_init(void)
 	return SUCCESS;
 }
 
-#ifndef KERNEL_2_5
-EXPORT_NO_SYMBOLS;
-#endif
-
-/* Dont try to use it as a static version !  */
-
 #ifdef MODULE
-MODULE_DESCRIPTION("Driver module for remote control (data from bt848 GPIO port)");
-MODULE_AUTHOR("Artur Lipowski");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
 /*
  *
  */
@@ -561,7 +541,42 @@ void cleanup_module(void)
 
 	dprintk(LOGHEAD "module successfully unloaded\n", minor);
 }
-#endif
+
+/* Dont try to use it as a static version !  */
+MODULE_DESCRIPTION("Driver module for remote control (data from bt848 GPIO port)");
+MODULE_AUTHOR("Artur Lipowski");
+MODULE_LICENSE("GPL");
+
+module_param(minor, int, 0444);
+MODULE_PARM_DESC(minor, "Preferred minor device number");
+
+module_param(card, int, 0444);
+MODULE_PARM_DESC(card, "TV card number to attach to");
+
+module_param(gpio_mask, long, 0444);
+MODULE_PARM_DESC(gpio_mask, "gpio_mask");
+
+module_param(gpio_lock_mask, long, 0444);
+MODULE_PARM_DESC(gpio_lock_mask, "gpio_lock_mask");
+
+module_param(gpio_xor_mask, long, 0444);
+MODULE_PARM_DESC(gpio_xor_mask, "gpio_xor_mask");
+
+module_param(soft_gap, int, 0444);
+MODULE_PARM_DESC(soft_gap, "Time between keypresses (in ms)");
+
+module_param(sample_rate, int, 0444);
+MODULE_PARM_DESC(sample_rate, "Sample rate (between 2 and HZ)");
+
+module_param(bttv_id, int, 0444);
+MODULE_PARM_DESC(bttv_id, "BTTV card type");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.

@@ -51,23 +51,16 @@
 #include <linux/poll.h>
 #include "lirc_sasem.h"
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-MODULE_AUTHOR( DRIVER_AUTHOR );
-MODULE_DESCRIPTION( DRIVER_DESC );
-MODULE_LICENSE("GPL");
-
 static int debug = 0;
-
-MODULE_PARM(debug, "i");
-MODULE_PARM_DESC(debug, "enable debug = 1, disable = 0 (default)");
 
 static t_usb_device_id s_sasemID [] = {
 	{ USB_DEVICE(0x11ba, 0x0101) },
 	{ }
 };
-MODULE_DEVICE_TABLE (usb, s_sasemID);
 
 static t_usb_driver s_SasemDriver =
 {
@@ -429,7 +422,7 @@ static int s_lirc_set_use_inc(void *p_data)
 static void s_lirc_set_use_dec(void *p_data) {
 	t_sasemDevice *l_sasemDevice = p_data;
 	int l_iDevnum;
-
+	
 	if (!l_sasemDevice) {
 		printk(DRIVER_NAME "[?]: s_lirc_set_use_dec called with no context\n");
 		return;
@@ -451,3 +444,13 @@ static void s_lirc_set_use_dec(void *p_data) {
 		up(&l_sasemDevice->m_semLock);
 	}
 }
+
+MODULE_DESCRIPTION("Infrared receiver driver for Dign HV5 HTPC and Sasem OnAir Remocon-V");
+MODULE_AUTHOR("Oliver Stabel <oliver.stabel@gmx.de>");
+MODULE_LICENSE("GPL");
+MODULE_DEVICE_TABLE (usb, s_sasemID);
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+EXPORT_NO_SYMBOLS;

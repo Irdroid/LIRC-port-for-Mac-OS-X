@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.52 2004/04/24 19:59:07 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.53 2004/08/07 08:44:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1028,34 +1028,6 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
-MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
-MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
-MODULE_PARM(type, "i");
-MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
-		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug");
-
-MODULE_PARM(io, "i");
-MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
-
-MODULE_PARM(irq, "i");
-MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
-
-MODULE_PARM(sense, "i");
-MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
-		 " (0 = active high, 1 = active low )");
-
-MODULE_PARM(softcarrier, "i");
-MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
-
-
-#ifndef KERNEL_2_5
-EXPORT_NO_SYMBOLS;
-#endif
-
 int init_module(void)
 {
 	int result;
@@ -1097,4 +1069,27 @@ void cleanup_module(void)
 #       endif
 }
 
-#endif
+MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
+MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
+MODULE_LICENSE("GPL");
+
+module_param(type, int, 0444);
+MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
+		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug");
+
+module_param(io, int, 0444);
+MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
+
+module_param(irq, int, 0444);
+MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+
+module_param(sense, bool, 0444);
+MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
+		 " (0 = active high, 1 = active low )");
+
+module_param(softcarrier, bool, 0444);
+MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.22 2004/05/16 09:14:39 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.23 2004/08/07 08:44:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -614,22 +614,6 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
-MODULE_AUTHOR("Christoph Bartelmus");
-MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
-MODULE_PARM(io, "i");
-MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
-
-MODULE_PARM(irq, "i");
-MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
-
-#ifndef KERNEL_2_5
-EXPORT_NO_SYMBOLS;
-#endif
-
 int pf(void *handle);
 void kf(void *handle);
 
@@ -759,4 +743,17 @@ void cleanup_module(void)
 	parport_unregister_device(ppdevice);
 	lirc_unregister_plugin(plugin.minor);
 }
-#endif
+
+MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
+MODULE_AUTHOR("Christoph Bartelmus");
+MODULE_LICENSE("GPL");
+
+module_param(io, int, 0444);
+MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
+
+module_param(irq, int, 0444);
+MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */

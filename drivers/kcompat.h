@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.7 2004/04/27 18:52:33 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.8 2004/08/07 08:44:21 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -32,8 +32,11 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 	unlock_kernel();                                               \
                                                                        \
 } while (0)
-
-#endif
+#define MODULE_PARM_int(x) MODULE_PARM(x, "i")
+#define MODULE_PARM_bool(x) MODULE_PARM(x, "i")
+#define MODULE_PARM_long(x) MODULE_PARM(x, "l")
+#define module_param(x,y,z) MODULE_PARM_##y(x)
+#endif /* Linux 2.6.0 */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
 #define KERNEL_2_5
@@ -42,7 +45,24 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #define MOD_INC_USE_COUNT try_module_get(THIS_MODULE)
 #undef MOD_DEC_USE_COUNT
 #define MOD_DEC_USE_COUNT module_put(THIS_MODULE)
+#undef EXPORT_NO_SYMBOLS
+#define EXPORT_NO_SYMBOLS
+#endif
 
+#ifndef MODULE_LICENSE
+#define MODULE_LICENSE(x)
+#endif
+
+#ifndef MODULE_PARM_DESC
+#define MODULE_PARM_DESC(x,y)
+#endif
+
+#ifndef MODULE_ALIAS_CHARDEV_MAJOR
+#define MODULE_ALIAS_CHARDEV_MAJOR(x)
+#endif
+
+#ifndef MODULE_DEVICE_TABLE
+#define MODULE_DEVICE_TABLE(x,y)
 #endif
 
 #ifndef IRQ_RETVAL
@@ -72,3 +92,5 @@ typedef void irqreturn_t;
 #if !defined(pci_pretty_name)
 #define pci_pretty_name(dev) ((dev)->name)
 #endif
+
+

@@ -85,7 +85,7 @@ static int io = IT87_CIR_DEFAULT_IOBASE;
 static int irq = IT87_CIR_DEFAULT_IRQ;
 static unsigned char it87_freq = 38; /* kHz */
 /* receiver demodulator default: off */
-static unsigned char it87_enable_demodulator = 0;
+static int it87_enable_demodulator = 0;
 
 static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
 static struct timer_list timerlist;
@@ -915,26 +915,6 @@ int init_lirc_it87(void)
 
 #ifdef MODULE
 
-MODULE_AUTHOR("Hans-Günter Lütke Uphues");
-MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
-MODULE_PARM(io, "i");
-MODULE_PARM_DESC(io,
-		 "I/O base address (default: 0x310)");
-MODULE_PARM(irq, "i");
-MODULE_PARM_DESC(irq,
-		 "Interrupt (1,3-12) (default: 7)");
-MODULE_PARM(it87_enable_demodulator, "i");
-MODULE_PARM_DESC(it87_enable_demodulator,
-		 "Receiver demodulator enable/disable (1/0), default: 0");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
-#ifndef KERNEL_2_5
-EXPORT_NO_SYMBOLS;
-#endif
-
-
 int init_module(void)
 {
 	int retval;
@@ -958,7 +938,24 @@ void cleanup_module(void)
 	drop_port();
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
-#endif
+
+MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
+MODULE_AUTHOR("Hans-Günter Lütke Uphues");
+MODULE_LICENSE("GPL");
+
+module_param(io, int, 0444);
+MODULE_PARM_DESC(io, "I/O base address (default: 0x310)");
+
+module_param(irq, int, 0444);
+MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
+
+module_param(it87_enable_demodulator, bool, 0444);
+MODULE_PARM_DESC(it87_enable_demodulator, 
+		 "Receiver demodulator enable/disable (1/0), default: 0");
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */
 
 
 /*

@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.23 2004/04/09 15:33:41 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.24 2004/08/07 08:44:22 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -83,9 +83,6 @@ struct IR {
 
 static int debug   = 0;    /* debug output */
 static int minor   = -1;   /* minor number */
-
-MODULE_PARM(debug,"i");
-MODULE_PARM(minor,"i");
 
 #define dprintk if (debug) printk
 
@@ -509,19 +506,8 @@ static int ir_command(struct i2c_client *client,unsigned int cmd, void *arg)
 
 /* ----------------------------------------------------------------------- */
 #ifdef MODULE
-MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller, Stefan Jahn");
-MODULE_DESCRIPTION("Infrared receiver driver for Hauppauge and Pixelview cards (i2c stack)");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-#endif
 
-
-#ifdef MODULE
 int init_module(void)
-#else
-int lirc_i2c_init(void)
-#endif
 {
 	request_module("bttv");
 	request_module("rivatv");
@@ -529,12 +515,24 @@ int lirc_i2c_init(void)
 	return 0;
 }
 
-#ifdef MODULE
 void cleanup_module(void)
 {
 	i2c_del_driver(&driver);
 }
-#endif
+
+MODULE_DESCRIPTION("Infrared receiver driver for Hauppauge and Pixelview cards (i2c stack)");
+MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller, Stefan Jahn");
+MODULE_LICENSE("GPL");
+
+module_param(minor, int, 0444);
+MODULE_PARM_DESC(minor, "Preferred minor device number");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */
 
 /*
  * Overrides for Emacs so that we follow Linus's tabbing style.

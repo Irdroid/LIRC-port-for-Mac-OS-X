@@ -57,6 +57,7 @@
 #warning "******************************************"
 #endif
 
+#include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
@@ -1262,40 +1263,6 @@ int init_lirc_sir(void)
 
 #ifdef MODULE
 
-#ifdef LIRC_SIR_TEKRAM
-MODULE_AUTHOR("Christoph Bartelmus");
-MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
-#elif defined(LIRC_ON_SA1100)
-MODULE_AUTHOR("Christoph Bartelmus");
-MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
-#elif defined(LIRC_SIR_ACTISYS_ACT200L)
-MODULE_AUTHOR("Karl Bongers");
-MODULE_DESCRIPTION("LIRC driver for Actisys Act200L");
-#else
-MODULE_AUTHOR("Milan Pikula");
-MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
-#endif
-
-#ifdef LIRC_ON_SA1100
-MODULE_PARM(irq, "i");
-MODULE_PARM_DESC(irq, "Interrupt (16)");
-#else
-MODULE_PARM(io, "i");
-MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
-MODULE_PARM(irq, "i");
-MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
-MODULE_PARM(threshold, "i");
-MODULE_PARM_DESC(threshold, "space detection threshold (3)");
-#endif
-
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-
-#ifndef KERNEL_2_5
-EXPORT_NO_SYMBOLS;
-#endif
-
 int init_module(void)
 {
 	int retval;
@@ -1318,4 +1285,36 @@ void cleanup_module(void)
 	drop_port();
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
+
+#ifdef LIRC_SIR_TEKRAM
+MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
+MODULE_AUTHOR("Christoph Bartelmus");
+#elif defined(LIRC_ON_SA1100)
+MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
+MODULE_AUTHOR("Christoph Bartelmus");
+#elif defined(LIRC_SIR_ACTISYS_ACT200L)
+MODULE_DESCRIPTION("LIRC driver for Actisys Act200L");
+MODULE_AUTHOR("Karl Bongers");
+#else
+MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
+MODULE_AUTHOR("Milan Pikula");
 #endif
+MODULE_LICENSE("GPL");
+
+#ifdef LIRC_ON_SA1100
+module_param(irq, int, 0444);
+MODULE_PARM_DESC(irq, "Interrupt (16)");
+#else
+module_param(io, int, 0444);
+MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
+
+module_param(irq, int, 0444);
+MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+
+module_param(threshold, int, 0444);
+MODULE_PARM_DESC(threshold, "space detection threshold (3)");
+#endif
+
+EXPORT_NO_SYMBOLS;
+
+#endif /* MODULE */
