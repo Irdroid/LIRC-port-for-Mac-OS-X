@@ -1,26 +1,4 @@
-/*      $Id: irrecord.c,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
-
-/***************************************************************************
- ** This file is part of the lirc-0.5.4 package ****************************
- ** LIRC - Linux Infrared Remote Control ***********************************
- ***************************************************************************
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published
- * by the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- */
-
+/*      $Id: irrecord.c,v 5.2 1999/05/07 17:48:10 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -71,6 +49,14 @@
 #define MAX_SIGNALS 200
 #define AEPS 100
 #define EPS 30
+
+/* some threshold values */
+
+#define TH_SPACE_ENC   80	/* I want less than 20% mismatches */
+#define TH_HEADER      90
+#define TH_TRAIL       90
+#define TH_IS_BIT      15
+
 
 struct lengths
 {
@@ -582,16 +568,28 @@ int analyse(struct ir_remote *remotes)
 			case SPACE_ENC:
 				if(-1==check_lengths(remotes))
 				{
+#                                       ifdef DEBUG
+					fprintf(stderr," check_lengths(%s) "
+						"failed\n",remotes->name);
+#                                       endif
 					return(-1);
 				}
 				if(-1==get_lengths(remotes))
 				{
+#                                       ifdef DEBUG
+					fprintf(stderr," get_lengths(%s) "
+						"failed\n",remotes->name);
+#                                       endif
 					return(-1);
 				}
 				remotes->flags&=~RAW_CODES;
 				remotes->flags|=SPACE_ENC;
 				if(-1==get_codes(remotes))
 				{
+#                                       ifdef DEBUG
+					fprintf(stderr," get_codes(%s) "
+						"failed\n",remotes->name);
+#                                       endif
 					remotes->flags&=~SPACE_ENC;
 					remotes->flags|=RAW_CODES;
 					return(-1);
@@ -645,8 +643,7 @@ int get_scheme(struct ir_remote *remote)
 			if(codes[i].length==codes[j].length)
 			{
 				match++;
-				/* I want less than 20% mismatches */
-				if(match>=80*sum/100) 
+				if(match>=TH_SPACE_ENC*sum/100) 
 				{
 					/* this is not yet the
 					   number of bits */
@@ -795,13 +792,13 @@ void get_header_length(struct ir_remote *remote,struct lengths **first_pulse,
 	plast=NULL;
 	while(p!=NULL)
 	{
-		if(p->count>=90*sum/100)
+		if(p->count>=TH_HEADER*sum/100)
 		{
 			s=*first_space;
 			slast=NULL;
 			while(s!=NULL)
 			{
-				if(s->count>=90*sum/100 &&
+				if(s->count>=TH_HEADER*sum/100 &&
 				   (p->count<=sum || s->count<=sum))
 				{
 					
@@ -820,7 +817,7 @@ void get_header_length(struct ir_remote *remote,struct lengths **first_pulse,
 							match++;
 						}
 					}
-					if(match>=sum*90/100)
+					if(match>=sum*TH_HEADER/100)
 					{
 						remote->phead=p->sum/p->count;
 						remote->shead=s->sum/s->count;
@@ -903,7 +900,7 @@ int is_bit(struct ir_remote *remote,unsigned long pulse, unsigned long space)
 	}
 	sum*=(remote->bits-1-(has_header(remote) ? 2:0));
 	sum/=2;
-	if(match>=20*sum/100)
+	if(match>=TH_IS_BIT*sum/100)
 	{
 		return(1);
 	}
@@ -995,7 +992,7 @@ int get_trail_length(struct ir_remote *remote,struct lengths **first_pulse)
 					match++;
 				}
 			}
-			if(match>=sum*90/100)
+			if(match>=sum*TH_TRAIL/100)
 			{
 				remote->ptrail=p->sum/p->count;
 				p->sum-=sum*p->sum/p->count;
@@ -1127,6 +1124,8 @@ int get_codes(struct ir_remote *remote)
 		}
 		else
 		{
+			fprintf(stderr," decode(%s) failed. current=%s\n",
+				remote->name,current->name);
 			return(-1);
 		}
 		codes++;
