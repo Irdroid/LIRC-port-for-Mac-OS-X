@@ -202,7 +202,7 @@ static int set_use_inc(void *data)
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
-		return -E10;
+		return -EIO;
 	}
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
 
@@ -358,12 +358,12 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->minor = -1;
 	plugin->code_length = bytes_in_key*8;
 	plugin->features = features;
-	plugin->count = 0;
 	plugin->data = ir;
 	plugin->rbuf = rbuf;
 	plugin->set_use_inc = &set_use_inc;
 	plugin->set_use_dec = &set_use_dec;
 
+	ir->count = 0;
 	init_MUTEX(&ir->lock);
 	init_waitqueue_head(&ir->wait_out);
 
