@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.5 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: receive.c,v 5.6 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -65,6 +65,11 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 		}
 	}
 	return(0);
+}
+
+void init_rec_buffer()
+{
+	memset(&rec_buffer,0,sizeof(rec_buffer));
 }
 
 int clear_rec_buffer()

@@ -1,4 +1,4 @@
-/*      $Id: receive.h,v 5.2 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: receive.h,v 5.3 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** receive.h ***************************************************************
@@ -34,6 +34,7 @@ struct rbuf
 };
 
 inline lirc_t lirc_t_max(lirc_t a,lirc_t b);
+void init_rec_buffer();
 int clear_rec_buffer(void);
 int receive_decode(struct ir_remote *remote,
 		   ir_code *prep,ir_code *codep,ir_code *postp,

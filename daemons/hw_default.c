@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.16 2000/07/13 19:01:41 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.17 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -138,11 +138,9 @@ int default_init()
 	struct stat s;
 	int i;
 	
-#if 0
-	/* FIXME */
-	memset(&rec_buffer,0,sizeof(rec_buffer));
-	memset(&send_buffer,0,sizeof(send_buffer));
-#endif
+	/* FIXME: other modules might need this, too */
+	init_rec_buffer();
+	init_send_buffer();
 	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
 	{
 		logprintf(LOG_ERR,"could not open lirc");

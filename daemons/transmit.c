@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.4 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: transmit.c,v 5.5 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -29,6 +29,11 @@ inline void set_bit(ir_code *code,int bit,int data)
 /*
   sending stuff
 */
+
+void init_send_buffer(void)
+{
+	memset(&send_buffer,0,sizeof(send_buffer));
+}
 
 inline void clear_send_buffer(void)
 {

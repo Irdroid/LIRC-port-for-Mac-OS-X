@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.17 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.18 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -383,6 +383,7 @@ int main(int argc,char **argv)
 		}
 		if(!get_toggle_bit(&remote))
 		{
+			printf("But I know for sure that RC6 has a toggle bit!\n");
 			fclose(fout);
 			unlink(filename);
 			if(hw.deinit_func) hw.deinit_func();
@@ -794,17 +795,21 @@ int get_toggle_bit(struct ir_remote *remote)
 	int retval=EXIT_SUCCESS;
 	int retries,flag,success;
 	ir_code first;
+	int seq,repeats;
+	int found;
 	
 	printf("Checking for toggle bit.\n");
-	printf("Please press an arbitrary button repeatedly "
-	       "(don't hold it down).\n");
+	printf(
+"Please press an arbitrary button repeatedly as fast as possible (don't hold\n"
+"it down!).\n");
 	retries=30;flag=success=0;first=0;
+	seq=repeats=0;found=0;
+	while(availabledata())
+	{
+		hw.rec_func(NULL);
+	}
 	while(retval==EXIT_SUCCESS && retries>0)
 	{
-		while(availabledata())
-		{
-			hw.rec_func(NULL);
-		}
 		if(!waitfordata(10000000))
 		{
 			printf("%s: no data for 10 secs, aborting\n",
@@ -815,23 +820,30 @@ int get_toggle_bit(struct ir_remote *remote)
 		hw.rec_func(NULL);
 		if(is_rc6(remote))
 		{
-			for(remote->toggle_bit=1,success=0;
+			for(remote->toggle_bit=1;
 			    remote->toggle_bit<=remote->bits;
 			    remote->toggle_bit++)
 			{
-				if(hw.decode_func(remote,&pre,&code,&post,
-						  &repeat_flag,&remaining_gap))
+				success=hw.decode_func(remote,&pre,&code,&post,
+						       &repeat_flag,
+						       &remaining_gap);
+				if(success)
 				{
-					success=1;
+					remote->remaining_gap=remaining_gap;
 					break;
 				}
 			}
 			if(success==0) remote->toggle_bit=0;
+			printf("%d\n",remote->toggle_bit);
 		}
 		else
 		{
 			success=hw.decode_func(remote,&pre,&code,&post,
 					       &repeat_flag,&remaining_gap);
+			if(success)
+			{
+				remote->remaining_gap=remaining_gap;
+			}
 		}
 		if(success)
 		{
@@ -842,37 +854,44 @@ int get_toggle_bit(struct ir_remote *remote)
 			}
 			else if(!repeat_flag)
 			{
-				if(is_rc6(remote) || first^code)
+				seq++;
+				if(!found && (is_rc6(remote) || first^code))
 				{
 					if(!is_rc6(remote))
 					{
 						set_toggle_bit(remote,first^code);
 					}
-					if(remote->toggle_bit>0)
-					{
-						printf("\nToggle bit is %d.\n",
-						       remote->toggle_bit);
-						return(1);
-					}
-					else
-						printf("\nInvalid toggle bit.\n");
-					break;
+					found=1;
 				}
 				printf(".");fflush(stdout);
 				retries--;
 			}
+			else
+			{
+				repeats++;
+			}
+		}
+	}
+	if(!found)
+	{
+		printf("\nNo toggle bit found.\n");
+	}
+	else
+	{
+		if(remote->toggle_bit>0)
+		{
+			printf("\nToggle bit is %d.\n",remote->toggle_bit);
 		}
 		else
 		{
-			printf(".");fflush(stdout);
-			retries--;
-		}
-		if(retries==0)
-		{
-			printf("\nNo toggle bit found.\n");
+			printf("\nInvalid toggle bit.\n");
 		}
 	}
-	return(0);
+	if(seq>0) remote->min_repeat=repeats/seq;
+#       ifdef DEBUG
+	printf("min_repeat=%d\n",remote->min_repeat);
+#       endif
+	return(found);
 }
 
 void set_toggle_bit(struct ir_remote *remote,ir_code xor)
@@ -1080,10 +1099,12 @@ int get_lengths(struct ir_remote *remote,int force)
 	int first_signal;
 
 	printf("Now start pressing buttons on your remote control.\n\n");
-	printf("It is very important that you press many different buttons and \n"
-	       "hold them down for approximately one second.\n"
-	       "Each button should generate at least one dot but in no case\n"
-	       "more than ten dots of output.\n");
+	printf(
+"It is very important that you press many different buttons and hold them\n"
+"down for approximately one second. Each button should generate at least one\n"
+"dot but in no case more than ten dots of output.\n"
+"Don't stop pressing buttons until two lines of dots (2x80) have been\n"
+"generated.\n\n");
 	flushhw();
 	retval=1;
 	average=0;sum=0;count=0;count_spaces=0;

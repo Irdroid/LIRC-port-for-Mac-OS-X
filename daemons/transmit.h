@@ -1,4 +1,4 @@
-/*      $Id: transmit.h,v 5.2 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: transmit.h,v 5.3 2000/09/03 14:34:45 columbus Exp $      */
 
 /****************************************************************************
  ** transmit.h **************************************************************
@@ -41,6 +41,7 @@ static inline lirc_t time_left(struct timeval *current,struct timeval *last,
 	return((lirc_t) (diff<gap ? gap-diff:0));
 }
 
+void init_send_buffer(void);
 inline void set_bit(ir_code *code,int bit,int data);
 int init_send(struct ir_remote *remote,struct ir_ncode *code);
 
