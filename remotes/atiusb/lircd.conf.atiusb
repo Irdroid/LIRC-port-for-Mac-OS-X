@@ -518,3 +518,91 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.0pre4(atiusb) on Tue Nov  9 12:37:00 2004
+#
+# contributed by Phil Speights
+#
+# brand: nvidia
+# model no. of remote control: UR88A 
+# devices being controlled by this remote: nvidia personal cinema
+#
+
+begin remote
+
+  name  ATIUSB_UR88A
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          243948
+  toggle_bit      0
+
+
+      begin codes
+          mouse-up                 0x4A75
+          mouse-right_up           0x4A75
+          mouse-right              0x4671
+          mouse-right_down         0x4B76
+          mouse-down               0x4B76
+          mouse-left_down          0x4873
+          mouse-left               0x4C77
+          mouse-left_up            0x4772
+          esc                      0xDF0A
+          mouse-button_left        0x4D78
+          mouse-button_right       0x517C
+          1                        0xE20D
+          2                        0xE30E
+          3                        0xE40F
+          4                        0xE510
+          5                        0xE611
+          6                        0xE712
+          7                        0xE813
+          8                        0xE914
+          9                        0xEA15
+          0                        0xEC17
+          stop                     0xFD28
+          play                     0xFA25
+          fastfoward               0xFB26
+          rewind                   0xF924
+          pause                    0xFE29
+          record                   0xFC27
+          previous                 0xF621
+          next                     0xF823
+          up                       0xEF1A
+          down                     0xF722
+          right                    0xF41F
+          left                     0xF21D
+          web                      0xDC07
+          music                    0xDB06
+          photo                    0xDA05
+          dvd/vcd                  0xD904
+          dvr                      0xD803
+          mute                     0xD500
+          playlist                 0xD601
+          chsurf                   0xD702
+          dvdmenu                  0xEE19
+          txt                      0xEB16
+          snapshots                0xED18
+          setup                    0xF01B
+          audio                    0xF11C
+          slow                     0xF520
+          ok                       0xF31E
+          vol+                     0xDE09
+          vol-                     0xDD08
+          chan-                    0xE10C
+          chan+                    0xE00B
+          zoom                     0xFF2A
+          angle                    0x002B
+      end codes
+
+end remote
+
+
