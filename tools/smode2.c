@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.8 2001/11/22 14:27:15 ranty Exp $      */
+/*      $Id: smode2.c,v 5.9 2002/07/27 09:03:21 lirc Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -104,6 +104,7 @@ int main(int argc, char **argv)
 	int div=5;
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
+	struct stat s;
 
 	progname="smode2";
 	while(1)
@@ -155,7 +156,11 @@ int main(int argc, char **argv)
 		fprintf(stderr,"%s: error opening %s\n",progname,device);
 		exit(EXIT_FAILURE);
 	};
-	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	if ( (fstat(fd,&s)!=-1) && (S_ISFIFO(s.st_mode)) )
+	{
+		/* can't do ioctls on a pipe */
+	}
+	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
 	{
 		printf("This program is only intended for receivers "
 		       "supporting the pulse/space layer.\n");

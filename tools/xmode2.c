@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.10 2001/11/20 15:12:33 ranty Exp $      */
+/*      $Id: xmode2.c,v 5.11 2002/07/27 09:03:22 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -129,6 +129,7 @@ int main(int argc, char **argv)
   char textbuffer[80];
   int div=5;
   int dmode=0;
+  struct stat s;
   
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
@@ -188,7 +189,11 @@ int main(int argc, char **argv)
 		fprintf(stderr,"%s: error opening %s\n",progname,device);
 		exit(EXIT_FAILURE);
 	};
-	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	if ( (fstat(fd,&s)!=-1) && (S_ISFIFO(s.st_mode)) )
+	{
+		/* can't do ioctls on a pipe */
+	}
+	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
 	{
 		printf("This program is only intended for receivers "
 		       "supporting the pulse/space layer.\n");
