@@ -1,8 +1,8 @@
-## $Id: Makefile.am,v 1.4 1999/07/27 09:19:27 jochym Exp $
+## $Id: Makefile.am,v 1.5 1999/07/27 17:00:35 jochym Exp $
 
 ## Process this file with automake to produce Makefile.in
 
-KERNEL_SRC=/usr/local/src/linux-2.2/linux
+KERNEL_SRC=/usr/src/linux
 KERNEL_INCLUDES=$(KERNEL_SRC)/include
 KERNEL_CHARDEV=$(KERNEL_SRC)/drivers/char
 
