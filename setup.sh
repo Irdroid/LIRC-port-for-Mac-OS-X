@@ -303,7 +303,8 @@ function ConfigDriver
 			f "ProVideo PV951 (card=42)" \
 			g "Technisat MediaFocus I" \
 			h "TView99 CPH063 (card=38)" \
-			i "Typhoon TView RDS / FM Stereo (card=53)" 2> $TEMP;
+			i "Typhoon TView RDS / FM Stereo (card=53)" \
+			j "Winfast TV2000 (card=34)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -327,6 +328,7 @@ function ConfigDriver
 		elif test "$1" = "g"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
 		elif test "$1" = "h"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
 		elif test "$1" = "i"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "j"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

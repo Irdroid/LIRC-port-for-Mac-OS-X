@@ -46,6 +46,9 @@ GPIO support:
 
 Slink-e support:
   Max Spring <mspring@employees.org>
+  
+Winfast TV2000:
+  Juan Toledo <toledo@users.sourceforge.net>
 
 I have only pieced this together by grepping the source for @ signs
 and then guessing the contribution.

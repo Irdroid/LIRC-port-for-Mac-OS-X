@@ -1,0 +1,63 @@
+
+# this config file was automatically generated
+# using lirc-0.6.3(pixelview_pak) on Thu May 17 16:04:02 2001
+#
+# contributed by Juan Toledo (toledo@users.sourceforge.net)
+#
+# brand:             Leadtek
+# model:             CoolCommand
+# supported devices: Leadtek CoolCommand (Winfast TV2000)
+#
+# Please notice that only the CH+/- and VOL+/- buttons
+# repeat codes when left pressed
+
+begin remote
+
+  name  Winfast-TV2000
+  bits            5
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   3
+  pre_data       0x0
+  post_data_bits  24
+  post_data      0x0
+  gap          425135
+  toggle_bit      0
+
+
+      begin codes
+          POWER                    0x0000000000000000
+          TV/FM                    0x0000000000000002
+          SCAN                     0x0000000000000015
+          DISPLAY                  0x0000000000000016
+          1                        0x0000000000000005
+          2                        0x0000000000000006
+          3                        0x0000000000000007
+          4                        0x0000000000000009
+          5                        0x000000000000000A
+          6                        0x000000000000000B
+          7                        0x000000000000000D
+          8                        0x000000000000000E
+          9                        0x000000000000000F
+          0                        0x0000000000000012
+          RECALL                   0x0000000000000011
+          ENTER                    0x0000000000000013
+          CC                       0x000000000000001F
+          MTS                      0x000000000000001B
+          FINE_DOWN                0x0000000000000019
+          FINE_UP                  0x0000000000000018
+          VIDEO                    0x000000000000001E
+          MUTE                     0x0000000000000014
+          CH_UP                    0x000000000000000C
+          CH_DOWN                  0x0000000000000010
+          VOL_DOWN                 0x0000000000000008
+          VOL_UP                   0x0000000000000004
+          FULLSCREEN               0x0000000000000003
+      end codes
+
+end remote
+
+

@@ -6,9 +6,10 @@
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
+ *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.8 2001/04/25 20:07:50 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.9 2001/05/20 20:04:43 lirc Exp $
  *
  */
 
@@ -104,7 +105,8 @@ static struct rcv_info rcv_infos[] = {
         {BTTV_BESTBUY_EASYTV,         0, 0x00007F00,          0, 0x0004000,          0,   0, 10,  8},
         {BTTV_BESTBUY_EASYTV2,        0, 0x00007F00,          0, 0x0008000,          0,   0, 10,  8},
 #endif
- 	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0}
+ 	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
+        {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
 };
 
 static unsigned char code_length = 0;
