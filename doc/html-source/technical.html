@@ -224,13 +224,17 @@ W | +------------------------+ +----------+ +-------------------------+
       following commands:
       </P>
     <PRE>
-  SEND_ONCE &lt;remote control name&gt; &lt;button name&gt;
+  SEND_ONCE &lt;remote control name&gt; &lt;button name&gt; [&lt;repeat count&gt;]
   SEND_START &lt;remote control name&gt; &lt;button name&gt;
   SEND_STOP &lt;remote control name&gt; &lt;button name&gt;</PRE>
     <P>
       The SEND_ONCE directive tells lircd to send the IR signal
-      associated with the given remote control and button name
-      once. Consequently SEND_START tells lircd to start repeating the
+      associated with the given remote control and button name, and then
+      repeat it <var>repeat count</var> times. <var>repeat count</var> is
+      a decimal number between 0 and 600.  If <var>repeat count</var> is
+      not specified or is less than the minimum number of repeats allowed
+      for that remote control, then this minimum value will be used
+      instead. SEND_START tells lircd to start repeating the
       given button until it receives a SEND_STOP command. As repeating
       of IR signals is very CPU intensive on most systems there should
       be a limit on the time for repeating buttons in every

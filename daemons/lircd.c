@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.41 2002/07/13 09:30:17 ranty Exp $      */
+/*      $Id: lircd.c,v 5.42 2002/07/28 08:53:27 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -963,9 +963,9 @@ void dosigalrm(int sig)
 }
 
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
-	     struct ir_ncode **code,int n)
+	     struct ir_ncode **code,int *reps,int n)
 {
-	char *name=NULL,*command=NULL;
+	char *name=NULL,*command=NULL,*repeats,*end_ptr=NULL;
 
 	*remote=NULL;
 	*code=NULL;
@@ -986,6 +986,29 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 	{
 		return(send_error(fd,message,"unknown command: \"%s\"\n",
 				  command));
+	}
+	if(reps!=NULL)
+	{
+		repeats=strtok(NULL,WHITE_SPACE);
+		if (repeats!=NULL)
+		{
+			*reps=strtol(repeats,&end_ptr,10);
+			if (*end_ptr || *reps<0 )
+			{
+				return(send_error(fd,message,
+						  "bad send packet\n"));
+			}
+			if (*reps>REPEAT_MAX)
+			{
+				return(send_error
+				       (fd,message,
+					"too many repeats: \"%d\"\n",*reps));
+			}
+		}
+		else
+		{
+			*reps=-1;
+		}
 	}
 	if(strtok(NULL,WHITE_SPACE)!=NULL)
 	{
@@ -1174,8 +1197,8 @@ int list(int fd,char *message,char *arguments)
 	struct ir_remote *remote;
 	struct ir_ncode *code;
 
-	if(parse_rc(fd,message,arguments,&remote,&code,0)==0) return(0);
-
+	if(parse_rc(fd,message,arguments,&remote,&code,NULL,0)==0) return(0);
+	
 	if(remote==NULL)
 	{
 		return(send_remote_list(fd,message));
@@ -1202,11 +1225,13 @@ int send_core(int fd,char *message,char *arguments,int once)
 	struct ir_remote *remote;
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
+	int reps;
 	
 	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
 					      "support sending\n"));
 	
-	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
+	if(parse_rc(fd,message,arguments,&remote,&code,
+		    once ? &reps:NULL,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
 	if(once)
@@ -1236,7 +1261,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 	}
 	if(once)
 	{
-		remote->repeat_countdown=remote->min_repeat;
+		remote->repeat_countdown=max(remote->min_repeat,reps);
 	}
 	else
 	{
@@ -1285,7 +1310,7 @@ int send_stop(int fd,char *message,char *arguments)
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
 	
-	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
+	if(parse_rc(fd,message,arguments,&remote,&code,NULL,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
 	if(repeat_remote && repeat_code &&

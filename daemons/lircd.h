@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.10 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: lircd.h,v 5.11 2002/07/28 08:53:27 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -66,7 +66,7 @@ void daemonize(void);
 void sigalrm(int sig);
 void dosigalrm(int sig);
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
-	     struct ir_ncode **code,int n);
+	     struct ir_ncode **code,int *reps,int n);
 int send_success(int fd,char *message);
 int send_error(int fd,char *message,char *format_str, ...);
 int send_remote_list(int fd,char *message);

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.21 2002/04/28 20:09:01 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.22 2002/07/28 08:53:27 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -71,6 +71,7 @@ struct ir_ncode {
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 
 /* stop repeating after 600 signals (approx. 1 minute) */
+/* update technical.html when changing this value */
 #define REPEAT_MAX 600
 
 #define DEFAULT_FREQ 38000
