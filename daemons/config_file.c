@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.8 2001/11/03 20:44:15 lirc Exp $      */
+/*      $Id: config_file.c,v 5.9 2002/02/22 14:47:46 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -350,6 +350,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("toggle_bit",key)==0){
 		rem->toggle_bit=s_strtoi(val);
+		return(1);
+	}
+	else if (strcasecmp("toggle_mask",key)==0){
+		rem->toggle_mask=s_strtocode(val);
 		return(1);
 	}
 	/* obsolete name */

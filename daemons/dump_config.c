@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.11 2001/11/27 11:50:21 ranty Exp $      */
+/*      $Id: dump_config.c,v 5.12 2002/02/22 14:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -171,6 +171,16 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 			fprintf(f, "  min_repeat      %d\n",rem->min_repeat);
 		}
 		fprintf(f, "  toggle_bit      %d\n\n",rem->toggle_bit);
+		if(has_toggle_mask(rem))
+		{
+#                       ifdef LONG_IR_CODE
+			fprintf(f, "  toggle_mask    0x%llX\n",
+				rem->toggle_mask);
+#                       else
+			fprintf(f, "  toggle_mask    0x%lX\n",
+				rem->toggle_mask);
+#                       endif
+		}
 	}
 	else
 	{

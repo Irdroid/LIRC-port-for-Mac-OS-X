@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.36 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: lircd.c,v 5.37 2002/02/22 14:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1217,6 +1217,10 @@ int send_core(int fd,char *message,char *arguments,int once)
 			return(send_error(fd,message,"already repeating\n"));
 		}
 	}
+	if(has_toggle_mask(remote))
+	{
+		remote->toggle_mask_state=0;
+	}
 	if(remote->toggle_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
@@ -1298,6 +1302,7 @@ int send_stop(int fd,char *message,char *arguments)
 		
 		setitimer(ITIMER_REAL,&repeat_timer,NULL);
 		
+		repeat_remote->toggle_mask_state=0;
 		repeat_remote=NULL;
 		repeat_code=NULL;
 		/* clin!=0, so we don't have to deinit hardware */

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.19 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.20 2002/02/22 14:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -117,12 +117,15 @@ struct ir_remote
 				       code sent once -> min_repeat=0 */
 	unsigned int freq;          /* modulation frequency */
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
+	ir_code toggle_mask;        /* Sharp (?) error detection scheme */
 	
 	/* end of user editable values */
 	
         int repeat_state;
+	int toggle_mask_state;
 	int repeat_countdown;
 	struct ir_ncode *last_code; /* code received or sent last */
+	struct ir_ncode *toggle_code; /* toggle code received or sent last */
 	int reps;
 	struct timeval last_send;   /* time last_code was received or sent */
 	lirc_t remaining_gap;       /* remember gap for CONST_LENGTH remotes */
@@ -222,6 +225,12 @@ static inline int has_header(struct ir_remote *remote)
 static inline int has_foot(struct ir_remote *remote)
 {
 	if(remote->pfoot>0 && remote->sfoot>0) return(1);
+	else return(0);
+}
+
+static inline int has_toggle_mask(struct ir_remote *remote)
+{
+	if(remote->toggle_mask>0) return(1);
 	else return(0);
 }
 

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.18 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.19 2002/02/22 14:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -154,6 +154,32 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			logprintf(LOG_ERR,"bad toggle_bit");
 		}
 	}
+	if(has_toggle_mask(remote) && remote->toggle_mask_state%2)
+	{
+		ir_code *affected,mask,mask_bit;
+		int bit,current_bit;
+		
+		affected=&post;
+		mask=remote->toggle_mask;
+		for(bit=current_bit=0;bit<remote->pre_data_bits+
+			    remote->bits+
+			    remote->post_data_bits;bit++,current_bit++)
+		{
+			if(bit==remote->post_data_bits)
+			{
+				affected=&code;
+				current_bit=0;
+			}
+			if(bit==remote->post_data_bits+remote->bits)
+			{
+				affected=&post;
+				current_bit=0;
+			}
+			mask_bit=mask&1;
+			(*affected)^=(mask_bit<<current_bit);
+			mask>>=1;
+		}
+	}
 	if(has_pre(remote))
 	{
 		if((pre|pre_mask)!=(remote->pre_data|pre_mask))
@@ -192,6 +218,22 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			if((codes->code|code_mask)==(code|code_mask))
 			{
 				found=codes;
+				if(has_toggle_mask(remote))
+				{
+					if(!(remote->toggle_mask_state%2))
+					{
+						remote->toggle_code=codes;
+						LOGPRINTF(1,
+							  "toggle_mask_start");
+						break;
+					}
+					if(codes!=remote->toggle_code)
+					{
+						remote->toggle_code=NULL;
+						return(NULL);
+					}
+					remote->toggle_code=NULL;
+				}
 				break;
 			}
 			codes++;
@@ -215,12 +257,29 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
 	   (!(remote->toggle_bit>0) || repeat_state==remote->repeat_state))
 	{
-		remote->reps++;
+		if(has_toggle_mask(remote))
+		{
+			remote->toggle_mask_state++;
+			if(remote->toggle_mask_state==4)
+			{
+				remote->reps++;
+				remote->toggle_mask_state=2;
+			}
+		}
+		else
+		{
+			remote->reps++;		
+		}
 	}
 	else
 	{
-		remote->reps=0;
+		remote->reps=0;		
 		remote->last_code=found;
+		if(has_toggle_mask(remote))
+		{
+			remote->toggle_mask_state=1;
+			remote->toggle_code=found;
+		}
 		if(remote->toggle_bit>0)
 		{
 			remote->repeat_state=repeat_state;
@@ -273,6 +332,13 @@ char *decode_all(struct ir_remote *remotes)
 
 			code=set_code(remote,ncode,repeat_state,repeat_flag,
 				      remaining_gap);
+			if(has_toggle_mask(remote) &&
+			   remote->toggle_mask_state%2)
+			{
+				decoding=NULL;
+				return(NULL);
+			}
+
 #ifdef __GLIBC__
 			/* It seems you can't print 64-bit longs on glibc */
 			
@@ -306,6 +372,7 @@ char *decode_all(struct ir_remote *remotes)
 		{
 			LOGPRINTF(1,"failed \"%s\" remote",remote->name);
 		}
+		remote->toggle_mask_state=0;
 		remote=remote->next;
 	}
 	decoding=NULL;

@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.6 2001/08/25 16:17:44 lirc Exp $      */
+/*      $Id: transmit.c,v 5.7 2002/02/22 14:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -319,7 +319,6 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		send_buffer.is_biphase=1;
 	}
-	
 	if(repeat_remote!=NULL && has_repeat(remote))
 	{
 		if(remote->flags&REPEAT_HEADER && has_header(remote))
@@ -332,7 +331,27 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		if(!is_raw(remote))
 		{
-			send_code(remote,code->code);
+			if(has_toggle_mask(remote))
+			{
+				if(remote->toggle_mask_state%2)
+				{
+					send_code(remote,code->code^
+						  remote->toggle_mask);
+				}
+				else
+				{
+					send_code(remote,code->code);
+				}
+				remote->toggle_mask_state++;
+				if(remote->toggle_mask_state==4)
+				{
+					remote->toggle_mask_state==2;
+				}
+			}
+			else
+			{
+				send_code(remote,code->code);
+			}
 		}
 	}
 	sync_send_buffer();
