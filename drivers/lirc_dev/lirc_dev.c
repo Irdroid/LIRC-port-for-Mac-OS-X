@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.30 2004/03/28 15:20:55 lirc Exp $
+ * $Id: lirc_dev.c,v 1.31 2004/08/05 15:45:01 lirc Exp $
  *
  */
 
@@ -316,7 +316,12 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->buf = p->rbuf;
 	} else {
 		ir->buf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
-		lirc_buffer_init(ir->buf, bytes_in_key, BUFLEN/bytes_in_key);
+		if(lirc_buffer_init
+		   (ir->buf, bytes_in_key, BUFLEN/bytes_in_key) != 0)
+		{
+			kfree(ir->buf);
+			return -ENOMEM;
+		}
 	}
 
 	if (p->features==0)
