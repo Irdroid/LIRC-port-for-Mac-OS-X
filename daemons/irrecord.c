@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.37 2002/01/06 13:36:43 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.38 2002/02/01 23:02:16 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -392,18 +392,24 @@ int main(int argc,char **argv)
 "DOCUMENTATION of this package, especially section \"Adding new remote\n"
 "controls\" for how to get help.\n"
 "\n"
-"IMPORTANT: The license of the config files created by this program requires\n"
-"that you send them to the author. If you don't like this license exit this\n"
-"program now by pressing Ctrl-C! Otherwise press RETURN.\n\n");
+"If there already is a remote control of the same brand available at\n"
+"http://www.lirc.org/remotes/ you might also want to try using such a\n"
+"remote as a template. The config files already contain all\n"
+"parameters of the protocol used by remotes of a certain brand and\n"
+"knowing these parameters makes the job of this program much\n"
+"easier. There are also template files for the most common protocols\n"
+"available in the remotes/generic/ directory of the source\n"
+"distribution of this package. You can use a template files by\n"
+"providing the path of the file as command line parameter.\n"
+"\n"
+"Please send the finished config files to <lirc@bartelmus.de> so that I\n"
+"can make them available to others. Don't forget to put all information\n"
+"that you can get about the remote control in the header of the file.\n"
+"\n"
+"Press RETURN to continue.\n\n");
 	
-	if(getchar()!='\n')
-	{
-		fclose(fout);
-		unlink(filename);
-		if(hw.deinit_func) hw.deinit_func();
-		exit(EXIT_FAILURE);
-	}
-
+	getchar();
+	
 	remote.name=filename;
 	switch(hw.rec_mode)
 	{
@@ -2186,20 +2192,8 @@ int get_gap_length(struct ir_remote *remote)
 
 void fprint_copyright(FILE *fout)
 {
-	/* As this program is distributed under GPL you could just
-	   remove this copyright notice and the config files generated
-	   with the modified program would automatically be covered by
-	   the GPL. Although I am aware of this I will not prevent it.
-
-	   I hope that nobody will do so because the license I put on
-	   the config files is not really a restriction. Instead it
-	   emphasizes the spirit of the GPL to make things available
-	   to everybody. */
-
 	fprintf(fout,
 		"\n"
-		"# Copyright (C) 1999 Christoph Bartelmus\n"
-		"#\n"
-		"# You may only use this file if you make it available to others,\n"
-		"# i.e. if you send it to <lirc@bartelmus.de>\n");
+		"# Please make this file available to others\n"
+		"# by sending it to <lirc@bartelmus.de>\n");
 }

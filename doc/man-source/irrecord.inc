@@ -21,10 +21,6 @@ find template files for the most common protocols in the
 remotes/generic/ directory of this package. The name of the new file is
 created by appending .conf to the given filename in this case.
 
-[NOTE]
-This program is provided to you free of charge. So it'd be only fair to
-respect its license.
-
 [SEE ALSO]
 Further information on this topic is available in section "Adding new
 remote controls" in html/help.html
