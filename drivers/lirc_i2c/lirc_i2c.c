@@ -1,8 +1,9 @@
-/*      $Id: lirc_i2c.c,v 1.11 2001/04/24 21:20:41 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.12 2001/12/12 20:26:01 ranty Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
- * (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ *
+ * Copyright (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
  * modified for PixelView (BT878P+W/FM) by
  *      Michal Kochanowicz <mkochano@pld.org.pl>
  *      Christoph Bartelmus <lirc@bartelmus.de>
@@ -10,6 +11,20 @@
  *      Ulrich Mueller <ulrich.mueller42@web.de>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
 
@@ -376,6 +391,14 @@ static int ir_command(struct i2c_client *client,unsigned int cmd, void *arg)
 }
 
 /* ----------------------------------------------------------------------- */
+#ifdef MODULE
+MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller");
+MODULE_DESCRIPTION("Infrared receiver driver for Hauppauge and Pixelview cards (i2c stack)");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
+#endif
+
 
 #ifdef MODULE
 int init_module(void)

@@ -7,9 +7,22 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
  *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
- * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.13 2001/11/14 21:46:35 lirc Exp $
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * $Id: lirc_gpio.c,v 1.14 2001/12/12 20:26:01 ranty Exp $
  *
  */
 
@@ -380,6 +393,9 @@ EXPORT_NO_SYMBOLS;
 #ifdef MODULE
 MODULE_DESCRIPTION("Driver module for remote control (data from bt848 GPIO port)");
 MODULE_AUTHOR("Artur Lipowski");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
 
 /*
  *

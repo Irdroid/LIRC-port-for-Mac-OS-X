@@ -4,6 +4,21 @@
  * lirc_sir - Device driver for use with SIR (serial infra red)
  * mode of IrDA on many notebooks.
  *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
  * 2000/09/16 Frank Przybylski <mail@frankprzybylski.de> :
  *  added timeout and relaxed pulse detection, removed gap bug
  *
@@ -1124,13 +1139,22 @@ int init_lirc_sir(void)
 #ifdef LIRC_SIR_TEKRAM
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
 #else
 #ifdef LIRC_ON_IPAQ
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
 #else
 MODULE_AUTHOR("Milan Pikula");
 MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
 #endif
 #endif
 #ifdef LIRC_ON_IPAQ

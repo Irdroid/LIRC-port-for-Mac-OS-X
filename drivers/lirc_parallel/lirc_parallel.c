@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.12 2001/06/23 17:34:27 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.13 2001/12/12 20:26:01 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -8,6 +8,20 @@
  *                 transmitting unit built by the author
  * 
  * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */ 
 
@@ -732,6 +746,9 @@ static struct file_operations lirc_fops =
 #if LINUX_VERSION_CODE >= 0x020200
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
+#endif
 
 MODULE_PARM(port, "i");
 MODULE_PARM_DESC(port, "I/O address (0x3bc, 0x378 or 0x278)");
