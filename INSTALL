@@ -1,3 +1,21 @@
+For detailed installation instructions refer to the HTML documentation
+of this package (see doc/html/index.html). 
+
+If you are a first time user please read the whole documentation
+carefully. If you upgrade from an older version please at least read
+the "Updating from lirc-x.y.z" sections in the HTML documentation.
+
+To install LIRC you basically have to:
+
+./setup.sh && make install
+
+The following are generic instructions to use the configure shell
+script. You most probably won't need to call configure manually as
+setup.sh will allow you to call configure with the correct options
+set. setup.sh will save the configure command line used in the file
+configure.sh. You can use the configure.sh shell script to manually
+append options or override given options easily.
+
 Basic Installation
 ==================
 
