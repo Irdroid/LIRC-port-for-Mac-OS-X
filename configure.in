@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.17 2000/03/09 20:59:40 columbus Exp $
+dnl $Id: configure.in,v 5.18 2000/03/12 12:30:32 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,8 +14,8 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
-AC_PATH_PROG(mknod, mknod, :)
-AC_PATH_PROG(depmod, depmod, :)
+AC_PATH_PROG(mknod, mknod, /bin/mknod)
+AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
 AC_PROG_LN_S
 
 dnl Checks for header files.
