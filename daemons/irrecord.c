@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.2 1999/08/13 18:59:54 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.3 1999/08/30 18:25:36 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -57,6 +57,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump);
 void unlink_length(struct lengths **first,struct lengths *remove);
 int get_trail_length(struct ir_remote *remote);
 int get_lead_length(struct ir_remote *remote);
+int get_repeat_length(struct ir_remote *remote);
 int get_header_length(struct ir_remote *remote);
 int get_data_length(struct ir_remote *remote);
 
@@ -89,6 +90,7 @@ unsigned long signals[MAX_SIGNALS];
 
 #define TH_SPACE_ENC   80	/* I want less than 20% mismatches */
 #define TH_HEADER      90
+#define TH_REPEAT      90
 #define TH_TRAIL       90
 #define TH_LEAD        90
 #define TH_IS_BIT      15
@@ -215,6 +217,8 @@ int main(int argc,char **argv)
 	{
 		if(!hw.init_func())
 		{
+			fprintf(stderr,"%s: could not init hardware"
+				" (lircd running ?)\n",progname);
 			fclose(fout);
 			unlink(filename);
 			exit(EXIT_FAILURE);
@@ -338,11 +342,9 @@ int main(int argc,char **argv)
 			while(availabledata())
 			{
 				hw.rec_func(NULL);
-				hw.decode_func(&remote,&pre,&code,&post,
-					       &repeat_flag,&remaining_gap);
 			}
 		}
-		printf("\nNow press button \"%s\".\n",buffer);
+		printf("\nNow press button \"%s\".\n",buffer);fflush(stdout);
 		
 		if(remote.flags&RAW_CODES)
 		{
@@ -553,8 +555,6 @@ int main(int argc,char **argv)
 		while(availabledata())
 		{
 			hw.rec_func(NULL);
-			hw.decode_func(&remote,&pre,&code,&post,
-				       &repeat_flag,&remaining_gap);
 		}
 		if(!waitfordata(10000000))
 		{
@@ -870,12 +870,12 @@ struct lengths
 enum analyse_mode {MODE_GAP,MODE_HAVE_GAP};
 
 struct lengths *first_space=NULL,*first_pulse=NULL;
-struct lengths *first_sum=NULL,*first_gap=NULL;
+struct lengths *first_sum=NULL,*first_gap=NULL,*first_repeat_gap=NULL;
 struct lengths *first_headerp=NULL,*first_headers=NULL;
 struct lengths *first_lead=NULL,*first_trail=NULL;
 struct lengths *first_repeatp=NULL,*first_repeats=NULL;
 unsigned long lengths[MAX_SIGNALS];
-unsigned int count,count_spaces,count_repeats,count_signals;
+unsigned int count,count_spaces,count_3repeats,count_5repeats,count_signals;
 
 int get_lengths(struct ir_remote *remote)
 {
@@ -890,7 +890,8 @@ int get_lengths(struct ir_remote *remote)
 	       "more than ten dots of output.\n");
 	flushhw();
 	retval=1;
-	average=0;sum=0;count=0;count_spaces=0;count_repeats=0;count_signals=0;
+	average=0;sum=0;count=0;count_spaces=0;
+	count_3repeats=0;count_5repeats=0;count_signals=0;
 	while(1)
 	{
 		if(!waitfordata(10000000))
@@ -1034,19 +1035,21 @@ int get_lengths(struct ir_remote *remote)
 				if(is_space(data))
 				{
 				        /* signal complete */
-					if(count==3)
+					if(count==4)
 					{
-						count_repeats++;
+						count_3repeats++;
 						add_length(&first_repeatp,signals[0]);
 						merge_lengths(first_repeatp);
 						add_length(&first_repeats,signals[1]);
 						merge_lengths(first_repeats);
 						add_length(&first_trail,signals[2]);
 						merge_lengths(first_trail);
+						add_length(&first_repeat_gap,signals[3]);
+						merge_lengths(first_repeat_gap);
 					}
-					else if(count==5)
+					else if(count==6)
 					{
-						count_repeats++;
+						count_5repeats++;
 						add_length(&first_headerp,signals[0]);
 						merge_lengths(first_headerp);
 						add_length(&first_headers,signals[1]);
@@ -1057,8 +1060,10 @@ int get_lengths(struct ir_remote *remote)
 						merge_lengths(first_repeats);
 						add_length(&first_trail,signals[4]);
 						merge_lengths(first_trail);
+						add_length(&first_repeat_gap,signals[5]);
+						merge_lengths(first_repeat_gap);
 					}
-					else if(count>5)
+					else if(count>6)
 					{
 						int i;
 
@@ -1104,6 +1109,7 @@ int get_lengths(struct ir_remote *remote)
 					if(!get_trail_length(remote) ||
 					   !get_lead_length(remote) ||
 					   !get_header_length(remote) ||
+					   !get_repeat_length(remote) ||
 					   !get_data_length(remote))
 					{
 						retval=0;
@@ -1117,6 +1123,7 @@ int get_lengths(struct ir_remote *remote)
 	free_lengths(first_pulse);
 	free_lengths(first_sum);
 	free_lengths(first_gap);
+	free_lengths(first_repeat_gap);
 	free_lengths(first_headerp);
 	free_lengths(first_headers);
 	free_lengths(first_lead);
@@ -1383,6 +1390,76 @@ int get_header_length(struct ir_remote *remote)
 	return(1);
 }
 
+int get_repeat_length(struct ir_remote *remote)
+{
+	unsigned int sum,max_count,repeatp,repeats,repeat_gap;
+	struct lengths *max_plength,*max_slength;
+
+	if(!((count_3repeats>SAMPLES/2 ? 1:0) ^
+	     (count_5repeats>SAMPLES/2 ? 1:0)))
+	{
+		if(count_3repeats>SAMPLES/2 || count_5repeats>SAMPLES/2)
+		{
+			printf("Repeat inconsitentcy.\n");
+			return(0);
+		}
+		printf("No repeat code found.\n");
+		return(1);
+	}
+
+	max_plength=get_max_length(first_repeatp,&sum);
+	max_count=max_plength->count;
+#       ifdef DEBUG
+	printf("get_repeat_length(): sum: %u, max_count %u\n",sum,max_count);
+#       endif
+	
+	if(max_count>=sum*TH_REPEAT/100)
+	{
+		max_slength=get_max_length(first_repeats,&sum);
+		max_count=max_slength->count;
+#               ifdef DEBUG
+		printf("get_repeat_length(): sum: %u, max_count %u\n",
+		       sum,max_count);
+#               endif
+		if(max_count>=sum*TH_REPEAT/100)
+		{
+			if(count_5repeats>count_3repeats &&
+			   !has_header(remote))
+			{
+				printf("Repeat code has header,"
+				       " but no header found!\n");
+				return(0);
+			}
+			if(count_3repeats>count_5repeats &&
+			   has_header(remote))
+			{
+				remote->flags|=NO_HEAD_REP;
+			}
+			repeatp=max_plength->sum/max_plength->count;
+			repeats=max_slength->sum/max_slength->count;
+			
+			printf("Found repeat code: %u %u\n",
+			       repeatp,repeats);
+			remote->prepeat=repeatp;
+			remote->srepeat=repeats;
+			if(remote->flags&CONST_LENGTH)
+			{
+				max_slength=get_max_length(first_repeat_gap,
+							   NULL);
+				repeat_gap=max_slength->sum/max_slength->count;
+				printf("Found repeat gap: %u\n",
+				       repeat_gap);
+				remote->repeat_gap=repeat_gap;
+				
+			}
+			return(1);
+		}
+	}
+	printf("No repeat header found.\n");
+	return(1);
+
+}
+
 void unlink_length(struct lengths **first,struct lengths *remove)
 {
 	struct lengths *last,*scan;
@@ -1431,8 +1508,7 @@ int get_data_length(struct ir_remote *remote)
 		max2_plength=get_max_length(first_pulse,NULL);
 		if(max2_plength!=NULL)
 		{
-			max_count=max2_plength->count;
-			if(max_count<sum*TH_IS_BIT/100)
+			if(max2_plength->count<max_count*TH_IS_BIT/100)
 				max2_plength=NULL;
 		}
 
@@ -1458,8 +1534,7 @@ int get_data_length(struct ir_remote *remote)
 			max2_slength=get_max_length(first_space,NULL);
 			if(max2_slength!=NULL)
 			{
-				max_count=max2_slength->count;
-				if(max_count<sum*TH_IS_BIT/100)
+				if(max2_slength->count<max_count*TH_IS_BIT/100)
 					max2_slength=NULL;
 			}
 			
@@ -1479,6 +1554,8 @@ int get_data_length(struct ir_remote *remote)
 			remote->aeps=AEPS;
 			if(is_shift(remote))
 			{
+				printf("Not implemented.\n");
+				return(0);
 			}
 			else
 			{
@@ -1516,10 +1593,11 @@ int get_data_length(struct ir_remote *remote)
 					remote->szero=min(s1,s2);
 				}
 			}
-			if((expect(remote,remote->phead,remote->pone) &&
-			    expect(remote,remote->shead,remote->sone)) ||
-			   (expect(remote,remote->phead,remote->pzero) &&
-			    expect(remote,remote->shead,remote->szero)))
+			if(has_header(remote) && !has_repeat(remote) &&
+			   ((expect(remote,remote->phead,remote->pone) &&
+			     expect(remote,remote->shead,remote->sone)) ||
+			    (expect(remote,remote->phead,remote->pzero) &&
+			     expect(remote,remote->shead,remote->szero))))
 			{
 				remote->phead=remote->shead=0;
 				printf("Removed header.\n");
