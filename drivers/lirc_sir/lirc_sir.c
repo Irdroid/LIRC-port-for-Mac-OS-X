@@ -828,7 +828,7 @@ static void send_pulse(unsigned long len)
 	while (--bytes_out) {
 		outb(PULSE, iobase + UART_TX);
 		/* FIXME treba seriozne cakanie z drivers/char/serial.c */
-		while (!(inb(iobase + UART_LSR) & UART_LSR_TEMT));
+		while (!(inb(iobase + UART_LSR) & UART_LSR_THRE));
 	}
 #if 0
 	if (time_left > 0)

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.24 2001/07/11 19:27:51 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.25 2001/07/18 10:16:39 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -220,7 +220,7 @@ unsigned long send_pulse(unsigned long length)
 		if(i==3)
 		{
 			soutp(UART_TX,output);
-			while(!(sinp(UART_LSR) & UART_LSR_TEMT));
+			while(!(sinp(UART_LSR) & UART_LSR_THRE));
 			output=0x7f;
 			i=0;
 		}
