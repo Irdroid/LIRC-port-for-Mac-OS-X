@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.40 2002/06/24 18:35:20 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.41 2002/07/04 15:59:40 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -957,6 +957,10 @@ int get_toggle_bit(struct ir_remote *remote)
 		{
 			printf("\nToggle bit is %d.\n",remote->toggle_bit);
 		}
+		else if(remote->toggle_mask!=0)
+		{
+			printf("\nToggle mask found.\n");
+		}
 		else
 		{
 			printf("\nInvalid toggle bit.\n");
@@ -974,11 +978,12 @@ void set_toggle_bit(struct ir_remote *remote,ir_code xor)
 	ir_code mask;
 	int toggle_bit;
 	struct ir_ncode *codes;
+	int bits;
 
 	if(!remote->codes) return;
 
-
-	mask=((ir_code) 1)<<(remote->bits+remote->pre_data_bits+remote->post_data_bits-1);
+	bits=remote->bits+remote->pre_data_bits+remote->post_data_bits;
+	mask=((ir_code) 1)<<(bits-1);
 	toggle_bit=1;
 	while(mask)
 	{
@@ -995,6 +1000,14 @@ void set_toggle_bit(struct ir_remote *remote,ir_code xor)
 		{
 			codes->code&=~mask;
 			codes++;
+		}
+	}
+	else
+	{
+		/* Sharp, Denon and some others use a toggle_mask */
+		if(bits==15 && xor==0x3ff)
+		{
+			remote->toggle_mask=xor;
 		}
 	}
 }
