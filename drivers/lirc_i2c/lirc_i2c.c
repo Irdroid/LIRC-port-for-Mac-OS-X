@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.32 2005/02/19 15:13:00 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.33 2005/03/11 20:04:03 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -94,6 +94,42 @@ static inline int reverse(int data, int bits)
 	}
 
 	return c;
+}
+
+static int add_to_buf_adap(void* data, struct lirc_buffer* buf)
+{
+	struct IR *ir = data;
+	unsigned char keybuf[4];
+	__u16 code;
+	unsigned char codes[2];
+	
+	keybuf[0] = 0x00;
+	i2c_master_send(&ir->c,keybuf,1);
+	/* poll IR chip */
+	if (4 == i2c_master_recv(&ir->c,keybuf,4)) {
+		ir->b[0] = keybuf[1];
+		ir->b[1] = keybuf[2];
+		ir->b[2] = keybuf[3];
+		dprintk("key (0x%02x/0x%02x)\n", ir->b[1], ir->b[2]);
+	} else {
+		dprintk("read error\n");
+		/* keep last successfull read buffer */
+		return -EIO;
+	}
+
+	/* key pressed ? */
+	if ((ir->b[1]) == 0xff)
+		return -ENODATA;
+
+	/* look what we have */
+	code = (((__u16)ir->b[1])<<8) & 0xff00;
+	code = code    	| (ir->b[2]) ;
+	dprintk("Your magic code no is (0x%04x)\n",code);
+	codes[0] = (code >> 8) & 0xff;
+	codes[1] = code & 0xff;
+
+	lirc_buffer_write_1( buf, codes );
+	return 0;
 }
 
 static int add_to_buf_pcf8574(void* data, struct lirc_buffer* buf)
@@ -244,7 +280,7 @@ static int add_to_buf_pv951(void* data, struct lirc_buffer* buf)
 	struct IR *ir = data;
 	unsigned char key;
 	unsigned char codes[4];
-	
+
 	/* poll IR chip */
 	if (1 != i2c_master_recv(&ir->c,&key,1)) {
 		dprintk("read error\n");
@@ -387,6 +423,11 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.code_length = 13;
 		ir->l.add_to_buf=add_to_buf_haup_pvr150;
 		break;
+	case 0x6b:
+		strcpy(ir->c.name,"Adaptec IR");
+		ir->l.code_length = 13;
+		ir->l.add_to_buf=add_to_buf_adap;
+		break;
 	case 0x18:
 	case 0x1a:
 		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
@@ -458,7 +499,15 @@ static int ir_probe(struct i2c_adapter *adap) {
 	   so we need to probe 0x71 as well.
 	*/
 	
-	static const int probe[] = { 0x1a, 0x18, 0x71, 0x4b, 0x64, 0x30, -1};
+	static const int probe[] = {
+		0x1a, /* Hauppauge IR external */
+		0x18, /* Hauppauge IR internal */
+		0x71, /* Hauppauge IR (PVR150) */
+		0x4b, /* PV951 IR */
+		0x64, /* Pixelview IR */
+		0x30, /* KNC ONE IR */
+		0x6b, /* Adaptec IR */
+		-1};
 	struct i2c_client c; char buf; int i,rc;
 
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {

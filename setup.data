@@ -48,6 +48,7 @@ hw_menu_entry: @hw-other-serial
 	mp3anywhere: "X10 MP3 Anywhere RF Receiver"
 
 hw_menu_entry: @hw-tv-card
+	adaptec: "Adaptec AVC-2410"
 	cph03x: "Askey Magic TView CPH03x (card=1)"
 	cph06x: "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)"
 	tvbox: "Asus TV-Box"
@@ -113,48 +114,159 @@ hw_menu_entry: @hw-usb
 	streamzap: "Streamzap PC Remote"
 	mceusb: "Windows Media Center Remotes"
 
-param_type: act200l animax irdeo irdeo_remote packard_bell serial \
-		sir tekram
+param_type: \
+	act200l \
+	animax \
+	irdeo \
+	irdeo_remote \
+	packard_bell \
+	serial \
+	sir \
+	tekram
 	com:
 
 param_type: parallel
 	lpt:
 
-param_type: caraca creative ea65 irman logitech mouseremote \
-		mp3anywhere pcmak pctv realmagic remotemaster silitek \
-		slinke uirt2 uirt2_raw
+param_type: \
+	caraca \
+	creative \
+	ea65 \
+	irman \
+	logitech \
+	mouseremote \
+	mp3anywhere \
+	pcmak \
+	pctv \
+	realmagic \
+	remotemaster \
+	silitek \
+	slinke \
+	uirt2 \
+	uirt2_raw
 	tty:
 
-param_type: pcmak_usb tira
+param_type: \
+	pcmak_usb \
+	tira
         ttyUSB:
 
-param_type: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
-		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
-		chronos cph03x cph06x creative_infracd devinput dsp \
-		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo igorplugusb imon it87 knc_one kworld \
-		leadtek_0007 leadtek_0010 leadtek_pvr2000 \
-		livedrive_midi livedrive_seq mceusb mediafocusI \
-		mouseremote_ps2 none pixelview_bt878 pixelview_pak \
-		pixelview_pro provideo sa1100 sasem streamzap \
-		tekram_bt829 tvbox udp
+param_type: \
+	adaptec \
+	atilibusb \
+	atiusb \
+	audio \
+	audio_alsa \
+	avermedia \
+	avermedia98 \
+	avermedia_vdomate \
+	bestbuy \
+	bestbuy2 \
+	breakoutbox \
+	bte \
+	chronos \
+	cph03x \
+	cph06x \
+	creative_infracd \
+	devinput \
+	dsp \
+	exaudio \
+	flyvideo \
+	gvbctv5pci \
+	hauppauge \
+	hauppauge_dvb \
+	hercules_smarttv_stereo \
+	igorplugusb \
+	imon \
+	it87 \
+	knc_one \
+	kworld \
+	leadtek_0007 \
+	leadtek_0010 \
+	leadtek_pvr2000 \
+	livedrive_midi \
+	livedrive_seq \
+	mceusb \
+	mediafocusI \
+	mouseremote_ps2 \
+	none \
+	pixelview_bt878 \
+	pixelview_pak \
+	pixelview_pro \
+	provideo \
+	sa1100 \
+	sasem \
+	streamzap \
+	tekram_bt829 \
+	tvbox \
+	udp
 	none:
 
-default_param: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
-		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
-		cph03x cph06x creative_infracd devinput dsp exaudio \
-		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo igorplugusb imon it87 knc_one kworld \
-		leadtek leadtek_0007 leadtek_0010 leadtek_pvr2000 \
-		livedrive_midi livedrive_seq mceusb mediafocusI \
-		mouseremote_ps2 none pixelview_bt878 pixelview_pak \
-		pixelview_pro provideo sa1100 sasem streamzap \
-		tekram_bt829 tvbox udp
+default_param: \
+	adaptec \
+	atilibusb \
+	atiusb \
+	audio \
+	audio_alsa \
+	avermedia \
+	avermedia98 \
+	avermedia_vdomate \
+	bestbuy \
+	bestbuy2 \
+	breakoutbox \
+	chronos \
+	cph03x \
+	cph06x \
+	creative_infracd \
+	devinput \
+	dsp \
+	exaudio \
+	flyvideo \
+	gvbctv5pci \
+	hauppauge \
+	hauppauge_dvb \
+	hercules_smarttv_stereo \
+	igorplugusb \
+	imon \
+	it87 \
+	knc_one \
+	kworld \
+	leadtek \
+	leadtek_0007 \
+	leadtek_0010 \
+	leadtek_pvr2000 \
+	livedrive_midi \
+	livedrive_seq \
+	mceusb \
+	mediafocusI \
+	mouseremote_ps2 \
+	none \
+	pixelview_bt878 \
+	pixelview_pak \
+	pixelview_pro \
+	provideo \
+	sa1100 \
+	sasem \
+	streamzap \
+	tekram_bt829 \
+	tvbox \
+	udp
 	none:
 
-default_param: caraca creative irman logitech mouseremote mp3anywhere \
-		pcmak pctv realmagic remotemaster silitek uirt2 \
-		uirt2_raw
+default_param: \
+	caraca \
+	creative \
+	irman \
+	logitech \
+	mouseremote \
+	mp3anywhere \
+	pcmak \
+	pctv \
+	realmagic \
+	remotemaster \
+	silitek \
+	uirt2 \
+	uirt2_raw
 	tty1:
 
 default_param: ea65
@@ -166,8 +278,14 @@ default_param: slinke
 default_param: parallel
 	lpt1:
 
-default_param: act200l animax irdeo irdeo_remote packard_bell \
-		serial tekram
+default_param: \
+	act200l \
+	animax \
+	irdeo \
+	irdeo_remote \
+	packard_bell \
+	serial \
+	tekram
 	com1:
 
 default_param: sir
@@ -176,5 +294,7 @@ default_param: sir
 default_param: bte
 	btty:
 
-default_param: pcmak_usb tira
+default_param: \
+	pcmak_usb \
+	tira
 	ttyUSB1:
