@@ -349,34 +349,12 @@ static void s_sasemCallbackIn(t_urb *p_urb)
 static int s_unregister_from_lirc(t_sasemDevice *p_sasemDevice) {
 	t_lirc_plugin *l_lircPlugin = p_sasemDevice->m_lircPlugin;
 	int l_iDevnum;
-	int l_iReturn;
 
 	l_iDevnum = p_sasemDevice->m_iDevnum;
 	if (debug) printk(DRIVER_NAME "[%d]: unregister from lirc called\n",
 			  l_iDevnum);
 	
-	if ((l_iReturn = lirc_unregister_plugin(l_lircPlugin->minor)) > 0) {
-		printk(DRIVER_NAME "[%d]: error in lirc_unregister minor: %d\n"
-		       "Trying again...\n", l_iDevnum, l_lircPlugin->minor);
-		if (l_iReturn == -EBUSY) {
-			printk(DRIVER_NAME "[%d]: device is opened, "
-			       "will unregister on close\n", l_iDevnum);
-			return -EAGAIN;
-		}
-		set_current_state(TASK_INTERRUPTIBLE);
-		schedule_timeout(HZ);
-
-		if ((l_iReturn = lirc_unregister_plugin(l_lircPlugin->minor)) > 0) {
-			printk(DRIVER_NAME "[%d]: lirc_unregister failed\n",
-			       l_iDevnum);
-		}
-	}
-	
-	if (l_iReturn != 0) {
-		printk(DRIVER_NAME "[%d]: didn't free resources\n",
-		       l_iDevnum);
-		return -EAGAIN;
-	}
+	lirc_unregister_plugin(l_lircPlugin->minor);
 	
 	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", l_iDevnum);
 	

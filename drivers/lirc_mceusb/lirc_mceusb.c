@@ -349,16 +349,6 @@ static int set_use_inc(void* data)
 
 static void set_use_dec(void* data)
 {
-	/* check for unplug here */
-	struct usb_skel* dev = (struct usb_skel*) data;
-	if( !dev->udev )
-	{ 
-		lirc_unregister_plugin( dev->minor );
-		lirc_buffer_free( dev->plugin->rbuf );
-		kfree( dev->plugin->rbuf );
-		kfree( dev->plugin );
-	}
-	
 	MOD_DEC_USE_COUNT;
 }
 

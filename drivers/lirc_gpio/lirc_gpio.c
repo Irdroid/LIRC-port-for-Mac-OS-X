@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.41 2005/02/19 15:12:59 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.42 2005/03/12 11:32:15 lirc Exp $
  *
  */
 
@@ -521,26 +521,7 @@ int init_module(void)
  */
 void cleanup_module(void)
 {
-	int ret;
-
-	ret = lirc_unregister_plugin(minor);
- 
-	if (0 > ret) {
-		printk(LOGHEAD "error in lirc_unregister_minor: %d\n"
-		       "Trying again...\n",
-		       minor, ret);
-
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(HZ);
-
-		ret = lirc_unregister_plugin(minor);
- 
-		if (0 > ret) {
-			printk(LOGHEAD "error in lirc_unregister_minor: %d!!!\n",
-			       minor, ret);
-			return;
-		}
-	}
+	lirc_unregister_plugin(minor);
 
 	dprintk(LOGHEAD "module successfully unloaded\n", minor);
 }

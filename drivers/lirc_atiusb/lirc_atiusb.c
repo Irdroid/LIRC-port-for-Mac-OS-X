@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.48 2005/02/22 16:05:18 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.49 2005/03/12 11:32:14 lirc Exp $
  */
 
 /*
@@ -282,33 +282,11 @@ static int unregister_from_lirc(struct irctl *ir)
 {
 	struct lirc_plugin *p = ir->p;
 	int devnum;
-	int rtn;
 
 	devnum = ir->devnum;
 	dprintk(DRIVER_NAME "[%d]: unregister from lirc called\n", devnum);
 
-	if ((rtn = lirc_unregister_plugin(p->minor)) > 0) {
-		printk(DRIVER_NAME "[%d]: error in lirc_unregister minor: %d\n"
-			"Trying again...\n", devnum, p->minor);
-		if (rtn == -EBUSY) {
-			printk(DRIVER_NAME
-				"[%d]: device is opened, will unregister"
-				" on close\n", devnum);
-			return -EAGAIN;
-		}
-		set_current_state(TASK_INTERRUPTIBLE);
-		schedule_timeout(HZ);
-
-		if ((rtn = lirc_unregister_plugin(p->minor)) > 0) {
-			printk(DRIVER_NAME "[%d]: lirc_unregister failed\n",
-			devnum);
-		}
-	}
-
-	if (rtn != SUCCESS) {
-		printk(DRIVER_NAME "[%d]: didn't free resources\n", devnum);
-		return -EAGAIN;
-	}
+	lirc_unregister_plugin(p->minor);
 
 	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", devnum);
 	return SUCCESS;
@@ -1214,7 +1192,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.48 2005/02/22 16:05:18 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.49 2005/03/12 11:32:14 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
