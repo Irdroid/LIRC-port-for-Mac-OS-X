@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.66 2001/09/30 16:18:02 lirc Exp $
+dnl $Id: configure.in,v 5.67 2001/11/04 00:08:38 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -121,6 +121,8 @@ AC_ARG_WITH(driver,
 driver=${withval},
 driver="unset"
 )
+
+#START HARDWARE HEURISTIC
 
 lirc_driver="$driver"
 lircd_conf=""
@@ -441,6 +443,8 @@ if test "$driver" = "knc_one"; then
   lircd_conf="knc_one/lircd.conf.knc_one"
 #  lircmd_conf="knc_one/lircmd.conf.knc_one"
 fi
+
+#END HARDWARE HEURISTIC
 
 AC_DEFINE_UNQUOTED(HW_DEFAULT, ${HW_DEFAULT})
 
