@@ -1,5 +1,6 @@
 /* lirc_atiusb - USB remote support for LIRC
  * (currently only supports X10 USB remotes)
+ * (supports ATI Remote Wonder and ATI Remote Wonder II, too)
  *
  * Copyright (C) 2003-2004 Paul Miller <pmiller9@users.sourceforge.net>
  *
@@ -11,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.33 2004/09/02 20:08:50 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.34 2004/09/26 16:17:53 pmiller9 Exp $
  */
 
 /*
@@ -63,7 +64,7 @@
 #define DRIVER_NAME		"lirc_atiusb"
 
 #define CODE_LENGTH		5
-#define CODE_MIN_LENGTH		4
+#define CODE_MIN_LENGTH		3
 #define USB_BUFLEN		(CODE_LENGTH*4)
 
 /* module parameters */
@@ -95,6 +96,30 @@ static unsigned long repeat_jiffies; // repeat timeout
 #define SEND_FLAG_IN_PROGRESS	1
 #define SEND_FLAG_COMPLETE	2
 
+static struct usb_device_id usb_remote_ati1_table [] = {
+	{ USB_DEVICE(0x0bc7, 0x0002) },		/* X10 USB Firecracker Interface */
+	{ USB_DEVICE(0x0bc7, 0x0003) },		/* X10 VGA Video Sender */
+	{ USB_DEVICE(0x0bc7, 0x0004) },		/* ATI Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0005) },		/* NVIDIA Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0006) },		/* ATI Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0007) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x0008) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x0009) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000A) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000B) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000C) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000D) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000E) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000F) },		/* X10 USB Transceiver */
+
+	{ }					/* Terminating entry */
+};
+
+static struct usb_device_id usb_remote_ati2_table [] = {
+	{ USB_DEVICE(0x0471, 0x0602) },		/* ATI Remote Wonder 2 */
+
+	{ }					/* Terminating entry */
+};
 
 /* data structure for each usb remote */
 struct irctl {
@@ -113,6 +138,12 @@ struct irctl {
 	dma_addr_t dma_in;
 	dma_addr_t dma_out;
 #endif
+
+	/* remote type based on usb_device_id tables */
+	enum {
+		ATI1_COMPATIBLE,
+		ATI2_COMPATIBLE
+	} remote_type;
 
 	/* handle repeats */
 	unsigned char old[CODE_LENGTH];
@@ -286,6 +317,41 @@ static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
 		ir->devnum, codes, len);
 }
 
+static inline int usb_remote_check(struct irctl *ir, int len)
+{
+	int chan;
+
+	/* ATI RW1: some remotes emit both 4 and 5 byte length codes. */
+	/* ATI RW2: emit 3 byte codes */
+	if (len < CODE_MIN_LENGTH || len > CODE_LENGTH)
+		return -1;
+
+	switch (ir->remote_type) {
+
+	case ATI1_COMPATIBLE:
+
+		// *** channel not tested with 4/5-byte Dutch remotes ***
+		chan = ((ir->buf_in[len-1]>>4) & 0x0F);
+
+		/* strip channel code */
+		if (!unique) {
+			ir->buf_in[len-1] &= 0x0F;
+			ir->buf_in[len-3] -= (chan<<4);
+		}
+		break;
+
+	case ATI2_COMPATIBLE:
+		chan = ir->buf_in[0];
+		if (!unique) ir->buf_in[0] = 0;
+		break;
+
+	default:
+		chan = 0;
+	}
+	return chan;
+}
+
+
 #ifdef KERNEL_2_5
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 #else
@@ -293,8 +359,7 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 {
 	struct irctl *ir;
-	int i, len;
-	unsigned char chan;
+	int i, len, chan;
 
 	if (!urb)
 		return;
@@ -315,26 +380,17 @@ static void usb_remote_recv(struct urb *urb)
 
 	/* success */
 	case SUCCESS:
-		/* some remotes emit both 4 and 5 byte length codes. */
-		if (len < CODE_MIN_LENGTH || len > CODE_LENGTH)
+
+		if ((chan = usb_remote_check(ir, len)) < 0)
 			break;
 
-		// *** channel not tested with 4/5-byte Dutch remotes ***
-		chan = ((ir->buf_in[len-1]>>4) & 0x0F);
-		if ( !((1<<chan) & mask) ) {
+		if ( !((1U<<chan) & mask) ) {
 			dprintk(DRIVER_NAME "[%d]: ignore channel %d\n",
 				ir->devnum, chan+1);
 			break;
 		}
-
 		dprintk(DRIVER_NAME "[%d]: accept channel %d\n",
 			ir->devnum, chan+1);
-
-		/* strip channel code */
-		if (!unique) {
-			ir->buf_in[len-1] &= 0x0F;
-			ir->buf_in[len-3] -= (chan<<4);
-		}
 
 		/* check for repeats */
 		if (memcmp(ir->old, ir->buf_in, len) == 0) {
@@ -397,57 +453,95 @@ static void usb_remote_send(struct urb *urb)
 		wake_up(&ir->wait_out);
 }
 
+#define id_in_table(id, table)                                  \
+	(((id) > (table)) && ((id)-(table) < sizeof(table)))
+
 #ifdef KERNEL_2_5
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
-	struct usb_device *dev = NULL;
-	struct usb_host_interface *idesc = NULL;
+	struct usb_device *dev = interface_to_usbdev(intf);
+	struct usb_host_interface *idesc;
 #else
 static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 				const struct usb_device_id *id)
 {
-	struct usb_interface *intf;
+	struct usb_interface *intf = &dev->actconfig->interface[ifnum];
 	struct usb_interface_descriptor *idesc;
 #endif
-	struct usb_endpoint_descriptor *ep_in, *ep_out;
+	struct usb_endpoint_descriptor *ep=NULL, *ep_in=NULL, *ep_out=NULL;
 	struct irctl *ir = NULL;
 	struct lirc_plugin *plugin = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int devnum, pipe, maxp, len, buf_len, bytes_in_key;
 	int minor = 0;
+	int i, type;
 	char buf[63], name[128]="";
 	int mem_failure = 0;
 
 	dprintk(DRIVER_NAME ": usb probe called\n");
 
+	/* determine remote type */
+	if (id_in_table(id, usb_remote_ati1_table)) {
+		type = ATI1_COMPATIBLE;
+	} else if (id_in_table(id, usb_remote_ati2_table)) {
+		type = ATI2_COMPATIBLE;
+	} else {
+		dprintk(DRIVER_NAME ": unknown id\n");
 #ifdef KERNEL_2_5
-	dev = interface_to_usbdev(intf);
+		return -ENODEV;
+#else
+		return NULL;
+#endif
+	}
+
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
 	idesc = intf->cur_altsetting;
 #else
 	idesc = &intf->altsetting[intf->act_altsetting];
 #endif
-	if (idesc->desc.bNumEndpoints != 2)
-		return -ENODEV;
-	ep_in = &idesc->endpoint[0].desc;
-	ep_out = &idesc->endpoint[1].desc;
-	if (((ep_in->bEndpointAddress & USB_ENDPOINT_DIR_MASK) != USB_DIR_IN)
-		|| (ep_in->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
-		!= USB_ENDPOINT_XFER_INT)
+
+	// step through the endpoints to find first in and first out endpoint
+	// of type interrupt transfer
+#ifdef KERNEL_2_5
+	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
+		ep = &idesc->endpoint[i].desc;
+#else
+	for (i = 0; i < idesc->bNumEndpoints; ++i) {
+		ep = &idesc->endpoint[i];
+#endif
+
+		if ((ep_in == NULL)
+			&& ((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN)
+			&& ((ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT)) {
+
+			// ATI2's ep 1 only reports mouse emulation, ep 2 reports both
+			if ((type != ATI2_COMPATIBLE)
+				|| ((ep->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK) == 0x02)) {
+
+				dprintk(DRIVER_NAME ": acceptable inbound endpoint found\n");
+				ep_in = ep;
+			}
+		}
+
+		if ((ep_out == NULL)
+			&& ((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT)
+			&& ((ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT)) {
+
+			dprintk(DRIVER_NAME ": acceptable outbound endpoint found\n");
+			ep_out = ep;
+		}
+	}
+	if (ep_in == NULL) {
+		dprintk(DRIVER_NAME ": inbound endpoint not found\n");
+#ifdef KERNEL_2_5
 		return -ENODEV;
 #else
-	intf = &dev->actconfig->interface[ifnum];
-	idesc = &intf->altsetting[intf->act_altsetting];
-	if (idesc->bNumEndpoints != 2)
-		return NULL;
-	ep_in = idesc->endpoint + 0;
-	ep_out = idesc->endpoint + 1;
-	if (((ep_in->bEndpointAddress & USB_ENDPOINT_DIR_MASK) != USB_DIR_IN)
-		|| (ep_in->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
-		!= USB_ENDPOINT_XFER_INT)
 		return NULL;
 #endif
+	}
+
 	devnum = dev->devnum;
 	pipe = usb_rcvintpipe(dev, ep_in->bEndpointAddress);
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
@@ -555,12 +649,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	ir->usbdev = dev;
 	ir->len_in = buf_len;
 	ir->connected = 0;
-
-	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
-		buf_len, usb_remote_recv, ir, ep_in->bInterval);
-	usb_fill_int_urb(ir->urb_out, dev,
-		usb_sndintpipe(dev, ep_out->bEndpointAddress), ir->buf_out,
-		USB_BUFLEN, usb_remote_send, ir, ep_out->bInterval);
+	ir->remote_type = type;
 
 	if (dev->descriptor.iManufacturer
 		&& usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
@@ -571,8 +660,19 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	printk(DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
 	       dev->bus->busnum, devnum);
 
-	send_packet(ir, 0x8004, init1);
-	send_packet(ir, 0x8007, init2);
+	/* inbound data */
+	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
+		buf_len, usb_remote_recv, ir, ep_in->bInterval);
+
+	/* outbound data (initialization) */
+	if (ep_out != NULL) {
+		usb_fill_int_urb(ir->urb_out, dev,
+			usb_sndintpipe(dev, ep_out->bEndpointAddress), ir->buf_out,
+			USB_BUFLEN, usb_remote_send, ir, ep_out->bInterval);
+
+		send_packet(ir, 0x8004, init1);
+		send_packet(ir, 0x8007, init2);
+	}
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(intf, ir);
@@ -618,31 +718,20 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	unregister_from_lirc(ir);
 }
 
-static struct usb_device_id usb_remote_id_table [] = {
-	{ USB_DEVICE(0x0bc7, 0x0002) },		/* X10 USB Firecracker Interface */
-	{ USB_DEVICE(0x0bc7, 0x0003) },		/* X10 VGA Video Sender */
-	{ USB_DEVICE(0x0bc7, 0x0004) },		/* ATI Wireless Remote Receiver */
-	{ USB_DEVICE(0x0bc7, 0x0005) },		/* NVIDIA Wireless Remote Receiver */
-	{ USB_DEVICE(0x0bc7, 0x0006) },		/* ATI Wireless Remote Receiver */
-	{ USB_DEVICE(0x0bc7, 0x0007) },		/* X10 USB Wireless Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x0008) },		/* X10 USB Wireless Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x0009) },		/* X10 USB Wireless Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000A) },		/* X10 USB Wireless Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000B) },		/* X10 USB Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000C) },		/* X10 USB Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000D) },		/* X10 USB Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000E) },		/* X10 USB Transceiver */
-	{ USB_DEVICE(0x0bc7, 0x000F) },		/* X10 USB Transceiver */
-
-	{ }					/* Terminating entry */
-};
-
-static struct usb_driver usb_remote_driver = {
+static struct usb_driver usb_remote_driver_ati1 = {
 	.owner =	THIS_MODULE,
-	.name =		DRIVER_NAME,
+	.name =		DRIVER_NAME "-ati1",
 	.probe =	usb_remote_probe,
 	.disconnect =	usb_remote_disconnect,
-	.id_table =	usb_remote_id_table
+	.id_table =	usb_remote_ati1_table
+};
+
+static struct usb_driver usb_remote_driver_ati2 = {
+	.owner =	THIS_MODULE,
+	.name =		DRIVER_NAME "-ati2",
+	.probe =	usb_remote_probe,
+	.disconnect =	usb_remote_disconnect,
+	.id_table =	usb_remote_ati2_table
 };
 
 static int __init usb_remote_init(void)
@@ -657,8 +746,12 @@ static int __init usb_remote_init(void)
 
 	repeat_jiffies = repeat*HZ/100;
 
-	if ((i = usb_register(&usb_remote_driver)) < 0) {
-		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
+	if ((i = usb_register(&usb_remote_driver_ati1)) < 0) {
+		printk(DRIVER_NAME ": usb register ati1 failed, result = %d\n", i);
+		return -ENODEV;
+	}
+	if ((i = usb_register(&usb_remote_driver_ati2)) < 0) {
+		printk(DRIVER_NAME ": usb register ati2 failed, result = %d\n", i);
 		return -ENODEV;
 	}
 
@@ -667,7 +760,8 @@ static int __init usb_remote_init(void)
 
 static void __exit usb_remote_exit(void)
 {
-	usb_deregister(&usb_remote_driver);
+	usb_deregister(&usb_remote_driver_ati1);
+	usb_deregister(&usb_remote_driver_ati2);
 }
 
 module_init(usb_remote_init);
@@ -676,7 +770,8 @@ module_exit(usb_remote_exit);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
-MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
+MODULE_DEVICE_TABLE(usb, usb_remote_ati1_table);
+MODULE_DEVICE_TABLE(usb, usb_remote_ati2_table);
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
