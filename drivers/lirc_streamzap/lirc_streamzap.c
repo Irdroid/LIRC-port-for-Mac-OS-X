@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.5 2005/02/27 15:05:39 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.6 2005/02/27 19:16:14 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.5 $"
+#define DRIVER_VERSION	"$Revision: 1.6 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -144,6 +144,7 @@ struct usb_streamzap {
 	struct timeval          signal_last;
 	struct timeval          signal_start;
 	enum StreamzapDecoderState decoder_state;
+	unsigned long           flush_jiffies;
 };
 
 
@@ -360,7 +361,7 @@ static void usb_streamzap_irq(struct urb *urb)
 	}
 
 	dprintk("received %d", sz->plugin.minor, urb->actual_length);
-	for (i=0 ; i < urb->actual_length; i++ )
+	if(sz->flush_jiffies < jiffies) for (i=0; i < urb->actual_length; i++)
 	{
 		dprintk("%d: %x", sz->plugin.minor,
 			i, (unsigned char) sz->buf_in[i]);
@@ -683,6 +684,8 @@ static int streamzap_use_inc(void *data)
 			lirc_buffer_remove_1(&sz->lirc_buf);
 		while(!lirc_buffer_empty(&sz->delay_buf))
 			lirc_buffer_remove_1(&sz->delay_buf);
+		
+		sz->flush_jiffies = jiffies + HZ;
 #ifdef KERNEL_2_5
                 if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
 #else
