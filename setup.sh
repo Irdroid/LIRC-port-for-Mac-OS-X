@@ -222,15 +222,15 @@ function ConfigDriver
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
            --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
-             1 "8250/16450/16550A UART compatible serial port" \
-             2 "Parallel port driver" \
+             1 "Home-brew (16x50A UART compatible serial port)" \
+             2 "Home-brew (parallel port)" \
              3 "Irman" \
-	     4 "TV card" \
+	     4 "TV card (EXPERIMENTAL, read README.tv)" \
 	     5 "Packard Bell receiver" \
 	     6 "Anir Multimedia Magic" \
              7 "PixelView RemoteMaster RC2000/RC3000" \
              8 "Logitech/AST" \
-             9 "SIR IrDA" 2> $TEMP
+             9 "SIR IrDA (built-in IR ports)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -357,8 +357,9 @@ function SaveConfig
 
 #############################################################################
 ## Main Program
-if test ! -x /usr/bin/dialog; then
-    echo "/usr/bin/dialog not found!"
+if ! which dialog >/dev/null; then
+    echo "dialog not found!"
+    exit 1
 fi
 
 if test -f $CONFIG; then
