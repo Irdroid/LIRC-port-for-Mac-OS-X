@@ -47,45 +47,87 @@
  *
  */
 /*
- * USB Skeleton driver - 0.6
+ * USB Skeleton driver - 1.1
  *
- * Copyright (c) 2001 Greg Kroah-Hartman (greg@kroah.com)
+ * Copyright (C) 2001-2003 Greg Kroah-Hartman (greg@kroah.com)
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU General Public License as
- *	published by the Free Software Foundation; either version 2 of
- *	the License, or (at your option) any later version.
+ *	published by the Free Software Foundation, version 2.
+ *
+ *
+ * This driver is to be used as a skeleton driver to be able to create a
+ * USB driver quickly.  The design of it is based on the usb-serial and
+ * dc2xx drivers.
+ *
+ * Thanks to Oliver Neukum, David Brownell, and Alan Stern for their help
+ * in debugging this driver.
+ *
+ *
+ * History:
+ *
+ * 2003-05-06 - 1.1 - changes due to usb core changes with usb_register_dev()
+ * 2003-02-25 - 1.0 - fix races involving urb->status, unlink_urb(), and
+ *			disconnect.  Fix transfer amount in read().  Use
+ *			macros instead of magic numbers in probe().  Change
+ *			size variables to size_t.  Show how to eliminate
+ *			DMA bounce buffer.
+ * 2002_12_12 - 0.9 - compile fixes and got rid of fixed minor array.
+ * 2002_09_26 - 0.8 - changes due to USB core conversion to struct device
+ *			driver.
+ * 2002_02_12 - 0.7 - zero out dev in probe function for devices that do
+ *			not have both a bulk in and bulk out endpoint.
+ *			Thanks to Holger Waechtler for the fix.
+ * 2001_11_05 - 0.6 - fix minor locking problem in skel_disconnect.
+ *			Thanks to Pete Zaitcev for the fix.
+ * 2001_09_04 - 0.5 - fix devfs bug in skel_disconnect. Thanks to wim delvaux
+ * 2001_08_21 - 0.4 - more small bug fixes.
+ * 2001_05_29 - 0.3 - more bug fixes based on review from linux-usb-devel
+ * 2001_05_24 - 0.2 - bug fixes based on review from linux-usb-devel people
+ * 2001_05_01 - 0.1 - first version
  *
  */
 
 #include <linux/config.h>
 #include <linux/kernel.h>
-#include <linux/sched.h>
-#include <linux/signal.h>
 #include <linux/errno.h>
-#include <linux/poll.h>
 #include <linux/init.h>
 #include <linux/slab.h>
-#include <linux/fcntl.h>
 #include <linux/module.h>
-#include <linux/spinlock.h>
-#include <linux/list.h>
 #include <linux/smp_lock.h>
 #include <linux/usb.h>
+#ifdef KERNEL_2_5
+#include <linux/completion.h>
+#include <asm/uaccess.h>
+#else
+#include <linux/spinlock.h>
+#include <linux/list.h>
+#include <linux/fcntl.h>
+#include <linux/poll.h>
+#include <linux/sched.h>
+#include <linux/signal.h>
+#endif
 
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
 #else
-	static int debug = 1;
+	static int debug;
 #endif
 
 #include "drivers/lirc.h"
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+
+
+/* Use our own dbg macro */
+#undef dbg
+#define dbg(format, arg...) do { if (debug) printk(KERN_DEBUG __FILE__ ": " format "\n" , ## arg); } while (0)
 
 /* Version Information */
 #define DRIVER_VERSION "v0.2"
 #define DRIVER_AUTHOR "Dan Conti, dconti@acm.wwu.edu"
 #define DRIVER_DESC "USB Microsoft IR Transceiver Driver"
+#define DRIVER_NAME "lirc_mceusb"
 
 /* Module paramaters */
 MODULE_PARM(debug, "i");
@@ -102,11 +144,6 @@ static struct usb_device_id mceusb_table [] = {
 };
 
 MODULE_DEVICE_TABLE (usb, mceusb_table);
-
-/* XXX TODO, 244 is likely unused but not reserved */
-/* Get a minor range for your devices from the usb maintainer */
-#define USB_MCEUSB_MINOR_BASE	244
-
 
 /* we can have up to this number of device plugged in at once */
 #define MAX_DEVICES		16
@@ -130,9 +167,14 @@ struct usb_skel {
 	struct urb *       write_urb;			/* the urb used to send data */
 	__u8               bulk_out_endpointAddr;	/* the address of the bulk out endpoint */
 
+	atomic_t		write_busy;		/* true iff write urb is busy */
+	struct completion	write_finished;		/* wait for the write to finish */
+	
 	wait_queue_head_t  wait_q;			/* for timeouts */
 	int                open_count;			/* number of times this port has been opened */
 	struct semaphore   sem;				/* locks this structure */
+	
+	int			present;		/* if the device is not disconnected */		
 
 	struct lirc_plugin* plugin;
 	
@@ -148,89 +190,48 @@ struct usb_skel {
 	 */
 	int    last_space;
 	
+#ifdef KERNEL_2_5
+	dma_addr_t dma_in;
+	dma_addr_t dma_out;
+#endif
 };
 
 #define MCE_TIME_UNIT 50
 
-
 /* driver api */
-static ssize_t mceusb_write	(struct file *file, const char *buffer,
-				 size_t count, loff_t *ppos);
-
-static int mceusb_open		(struct inode *inode, struct file *file);
-static int mceusb_release	(struct inode *inode, struct file *file);
-
-static void * mceusb_probe	(struct usb_device *dev, unsigned int ifnum,
-				 const struct usb_device_id *id);
+#ifdef KERNEL_2_5
+static int mceusb_probe		(struct usb_interface *interface, const struct usb_device_id *id);
+static void mceusb_disconnect	(struct usb_interface *interface);
+static void mceusb_write_bulk_callback	(struct urb *urb, struct pt_regs *regs);
+#else
+static void * mceusb_probe	(struct usb_device *dev, unsigned int ifnum, const struct usb_device_id *id);
 static void mceusb_disconnect	(struct usb_device *dev, void *ptr);
-
 static void mceusb_write_bulk_callback	(struct urb *urb);
+#endif
 
 /* read data from the usb bus; convert to mode2 */
 static int msir_fetch_more_data( struct usb_skel* dev, int dont_block );
 
 /* helper functions */
 static void msir_cleanup( struct usb_skel* dev );
-static int set_use_inc(void* data);
-static void set_use_dec(void* data);
+static void set_use_dec( void* data );
+static int set_use_inc( void* data );
     
 /* array of pointers to our devices that are currently connected */
 static struct usb_skel		*minor_table[MAX_DEVICES];
 
 /* lock to protect the minor_table structure */
 static DECLARE_MUTEX (minor_table_mutex);
+static void mceusb_setup( struct usb_device *udev );
 
-/*
- * File operations needed when we register this driver.
- * This assumes that this driver NEEDS file operations,
- * of course, which means that the driver is expected
- * to have a node in the /dev directory. If the USB
- * device were for a network interface then the driver
- * would use "struct net_driver" instead, and a serial
- * device would use "struct tty_driver". 
- */
-static struct file_operations mceusb_fops = {
-	/*
-	 * The owner field is part of the module-locking
-	 * mechanism. The idea is that the kernel knows
-	 * which module to increment the use-counter of
-	 * BEFORE it calls the device's open() function.
-	 * This also means that the kernel can decrement
-	 * the use-counter again before calling release()
-	 * or should the open() function fail.
-	 *
-	 * Not all device structures have an "owner" field
-	 * yet. "struct file_operations" and "struct net_device"
-	 * do, while "struct tty_driver" does not. If the struct
-	 * has an "owner" field, then initialize it to the value
-	 * THIS_MODULE and the kernel will handle all module
-	 * locking for you automatically. Otherwise, you must
-	 * increment the use-counter in the open() function
-	 * and decrement it again in the release() function
-	 * yourself.
-	 */
-	owner:		THIS_MODULE,
-	
-	write:		mceusb_write,
-	ioctl:		NULL,
-	open:		mceusb_open,
-	release:	mceusb_release,
-};      
-
-
-/* usb specific object needed to register this driver with the usb
-   subsystem */
+/* usb specific object needed to register this driver with the usb subsystem */
 static struct usb_driver mceusb_driver = {
-	name:		"ir_transceiver",
-	probe:		mceusb_probe,
-	disconnect:	mceusb_disconnect,
-	fops:		NULL, //&mceusb_fops,
-	minor:		USB_MCEUSB_MINOR_BASE,
-	id_table:	mceusb_table,
+	.owner =	THIS_MODULE,
+	.name =		DRIVER_NAME,
+	.probe =	mceusb_probe,
+	.disconnect =	mceusb_disconnect,
+	.id_table =	mceusb_table,
 };
-
-
-
 
 
 /**
@@ -252,17 +253,22 @@ static inline void usb_mceusb_debug_data (const char *function, int size,
 	printk ("\n");
 }
 
-
 /**
- *	mceusb_delete
+ *mceusb_delete
  */
 static inline void mceusb_delete (struct usb_skel *dev)
 {
+	dbg("%s",__func__);
 	minor_table[dev->minor] = NULL;
+#ifdef KERNEL_2_5
+	usb_buffer_free(dev->udev, dev->bulk_in_size, dev->bulk_in_buffer, dev->dma_in);
+	usb_buffer_free(dev->udev, dev->bulk_out_size, dev->bulk_out_buffer, dev->dma_out);
+#else
 	if (dev->bulk_in_buffer != NULL)
 		kfree (dev->bulk_in_buffer);
 	if (dev->bulk_out_buffer != NULL)
 		kfree (dev->bulk_out_buffer);
+#endif
 	if (dev->write_urb != NULL)
 		usb_free_urb (dev->write_urb);
 	kfree (dev);
@@ -281,8 +287,7 @@ static void mceusb_setup( struct usb_device *udev )
 			      0, 0, data, 2, HZ * 3);
     
 	/*    res = usb_get_status( udev, 0, 0, data ); */
-	dbg(__FUNCTION__ " res = %d status = 0x%x 0x%x",
-	    res, data[0], data[1] );
+	dbg("%s - res = %d status = 0x%x 0x%x",__func__,res,data[0],data[1]);
     
 	/* This is a strange one. They issue a set address to the device
 	 * on the receive control pipe and expect a certain value pair back
@@ -292,8 +297,8 @@ static void mceusb_setup( struct usb_device *udev )
 	res = usb_control_msg( udev, usb_rcvctrlpipe(udev, 0),
 			       5, USB_TYPE_VENDOR, 0, 0,
 			       data, 2, HZ * 3 );
-	dbg(__FUNCTION__ " res = %d, devnum = %d", res, udev->devnum);
-	dbg(__FUNCTION__ " data[0] = %d, data[1] = %d", data[0], data[1] );
+	dbg("%s - res = %d, devnum = %d", __func__, res, udev->devnum);
+	dbg("%s - data[0] = %d, data[1] = %d", __func__, data[0], data[1] );
 
     
 	/* set feature */
@@ -301,7 +306,7 @@ static void mceusb_setup( struct usb_device *udev )
 			       USB_REQ_SET_FEATURE, USB_TYPE_VENDOR,
 			       0xc04e, 0x0000, NULL, 0, HZ * 3 );
     
-	dbg(__FUNCTION__ " res = %d", res);
+	dbg("%s - res = %d", __func__, res);
 
 	/* These two are sent by the windows driver, but stall for
 	 * me. I dont have an analyzer on the linux side so i can't
@@ -314,168 +319,15 @@ static void mceusb_setup( struct usb_device *udev )
 			       0x04, USB_TYPE_VENDOR,
 			       0x0808, 0x0000, NULL, 0, HZ * 3 );
     
-	dbg(__FUNCTION__ " res = %d", res);
+	dbg("%s - res = %d", __func__, res);
     
 	/* this is another custom control message they send */
 	res = usb_control_msg( udev, usb_sndctrlpipe(udev, 0),
 			       0x02, USB_TYPE_VENDOR,
 			       0x0000, 0x0100, NULL, 0, HZ * 3 );
     
-	dbg(__FUNCTION__ " res = %d", res);
+	dbg("%s - res = %d", __func__, res);
 #endif
-}
-
-/**
- *	mceusb_open
- */
-static int mceusb_open (struct inode *inode, struct file *file)
-{
-	struct usb_skel *dev = NULL;
-	struct usb_device* udev = NULL;
-	int subminor;
-	int retval = 0;
-	
-	dbg(__FUNCTION__);
-
-	/* This is a very sucky point. On lirc, we get passed the minor
-	 * number of the lirc device, which is totally retarded. We want
-	 * to support people opening /dev/usb/msir0 directly though, so
-	 * try and determine who the hell is calling us here
-	 */
-	if( MAJOR( inode->i_rdev ) != USB_MAJOR )
-	{
-		/* This is the lirc device just passing on the
-		 * request. We probably mismatch minor numbers here,
-		 * but the lucky fact is that nobody will ever use two
-		 * of the exact same remotes with two recievers on one
-		 * machine
-		 */
-		subminor = 0;
-	}
-	else {
-		subminor = MINOR (inode->i_rdev) - USB_MCEUSB_MINOR_BASE;
-	}
-	if ((subminor < 0) ||
-	    (subminor >= MAX_DEVICES)) {
-		dbg("subminor %d", subminor);
-		return -ENODEV;
-	}
-
-	/* Increment our usage count for the module.
-	 * This is redundant here, because "struct file_operations"
-	 * has an "owner" field. This line is included here soley as
-	 * a reference for drivers using lesser structures... ;-)
-	 */
-
-	MOD_INC_USE_COUNT;
-
-	/* lock our minor table and get our local data for this minor */
-	down (&minor_table_mutex);
-	dev = minor_table[subminor];
-	if (dev == NULL) {
-		dbg("dev == NULL");
-		up (&minor_table_mutex);
-		MOD_DEC_USE_COUNT;
-		return -ENODEV;
-	}
-	udev = dev->udev;
-
-	/* lock this device */
-	down (&dev->sem);
-
-	/* unlock the minor table */
-	up (&minor_table_mutex);
-
-	/* increment our usage count for the driver */
-	++dev->open_count;
-
-	/* save our object in the file's private structure */
-	file->private_data = dev;
-
-	/* init the waitq */
-	init_waitqueue_head( &dev->wait_q );
-    
-	/* clear off the first few messages. these look like
-	 * calibration or test data, i can't really tell
-	 * this also flushes in case we have random ir data queued up
-	 */
-	{
-		char junk[64];
-		int partial = 0, retval, i;
-		for( i = 0; i < 40; i++ )
-		{
-			retval = usb_bulk_msg 
-				(udev, usb_rcvbulkpipe 
-				 (udev, dev->bulk_in_endpointAddr),
-				 junk, 64,
-				 &partial, HZ*10);
-		}
-	}
-
-	msir_cleanup( dev );
-    
-	/* unlock this device */
-	up (&dev->sem);
-
-	return retval;
-}
-
-
-/**
- *	mceusb_release
- */
-static int mceusb_release (struct inode *inode, struct file *file)
-{
-	struct usb_skel *dev;
-	int retval = 0;
-
-	dev = (struct usb_skel *)file->private_data;
-	if (dev == NULL) {
-		printk (__FUNCTION__ " - object is NULL\n");
-		return -ENODEV;
-	}
-
-	/* lock our minor table */
-	down (&minor_table_mutex);
-
-	/* lock our device */
-	down (&dev->sem);
-
-	/* XXX TODO disabled while debugging; there is an issue where
-	 * the open_count becomes invalid
-	 */
-#if 0
-	if (dev->open_count <= 0) {
-		printk (__FUNCTION__ " - device not opened\n");
-		retval = -ENODEV;
-		goto exit_not_opened;
-	}
-#endif
-	if (dev->udev == NULL) {
-		/* the device was unplugged before the file was released */
-		up (&dev->sem);
-		mceusb_delete (dev);
-		up (&minor_table_mutex);
-		MOD_DEC_USE_COUNT;
-		return 0;
-	}
-
-	/* decrement our usage count for the device */
-	--dev->open_count;
-	if (dev->open_count <= 0) {
-		/* shutdown any bulk writes that might be going on */
-		usb_unlink_urb (dev->write_urb);
-		dev->open_count = 0;
-	}
-
-	/* decrement our usage count for the module */
-	MOD_DEC_USE_COUNT;
-
-	//exit_not_opened:
-	up (&dev->sem);
-	up (&minor_table_mutex);
-
-	return retval;
 }
 
 static void msir_cleanup( struct usb_skel* dev )
@@ -494,7 +346,6 @@ static void msir_cleanup( struct usb_skel* dev )
 
 static int set_use_inc(void* data)
 {
-	/*    struct usb_skel* skel = (struct usb_skel*)data; */
 	MOD_INC_USE_COUNT;
 	return 0;
 }
@@ -510,7 +361,7 @@ static void set_use_dec(void* data)
 		kfree( dev->plugin->rbuf );
 		kfree( dev->plugin );
 	}
-    
+	
 	MOD_DEC_USE_COUNT;
 }
 
@@ -539,7 +390,7 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 	int bulkidx = 0;
 	int bytes_left_in_packet = 0;
 	signed char* signedp = (signed char*)dev->bulk_in_buffer;
-
+	
 	if( words_to_read == 0 )
 		return dev->lirccnt;
 
@@ -555,7 +406,7 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 	/* reserve room for our leading space */
 	if( dev->last_space )
 		words_to_read--;
-
+		
 	while( words_to_read )
 	{
 		/* handle signals and USB disconnects */
@@ -598,7 +449,7 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 			   other errors to -EIO */
 			if( retval )
 			{
-				if( retval == USB_ST_DATAOVERRUN && 
+				if( retval == -EOVERFLOW && 
 				    retries < 5 )
 				{
 					retries++;
@@ -756,77 +607,6 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 	return dev->lirccnt;
 }
 
-/**
- *	mceusb_write
- */
-static ssize_t mceusb_write (struct file *file, const char *buffer,
-			     size_t count, loff_t *ppos)
-{
-	struct usb_skel *dev;
-	ssize_t bytes_written = 0;
-	int retval = 0;
-
-	dev = (struct usb_skel *)file->private_data;
-
-	dbg(__FUNCTION__ " - minor %d, count = %d", dev->minor, count);
-
-	/* lock this object */
-	down (&dev->sem);
-
-	/* verify that the device wasn't unplugged */
-	if (dev->udev == NULL) {
-		retval = -ENODEV;
-		goto exit;
-	}
-
-	/* verify that we actually have some data to write */
-	if (count == 0) {
-		dbg(__FUNCTION__ " - write request of 0 bytes");
-		goto exit;
-	}
-
-	/* see if we are already in the middle of a write */
-	if (dev->write_urb->status == -EINPROGRESS) {
-		dbg (__FUNCTION__ " - already writing");
-		goto exit;
-	}
-
-	/* we can only write as much as 1 urb will hold */
-	bytes_written = (count > dev->bulk_out_size) ? 
-				dev->bulk_out_size : count;
-
-	/* copy the data from userspace into our urb */
-	if (copy_from_user(dev->write_urb->transfer_buffer, buffer, 
-			   bytes_written)) {
-		retval = -EFAULT;
-		goto exit;
-	}
-
-	usb_mceusb_debug_data (__FUNCTION__, bytes_written, 
-			     dev->write_urb->transfer_buffer);
-
-	/* set up our urb */
-	FILL_BULK_URB(dev->write_urb, dev->udev, 
-		      usb_sndbulkpipe(dev->udev, dev->bulk_out_endpointAddr),
-		      dev->write_urb->transfer_buffer, bytes_written,
-		      mceusb_write_bulk_callback, dev);
-
-	/* send the data out the bulk port */
-	retval = usb_submit_urb(dev->write_urb);
-	if (retval) {
-		err(__FUNCTION__ " - failed submitting write urb, error %d",
-		    retval);
-	} else {
-		retval = bytes_written;
-	}
-
- exit:
-	/* unlock the device */
-	up (&dev->sem);
-
-	return retval;
-}
-
 /* mceusb_add_to_buf: called by lirc_dev to fetch all available keys
  * this is used as a polling interface for us: since we set
  * plugin->sample_rate we will periodically get the below call to
@@ -835,7 +615,7 @@ static ssize_t mceusb_write (struct file *file, const char *buffer,
  */
 static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 {
-	struct usb_skel* dev = (struct usb_skel*)data;
+	struct usb_skel* dev = (struct usb_skel*) data;
 
 	down( &dev->sem );
 
@@ -852,7 +632,7 @@ static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 		dev->lircidx = 0;
         
 		res = msir_fetch_more_data( dev, 1 );
-
+		
 		if( res == 0 )
 			res = -ENODATA;
 		if( res < 0 ) {
@@ -860,6 +640,7 @@ static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 			return res;
 		}
 	}
+
 	if( dev->lirccnt )
 	{
 		int keys_to_copy;
@@ -878,7 +659,7 @@ static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 		up( &dev->sem );
 		return 0;
 	}
-    
+
 	up( &dev->sem );
 	return -ENODATA;
 }
@@ -886,17 +667,19 @@ static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 /**
  *	mceusb_write_bulk_callback
  */
-
+#ifdef KERNEL_2_5 
+static void mceusb_write_bulk_callback (struct urb *urb, struct pt_regs *regs)
+#else
 static void mceusb_write_bulk_callback (struct urb *urb)
+#endif
 {
 	struct usb_skel *dev = (struct usb_skel *)urb->context;
 
-	dbg(__FUNCTION__ " - minor %d", dev->minor);
+	dbg("%s - minor %d", __func__, dev->minor);
 
 	if ((urb->status != -ENOENT) && 
 	    (urb->status != -ECONNRESET)) {
-		dbg(__FUNCTION__ " - nonzero write bulk status received: %d",
-		    urb->status);
+		dbg("%s - nonzero write buld status received: %d\n", __func__, urb->status);
 		return;
 	}
 
@@ -906,27 +689,41 @@ static void mceusb_write_bulk_callback (struct urb *urb)
 /**
  *	mceusb_probe
  *
- *	Called by the usb core when a new device is connected that it
+ *	Called by the usb core when a new device is connected that it 
  *	thinks this driver might be interested in.
  */
+#ifdef KERNEL_2_5 
+static int mceusb_probe(struct usb_interface *interface, const struct usb_device_id *id)
+{
+	struct usb_device *udev = interface_to_usbdev(interface);
+	struct usb_host_interface *iface_desc;
+#else
 static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			   const struct usb_device_id *id)
 {
+	struct usb_interface *interface = &udev->actconfig->interface[ifnum];
+	struct usb_interface_descriptor *iface_desc;	
+#endif
 	struct usb_skel *dev = NULL;
-	struct usb_interface *interface;
-	struct usb_interface_descriptor *iface_desc;
 	struct usb_endpoint_descriptor *endpoint;
+	
 	struct lirc_plugin* plugin;
 	struct lirc_buffer* rbuf;
 
 	int minor;
-	int buffer_size;
+	size_t buffer_size;
 	int i;
+	int retval = -ENOMEM;
 	
 	/* See if the device offered us matches what we can accept */
 	if ((udev->descriptor.idVendor != USB_MCEUSB_VENDOR_ID) ||
 	    (udev->descriptor.idProduct != USB_MCEUSB_PRODUCT_ID)) {
+	    	dbg("Wrong Vendor/Product IDs");
+#ifdef KERNEL_2_5
+		return -ENODEV;
+#else
 		return NULL;
+#endif
 	}
 
 	/* select a "subminor" number (part of a minor number) */
@@ -938,19 +735,21 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	if (minor >= MAX_DEVICES) {
 		info ("Too many devices plugged in, "
 		      "can not handle this device.");
-		goto exit;
+		goto error;
 	}
 
-	/* allocate memory for our device state and intialize it */
+	/* allocate memory for our device state and initialize it */
 	dev = kmalloc (sizeof(struct usb_skel), GFP_KERNEL);
 	if (dev == NULL) {
 		err ("Out of memory");
-		goto exit;
+#ifdef KERNEL_2_5
+		retval = -ENOMEM;
+#endif
+		goto error;
 	}
 	minor_table[minor] = dev;
-
-	interface = &udev->actconfig->interface[ifnum];
-
+	
+	memset (dev, 0x00, sizeof (*dev));
 	init_MUTEX (&dev->sem);
 	dev->udev = udev;
 	dev->interface = interface;
@@ -958,27 +757,48 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 
 	/* set up the endpoint information */
 	/* check out the endpoints */
+	/* use only the first bulk-in and bulk-out endpoints */
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
+	iface_desc = interface->cur_altsetting;
+#else
 	iface_desc = &interface->altsetting[0];
+#endif
+
+#ifdef KERNEL_2_5
+	for (i = 0; i < iface_desc->desc.bNumEndpoints; ++i) {
+		endpoint = &iface_desc->endpoint[i].desc;
+#else
 	for (i = 0; i < iface_desc->bNumEndpoints; ++i) {
 		endpoint = &iface_desc->endpoint[i];
-
-		if ((endpoint->bEndpointAddress & 0x80) &&
-		    ((endpoint->bmAttributes & 3) == 0x02)) {
-			/* we found a bulk in endpoint */
+#endif
+		if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) &&
+		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) ==
+		     USB_ENDPOINT_XFER_BULK)) {
+			dbg("we found a bulk in endpoint");
 			buffer_size = endpoint->wMaxPacketSize;
 			dev->bulk_in_size = buffer_size;
 			dev->bulk_in_endpointAddr = endpoint->bEndpointAddress;
-			dev->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
+#ifdef KERNEL_2_5
+			dev->bulk_in_buffer = usb_buffer_alloc
+				(udev, buffer_size, SLAB_ATOMIC, &dev->dma_in);
+#else
+			dev->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
+#endif
 			if (!dev->bulk_in_buffer) {
 				err("Couldn't allocate bulk_in_buffer");
 				goto error;
 			}
 		}
 		
-		if (((endpoint->bEndpointAddress & 0x80) == 0x00) &&
-		    ((endpoint->bmAttributes & 3) == 0x02)) {
-			/* we found a bulk out endpoint */
+		if (((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == 0x00) &&
+		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) ==
+		     USB_ENDPOINT_XFER_BULK)) {
+			dbg("we found a bulk out endpoint");
+#ifdef KERNEL_2_5
+			dev->write_urb = usb_alloc_urb(0, GFP_KERNEL);
+#else
 			dev->write_urb = usb_alloc_urb(0);
+#endif
 			if (!dev->write_urb) {
 				err("No free urbs available");
 				goto error;
@@ -986,17 +806,34 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			buffer_size = endpoint->wMaxPacketSize;
 			dev->bulk_out_size = buffer_size;
 			dev->bulk_out_endpointAddr = endpoint->bEndpointAddress;
+#ifdef KERNEL_2_5
+			dev->bulk_out_buffer = usb_buffer_alloc(udev, buffer_size, SLAB_ATOMIC, &dev->dma_out);
+#else
 			dev->bulk_out_buffer = kmalloc (buffer_size, GFP_KERNEL);
+#endif
 			if (!dev->bulk_out_buffer) {
 				err("Couldn't allocate bulk_out_buffer");
 				goto error;
 			}
-			FILL_BULK_URB(dev->write_urb, udev, 
+#ifdef KERNEL_2_5
+			usb_fill_bulk_urb(dev->write_urb, udev, 
 				      usb_sndbulkpipe
 				      (udev, endpoint->bEndpointAddress),
 				      dev->bulk_out_buffer, buffer_size,
 				      mceusb_write_bulk_callback, dev);
+#else
+			FILL_BULK_URB(dev->write_urb, udev,
+				      usb_sndbulkpipe
+				      (udev, endpoint->bEndpointAddress),
+				      dev->bulk_out_buffer, buffer_size,
+				      mceusb_write_bulk_callback, dev);
+#endif 
 		}
+	}
+
+	if (!(dev->bulk_in_endpointAddr && dev->bulk_out_endpointAddr)) {
+		err("Couldn't find both bulk-in and bulk-out endpoints");
+		goto error;
 	}
 
 	/* init the waitq */
@@ -1023,8 +860,8 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		kfree( rbuf );
 		goto error;
 	}
-    
-	strcpy(plugin->name, "lirc_mceusb ");
+
+	strcpy(plugin->name, DRIVER_NAME " ");
 	plugin->minor       = minor;
 	plugin->code_length = sizeof(lirc_t) * 8;
 	plugin->features    = LIRC_CAN_REC_MODE2; // | LIRC_CAN_SEND_MODE2;
@@ -1036,7 +873,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	plugin->sample_rate = 80;   // sample at 100hz (10ms)
 	plugin->add_to_buf  = &mceusb_add_to_buf;
 	//    plugin->fops        = &mceusb_fops;
-	if( lirc_register_plugin( plugin ) < 0 )
+	if( lirc_register_plugin(plugin) < 0 )
 	{
 		kfree( plugin );
 		lirc_buffer_free( rbuf );
@@ -1044,7 +881,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		goto error;
 	}
 	dev->plugin = plugin;
-
+	
 	/* clear off the first few messages. these look like
 	 * calibration or test data, i can't really tell
 	 * this also flushes in case we have random ir data queued up
@@ -1064,53 +901,81 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
     
 	msir_cleanup( dev );
 	mceusb_setup( udev );
-
+	
+#ifdef KERNEL_2_5
+	/* we can register the device now, as it is ready */
+	usb_set_intfdata (interface, dev);
+#endif	
 	/* let the user know what node this device is now attached to */
 	//info ("USB Microsoft IR Transceiver device now attached to msir%d", dev->minor);
-	goto exit;
-	
+	up (&minor_table_mutex);
+#ifdef KERNEL_2_5
+	return 0;
+#else
+	return dev;
+#endif
  error:
 	mceusb_delete (dev);
 	dev = NULL;
-
- exit:
+	dbg("%s: retval = %x",__func__,retval);
 	up (&minor_table_mutex);
-	return dev;
+#ifdef KERNEL_2_5
+	return retval;
+#else
+	return NULL;
+#endif
 }
 
 /**
  *	mceusb_disconnect
  *
  *	Called by the usb core when the device is removed from the system.
+ *
+ *	This routine guarantees that the driver will not submit any more urbs
+ *	by clearing dev->udev.  It is also supposed to terminate any currently
+ *	active urbs.  Unfortunately, usb_bulk_msg(), used in skel_read(), does
+ *	not provide any way to do this.  But at least we can cancel an active
+ *	write.
  */
+#ifdef KERNEL_2_5 
+static void mceusb_disconnect(struct usb_interface *interface)
+#else
 static void mceusb_disconnect(struct usb_device *udev, void *ptr)
+#endif
 {
 	struct usb_skel *dev;
 	int minor;
-
+#ifdef KERNEL_2_5
+	dev = usb_get_intfdata (interface);
+	usb_set_intfdata (interface, NULL);
+#else
 	dev = (struct usb_skel *)ptr;
+#endif
 	
 	down (&minor_table_mutex);
 	down (&dev->sem);
-		
 	minor = dev->minor;
 
 	/* unhook lirc things */
-	lirc_unregister_plugin( dev->minor );
+	lirc_unregister_plugin( minor );
 	lirc_buffer_free( dev->plugin->rbuf );
 	kfree( dev->plugin->rbuf );
 	kfree( dev->plugin );
-
-	/* if the device is not opened, then we clean up right now */
-	if (!dev->open_count) {
-		up (&dev->sem);
-		mceusb_delete (dev);
-	} else {
-		dev->udev = NULL;
-		up (&dev->sem);
+#ifdef KERNEL_2_5
+	/* terminate an ongoing write */
+	if (atomic_read (&dev->write_busy)) {
+		usb_unlink_urb (dev->write_urb);
+		wait_for_completion (&dev->write_finished);
 	}
 
-	info("USB Skeleton #%d now disconnected", minor);
+	/* prevent device read, write and ioctl */
+	dev->present = 0;
+#endif
+	
+	mceusb_delete (dev);
+	
+	info("Microsoft IR Transceiver #%d now disconnected", minor);
+	up (&dev->sem);
 	up (&minor_table_mutex);
 }
 
@@ -1125,11 +990,17 @@ static int __init usb_mceusb_init(void)
 
 	/* register this driver with the USB subsystem */
 	result = usb_register(&mceusb_driver);
-	if (result < 0) {
-		err("usb_register failed for the "__FILE__" driver. "
-		    "error number %d",
-		    result);
+#ifdef KERNEL_2_5	
+	if ( result ) {
+#else
+	if ( result < 0 ) {
+#endif
+		err("usb_register failed for the " DRIVER_NAME " driver. error number %d",result);
+#ifdef KERNEL_2_5
+		return result;
+#else
 		return -1;
+#endif
 	}
 
 	info(DRIVER_DESC " " DRIVER_VERSION);
