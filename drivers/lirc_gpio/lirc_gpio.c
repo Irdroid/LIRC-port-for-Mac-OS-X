@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.1 2000/12/08 19:24:22 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.2 2001/01/05 21:28:06 columbus Exp $
  *
  */
 
@@ -388,6 +388,9 @@ int init_module(void)
 		       type,cardid);
 		if (type==BTTV_AVPHONE98 && cardid!=0x00031461)	{
 			type = BTTV_AVERMEDIA98;
+		}
+		if (type==BTTV_AVERMEDIA98 && cardid==0x00041461) {
+			type = BTTV_AVPHONE98;
 		}
 
 		if (type == BTTV_UNKNOWN) {
