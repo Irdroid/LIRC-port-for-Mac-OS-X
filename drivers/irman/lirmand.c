@@ -1,4 +1,4 @@
-/*      $Id: lirmand.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirmand.c,v 5.1 1999/05/04 23:34:03 wheeley Exp $      */
 
 /* lirmand.c v0.5.5 (c) 1998-1999 Tom Wheeley <tomw@tsys.demon.co.uk> */
 /* This program is free software.  See file COPYING for details       */
@@ -174,9 +174,16 @@ void write_encoded_uchar(unsigned char value, int numbits)
 
 RETSIGTYPE sigterm(int sig)
 {
+  /* restore original handler (required on some systems) 
+   * thanks to Yoann <yoann@coldserver.com>
+   */
+  signal(sig, SIG_DFL);
+  
   ir_finish();
   close(lirc);
   close_log();
+  
+  /* raise original handler to boot us out */
   raise(sig);
 }
 
