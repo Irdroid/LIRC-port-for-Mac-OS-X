@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.15 2001/04/24 19:16:29 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.16 2001/04/25 08:54:08 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -30,12 +30,10 @@
 #define CFG_USER	".lircrc"
 
 /* log files */
-#define LOGDIR		"/var/log"
 #define LOG_LIRCD	"lircd"
 #define LOG_LIRMAND	"lirmand"
 
 /* pid file */
-#define PIDDIR          "/var/run"
 #define PID_LIRCD       "lircd.pid"
 
 /* default port number */
@@ -92,9 +90,6 @@
 /* Set the timer for the parallel port driver */
 #define LIRC_TIMER		65536
 
-/* Set the default tty used by the irman/remotemaster driver */
-#define LIRC_IRTTY		"/dev/ttyS0"
-
 /* Define if you have an animax serial port receiver */
 #undef LIRC_SERIAL_ANIMAX
 
@@ -107,6 +102,9 @@
 /* Define if you have an IRdeo serial port receiver */
 #undef LIRC_SERIAL_IRDEO
 
+/* Define if you want to cross-compile for the iPAQ */
+#undef LIRC_ON_IPAQ
+
 /* Define if you want to use a Tekram Irmate 210 */
 #undef LIRC_SIR_TEKRAM
 
@@ -118,6 +116,9 @@
 
 /* syslog facility to use */
 #define LIRC_SYSLOG		LOG_DAEMON
+
+/* modifiable single-machine data */
+#define LOCALSTATEDIR           "/var"
 
 /* system configuration directory */
 #define SYSCONFDIR		"/etc"
@@ -144,6 +145,9 @@
 #define LIRC_DRIVER_DEVICE      DEVDIR "/" DEV_LIRC
 #endif /* LIRC_HAVE_DEVFS */
 
+/* Set the default tty used by the irman/remotemaster driver */
+#define LIRC_IRTTY		DEVDIR "/" "ttyS0"
+
 #define LIRCD			DEVDIR "/" DEV_LIRCD
 #define LIRCM			DEVDIR "/" DEV_LIRCM
 
@@ -152,9 +156,9 @@
 
 #define LIRCCFGFILE		CFG_USER
 
-#define LOGFILE			LOGDIR "/" LOG_LIRCD
-#define LIRMAND_LOGFILE		LOGDIR "/" LOG_LIRMAND
+#define LOGFILE			LOCALSTATEDIR "/log/" LOG_LIRCD
+#define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND
 
-#define PIDFILE                 PIDDIR "/" PID_LIRCD
+#define PIDFILE                 LOCALSTATEDIR "/run/" PID_LIRCD
 
 /* end of acconfig.h */

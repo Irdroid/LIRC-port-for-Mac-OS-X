@@ -12,6 +12,10 @@
  *   kind of disappointing that nobody was able to implement that
  *   before),
  *   major clean-up
+ *
+ * 2001/02/27 Christoph Bartelmus <lirc@bartelmus.de> : 
+ *   added support for StrongARM SA1100 embedded microprocessor
+ *   parts cut'n'pasted from sa1100_ir.c (C) 2000 Russell King
  */
 
 
@@ -33,7 +37,7 @@
  
 #include <linux/config.h>
 
-#ifndef CONFIG_SERIAL_MODULE
+#if !defined(LIRC_ON_IPAQ) && !defined(CONFIG_SERIAL_MODULE)
 #warning "******************************************"
 #warning " Your serial port driver is compiled into "
 #warning " the kernel. You will have to release the "
@@ -65,6 +69,9 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>
+#ifdef LIRC_ON_IPAQ
+#include <asm/hardware.h>
+#endif
 
 #include <linux/timer.h>
 
@@ -72,6 +79,7 @@
 
 /* SECTION: Definitions */
 
+/**************************** Tekram dongle ***************************/
 #ifdef LIRC_SIR_TEKRAM
 /* stolen from kernel source */
 /* definitions for Tekram dongle */
@@ -83,27 +91,65 @@
 #define TEKRAM_2400   0x08
 
 #define TEKRAM_PW 0x10 /* Pulse select bit */
+
+/* 10bit * 1s/115200bit in milli seconds = 87ms*/
+#define TIME_CONST (10000000ul/115200ul)
+
+#endif
+
+/******************************** iPAQ ********************************/
+#ifdef LIRC_ON_IPAQ
+struct sa1100_ser2_registers
+{
+	/* HSSP control register */
+	unsigned char hscr0;
+	/* UART registers */
+	unsigned char utcr0;
+	unsigned char utcr1;
+	unsigned char utcr2;
+	unsigned char utcr3;
+	unsigned char utcr4;
+	unsigned char utdr;
+	unsigned char utsr0;
+	unsigned char utsr1;
+} sr;
+
+static int irq=IRQ_Ser2ICP;
+
+#define LIRC_ON_IPAQ_TRANSMITTER_LATENCY 0
+
+/* pulse/space ratio of 50/50 */
+unsigned long pulse_width = (13-LIRC_ON_IPAQ_TRANSMITTER_LATENCY);
+/* 1000000/freq-pulse_width */
+unsigned long space_width = (13-LIRC_ON_IPAQ_TRANSMITTER_LATENCY);
+unsigned int freq = 38000;      /* modulation frequency */
+unsigned int duty_cycle = 50;   /* duty cycle of 50% */
+
 #endif
 
 #define RBUF_LEN 1024
 #define WBUF_LEN 1024
 
 #define LIRC_DRIVER_NAME "lirc_sir"
-#ifdef LIRC_SIR_TEKRAM
-/* 10bit * 1s/115200bit in milli seconds = 87ms*/
-#define TIME_CONST (10000000ul/115200ul)
-#else
+
+#ifndef LIRC_SIR_TEKRAM
 #define PULSE '['
+
 /* 9bit * 1s/115200bit in milli seconds = 78.125ms*/
 #define TIME_CONST (9000000ul/115200ul)
 #endif
+
+
 /* timeout for sequences in jiffies (=5/100s) */
 /* must be longer than TIME_CONST */
 #define SIR_TIMEOUT	(HZ*5/100)
 
 static int major = LIRC_MAJOR;
+
+#ifndef LIRC_ON_IPAQ
 static int iobase = LIRC_PORT;
 static int irq = LIRC_IRQ;
+#endif
 
 static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
 static struct timer_list timerlist;
@@ -163,7 +209,17 @@ static void drop_port(void);
 int init_module(void);
 void cleanup_module(void);
 
-
+#ifdef LIRC_ON_IPAQ
+void inline on(void)
+{
+	PPSR|=PPC_TXD2;
+}
+  
+void inline off(void)
+{
+	PPSR&=~PPC_TXD2;
+}
+#else
 static inline unsigned int sinp(int offset)
 {
 	return inb(iobase + offset);
@@ -173,6 +229,7 @@ static inline void soutp(int offset, int value)
 {
 	outb(value, iobase + offset);
 }
+#endif
 
 /* SECTION: Communication with user-space */
 
@@ -283,6 +340,10 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 	copy_from_user(tx_buf, buf, n);
 	i = 0;
 	n/=sizeof(lirc_t);
+#ifdef LIRC_ON_IPAQ
+	/* disable receiver */
+	Ser2UTCR3=0;
+#endif
 	while (1) {
 		if (i >= n)
 			break;
@@ -295,6 +356,15 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 			send_space(tx_buf[i]);
 		i++;
 	}
+#ifdef LIRC_ON_IPAQ
+	off();
+	udelay(1000); /* wait 1ms for IR diode to recover */
+	Ser2UTCR3=0;
+	/* clear status register to prevent unwanted interrupts */
+	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
+	/* enable receiver */
+	Ser2UTCR3=UTCR3_RXE|UTCR3_RIE;
+#endif
 	return n;
 #endif
 }
@@ -304,12 +374,23 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
 	int retval = 0;
 	unsigned long value = 0;
+	unsigned int ivalue;
 
 #ifdef LIRC_SIR_TEKRAM
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_REC_MODE2;
 	else if (cmd == LIRC_GET_SEND_MODE)
 		value = 0;
+	else if (cmd == LIRC_GET_REC_MODE)
+		value = LIRC_MODE_MODE2;
+#elif defined(LIRC_ON_IPAQ)
+	if (cmd == LIRC_GET_FEATURES)
+		value = LIRC_CAN_SEND_PULSE |
+			LIRC_CAN_SET_SEND_DUTY_CYCLE |
+			LIRC_CAN_SET_SEND_CARRIER |
+			LIRC_CAN_REC_MODE2;
+	else if (cmd == LIRC_GET_SEND_MODE)
+		value = LIRC_MODE_PULSE;
 	else if (cmd == LIRC_GET_REC_MODE)
 		value = LIRC_MODE_MODE2;
 #else
@@ -348,6 +429,47 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		retval = get_user(value, (unsigned long *) arg);
 #endif
 		break;
+#ifdef LIRC_ON_IPAQ
+	case LIRC_SET_SEND_DUTY_CYCLE:
+#               ifdef KERNEL_2_1
+		retval=get_user(ivalue,(unsigned int *) arg);
+		if(retval) return(retval);
+#               else
+		retval=verify_area(VERIFY_READ,(unsigned int *) arg,
+				   sizeof(unsigned int));
+		if(result) return(result);
+		ivalue=get_user((unsigned int *) arg);
+#               endif
+		if(ivalue<=0 || ivalue>100) return(-EINVAL);
+		/* (ivalue/100)*(1000000/freq) */
+		duty_cycle=ivalue;
+		pulse_width=(unsigned long) duty_cycle*10000/freq;
+		space_width=(unsigned long) 1000000L/freq-pulse_width;
+		if(pulse_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
+			space_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		break;
+	case LIRC_SET_SEND_CARRIER:
+#               ifdef KERNEL_2_1
+		retval=get_user(ivalue,(unsigned int *) arg);
+		if(retval) return(retval);
+#               else
+		retval=verify_area(VERIFY_READ,(unsigned int *) arg,
+				   sizeof(unsigned int));
+		if(retval) return(retval);
+		ivalue=get_user((unsigned int *) arg);
+#               endif
+		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
+		freq=ivalue;
+		pulse_width=(unsigned long) duty_cycle*10000/freq;
+		space_width=(unsigned long) 1000000L/freq-pulse_width;
+		if(pulse_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
+			space_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		break;
+#endif
 	default:
 		retval = -ENOIOCTLCMD;
 
@@ -433,7 +555,7 @@ static struct file_operations lirc_fops =
 };
 
 #ifdef MODULE
-static int init_chrdev(void)
+int init_chrdev(void)
 {
 	int retval;
 
@@ -480,8 +602,10 @@ static void sir_timeout(unsigned long data)
  	spin_lock_irqsave(&timer_lock, flags);
 	if (last_value)
 	{
+#ifndef LIRC_ON_IPAQ
 		/* clear unread bits in UART and restart */
 		outb(UART_FCR_CLEAR_RCVR, iobase + UART_FCR);
+#endif
 		/* determine 'virtual' pulse end: */
 	 	pulse_end = delta(&last_tv, &last_intr_tv);
 #ifdef DEBUG_SIGNAL
@@ -497,12 +621,84 @@ static void sir_timeout(unsigned long data)
 
 static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 {
-	int iir, lsr;
 	unsigned char data;
 	struct timeval curr_tv;
 	static unsigned long deltv;
+#ifdef LIRC_ON_IPAQ
+	int status;
+	static int n=0;
+	
+	//printk("interrupt\n");
+	status = Ser2UTSR0;
+	/*
+	 * Deal with any receive errors first.  The bytes in error may be
+	 * the only bytes in the receive FIFO, so we do this first.
+	 */
+	while (status & UTSR0_EIF)
+	{
+		int bstat;
+		
+#ifdef DEBUG
+		printk("EIF\n");
+		bstat = Ser2UTSR1;
+		
+		if (bstat & UTSR1_FRE)
+			printk("frame error\n");
+		if (bstat & UTSR1_ROR)
+			printk("receive fifo overrun\n");
+		if(bstat&UTSR1_PRE)
+			printk("parity error\n");
+#endif
+		
+		bstat = Ser2UTDR;
+		n++;
+		status = Ser2UTSR0;
+	}
+
+	if (status & (UTSR0_RFS | UTSR0_RID))
+	{
+		do_gettimeofday(&curr_tv);
+		deltv = delta(&last_tv, &curr_tv);
+		do
+		{
+#ifdef DEBUG_SIGNAL
+			printk(KERN_DEBUG LIRC_DRIVER_NAME": t %lu , d %d\n",
+			       deltintrtv,(int)data);
+#endif
+			data=Ser2UTDR;
+			//printk("data: %d\n",data);
+			n++;
+		}
+		while(status&UTSR0_RID && /* do not empty fifo in
+                                             order to get UTSR0_RID in
+                                             any case */
+		      Ser2UTSR1 & UTSR1_RNE); /* data ready */
+		
+		if(status&UTSR0_RID)
+		{
+			//printk("add\n");
+			add_read_queue(0,deltv-n*TIME_CONST); /*space*/
+			add_read_queue(1,n*TIME_CONST); /*pulse*/
+			n=0;
+			last_tv=curr_tv;
+		}
+	}
+
+	if (status & UTSR0_TFS) {
+
+		printk("transmit fifo not full, shouldn't ever happen\n");
+	}
+
+	/*
+	 * We must clear certain bits.
+	 */
+	status &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
+	if (status)
+		Ser2UTSR0 = status;
+#else
 	unsigned long deltintrtv;
 	unsigned long flags;
+	int iir, lsr;
 
 	while ((iir = inb(iobase + UART_IIR) & UART_IIR_ID)) {
 		switch (iir) { /* FIXME toto treba preriedit */
@@ -578,9 +774,44 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 			break;
 		}
 	}
+#endif
 }
 
-#ifndef LIRC_SIR_TEKRAM
+#ifdef LIRC_ON_IPAQ
+void send_pulse(unsigned long length)
+{
+	unsigned long k,delay;
+	int flag;
+
+	if(length==0) return;
+	/* this won't give us the carrier frequency we really want
+	   due to integer arithmetic, but we can accept this inaccuracy */
+
+	for(k=flag=0;k<length;k+=delay,flag=!flag)
+	{
+		if(flag)
+		{
+			off();
+			delay=space_width;
+		}
+		else
+		{
+			on();
+			delay=pulse_width;
+		}
+		udelay(delay);
+	}
+	off();
+}
+
+void send_space(unsigned long length)
+{
+	if(length==0) return;
+	off();
+	udelay(length);
+}
+#elif defined(LIRC_SIR_TEKRAM)
+#else
 static void send_space(unsigned long len)
 {
 	udelay(len);
@@ -609,10 +840,81 @@ static void send_pulse(unsigned long len)
 static int init_hardware(void)
 {
 	int flags;
-
+	
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
-#ifdef LIRC_SIR_TEKRAM
+#ifdef LIRC_ON_IPAQ
+#if 0
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR0: %02x\n",Ser2UTCR0);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR1: %02x\n",Ser2UTCR1);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR2: %02x\n",Ser2UTCR2);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR3: %02x\n",Ser2UTCR3);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR4: %02x\n",Ser2UTCR4);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTDR:  %02x\n",Ser2UTDR);
+	
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR0: %02x\n",Ser2UTSR0);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR1: %02x\n",Ser2UTSR1);
+
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR0: %02x\n",Ser2HSCR0);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR1: %02x\n",Ser2HSCR1);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR2: %02x\n",Ser2HSCR2);
+#endif
+	sr.hscr0=Ser2HSCR0;
+
+	sr.utcr0=Ser2UTCR0;
+	sr.utcr1=Ser2UTCR1;
+	sr.utcr2=Ser2UTCR2;
+	sr.utcr3=Ser2UTCR3;
+	sr.utcr4=Ser2UTCR4;
+
+	sr.utdr=Ser2UTDR;
+	sr.utsr0=Ser2UTSR0;
+	sr.utsr1=Ser2UTSR1;
+
+	/* configure GPIO */
+	/* output */
+	PPDR|=PPC_TXD2;
+	PSDR|=PPC_TXD2;
+	/* set output to 0 */
+	off();
+	
+	/*
+	 * Enable HP-SIR modulation, and ensure that the port is disabled.
+	 */
+	Ser2UTCR3=0;
+	Ser2HSCR0=sr.hscr0 & (~HSCR0_HSSP);
+	
+	/* clear status register to prevent unwanted interrupts */
+	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
+	
+	/* 7N1 */
+	Ser2UTCR0=UTCR0_1StpBit|UTCR0_7BitData;
+	/* 115200 */
+	Ser2UTCR1=0;
+	Ser2UTCR2=1;
+	/* use HPSIR, 1.6 usec pulses */
+	Ser2UTCR4=UTCR4_HPSIR|UTCR4_Z1_6us;
+	
+	/* enable receiver, receive fifo interrupt */
+	Ser2UTCR3=UTCR3_RXE|UTCR3_RIE;
+	
+	/* clear status register to prevent unwanted interrupts */
+	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
+	
+#if 0
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR0: %02x\n",Ser2UTCR0);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR1: %02x\n",Ser2UTCR1);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR2: %02x\n",Ser2UTCR2);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR3: %02x\n",Ser2UTCR3);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR4: %02x\n",Ser2UTCR4);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTDR:  %02x\n",Ser2UTDR);
+	
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR0: %02x\n",Ser2UTSR0);
+	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR1: %02x\n",Ser2UTSR1);
+#endif
+
+
+#elif defined(LIRC_SIR_TEKRAM)
 	/* disable FIFO */ 
 	soutp(UART_FCR,
 	      UART_FCR_CLEAR_RCVR|
@@ -689,7 +991,7 @@ static int init_hardware(void)
 		/* FIFO operation */
 	outb(UART_FCR_ENABLE_FIFO, iobase + UART_FCR);
 		/* interrupts */
-	// outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, iobase + UART_IER);	
+	// outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, iobase + UART_IER);
 	outb(UART_IER_RDI, iobase + UART_IER);	
 	/* turn on UART */
 	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, iobase + UART_MCR);
@@ -703,8 +1005,26 @@ static void drop_hardware(void)
 	int flags;
 
 	spin_lock_irqsave(&hardware_lock, flags);
+
+#ifdef LIRC_ON_IPAQ
+	Ser2UTCR3=0;
+	
+	Ser2UTCR0=sr.utcr0;
+	Ser2UTCR1=sr.utcr1;
+	Ser2UTCR2=sr.utcr2;
+	Ser2UTCR4=sr.utcr4;
+	Ser2UTCR3=sr.utcr3;
+	
+	Ser2HSCR0=sr.hscr0;
+#ifdef CONFIG_SA1100_BITSY
+	if (machine_is_bitsy()) {
+		clr_bitsy_egpio(EGPIO_BITSY_IR_ON);
+	}
+#endif
+#else
 	/* turn off interrupts */
 	outb(0, iobase + UART_IER);	
+#endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
 
@@ -713,7 +1033,8 @@ static void drop_hardware(void)
 static int init_port(void)
 {
 	int retval;
-
+	
+#ifndef LIRC_ON_IPAQ
 	/* get I/O port access and IRQ line */
 	retval = check_region(iobase, 8);
 	if (retval < 0) {
@@ -722,18 +1043,21 @@ static int init_port(void)
 			iobase);
 		return retval;
 	}
+#endif
 	retval = request_irq(irq, sir_interrupt, SA_INTERRUPT,
-			LIRC_DRIVER_NAME, NULL);
+			     LIRC_DRIVER_NAME, NULL);
 	if (retval < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME
 			": IRQ %d already in use.\n",
 			irq);
 		return retval;
 	}
+#ifndef LIRC_ON_IPAQ
 	request_region(iobase, 8, LIRC_DRIVER_NAME);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": I/O port 0x%.4x, IRQ %d.\n",
 		iobase, irq);
+#endif
 
 	init_timer(&timerlist);
 	timerlist.function = sir_timeout;
@@ -744,8 +1068,11 @@ static int init_port(void)
 
 static void drop_port(void)
 {
+	disable_irq(irq);
 	free_irq(irq, NULL);
+#ifndef LIRC_ON_IPAQ
 	release_region(iobase, 8);
+#endif
 }
 
 int init_lirc_sir(void)
@@ -759,6 +1086,7 @@ int init_lirc_sir(void)
 	if (retval < 0)
 		return retval;
 	init_hardware();
+	enable_irq(irq);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": Installed.\n");
 	return 0;
@@ -771,23 +1099,55 @@ int init_lirc_sir(void)
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
 #else
+#ifdef LIRC_ON_IPAQ
+MODULE_AUTHOR("Christoph Bartelmus");
+MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
+#else
 MODULE_AUTHOR("Milan Pikula");
 MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
 #endif
+#endif
+#ifdef LIRC_ON_IPAQ
+MODULE_PARM(irq, "i");
+MODULE_PARM_DESC(irq, "Interrupt (16)");
+#else
 MODULE_PARM(iobase, "i");
 MODULE_PARM_DESC(iobase, "I/O address base (0x3f8 or 0x2f8)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+#endif
 
 EXPORT_NO_SYMBOLS;
+#endif
+
+#if 0
+lirc_sir Ser2UTCR0: 0a                                                        
+lirc_sir Ser2UTCR1: 00                                                        
+lirc_sir Ser2UTCR2: 01                                                        
+lirc_sir Ser2UTCR3: 0b                                                        
+lirc_sir Ser2UTCR4: 01                                                        
+lirc_sir Ser2UTDR:  ff                                                        
+lirc_sir Ser2UTSR0: 01                                                        
+lirc_sir Ser2UTSR1: 04                                                        
+lirc_sir Ser2HSCR0: 00                                                        
+lirc_sir Ser2HSCR1: 00                                                        
+lirc_sir Ser2HSCR2: c0000                                                     
 #endif
 
 int init_module(void)
 {
 	int retval;
-
-	retval = init_chrdev();
-	if (retval < 0)
+	
+#if 0
+	/*FIXME*/
+	/* 7N1 */
+	Ser2UTCR0=UTCR0_1StpBit|UTCR0_7BitData;
+	/* 115200 */
+	Ser2UTCR1=0;
+	Ser2UTCR2=1;
+#endif
+	retval=init_chrdev();
+	if(retval < 0)
 		return retval;
 	retval = init_lirc_sir();
 	if (retval) {
@@ -805,5 +1165,3 @@ void cleanup_module(void)
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
 #endif
-
-

@@ -231,7 +231,8 @@ function ConfigDriver
 	     3 "Other serial port devices" \
 	     4 "TV card" \
              5 "SIR IrDA (built-in IR ports)" \
-	     6 "None (network connections only)" 2> $TEMP
+	     6 "iPAQ" \
+	     7 "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -330,7 +331,8 @@ function ConfigDriver
 		return;
 	    fi;
         elif test "$1" = "5"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
-        elif test "$1" = "6"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
+	elif test "$1" = "6"; then LIRC_DRIVER=ipaq;         DRIVER_PARAMETER=none;
+        elif test "$1" = "7"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
     fi
         GetSelectedDriver
         SetPortAndIrq
