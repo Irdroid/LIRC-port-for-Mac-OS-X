@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 1.1 1999/04/29 21:16:40 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
 
 /*
  *  are you editing the correct file?

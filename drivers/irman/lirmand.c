@@ -1,4 +1,4 @@
-/*      $Id: lirmand.c,v 1.1 1999/04/29 21:16:53 columbus Exp $      */
+/*      $Id: lirmand.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
 
 /* lirmand.c v0.5.5 (c) 1998-1999 Tom Wheeley <tomw@tsys.demon.co.uk> */
 /* This program is free software.  See file COPYING for details       */

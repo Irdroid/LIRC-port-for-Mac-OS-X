@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.h,v 1.1 1999/04/29 21:16:52 columbus Exp $      */
+/*      $Id: lirc_parallel.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
 
 #ifndef _LIRC_PARALLEL_H
 #define _LIRC_PARALLEL_H

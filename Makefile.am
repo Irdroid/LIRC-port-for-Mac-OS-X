@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.1 1999/04/29 21:16:38 columbus Exp $
+## $Id: Makefile.am,v 5.0 1999/04/29 21:30:59 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
