@@ -1,4 +1,4 @@
-0.7.0-CVS: future
+0.7.0: 11/06/04
   * added userspace USB driver for ATI remotes (Michael Gold)
   * added support for Igor Cesko's USB IR receiver (Jan Hochstein)
   * added support for ELMAK PCMAK (Pawel Nowak)
