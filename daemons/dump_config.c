@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.6 2000/07/13 19:01:41 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.7 2001/01/20 13:32:00 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -27,14 +27,14 @@ void fprint_comment(FILE *f,struct ir_remote *rem)
 	fprintf(f,
 		"#\n"
 		"# this config file was automatically generated\n"
-		"# using lirc-%s on %s"
+		"# using lirc-%s(%s) on %s"
 		"#\n"
 		"# contributed by \n"
 		"#\n"
 		"# brand:             %s\n"
 		"# model:             \n"
 		"# supported devices: \n"
-		"#\n\n",VERSION,asctime(tmp),
+		"#\n\n",VERSION,LIRC_DRIVER,asctime(tmp),
 		rem->name);
 }
 

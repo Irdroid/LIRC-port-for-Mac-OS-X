@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.7 2001/01/18 21:35:24 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.8 2001/01/20 13:32:00 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -95,6 +95,18 @@ MODULE_PARM(minor,"i");
 
 /* ----------------------------------------------------------------------- */
 
+static inline int reverse(int data, int bits)
+{
+	int i;
+	int c;
+	
+	for (c=0,i=0; i<bits; i++) {
+		c |= (((data & (1<<i)) ? 1:0)) << (bits-1-i);
+	}
+
+	return c;
+}
+
 static int get_key_haup(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
@@ -153,6 +165,18 @@ static int get_key_pv951(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
         unsigned char b;
+	static unsigned char codes[4];
+	
+	if(key_no>0)
+	{
+		if(key_no>=4) {
+			dprintk(KERN_DEBUG DEVICE_NAME
+				": something wrong in get_key_pv951\n");
+			return -EBADRQC;
+		}
+		*key = codes[key_no];
+		return 0;
+	}
 	
 	/* poll IR chip */
 	if (1 != i2c_master_recv(&ir->c,&b,1)) {
@@ -161,9 +185,15 @@ static int get_key_pv951(void* data, unsigned char* key, int key_no)
 	}
 	/* ignore 0xaa */
 	if (b==0xaa)
-		return -1
+		return -1;
 	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
-	*key = b;
+	
+	codes[2] = reverse(b,8);
+	codes[3] = (~codes[2])&0xff;
+	codes[0] = 0x61;
+	codes[1] = 0xD6;
+	
+	*key=codes[0];
 	return 0;
 }
 
@@ -247,7 +277,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		break;
 	case 0x4b:
 		strcpy(ir->c.name,"PV951 IR");
-		ir->l.code_length = 8;
+		ir->l.code_length = 32;
 		ir->l.get_key=get_key_pv951;
 		break;
 	case 0x18:
