@@ -5,39 +5,56 @@
 
 
 #
-# This is for the remote that Avermedia bundles with its Tv98.
-# Commands from the remote are hardware-decoded by a PIC16c54-xt, which makes
-# lirc's job easy. Make sure you compile the daemons with the experimental
-# -DDECODED option. You need at least lirc-0.5.5pre8 to use this config file
+# This is for the remote that LiveView bundles with its FlyVideo98.
+# Commands from the remote are hardware-decoded and send to GPIO port 
+# which makes lirc's job easy. 
+# Make sure you compile the daemons with the experimental -DDECODED option. 
+# You need at least lirc-0.5.5pre8 to use this config file
 #
-# contributed by Ryan Gammon <rggammon@engmail.uwaterloo.ca>
+# contributed by Pawel T. Jochym <jochym@ifj.edu.pl>
 #
-# brand:             Avermedia TV98
+# brand:             LiveView FlyVideo'98
 # supported devices: This remote control comes with some TV Tuner cards from
-#                    Avermedia.
+#                    LiveView.
 #
-# notes:             The 0x?0D codes appear to unused (the remote has 31 
-#                    buttons, so it makes sense)
 
 begin remote
   name  FLY98
   bits  8
       begin codes
-	FV98_0  	   0x00000000000000F0
-	FV98_1  	   0x00000000000000C0
-	FV98_2  	   0x0000000000000020
-	FV98_3  	   0x00000000000000A0
-	FV98_4  	   0x00000000000000E0
-	FV98_5  	   0x0000000000000010
-	FV98_6  	   0x0000000000000090
-	FV98_7  	   0x00000000000000D0
-	FV98_8  	   0x0000000000000030
-	FV98_9  	   0x00000000000000B0
-	FV98_MUTE	   0x00000000000000D8
-	FV98_VOL_PLUS	   0x0000000000000028
-	FV98_VOL_MINUS     0x00000000000000E8
-	FV98_CHAN_PLUS     0x0000000000000048
-	FV98_CHAN_MINUS    0x00000000000000C8
-	FV98_FULL_SCREEN   0x0000000000000040
+	0		0x1E
+	1		0x18
+	2		0x04
+	3		0x14
+	4		0x1C
+	5		0x02
+	6		0x12
+	7		0x1A
+	8		0x06
+	9		0x16
+	MUTE		0x1B
+	VOL_PLUS	0x05
+	VOL_MINUS	0x1D
+	CHAN_PLUS	0x09
+	CHAN_MINUS	0x19
+	FULL_SCREEN	0x08
+	POWER		0x00
+	MOUSE_MODE	0x10
+	CANCEL		0x1F
+	ENTER		0x01
+	CHANELS		0x17
+	MENU		0x0C
+	LEFT		0x09
+	RIGHT		0x15
+	UP		0x0E
+	DOWN		0x13
+	CENTER		0x19
+	VIDEO		0x11
+	INC		0x0A
+	DEC		0x0D
+	ESC		0x0B
+	RETURN		0x03
+	REV		0x0F
+	FWD		0x07
       end codes
 end remote

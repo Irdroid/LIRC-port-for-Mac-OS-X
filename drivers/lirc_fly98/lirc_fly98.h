@@ -1,7 +1,7 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 /*
-   $Id: lirc_fly98.h,v 1.2 1999/07/27 09:17:26 jochym Exp $
+   $Id: lirc_fly98.h,v 1.3 1999/08/02 07:38:30 jochym Exp $
 */
 /*
  * This driver is for a FlyVideo'98/FlyVideoII/ConferenceTV 
@@ -56,7 +56,7 @@ struct irctl
 };
 
 extern void remote_queue_key(int nr, unsigned long code);
-typedef void (*bttv_gpio_monitor_t)(int nr, unsigned long data);               
+typedef void (*bttv_gpio_monitor_t)(int nr, unsigned long data); 
 extern bttv_gpio_monitor_t bttv_set_gpio_monitor(bttv_gpio_monitor_t callback);
 
 #endif /* REMOTE_H */

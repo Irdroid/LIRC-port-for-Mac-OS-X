@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.5 1999/07/27 17:01:59 jochym Exp $
+ * $Id: lirc_fly98.c,v 1.6 1999/08/02 07:38:30 jochym Exp $
  *
  */
 
@@ -22,6 +22,14 @@
  *
  * 0.0.3  Ported to kernel 2.2.10 bttv driver. Poll function added
  *	  some clean-up.
+ * From now on RCS log:
+ * $Log: lirc_fly98.c,v $
+ * Revision 1.6  1999/08/02 07:38:30  jochym
+ * Finally a working setup. Further clean-up of the kernel patch (got it
+ * even smaller). Configuration files for lircd, lircmd and ~/.lircrc.
+ * Lock-up in the bttv caused by wrong initialization order removed.
+ * External bttv patch not fully tested yet. Internal version 0.1. BETA.
+ *
  */
 
 #include <linux/module.h>
@@ -54,7 +62,7 @@
 
 #define dprintk     if (debug) printk
 
-static int debug =  0; /* insmod parameter */
+static int debug = 0; /* insmod parameter */
 
 /* Array of IRCtls structures */
 struct irctl irctls[MAX_IRCTL_DEVICES];

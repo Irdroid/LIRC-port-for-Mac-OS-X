@@ -2,3 +2,10 @@
     Even smaller kernel patch. Remote driver removed from the kernel.
     Only GPIO monitor function implanted into the bttv. The rest is handled
     by lirc_fly98.o
+
+$Log: ChangeLog,v $
+Revision 1.2  1999/08/02 07:38:30  jochym
+Finally a working setup. Further clean-up of the kernel patch (got it
+even smaller). Configuration files for lircd, lircmd and ~/.lircrc.
+Lock-up in the bttv caused by wrong initialization order removed.
+External bttv patch not fully tested yet. Internal version 0.1. BETA.
