@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.39 2004/10/10 23:47:59 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.40 2004/10/19 13:17:56 pmiller9 Exp $
  */
 
 /*
@@ -527,7 +527,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			if ((type != ATI2_COMPATIBLE)
 				|| ((ep->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK) == 0x02)) {
 
-				dprintk(DRIVER_NAME ": acceptable inbound endpoint(%d) found\n", ep->bEndpointAddress);
+				dprintk(DRIVER_NAME ": acceptable inbound endpoint(0x%x) found\n", ep->bEndpointAddress);
 				ep_in = ep;
 			}
 		}
@@ -536,7 +536,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			&& ((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT)
 			&& ((ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT)) {
 
-			dprintk(DRIVER_NAME ": acceptable outbound endpoint(%d) found\n", ep->bEndpointAddress);
+			dprintk(DRIVER_NAME ": acceptable outbound endpoint(0x%x) found\n", ep->bEndpointAddress);
 			ep_out = ep;
 		}
 	}
