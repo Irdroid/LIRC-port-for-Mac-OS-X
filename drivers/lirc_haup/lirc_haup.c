@@ -81,7 +81,12 @@ static void lirc_haup_do_timer(unsigned long data)
 
 	spin_lock(&remote_lock);
 	
-	if (remote->wait_cleanup != NULL) {
+#if LINUX_VERSION_CODE < 0x020300
+        if (remote->wait_cleanup != NULL) {
+#else
+	if (remote->wait_cleanup.task_list.next != 
+	    &(remote->wait_cleanup.task_list)) {
+#endif
 		wake_up(&remote->wait_cleanup);
 	        spin_unlock(&remote_lock);
 		/* Now cleanup_module can return */
