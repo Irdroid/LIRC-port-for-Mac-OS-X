@@ -42,9 +42,9 @@ begin remote
         MEMO            0x0047  # 'G' - hides dialog widget!
 
 # t630
-        F-LEFT          0x005b  # '['
-        F-RIGHT         0x005d  # ']'  - triggers 'e'
-        J-CLICK         0x3a4a  # ':J' - triggers 'e'
+        F_LEFT          0x005b  # '['
+        F_RIGHT         0x005d  # ']'  - triggers 'e'
+        J_CLICK         0x3a4a  # ':J' - triggers 'e'
         RETURN          0x3a52  # ':R' - triggers 'e'
         CAMERA          0x3a43  # ':C'
         WAP             0x3a4f  # ':O'

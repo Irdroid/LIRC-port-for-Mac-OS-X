@@ -193,11 +193,11 @@ int bte_connect(void)
 
 int bte_init(void)
 {
-	LOGPRINTF(3, "bte_init called");
+	LOGPRINTF(3, "bte_init called, device %s", hw.device);
 
-	if(tty_create_lock(hw.device))
+	if(!tty_create_lock(hw.device))
 	{
-		logprintf(LOG_ERR,"could not create lock files");
+		logprintf(LOG_ERR,"bte_init: could not create lock file");
 		return 0;
 	}
 	if (!bte_connect())
@@ -224,7 +224,7 @@ char *bte_readline()
 	static int n=0;
 	int ok=1;
 
-	LOGPRINTF(3, "bte_readline called");
+	LOGPRINTF(6, "bte_readline called");
 
 	if (io_failed && !bte_connect()) // try to reestablish connection
 		return(NULL);
@@ -261,7 +261,7 @@ char *bte_automaton()
 	int key_release = 0;
 	int i;
 	
-	LOGPRINTF(3, "bte_automaton called");
+	LOGPRINTF(5, "bte_automaton called");
 
 	code=0;
 
@@ -390,7 +390,7 @@ char *bte_automaton()
 
 char *bte_rec(struct ir_remote *remotes)
 {
-	LOGPRINTF(3, "bte_rec called");
+	LOGPRINTF(4, "bte_rec called");
 
 	if( bte_automaton())
 		return decode_all(remotes);
