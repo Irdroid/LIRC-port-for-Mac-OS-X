@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.4 1999/07/27 09:17:26 jochym Exp $
+ * $Id: lirc_fly98.c,v 1.5 1999/07/27 17:01:59 jochym Exp $
  *
  */
 
@@ -235,7 +235,7 @@ static ssize_t irctl_read(struct file *file,
 	ir->head%=BUFLEN;
 	spin_unlock(&ir->lock);
 	dprintk("irctl_read: ret %d data %d\n", r, *buffer);
-	return (r==0) ? 1 : -EIO;
+	return (r==0) ? 1 : -EFAULT;
 
 #if 0
 	    /*
