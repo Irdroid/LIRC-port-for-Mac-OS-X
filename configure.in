@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.58 2001/04/25 20:07:50 lirc Exp $
+dnl $Id: configure.in,v 5.59 2001/05/06 19:44:34 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -474,8 +474,6 @@ if test -n "${withval}"; then
     facility=LOG_DAEMON;
   elif test "${withval}" = LOG_AUTH; then
     true;
-  elif test "${withval}" = LOG_AUTH; then
-    true;
   elif test "${withval}" = LOG_AUTHPRIV; then
     true;
   elif test "${withval}" = LOG_DAEMON; then
@@ -509,6 +507,8 @@ dnl if --prefix is not specified, then $prefix is still set to NONE by
 dnl configure.  That's bad here where we want to expand it!
 cur_prefix=$prefix
 test "x${prefix}" = "xNONE" && prefix=$ac_default_prefix 
+test "${sysconfdir}" = "\${prefix}/etc" && sysconfdir=/etc
+test "${localstatedir}" = "\${prefix}/var" && localstatedir=/var
 sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
 prefix=$cur_prefix
