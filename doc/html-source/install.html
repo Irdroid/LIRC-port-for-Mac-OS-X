@@ -38,17 +38,22 @@ kernel. More documentation is available at the <A
 HREF="http://sunsite.unc.edu/LDP/">Linux Documentation
 Project</A>.</P>
 
-<P>If you want to use a home-brew receiver, an Anir Multimedia Magic
-or a Packard Bell receiver you will have to compile the Linux kernel
-serial port driver as a module. The according kernel option that has
-to be set to <em>m</em> is <em>Standard/generic (dumb) serial
-support</em> in the <em>Character devices</em> section of the kernel
-configuration dialogue. You also must make sure that the
-<em>lirc_serial</em> module is loaded before the Linux serial port
-module. If you ignore the compile error and don't do this it will work
-anyway but this approach is begging for hard to trace problems. The
-same holds if you want to use the SIR IrDA driver except that it will
-refuse to work if the port is already used by the serial driver.</P>
+<P>If you want to use a home-brew receiver, an Anir Multimedia Magic,
+a Packard Bell receiver or if you want to use the SIR IrDA driver you
+should compile the Linux kernel serial port driver as a module. The
+according kernel option that has to be set to <em>m</em> is
+<em>Standard/generic (dumb) serial support</em> in the <em>Character
+devices</em> section of the kernel configuration dialogue. Usually the
+serial port driver grabs all ports it auto-detects as soon as it is
+loaded and the LIRC modules won't be able to use any of them.</P>
+
+<P>
+There are two solutions for this problem. Either you load the LIRC
+module before the kernel serial port driver is loaded (that's why you
+have to compile it as a module) or you call <em>setserial /dev/ttySx
+uart none</em> to release the according port. setserial usually is
+already called during boot-up in some init script whose location
+depends on the distribution you use.</P>
 
 <P><B>TV cards:</B> To use any TV card remote controls you will need
 either at least kernel version 2.4.0 or you use Gerd Knorr's current

@@ -26,9 +26,15 @@
 #include <linux/config.h>
 
 #ifndef CONFIG_SERIAL_MODULE
+#warning "--- Your serial port driver is compiled into the  ---"
+#warning "--- kernel. You will have to release the port you ---"
+#warning "--- want to use for LIRC with:                    ---"
+#warning "---     setserial /dev/ttySx uart none            ---"
+#if 0
 #error "--- Please compile your Linux kernel serial port    ---"
 #error "--- driver as a module. Read the LIRC documentation ---"
 #error "--- for further details.                            ---"
+#endif
 #endif
 
 #include <linux/sched.h>

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.19 2000/10/22 17:31:31 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.20 2000/11/23 19:38:03 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -29,9 +29,15 @@
 #include <linux/config.h>
 
 #ifndef CONFIG_SERIAL_MODULE
+#warning "--- Your serial port driver is compiled into the  ---"
+#warning "--- kernel. You will have to release the port you ---"
+#warning "--- want to use for LIRC with:                    ---"
+#warning "---     setserial /dev/ttySx uart none            ---"
+#if 0
 #error "--- Please compile your Linux kernel serial port    ---"
 #error "--- driver as a module. Read the LIRC documentation ---"
 #error "--- for further details.                            ---"
+#endif
 #endif
 
 #include <linux/module.h>
