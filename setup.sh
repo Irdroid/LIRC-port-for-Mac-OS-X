@@ -160,7 +160,8 @@ SetPortAndIrq ()
     elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
 	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
-        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic"; then
+        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic" -o \
+	"$LIRC_DRIVER" = "mp3anywhere" ; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to use" \
@@ -294,7 +295,8 @@ ConfigDriver ()
 			b "REALmagic (bundled with Hollywood Plus DVD card)" \
 			c "Slink-e (receive only)" \
                         d "Silitek SM-1000" \
-			e "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
+			e "Tekram Irmate 210 (16x50 UART compatible serial port)" \
+			f "X10 MP3 Anywhere RF Receiver" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -313,6 +315,7 @@ ConfigDriver ()
 		elif test "$1" = "c"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
 		elif test "$1" = "d"; then LIRC_DRIVER=silitek;      DRIVER_PARAMETER=tty1;
 		elif test "$1" = "e"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "f"; then LIRC_DRIVER=mp3anywhere;  DRIVER_PARAMETER=tty1;
 		fi
 		}
 	    else
@@ -532,8 +535,9 @@ SaveConfig ()
         }
     elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "silitek" -o \
-        "$LIRC_DRIVER" = "realmagic"; then
+	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
+        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic" -o \
+	"$LIRC_DRIVER" = "mp3anywhere" ; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

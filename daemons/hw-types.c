@@ -10,6 +10,7 @@ extern struct hardware hw_default;
 extern struct hardware hw_creative;
 extern struct hardware hw_irman;
 extern struct hardware hw_logitech;
+extern struct hardware hw_mp3anywhere;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
@@ -51,6 +52,7 @@ struct hardware *hw_list[] =
 	&hw_irman,
 #endif
 	&hw_logitech,
+	&hw_mp3anywhere,
 	&hw_pinsys,
 	&hw_pixelview,
 	&hw_silitek,

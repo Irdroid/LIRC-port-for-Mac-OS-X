@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.27 2003/02/15 09:45:24 lirc Exp $
+## $Id: Makefile.am,v 5.28 2003/02/16 19:06:56 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -18,6 +18,7 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
+			hw_mp3anywhere.c hw_mp3anywhere.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
 			hw_creative.c hw_creative.h \
@@ -43,6 +44,7 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
+			hw_mp3anywhere.c hw_mp3anywhere.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
 			hw_creative.c hw_creative.h \
