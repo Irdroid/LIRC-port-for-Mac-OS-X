@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.15 2002/03/06 12:40:59 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.16 2002/10/08 21:59:47 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -71,6 +71,7 @@
 #endif
 
 #include "drivers/lirc.h"
+#include "../lirc_dev/lirc_dev.h"
 
 #include "lirc_parallel.h"
 
@@ -741,6 +742,32 @@ static struct file_operations lirc_fops =
 	release: lirc_close
 };
 
+static void set_use_inc(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+       MOD_INC_USE_COUNT;
+#endif
+}
+
+static void set_use_dec(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+       MOD_DEC_USE_COUNT;
+#endif
+}
+static struct lirc_plugin plugin = {
+       name:           LIRC_DRIVER_NAME,
+       minor:          -1,
+       code_length:    1,
+       sample_rate:    0,
+       data:           NULL,
+       get_key:        NULL,
+       get_queue:      NULL,
+       set_use_inc:    set_use_inc,
+       set_use_dec:    set_use_dec,
+       fops:           &lirc_fops,
+};
+
 #ifdef MODULE
 
 #if LINUX_VERSION_CODE >= 0x020200
@@ -882,7 +909,7 @@ int init_module(void)
 	parport_release(ppdevice);
  skip_init:
 #endif
-	if(register_chrdev(LIRC_MAJOR, LIRC_DRIVER_NAME, &lirc_fops)<0)
+	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0)
 	{
 		printk(KERN_NOTICE "%s: register_chrdev() failed\n",LIRC_DRIVER_NAME);
 #ifdef KERNEL_2_2
@@ -904,6 +931,6 @@ void cleanup_module(void)
 #else
 	release_region(io,LIRC_PORT_LEN);
 #endif
-	unregister_chrdev(LIRC_MAJOR,LIRC_DRIVER_NAME);
+	lirc_unregister_plugin(plugin.minor);
 }
 #endif

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.89 2002/10/06 16:49:38 lirc Exp $
+dnl $Id: configure.in,v 5.90 2002/10/08 21:59:46 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -97,9 +97,10 @@ possible_drivers="(none) (udp) (dsp) (remotemaster) (pctv) (logitech) \
 	(slinke) (silitek) (mediafocusI) (irreal)"
 
 if test x${no_kernel} != xyes; then
-  possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
-	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio) \
-	(lirc_dev) (lirc_it87) (lirc_dev lirc_bt829)"
+  possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
+	(lirc_dev lirc_sir) (lirc_dev lirc_parallel) (lirc_dev lirc_i2c) \
+	(lirc_dev lirc_gpio) (lirc_dev) (lirc_dev lirc_it87) \
+	(lirc_dev lirc_bt829)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -183,13 +184,13 @@ if test "$driver" = "any"; then
 	  irreal)
 	  #hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
 	  ;;
-	  lirc_serial)
+	  lirc_dev-lirc_serial)
 	  ;;
-	  lirc_sir)
+	  lirc_dev-lirc_sir)
 	  ;;
-	  lirc_it87)
+	  lirc_dev-lirc_it87)
 	  ;;
-	  lirc_parallel)
+	  lirc_dev-lirc_parallel)
 	  ;;
 	  lirc_aver)
 	  ;;
@@ -247,24 +248,24 @@ if test "$driver" = "irman_sw"; then
 fi
 
 if test "$driver" = "serial"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
 fi
 if test "$driver" = "it87"; then
-  lirc_driver=lirc_it87
+  lirc_driver="lirc_dev lirc_it87"
 fi
 if test "$driver" = "sir"; then
-  lirc_driver=lirc_sir
+  lirc_driver="lirc_dev lirc_sir"
 fi
 if test "$driver" = "sa1100"; then
-  lirc_driver=lirc_sir
+  lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_ON_SA1100)
 fi
 if test "$driver" = "tekram"; then
-  lirc_driver=lirc_sir
+  lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_SIR_TEKRAM)
 fi
 if test "$driver" = "act200l"; then
-  lirc_driver=lirc_sir
+  lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_SIR_ACTISYS_ACT200L)
 fi
 if test "$driver" = "tekram_bt829"; then
@@ -273,43 +274,43 @@ if test "$driver" = "tekram_bt829"; then
   lircmd_conf="tekram/lircmd.conf.m230"
 fi
 if test "$driver" = "animax"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   lircd_conf="animax/lircd.conf.animax"
   lircmd_conf="animax/lircmd.conf.animax"
   AC_DEFINE(LIRC_SERIAL_ANIMAX)
 fi
 if test "$driver" = "packard_bell"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   lircd_conf="packard_bell/lircd.conf.packard_bell"
 fi
 if test "$driver" = "com1"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   port=0x3f8
   irq=4
 fi
 if test "$driver" = "com2"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   port=0x2f8
   irq=3
 fi
 if test "$driver" = "com3"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   port=0x3e8
   irq=4
 fi
 if test "$driver" = "sir_com3"; then
-  lirc_driver=lirc_sir
+  lirc_driver="lirc_dev lirc_sir"
   port=0x3e8
   irq=4
 fi
 if test "$driver" = "com4"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   port=0x2e8
   irq=3
 fi
 
 if test "$driver" = "parallel"; then
-  lirc_driver=lirc_parallel
+  lirc_driver="lirc_dev lirc_parallel"
 fi
 if test "$driver" = "asus_tvbox"; then
   lirc_driver="lirc_dev lirc_i2c"
@@ -392,12 +393,12 @@ if test "$driver" = "bestbuy2"; then
   lircmd_conf="bestbuy/lircmd.conf.bestbuy2"
 fi
 if test "$driver" = "lpt1"; then
-  lirc_driver=lirc_parallel
+  lirc_driver="lirc_dev lirc_parallel"
   port=0x378
   irq=7
 fi
 if test "$driver" = "lpt2"; then
-  lirc_driver=lirc_parallel
+  lirc_driver="lirc_dev lirc_parallel"
   port=0x278
   irq=5
 fi
@@ -459,11 +460,11 @@ if test "$driver" = "irreal"; then
   HW_DEFAULT="hw_irreal"
 fi
 if test "$driver" = "irdeo"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   AC_DEFINE(LIRC_SERIAL_IRDEO)
 fi
 if test "$driver" = "irdeo_remote"; then
-  lirc_driver=lirc_serial
+  lirc_driver="lirc_dev lirc_serial"
   AC_DEFINE(LIRC_SERIAL_IRDEO_REMOTE)
 fi
 if test "$driver" = "mediafocusI"; then
@@ -532,13 +533,8 @@ dnl now we've checked, we can rename things for the drivers/Makefile
 if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca"; then
   lirc_driver=
 fi
-
-if test "$lirc_driver" = "lirc_dev lirc_gpio"; then
-  kernel_module="lirc_gpio"
-elif test "$lirc_driver" = "lirc_dev lirc_i2c"; then
-  kernel_module="lirc_i2c"
-elif test "$lirc_driver" = "lirc_dev lirc_bt829"; then
-  kernel_module="lirc_bt829"
+if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
+  :
 elif test "$lirc_driver" != ""; then
   kernel_module=$lirc_driver
 fi

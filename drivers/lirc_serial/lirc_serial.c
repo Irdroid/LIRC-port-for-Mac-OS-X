@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.39 2002/10/02 18:35:32 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.40 2002/10/08 21:59:50 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -104,6 +104,7 @@
 #include <asm/fcntl.h>
 
 #include "drivers/lirc.h"
+#include "../lirc_dev/lirc_dev.h"
 
 #if defined(LIRC_SERIAL_SOFTCARRIER) && !defined(LIRC_SERIAL_TRANSMITTER)
 #warning "Software carrier only affects transmitting"
@@ -241,7 +242,6 @@ struct lirc_serial hardware[]=
 #define RBUF_LEN 256
 #define WBUF_LEN 256
 
-static int major = LIRC_MAJOR;
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 
 #ifdef KERNEL_2_3
@@ -1255,6 +1255,32 @@ static struct file_operations lirc_fops =
 	release: lirc_close
 };
 
+static void set_use_inc(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+	MOD_INC_USE_COUNT;
+#endif
+}
+
+static void set_use_dec(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+	MOD_DEC_USE_COUNT;
+#endif
+}
+static struct lirc_plugin plugin = {
+	name:		LIRC_DRIVER_NAME,
+	minor:		-1,
+	code_length:	1,
+	sample_rate:	0,
+	data:		NULL,
+	get_key:	NULL,
+	get_queue:	NULL,
+	set_use_inc:	set_use_inc,
+	set_use_dec:	set_use_dec,
+	fops:		&lirc_fops,
+};
+
 #ifdef MODULE
 
 #if LINUX_VERSION_CODE >= 0x020100
@@ -1306,7 +1332,7 @@ int init_module(void)
 	}
 	if ((result = init_port()) < 0)
 		return result;
-	if (register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops) < 0) {
+	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": register_chrdev failed!\n");
 		release_region(io, 8);
@@ -1318,7 +1344,7 @@ int init_module(void)
 void cleanup_module(void)
 {
 	release_region(io, 8);
-	unregister_chrdev(major, LIRC_DRIVER_NAME);
+	lirc_unregister_plugin(plugin.minor);
 #       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": cleaned up module\n");
 #       endif

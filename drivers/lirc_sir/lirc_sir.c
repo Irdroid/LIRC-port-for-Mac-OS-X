@@ -95,6 +95,7 @@
 #include <linux/timer.h>
 
 #include "drivers/lirc.h"
+#include "../lirc_dev/lirc_dev.h"
 
 /* SECTION: Definitions */
 
@@ -166,8 +167,6 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 /* timeout for sequences in jiffies (=5/100s) */
 /* must be longer than TIME_CONST */
 #define SIR_TIMEOUT	(HZ*5/100)
-
-static int major = LIRC_MAJOR;
 
 #ifndef LIRC_ON_SA1100
 static int io = LIRC_PORT;
@@ -615,22 +614,47 @@ static struct file_operations lirc_fops =
 	release: lirc_close,
 };
 
+static void set_use_inc(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+       MOD_INC_USE_COUNT;
+#endif
+}
+
+static void set_use_dec(void* data)
+{
+#if WE_DONT_USE_LOCAL_OPEN_CLOSE
+       MOD_DEC_USE_COUNT;
+#endif
+}
+static struct lirc_plugin plugin = {
+       name:           LIRC_DRIVER_NAME,
+       minor:          -1,
+       code_length:    1,
+       sample_rate:    0,
+       data:           NULL,
+       get_key:        NULL,
+       get_queue:      NULL,
+       set_use_inc:    set_use_inc,
+       set_use_dec:    set_use_dec,
+       fops:           &lirc_fops,
+};
+
+
 #ifdef MODULE
 int init_chrdev(void)
 {
-	int retval;
-
-	retval = register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops);
-	if (retval < 0) {
+	plugin.minor = lirc_register_plugin(&plugin);
+	if (plugin.minor < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME ": init_chrdev() failed.\n");
-		return retval;
+		return -EIO;
 	}
 	return 0;
 }
 
 static void drop_chrdev(void)
 {
-	unregister_chrdev(major, LIRC_DRIVER_NAME);
+	lirc_unregister_plugin(plugin.minor);
 }
 #endif
 

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.18 2001/12/12 20:26:01 ranty Exp $
+ * $Id: lirc_dev.c,v 1.19 2002/10/08 21:59:46 ranty Exp $
  *
  */
 
@@ -264,10 +264,16 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			       "sample_rate must be beetween 2 and 50!\n");
 			return -EBADRQC;
 		}
-	} else {
+	} else if (!p->fops) {
 		if (!p->get_queue) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "get_queue cannot be NULL!\n");
+			return -EBADRQC;
+		}
+	} else {
+		if (!p->fops->read || !p->fops->poll || !p->fops->ioctl) {
+			printk("lirc_dev: lirc_register_plugin:"
+			       "neither read, poll nor ioctl can be NULL!\n");
 			return -EBADRQC;
 		}
 	}
@@ -325,18 +331,21 @@ int lirc_register_plugin(struct lirc_plugin *p)
 					  &fops, NULL);
 #endif
 
-	/* try to fire up polling thread */
-	ir->t_notify = &tn;
-	ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
-	if (ir->tpid < 0) {
-		IRUNLOCK;
-		up(&plugin_lock);
-		printk("lirc_dev: lirc_register_plugin:"
-		       "cannot run poll thread for minor = %d\n", p->minor);
-		return -ECHILD;
+	if(p->sample_rate || p->get_queue) {
+		/* try to fire up polling thread */
+		ir->t_notify = &tn;
+		ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
+		if (ir->tpid < 0) {
+			IRUNLOCK;
+			up(&plugin_lock);
+			printk("lirc_dev: lirc_register_plugin:"
+			       "cannot run poll thread for minor = %d\n",
+			       p->minor);
+			return -ECHILD;
+		}
+		down(&tn);
+		ir->t_notify = NULL;
 	}
-	down(&tn);
-	ir->t_notify = NULL;
 	up(&plugin_lock);
 
 	MOD_INC_USE_COUNT;
@@ -421,6 +430,10 @@ static int irctl_open(struct inode *inode, struct file *file)
 
 	dprintk(LOGHEAD "open called\n", ir->p.name, ir->p.minor);
 
+	/* if the plugin has an open function use it instead */
+	if(ir->p.fops && ir->p.fops->open)
+		return ir->p.fops->open(inode, file);
+
 	down_interruptible(&plugin_lock);
 
 	if (ir->p.minor == NOPLUG) {
@@ -462,6 +475,10 @@ static int irctl_close(struct inode *inode, struct file *file)
 
 	dprintk(LOGHEAD "close called\n", ir->p.name, ir->p.minor);
  
+	/* if the plugin has a close function use it instead */
+	if(ir->p.fops && ir->p.fops->release)
+		return ir->p.fops->release(inode, file);
+
 	down_interruptible(&plugin_lock);
 
 	--ir->open;
@@ -480,6 +497,10 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 
 	dprintk(LOGHEAD "poll called\n", ir->p.name, ir->p.minor);
+
+	/* if the plugin has a poll function use it instead */
+	if(ir->p.fops && ir->p.fops->poll)
+		return ir->p.fops->poll(file, wait);
 
 	if (!ir->in_buf) {
 		poll_wait(file, &ir->wait_poll, wait);
@@ -504,6 +525,10 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 
 	dprintk(LOGHEAD "poll called (%u)\n",
 		ir->p.name, ir->p.minor, cmd);
+
+	/* if the plugin has a ioctl function use it instead */
+	if(ir->p.fops && ir->p.fops->ioctl)
+		return ir->p.fops->ioctl(inode, file, cmd, arg);
 
 	if (ir->p.minor == NOPLUG) {
 		dprintk(LOGHEAD "ioctl result = -ENODEV\n",
@@ -554,6 +579,10 @@ static ssize_t irctl_read(struct file *file,
 	DECLARE_WAITQUEUE(wait, current);
 
 	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
+
+	/* if the plugin has a specific read function use it instead */
+	if(ir->p.fops && ir->p.fops->read)
+		return ir->p.fops->read(file, buffer, length, ppos);
 
 	if (ir->bytes_in_key != length) {
 		dprintk(LOGHEAD "read result = -EIO\n",
@@ -611,9 +640,24 @@ static ssize_t irctl_read(struct file *file,
 	return ret ? -EFAULT : length;
 }
 
+static ssize_t irctl_write(struct file *file, const char *buffer,
+			   size_t length, loff_t * ppos)
+{
+	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+
+	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
+
+	/* if the plugin has a specific read function use it instead */
+	if(ir->p.fops && ir->p.fops->write)
+		return ir->p.fops->write(file, buffer, length, ppos);
+
+	return -EINVAL;
+}
+
 
 static struct file_operations fops = {
 	read:    irctl_read, 
+	write:   irctl_write,
 	poll:    irctl_poll,
 	ioctl:   irctl_ioctl,
 	open:    irctl_open,

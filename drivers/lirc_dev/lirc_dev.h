@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.3 2000/12/03 18:02:55 columbus Exp $
+ * $Id: lirc_dev.h,v 1.4 2002/10/08 21:59:46 ranty Exp $
  *
  */
 
@@ -30,6 +30,7 @@ struct lirc_plugin
      wait_queue_head_t* (*get_queue) (void* data);
      void (*set_use_inc) (void* data);
      void (*set_use_dec) (void* data);
+     struct file_operations *fops;
 };
 /* name:
  * this string will be used for logs
@@ -72,6 +73,9 @@ struct lirc_plugin
  *
  * set_use_dec:
  * set_use_dec will be called after device is closed
+ *
+ * fops:
+ * file_operations for drivers which don't fit the current plugin model.
  */
 
 
