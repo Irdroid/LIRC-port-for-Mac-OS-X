@@ -302,15 +302,18 @@ ConfigDriver ()
 			b "Hauppauge TV card (new I2C layer required)" \
 			c "Hauppauge DVB-s card (ver. 2.1)" \
 			d "KNC ONE TV Station (-/SE/PRO/RDS)" \
-			e "Phoebe Tv Master + FM (card=22)" \
-                        f "Pixelview PlayTV pro (card=37)" \
-                        g "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
-			h "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
-			i "ProVideo PV951 (card=42)" \
-			j "Technisat MediaFocus I" \
-			k "TView99 CPH063 (card=38)" \
-			l "Typhoon TView RDS / FM Stereo (card=53)" \
-			m "Winfast TV2000 (card=34)" 2> $TEMP;
+			e "Lenco MXTV-9578 CP (card=50)" \
+			f "Phoebe Tv Master + FM (card=22)" \
+                        g "PixelView PlayTV PAK (card=50)" \
+                        h "Pixelview PlayTV pro (card=37)" \
+                        i "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
+			j "Prolink PV-BT878P+4E (card=50)" \
+			k "Prolink PV-BT878P+9B (PlayTV Pro rev.9B FM+NICAM) (card=72)" \
+			l "ProVideo PV951 (card=42)" \
+			m "Technisat MediaFocus I" \
+			n "TView99 CPH063 (card=38)" \
+			o "Typhoon TView RDS / FM Stereo (card=53)" \
+			p "Winfast TV2000 (card=34)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -329,15 +332,18 @@ ConfigDriver ()
 		elif test "$1" = "b"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
 		elif test "$1" = "c"; then LIRC_DRIVER=hauppauge_dvb;   DRIVER_PARAMETER=none;
 		elif test "$1" = "d"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "e"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "f"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
-		elif test "$1" = "g"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
-		elif test "$1" = "h"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
-		elif test "$1" = "i"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
-		elif test "$1" = "j"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "k"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "l"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "m"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
+		elif test "$1" = "e"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "f"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "g"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "h"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
+		elif test "$1" = "i"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
+		elif test "$1" = "j"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "k"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
+		elif test "$1" = "l"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
+		elif test "$1" = "m"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
+		elif test "$1" = "n"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "o"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "p"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

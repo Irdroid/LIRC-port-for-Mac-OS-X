@@ -9,7 +9,7 @@
  *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.12 2001/08/26 12:27:47 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.13 2001/11/14 21:46:35 lirc Exp $
  *
  */
 
@@ -86,6 +86,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_PXELVWPLTVPAK,          0, 0x00003e00,          0, 0x0010000,          0,   0, 15,  0},
 #endif
 	{BTTV_PXELVWPLTVPRO,          0, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
+#ifdef BTTV_PV_BT878P_9B
+	{BTTV_PV_BT878P_9B,           0, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
+#endif
 	{BTTV_AVERMEDIA,              0, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_AVPHONE98,     0x00011461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
 	{BTTV_AVERMEDIA98,   0x00021461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
