@@ -1,5 +1,10 @@
 
 $Log: ChangeLog,v $
+Revision 1.7  2000/05/15 14:23:58  jochym
+This is still version 0.1 of the software. A new patches has been added
+to the archive: for kernel 2.2.14 and 2.2.15.
+
+
 Revision 1.6  2000/05/05 09:51:50  jochym
 Documentation corrected. Patch for kernel 2.2.14 added.
 
