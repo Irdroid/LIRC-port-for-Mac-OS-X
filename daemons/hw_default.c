@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.3 1999/08/03 19:45:11 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.4 1999/08/12 18:35:48 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -414,26 +414,28 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
   decoding stuff
 */
 
-unsigned long get_next_rec_buffer(unsigned long maxusec)
+unsigned long readdata(unsigned long maxusec)
 {
-	if(rec_buffer.rptr<rec_buffer.wptr)
-	{
-#               ifdef DEBUG
-		logprintf(3,"<%ld\n",rec_buffer.data[rec_buffer.rptr]
-			  &(PULSE_BIT-1));
-#               endif
-		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
-		return(rec_buffer.data[rec_buffer.rptr++]);
-	}
-	else
-	{
-		if(rec_buffer.wptr<RBUF_SIZE)
-		{
-			unsigned long data;
-			int ret;
-			
-			if(!waitfordata(maxusec)) return(0);
+	/* simple noise filter */
+	static unsigned long filter[3];
+	static int ptr=0;
+	unsigned long data;
+	int ret;
 
+	if(maxusec>0)
+	{
+		unsigned long sum;
+		int i;
+
+		for(i=0,sum=0;i<ptr;i++) sum+=filter[i]&(PULSE_BIT-1);
+		if(sum>=maxusec) return(0);
+		maxusec-=sum;
+	}
+	while(1)
+	{
+		if(ptr==0 || (is_space(filter[0]) && ptr<3))
+		{
+			if(!waitfordata(maxusec)) return(0);
 #if defined(SIM_REC) && !defined(DAEMONIZE)
 			while(1)
 			{
@@ -466,6 +468,58 @@ unsigned long get_next_rec_buffer(unsigned long maxusec)
 			}
 			while(ret!=sizeof(unsigned long));
 #endif
+			filter[ptr++]=data;
+		}
+		if(is_space(filter[0]))
+		{
+			if(maxusec>0)
+			{
+				if((data&(PULSE_BIT-1))>=maxusec) return(0);
+				else maxusec-=(data&(PULSE_BIT-1));
+			}
+			if(ptr<3) continue;
+			
+			if(filter[0]>10000 &&
+			   (filter[1]&(PULSE_BIT-1))<250 &&
+			   filter[2]>10000)
+			{
+				filter[0]+=(filter[1]&(PULSE_BIT-1))+filter[2];
+				if(filter[0]>(PULSE_BIT-1))
+				{
+					filter[0]=PULSE_BIT-1;
+				}
+				ptr=1;
+				continue;
+			}
+		}
+		data=filter[0];
+		filter[0]=filter[1];
+		filter[1]=filter[2];
+		ptr--;
+		break;
+	}
+	return(data);
+}
+
+unsigned long get_next_rec_buffer(unsigned long maxusec)
+{
+	if(rec_buffer.rptr<rec_buffer.wptr)
+	{
+#               ifdef DEBUG
+		logprintf(3,"<%ld\n",rec_buffer.data[rec_buffer.rptr]
+			  &(PULSE_BIT-1));
+#               endif
+		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
+		return(rec_buffer.data[rec_buffer.rptr++]);
+	}
+	else
+	{
+		if(rec_buffer.wptr<RBUF_SIZE)
+		{
+			unsigned long data;
+			
+			if((data=readdata(maxusec))==0) return(0);
+			
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
@@ -527,7 +581,6 @@ int clear_rec_buffer()
 	else
 	{
 		unsigned long data;
-		int ret;
 		
 		move=rec_buffer.wptr-rec_buffer.rptr;
 		if(move>0 && rec_buffer.rptr>0)
@@ -541,18 +594,12 @@ int clear_rec_buffer()
 		{
 			rec_buffer.wptr=0;
 		}
-		do
-		{
-			ret=read(hw.fd,&data,sizeof(unsigned long));
-#                       ifdef DEBUG
-			if(ret!=sizeof(unsigned long))
-			{
-				logprintf(1,"error reading from lirc\n");
-				logperror(1,NULL);
-			}
-#                       endif
-		}
-		while(ret!=sizeof(unsigned long));
+		
+		data=readdata(0);
+		
+#               ifdef DEBUG
+		logprintf(3,"c%ld\n",data&(PULSE_BIT-1));
+#               endif
 
 		rec_buffer.data[rec_buffer.wptr]=data;
 		rec_buffer.wptr++;
@@ -761,12 +808,14 @@ inline unsigned long sync_rec_buffer(struct ir_remote *remote)
 	deltas=get_next_space();
 	if(deltas==0) return(0);
 
+	logprintf(0,"%ld\n",deltas);
 	while(deltas<remote->remaining_gap*(100-remote->eps)/100
 	      && deltas<remote->remaining_gap-remote->aeps)
 	{
 		deltap=get_next_pulse();
 		if(deltap==0) return(0);
 		deltas=get_next_space();
+		logprintf(0,"%ld\n",deltas);
 		if(deltas==0) return(0);
 		count++;
 		if(count>REC_SYNC) /* no sync found, 
@@ -1253,7 +1302,10 @@ int default_init()
 #else
 	struct stat s;
 	int i;
-
+	
+	memset(&rec_buffer,0,sizeof(rec_buffer));
+	memset(&send_buffer,0,sizeof(send_buffer));
+	
 	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
 	{
 		logprintf(0,"could not open lirc\n");
