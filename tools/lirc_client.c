@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.10 2000/11/09 17:51:00 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.11 2001/04/24 19:05:58 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1019,7 +1019,7 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 		if(scan->next_code->button==LIRC_ALL || 
 		   strcasecmp(scan->next_code->button,button)==0)
 		{
-			if(scan->code->next==NULL || rep==1)
+			if(scan->code->next==NULL || rep==0)
 			{
 				scan->next_code=scan->next_code->next;
 			}
@@ -1027,7 +1027,7 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 			{
 				scan->next_code=scan->code;
                                 if(scan->code->next!=NULL || 
-                                   (scan->rep==0 ? rep==1:(rep%scan->rep)==0))
+                                   (scan->rep==0 ? rep==0:(rep%scan->rep)==0))
                                 {
                                         return(1);
                                 }
@@ -1042,7 +1042,7 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 			}
 		}
 	}
-        if(rep!=1) return(0);
+        if(rep!=0) return(0);
 	codes=scan->code;
         if(codes==scan->next_code) return(0);
 	codes=codes->next;
@@ -1082,7 +1082,7 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
                                 if(prev->button==LIRC_ALL ||
                                    strcasecmp(prev->button,button)==0)
                                 {
-                                        if(rep==1)
+                                        if(rep==0)
                                         {
                                                 scan->next_code=prev->next;
                                                 return(0);
@@ -1121,7 +1121,6 @@ int lirc_code2char(struct lirc_config *config,char *code,char **string)
 	*string=NULL;
 	if(sscanf(code,"%*llx %x %*s %*s\n",&rep)==1)
 	{
-		rep++;
 		backup=strdup(code);
 		if(backup==NULL) return(-1);
 
