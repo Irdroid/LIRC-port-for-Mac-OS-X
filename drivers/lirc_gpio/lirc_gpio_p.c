@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.22 2000/09/27 18:17:47 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.23 2000/11/26 20:14:11 columbus Exp $
  *
  */
 
@@ -23,7 +23,12 @@
 #include <linux/errno.h>
 
 #include "../lirc_dev/lirc_dev.h"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
+#else
+#include "../drivers/media/video/bttv.h"
+#endif
+
 #if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,37)
 #error "!!! Sorry, this driver needs bttv version 0.7.37 or higher   !!!"
 #error "!!! If you are using the bttv package, copy it to the kernel !!!"

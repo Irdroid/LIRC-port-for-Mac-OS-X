@@ -6,7 +6,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_i.c,v 1.3 2000/07/28 11:10:44 columbus Exp $
+ * $Id: lirc_gpio_i.c,v 1.4 2000/11/26 20:14:11 columbus Exp $
  *
  */
 
@@ -22,8 +22,13 @@
 #include <linux/wrapper.h>
 
 #include "../lirc_dev/lirc_dev.h"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
 #include "../drivers/char/bt848.h"
+#else
+#include "../drivers/media/video/bttv.h"
+#include "../drivers/media/video/bt848.h"
+#endif
 
 /* default parameters values are suitable for the PixelView Play TVPro card */
 
