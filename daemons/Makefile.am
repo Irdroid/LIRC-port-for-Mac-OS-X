@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.17 2001/04/24 19:26:56 lirc Exp $
+## $Id: Makefile.am,v 5.18 2001/04/26 18:47:31 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -73,15 +73,15 @@ install-exec-local: mkdev
 uninstall-local: rmdev
 
 install-data-local:
-	test "$(lircd_conf)" = ""  || test -e $(sysconfdir)/lircd.conf  || ($(mkinstalldirs) $(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircd.conf)
-	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || ($(mkinstalldirs) $(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircmd_conf) $(sysconfdir)/lircmd.conf)
+	test "$(lircd_conf)" = ""  || test -e $(DESTDIR)$(sysconfdir)/lircd.conf  || ($(mkinstalldirs) $(DESTDIR)$(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(DESTDIR)$(sysconfdir)/lircd.conf)
+	test "$(lircmd_conf)" = "" || test -e $(DESTDIR)$(sysconfdir)/lircmd.conf || ($(mkinstalldirs) $(DESTDIR)$(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircmd_conf) $(DESTDIR)$(sysconfdir)/lircmd.conf)
 
 mkdev:
-	test -e @devdir@/lircd || @mknod@ @devdir@/lircd p
-	test -e @devdir@/lircm || @mknod@ @devdir@/lircm p
+	test -e $(DESTDIR)$(devdir)/lircd || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lircd p)
+	test -e $(DESTDIR)$(devdir)/lircm || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lircm p)
 
 rmdev:
-	$(RM) @devdir@/lircd
-	$(RM) @devdir@/lircm
+	-$(RM) $(DESTDIR)$(devdir)/lircd
+	-$(RM) $(DESTDIR)$(devdir)/lircm
 
 CLEANFILES = *~

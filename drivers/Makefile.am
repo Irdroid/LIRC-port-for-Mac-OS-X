@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.13 2000/12/08 23:36:30 columbus Exp $
+## $Id: Makefile.am,v 5.14 2001/04/26 18:47:31 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -16,13 +16,13 @@ install-exec-local: mklink mkdev
 uninstall-local: rmlink mkdev
 
 mklink:
-	test "@irtty@" = "" || test -L @devdir@/lirc || (cd `dirname @irtty@` && $(LN_S) `basename @irtty@` lirc)
+	test "@irtty@" = "" || test -L $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && cd `dirname $(DESTDIR)@irtty@` && $(LN_S) `basename @irtty@` lirc)
 
 rmlink:
-	test "@irtty@" = "" || $(RM) @devdir@/lirc
+	-test "@irtty@" = "" || $(RM) $(DESTDIR)$(devdir)/lirc
 
 mkdev:
-	test "@driver@" != "mediafocusI" || test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
+	test "@driver@" != "mediafocusI" || test -c $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
 
 rmdev:
-	test "@driver@" != "mediafocusI" || test -c @devdir@/lirc && $(RM) @devdir@/lirc
+	-test "@driver@" != "mediafocusI" || test -c $(DESTDIR)$(devdir)/lirc || $(RM) $(DESTDIR)$(devdir)/lirc

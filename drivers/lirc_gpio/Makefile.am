@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.5 2001/01/05 20:25:53 columbus Exp $
+## $Id: Makefile.am,v 1.6 2001/04/26 18:47:31 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -25,18 +25,6 @@ $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
   endif
 # the spaces above are necessary because automake otherwise will complain
 # and even worse, it will delete the line
-
-install-exec-local: mkdev
-uninstall-local: rmdev
-
-mkdev:
-	test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
-
-rmdev:
-	test -c @devdir@/lirc && $(RM) @devdir@/lirc
-
-install-data-local:
-	-@depmod@ -a
 
 CLEANFILES = $(module_DATA) .$(module_DATA).flags *~
 

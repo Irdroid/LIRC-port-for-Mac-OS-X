@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.7 2001/01/05 20:25:53 columbus Exp $
+## $Id: Makefile.am,v 5.8 2001/04/26 18:47:31 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -30,10 +30,10 @@ install-exec-local: mkdev
 uninstall-local: rmdev
 
 mkdev:
-	test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
+	test -c $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
 
 rmdev:
-	test -c @devdir@/lirc && $(RM) @devdir@/lirc
+	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
 
 install-data-local:
 	-@depmod@ -a
