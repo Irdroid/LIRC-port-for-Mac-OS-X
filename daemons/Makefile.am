@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.13 2000/07/08 17:33:34 columbus Exp $
+## $Id: Makefile.am,v 5.14 2000/07/13 19:01:41 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -20,7 +20,6 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
-			hw_irreal.c hw_irreal.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -41,13 +40,12 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
-			hw_irreal.c hw_irreal.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
 
 ## maintainer mode stuff
-EXTRA_PROGRAMS = lircd.simsend lircd.simrec
+EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke
 noinst_PROGRAMS = @maintmode_daemons_extra@
 lircd_simsend_SOURCES = 
 lircd_simsend_LDADD = lircd_simsend.o hw_default_simsend.o config_file.o \
@@ -64,6 +62,8 @@ lircd_simrec.o: lircd.c lircd.h ir_remote.h config_file.h hardware.h  $(top_srcd
 hw_default_simrec.o: hw_default.c hw_default.h hardware.h ir_remote.h lircd.h  $(top_srcdir)/config.h
 	$(COMPILE) -DSIM_REC -c hw_default.c -o hw_default_simrec.o
 
+slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
+		dump_config.c dump_config.h
 
 install-exec-local: mkdev
 uninstall-local: rmdev

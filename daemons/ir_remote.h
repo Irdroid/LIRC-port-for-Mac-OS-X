@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.12 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.13 2000/07/13 19:01:41 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -107,6 +107,8 @@ struct ir_remote
 	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
 	int toggle_bit;             /* 1..bits */
+	int min_repeat;             /* code is repeated at least x times
+				       code sent once -> min_repeat=0 */
 	unsigned int freq;          /* modulation frequency */
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	
@@ -159,6 +161,12 @@ static inline int is_raw(struct ir_remote *remote)
 static inline int is_biphase(struct ir_remote *remote)
 {
 	if(remote->flags&RC5 || remote->flags&RC6) return(1);
+	else return(0);
+}
+
+static inline int is_rc5(struct ir_remote *remote)
+{
+	if(remote->flags&RC5) return(1);
 	else return(0);
 }
 

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.5 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.6 2000/07/13 19:01:41 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -155,6 +155,10 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 			fprintf(f, "  repeat_gap   %lu\n",
 				(unsigned long) rem->repeat_gap);
 		}
+		if(rem->min_repeat>0)
+		{
+			fprintf(f, "  min_repeat      %d\n",rem->min_repeat);
+		}
 		fprintf(f, "  toggle_bit      %d\n\n",rem->toggle_bit);
 	}
 	else
@@ -167,7 +171,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  repeat %5lu %5lu\n",
 			(unsigned long) rem->prepeat,
 			(unsigned long) rem->srepeat);
-		fprintf(f, "  gap    %lu\n\n",(unsigned long) rem->gap);
+		fprintf(f, "  gap    %lu\n",(unsigned long) rem->gap);
 	}
 	if(rem->freq!=0)
 	{
@@ -177,6 +181,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 	{
 		fprintf(f, "  duty_cycle   %u\n",rem->duty_cycle);
 	}
+	fprintf(f,"\n");
 }
 
 void fprint_remote_foot(FILE *f, struct ir_remote *rem)

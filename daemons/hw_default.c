@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.15 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.16 2000/07/13 19:01:41 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -188,21 +188,21 @@ int default_init()
 		if(!(LIRC_CAN_SEND(hw.features) || 
 		     LIRC_CAN_REC(hw.features)))
 		{
-			logprintf(1,"driver supports neither "
+			LOGPRINTF(1,"driver supports neither "
 				  "sending nor receiving of IR signals");
 		}
 		if(LIRC_CAN_SEND(hw.features) && LIRC_CAN_REC(hw.features))
 		{
-			logprintf(1,"driver supports both sending and "
+			LOGPRINTF(1,"driver supports both sending and "
 				  "receiving");
 		}
 		else if(LIRC_CAN_SEND(hw.features))
 		{
-			logprintf(1,"driver supports sending");
+			LOGPRINTF(1,"driver supports sending");
 		}
 		else if(LIRC_CAN_REC(hw.features))
 		{
-			logprintf(1,"driver supports receiving");
+			LOGPRINTF(1,"driver supports receiving");
 		}
 	}
 #       endif
