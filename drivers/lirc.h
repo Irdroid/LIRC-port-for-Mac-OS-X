@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.4 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: lirc.h,v 5.5 2001/12/08 15:07:03 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -90,6 +90,11 @@ typedef int lirc_t;
 #define LIRC_SET_REC_CARRIER           _IOW('i', 0x00000014, __u32)
 #define LIRC_SET_SEND_DUTY_CYCLE       _IOW('i', 0x00000015, __u32)
 #define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, __u32)
+
+/* to set a range use
+   LIRC_SET_REC_DUTY_CYCLE_RANGE/LIRC_SET_REC_CARRIER_RANGE with the
+   lower bound first and later
+   LIRC_SET_REC_DUTY_CYCLE/LIRC_SET_REC_CARRIER with the upper bound */
 
 #define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, __u32)
 #define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, __u32)

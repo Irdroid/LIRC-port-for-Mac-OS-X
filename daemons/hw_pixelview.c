@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.13 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: hw_pixelview.c,v 5.14 2001/12/08 15:07:03 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -46,6 +46,7 @@ struct hardware hw_pixelview=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	30,                       /* code_length */
 	pixelview_init,           /* init_func */
+	NULL,                     /* config_func */
 	pixelview_deinit,         /* deinit_func */
 	NULL,                     /* send_func */
 	pixelview_rec,            /* rec_func */

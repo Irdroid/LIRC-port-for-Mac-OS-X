@@ -50,6 +50,7 @@ struct hardware hw_silitek=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	24,                       /* code_length */
 	silitek_init,             /* init_func */
+	NULL,                     /* config_func */
 	silitek_deinit,           /* deinit_func */
 	NULL,                     /* send_func */
 	silitek_rec,              /* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.18 2001/08/25 16:17:44 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.19 2001/12/08 15:07:03 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -71,6 +71,8 @@ struct ir_ncode {
 
 /* stop repeating after 600 signals (approx. 1 minute) */
 #define REPEAT_MAX 600
+
+#define DEFAULT_FREQ 38000
 
 struct ir_remote 
 {
@@ -287,6 +289,8 @@ static inline int map_code(struct ir_remote *remote,
 	return(1);
 }
 
+void get_frequency_range(struct ir_remote *remotes,
+			 unsigned int *min_freq,unsigned int *max_freq);
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,

@@ -65,6 +65,7 @@ struct hardware hw_pinsys=
 	8,                        /* code_length */
 #endif
 	pinsys_init,              /* init_func */
+	NULL,                     /* config_func */
 	pinsys_deinit,            /* deinit_func */
 	NULL,                     /* send_func */
 	pinsys_rec,               /* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.35 2001/11/24 09:45:08 ranty Exp $      */
+/*      $Id: lircd.c,v 5.36 2001/12/08 15:07:03 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -394,6 +394,7 @@ void config(void)
 		   as they could still be in use */
 		free_remotes=remotes;
 		remotes=config_remotes;
+		if(hw.config_func) (void) hw.config_func(remotes);
 	}
 }
 
@@ -1605,6 +1606,13 @@ int waitfordata(unsigned long maxusec)
 			{
 				ret=select(maxfd+1,&fds,NULL,NULL,NULL);
 			}
+			if(ret==-1 && errno!=EINTR)
+			{
+				logprintf(LOG_ERR,"select() failed");
+				logperror(LOG_ERR,NULL);
+				raise(SIGTERM);
+				continue;
+			}
 			gettimeofday(&now,NULL);
 			if(free_remotes!=NULL)
 			{
@@ -1632,12 +1640,6 @@ int waitfordata(unsigned long maxusec)
 			}
 		}
 		while(ret==-1 && errno==EINTR);
-		if(ret==-1)
-		{
-			logprintf(LOG_ERR,"select() failed");
-			logperror(LOG_ERR,NULL);
-			continue;
-		}
 		
 		for(i=0;i<clin;i++)
 		{

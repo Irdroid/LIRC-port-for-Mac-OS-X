@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.4 2001/06/11 08:29:38 ranty Exp $   */
+/*      $Id: hw_caraca.c,v 1.5 2001/12/08 15:07:03 lirc Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -52,6 +52,7 @@ struct hardware hw_caraca=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	16,                       /* code_length */
 	caraca_init,              /* init_func */
+	NULL,                     /* config_func */
 	caraca_deinit,            /* deinit_func */
 	NULL,                     /* send_func */
 	caraca_rec,               /* rec_func */

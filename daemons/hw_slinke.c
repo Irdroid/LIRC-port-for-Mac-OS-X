@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.6 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: hw_slinke.c,v 5.7 2001/12/08 15:07:03 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -98,6 +98,7 @@ struct hardware hw_slinke = {
     LIRC_MODE_MODE2,    /* rec_mode */
     0,                  /* code_length */
     slinke_init,        /* init_func */
+    NULL,               /* config_func */
     slinke_deinit,      /* deinit_func */
     NULL,               /* send_func */
     slinke_rec,         /* rec_func */

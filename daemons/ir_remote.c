@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.17 2001/04/24 19:42:23 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.18 2001/12/08 15:07:03 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -35,6 +35,41 @@ struct ir_remote *repeat_remote=NULL;
 struct ir_ncode *repeat_code;
 
 extern struct hardware hw;
+
+void get_frequency_range(struct ir_remote *remotes,
+			 unsigned int *min_freq,unsigned int *max_freq)
+{
+	struct ir_remote *scan;
+	
+	/* use remotes carefully, it may be changed on SIGHUP */
+	scan=remotes;
+	if(scan==NULL)
+	{
+		*min_freq=DEFAULT_FREQ;
+		*max_freq=DEFAULT_FREQ;
+	}
+	else
+	{
+		*min_freq=scan->freq;
+		*max_freq=scan->freq;
+		scan=scan->next;
+	}
+	while(scan)
+	{
+		if(scan->freq!=0)
+		{
+			if(scan->freq>*max_freq)
+			{
+				*max_freq=scan->freq;
+			}
+			else if(scan->freq<*min_freq)
+			{
+				*min_freq=scan->freq;
+			}
+		}
+		scan=scan->next;
+	}
+}
 
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name)
 {
