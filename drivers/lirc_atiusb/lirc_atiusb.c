@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.13 2003/11/17 16:58:15 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.14 2004/01/18 02:02:21 pmiller9 Exp $
  */
 
 /*
@@ -300,6 +300,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	int pipe, minor, devnum, maxp, len, buf_len, bytes_in_key;
 	unsigned long features;
 	char buf[63], name[128]="";
+	int mem_failure = 0;
 
 	dprintk(DRIVER_NAME ": usb probe called\n");
 
@@ -330,52 +331,51 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
 	buf_len = len - (len % bytes_in_key);
 
+	/* allocate memory */
+	mem_failure = 0;
 	if (!(ir = kmalloc(sizeof(struct irctl), GFP_KERNEL))) {
-		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
-		return NULL;
+		mem_failure = 1;
+	} else if (!(plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL))) {
+		mem_failure = 2;
+	} else if (!(rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL))) {
+		mem_failure = 3;
+	} else if (lirc_buffer_init(rbuf, bytes_in_key, buf_len/bytes_in_key)) {
+		mem_failure = 4;
+	} else {
+
+		memset(ir, 0, sizeof(struct irctl));
+		memset(plugin, 0, sizeof(struct lirc_plugin));
+
+		strcpy(plugin->name, DRIVER_NAME " ");
+		plugin->minor = -1;
+		plugin->code_length = bytes_in_key*8;
+		plugin->features = features;
+		plugin->data = ir;
+		plugin->rbuf = rbuf;
+		plugin->set_use_inc = &set_use_inc;
+		plugin->set_use_dec = &set_use_dec;
+
+		ir->connected = 0;
+		init_MUTEX(&ir->lock);
+		init_waitqueue_head(&ir->wait_out);
+
+		if ((minor = lirc_register_plugin(plugin)) < 0) {
+			mem_failure = 5;
+		}
 	}
-	memset(ir, 0, sizeof(struct irctl));
 
-	if (!(plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL))) {
-		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
-		kfree(ir);
-		return NULL;
-	}
-	memset(plugin, 0, sizeof(struct lirc_plugin));
-
-	if (!(rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL))) {
-		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
-		kfree(ir);
-		kfree(plugin);
-		return NULL;
-	}
-
-	if (lirc_buffer_init(rbuf, bytes_in_key, buf_len/bytes_in_key)) {
-		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
-		kfree(ir);
-		kfree(plugin);
-		kfree(rbuf);
-		return NULL;
-	}
-
-	strcpy(plugin->name, DRIVER_NAME " ");
-	plugin->minor = -1;
-	plugin->code_length = bytes_in_key*8;
-	plugin->features = features;
-	plugin->data = ir;
-	plugin->rbuf = rbuf;
-	plugin->set_use_inc = &set_use_inc;
-	plugin->set_use_dec = &set_use_dec;
-
-	ir->connected = 0;
-	init_MUTEX(&ir->lock);
-	init_waitqueue_head(&ir->wait_out);
-
-	if ((minor = lirc_register_plugin(plugin)) < 0) {
-		kfree(ir);
-		kfree(plugin);
+	/* free allocated memory incase of failure */
+	switch (mem_failure) {
+	case 5:
 		lirc_buffer_free(rbuf);
+	case 4:
 		kfree(rbuf);
+	case 3:
+		kfree(plugin);
+	case 2:
+		kfree(ir);
+	case 1:
+		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
 		return NULL;
 	}
 
