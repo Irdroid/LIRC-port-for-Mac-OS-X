@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.12 2000/07/21 20:30:28 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.13 2000/07/27 19:53:44 columbus Exp $
  *
  */
 
@@ -23,8 +23,8 @@
 
 #include "../lirc_dev/lirc_dev.h"
 #include "../drivers/char/bttv.h"
-#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,32)
-#error "!!! Sorry, this driver needs bttv version 0.7.32 or higher   !!!"
+#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,37)
+#error "!!! Sorry, this driver needs bttv version 0.7.37 or higher   !!!"
 #error "!!! If you are using the bttv package, copy it to the kernel !!!"
 #endif
 
@@ -67,10 +67,12 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0},
 	/* CPH031 and CPH033 cards (?) */
+	/* MIRO was just a work-around */
 	{BTTV_MIRO,          0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+	{BTTV_DYNALINK,      0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	/* just a guess */
-	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 50, 32},
- 	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 50, 32}
+	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
+ 	{BTTV_MAGICTVIEW063, 0x00001f00,          0, 0x0004000,          0,   0, 20, 32}
 };
 
 static unsigned char code_length = 0;
@@ -175,14 +177,15 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_AVERMEDIA98:
 		break;
         case BTTV_MAGICTVIEW061:
-        case BTTV_MAGICTVIEW063:
 		codes[0]=(codes[0]&0x01)
 			|(codes[0]&0x02<<1)
 			|(codes[0]&0x04<<2)
 			|(codes[0]&0x08>>2)
 			|(codes[0]&0x10>>1);
 		/* FALLTHROUGH */
+        case BTTV_MAGICTVIEW063:
 	case BTTV_MIRO:
+	case BTTV_DYNALINK:
 		codes[2]=reverse(codes[0],8);
 		codes[3]=(~codes[2])&0xff;
 		codes[0]=0x61;
