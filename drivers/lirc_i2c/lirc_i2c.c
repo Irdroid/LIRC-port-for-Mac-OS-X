@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.21 2004/02/29 11:53:38 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.22 2004/03/02 19:34:21 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -156,6 +156,7 @@ static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 	struct IR *ir = data;
 	unsigned char keybuf[3];
 	__u16 code;
+	unsigned char codes[2];
 
 	/* poll IR chip */
 	if (3 == i2c_master_recv(&ir->c,keybuf,3)) {
@@ -175,9 +176,12 @@ static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 	
 	/* look what we have */
 	code = (((__u16)ir->b[0]&0x7f)<<6) | (ir->b[1]>>2);
+	
+	codes[0] = (code >> 8) & 0xff;
+	codes[1] = code & 0xff;
 
 	/* return it */
-	lirc_buffer_write_1( buf, (char*) &code );
+	lirc_buffer_write_1( buf, codes );
 	return 0;
 }
 
