@@ -8,6 +8,7 @@
 #include <linux/malloc.h>
 #include <linux/tqueue.h>
 #include <linux/poll.h>
+#include <linux/kmod.h>
 
 #include <linux/i2c.h>
 
@@ -25,51 +26,6 @@
 /* lock for SMP support */
 spinlock_t remote_lock;
 
-struct lirc_haup_i2c_info
-{
-	struct i2c_bus   *bus;     /* where is our chip */
-	int ckey;
-	int addr;
-};
-
-/* Mmmh. Why put this into a list? */
-struct lirc_haup_status {
-	unsigned short code;
-#if LINUX_VERSION_CODE < 0x020300
-	struct wait_queue *wait_poll, *wait_cleanup;
-#else
-        wait_queue_head_t wait_poll, wait_cleanup;
-#endif
-	struct lirc_haup_i2c_info *i2c_remote;
-	unsigned char last_b1;
-	unsigned int open:1;
-	unsigned int status_changed:1;
-	unsigned int attached:1;       
-};
-
-/* soft irq */
-static void         lirc_haup_do_timer(unsigned long data);
-
-/* fops hooks */
-static int          lirc_haup_open(struct inode *inode, struct file *file);
-static int          lirc_haup_close(struct inode *inode, struct file *file);
-static ssize_t      lirc_haup_read(struct file * file, char * buffer,
-				   size_t count, loff_t *ppos);
-static ssize_t      lirc_haup_write(struct file * file, const char * buffer,
-				    size_t count, loff_t *ppos);
-static unsigned int lirc_haup_poll(struct file *file,
-				   struct poll_table_struct * wait);
-static int          lirc_haup_ioctl(struct inode *, struct file *,
-				    unsigned int cmd, unsigned long arg);
-
-/* i2c_driver hooks */
-static int          lirc_haup_attach(struct i2c_device *device);
-static int          lirc_haup_detach(struct i2c_device *device);
-static int          lirc_haup_command(struct i2c_device *device,
-				      unsigned int cmd, void *arg);
-static __u16 readKey(struct lirc_haup_status *remote);
-static char *         keyname(unsigned char v);
- 
 /* we use a timer_list instead of a tq_struct. */
 static struct timer_list lirc_haup_timer;
 
@@ -127,11 +83,18 @@ static void lirc_haup_do_timer(unsigned long data)
 
 	if (remote->attached) {
 	        spin_unlock(&remote_lock);
-		code = readKey(remote);
+		code = read_raw_keypress(remote); /* get key from the remote */
 		spin_lock(&remote_lock);
 		if( (remote->status_changed) ) {
-			remote->code           = code;
-			wake_up_interruptible(&remote->wait_poll);
+			/* if buffer is full, drop input */
+			if (((remote->tail+1)%BUFLEN)==remote->head) {
+				dprintk("Input buffer overflow\n");
+			} else {
+				/* put new code to the buffer */
+				remote->buffer[remote->tail++]=code;
+				remote->tail%=BUFLEN;
+				wake_up_interruptible(&remote->wait_poll);
+			}
 		}
 	}
 
@@ -141,7 +104,7 @@ static void lirc_haup_do_timer(unsigned long data)
 	spin_unlock(&remote_lock);
 }
 
-static __u16 readKey(struct lirc_haup_status *remote)
+static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 {
 	unsigned char b1, b2, b3;
 	__u16 repeat_bit;
@@ -276,7 +239,7 @@ static int lirc_haup_detach(struct i2c_device *device)
 	remote.i2c_remote = NULL;
 	remote.attached   = 0;
 
-	spin_lock(&remote_lock);
+	spin_unlock(&remote_lock);
 
 /*	MOD_DEC_USE_COUNT; */
 
@@ -335,6 +298,8 @@ static int lirc_haup_ioctl(struct inode *ino, struct file *fp,
 	return result;
 }
 
+/* This function is called whenever a process attempts to open the device
+ * file */
 static int lirc_haup_open(struct inode *inode, struct file *file)
 {
         spin_lock(&remote_lock);
@@ -354,7 +319,6 @@ static int lirc_haup_open(struct inode *inode, struct file *file)
 	init_waitqueue_head(&remote.wait_cleanup);
 #endif
 	remote.status_changed = 0;
-	remote.code           = 0xFF;
 
 	init_timer(&lirc_haup_timer);
 	lirc_haup_timer.function = lirc_haup_do_timer;
@@ -363,12 +327,20 @@ static int lirc_haup_open(struct inode *inode, struct file *file)
 	add_timer(&lirc_haup_timer);
 
 	spin_unlock(&remote_lock);
+
+	/* initialize input buffer pointers */
+	remote.head=remote.tail=0;
 	
+	/* Make sure that the module isn't removed while the file is open by 
+	 * incrementing the usage count (the number of opened references to the
+	 * module, if it's not zero rmmod will fail)
+	 */
 	MOD_INC_USE_COUNT;
 
 	return SUCCESS;
 }
 
+/* This function is called when a process closes the device file. */
 static int lirc_haup_close(struct inode *inode, struct file *file)
 {
 	sleep_on(&remote.wait_cleanup);
@@ -377,29 +349,49 @@ static int lirc_haup_close(struct inode *inode, struct file *file)
   
 	remote.open = 0;
 
+	/* flush the buffer */
+	remote.head=remote.tail=0;
+	
 	del_timer(&lirc_haup_timer);
 
 	spin_unlock(&remote_lock);
 	
+	/* Decrement the usage count, 
+	 * otherwise once you opened the file you'll
+	 * never get rid of the module.
+	 */
 	MOD_DEC_USE_COUNT;
 	
 	return SUCCESS;
 }
 
 static ssize_t lirc_haup_read(struct file * file, char * buffer,
-			      size_t count, loff_t *ppos)
+			      size_t length, loff_t *ppos)
 {
         unsigned char data[2];
 
 	spin_lock(&remote_lock);
 	
-	if(count != 2) {
+	if(length != 2) {
 	        spin_unlock(&remote_lock);
-		return -EINVAL; /* we are only prepared to send 2 bytes */
+		return -EIO; /* we are only prepared to send 2 bytes */
 	}
 
-	data[0]=(unsigned char) ((remote.code>>8)&0x1f);
-	data[1]=(unsigned char) (remote.code&0xff);
+	/* if input buffer is empty, wait for input */
+	if (remote.head==remote.tail) {
+		spin_unlock(remote_lock);
+		if (file->f_flags & O_NONBLOCK)
+			return -EAGAIN;
+		if (signal_pending(current))
+			return -ERESTARTSYS;
+		interruptible_sleep_on(&remote.wait_poll);
+		current->state = TASK_RUNNING;
+		spin_lock(remote_lock);
+	}
+	
+	data[0]=(unsigned char) ((remote.buffer[remote.head]>>8)&0x1f);
+	data[1]=(unsigned char) (remote.buffer[remote.head++]&0xff);
+	remote.head%=BUFLEN;
 	
 	if(copy_to_user(buffer,data,2)) {
 	        spin_unlock(&remote_lock);
@@ -408,12 +400,12 @@ static ssize_t lirc_haup_read(struct file * file, char * buffer,
 
 	spin_unlock(&remote_lock);
 	
-	return count;
+	return length;
 }
 
 
 static ssize_t lirc_haup_write(struct file * file, const char * buffer,
-			       size_t count, loff_t *ppos)
+			       size_t length, loff_t *ppos)
 {
 	return -EINVAL;
 }
@@ -432,7 +424,18 @@ int init_module(void)
 	int ret;
 
 	remote_lock = SPIN_LOCK_UNLOCKED;
-	
+
+	/* BTTV module is needed to access the on-board I2C bus */
+
+	ret = request_module("bttv");
+
+	if (ret <0) {
+		printk ("lirc_haup: "
+			"request for module bttv failed, "
+			"code %d\n", ret);
+		return ret;
+	}
+	     
 	ret = register_chrdev(LIRC_MAJOR, DEVICE_NAME, &lirc_haup_fops);
 
 	if (ret < 0) {
@@ -481,3 +484,11 @@ void cleanup_module(void)
 		printk("Error in i2c_unregister_driver: %d\n", ret);
 
 }
+
+/*
+ * Overrides for Emacs so that we follow Linus's tabbing style.
+ * ---------------------------------------------------------------------------
+ * Local variables:
+ * c-basic-offset: 8
+ * End:
+ */

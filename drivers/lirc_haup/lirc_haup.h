@@ -18,6 +18,8 @@
 #define POLLING    (HZ / 20)
 #define I2C_DRIVERID_REMOTE 4
 
+#define BUFLEN 256  /* read buffer length */
+
 /*
  * If this key changes, a new key was pressed.
  */
@@ -35,7 +37,8 @@
 
 /*
  * KEY SEQUENCES.
- * BYTE 2 contains the last key pressed. The mapping is
+ * Hauppauge uses these definitions internally in transmitting keypresses.
+ * BYTE 2 contains the last key pressed.
  */
 #define REMOTE_0           0x00
 #define REMOTE_1           0x04
@@ -59,6 +62,51 @@
 #define REMOTE_MINIMIZE    0x98
 #define REMOTE_FULL_SCREEN 0xb8
 
+struct lirc_haup_i2c_info
+{
+	struct i2c_bus   *bus;     /* where our chip is */
+	int ckey;
+	int addr;
+};
+
+struct lirc_haup_status {
+	unsigned short buffer[BUFLEN];  /* input buffer */
+	int head,tail;                  /* input buffer ptrs */
+#       if LINUX_VERSION_CODE < 0x020300
+	struct wait_queue *wait_poll, *wait_cleanup;
+#       else
+        wait_queue_head_t wait_poll, wait_cleanup;
+#       endif
+	struct lirc_haup_i2c_info *i2c_remote;
+	unsigned char last_b1;
+	unsigned int open:1;
+	unsigned int status_changed:1;
+	unsigned int attached:1;       
+};
+
+/* soft irq */
+static void         lirc_haup_do_timer(unsigned long data);
+
+/* fops hooks */
+static int          lirc_haup_open(struct inode *inode, struct file *file);
+static int          lirc_haup_close(struct inode *inode, struct file *file);
+static ssize_t      lirc_haup_read(struct file * file, char * buffer,
+				   size_t count, loff_t *ppos);
+static ssize_t      lirc_haup_write(struct file * file, const char * buffer,
+				    size_t count, loff_t *ppos);
+static unsigned int lirc_haup_poll(struct file *file,
+				   struct poll_table_struct * wait);
+static int          lirc_haup_ioctl(struct inode *, struct file *,
+				    unsigned int cmd, unsigned long arg);
+
+/* i2c_driver hooks */
+static int          lirc_haup_attach(struct i2c_device *device);
+static int          lirc_haup_detach(struct i2c_device *device);
+static int          lirc_haup_command(struct i2c_device *device,
+				      unsigned int cmd, void *arg);
+static __u16 read_raw_keypress(struct lirc_haup_status *remote);
+static char *         keyname(unsigned char v);
+ 
 #endif /* _LIRC_HAUP_H_ */
 
 
