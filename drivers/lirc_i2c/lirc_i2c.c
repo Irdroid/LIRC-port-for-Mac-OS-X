@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.2 2000/10/07 09:04:35 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.3 2000/10/10 17:12:50 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -213,7 +213,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.get_key=get_key_haup;
 		break;
 	default:
-		/* should'nt happen */
+		/* shouldn't happen */
 		printk("lirc_i2c: Huh? unknown i2c address (0x%02x)?\n",addr);
 		kfree(ir);
 		return -1;

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.19 2000/09/27 17:50:52 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.20 2000/10/10 17:12:50 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -231,7 +231,7 @@ int main(int argc,char **argv)
 		}
 		remove_pre_data(remotes);
 		remove_post_data(remotes);
-		get_pre_data(remotes);
+		//get_pre_data(remotes);
 		//get_post_data(remotes);
 		
 		fprint_remotes(stdout,remotes);

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.42 2000/09/30 19:32:40 columbus Exp $
+dnl $Id: configure.in,v 5.43 2000/10/10 17:12:49 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -74,7 +74,8 @@ fi
 dnl look for Linux kernel source
 
 AC_PATH_KERNEL_SOURCE
-AC_KERNEL_HEADER_DEVFS
+dnl FIXME: currently only looking for DEVFS if lirc_dev is used
+dnl AC_KERNEL_HEADER_DEVFS
 
 dnl here we see what drivers we could possibly even hope to run.
 dnl this could be _much_ more sophisticated!  especially the lirc ones.
@@ -336,6 +337,11 @@ if test "$driver" = "hauppauge" -o "$driver" = "pixelview_bt878"; then
   kernel_module=lirc_i2c
 fi
 
+dnl FIXME
+if echo "$lirc_driver"|grep lirc_dev >/dev/null; then
+  AC_KERNEL_HEADER_DEVFS
+fi
+
 dnl slightly more advanced options
 
 dnl maintainer mode options
@@ -520,6 +526,8 @@ echo
 if test "$kernel_module" = ""; then
   echo "Your hardware does not require a kernel module."
 else
-  echo "You will need the $kernel_module kernel module."
+  echo "You will have to use the $kernel_module kernel module."
 fi
+echo
+echo "Now enter 'make' and 'make install' to compile and install the package."
 echo
