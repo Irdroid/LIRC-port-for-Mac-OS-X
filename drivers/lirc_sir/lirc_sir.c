@@ -35,15 +35,11 @@
 
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= 0x020100
-#define KERNEL_2_1
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
-#define KERNEL_2_3
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
+#error "**********************************************************"
+#error " Sorry, this driver needs kernel version 2.2.18 or higher "
+#error "**********************************************************"
 #endif
-#else
-#define KERNEL_2_0
-#endif
-
 #include <linux/module.h>
 
 #ifdef HAVE_CONFIG_H
@@ -76,9 +72,7 @@
 #include <linux/wait.h>
 #include <linux/mm.h>
 #include <linux/delay.h>
-#ifdef KERNEL_2_1
 #include <linux/poll.h>
-#endif
 #include <asm/system.h>
 #include <asm/segment.h>
 #include <asm/io.h>
@@ -95,7 +89,8 @@
 #include <linux/timer.h>
 
 #include "drivers/lirc.h"
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
+#include "drivers/kcompat.h"
 
 /* SECTION: Definitions */
 
@@ -181,11 +176,7 @@ static struct timeval last_tv = {0, 0};
 static struct timeval last_intr_tv = {0, 0};
 static int last_value = 0;
 
-#ifdef KERNEL_2_3
 static DECLARE_WAIT_QUEUE_HEAD(lirc_read_queue);
-#else
-static struct wait_queue * lirc_read_queue = NULL;
-#endif
 
 static spinlock_t hardware_lock = SPIN_LOCK_UNLOCKED;
 static spinlock_t dev_lock = SPIN_LOCK_UNLOCKED;
@@ -199,14 +190,8 @@ static lirc_t tx_buf[WBUF_LEN];
 
 /* Communication with user-space */
 static int lirc_open(struct inode * inode, struct file * file);
-#ifdef KERNEL_2_1
 static int lirc_close(struct inode * inode, struct file *file);
 static unsigned int lirc_poll(struct file * file, poll_table * wait);
-#else
-static void lirc_close(struct inode * inode, struct file *file);
-static int lirc_select(struct inode * inode, struct file * file,
-		int type, select_table * wait);
-#endif
 static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 		loff_t * ppos);
 static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos);
@@ -283,19 +268,12 @@ static int lirc_open(struct inode * inode, struct file * file)
 	return 0;
 }
 
-#ifdef KERNEL_2_1
 static int lirc_close(struct inode * inode, struct file *file)
-#else
-static void lirc_close(struct inode * inode, struct file *file)
-#endif
 {
 	MOD_DEC_USE_COUNT;
-#ifdef KERNEL_2_1
 	return 0;
-#endif
 }
 
-#ifdef KERNEL_2_1
 static unsigned int lirc_poll(struct file * file, poll_table * wait)
 {
 	poll_wait(file, &lirc_read_queue, wait);
@@ -303,29 +281,13 @@ static unsigned int lirc_poll(struct file * file, poll_table * wait)
 		return POLLIN | POLLRDNORM;
 	return 0;
 }
-#else
-static int lirc_select(struct inode * inode, struct file * file,
-		int type, select_table * wait)
-{
-	if (type != SEL_IN)
-		return 0;
-	if (rx_head != rx_tail)
-		return 1;
-	select_wait(&lirc_read_queue, wait);
-	return 0;
-}
-#endif
 
 static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 		loff_t * ppos)
 {
 	int n=0;
 	int retval = 0;
-#ifdef KERNEL_2_3
 	DECLARE_WAITQUEUE(wait,current);
-#else
-	struct wait_queue wait={current,NULL};
-#endif
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
@@ -341,13 +303,8 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 			{
 				return retval;
 			}
-#ifdef KERNEL_2_1
 			copy_to_user((void *) buf+n,(void *) (rx_buf+rx_head),
 				     sizeof(lirc_t));
-#else
-			memcpy_tofs((void *) buf+n,(void *) (rx_buf+rx_head),
-				    sizeof(lirc_t));
-#endif
 			rx_head=(rx_head+1)&(RBUF_LEN-1);
 			n+=sizeof(lirc_t);
 		}
@@ -358,19 +315,11 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 				retval=-EAGAIN;
 				break;
 			}
-#                       ifdef KERNEL_2_1
 			if(signal_pending(current))
 			{
 				retval=-ERESTARTSYS;
 				break;
 			}
-#                       else
-			if(current->signal & ~current->blocked)
-			{
-				retval=-EINTR;
-				break;
-			}
-#                       endif
 			schedule();
 			current->state=TASK_INTERRUPTIBLE;
 		}
@@ -466,40 +415,17 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	case LIRC_GET_FEATURES:
 	case LIRC_GET_SEND_MODE:
 	case LIRC_GET_REC_MODE:
-#ifdef KERNEL_2_0
-		retval = verify_area(VERIFY_WRITE, (unsigned long *) arg,
-			sizeof(unsigned long));
-		if (retval)
-			break;
-#else
-		retval =
-#endif
-		put_user(value, (unsigned long *) arg);
+		retval = put_user(value, (unsigned long *) arg);
 		break;
 
 	case LIRC_SET_SEND_MODE:
 	case LIRC_SET_REC_MODE:
-#ifdef KERNEL_2_0
-		retval = verify_area(VERIFY_READ, (unsigned long *) arg,
-			sizeof(unsigned long));
-		if (retval)
-			break;
-		value = get_user((unsigned long *) arg);
-#else
 		retval = get_user(value, (unsigned long *) arg);
-#endif
 		break;
 #ifdef LIRC_ON_SA1100
 	case LIRC_SET_SEND_DUTY_CYCLE:
-#               ifdef KERNEL_2_1
 		retval=get_user(ivalue,(unsigned int *) arg);
 		if(retval) return(retval);
-#               else
-		retval=verify_area(VERIFY_READ,(unsigned int *) arg,
-				   sizeof(unsigned int));
-		if(result) return(result);
-		ivalue=get_user((unsigned int *) arg);
-#               endif
 		if(ivalue<=0 || ivalue>100) return(-EINVAL);
 		/* (ivalue/100)*(1000000/freq) */
 		duty_cycle=ivalue;
@@ -511,15 +437,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			space_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 	case LIRC_SET_SEND_CARRIER:
-#               ifdef KERNEL_2_1
 		retval=get_user(ivalue,(unsigned int *) arg);
 		if(retval) return(retval);
-#               else
-		retval=verify_area(VERIFY_READ,(unsigned int *) arg,
-				   sizeof(unsigned int));
-		if(retval) return(retval);
-		ivalue=get_user((unsigned int *) arg);
-#               endif
 		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
 		freq=ivalue;
 		pulse_width=(unsigned long) duty_cycle*10000/freq;
@@ -604,11 +523,7 @@ static struct file_operations lirc_fops =
 {
 	read:    lirc_read,
 	write:   lirc_write,
-#ifdef KERNEL_2_1
 	poll:    lirc_poll,
-#else
-	select:  lirc_select,
-#endif
 	ioctl:   lirc_ioctl,
 	open:    lirc_open,
 	release: lirc_close,
@@ -1173,13 +1088,7 @@ static void drop_port(void)
 {
 	disable_irq(irq);
 	free_irq(irq, NULL);
-#ifdef KERNEL_2_3
 	del_timer_sync(&timerlist);
-#else
-	start_bh_atomic();
-	del_timer(&timerlist);
-	end_bh_atomic();
-#endif
 #ifndef LIRC_ON_SA1100
 	release_region(io, 8);
 #endif
@@ -1335,9 +1244,7 @@ int init_lirc_sir(void)
 {
 	int retval;
 
-#ifdef KERNEL_2_3
 	init_waitqueue_head(&lirc_read_queue);
-#endif
 	retval = init_port();
 	if (retval < 0)
 		return retval;
@@ -1349,8 +1256,6 @@ int init_lirc_sir(void)
 }
 
 #ifdef MODULE
-
-#ifdef KERNEL_2_1
 
 #ifdef LIRC_SIR_TEKRAM
 MODULE_AUTHOR("Christoph Bartelmus");
@@ -1381,7 +1286,6 @@ MODULE_LICENSE("GPL");
 #endif
 
 EXPORT_NO_SYMBOLS;
-#endif
 
 int init_module(void)
 {

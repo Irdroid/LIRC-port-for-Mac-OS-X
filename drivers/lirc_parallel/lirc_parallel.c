@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.16 2002/10/08 21:59:47 ranty Exp $      */
+/*      $Id: lirc_parallel.c,v 5.17 2002/10/12 15:31:48 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -34,15 +34,13 @@
 #endif
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= 0x020100 && LINUX_VERSION_CODE < 0x020200
-#error "--- Sorry, 2.1.x kernels are not supported. ---"
-#elif LINUX_VERSION_CODE >= 0x020200
-#define KERNEL_2_2
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
+#error "**********************************************************"
+#error " Sorry, this driver needs kernel version 2.2.18 or higher "
+#error "**********************************************************"
+#endif
+
 #include <linux/config.h>
-#endif
-#if LINUX_VERSION_CODE >= 0x020400
-#define KERNEL_2_4
-#endif
 
 #ifdef CONFIG_SMP
 #error "--- Sorry, this driver is not SMP safe. ---"
@@ -64,14 +62,12 @@
 #include <asm/signal.h>
 #include <asm/irq.h>
 
-#ifdef KERNEL_2_2
 #include <asm/uaccess.h>
 #include <linux/poll.h>
 #include <linux/parport.h>
-#endif
 
 #include "drivers/lirc.h"
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
 
 #include "lirc_parallel.h"
 
@@ -94,21 +90,15 @@ unsigned int default_timer = LIRC_TIMER;
 static lirc_t wbuf[WBUF_SIZE];
 static lirc_t rbuf[RBUF_SIZE];
 
-#ifdef KERNEL_2_4
 DECLARE_WAIT_QUEUE_HEAD(lirc_wait);
-#else
-static struct wait_queue *lirc_wait=NULL;
-#endif
 
 unsigned int rptr=0,wptr=0;
 unsigned int lost_irqs=0;
 int is_open=0;
 
-#ifdef KERNEL_2_2
 struct parport *pport;
 struct pardevice *ppdevice;
 int is_claimed=0;
-#endif
 
 /***********************************************************************
  *************************   Interne Funktionen  ***********************
@@ -116,7 +106,6 @@ int is_claimed=0;
 
 unsigned int __inline__ in(int offset)
 {
-#ifdef KERNEL_2_2
 	switch(offset)
 	{
 	case LIRC_LP_BASE:
@@ -127,14 +116,10 @@ unsigned int __inline__ in(int offset)
 		return(parport_read_control(pport));
 	}
 	return(0); /* make compiler happy */
-#else
-	return(inb(io+offset));
-#endif
 }
 
 void __inline__ out(int offset, int value)
 {
-#ifdef KERNEL_2_2
 	switch(offset)
 	{
 	case LIRC_LP_BASE:
@@ -148,9 +133,6 @@ void __inline__ out(int offset, int value)
 		       LIRC_DRIVER_NAME);
 		break;
 	}
-#else
-	outb(value,io+offset);
-#endif
 }
 
 unsigned int __inline__ lirc_get_timer(void)
@@ -232,7 +214,6 @@ unsigned int init_lirc_timer(void)
 	}
 }
 
-#ifdef KERNEL_2_2
 int lirc_claim(void)
 {
 	if(parport_claim(ppdevice)!=0)
@@ -252,7 +233,6 @@ int lirc_claim(void)
 	is_claimed=1;
 	return(1);
 }
-#endif
 
 /***********************************************************************
  *************************   interrupt handler  ************************
@@ -286,12 +266,10 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
 	if(!MOD_IN_USE)
 		return;
 
-#ifdef KERNEL_2_2
 	if(!is_claimed)
 	{
 		return;
 	}
-#endif
 
 	/* disable interrupt */
 	/*
@@ -386,32 +364,16 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
  **************************   file_operations   ************************
  ***********************************************************************/
 
-#ifdef KERNEL_2_2
 static loff_t lirc_lseek(struct file *filep,loff_t offset,int orig)
 {
 	return(-ESPIPE);
 }
-#else
-static int lirc_lseek(struct inode *inode,struct file *filep,off_t offset,int orig)
-{
-	return(-ESPIPE);
-}
-#endif
 
-#ifdef KERNEL_2_2
 static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 {
-#else
-static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
-{
-#endif
 	int result;
 	int count=0;
-#ifdef KERNEL_2_4
 	DECLARE_WAITQUEUE(wait, current);
-#else
-	struct wait_queue wait={current,NULL};
-#endif
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
@@ -424,13 +386,8 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 	{
 		if(rptr!=wptr)
 		{
-#ifdef KERNEL_2_2
 			copy_to_user(buf+count,(char *) &rbuf[rptr],
 				     sizeof(lirc_t));
-#else
-			memcpy_tofs(buf+count,(char *) &rbuf[rptr],
-				    sizeof(lirc_t));
-#endif
 			rptr=(rptr+1)&(RBUF_SIZE-1);
 			count+=sizeof(lirc_t);
 		}
@@ -441,19 +398,11 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 				result=-EAGAIN;
 				break;
 			}
-#ifdef KERNEL_2_2
 			if (signal_pending(current))
 			{
 				result=-ERESTARTSYS;
 				break;
 			}
-#else
-			if(current->signal & ~current->blocked)
-			{
-				result=-EINTR;
-				break;
-			}
-#endif
 			schedule();
 			current->state=TASK_INTERRUPTIBLE;
 		}
@@ -463,13 +412,8 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 	return(count ? count:result);
 }
 
-#ifdef KERNEL_2_2
 static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 			  loff_t *ppos)
-#else
-static int lirc_write(struct inode *node,struct file *filep,const char *buf,
-		      int n)
-#endif
 {
 	int result,count;
 	unsigned int i;
@@ -477,12 +421,10 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	unsigned long flags;
 	lirc_t counttimer;
 	
-#ifdef KERNEL_2_2
 	if(!is_claimed)
 	{
 		return(-EBUSY);
 	}
-#endif
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	result=verify_area(VERIFY_READ,buf,n);
 	if(result) return(result);
@@ -491,15 +433,7 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	
 	if(count>WBUF_SIZE || count%2==0) return(-EINVAL);
 	
-#ifdef KERNEL_2_2
 	copy_from_user(wbuf,buf,n);
-#else
-	memcpy_fromfs(wbuf,buf,n);
-
-	/*
-	  if(check_region(io,LIRC_PORT_LEN)!=0) return(-EBUSY);
-	*/
-#endif
 	
 #ifdef LIRC_TIMER
 	if(timer==0) /* try again if device is ready */
@@ -561,7 +495,6 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	return(n);
 }
 
-#ifdef KERNEL_2_2
 static unsigned int lirc_poll(struct file *file, poll_table * wait)
 {
 	poll_wait(file, &lirc_wait,wait);
@@ -569,18 +502,6 @@ static unsigned int lirc_poll(struct file *file, poll_table * wait)
 		return(POLLIN|POLLRDNORM);
 	return(0);
 }
-#else
-static int lirc_select(struct inode *node,struct file *file,int sel_type,
-		       select_table *wait)
-{
-	if(sel_type!=SEL_IN)
-		return 0;
-	if(rptr!=wptr)
-		return(1);
-	select_wait(&lirc_wait,wait);
-	return(0);
-}
-#endif
 
 static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		      unsigned long arg)
@@ -591,60 +512,25 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
-#               ifdef KERNEL_2_2
 		result=put_user(features,(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long*) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(features,(unsigned long *) arg);
-#               endif
 		break;
 	case LIRC_GET_SEND_MODE:
-#               ifdef KERNEL_2_2
 		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
-#               endif
 		break;
 	case LIRC_GET_REC_MODE:
-#               ifdef KERNEL_2_2
 		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
-#               endif
 		break;
 	case LIRC_SET_SEND_MODE:
-#               ifdef KERNEL_2_2
 		result=get_user(mode,(unsigned long *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		mode=get_user((unsigned long *) arg);
-#               endif
 		if(mode!=LIRC_MODE_PULSE) return(-EINVAL);
 		break;
 	case LIRC_SET_REC_MODE:
-#               ifdef KERNEL_2_2
 		result=get_user(mode,(unsigned long *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		mode=get_user((unsigned long *) arg);
-#               endif
 		if(mode!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
 	default:
@@ -655,36 +541,15 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 
 static int lirc_open(struct inode* node,struct file* filep)
 {
-#ifndef KERNEL_2_2
-	int result;
-#endif
-	
 	if(MOD_IN_USE)
 	{
 		return(-EBUSY);
 	}
-#ifdef KERNEL_2_2
 	if(!lirc_claim())
 	{
 		return(-EBUSY);
 	}
 	pport->ops->enable_irq(pport);
-#else
-	result=request_irq(irq,irq_handler,SA_INTERRUPT,
-			   LIRC_DRIVER_NAME,NULL);
-	switch(result)
-	{
-	case -EBUSY:
-		printk(KERN_NOTICE "%s: IRQ %u busy\n",LIRC_DRIVER_NAME,irq);
-		return(-EBUSY);
-	case -EINVAL:
-		printk(KERN_NOTICE "%s: bad irq number or handler\n",
-		       LIRC_DRIVER_NAME);
-		return(-EINVAL);
-	}
-	/* enable interrupt */
-	out(LIRC_PORT_IRQ,LP_PINITP|LP_PSELECP|LP_PINTEN);
-#endif
 
 	/* init read ptr */
 	rptr=wptr=0;
@@ -695,48 +560,24 @@ static int lirc_open(struct inode* node,struct file* filep)
 	return(0);
 }
 
-#ifdef KERNEL_2_2
 static int lirc_close(struct inode* node,struct file* filep)
-#else
-static void lirc_close(struct inode* node,struct file* filep)
-#endif
 {
-#ifdef KERNEL_2_2
 	if(is_claimed)
 	{
 		is_claimed=0;
 		parport_release(ppdevice);
 	}
-#else
-	free_irq(irq,NULL);
-	
-	/* disable interrupt */
-	/*
-	  FIXME
-	  out(LIRC_PORT_IRQ,LP_PINITP|LP_PSELECP);
-	*/
-#endif
 	is_open=0;
 	MOD_DEC_USE_COUNT;
-#ifdef KERNEL_2_2
 	return(0);
-#endif
 }
 
 static struct file_operations lirc_fops = 
 {
-#ifdef KERNEL_2_2
 	llseek:  lirc_lseek,
-#else
-	lseek:   lirc_lseek,
-#endif
 	read:    lirc_read,
 	write:   lirc_write,
-#ifdef KERNEL_2_2
 	poll:    lirc_poll,
-#else
-	select:  lirc_select,
-#endif
 	ioctl:   lirc_ioctl,
 	open:    lirc_open,
 	release: lirc_close
@@ -770,7 +611,6 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
-#if LINUX_VERSION_CODE >= 0x020200
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
 #ifdef MODULE_LICENSE
@@ -784,9 +624,7 @@ MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
 
 EXPORT_NO_SYMBOLS;
-#endif
 
-#ifdef KERNEL_2_2
 int pf(void *handle);
 void kf(void *handle);
 
@@ -833,7 +671,6 @@ void kf(void *handle)
 	printk(KERN_INFO "%s: reclaimed port\n",LIRC_DRIVER_NAME);
 	*/
 }
-#endif
 
 /***********************************************************************
  ******************   init_module()/cleanup_module()  ******************
@@ -841,7 +678,6 @@ void kf(void *handle)
 
 int init_module(void)
 {
-#ifdef KERNEL_2_2
 	pport=parport_enumerate();
 	while(pport!=NULL)
 	{
@@ -869,14 +705,6 @@ int init_module(void)
 		goto skip_init;
 	is_claimed=1;
 	out(LIRC_LP_CONTROL,LP_PSELECP|LP_PINITP);
-#else
-	if(check_region(io,LIRC_PORT_LEN)!=0)
-	{
-		printk(KERN_NOTICE "%s: port already in use\n",LIRC_DRIVER_NAME);
-		return(-EBUSY);
-	}
-	request_region(io,LIRC_PORT_LEN,LIRC_DRIVER_NAME);
-#endif
 
 #ifdef LIRC_TIMER
 #       ifdef DEBUG
@@ -888,13 +716,9 @@ int init_module(void)
 #       if 0 	/* continue even if device is offline */
 	if(timer==0) 
 	{
-#       ifdef KERNEL_2_2
 		is_claimed=0;
 		parport_release(pport);
 		parport_unregister_device(ppdevice);
-#       else
-		release_region(io,LIRC_PORT_LEN);
-#       endif
 		return(-EIO);
 	}
 	
@@ -904,19 +728,13 @@ int init_module(void)
 #       endif
 #endif 
 
-#ifdef KERNEL_2_2
 	is_claimed=0;
 	parport_release(ppdevice);
  skip_init:
-#endif
 	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0)
 	{
 		printk(KERN_NOTICE "%s: register_chrdev() failed\n",LIRC_DRIVER_NAME);
-#ifdef KERNEL_2_2
 		parport_unregister_device(ppdevice);
-#else
-		release_region(io,LIRC_PORT_LEN);
-#endif
 		return(-EIO);
 	}
 	printk(KERN_INFO "%s: installed using port 0x%04x irq %d\n",LIRC_DRIVER_NAME,io,irq);
@@ -926,11 +744,7 @@ int init_module(void)
 void cleanup_module(void)
 {
 	if(MOD_IN_USE) return;
-#ifdef KERNEL_2_2
 	parport_unregister_device(ppdevice);
-#else
-	release_region(io,LIRC_PORT_LEN);
-#endif
 	lirc_unregister_plugin(plugin.minor);
 }
 #endif

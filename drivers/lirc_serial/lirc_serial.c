@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.40 2002/10/08 21:59:50 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.41 2002/10/12 15:31:48 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -55,15 +55,10 @@
 #endif
  
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= 0x020100
-#define KERNEL_2_1
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
-#define KERNEL_2_3
-#endif
-#endif
-
-#if LINUX_VERSION_CODE >= 0x020212
-#define LIRC_LOOPS_PER_JIFFY
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
+#error "**********************************************************"
+#error " Sorry, this driver needs kernel version 2.2.18 or higher "
+#error "**********************************************************"
 #endif
 
 #include <linux/config.h>
@@ -93,9 +88,7 @@
 #include <linux/wait.h>
 #include <linux/mm.h>
 #include <linux/delay.h>
-#ifdef KERNEL_2_1
 #include <linux/poll.h>
-#endif
 
 #include <asm/system.h>
 #include <asm/segment.h>
@@ -104,13 +97,13 @@
 #include <asm/fcntl.h>
 
 #include "drivers/lirc.h"
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
 
 #if defined(LIRC_SERIAL_SOFTCARRIER) && !defined(LIRC_SERIAL_TRANSMITTER)
 #warning "Software carrier only affects transmitting"
 #endif
 
-#if defined(rdtsc) && defined(KERNEL_2_1)
+#if defined(rdtsc)
 
 #define USE_RDTSC
 #warning "Note: using rdtsc instruction"
@@ -244,15 +237,9 @@ struct lirc_serial hardware[]=
 
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 
-#ifdef KERNEL_2_3
 static DECLARE_WAIT_QUEUE_HEAD(lirc_wait_in);
-#else
-static struct wait_queue *lirc_wait_in = NULL;
-#endif
 
-#ifdef KERNEL_2_1
 static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
-#endif
 
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
@@ -379,12 +366,8 @@ void calc_pulse_lengths_in_clocks(void)
 {
 	unsigned long long loops_per_sec,work;
 
-#ifdef LIRC_LOOPS_PER_JIFFY
 	loops_per_sec=current_cpu_data.loops_per_jiffy;
 	loops_per_sec*=HZ;
-#else
-	loops_per_sec=current_cpu_data.loops_per_sec;
-#endif
 	
 	/* How many clocks in a microsecond?, avoiding long long divide */
 	work=loops_per_sec;
@@ -401,19 +384,11 @@ void calc_pulse_lengths_in_clocks(void)
 	pulse_width = period*duty_cycle/100;
 	space_width = period - pulse_width;
 #ifdef DEBUG
-#ifdef LIRC_LOOPS_PER_JIFFY
 	printk(KERN_INFO LIRC_DRIVER_NAME
 	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
 	       "clk/jiffy=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
 	       freq, duty_cycle, current_cpu_data.loops_per_jiffy,
 	       pulse_width, space_width, conv_us_to_clocks);
-#else
-	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
-	       "clk/sec=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
-	       freq, duty_cycle, current_cpu_data.loops_per_sec,
-	       pulse_width, space_width, conv_us_to_clocks);
-#endif
 #endif
 }
 
@@ -724,19 +699,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 	} while(!(sinp(UART_IIR) & UART_IIR_NO_INT)); /* still pending ? */
 }
 
-#ifdef KERNEL_2_3
 static DECLARE_WAIT_QUEUE_HEAD(power_supply_queue);
-#else
-static struct wait_queue *power_supply_queue = NULL;
-#endif
-#ifndef KERNEL_2_1
-static struct timer_list power_supply_timer;
-
-static void power_supply_up(unsigned long ignored)
-{
-        wake_up(&power_supply_queue);
-}
-#endif
 
 static int init_port(void)
 {
@@ -822,17 +785,7 @@ static int init_port(void)
 	{
 		/* wait 1 sec for the power supply */
 		
-#               ifdef KERNEL_2_1
 		sleep_on_timeout(&power_supply_queue,HZ);
-#               else
-		init_timer(&power_supply_timer);
-		power_supply_timer.expires=jiffies+HZ;
-		power_supply_timer.data=(unsigned long) current;
-		power_supply_timer.function=power_supply_up;
-		add_timer(&power_supply_timer);
-		sleep_on(&power_supply_queue);
-		del_timer(&power_supply_timer);
-#               endif
 		
 		sense=(sinp(UART_MSR) & hardware[type].signal_pin) ? 1:0;
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
@@ -852,14 +805,10 @@ static int lirc_open(struct inode *ino, struct file *filep)
 	int result;
 	unsigned long flags;
 	
-#       ifdef KERNEL_2_1
 	spin_lock(&lirc_lock);
-#       endif
 	if(MOD_IN_USE)
 	{
-#               ifdef KERNEL_2_1
 		spin_unlock(&lirc_lock);
-#               endif
 		return -EBUSY;
 	}
 	
@@ -871,16 +820,12 @@ static int lirc_open(struct inode *ino, struct file *filep)
 	{
 	case -EBUSY:
 		printk(KERN_ERR LIRC_DRIVER_NAME ": IRQ %d busy\n", irq);
-#               ifdef KERNEL_2_1
 		spin_unlock(&lirc_lock);
-#               endif
 		return -EBUSY;
 	case -EINVAL:
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": Bad irq number or handler\n");
-#               ifdef KERNEL_2_1
 		spin_unlock(&lirc_lock);
-#               endif
 		return -EINVAL;
 	default:
 #               ifdef DEBUG
@@ -904,17 +849,11 @@ static int lirc_open(struct inode *ino, struct file *filep)
 	rbh = rbt = 0;
 	
 	MOD_INC_USE_COUNT;
-#       ifdef KERNEL_2_1
 	spin_unlock(&lirc_lock);
-#       endif
 	return 0;
 }
 
-#ifdef KERNEL_2_1
 static int lirc_close(struct inode *node, struct file *file)
-#else
-static void lirc_close(struct inode *node, struct file *file)
-#endif
 {	unsigned long flags;
 	
 	save_flags(flags);cli();
@@ -934,12 +873,9 @@ static void lirc_close(struct inode *node, struct file *file)
 	
 	MOD_DEC_USE_COUNT;
 	
-#       ifdef KERNEL_2_1
 	return 0;
-#       endif
 }
 
-#ifdef KERNEL_2_1
 static unsigned int lirc_poll(struct file *file, poll_table * wait)
 {
 	poll_wait(file, &lirc_wait_in, wait);
@@ -947,33 +883,12 @@ static unsigned int lirc_poll(struct file *file, poll_table * wait)
 		return POLLIN | POLLRDNORM;
 	return 0;
 }
-#else
-static int lirc_select(struct inode *node, struct file *file,
-		       int sel_type, select_table * wait)
-{
-	if (sel_type != SEL_IN)
-		return 0;
-	if (rbh != rbt)
-		return 1;
-	select_wait(&lirc_wait_in, wait);
-	return 0;
-}
-#endif
 
-#ifdef KERNEL_2_1
 static ssize_t lirc_read(struct file *file, char *buf,
 			 size_t count, loff_t * ppos)
-#else
-static int lirc_read(struct inode *node, struct file *file, char *buf,
-		     int count)
-#endif
 {
 	int n=0,retval=0;
-#ifdef KERNEL_2_3
 	DECLARE_WAITQUEUE(wait,current);
-#else
-	struct wait_queue wait={current,NULL};
-#endif
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
@@ -982,13 +897,8 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 	while (n < count)
 	{
 		if (rbt != rbh) {
-#                       ifdef KERNEL_2_1
 			copy_to_user((void *) buf+n,
 				     (void *) &rbuf[rbh],sizeof(lirc_t));
-#                       else
-			memcpy_tofs((void *) buf+n,
-				    (void *) &rbuf[rbh],sizeof(lirc_t));
-#                       endif
 			rbh = (rbh + 1) & (RBUF_LEN - 1);
 			n+=sizeof(lirc_t);
 		} else {
@@ -996,17 +906,10 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 				retval = -EAGAIN;
 				break;
 			}
-#                       ifdef KERNEL_2_1
 			if (signal_pending(current)) {
 				retval = -ERESTARTSYS;
 				break;
 			}
-#                       else
-			if (current->signal & ~current->blocked) {
-				retval = -EINTR;
-				break;
-			}
-#                       endif
 			schedule();
 			current->state=TASK_INTERRUPTIBLE;
 		}
@@ -1016,13 +919,8 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 	return (n ? n : retval);
 }
 
-#ifdef KERNEL_2_1
 static ssize_t lirc_write(struct file *file, const char *buf,
 			 size_t n, loff_t * ppos)
-#else
-static int lirc_write(struct inode *node, struct file *file, const char *buf,
-                     int n)
-#endif
 {
 	int retval,i,count;
 	unsigned long flags;
@@ -1038,11 +936,7 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 	if(retval) return(retval);
 	count=n/sizeof(lirc_t);
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
-#       ifdef KERNEL_2_1
 	copy_from_user(wbuf,buf,n);
-#       else
-	memcpy_fromfs(wbuf,buf,n);
-#       endif
 	save_flags(flags);cli();
 	if(hardware[type].type==LIRC_IRDEO)
 	{
@@ -1069,16 +963,9 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
-#               ifdef KERNEL_2_1
 		result=put_user(hardware[type].features,
 				(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long*) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(hardware[type].features,(unsigned long *) arg);
-#               endif
 		break;
 		
 	case LIRC_GET_SEND_MODE:
@@ -1087,19 +974,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=put_user(LIRC_SEND2MODE
 				(hardware[type].features&LIRC_CAN_SEND_MASK),
 				(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(LIRC_SEND2MODE
-			 (hardware[type].features&LIRC_CAN_SEND_MASK),
-			 (unsigned long *) arg);
-#               endif
 		break;
 		
 	case LIRC_GET_REC_MODE:
@@ -1108,19 +986,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=put_user(LIRC_REC2MODE
 				(hardware[type].features&LIRC_CAN_REC_MASK),
 				(unsigned long *) arg);
 		if(result) return(result); 
-#               else
-		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		put_user(LIRC_REC2MODE
-			 (hardware[type].features&LIRC_CAN_REC_MASK),
-			 (unsigned long *) arg);
-#               endif
 		break;
 		
 	case LIRC_SET_SEND_MODE:
@@ -1129,15 +998,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		value=get_user((unsigned long *) arg);
-#               endif
 		/* only LIRC_MODE_PULSE supported */
 		if(value!=LIRC_MODE_PULSE) return(-ENOSYS);
 		break;
@@ -1148,15 +1010,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
-		if(result) return(result);
-		value=get_user((unsigned long *) arg);
-#               endif
 		/* only LIRC_MODE_MODE2 supported */
 		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
@@ -1167,15 +1022,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned int *) arg,
-				   sizeof(unsigned int));
-		if(result) return(result);
-		ivalue=get_user((unsigned int *) arg);
-#               endif
 		if(ivalue<=0 || ivalue>100) return(-EINVAL);
 #               ifdef USE_RDTSC
 		duty_cycle=ivalue;
@@ -1204,15 +1052,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 			return(-ENOIOCTLCMD);
 		}
 		
-#               ifdef KERNEL_2_1
 		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
-#               else
-		result=verify_area(VERIFY_READ,(unsigned int *) arg,
-				   sizeof(unsigned int));
-		if(result) return(result);
-		ivalue=get_user((unsigned int *) arg);
-#               endif
 		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
 #               ifdef USE_RDTSC
 		freq=ivalue;
@@ -1245,11 +1086,7 @@ static struct file_operations lirc_fops =
 {
 	read:    lirc_read,
 	write:   lirc_write,
-#       ifdef KERNEL_2_1
 	poll:    lirc_poll,
-#       else
-	select:  lirc_select,
-#       endif
 	ioctl:   lirc_ioctl,
 	open:    lirc_open,
 	release: lirc_close
@@ -1283,7 +1120,6 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
-#if LINUX_VERSION_CODE >= 0x020100
 MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
 MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
 #ifdef MODULE_LICENSE
@@ -1309,7 +1145,6 @@ MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
 
 
 EXPORT_NO_SYMBOLS;
-#endif
 
 int init_module(void)
 {

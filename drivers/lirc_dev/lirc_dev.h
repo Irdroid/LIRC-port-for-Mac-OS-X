@@ -4,17 +4,12 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.4 2002/10/08 21:59:46 ranty Exp $
+ * $Id: lirc_dev.h,v 1.5 2002/10/12 15:31:47 ranty Exp $
  *
  */
 
 #ifndef _LINUX_LIRC_DEV_H
 #define _LINUX_LIRC_DEV_H
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
-/* comes with bttv */
-#include "../drivers/char/kcompat24.h"
-#endif
 
 #define MAX_IRCTL_DEVICES 2
 #define BUFLEN            16

@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.17 2002/10/06 16:03:31 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.18 2002/10/12 15:31:47 ranty Exp $
  *
  */
 
@@ -40,9 +40,6 @@
 #include <linux/errno.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
-/* comes with bttv */
-#include "../drivers/char/kcompat24.h"
-
 #include "../drivers/char/bttv.h"
 #include "../drivers/char/bttvp.h"
 #else
@@ -58,7 +55,7 @@
 #error "*******************************************************"
 #endif
 
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
 
 static int debug = 0;
 static int card = 0;
@@ -79,6 +76,7 @@ MODULE_PARM(gpio_xor_mask,"l");
 MODULE_PARM(soft_gap,"i");
 MODULE_PARM(sample_rate,"b");
 
+#undef dprintk
 #define dprintk  if (debug) printk
 
 struct rcv_info {

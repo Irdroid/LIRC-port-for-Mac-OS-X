@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.19 2002/10/08 21:59:46 ranty Exp $
+ * $Id: lirc_dev.c,v 1.20 2002/10/12 15:31:47 ranty Exp $
  *
  */
 
@@ -30,10 +30,10 @@
 #define LIRC_HAVE_DEVFS
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
-#error "********************************************************"
-#error " Sorry, this driver needs kernel version 2.2.4 or higher"
-#error "********************************************************"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
+#error "**********************************************************"
+#error " Sorry, this driver needs kernel version 2.2.18 or higher "
+#error "**********************************************************"
 #endif
 
 #include <linux/config.h>

@@ -63,7 +63,8 @@
 #include <linux/timer.h>
 
 #include "drivers/lirc.h"
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
+#include "drivers/kcompat.h"
 
 #include "lirc_it87.h"
 

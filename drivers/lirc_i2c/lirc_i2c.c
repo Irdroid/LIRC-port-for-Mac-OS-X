@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.14 2002/10/06 16:49:38 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.15 2002/10/12 15:31:47 ranty Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -61,7 +61,7 @@
 
 #include <asm/semaphore.h>
 
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
 #else
