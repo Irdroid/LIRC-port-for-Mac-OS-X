@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.21 2004/01/31 03:38:58 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.22 2004/04/10 01:45:39 pmiller9 Exp $
  */
 
 /*
@@ -60,13 +60,8 @@
 #include <linux/poll.h>
 #include <linux/wait.h>
 
-#if KERNEL26
-#include <linux/lirc.h>
-#include "lirc_dev.h"
-#else
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
-#endif
 
 #define DRIVER_VERSION		"0.3"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
