@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.7 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.8 1999/11/22 20:24:23 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -283,9 +283,6 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 				        /* detecting pulse while this
 					   MUST be a space! */
 				        sense=sense ? 0:1;
-					printk(KERN_WARNING LIRC_DRIVER_NAME 
-					       ": AIEEEE: Damn autodetection "
-					       "still is not working!\n");
 				}
 			}
 			else
