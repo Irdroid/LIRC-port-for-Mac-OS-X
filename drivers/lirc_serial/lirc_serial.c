@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.38 2002/01/06 13:33:30 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.39 2002/10/02 18:35:32 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -711,7 +711,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 				       ": AIEEEE: your clock just jumped "
 				       "backwards\n");
 				printk(KERN_WARNING LIRC_DRIVER_NAME
-				       "%d %d %lx %lx %lx %lx\n",
+				       ": %d %d %lx %lx %lx %lx\n",
 				       dcd,sense,
 				       tv.tv_sec,lasttv.tv_sec,
 				       tv.tv_usec,lasttv.tv_usec);
