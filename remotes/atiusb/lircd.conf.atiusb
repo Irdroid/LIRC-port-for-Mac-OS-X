@@ -623,6 +623,8 @@ end remote
 # brand:	Medion, Made by X10, China
 # Remote P/N:	20016398
 # Receiver P/N:	20016397
+#
+# bundled with bundled with Titanium TD8008 and TD8080 Aldi PC
 
 begin remote
 
@@ -661,7 +663,7 @@ begin remote
           GREEN                    0x0833
           YELLOW                   0x0934
           BLUE                     0x0A35
-          TXT                      0xFE29
+          TXT                      0xEB16
           1                        0xE20D
           2                        0xE30E
           3                        0xE40F
