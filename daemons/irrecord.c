@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.9 2000/01/24 18:43:54 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.10 2000/02/02 20:25:07 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -65,6 +65,7 @@ extern struct hardware hw;
 extern struct ir_remote *last_remote;
 
 char *progname;
+const char *usage="Usage: %s --help | --version | [--force] file\n";
 
 struct ir_remote remote;
 struct ir_ncode ncode;
@@ -175,7 +176,7 @@ int main(int argc,char **argv)
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s [options] [file]\n",progname);
+			printf(usage,progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -f --force\t\tforce raw mode\n");
@@ -187,8 +188,13 @@ int main(int argc,char **argv)
 			force=1;
 			break;
 		default:
+			printf("Try %s -h for help!\n",progname);
 			exit(EXIT_FAILURE);
 		}
+	}
+	if(argc==1)
+	{
+		printf(usage,progname);
 	}
 	if(optind+1!=argc)
 	{
