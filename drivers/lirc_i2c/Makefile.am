@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.8 2000/04/18 20:14:57 columbus Exp $
+## $Id: Makefile.am,v 1.1 2000/09/30 19:32:40 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -7,10 +7,10 @@ EXTRA_DIST =
 ## this is so that Automake includes the C compiling definitions, and
 ## includes the source files in the distribution.
 EXTRA_PROGRAMS = automake_dummy
-automake_dummy_SOURCES = lirc_haup.c
+automake_dummy_SOURCES = lirc_i2c.c
 
 ## there is no *just* object file support in automake.  This is close enough
-module_DATA = lirc_haup.o
+module_DATA = lirc_i2c.o
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@

@@ -1,4 +1,4 @@
-.lirc_haup.o.flags
+.lirc_i2c.o.flags
 Makefile.in
 Makefile
 .deps

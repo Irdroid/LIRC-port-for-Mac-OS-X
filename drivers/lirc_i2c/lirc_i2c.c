@@ -1,8 +1,11 @@
-/*      $Id: lirc_haup.c,v 1.16 2000/09/21 19:11:28 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.1 2000/09/30 19:32:40 columbus Exp $      */
 
 /*
- * hauppauge IR lirc plugin - new 2.3.x i2c stack
- *      (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
+ * (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
+ * modified for PixelView (BT878P+W/FM) by
+ *      Michal Kochanowicz <mkochano@pld.org.pl>
+ *      Christoph Bartelmus <lirc@bartelmus.de>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -18,6 +21,7 @@
 #endif
 
 #include <linux/module.h>
+#include <linux/kmod.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/string.h>
@@ -26,11 +30,9 @@
 #include <linux/errno.h>
 #include <linux/malloc.h>
 #include <linux/i2c.h>
-#include <linux/videodev.h>
 #include <asm/semaphore.h>
 
 #include "../lirc_dev/lirc_dev.h"
-#include "../drivers/char/bttv.h"
 
 /* Addresses to scan */
 static unsigned short normal_i2c[] = {I2C_CLIENT_END};
@@ -66,8 +68,7 @@ MODULE_PARM(minor,"i");
 
 /* ----------------------------------------------------------------------- */
 
-#define DEVICE_NAME "lirc_haup"
-#define CODE_LENGTH 13
+#define DEVICE_NAME "lirc_i2c"
 
 /*
  * If this key changes, a new key was pressed.
@@ -77,7 +78,7 @@ MODULE_PARM(minor,"i");
 
 /* ----------------------------------------------------------------------- */
 
-static int get_key(void* data, unsigned char* key, int key_no)
+static int get_key_haup(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
         unsigned char b[3];
@@ -111,6 +112,21 @@ static int get_key(void* data, unsigned char* key, int key_no)
 	return 0;
 }
 
+static int get_key_pixelview(void* data, unsigned char* key, int key_no)
+{
+	struct IR *ir = data;
+        unsigned char b;
+	
+	/* poll IR chip */
+	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		return -1;
+	}
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
+	*key = b;
+	return 0;
+}
+
 static void set_use_inc(void* data)
 {
 	struct IR *ir = data;
@@ -132,15 +148,10 @@ static void set_use_dec(void* data)
 }
 
 static struct lirc_plugin lirc_template = {
-	"lirc_haup",
-	0,
-	0,
-	0,
-	NULL,
-	get_key,
-	NULL,
-	set_use_inc,
-	set_use_dec
+	name:        "lirc_i2c",
+	get_key:     get_key_haup,
+	set_use_inc: set_use_inc,
+	set_use_dec: set_use_dec
 };
 
 /* ----------------------------------------------------------------------- */
@@ -153,7 +164,7 @@ static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg);
 
 static struct i2c_driver driver = {
         "i2c ir driver",
-        /* I2C_DRIVERID_FIXME */ 42,
+        /* FIXME */ I2C_DRIVERID_EXP3,
         I2C_DF_NOTIFY,
         ir_probe,
         ir_detach,
@@ -174,8 +185,6 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
 {
         struct IR *ir;
-	struct bttv *btv;
-	int type,cardid;
 	
         client_template.adapter = adap;
         client_template.addr = addr;
@@ -191,23 +200,24 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
-	ir->l.code_length = CODE_LENGTH;
+	switch(addr)
+	{
+	case 0:
+		ir->l.code_length = 8;
+		ir->l.get_key=get_key_pixelview;
+		break;
+	case 1:
+		ir->l.code_length = 13;
+		ir->l.get_key=get_key_haup;
+		break;
+	}
 	ir->nextkey = -1;
 	
 	/* register device */
 	i2c_attach_client(&ir->c);
 	ir->l.minor = lirc_register_plugin(&ir->l);
-	
-	btv=(struct bttv *) (adap->data);
-	
-	if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1) {
-		dprintk(KERN_DEBUG DEVICE_NAME ": could not get card type\n");
-	}
-	else
-	{
-		dprintk(KERN_DEBUG DEVICE_NAME ": card type 0x%x, id 0x%x\n",
-			type,cardid);
-	}
+	if (ir->c.adapter->inc_use)
+		ir->c.adapter->inc_use(ir->c.adapter);
 	
 	return 0;
 }
@@ -217,6 +227,8 @@ static int ir_detach(struct i2c_client *client)
         struct IR *ir = client->data;
 	
 	/* unregister device */
+	if (ir->c.adapter->dec_use)
+		ir->c.adapter->dec_use(ir->c.adapter);
 	lirc_unregister_plugin(ir->l.minor);
 	i2c_detach_client(&ir->c);
 
@@ -243,11 +255,10 @@ static int ir_command(struct i2c_client *client,unsigned int cmd, void *arg)
 #ifdef MODULE
 int init_module(void)
 #else
-int lirc_haup_init(void)
+int lirc_i2c_init(void)
 #endif
 {
 	request_module("bttv");
-	
 	i2c_add_driver(&driver);
 	return 0;
 }

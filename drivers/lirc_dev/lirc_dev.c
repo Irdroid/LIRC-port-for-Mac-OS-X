@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.13 2000/09/27 17:49:47 columbus Exp $
+ * $Id: lirc_dev.c,v 1.14 2000/09/30 19:32:40 columbus Exp $
  *
  */
 
@@ -12,12 +12,12 @@
 # include <config.h>
 #endif
  
+#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
 /* fix for SuSE 7.0 */
 #undef LIRC_HAVE_DEVFS
 #endif
 
-#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
 #error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
 #endif
