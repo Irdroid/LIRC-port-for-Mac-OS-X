@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.18 2002/10/12 15:31:47 ranty Exp $
+## $Id: Makefile.am,v 5.19 2002/10/21 18:26:13 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -13,7 +13,8 @@ SUBDIRS = @lirc_driver@
 
 CLEANFILES = *~
 
-if MANAGE_DEVICES
+if SANDBOXED
+else
 install-exec-local: mklink mkdev
 uninstall-local: rmlink mkdev
 endif

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.5 2002/02/01 11:43:28 ranty Exp $
+## $Id: Makefile.am,v 1.6 2002/10/21 18:26:13 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -26,7 +26,8 @@ $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
 # the spaces above are necessary because automake otherwise will complain
 # and even worse, it will delete the line
 
-if MANAGE_DEVICES
+if SANDBOXED
+else
 install-exec-local: mkdev
 uninstall-local: rmdev
 endif
@@ -38,7 +39,10 @@ rmdev:
 	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
 
 install-data-local:
+if SANDBOXED
+else
 	-@depmod@ -a
+endif
 
 CLEANFILES = $(module_DATA) .$(module_DATA).flags *~
 

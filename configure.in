@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.92 2002/10/21 09:08:35 ranty Exp $
+dnl $Id: configure.in,v 5.93 2002/10/21 18:26:12 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -560,11 +560,11 @@ maintmode_daemons_extra="lircd.simrec lircd.simsend slinke"
 
 dnl don't create nor destroy devices when installing and uninstalling
 
-AC_ARG_ENABLE(manage_devices,
-[  --disable-manage-devices    don't create and destroy devices automatically],
-[ enable_manage_devices="${enableval}" ],
-[ enable_manage_devices="yes"])
-AM_CONDITIONAL(MANAGE_DEVICES, test x$enable_manage_devices = xyes)
+AC_ARG_ENABLE(sandboxed,
+[  --enable-sandboxed      don't touch anything out of the install directory],
+[ enable_sandboxed="${enableval}" ],
+[ enable_sandboxed="no"])
+AM_CONDITIONAL(SANDBOXED, test x$enable_sandboxed = xyes)
 
 AC_ARG_WITH(devdir,
 [  --with-devdir=DIR       Install device files in DIR (/dev)],

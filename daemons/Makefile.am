@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.24 2002/10/09 19:54:54 ranty Exp $
+## $Id: Makefile.am,v 5.25 2002/10/21 18:26:12 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -75,7 +75,8 @@ lircd_simrec_CFLAGS = -DSIM_REC
 slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
 		dump_config.c dump_config.h
 
-if MANAGE_DEVICES
+if SANDBOXED
+else
 install-exec-local: mkdev
 uninstall-local: rmdev
 endif

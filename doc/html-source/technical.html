@@ -539,6 +539,39 @@ fi</PRE>
       applications even if you don't have a LIRC compatible device
       yourself.
     </P>
+
+    <A NAME="packagers"></A><HR>
+    <H1 ALIGN="CENTER">Note for packagers</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      If you want to make a binary package for lirc (.deb, .rpm, ...),
+      there are a couple of goodies you can take advantage of:
+      <dl>
+      <dt>--with-driver=any 
+      <dd>
+	Builds support for as many devices as possible on a single lircd
+	binary. Note that for some devices kernel support is required, and
+	when using <em>any</em> driver, no kernel modules will be built
+	automatically, so you will have to build them explicitly.
+      </dd>
+      <dt>--enable-sandboxed
+      <dd>
+	Prevents any changes out of the installation directory on "make
+	install":
+          <ul>
+          <li>will not create device nodes on /dev/</li>
+	  <li>will not run depmod</li>
+	  </ul>
+      </dd>
+      <dt>DESTDIR
+      <dd>
+	You should use <em>DESTDIR</em> and not <em>prefix</em> to install
+	into the sandbox, modules will be installed to <em>/lib/</em>
+	otherwise.
+      </dd>
+      </dl>
+    </P>
     
     <A NAME="bugs"></A><HR>
     <H1 ALIGN="CENTER">Known bugs</H1>
