@@ -2,6 +2,7 @@
   * added support for Pixelview PlayTV (bt878) card
   * moved lirc_haup to lirc_i2c
   * added support for Chronos Video Shuttle II TV card (Tonu Raitviir)
+  * added startup_mode flag to .lircrc config file (Bruno Coudoin)
 
 0.6.2: 09/10/00
   * added support for IRdeo (www.pofahl.de/irdeo.htm). Many thanks to

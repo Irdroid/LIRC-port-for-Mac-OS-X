@@ -299,6 +299,9 @@ constructions:</P>
     mode but xawtv would begin without any mode enabled. By renaming
     the mode from <em>tv</em> to <em>xawtv</em> you can solve this
     problem.
+
+    <br>Another way to specify a startup mode is by using the startup_mode
+    flag as described bellow.
 </DD>
 </DL>
 The following are valid flags:
@@ -320,6 +323,17 @@ The following are valid flags:
 <DD>This is only allowed within a mode block. It tells the
     program to leave this mode.
 </DD>
+<DT>startup_mode</DT>
+<DD>Tells the program to start in the mode given in the mode keyword.
+    The following example tells the program to start in the  <em>browser</em>
+    mode
+<PRE>
+begin
+	flags = startup_mode
+	mode = browser
+end
+</PRE>
+
 </DL>
 
 <P>Ok, now a simple example for a <em>.lircrc</em> file (supposed you

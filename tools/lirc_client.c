@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.9 2000/09/30 17:47:31 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.10 2000/11/09 17:51:00 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -514,6 +514,10 @@ unsigned int lirc_flags(char *string)
 		{
 			flags|=mode;
 		}
+		else if(strcasecmp(s,"startup_mode")==0)
+		{
+			flags|=startup_mode;
+		}
 		else
 		{
 			lirc_printf("%s: unknown flag \"%s\"\n",lirc_prog,s);
@@ -836,15 +840,38 @@ char *lirc_startupmode(struct lirc_config_entry *first)
 
 	startupmode=NULL;
 	scan=first;
+	/* Set a startup mode based on flags=startup_mode */
 	while(scan!=NULL)
 	{
-		if(scan->mode!=NULL &&strcasecmp(lirc_prog,scan->mode)==0)
-		{
-			startupmode=lirc_prog;
-			break;
+		if(scan->flags&startup_mode) {
+			if(scan->change_mode!=NULL) {
+				startupmode=scan->change_mode;
+				/* Remove the startup mode or it confuses lirc mode system */
+				scan->change_mode=NULL;
+				break;
+			}
+			else {
+				lirc_printf("%s: startup_mode flags requires 'mode ='\n",
+					    lirc_prog);
+			}
 		}
 		scan=scan->next;
 	}
+
+	/* Set a default mode if we find a mode = client app name */
+	if(startupmode==NULL) {
+		scan=first;
+		while(scan!=NULL)
+		{
+			if(scan->mode!=NULL &&strcasecmp(lirc_prog,scan->mode)==0)
+			{
+				startupmode=lirc_prog;
+				break;
+			}
+			scan=scan->next;
+		}
+	}
+
 	if(startupmode==NULL) return(NULL);
 	scan=first;
 	while(scan!=NULL)
