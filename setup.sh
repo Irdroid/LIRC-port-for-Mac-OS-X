@@ -308,7 +308,7 @@ SaveConfig ()
     echo '#!/bin/bash' >$START
     echo >>$START
     echo "./configure \\" >>$START
-    echo "--with-module-dir=/lib/modules/`uname -r`/misc \\" >>$START
+    echo "--with-moduledir=/lib/modules/`uname -r`/misc \\" >>$START
     if   test "$LIRC_DRIVER" = "serial"; then
         {
         if test "$SOFT_CARRIER" = "off"; then echo "--without-soft-carrier \\" >>$START; fi
