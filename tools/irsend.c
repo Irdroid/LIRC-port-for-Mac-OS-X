@@ -1,8 +1,8 @@
-/* 	$Id: rc.c,v 5.1 2002/09/12 19:53:56 lirc Exp $	 */
+/* 	$Id: irsend.c,v 5.1 2002/10/21 20:47:15 ranty Exp $	 */
 
 /*
   
-  rc -  application for sending IR-codes via lirc
+  irsend -  application for sending IR-codes via lirc
   
   Copyright (C) 1998 Christoph Bartelmus (lirc@bartelmus.de)
   
@@ -269,7 +269,7 @@ int main(int argc,char **argv)
 			printf("\t -v --version\t\tdisplay version\n");
 			return(0);
 		case 'v':
-			printf("rc %s\n",VERSION);
+			printf("irsend %s\n",VERSION);
 			return(EXIT_SUCCESS);
 		default:
 			return(EXIT_FAILURE);

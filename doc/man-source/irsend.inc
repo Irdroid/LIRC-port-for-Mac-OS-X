@@ -1,5 +1,5 @@
 [NAME]
-rc - basic LIRC program to send infra-red commands
+irsend - basic LIRC program to send infra-red commands
 
 [DESCRIPTION]
 Asks the \fBlircd\fR daemon to send one or more CIR
@@ -39,11 +39,11 @@ can be empty:
 [EXAMPLES]
 .nf
 .RS 3
-rc LIST DenonTuner ""
-rc SEND_ONCE  DenonTuner PROG-SCAN 
-rc SEND_ONCE  OnkyoAmpli VOL-UP VOL-UP VOL-UP VOL-UP
-rc SEND_START OnkyoAmpli VOL-DOWN ; sleep 3
-rc SEND_STOP  OnkyoAmpli VOL-DOWN
+irsend LIST DenonTuner ""
+irsend SEND_ONCE  DenonTuner PROG-SCAN 
+irsend SEND_ONCE  OnkyoAmpli VOL-UP VOL-UP VOL-UP VOL-UP
+irsend SEND_START OnkyoAmpli VOL-DOWN ; sleep 3
+irsend SEND_STOP  OnkyoAmpli VOL-DOWN
 .RE
 .fi
 [FILES]
@@ -57,8 +57,8 @@ waveform details.
 If \fBlircd\fR is not running (or /dev/lircd lacks write permissions)
 \fBrc\fR aborts with the following diagnostics:
 .nf
-"rc: could not connect to socket"
-"rc: Connection refused" (or "Permission denied").
+"irsend: could not connect to socket"
+"irsend: Connection refused" (or "Permission denied").
 .fi
 
 [SEE ALSO]
