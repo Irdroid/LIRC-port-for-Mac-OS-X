@@ -1,0 +1,333 @@
+diff -u --recursive --new-file bttv-my-clean/driver/MAKEDEV bttv-irctl/driver/MAKEDEV
+--- bttv-my-clean/driver/MAKEDEV	Tue Sep 29 02:31:30 1998
++++ bttv-irctl/driver/MAKEDEV	Thu Apr 29 01:11:38 1999
+@@ -26,3 +26,6 @@
+ makedev bttv 0
+ makedev bttv-fm 64
+ makedev bttv-vbi 224
++
++echo "*** Testing IRCtl in FV98 ***"
++mknod IRCtl c 61 0
+diff -u --recursive --new-file bttv-my-clean/driver/Makefile bttv-irctl/driver/Makefile
+--- bttv-my-clean/driver/Makefile	Tue May  4 23:18:38 1999
++++ bttv-irctl/driver/Makefile	Sat Jul 24 01:16:14 1999
+@@ -9,7 +9,7 @@
+ # 5: Philips PAL tuner
+ # 6: Temic NTSC tuner
+ # 7: Temic PAL tuner
+-# TUNER=0
++TUNER=0
+ # Do not select the tuner type here!
+ # Edit the type argument for the tuner module in "update"!
+ 
+@@ -67,17 +67,18 @@
+ #KERNEL_LOCATION=/usr/src/kernel/2.0.35
+ #KERNEL_LOCATION=/usr/src/kernel/$(CURRENT)
+ #KERNEL_LOCATION=/usr/src/kernel/vger
+-KERNEL_LOCATION=/usr/src/linux
++KERNEL_LOCATION=/usr/src/local/linux
+ 
+ 
+ #################################################
+ # some magic for using linux kernel settings
+ # when compiling module(s)
+ 
+-M_OBJS       = bttv.o msp3400.o tuner.o #i2c_chardev.o
+-MX_OBJS      = videodev.o i2c.o
++M_OBJS       = bttv.o msp3400.o tuner.o i2c_chardev.o
++MX_OBJS      = videodev.o i2c.o 
+ EXTRA_CFLAGS = -DTUNER_DEFAULT=$(TUNER) -DCARD_DEFAULT=$(CARD) \
+-	-DBTTV_MAJOR=$(BTTV_MAJOR) $(INTERFACE) $(MSP) $(PLL) -DVIDEODAT
++	-DBTTV_MAJOR=$(BTTV_MAJOR) $(INTERFACE) $(MSP) $(PLL) \
++	-DVIDEODAT -DGPIOMON
+ 
+ here:
+ 	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR modules)
+@@ -85,8 +86,11 @@
+ install:
+ 	su -c "cp -v $(M_OBJS) $(MX_OBJS) /lib/modules/$(CURRENT)/misc"
+ 
++readir: readirctl.c
++	cc readirctl.c -o readir
++
+ clean:
+-	-rm -f $(M_OBJS) $(MX_OBJS) .*.o.flags *~
++	-rm -f $(M_OBJS) $(MX_OBJS) .*.o.flags *~ readir
+ 
+ include $(KERNEL_LOCATION)/Rules.make
+ 
+diff -u --recursive --new-file bttv-my-clean/driver/bttv.c bttv-irctl/driver/bttv.c
+--- bttv-my-clean/driver/bttv.c	Sun Feb  7 22:49:48 1999
++++ bttv-irctl/driver/bttv.c	Fri Jul 23 22:07:21 1999
+@@ -18,6 +18,10 @@
+     along with this program; if not, write to the Free Software
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
++#include <linux/config.h>
++#ifndef EXPORT_SYMTAB
++#define EXPORT_SYMTAB
++#endif
+ 
+ #include <linux/module.h>
+ #include <linux/delay.h>
+@@ -130,6 +134,10 @@
+ static int bttv_num;			/* number of Bt848s in use */
+ static struct bttv bttvs[BTTV_MAX];
+ 
++#ifdef GPIOMON
++static bttv_gpio_monitor_t gpio_monitor=NULL;
++#endif
++
+ #define I2C_TIMING (0x7<<4)
+ #define I2C_DELAY   10
+ 
+@@ -580,6 +588,9 @@
+         { "FlyVideo 98",
+           3, 0, 2, 0x8dff00, {2, 3, 1, 1}, 
+           {0, 0x8dff00, 0x800, 0x400, 0x8dff00, 0 }},
++        { "FlyVideo 98/IR",
++          3, 0, 2, 0x8dfe00, {2, 3, 1, 1}, 
++          {0, 0x8dfe00, 0x800, 0x400, 0x8dfe00, 0 }},
+ };
+ #define TVCARDS (sizeof(tvcards)/sizeof(tvcard))
+ 
+@@ -3498,6 +3539,16 @@
+         return 1;
+ }
+ 
++#ifdef GPIOMON
++bttv_gpio_monitor_t bttv_set_gpio_monitor(bttv_gpio_monitor_t callback)
++{
++        bttv_gpio_monitor_t prev=gpio_monitor;
++  
++        gpio_monitor=callback;
++        return prev;
++}
++#endif
++
+ static int init_bt848(int i)
+ {
+         struct bttv *btv = &bttvs[i];
+@@ -3606,15 +3657,28 @@
+ 	/* clear interrupt status */
+ 	btwrite(0xfffffUL, BT848_INT_STAT);
+         
++#ifdef GPIOMON
+ 	/* set interrupt mask */
+ 	btwrite(btv->triton1|
+                 /*BT848_INT_PABORT|BT848_INT_RIPERR|BT848_INT_PPERR|
+                   BT848_INT_FDSR|BT848_INT_FTRGT|BT848_INT_FBUS|*/
++                BT848_INT_GPINT|
+                 BT848_INT_VSYNC|
+ 		BT848_INT_SCERR|
+ 		BT848_INT_RISCI|BT848_INT_OCERR|BT848_INT_VPRES|
+ 		BT848_INT_FMTCHG|BT848_INT_HLOCK,
+ 		BT848_INT_MASK);
++#else
++	/* set interrupt mask */
++	btwrite(btv->triton1|
++                /*BT848_INT_PABORT|BT848_INT_RIPERR|BT848_INT_PPERR|
++                  BT848_INT_FDSR|BT848_INT_FTRGT|BT848_INT_FBUS|*/
++                BT848_INT_VSYNC|
++		BT848_INT_SCERR|
++		BT848_INT_RISCI|BT848_INT_OCERR|BT848_INT_VPRES|
++		BT848_INT_FMTCHG|BT848_INT_HLOCK,
++		BT848_INT_MASK);
++#endif
+ 
+ 	make_vbitab(btv);
+ 	bt848_set_risc_jmps(btv);
+@@ -3649,9 +3713,21 @@
+ 		IDEBUG(printk ("bttv%d:  stat %08x\n", btv->nr, stat));
+ 
+ 		/* get device status bits */
+-		dstat=btread(BT848_DSTATUS);
+-    
+-		if (astat&BT848_INT_FMTCHG) 
++		dstat=	btread(BT848_DSTATUS);
++
++#ifdef GPIOMON
++                if ( (astat&BT848_INT_GPINT) )
++                  {
++                    unsigned long b;
++                    
++                    b=btread(BT848_GPIO_DATA);
++                    printk("bttv%d: GPIO: %04lx INT_STAT: %04lx \n", 
++                           btv->nr, b&0x1ff, (long)stat);
++                    (gpio_monitor) ? gpio_monitor(btv->nr, b) : 0;
++                  }
++#endif
++
++                if (astat&BT848_INT_FMTCHG) 
+ 		{
+ 			IDEBUG(printk ("bttv%d: IRQ_FMTCHG\n", btv->nr));
+ 			/*btv->win.norm&=
+@@ -4171,8 +4247,48 @@
+ 	}
+ }
+ 
+-#ifdef MODULE
+ 
++#ifdef GPIOMON
++void setup_gpio_irq(int nr)
++{
++  /* Set up GPIOINT mask */
++  struct bttv *btv;                                                       
++  
++  btv = &bttvs[nr];
++  if(btv == NULL) {                                                       
++    printk("bttv%d: setup_gpio_irq: *btv == NULL\n",nr);
++    return;                                                         
++  };
++
++  btwrite(btread(BT848_GPIO_DMA_CTL)
++          |BT848_GPIO_DMA_CTL_GPINTC
++          ,BT848_GPIO_DMA_CTL);
++  btwrite(btread(BT848_GPIO_DMA_CTL)
++          |BT848_GPIO_DMA_CTL_GPINTI
++          ,BT848_GPIO_DMA_CTL);
++  btwrite(btread(BT848_INT_STAT)|BT848_INT_GPINT,
++          BT848_INT_STAT);
++  btwrite(btread(BT848_INT_MASK)|BT848_INT_GPINT
++          ,BT848_INT_MASK);
++
++};
++
++void reset_gpio_irq(int nr)
++{
++  /* Reset GPIOINT mask */
++  struct bttv *btv;                                                       
++  
++  btv = &bttvs[nr];
++  if(btv == NULL) {                                                       
++    printk("bttv%d: reset_gpio_irq: *btv == NULL\n",nr);
++    return;                                                         
++  };
++  btwrite(btread(BT848_INT_MASK)&(~BT848_INT_GPINT)
++          ,BT848_INT_MASK);
++};
++#endif /* GPIOMON */
++
++#ifdef MODULE
+ int init_module(void)
+ {
+ #else
+@@ -4193,8 +4309,13 @@
+ 			release_bttv();
+ 			return -EIO;
+ 		} 
++#ifdef GPIOMON
++                else {
++                  setup_gpio_irq(i);
++                }
++#endif
++                
+ 	}
+-
+ 	return 0;
+ }
+ 
+@@ -4204,11 +4325,24 @@
+ 
+ void cleanup_module(void)
+ {
+-        release_bttv();
++#ifdef GPIOMON
++    {
++      int i;
++      for (i=0; i<bttv_num; i++) 
++        reset_gpio_irq(i);
++    }
++#endif
++  release_bttv();
+ }
+ 
+ #endif
+ 
++#ifdef GPIOMON
++#if LINUX_VERSION_CODE >= 0x020100
++EXPORT_SYMBOL(bttv_set_gpio_monitor);
++#endif
++#endif
++
+ /*
+  * Local variables:
+  * c-indent-level: 8
+@@ -4222,3 +4356,12 @@
+  * tab-width: 8
+  * End:
+  */
+diff -u --recursive --new-file bttv-my-clean/driver/bttv.h bttv-irctl/driver/bttv.h
+--- bttv-my-clean/driver/bttv.h	Thu Feb  4 00:50:42 1999
++++ bttv-irctl/driver/bttv.h	Fri Jul 23 22:04:04 1999
+@@ -181,6 +181,11 @@
+ };
+ #endif
+ 
++#ifdef GPIOMON
++typedef void (*bttv_gpio_monitor_t)(int nr, unsigned long data);
++extern bttv_gpio_monitor_t bttv_set_gpio_monitor(bttv_gpio_monitor_t callback);
++#endif
++
+ /*The following should be done in more portable way. It depends on define
+   of _ALPHA_BTTV in the Makefile.*/
+ 
+@@ -283,3 +288,20 @@
+  
+ 
+ #endif
+diff -u --recursive --new-file bttv-my-clean/driver/readirctl.c bttv-irctl/driver/readirctl.c
+--- bttv-my-clean/driver/readirctl.c	Thu Jan  1 01:00:00 1970
++++ bttv-irctl/driver/readirctl.c	Sat Jul 24 01:19:24 1999
+@@ -0,0 +1,51 @@
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/ioctl.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include "bttv.h"
++	     
++#define BUFLEN 256
++
++void binprint( unsigned b )
++{
++    int k, m=0x80;
++    
++    for( k=0; k<8; k++, m>>=1 ){
++	printf( "%1c", ( b & m )? '1' : '0' );
++    }; 
++}
++
++int main( void )
++{
++    FILE *fd;
++    unsigned char buf;
++    
++    fd=fopen("./IRCtl", "r");
++    if (fd==NULL) {
++	fprintf(stderr,"Can't open IRCtl\n");
++        exit(1);
++    };
++    
++    fprintf(stderr,"Opened IRCtl\n");
++    
++    while (1){
++	fread( &buf, sizeof(buf), 1, fd );
++	/*if (buf>=0)*/ {
++	  /* if (buf & 0xff) */ {
++		printf("0x%02X = %03d\n",
++			(unsigned)(buf & 0xff),
++			(unsigned)(buf & 0xff));
++	    };
++	    /*
++	    printf("GPIO: 0x%06X => 0x%06X %03d => %03d \n", 
++		prev & 0xFF, buf & 0xff,
++		prev & 0xFF, buf & 0xff );
++	    */
++	}
++	/*usleep(50000);*/
++    };
++};
++
