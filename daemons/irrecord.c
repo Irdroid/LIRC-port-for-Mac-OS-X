@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.30 2001/07/05 18:01:06 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.31 2001/07/06 06:35:50 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1029,6 +1029,12 @@ void get_pre_data(struct ir_remote *remote)
 		mask=mask<<1;
 	}
 	count-=sizeof(ir_code)*CHAR_BIT-remote->bits;
+	
+	/* only "even" numbers should go to pre/post data */
+	if(count%8 && (remote->bits-count)%8)
+	{
+		count-=count%8;
+	}
 	if(count>0)
 	{
 		mask=0;
@@ -1076,6 +1082,11 @@ void get_post_data(struct ir_remote *remote)
 	{
 		count++;
 		mask=mask>>1;
+	}
+	/* only "even" numbers should go to pre/post data */
+	if(count%8 && (remote->bits-count)%8)
+	{
+		count-=count%8;
 	}
 	if(count>0)
 	{
