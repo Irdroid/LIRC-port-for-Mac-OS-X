@@ -844,6 +844,12 @@ static int init_hardware(void)
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
 #ifdef LIRC_ON_IPAQ
+#ifdef CONFIG_SA1100_BITSY
+	if (machine_is_bitsy()) {
+		printk("Power on IR module\n");
+		set_bitsy_egpio(EGPIO_BITSY_IR_ON);
+	}
+#endif
 #if 0
 	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR0: %02x\n",Ser2UTCR0);
 	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR1: %02x\n",Ser2UTCR1);
