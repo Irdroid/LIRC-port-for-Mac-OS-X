@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.36 2001/11/27 11:50:22 ranty Exp $      */
+/*      $Id: irrecord.c,v 5.37 2002/01/06 13:36:43 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -756,7 +756,7 @@ int main(int argc,char **argv)
 	return(EXIT_SUCCESS);
 }
 
-void flushhw()
+void flushhw(void)
 {
 	size_t size=1;
 	char buffer[sizeof(ir_code)];
@@ -777,7 +777,7 @@ void flushhw()
 	while(read(hw.fd,buffer,size)==size);
 }
 
-int resethw()
+int resethw(void)
 {
 	int flags;
 

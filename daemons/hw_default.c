@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.22 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.23 2002/01/06 13:36:43 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -38,7 +38,7 @@
 
 extern struct ir_remote *repeat_remote;
 
-unsigned long supported_send_modes[]=
+static unsigned long supported_send_modes[]=
 {
 	/* LIRC_CAN_SEND_STRING, I don't think there ever will be a driver 
 	   that supports that */
@@ -49,7 +49,7 @@ unsigned long supported_send_modes[]=
 	/* LIRC_CAN_SEND_RAW, */
 	0
 };
-unsigned long supported_rec_modes[]=
+static unsigned long supported_rec_modes[]=
 {
 	LIRC_CAN_REC_STRING,
 	LIRC_CAN_REC_LIRCCODE,
