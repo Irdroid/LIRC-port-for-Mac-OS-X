@@ -9,7 +9,7 @@
  *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.11 2001/06/24 10:25:06 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.12 2001/08/26 12:27:47 lirc Exp $
  *
  */
 
@@ -439,10 +439,10 @@ int init_module(void)
 			}
 		}
 		if (type==BTTV_AVPHONE98 && cardid==0x00011461)	{
-			type = BTTV_AVERMEDIA98;
+			rcv_infos[card_type].bttv_id = BTTV_AVERMEDIA98;
 		}
 		if (type==BTTV_AVERMEDIA98 && cardid==0x00041461) {
-			type = BTTV_AVPHONE98;
+			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
 		}
 		if (card_type == sizeof(rcv_infos)/sizeof(struct rcv_info)) {
 			printk(LOGHEAD "TV card type %x not supported!\n",

@@ -1,3 +1,6 @@
+0.6.5: future
+  * more transmit bug fixes
+
 0.6.4: 08/15/01
   * fixed bug in home-brew transmitter code (Steve Davies)
   * fixed bug in Irdeo transmit code
