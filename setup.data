@@ -105,6 +105,7 @@ hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
+	dvico: "DViCO USB Remote"
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
@@ -170,6 +171,7 @@ param_type: \
 	creative_infracd \
 	devinput \
 	dsp \
+	dvico \
 	exaudio \
 	flyvideo \
 	gvbctv5pci \
@@ -220,6 +222,7 @@ default_param: \
 	creative_infracd \
 	devinput \
 	dsp \
+	dvico \
 	exaudio \
 	flyvideo \
 	gvbctv5pci \

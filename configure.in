@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.140 2005/03/11 20:04:01 lirc Exp $
+dnl $Id: configure.in,v 5.141 2005/03/11 21:26:55 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -136,7 +136,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (bte) (ea65) (exaudio) (irreal) \
+possible_drivers="(none) (bte) (dvico) (ea65) (exaudio) (irreal) \
 	(livedrive_midi) (livedrive_seq) (logitech) (mediafocusI) \
 	(mouseremote) (mouseremote_ps2) (mp3anywhere) (pcmak) \
 	(pcmak_usb) (pctv) (remotemaster) (silitek) (slinke) (tira) \
@@ -212,21 +212,22 @@ AC_ARG_WITH(driver,
                           avermedia_vdomate, avermedia98, bestbuy,
                           bestbuy2, breakoutbox, bte, caraca, chronos,
                           comX, creative_infracd, dsp, cph03x, cph06x,
-                          creative, devinput, ea65, exaudio, flyvideo,
-                          gvbctv5pci, hauppauge, hauppauge_dvb,
-                          hercules_smarttv_stereo, igorplugusb, imon,
-                          irdeo, irdeo_remote, irman, irreal, it87,
-                          knc_one, kworld, leadtek_0007, leadtek_0010,
-			  leadtek_pvr2000, livedrive_midi,
-			  livedrive_seq, logitech, lptX, mceusb,
-			  mediafocusI, mouseremote, mouseremote_ps2,
-			  mp3anywhere, packard_bell, parallel, pcmak,
-			  pcmak_usb, pctv, pixelview_bt878,
-			  pixelview_pak, pixelview_pro, provideo,
-			  realmagic, remotemaster, sa1100, sasem,
-			  serial, silitek, sir, slinke, streamzap,
-			  tekram, tekram_bt829, tira, tvbox, udp,
-			  uirt2, uirt2_raw],
+                          creative, devinput, dvico, ea65, exaudio,
+                          flyvideo, gvbctv5pci, hauppauge,
+                          hauppauge_dvb, hercules_smarttv_stereo,
+                          igorplugusb, imon, irdeo, irdeo_remote,
+                          irman, irreal, it87, knc_one, kworld,
+                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, mceusb, mediafocusI, mouseremote,
+                          mouseremote_ps2, mp3anywhere, packard_bell,
+                          parallel, pcmak, pcmak_usb, pctv,
+                          pixelview_bt878, pixelview_pak,
+                          pixelview_pro, provideo, realmagic,
+                          remotemaster, sa1100, sasem, serial,
+                          silitek, sir, slinke, streamzap, tekram,
+                          tekram_bt829, tira, tvbox, udp, uirt2,
+                          uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -290,6 +291,9 @@ if test "$driver" = "any"; then
 		;;
 	dsp)
 		hw_module="${hw_module} hw_dsp.o receive.o"
+		;;
+	dvico)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	ea65)
 		hw_module="${hw_module} hw_ea65.o serial.o"
@@ -565,6 +569,13 @@ if test "$driver" = "dsp"; then
   lirc_driver="none"
   hw_module="hw_dsp.o receive.o"
   HW_DEFAULT="hw_dsp"
+fi
+
+if test "$driver" = "dvico"; then
+  lirc_driver="none"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_dvico"
+  lircd_conf="dvico/lircd.conf.fusionHDTV"
 fi
 
 if test "$driver" = "ea65"; then

@@ -15,6 +15,7 @@ extern struct hardware hw_creative_infracd;
 extern struct hardware hw_default;
 extern struct hardware hw_devinput;
 extern struct hardware hw_dsp;
+extern struct hardware hw_dvico;
 extern struct hardware hw_ea65;
 extern struct hardware hw_irman;
 extern struct hardware hw_livedrive_midi;
@@ -81,6 +82,7 @@ struct hardware *hw_list[] =
 #ifdef HAVE_SOUNDCARD
 	&hw_dsp,
 #endif
+	&hw_dvico,
 	&hw_ea65,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,
