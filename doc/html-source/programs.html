@@ -6,7 +6,7 @@
 domain socket</P>
 
 <PRE>
-  <B>lircd</B> [-n | --nodaemon] [config_file]
+  <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> | --permission=<em>mode</em>] [config_file]
   <B>lircd</B> -h | --help
   <B>lircd</B> -v | --version
 </PRE>
@@ -21,6 +21,16 @@ codes received by lircd and they can send commands to lircd.
 
 <P>
 If you provide the --nodaemon option lircd won't fork to background.
+</P>
+
+<P>
+The --permission option gives the file permission of
+<em>/dev/lircd</em> if it has to be created in octal
+representation. Read the documentation for chmod for further
+details. If no --permission option is given when the socket is
+initially created the default is to give all users read and write
+permissions (0666 in octal representation). If /dev/lircd already
+exists this option has no effect.
 </P>
 
 <P>

@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.4 2000/04/15 20:28:51 columbus Exp $      */
+/*      $Id: lircd.h,v 5.5 2000/05/03 19:41:21 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -22,7 +22,7 @@ void config(void);
 void nolinger(int sock);
 void remove_client(int fd);
 void add_client(void);
-void start_server(void);
+void start_server(mode_t permission);
 void logprintf(int level,char *format_str, ...);
 void logperror(int level,const char *s);
 void daemonize(void);

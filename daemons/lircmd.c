@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.9 2000/05/03 18:18:23 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.10 2000/05/03 19:41:21 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -708,7 +708,7 @@ int main(int argc,char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options] [config-file]\n",progname);
-			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -h --help\t\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\tdon't fork to background\n");
 			return(EXIT_SUCCESS);

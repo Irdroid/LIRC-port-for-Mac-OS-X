@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.16 2000/05/03 18:18:23 columbus Exp $      */
+/*      $Id: lircd.c,v 5.17 2000/05/03 19:41:21 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -45,6 +45,7 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
@@ -120,6 +121,28 @@ static int termsig;
 inline int max(int a,int b)
 {
 	return(a>b ? a:b);
+}
+
+/* cut'n'paste from fileutils-3.16: */
+
+#define isodigit(c) ((c) >= '0' && (c) <= '7')
+
+/* Return a positive integer containing the value of the ASCII
+   octal number S.  If S is not an octal number, return -1.  */
+
+static int
+oatoi (s)
+     char *s;
+{
+  register int i;
+
+  if (*s == 0)
+    return -1;
+  for (i = 0; isodigit (*s); ++s)
+    i = i * 8 + *s - '0';
+  if (*s)
+    return -1;
+  return i;
 }
 
 /* A safer write(), since sockets might not write all but only some of the
@@ -385,11 +408,12 @@ void add_client(void)
 	logprintf(0,"accepted new client\n");
 }
 
-void start_server(void)
+void start_server(mode_t permission)
 {
 	struct sockaddr_un serv_addr;
 	struct stat s;
 	int ret;
+	int new=1;
 	
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(sockfd==-1)
@@ -405,19 +429,24 @@ void start_server(void)
 	   have to delete the old socket.  
 	*/
 	ret=stat(LIRCD,&s);
-	if(ret==-1)
+	if(ret==-1 && errno!=ENOENT)
 	{
 		fprintf(stderr,"%s: could not get file information for %s\n",
 			progname,LIRCD);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
-	ret=unlink(LIRCD);
-	if(ret==-1)
+	if(ret!=-1)
 	{
-		fprintf(stderr,"%s: could not delete %s\n",progname,LIRCD);
-		perror(NULL);
-		exit(EXIT_FAILURE);
+		new=0;
+		ret=unlink(LIRCD);
+		if(ret==-1)
+		{
+			fprintf(stderr,"%s: could not delete %s\n",
+				progname,LIRCD);
+			perror(NULL);
+			exit(EXIT_FAILURE);
+		}
 	}
 	
 	serv_addr.sun_family=AF_UNIX;
@@ -430,7 +459,10 @@ void start_server(void)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
+	if(new ?
+	   chmod(LIRCD,permission):
+	   (chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
+	   )
 	{
 		fprintf(stderr,"%s: could not set file permissions\n",progname);
 		perror(progname);
@@ -1170,6 +1202,7 @@ int main(int argc,char **argv)
 {
 	struct sigaction act;
 	int nodaemon=0;
+	mode_t permission=S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 
 	while(1)
 	{
@@ -1179,15 +1212,16 @@ int main(int argc,char **argv)
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"nodaemon",no_argument,NULL,'n'},
+			{"permission",required_argument,NULL,'p'},
 #                       ifdef DEBUG
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{0, 0, 0, 0}
 		};
 #               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvnD::",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:D::",long_options,NULL);
 #               else
-		c = getopt_long(argc,argv,"hvn",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:",long_options,NULL);
 #               endif
 		if(c==-1)
 			break;
@@ -1195,9 +1229,10 @@ int main(int argc,char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options] [config-file]\n",progname);
-			printf("\t -h --help\t\tdisplay this message\n");
-			printf("\t -v --version\t\tdisplay version\n");
-			printf("\t -n --nodaemon\t\tdon't fork to background\n");
+			printf("\t -h --help\t\t\t\tdisplay this message\n");
+			printf("\t -v --version\t\t\tdisplay version\n");
+			printf("\t -n --nodaemon\t\t\tdon't fork to background\n");
+			printf("\t -p --permission=mode\tfile permissions for " LIRCD "\n");
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
@@ -1207,6 +1242,14 @@ int main(int argc,char **argv)
 			return(EXIT_SUCCESS);
 		case 'n':
 			nodaemon=1;
+			break;
+		case 'p':
+			if(oatoi(optarg)==-1)
+			{
+				fprintf(stderr,"%s: invalid mode\n",progname);
+				return(EXIT_FAILURE);
+			}
+			permission=oatoi(optarg);
 			break;
 #               ifdef DEBUG
 		case 'D':
@@ -1235,7 +1278,7 @@ int main(int argc,char **argv)
 	
 	signal(SIGPIPE,SIG_IGN);
 	
-	start_server();
+	start_server(permission);
 	
 	act.sa_handler=sigterm;
 	sigfillset(&act.sa_mask);
