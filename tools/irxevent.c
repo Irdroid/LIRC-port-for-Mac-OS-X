@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.4 2000/10/01 15:34:50 columbus Exp $      */
+/*      $Id: irxevent.c,v 5.5 2001/04/24 19:34:02 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -509,7 +509,8 @@ int main(int argc, char *argv[])
 				&pointer_y,windowname))
 		{
 		  
-		  if((w=find_window(root,windowname))&& (w=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
+		  if((w=find_window(root,windowname)) &&
+		     (subw=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
 		    {
 		      if (w==subw) subw=0;
 		      debugprintf(" %s\n",c);
