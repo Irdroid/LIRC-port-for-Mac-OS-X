@@ -1,3 +1,6 @@
+0.6.3: future
+  * Added support for Chronos Video Shuttle II TV card (Tonu Raitviir)
+
 0.6.2: 09/10/00
   * Added support for IRdeo (www.pofahl.de/irdeo.htm). Many thanks to
     Hans-Hermann Redenius for contributing a device.

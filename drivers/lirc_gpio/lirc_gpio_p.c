@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.19 2000/09/17 17:49:30 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.20 2000/09/18 19:51:27 columbus Exp $
  *
  */
 
@@ -67,6 +67,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVERMEDIA,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10,  0},
 	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0},
+	{BTTV_CHRONOS_VS2,   0x000000f8,          0, 0x0000100,          0,   0, 20,  0},
 	/* CPH031 and CPH033 cards (?) */
 	/* MIRO was just a work-around */
 	{BTTV_MIRO,          0x00001f00,          0, 0x0004000,          0,   0, 10, 32},

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-LIRC_VERSION="0.6.2"
+LIRC_VERSION="0.6.3"
 
 #############################################################################
 ## Default Values
@@ -270,7 +270,7 @@ function ConfigDriver
         elif test "$1" = "4"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 18 74 10\
+		--menu "$CONFIG_DRIVER_TEXT" 18 74 11\
 			1 "Hauppauge TV card (new I2C layer required)" \
 			2 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
 			3 "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)" \
@@ -280,7 +280,8 @@ function ConfigDriver
 			7 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
 			8 "Phoebe Tv Master + FM (card=22)" \
 			9 "TView99 CPH063 (card=38)" \
-                        0 "Pixelview PlayTV pro card (card=37)" 2> $TEMP;
+                        0 "Pixelview PlayTV pro card (card=37)" \
+			a "Chronos Video Shuttle II (card=35)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -294,6 +295,7 @@ function ConfigDriver
 		elif test "$1" = "8"; then LIRC_DRIVER=cph06x; DRIVER_PARAMETER=none;
 		elif test "$1" = "9"; then LIRC_DRIVER=cph06x; DRIVER_PARAMETER=none;
 		elif test "$1" = "0"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
+		elif test "$1" = "a"; then LIRC_DRIVER=chronos; DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.39 2000/08/23 19:47:25 columbus Exp $
+dnl $Id: configure.in,v 5.40 2000/09/18 19:51:27 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
 fi
 
 
-AM_INIT_AUTOMAKE(lirc, 0.6.2)
+AM_INIT_AUTOMAKE(lirc, 0.6.3)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -111,7 +111,7 @@ AC_ARG_WITH(driver,
                           irman, remotemaster, pctv, comX, lptX, avermedia,
 			  avermedia98, hauppauge, fly98, pixelview_pro,
 			  cph03x, cph06x, logitech, caraca, slinke, irdeo,
-                          irreal],
+                          irreal, chronos],
 
 driver=${withval},
 driver="unset"
@@ -224,6 +224,12 @@ if test "$driver" = "pixelview_pro"; then
   gpio_module="lirc_gpio_p"
   lircd_conf="pixelview/lircd.conf.playtv_pro"
   lircmd_conf="pixelview/lircmd.conf.playtv_pro"
+fi
+if test "$driver" = "chronos"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  gpio_module="lirc_gpio_p"
+  lircd_conf="chronos/lircd.conf.chronos"
+#  lircmd_conf="chronos/lircmd.conf.chronos"
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
