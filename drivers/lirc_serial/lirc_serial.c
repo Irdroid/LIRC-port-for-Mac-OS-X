@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.32 2001/09/18 09:03:36 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.33 2001/09/28 07:01:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -91,9 +91,16 @@
 
 #include "drivers/lirc.h"
 
-#if defined(rdtsc) && defined(KERNEL_2_1)
+#if defined(LIRC_SERIAL_SOFTCARRIER) && !defined(LIRC_SERIAL_TRANSMITTER)
+#warning "Software carrier only affects transmitting"
+#undef LIRC_SERIAL_SOFTCARRIER
+#endif
+
+#if defined(rdtsc) && defined(KERNEL_2_1) && defined(LIRC_SERIAL_SOFTCARRIER)
+
 #define USE_RDTSC
 #warning "Note: using rdtsc instruction"
+
 #endif
 
 #ifdef LIRC_SERIAL_ANIMAX
@@ -274,7 +281,7 @@ void off(void)
 	soutp(UART_MCR,LIRC_OFF);
 }
 
-#if defined(LIRC_SERIAL_SOFTCARRIER) && defined(USE_RDTSC)
+#ifdef USE_RDTSC
 
 /* This is an overflow/precision juggle, complicated in that we can't
    do long long divide in the kernel */
@@ -699,11 +706,9 @@ static int init_port(void)
 	
 	restore_flags(flags);
 	
-#ifdef LIRC_SERIAL_TRANSMITTER
 #ifdef USE_RDTSC
 	/* Initialize pulse/space widths */
 	calc_pulse_lengths_in_clocks();
-#endif
 #endif
 
 	/* If pin is high, then this must be an active low receiver. */
@@ -949,14 +954,14 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
         int result;
 	unsigned long value;
+#       ifdef LIRC_SERIAL_SOFTCARRIER
 	unsigned int ivalue;
+#       endif
 	unsigned long features=
-#       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	LIRC_CAN_SET_SEND_DUTY_CYCLE|
 #       ifndef LIRC_SERIAL_IRDEO
 	LIRC_CAN_SET_SEND_CARRIER|
-#       endif
 #       endif
 	LIRC_CAN_SEND_PULSE|
 #       endif
@@ -1029,7 +1034,6 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #               endif
 		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
-#       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	case LIRC_SET_SEND_DUTY_CYCLE:
 #               ifdef KERNEL_2_1
@@ -1042,10 +1046,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		ivalue=get_user((unsigned int *) arg);
 #               endif
 		if(ivalue<=0 || ivalue>100) return(-EINVAL);
-#ifdef USE_RDTSC
+#               ifdef USE_RDTSC
 		duty_cycle=ivalue;
 		calc_pulse_lengths_in_clocks();
-#else
+#               else /* USE_RDTSC */
 		if(256*1000000L/freq*ivalue/100<=
 		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		if(256*1000000L/freq*(100-ivalue)/100<=
@@ -1054,7 +1058,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		period=256*1000000L/freq;
 		pulse_width=period*duty_cycle/100;
 		space_width=period-pulse_width;
-#endif
+#               endif /* USE_RDTSC */
 #               ifdef DEBUG
 		printk(KERN_WARNING LIRC_DRIVER_NAME
 		       ": after SET_SEND_DUTY_CYCLE, freq=%d pulse=%ld, "
@@ -1093,7 +1097,6 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		       freq, pulse_width, space_width, conv_us_to_clocks);
 #               endif
 		break;
-#       endif
 #       endif
 	default:
 		return(-ENOIOCTLCMD);
