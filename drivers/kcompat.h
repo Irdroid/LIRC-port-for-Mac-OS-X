@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.2 2004/03/28 15:20:54 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.3 2004/03/28 15:25:44 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -13,7 +13,7 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#define daemonize(name)                                                \
+#define daemonize(name) do {                                           \
                                                                        \
 	lock_kernel();                                                 \
 	                                                               \
@@ -28,7 +28,9 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 	                                                               \
 	strcpy(current->comm, name);                                   \
 	                                                               \
-	unlock_kernel();
+	unlock_kernel();                                               \
+                                                                       \
+} while (0)
 
 #endif
 
@@ -48,8 +50,8 @@ typedef void irqreturn_t;
 #endif
 
 #if !defined(local_irq_save)
-#define local_irq_save(flags) save_flags(flags);cli()
+#define local_irq_save(flags) do{ save_flags(flags);cli(); } while(0)
 #endif
 #if !defined(local_irq_restore)
-#define local_irq_restore(flags) restore_flags(flags)
+#define local_irq_restore(flags) do{ restore_flags(flags); } while(0)
 #endif
