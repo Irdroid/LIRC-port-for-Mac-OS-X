@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.3 2005/02/19 15:13:03 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.4 2005/02/19 21:37:52 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.3 $"
+#define DRIVER_VERSION	"$Revision: 1.4 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -272,11 +272,8 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 	}
 	
 	pulse = ((lirc_t) value)*STREAMZAP_RESOLUTION;
+	pulse += STREAMZAP_RESOLUTION/2;
 	sz->sum += pulse;
-	if(pulse == 0)
-	{
-		pulse = 1;
-	}
 	pulse |= PULSE_BIT;
 	push(sz, (char *)&pulse);
 	
@@ -301,11 +298,8 @@ static inline void push_full_space(struct usb_streamzap *sz,
 	lirc_t space;
 	
 	space = ((lirc_t) value)*STREAMZAP_RESOLUTION;
+	space += STREAMZAP_RESOLUTION/2;
 	sz->sum += space;
-	if(space == 0)
-	{
-		space = 1;
-	}
 	push(sz, (char *)&space);
 }
 
