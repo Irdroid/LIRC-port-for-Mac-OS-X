@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.4 2000/10/23 07:45:43 columbus Exp $
+## $Id: acinclude.m4,v 1.5 2000/11/23 19:35:36 columbus Exp $
 ##
 ## additional m4 macros
 ##
@@ -13,7 +13,6 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
   kerneldir=missing
   no_kernel=yes
 
-
   if test `uname` != "Linux"; then
     kerneldir="not running Linux"
   else
@@ -27,7 +26,11 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
 
   if test x${no_kernel} != xyes; then
     if test -f ${kerneldir}/Makefile; then
-      ac_pkss_makefile=`mktemp /tmp/temp.XXXXXX`
+      if test "${ac_pkss_mktemp}" = "yes"; then
+        ac_pkss_makefile=`mktemp /tmp/LIRCMF.XXXXXX`
+      else
+        ac_pkss_makefile=/tmp/LIRCMF.XXXXXX
+      fi
       cat ${kerneldir}/Makefile >${ac_pkss_makefile}
       echo "lirc_tell_me_what_cc_is:" >>${ac_pkss_makefile}
       echo "	echo \$(CC)" >>${ac_pkss_makefile}
@@ -47,6 +50,7 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
 
 AC_DEFUN(AC_PATH_KERNEL_SOURCE,
 [
+  AC_CHECK_PROG(ac_pkss_mktemp,mktemp,yes,no)
   AC_PROVIDE([AC_PATH_KERNEL_SOURCE])
   AC_MSG_CHECKING(for Linux kernel sources)
 
