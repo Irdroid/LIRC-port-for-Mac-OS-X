@@ -57,6 +57,8 @@ Configuration of both is described here:</P>
 
 <H3>X11</H3>
 
+
+<H4>3.x</H4>
 <P>Just put this section in your XF86Config file to use the mouse in
 addition to your normal one.</P>
 
@@ -89,6 +91,22 @@ not work with certain X11 versions. But almost always at least one of
 the protocols did work. So try them both before trying another X11
 version. But always remember that you have to modify both XF86Config and
 lircmd.conf so they use the same protocol.</P>
+
+<H4>4.x</H4>
+<P>
+I received this configuration from a user. I didn't test it myself yet.
+</P>
+<PRE>
+Section "InputDevice"
+        Identifier  "Mouse2"
+        Driver      "mouse"
+        Option      "Protocol" "ImPS/2"
+        Option      "Device" "/dev/lircm"
+        Option      "DeviceName" "Remote"
+        Option      "AlwaysCore"
+        Option      "Buttons" "5"
+EndSection
+</PRE>
 
 <H3>gpm</H3>
 

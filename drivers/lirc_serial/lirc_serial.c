@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.18 2000/08/26 19:55:27 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.19 2000/10/22 17:31:31 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -29,9 +29,9 @@
 #include <linux/config.h>
 
 #ifndef CONFIG_SERIAL_MODULE
-#error "--- Please compile your Linux kernel serial port driver ---"
-#error "--- as a module. Read the LIRC documentation for further---"
-#error "--- details. ---"
+#error "--- Please compile your Linux kernel serial port    ---"
+#error "--- driver as a module. Read the LIRC documentation ---"
+#error "--- for further details.                            ---"
 #endif
 
 #include <linux/module.h>

@@ -26,9 +26,9 @@
 #include <linux/config.h>
 
 #ifndef CONFIG_SERIAL_MODULE
-#error "--- Please compile your Linux serial port driver ---"
-#error "--- as a module. Read the LIRC documentation for ---"
-#error "--- further details. ---"
+#error "--- Please compile your Linux kernel serial port    ---"
+#error "--- driver as a module. Read the LIRC documentation ---"
+#error "--- for further details.                            ---"
 #endif
 
 #include <linux/sched.h>
