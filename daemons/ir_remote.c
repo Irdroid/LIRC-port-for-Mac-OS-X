@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.9 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.10 1999/08/13 18:57:57 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -171,17 +171,33 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	return(found);
 }
 
+inline unsigned long time_elapsed(struct timeval *last,
+				  struct timeval *current)
+{
+	unsigned long secs,usecs,diff;
+	
+	secs=current->tv_sec-last->tv_sec;
+	usecs=current->tv_usec-last->tv_usec;
+	
+	diff=1000000*secs+usecs;
+	
+	return(diff);
+}
+
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    int repeat_state,int repeat_flag,
 			    unsigned long remaining_gap)
 {
 	unsigned long long code;
+	struct timeval current;
 
-	last_remote=remote;
 #       ifdef DEBUG
 	logprintf(1,"found: %s\n",found->name);
 #       endif
+
+	gettimeofday(&current,NULL);
 	if(found==remote->last_code && repeat_flag &&
+	   time_elapsed(&remote->last_send,&current)<1000000 &&
 	   (!(remote->repeat_bit>0) || repeat_state==remote->repeat_state))
 	{
 		remote->reps++;
@@ -195,8 +211,8 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			remote->repeat_state=repeat_state;
 		}
 	}
-	
-	gettimeofday(&remote->last_send,NULL);
+	last_remote=remote;
+	remote->last_send=current;
 	remote->remaining_gap=remaining_gap;
 	
 	code=0;
