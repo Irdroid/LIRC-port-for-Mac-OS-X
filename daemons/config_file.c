@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.16 2004/01/13 12:25:51 lirc Exp $      */
+/*      $Id: config_file.c,v 5.17 2004/02/08 20:42:35 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "lircd.h"
 #include "ir_remote.h"
@@ -414,6 +415,38 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("duty_cycle",key)==0){
 		rem->duty_cycle=s_strtoui(val);
+		return(1);
+	}
+	else if (strcasecmp("baud",key)==0){
+		rem->baud=s_strtoui(val);
+		return(1);
+	}
+	else if (strcasecmp("serial_mode",key)==0){
+		if(val[0]<'5' || val[0]>'9')
+		{
+			logprintf(LOG_ERR,"error in configfile line %d:",
+				  line);
+			logprintf(LOG_ERR,"bad bit count");
+			parse_error=1;
+			return 0;
+		}
+		rem->bits_in_byte=val[0]-'0';
+		if(toupper(val[1])!='N')
+		{
+			logprintf(LOG_ERR,"error in configfile line %d:",
+				  line);
+			logprintf(LOG_ERR,"unsupported parity mode");
+			parse_error=1;
+			return 0;
+		}
+		if(strcmp(val+2, "1.5")==0)
+		{
+			rem->stop_bits=3;
+		}
+		else
+		{
+			rem->stop_bits=s_strtoui(val+2)*2;
+		}
 		return(1);
 	}
 	else if (val2!=NULL)
@@ -832,6 +865,27 @@ struct ir_remote * read_config(FILE *f)
 				rem->post_data_bits;
 			
 			rem->rc6_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
+		}
+		if(is_serial(rem))
+		{
+			lirc_t base;
+			
+			if(rem->baud>0)
+			{
+				base=1000000/rem->baud;
+				if(rem->pzero==0 && rem->szero==0)
+				{
+					rem->pzero=base;
+				}
+				if(rem->pone==0 && rem->sone==0)
+				{
+					rem->sone=base;
+				}
+			}
+			if(rem->bits_in_byte==0)
+			{
+				rem->bits_in_byte=8;
+			}
 		}
 		rem=rem->next;
 	}

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.18 2004/01/13 12:25:51 lirc Exp $      */
+/*      $Id: receive.c,v 5.19 2004/02/08 20:42:35 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -441,6 +441,12 @@ inline int get_header(struct ir_remote *remote)
 		unget_rec_buffer(2);
 		return(0);
 	}
+	if(remote->shead==0)
+	{
+		if(!sync_pending_space(remote)) return 0;
+		set_pending_pulse(remote->phead);
+		return 1;
+	}
 	if(!expectpulse(remote,remote->phead))
 	{
 		unget_rec_buffer(1);
@@ -684,6 +690,129 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			laststate=state;
 		}
 		return(code);
+	}
+	else if(is_serial(remote))
+	{
+		int received;
+		int space, start_bit, stop_bit;
+		lirc_t delta,origdelta,pending,expecting;
+		lirc_t base, stop;
+		
+		base=1000000/remote->baud;
+		
+		/* start bit */
+		set_pending_pulse(base);
+		
+		received=0;
+		space=(rec_buffer.pendingp==0); /* expecting space ? */
+		start_bit=0;
+		stop_bit=0;
+		delta=origdelta=0;
+		stop=base*remote->stop_bits/2;
+		
+		while(received<bits)
+		{
+			if(delta==0)
+			{
+				delta=space ?
+					get_next_space(remote->sone*
+						       remote->bits_in_byte+
+						       base*remote->stop_bits/2):
+					get_next_pulse(remote->pzero*
+						       remote->bits_in_byte);
+				if(delta==0 && space &&
+				   received+remote->bits_in_byte>=bits)
+				{
+					/* open end */
+					delta=remote->sone*
+						remote->bits_in_byte+
+						base*remote->stop_bits/2;
+				}
+				origdelta=delta;
+			}
+			if(delta==0)
+			{
+				LOGPRINTF(1,"failed before bit %d",
+					  received+1);
+				return((ir_code) -1);
+			}
+			pending=(space ?
+				 rec_buffer.pendings:rec_buffer.pendingp);
+			if(delta<=pending)
+			{
+				if(!expect(remote, delta, pending))
+				{
+					LOGPRINTF(1,"failed before bit %d",
+						  received+1);
+					return((ir_code) -1);
+				}
+				delta=0;
+			}
+			else
+			{
+				delta-=pending;
+			}
+			if(pending>0)
+			{
+				if(stop_bit)
+				{
+					delta=0;
+					set_pending_pulse(base);
+					stop_bit=0;
+					space=0;
+				}
+				else
+				{
+					set_pending_pulse(0);
+					set_pending_space(0);
+				}
+				continue;
+			}
+			expecting=(space ? remote->sone:remote->pzero);
+			if(delta>expecting || expect(remote,delta,expecting))
+			{
+				delta-=(expecting>delta ? delta:expecting);
+				received++;
+				code<<=1;
+				code|=space;
+				LOGPRINTF(2,"adding %d",space);
+				if(received%remote->bits_in_byte==0)
+				{
+					ir_code temp;
+					
+					temp=code>>remote->bits_in_byte;
+					code=temp<<remote->bits_in_byte|
+						reverse(code,remote->bits_in_byte);
+
+					if(space && delta==0)
+					{
+						LOGPRINTF(1,"failed at stop "
+							  "bit after %d bits",
+							  received+1);
+						return((ir_code) -1);
+					}
+					LOGPRINTF(3,"awaiting stop bit");
+					set_pending_space(stop);
+					stop_bit=1;
+				}				
+			}
+			else
+			{
+				if(delta==origdelta)
+				{
+					LOGPRINTF(1,"framing error after "
+						  "%d bits",received+1);
+					return((ir_code) -1);
+				}
+				delta=0;
+			}
+			if(delta==0)
+			{
+				space=(space ? 0:1);
+			}
+		}
+		set_pending_space(0);
+		return code;
 	}
 	
 	for(i=0;i<bits;i++)

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.27 2004/01/13 12:25:51 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.28 2004/02/08 20:42:35 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -76,6 +76,7 @@ struct ir_ncode {
 #define REPEAT_HEADER   0x0200    /* header is also sent before repeat code */
 #define GOLDSTAR        0x0400    /* encoding found on Goldstar remote */
 #define GRUNDIG         0x0800    /* encoding found on Grundig remote */
+#define SERIAL          0x1000    /* serial protocol */
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 #define COMPAT_REVERSE  0x8000    /* compatibility mode for REVERSE flag */
@@ -137,6 +138,13 @@ struct ir_remote
 	ir_code toggle_mask;        /* Sharp (?) error detection scheme */
 	ir_code rc6_mask;           /* RC-6 doubles signal length of
 				       some bits */
+	
+	/* serial protocols */
+	unsigned int baud;          /* can be overridden by [p|s]zero,
+				       [p|s]one */
+	unsigned int bits_in_byte;  /* default: 8 */
+	unsigned int parity;        /* currently unsupported */
+	unsigned int stop_bits;     /* mapping: 1->2 1.5->3 2->4 */
 	
 	/* end of user editable values */
 	
@@ -220,6 +228,12 @@ static inline int is_goldstar(struct ir_remote *remote)
 static inline int is_grundig(struct ir_remote *remote)
 {
 	if(remote->flags&GRUNDIG) return(1);
+	else return(0);
+}
+
+static inline int is_serial(struct ir_remote *remote)
+{
+	if(remote->flags&SERIAL) return(1);
 	else return(0);
 }
 

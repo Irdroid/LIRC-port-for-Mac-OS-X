@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.6 2003/09/21 10:15:02 lirc Exp $      */
+/*      $Id: config_file.h,v 5.7 2004/02/08 20:42:35 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -39,6 +39,7 @@ static struct flaglist all_flags[]=
         {"REPEAT_HEADER",   REPEAT_HEADER},
         {"GOLDSTAR",        GOLDSTAR},
 	{"GRUNDIG",         GRUNDIG},
+	{"SERIAL",          SERIAL},
 	
         {NULL,0},
 };

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.13 2004/02/06 19:14:59 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.14 2004/02/08 20:42:35 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -190,6 +190,14 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 			fprintf(f, "  rc6_mask    0x%lX\n",
 				rem->rc6_mask);
 #                       endif
+		}
+		if(is_serial(rem))
+		{
+			fprintf(f, "  baud            %d\n",rem->baud);
+			fprintf(f, "  serial_mode     %dN%d%s\n",
+				rem->bits_in_byte,
+				rem->stop_bits/2,
+				rem->stop_bits%2 ? ".5":"");
 		}
 	}
 	else
