@@ -125,6 +125,22 @@ notice if this does not work correctly.
 </P>
 
 <P>
+If you want to use a config file to send IR commands you should try to
+vary the modulation frequency of the signals. The default frequency is
+<NOBR>38000 Hz</NOBR>. It cannot be detected automatically because the
+receiver hardware only gives us the demodulated signals. Using the
+correct modulation frequency will increase range significantly. You
+can set the modulation frequency for a remote control by adding the
+line
+<PRE>
+        frequency &lt;freq&gt;
+</PRE>
+to the according section of the config file where <em>freq</em> stands
+for the modulation frequency in Hertz. Usually values from 34000 to
+44000 are good choices.
+</P>
+
+<P>
 As creating new config files is difficult sometimes and irrecord often
 cannot detect all features of the remote control please send new
 config files to <A
