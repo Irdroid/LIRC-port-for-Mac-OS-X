@@ -365,6 +365,9 @@ end remote
 # distributed in France
 # model no. of remote control: 4184(UR86E)
 # devices being controlled by this remote:
+
+#
+# sold by Pearl as Q-Sonic Master Remote 6in1 PC
 #
 
 begin remote
@@ -424,6 +427,11 @@ begin remote
           mouse_up_left            0x0000001429740000
           mouse_down_left          0x000000142C770000
           power                    0x00000020EE11F00F
+# additional codes reported by Daniel Beyer for Q-Sonic Master Remote 6in1 PC
+          leftbtn_up               0x000000142e790000
+          rightbtn_up              0x00000014327d0000
+          pc                       0x00000020ee11d40b
+
       end codes
 
 end remote
