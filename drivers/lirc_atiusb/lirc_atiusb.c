@@ -61,7 +61,7 @@
 #define DRIVER_VERSION		"0.1"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC			"USB remote driver for LIRC"
-#define DRIVER_NAME			"lirc_usb"
+#define DRIVER_NAME			"lirc_atiusb"
 #define DRIVER_LOG			DRIVER_NAME "  "
 
 #define MAX_DEVICES			16
@@ -106,7 +106,7 @@ struct irctl {
 	int devnum;
 	int send_flags;
 
-	int count;
+	int connected;
 
 	struct semaphore lock;
 };
@@ -166,6 +166,9 @@ static int unregister_from_lirc(struct irctl *ir)
 	struct lirc_plugin *p = ir->p;
 	int devnum = ir->devnum;
 	int retval;
+
+	dprintk(DRIVER_NAME "[%d]: unregister from lirc called\n", ir->devnum);
+
 	if ((retval = lirc_unregister_plugin(p->minor)) > 0) {
 		printk(DRIVER_NAME "[%d]: error in lirc_unregister_minor: %d\n"
 		       "Trying again...\n", devnum, p->minor);
@@ -206,7 +209,7 @@ static int set_use_inc(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
 
-	if (!ir->count) {
+	if (!ir->connected) {
 		if(!ir->usbdev)
 			return -ENOENT;
 		ir->irq.dev = ir->usbdev;
@@ -216,8 +219,8 @@ static int set_use_inc(void *data)
 				   ir->devnum);
 			return -EIO;
 		}
+		ir->connected = 1;
 	}
-	ir->count++;
 
 	MOD_INC_USE_COUNT;
 	return 0;
@@ -233,15 +236,9 @@ static void set_use_dec(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
-	if (ir->count) {
-		ir->count--;
-	} else {
-		usb_remote_disconnect(NULL,ir);
-
-		/* the device was unplugged while we where open */
-		if(!ir->usbdev)
-			unregister_from_lirc(ir);
-	}
+	/* the device was unplugged while we where open */
+	if(!ir->usbdev)
+		unregister_from_lirc(ir);
 
 	MOD_DEC_USE_COUNT;
 }
@@ -363,7 +360,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->set_use_inc = &set_use_inc;
 	plugin->set_use_dec = &set_use_dec;
 
-	ir->count = 0;
+	ir->connected = 0;
 	init_MUTEX(&ir->lock);
 	init_waitqueue_head(&ir->wait_out);
 
@@ -407,16 +404,15 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 {
 	struct irctl *ir = ptr;
 	int devnum;
-	struct lirc_plugin *p;
 
 	if (!ir || !ir->p) {
 		printk(DRIVER_NAME
 		       "[?]: usb_remote_disconnect called with no context\n");
 		return;
 	}
-
 	devnum = ir->devnum;
-	p = ir->p;
+
+	dprintk(DRIVER_NAME "[%d]: usb_remote_disconnect called\n", devnum);
 
 	ir->usbdev = NULL;
 
@@ -431,8 +427,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 
 	unregister_from_lirc(ir);
 
-	printk(DRIVER_NAME "[%d]: usb remote disconnected\n",
-	       ((struct irctl *)ptr)->devnum);
+	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", devnum);
 }
 
 static struct usb_device_id usb_remote_id_table [] = {
