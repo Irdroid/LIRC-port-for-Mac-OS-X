@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.11 2001/04/24 19:05:58 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.12 2003/04/19 09:24:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -540,6 +540,10 @@ int lirc_readconfig(char *file,
 	if(file==NULL)
 	{
 		home=getenv("HOME");
+		if(home==NULL)
+		{
+			home="/";
+		}
 		filename=(char *) malloc(strlen(home)+1+strlen(LIRCCFGFILE)+1);
 		if(filename==NULL)
 			return(-1);
@@ -962,22 +966,13 @@ char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan)
 	char *s;
 	int do_once=1;
 	
-	if(scan->flags&quit)
-	{
-		config->next=NULL;
-	}
-	else
-	{
-		config->next=scan->next;
-	}
 	if(scan->flags&mode)
 	{
 		lirc_clearmode(config);
 	}
 	if(scan->change_mode!=NULL)
 	{
-		config->current_mode
-		=scan->change_mode;
+		config->current_mode=scan->change_mode;
 		if(scan->flags&once)
 		{
 			if(scan->flags&ecno)
@@ -996,11 +991,9 @@ char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan)
 	   do_once==1)
 	{
 		s=scan->next_config->string;
-		scan->next_config
-		=scan->next_config->next;
+		scan->next_config=scan->next_config->next;
 		if(scan->next_config==NULL)
-			scan->next_config
-			=scan->config;
+			scan->next_config=scan->config;
 		return(s);
 	}
 	return(NULL);
@@ -1116,7 +1109,9 @@ int lirc_code2char(struct lirc_config *config,char *code,char **string)
 	int rep;
 	char *backup;
 	char *remote,*button;
+	char *s=NULL;
 	struct lirc_config_entry *scan;
+	int quit_happened;
 
 	*string=NULL;
 	if(sscanf(code,"%*llx %x %*s %*s\n",&rep)==1)
@@ -1136,34 +1131,39 @@ int lirc_code2char(struct lirc_config *config,char *code,char **string)
 		}
 		
 		scan=config->next;
+		quit_happened=0;
 		while(scan!=NULL)
 		{
 			if(lirc_iscode(scan,remote,button,rep) &&
 			   (scan->mode==NULL ||
 			    (scan->mode!=NULL && 
 			     config->current_mode!=NULL &&
-			     strcasecmp(scan->mode,config->current_mode)==0))
+			     strcasecmp(scan->mode,config->current_mode)==0)) &&
+			   quit_happened==0
 			   )
 			{
-				char *s;
 				s=lirc_execute(config,scan);
-				if(s!=NULL)
+				if(scan->flags&quit)
 				{
-					free(backup);
-					*string=s;
-					return(0);
+					quit_happened=1;
+					config->next=NULL;
+					scan=scan->next;
+					continue;
+				}
+				else if(s!=NULL)
+				{
+					config->next=scan->next;
+					break;
 				}
 			}
-			if(config->next!=NULL)
-			{
-				scan=scan->next;
-			}
-			else
-			{
-				scan=NULL;
-			}
+			scan=scan->next;
 		}
 		free(backup);
+		if(s!=NULL)
+		{
+			*string=s;
+			return(0);
+		}
 	}
 	config->next=config->first;
 	return(0);
