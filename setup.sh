@@ -249,7 +249,7 @@ function ConfigDriver
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
-		elif test "$1" = "1"; then LIRC_DRIVER=hauppauge; DRIVER_PARAMETER=none;
+		if test "$1" = "1"; then LIRC_DRIVER=hauppauge; DRIVER_PARAMETER=none;
 		elif test "$1" = "2"; then LIRC_DRIVER=avermedia; DRIVER_PARAMETER=none;
 		elif test "$1" = "3"; then LIRC_DRIVER=fly98;     DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
