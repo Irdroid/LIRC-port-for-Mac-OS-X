@@ -49,7 +49,7 @@ hw_menu_entry: @hw-tv-card
 	bestbuy: "BestBuy Easy TV (BT848) (card=55)"
 	bestbuy2: "BestBuy Easy TV (BT878) (card=62)"
 	chronos: "Chronos Video Shuttle II (card=35)"
-	tvbox: "Creative BreakOut-Box"
+	breakoutbox: "Creative BreakOut-Box"
 	cph03x: "Dynalink Magic TView (card=48)"
 	flyvideo: "FlyVideo II (card=8)"
 	flyvideo: "FlyVideo 98 (card=30)"
@@ -100,7 +100,7 @@ param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
 	tty:
 
 param_type: atiusb audio avermedia avermedia98 avermedia_vdomate bestbuy \
-		bestbuy2 bte chronos cph03x cph06x creative_infracd \
+		bestbuy2 breakoutbox bte chronos cph03x cph06x creative_infracd \
 		dsp flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
 		knc_one kworld leadtek_0007 leadtek_0010 \
 		livedrive_midi livedrive_seq mediafocusI none \
@@ -109,7 +109,7 @@ param_type: atiusb audio avermedia avermedia98 avermedia_vdomate bestbuy \
 	none:
 
 default_param: atiusb audio avermedia avermedia98 avermedia_vdomate bestbuy \
-		bestbuy2 chronos cph03x cph06x creative_infracd dsp \
+		bestbuy2 breakoutbox chronos cph03x cph06x creative_infracd dsp \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
 		knc_one kworld leadtek leadtek_0007 leadtek_0010 \
 		livedrive_midi livedrive_seq mediafocusI none \

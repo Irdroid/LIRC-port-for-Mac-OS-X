@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.109 2003/06/17 18:26:40 ranty Exp $
+dnl $Id: configure.in,v 5.110 2003/08/03 09:40:10 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -173,7 +173,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, act200l, animax, atiusb, audio,
 			  avermedia, avermedia_vdomate, avermedia98,
-			  bestbuy, bestbuy2, bte, caraca, chronos,
+			  bestbuy, bestbuy2, breakoutbox, bte, caraca, chronos,
 			  comX, creative_infracd, dsp, cph03x, cph06x,
 			  creative, flyvideo, gvbctv5pci, hauppauge,
 			  hauppauge_dvb, irdeo, irdeo_remote, irman,
@@ -683,6 +683,11 @@ fi
 if test "$driver" = "tvbox"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="asus/lircd.conf.asus"
+fi
+
+if test "$driver" = "breakoutbox"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="creative/lircd.conf.breakoutbox"
 fi
 
 if test "$driver" = "udp"; then

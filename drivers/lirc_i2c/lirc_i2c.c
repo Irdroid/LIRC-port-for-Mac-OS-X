@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.19 2003/05/24 20:16:51 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.20 2003/08/03 09:40:10 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -9,7 +9,7 @@
  *      Christoph Bartelmus <lirc@bartelmus.de>
  * modified for KNC ONE TV Station/Anubis Typhoon TView Tuner by
  *      Ulrich Mueller <ulrich.mueller42@web.de>
- * modified for Asus TV-Box and Creative BreakOut-Box by
+ * modified for Asus TV-Box and Creative/VisionTek BreakOut-Box by
  *      Stefan Jahn <stefan@lkcc.org>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
@@ -73,6 +73,8 @@ struct IR {
 	struct i2c_client  c;
 	int nextkey;
 	unsigned char b[3];
+	unsigned char bits;
+	unsigned char flag;
 };
 
 /* ----------------------------------------------------------------------- */
@@ -104,14 +106,23 @@ static inline int reverse(int data, int bits)
 	return c;
 }
 
-static int get_key_asus(void* data, unsigned char* key, int key_no)
+static int get_key_pcf8574(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
 	int rc;
+	unsigned char all, mask;
 
-	/* poll IR chip */
-	rc = i2c_smbus_write_byte(&ir->c, 0xff); /* send bit mask */
-	rc = i2c_smbus_read_byte(&ir->c);        /* receive scan code */
+	/* compute all valid bits (key code + pressed/release flag) */
+	all = ir->bits | ir->flag;
+
+	/* save IR writable mask bits */
+	mask = i2c_smbus_read_byte(&ir->c) & ~all;
+
+	/* send bit mask */
+	rc = i2c_smbus_write_byte(&ir->c, (0xff & all) | mask);
+
+	/* receive scan code */
+	rc = i2c_smbus_read_byte(&ir->c);
 
 	if (rc == -1) {
 		dprintk(DEVICE_NAME ": %s read error\n", ir->c.name);
@@ -119,20 +130,22 @@ static int get_key_asus(void* data, unsigned char* key, int key_no)
 	}
 
 	/* drop duplicate polls */
-	if (ir->b[0] == (rc & 0xff)) {
+	if (ir->b[0] == (rc & all)) {
 		return -1;
 	}
-	ir->b[0] = rc & 0xff;
+	ir->b[0] = rc & all;
 
 	dprintk(DEVICE_NAME ": %s key 0x%02X %s\n",
-		ir->c.name, rc & ~0x07, (rc & 0x04) ? "released" : "pressed");
+		ir->c.name, rc & ir->bits,
+		(rc & ir->flag) ? "released" : "pressed");
 
-	if (rc & 0x04) {
+	if (rc & ir->flag) {
 		/* ignore released buttons */
 		return -1;
 	}
 
-	*key  = rc & ~0x07;
+	/* return valid key code */
+	*key  = rc & ir->bits;
 	return 0;
 }
 
@@ -352,7 +365,9 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	case 0x23:
 		strcpy(ir->c.name,"TV-Box IR");
 		ir->l.code_length = 8;
-		ir->l.get_key=get_key_asus;
+		ir->l.get_key=get_key_pcf8574;
+		ir->bits = flags & 0xff;
+		ir->flag = (flags >> 8) & 0xff;
 		break;
 		
 	default:
@@ -417,22 +432,24 @@ static int ir_probe(struct i2c_adapter *adap) {
 		}
 	}
 
-	/* Asus TV-Box and Creative BreakOut-Box (PCF8574) */
+	/* Asus TV-Box and Creative/VisionTek BreakOut-Box (PCF8574) */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_RIVA)) {
 		/* addresses to probe;
 		   leave 0x24 and 0x25 because SAA7113H possibly uses it 
 		   0x21 and 0x22 possibly used by SAA7108E 
 		   Asus:      0x21 is a correct address (channel 1 of PCF8574)
 		   Creative:  0x23 is a correct address (channel 3 of PCF8574)
+		   VisionTek: 0x23 is a correct address (channel 3 of PCF8574)
 		*/
-		static const int asus_probe[] = { 0x20, 0x21, 0x22, 0x23,
-						  0x24, 0x25, 0x26, 0x27, -1 };
+		static const int pcf_probe[] = { 0x20, 0x21, 0x22, 0x23,
+						 0x24, 0x25, 0x26, 0x27, -1 };
 		int ret1, ret2, ret3, ret4;
+		unsigned char bits = 0, flag = 0;
 
 		memset(&c,0,sizeof(c));
 		c.adapter = adap;
-		for (i = 0; -1 != asus_probe[i]; i++) {
-			c.addr = asus_probe[i];
+		for (i = 0; -1 != pcf_probe[i]; i++) {
+			c.addr = pcf_probe[i];
 			ret1 = i2c_smbus_write_byte(&c, 0xff);
 			ret2 = i2c_smbus_read_byte(&c);
 			ret3 = i2c_smbus_write_byte(&c, 0x00);
@@ -444,17 +461,23 @@ static int ir_probe(struct i2c_adapter *adap) {
 			    ret3 != -1 && ret4 != -1) {
 				/* in the Asus TV-Box: bit 1-0 */
 				if (((ret2 & 0x03) == 0x03) && 
-				    ((ret4 & 0x03) == 0x00))
+				    ((ret4 & 0x03) == 0x00)) {
+					bits = (unsigned char) ~0x07;
+					flag = 0x04;
 					rc = 1;
-				/* in the Creative BreakOut-Box: bit 7-5 */
-				if (((ret2 & 0xe0) == 0xe0) && 
-				    ((ret4 & 0xe0) == 0x00))
+				}
+				/* in the Creative/VisionTek BreakOut-Box: bit 7-6 */
+				if (((ret2 & 0xc0) == 0xc0) && 
+				    ((ret4 & 0xc0) == 0x00)) {
+					bits = (unsigned char) ~0xe0;
+					flag = 0x20;
 					rc = 1;
+				}
 			}
 			dprintk(DEVICE_NAME ": probe 0x%02x @ %s: %s\n",
 				c.addr, adap->name, rc ? "yes" : "no");
 			if (rc)
-				ir_attach(adap,asus_probe[i],0,0);
+				ir_attach(adap,pcf_probe[i],bits|(flag<<8),0);
 		}
 	}
 		
