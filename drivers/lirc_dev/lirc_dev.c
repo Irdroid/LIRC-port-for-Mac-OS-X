@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.6 2000/05/05 11:07:06 columbus Exp $
+ * $Id: lirc_dev.c,v 1.7 2000/06/02 14:15:56 columbus Exp $
  *
  */
 
@@ -152,11 +152,9 @@ inline static int add_to_buf(struct irctl *ir)
 static int lirc_thread(void *irctl)
 {
 	struct irctl *ir = irctl;
-
-#ifdef __SMP__
+	
 	lock_kernel();
-#endif
-
+	
 	/* This thread doesn't need any user-level access,
 	 * so get rid of all our resources
 	 */
@@ -168,20 +166,18 @@ static int lirc_thread(void *irctl)
 	current->euid = 0;
 	current->tty = NULL;
 	sigfillset(&current->blocked);
-
+	
 	strcpy(current->comm, "lirc_dev");
-
-#ifdef __SMP__
+	
 	unlock_kernel();
-#endif
-
+	
 	if(ir->t_notify != NULL) {
 		up(ir->t_notify);
 	}
-
+	
 	dprintk(LOGHEAD "poll thread started\n",
 		ir->p.name, ir->p.minor);
-
+	
 	do {
 		if (ir->open) {
 			if (ir->jiffies_to_wait) {
@@ -202,15 +198,15 @@ static int lirc_thread(void *irctl)
 			schedule_timeout(HZ/2);
 		}
 	} while (!ir->shutdown && !signal_pending(current));
-
+	
 	ir->tpid = -1;
 	if(ir->t_notify != NULL) {
 		up(ir->t_notify);
 	}
-
+	
 	dprintk(LOGHEAD "poll thread ended\n",
 		ir->p.name, ir->p.minor);
-
+	
 	return 0;
 }
 

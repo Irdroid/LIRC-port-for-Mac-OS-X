@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.8 2000/03/23 20:04:41 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.9 2000/06/02 14:15:56 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -24,7 +24,8 @@
 #error "--- Sorry, 2.1.x kernels are not supported. ---"
 #elif LINUX_VERSION_CODE >= 0x020200
 #define KERNEL_2_2
-#ifdef __SMP__ 
+#include <linux/config.h>
+#ifdef CONFIG_SMP
 #error "--- Sorry, this driver is not SMP safe. ---"
 #endif
 #endif
