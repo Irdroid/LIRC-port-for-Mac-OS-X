@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.9 2002/06/24 18:35:20 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.10 2003/02/13 16:09:08 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -317,10 +317,7 @@ void make_key(char *keyname,int x, int y,XKeyEvent *xev)
 {
   char *part, *part2;
   struct keymodlist_t *kmlptr;
-#ifndef HAVE_STRSEP
-  char tmpkeyname[128];
-  strncpy(tmpkeyname,keyname,128);
-#endif
+
   part2=malloc(128);
 
   xev->type = KeyPress;
@@ -336,7 +333,7 @@ void make_key(char *keyname,int x, int y,XKeyEvent *xev)
 #ifdef HAVE_STRSEP
   while ((part=strsep(&keyname, key_delimiter)))
 #else
-  while ((part=strtok(tmpkeyname, key_delimiter)))
+  while ((part=strtok(keyname, key_delimiter)) && ((keyname=NULL)==NULL))
 #endif
     {
       part2=strncpy(part2,part,128);
