@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.11 2004/02/11 16:12:01 lirc Exp $      */
+/*      $Id: mode2.c,v 5.12 2004/05/30 16:19:32 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -94,7 +94,7 @@ int main(int argc,char **argv)
 	else if ( (fstat(fd,&s)!=-1) && (!S_ISCHR(s.st_mode)) )
 	{
 		fprintf(stderr,"%s: %s is not a character device\n",progname,device);
-		fprintf(stderr,"%s: use the -d option to specify the correct device\n",progname,device);
+		fprintf(stderr,"%s: use the -d option to specify the correct device\n",progname);
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
