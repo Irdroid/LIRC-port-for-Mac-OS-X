@@ -399,7 +399,10 @@ while test "$EXIT" != "yes"; do
 done
 #clear
 rm -f $TEMP
-echo "Written by <karsten.scheibler@bigfoot.de>, 1999-JUN-28"
+echo "setup.sh written by Karsten Scheibler, 1999-JUN-28"
+echo
+echo "If you have problems or questions please consult the mailing list"
+echo "<http://lists.sourceforge.net/mailman/listinfo/lirc-list>"
 echo
 echo $MESSAGE
 if test "$CONFIGURE" = "yes"; then
