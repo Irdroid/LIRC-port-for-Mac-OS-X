@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.41 2002/07/04 15:59:40 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.42 2002/07/13 09:30:17 ranty Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -263,11 +263,13 @@ int main(int argc,char **argv)
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		exit(EXIT_FAILURE);
 	}
-#ifdef LIRC_NETWORK_ONLY 
-	fprintf(stderr,"%s: irrecord does not make sense without hardware\n",
-		progname);
-	exit(EXIT_FAILURE);
-#endif
+	if(strcmp(hw.name, "null")==0)
+	{
+		fprintf(stderr,
+			"%s: irrecord does not make sense without hardware\n",
+			progname);
+		exit(EXIT_FAILURE);
+	}
 	filename=argv[optind];
 	fin=fopen(filename,"r");
 	if(fin!=NULL)

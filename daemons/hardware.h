@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.6 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: hardware.h,v 5.7 2002/07/13 09:30:17 ranty Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -36,7 +36,5 @@ struct hardware
 	char *name;
 };
 
-#ifndef LIRC_NETWORK_ONLY
 extern struct hardware hw;
-#endif
 #endif

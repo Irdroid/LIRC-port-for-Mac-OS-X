@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.40 2002/06/16 18:18:57 lirc Exp $      */
+/*      $Id: lircd.c,v 5.41 2002/07/13 09:30:17 ranty Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1852,14 +1852,13 @@ int main(int argc,char **argv)
 		return(EXIT_FAILURE);
 	}
 	
-#ifdef LIRC_NETWORK_ONLY
-	if(peern==0)
+	if(strcmp(hw.name, "null")==0 && peern==0)
 	{
 		fprintf(stderr,"%s: there's no hardware I can use and "
 			"no peers are specified\n",progname);
 		return(EXIT_FAILURE);
 	}
-#endif
+
 	signal(SIGPIPE,SIG_IGN);
 	
 	start_server(permission,nodaemon);

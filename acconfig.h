@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.20 2002/05/18 14:53:09 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.21 2002/07/13 09:30:17 ranty Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -113,9 +113,6 @@
 
 /* Define if you want to use a Tekram Irmate 210 */
 #undef LIRC_SIR_TEKRAM
-
-/* Define if there's no device connected to the local lircd */
-#undef LIRC_NETWORK_ONLY
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS

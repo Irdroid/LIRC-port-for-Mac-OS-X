@@ -22,6 +22,24 @@ extern struct hardware hw_udp;
 # warning HW_DEFAULT is not defined
 #endif
 
+struct hardware hw_null=
+{
+	"/dev/null",        /* default device */
+	-1,                 /* fd */
+	0,                  /* features */
+	0,                  /* send_mode */
+	0,                  /* rec_mode */
+	0,                  /* code_length */
+	NULL,               /* init_func */
+	NULL,               /* config_func */
+	NULL,               /* deinit_func */
+	NULL,               /* send_func */
+	NULL,               /* rec_func */
+	NULL,               /* decode_func */
+	NULL,		    /* readdata */
+	"null",		    /* name */
+};
+
 struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
@@ -37,28 +55,14 @@ struct hardware *hw_list[] =
 	&hw_slinke,
 	&hw_dsp,
 	&hw_udp,
+	&hw_null,
 #else
-#ifndef LIRC_NETWORK_ONLY
 	&HW_DEFAULT,
-#endif
 #endif
 	NULL
 };
 
-struct hardware hw=
-{
-	"/dev/null",        /* default device */
-	-1,                 /* fd */
-	0,                  /* features */
-	0,                  /* send_mode */
-	0,                  /* rec_mode */
-	0,                  /* code_length */
-	NULL,               /* init_func */
-	NULL,               /* deinit_func */
-	NULL,               /* send_func */
-	NULL,               /* rec_func */
-	NULL,               /* decode_func */
-};
+struct hardware hw;
 
 // which one is HW_DEFAULT could be selected with autoconf in a similar
 // way as it is now done upstream
@@ -69,9 +73,7 @@ int hw_choose_driver (char *name)
 	char *device = hw.device;
 	
 	if(name==NULL){
-#ifndef LIRC_NETWORK_ONLY
 		hw = HW_DEFAULT;
-#endif
 		return 0;
 	}
 	for (i=0; hw_list[i]; i++)
