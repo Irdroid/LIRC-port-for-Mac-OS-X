@@ -1,7 +1,18 @@
+/* $Id: lirc_aver.c,v 1.2 1999/06/08 12:01:42 denis Exp $ */
+/* $Log: lirc_aver.c,v $
+/* Revision 1.2  1999/06/08 12:01:42  denis
+/* Compilation with new lirc fixed.
+/* New lirc ioctl interface added.
+/* Main lirc config.h file added.
+/* "major" module option added.
+/* Repeat code with "repeat_bit" implemented.
+/* */
+
 /* 
     remote_aver.o - Remote control driver for avermedia remotes and lirc
 
     Copyright (C) 1999  Ryan Gammon (rggammon@engmail.uwaterloo.ca)
+    Changes by Denis V. Dmitrienko <denis@null.net>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,6 +60,10 @@ Algorithm:
 #error "--- A 2.2.x kernel is required to use this module ---"
 #endif
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <linux/module.h>
 
 #ifndef MODULE
@@ -61,6 +76,13 @@ Algorithm:
 #include <linux/fs.h>
 
 #include "../lirc.h"
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE !FALSE
+#endif
 
 /* In linux/drivers/char/bttv.c */
 extern int read_bt848_gpio(int card, int latch, unsigned long mask, unsigned long *val);
@@ -75,19 +97,20 @@ static ssize_t remote_read(struct file * file, char * buffer, size_t count, loff
 static ssize_t remote_write(struct file * file, const char * buffer, size_t count, loff_t *ppos);
 
 MODULE_PARM(card, "1-4i"); /* Which avermedia card to use, if you have more than 1 */
+MODULE_PARM(major, "i");
 EXPORT_NO_SYMBOLS;
 
 static int card = 1;
-
-static int mode_decoded = FALSE;
-static int is_open = FALSE;
+static int major = LIRC_MAJOR;
 
 struct remote_status {
+  int is_open;
+  int mode_decoded;
 	unsigned char code;
 	struct wait_queue *wait_poll, *wait_cleanup;
 	int status_changed;
+  char repeat;
 };
-
 
 static struct tq_struct polling_task = {
 	NULL,		/* Next item in list - queue_task will do this for us */
@@ -112,14 +135,13 @@ struct file_operations fops = {
 static struct remote_status remote;
 static int ticks = 0;
 
-
 static void remote_timer(void *unused)
 {
 	unsigned char code;	
 	unsigned long gpio, ready;
-	int result, repeat;
+	int result;
 	
-	if(mode_decoded)
+	if(remote.mode_decoded)
 	{
 		/* Put ourselves back in the task queue */
 		queue_task(&polling_task, &tq_timer); 
@@ -142,36 +164,32 @@ static void remote_timer(void *unused)
 	
 	ticks = 0;
 
-	result = read_bt848_gpio(card, FALSE, 0x00010000, &ready);
+	result = read_bt848_gpio(card-1, FALSE, 0x00010000, &ready);
 
 	if((result != 0) || (!ready))
 	{
+    if(remote.code != 0xFF)
+      remote.repeat = !remote.repeat;
 		remote.code = 0xFF;
 		return;
 	}
 	
-	if(write_bt848_gpio(card, FALSE, 0x00020000, 0x00020000) != 0) return;
-	if(read_bt848_gpio (card, FALSE, 0x00FC0000, &gpio)      != 0) return;
-	if(write_bt848_gpio(card, FALSE, 0x00020000, 0x00000000) != 0) return;
+	if(write_bt848_gpio(card-1, FALSE, 0x00020000, 0x00020000) != 0) return;
+	if(read_bt848_gpio (card-1, FALSE, 0x00FC0000, &gpio)      != 0) return;
+	if(write_bt848_gpio(card-1, FALSE, 0x00020000, 0x00000000) != 0) return;
 
 	gpio >>= 16;
 	code = (gpio & 0xF0) >> 4;
 	if(gpio & 0x08)	code += 0x10;
-	/* if(gpio & 0x02) code += 0x20; */ 
-	repeat = (gpio & 0x04);
 
-	if( (remote.code != code) || repeat )
-	{
-		printk("Code %d\n", code);
-		remote.code = code;
-		remote.status_changed = 1;
-		wake_up_interruptible(&remote.wait_poll);
-	}
+  remote.code = code;
+  remote.status_changed = 1;
+  wake_up_interruptible(&remote.wait_poll);
 }
 
 static unsigned int remote_poll(struct file *file, struct poll_table_struct * wait)
 {
-        poll_wait(file, &remote.wait_poll, wait);
+  poll_wait(file, &remote.wait_poll, wait);
 
 	if(remote.status_changed)
 	{
@@ -182,40 +200,63 @@ static unsigned int remote_poll(struct file *file, struct poll_table_struct * wa
 		return 0;
 }
 
-static int remote_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long argp)
+static int remote_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
+  int result;
+	unsigned long features = LIRC_CAN_REC_CODE, mode;
+
 	switch(cmd)
 	{
-		case LIRC_MODE_DECODED:
-			if(!mode_decoded)
-			{
-				mode_decoded = TRUE;
-				queue_task(&polling_task, &tq_timer);
-			}
-			return 0;
-		case LIRC_MODE_PULSE_SPACE:
-			if(mode_decoded)
-			{
-				mode_decoded = FALSE;
-				sleep_on(&remote.wait_cleanup);
-			}
-			return -ENOSYS;
+    case LIRC_GET_FEATURES:
+      result = put_user(features,(unsigned long*)arg);
+      if(result)
+        return(result); 
+      break;
+    case LIRC_GET_REC_MODE:
+      result = put_user(LIRC_MODE_CODE,(unsigned long*)arg);
+      if(result)
+        return(result); 
+      break;
+    case LIRC_SET_REC_MODE:
+      result = get_user(mode,(unsigned long*)arg);
+      if(result)
+        return(result);
+      if(mode != LIRC_MODE_CODE)
+      {
+        if(remote.mode_decoded)
+        {
+          remote.mode_decoded = FALSE;
+          sleep_on(&remote.wait_cleanup);
+        }
+        return -ENOSYS;
+      }
+      else
+      {
+        if(!remote.mode_decoded)
+        {
+          remote.mode_decoded = TRUE;
+          queue_task(&polling_task, &tq_timer);
+        }
+      }
+      break;
+    default:
+      return -ENOIOCTLCMD;
 	}
-
-	return -EINVAL;
+  return 0;
 }
 
 static int remote_open(struct inode *inode, struct file *file)
 {
 	/* We don't want to talk to two processes at the same time */
-	if (is_open)
+	if (remote.is_open)
 		return -EBUSY;
 	
-	is_open = TRUE;
+	remote.is_open = TRUE;
 	remote.wait_poll = NULL;
 	remote.wait_cleanup = NULL;
 	remote.status_changed = FALSE;
 	remote.code = 0xFF;
+  remote.repeat = 0;
 
 	MOD_INC_USE_COUNT;
 
@@ -224,13 +265,13 @@ static int remote_open(struct inode *inode, struct file *file)
 
 static int remote_close(struct inode *inode, struct file *file)
 {
-	if(mode_decoded)
+	if(remote.mode_decoded)
 	{
-		mode_decoded = FALSE;
+		remote.mode_decoded = FALSE;
 		sleep_on(&remote.wait_cleanup);
 	}
 
-	is_open = FALSE;
+	remote.is_open = FALSE;
 
 	MOD_DEC_USE_COUNT;
 	
@@ -239,38 +280,36 @@ static int remote_close(struct inode *inode, struct file *file)
 
 static ssize_t remote_read(struct file * file, char * buffer, size_t count, loff_t *ppos)
 {
-	unsigned long lirc_data;
+	unsigned char lirc_data;
 
-	if(count != 4)		/* the lirc protocol works on 4 byte packets only */
+	if(count != 1)		/* LIRC_MODE_CODE */
 		return -EIO;
 	
-	lirc_data = (unsigned long)(remote.code);
-	put_user(lirc_data, (unsigned long *)(buffer));
+	lirc_data = (unsigned char)(remote.code | (remote.repeat << 7));
+	put_user(lirc_data, (unsigned char*)(buffer));
 
 	return count;
 }
 
-
 static ssize_t remote_write(struct file * file, const char * buffer, size_t count, loff_t *ppos)
 {
-        return -EINVAL;
+  return -EINVAL;
 }
-
 
 int init_module(void)
 {
 	int ret;
 	
-	card--;
-	
-	ret = register_chrdev(LIRC_MAJOR, DEVICE_NAME, &fops);
+	ret = register_chrdev(major, LIRC_DRIVER, &fops);
 
 	if (ret < 0)
 	{
-		printk("remote: registration of device with major %d failed, code %d\n", LIRC_MAJOR, ret);
+		printk("remote: registration of device with major %d failed, code %d\n", major, ret);
 		return ret;
 	}
-	
+  remote.mode_decoded = FALSE;
+  remote.is_open = FALSE;
+
 	return 0;
 }
 
@@ -279,7 +318,7 @@ void cleanup_module(void)
 	int ret;
 
 	/* Unregister the device */
-	ret = unregister_chrdev(LIRC_MAJOR, DEVICE_NAME);
+	ret = unregister_chrdev(major, LIRC_DRIVER);
 
 	/* If there's an error, report it */ 
 	if (ret < 0)
