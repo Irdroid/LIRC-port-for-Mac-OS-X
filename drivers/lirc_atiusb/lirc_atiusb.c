@@ -238,7 +238,7 @@ static void usb_remote_irq(struct urb *urb)
 	if (urb->actual_length != ir->p->code_length/8) return;
 
 	lirc_buffer_write_1(ir->p->rbuf, urb->transfer_buffer);
-	wake_up_sync(&ir->p->rbuf->wait_poll);
+	wake_up(&ir->p->rbuf->wait_poll);
 }
 
 static void usb_remote_out(struct urb *urb)
