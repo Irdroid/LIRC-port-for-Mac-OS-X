@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.48 2003/02/15 09:00:57 lirc Exp $      */
+/*      $Id: lircd.c,v 5.49 2003/03/30 12:22:11 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1839,7 +1839,7 @@ int main(int argc,char **argv)
 		case 'd':
 			hw.device=optarg;
 			break;
-                case 'i':
+                case 'P':
                         pidfile=optarg;
                         break;
 #                       ifndef USE_SYSLOG
