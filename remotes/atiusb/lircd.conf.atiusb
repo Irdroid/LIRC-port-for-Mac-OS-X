@@ -352,3 +352,78 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.0pre6(atiusb) on Fri Jul  9 10:08:10 2004
+#
+# contributed by 		Julien Damon
+#
+# brand:                       microapp6in1
+# see http://www.microapp.com/fiche_produit.cfm?ref_produit=4184
+# distributed in France
+# model no. of remote control: 4184(UR86E)
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  microapp6in1
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          203993
+  toggle_bit      0
+
+
+      begin codes
+          num_1                    0x00000020EE11820D
+          num_2                    0x00000020EE11420D
+          num_3                    0x00000020EE11C20D
+          num_4                    0x00000020EE11220D
+          num_5                    0x00000020EE11A20D
+          num_6                    0x00000020EE11620D
+          num_7                    0x00000020EE11E20D
+          num_8                    0x00000020EE11120D
+          num_9                    0x00000020EE11920D
+          num_0                    0x00000020EE11020D
+          AV                       0x00000020EE11BA05
+          ok                       0x00000020EE11520D
+          up                       0x00000020EE11D50A
+          left                     0x00000020EE11D20D
+          right                    0x00000020EE11D10E
+          down                     0x00000020EE11D30C
+          exit                     0x00000020EE11C906
+          menu                     0x00000020EE11B609
+          mute                     0x00000020EE11A00F
+          vol+                     0x00000020EE11600F
+          vol-                     0x00000020EE11E00F
+          ch+                      0x00000020EE11400F
+          ch-                      0x00000020EE11C00F
+          hand                     0x00000014307B0000
+          skip_left                0x00000020EE113A05
+          skip_right               0x00000020EE11D807
+          play                     0x00000020EE11B00F
+          backward                 0x00000020EE113807
+          forward                  0x00000020EE11B807
+          pause                    0x00000020EE11720D
+          stop                     0x00000020EE11FF00
+          record                   0x00000020EE11700F
+          clic_left                0x000000142D780000
+          clic_right               0x00000014317C0000
+          mouse_up                 0x0000001427720000
+          mouse_down               0x0000001428730000
+          mouse_right              0x0000001426710000
+          mouse_left               0x0000001425700000
+          mouse_up_right           0x000000142A750000
+          mouse_down_right         0x000000142B760000
+          mouse_up_left            0x0000001429740000
+          mouse_down_left          0x000000142C770000
+          power                    0x00000020EE11F00F
+      end codes
+
+end remote
+
+
