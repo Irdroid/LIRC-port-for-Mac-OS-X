@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.6 2000/03/21 12:03:04 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.7 2000/04/02 10:36:54 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -377,9 +377,14 @@ void mouse_conv(int rep,char *button,char *remote)
 			if(ms.always_active==0)
 			{
 				if(ms.active==0)
+				{
 					activate();
+					ms.toggle_active=1;
+				}
 				else
+				{
 					deactivate();
+				}
 			}
 		}
 		
@@ -562,7 +567,6 @@ struct trans_mouse *read_config(FILE *fd)
 		{
 			d=mouse_toggle_activate;
 			new_ms.always_active=0;
-			new_ms.toggle_active=1;
 		}
 		else
 		{
