@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.13 2000/04/15 20:28:51 columbus Exp $      */
+/*      $Id: lircd.c,v 5.14 2000/04/17 20:44:56 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1061,7 +1061,7 @@ int waitfordata(unsigned long maxusec)
 				}
 				if(hup)
 				{
-					dosigterm(SIGHUP);
+					dosighup(SIGHUP);
 					hup=0;
 				}
 				if(alrm)
