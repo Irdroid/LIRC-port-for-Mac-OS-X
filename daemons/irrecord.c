@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.8 1999/10/18 10:14:55 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.9 2000/01/24 18:43:54 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1324,7 +1324,7 @@ void merge_lengths(struct lengths *first)
 		}
 		l=l->next;
 	}
-#       ifdef 0
+#       ifdef DEBUG
 	l=first;
 	while(l!=NULL)
 	{
@@ -1349,7 +1349,7 @@ void get_scheme(struct ir_remote *remote)
 		}
 		sum+=lengths[i];
 #               ifdef DEBUG
-		if(lengths[i]>0) printf("%d: %lu\n",i,lengths[i]);
+		if(lengths[i]>0) printf("%u: %lu\n",i,lengths[i]);
 #               endif
 	}
 #       ifdef DEBUG
