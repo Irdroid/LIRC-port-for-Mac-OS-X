@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.12 2004/05/30 16:19:32 lirc Exp $      */
+/*      $Id: mode2.c,v 5.13 2005/02/27 15:02:20 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -23,19 +23,25 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <limits.h>
 
 #include "drivers/lirc.h"
+#include "daemons/ir_remote.h"
 
 int main(int argc,char **argv)
 {
 	int fd;
+	char buffer[sizeof(ir_code)];
 	lirc_t data;
 	unsigned long mode;
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
 	struct stat s;
 	int dmode=0;
-
+	unsigned long code_length;
+	size_t count=sizeof(lirc_t);
+	int i;
+	
 	progname="mode2";
 	while(1)
 	{
@@ -98,7 +104,7 @@ int main(int argc,char **argv)
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
-	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1)
 	{
 		printf("This program is only intended for receivers "
 		       "supporting the pulse/space layer.\n");
@@ -111,17 +117,52 @@ int main(int argc,char **argv)
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
+	if(mode==LIRC_MODE_CODE)
+	{
+		count = 1;
+	}
+	else if(mode==LIRC_MODE_LIRCCODE)
+	{
+		if(ioctl(fd,LIRC_GET_LENGTH,&code_length)==-1)
+		{
+			fprintf(stderr, "%s: could not get code length\n",
+				progname);
+			perror(progname);
+			close(fd);
+			exit(EXIT_FAILURE);
+		}
+		if(code_length>sizeof(ir_code)*CHAR_BIT)
+		{
+			fprintf(stderr, "%s: cannot handle %lu bit codes\n",
+				progname, code_length);
+			close(fd);
+			exit(EXIT_FAILURE);
+		}
+		count = (code_length+CHAR_BIT-1)/CHAR_BIT;
+	}
 	while(1)
 	{
 		int result;
 
-		result=read(fd,&data,sizeof(data));
-		if(result!=sizeof(data))
+		result=read(fd,(mode==LIRC_MODE_MODE2 ? (void *) &data:buffer),count);
+		if(result!=count)
 		{
 			fprintf(stderr,"read() failed\n");
 			break;
 		}
 		
+		if(mode!=LIRC_MODE_MODE2)
+		{
+			printf("code: 0x");
+			for(i=0; i<count; i++)
+			{
+				printf("%02x", (unsigned char) buffer[i]);
+			}
+			printf("\n");
+			fflush(stdout);
+			continue;
+		}
+
 		if (!dmode)
 		{
 			printf("%s %lu\n",(data&PULSE_BIT)?"pulse":"space",
