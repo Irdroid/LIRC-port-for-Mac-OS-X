@@ -66,12 +66,12 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> [Focus] <windowname> | WindowID <id> 
-	| CurrentWindow | RootWindow
+config = Key [shift-][ctrl-][alt-]<key> [Focus] <windowname>
+	| WindowID <id> | CurrentWindow | RootWindow
 config = Button <button> <x> <y> [Focus] <windowname> | WindowID <id> 
 	| CurrentWindow | RootWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> [Focus] <windowname> 
-	| WindowID id | CurrentWindow | RootWindow
+config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> [Focus]
+	<windowname> | WindowID id | CurrentWindow | RootWindow
 .RE
 .fi
 
