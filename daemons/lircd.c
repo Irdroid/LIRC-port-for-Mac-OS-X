@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.26 2001/04/24 19:12:19 lirc Exp $      */
+/*      $Id: lircd.c,v 5.27 2001/04/25 10:39:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -773,8 +773,10 @@ void start_server(mode_t permission,int nodaemon)
 
 	if(listen_tcpip)
 	{
+		int enable=1;
+
 		/* create socket*/
-		sockinet=socket(AF_INET,SOCK_STREAM,0);
+		sockinet=socket(PF_INET,SOCK_STREAM,IPPROTO_IP);
 		if(sockinet==-1)
 		{
 			close(sockfd);
@@ -785,7 +787,8 @@ void start_server(mode_t permission,int nodaemon)
 			perror(progname);
 			exit(EXIT_FAILURE);
 		};
-		
+		(void) setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,
+				  &enable,sizeof(enable));
 		serv_addr_in.sin_family=AF_INET;
 		serv_addr_in.sin_addr.s_addr=htonl(INADDR_ANY);
 		serv_addr_in.sin_port=htons(port);
