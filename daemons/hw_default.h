@@ -1,4 +1,4 @@
-/*      $Id: hw_default.h,v 5.3 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hw_default.h,v 5.4 2000/05/06 15:42:02 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.h ************************************************************
@@ -44,6 +44,7 @@ struct rbuf
 	lirc_t sum;
 };
 
+inline lirc_t lirc_t_max(lirc_t a,lirc_t b);
 inline void set_bit(ir_code *code,int bit,int data);
 inline lirc_t time_left(struct timeval *current,struct timeval *last,
 			lirc_t gap);

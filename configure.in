@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.26 2000/05/03 13:51:06 columbus Exp $
+dnl $Id: configure.in,v 5.27 2000/05/06 15:42:02 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -176,8 +176,8 @@ if test "$driver" = "parallel"; then
   lirc_driver=lirc_parallel
 fi
 if test "$driver" = "avermedia"; then
-  AC_MSG_ERROR([sorry, the selected driver is not available any more])
-  lirc_driver=lirc_aver
+  lirc_driver="lirc_dev lirc_gpio"
+  gpio_module="lirc_gpio_p.o"
   lircd_conf="avermedia/lircd.conf.avermedia"
   lircmd_conf="avermedia/lircmd.conf.avermedia"
 fi

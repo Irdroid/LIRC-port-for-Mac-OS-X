@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.11 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.12 2000/05/06 15:42:02 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -74,6 +74,11 @@ struct hardware hw=
 	default_rec,      /* rec_func */
 	default_decode,   /* decode_func */
 };
+
+inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
+{
+	return(a>b ? a:b);
+}
 
 inline void set_bit(ir_code *code,int bit,int data)
 {
@@ -1116,7 +1121,9 @@ int default_decode(struct ir_remote *remote,
 		   hw.rec_mode==LIRC_MODE_LIRCCODE)
 		{
 			int i;
-
+			lirc_t sum;
+			struct timeval current;
+			
 #                       ifdef DEBUG
 #                       ifdef LONG_IR_CODE
 			logprintf(1,"decoded: %llx\n",rec_buffer.decoded);
@@ -1150,7 +1157,23 @@ int default_decode(struct ir_remote *remote,
 			code=rec_buffer.decoded&code_mask;
 			code_mask=0;
 			pre=rec_buffer.decoded>>remote->bits;
-			sync=remote->gap;
+
+			gettimeofday(&current,NULL);
+			sum=remote->phead+remote->shead+
+				lirc_t_max(remote->pone+remote->sone,
+					   remote->pzero+remote->szero)*
+				(remote->bits+
+				 remote->pre_data_bits+
+				 remote->post_data_bits)+
+				remote->plead+
+				remote->ptrail+
+				remote->pfoot+remote->sfoot+
+				remote->pre_p+remote->pre_s+
+				remote->post_p+remote->post_s;
+			
+			rec_buffer.sum=sum>=remote->gap ? remote->gap-1:sum;
+			sync=time_elapsed(&remote->last_send,&current)-
+				rec_buffer.sum;
 		}
 		else
 		{

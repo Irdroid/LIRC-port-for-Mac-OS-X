@@ -4,9 +4,10 @@
  * 
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
+ *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.3 2000/05/05 11:08:56 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.4 2000/05/06 15:42:02 columbus Exp $
  *
  */
 
@@ -24,14 +25,11 @@
 #include "../drivers/char/bttv.h"
 
 /* default parameters value are suitable for the PixelView Play TVPro card
- * for the AverMedias you should use:
- * gpio_lock_mask=0x010000
- * gpio_xor_mask=0x010000
- * gpio_mask=0x0f88000
- */                                                                                                    
+ */
 
 static int debug = 0;
 static int card = 0;
+static int type = 0;
 static int minor = -1;
 static unsigned int gpio_mask = 0x1f00;
 static unsigned int gpio_lock_mask = 0x8000;
@@ -60,24 +58,38 @@ static int get_key(void* data, unsigned char *key, int key_no)
 {
 	static unsigned long next_time = 0;
 	static unsigned char last_key = 0xff;
+	static u32 key_code=0;
 
 	unsigned long code;
 	unsigned int mask = gpio_mask;
 	unsigned char shift = 0;
 	unsigned char curr_key = 0;
-
+	
 	if (bttv_read_gpio(card, &code)) {
 		dprintk("lirc_gpio_p %d: cannot read GPIO\n", card);
 		return -1;
 	}
-
+	switch(type)
+	{
+	case BTTV_AVERMEDIA98:
+		if(key_no>0 && key_no<=3)
+		{
+			if(key_no>3) return(-1);
+			*key=(unsigned char) ((key_code>>(3-key_no)*8)&0xff);
+			return(0);
+		}
+		break;
+	default:
+		break;
+	}
+	
 	code ^= gpio_xor_mask;
-
- 	if (gpio_lock_mask && (code & gpio_lock_mask)) {
- 		last_key = 0xff;
- 		return -1;
- 	}
-
+	
+	if (gpio_lock_mask && (code & gpio_lock_mask)) {
+		last_key = 0xff;
+		return -1;
+	}
+	
 	/* extract bits from "raw" GPIO value using gpio_mask */
 	code >>= gpio_pre_shift;
 	while (mask) {
@@ -87,14 +99,35 @@ static int get_key(void* data, unsigned char *key, int key_no)
 		mask >>= 1;
 		code >>= 1;
 	}
-	   
+	
 	if (curr_key == last_key && jiffies < next_time) {
 		return -1;
 	}
-
+	
 	next_time = jiffies + soft_gap;
-	last_key = *key = curr_key;
 
+	last_key=curr_key;
+	switch(type)
+	{
+	case BTTV_AVERMEDIA98:
+		/* set pre_data */
+		if(curr_key&0x1)
+		{
+			key_code=0xC03F0000;
+		}
+		else
+		{
+			key_code=0x40BF0000;
+		}
+		curr_key&=(~0x1);
+		curr_key<<=2;
+		key_code|=(curr_key)<<8 | (~(curr_key)&0xff);
+		*key=(unsigned char) ((key_code>>24)&0xff);
+		break;
+	default:
+		*key = curr_key;
+		break;
+	}
 	return 0;
 }
 
@@ -137,13 +170,21 @@ int gpio_remote_init(void)
 	}
 
 	/* calculte scan code length in bits */
-	plugin.code_length = 1;
-	mask = gpio_mask >> 1;
-	while(mask) {
-		if (mask & 1u) {
-			plugin.code_length++;
+	switch(type)
+	{
+	case BTTV_AVERMEDIA98:
+		plugin.code_length=32;
+		break;
+	default:
+		plugin.code_length = 1;
+		mask = gpio_mask >> 1;
+		while(mask) {
+			if (mask & 1u) {
+				plugin.code_length++;
+			}
+			mask >>= 1;
 		}
-		mask >>= 1;
+		break;
 	}
 
 	/* translate ms to jiffies */
@@ -185,10 +226,22 @@ int init_module(void)
 		return -1;
 	}
 	
-	if (0 > bttv_get_id(card)) {
+	type=bttv_get_id(card);
+	if (type < 0) {
 		printk("lirc_gpio_p %d: parameter card (%d) has bad value!\n",
 		       minor, card);
 		return -1;
+	}
+	switch(type)
+	{
+	case BTTV_AVERMEDIA:
+	case BTTV_AVERMEDIA98:
+		gpio_mask      = 0x0f88000;
+		gpio_lock_mask = 0x010000;
+		gpio_xor_mask  = 0x010000;
+		soft_gap = 0;
+		sample_rate = 12;
+		break;
 	}
 
 	if (!gpio_mask) {
