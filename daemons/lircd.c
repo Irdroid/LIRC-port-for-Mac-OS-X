@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.37 2002/02/22 14:47:47 lirc Exp $      */
+/*      $Id: lircd.c,v 5.38 2002/03/24 21:10:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1791,6 +1791,7 @@ int main(int argc,char **argv)
 				hw_print_drivers(stderr);
 				exit (EXIT_FAILURE);
 			}
+			break;
 		case 'd':
 			hw.device=optarg;
 			break;
