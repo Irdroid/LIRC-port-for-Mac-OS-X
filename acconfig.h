@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.2 1999/08/02 19:56:48 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.3 1999/08/06 18:12:48 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -81,6 +81,9 @@
 
 /* Define if you have an animax serial port receiver */
 #undef LIRC_SERIAL_ANIMAX
+
+/* Define if you have a IR diode connected to the serial port */
+#undef LIRC_SERIAL_TRANSMITTER
 
 /* Define if the software needs to generate the carrier frequency */
 #undef LIRC_SERIAL_SOFTCARRIER

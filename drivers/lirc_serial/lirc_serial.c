@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.4 1999/07/27 16:58:26 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.5 1999/08/06 18:12:48 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -88,7 +88,7 @@ static int irq = LIRC_IRQ;
 
 static unsigned char rbuf[RBUF_LEN];
 static int rbh, rbt;
-#ifndef LIRC_SERIAL_ANIMAX
+#ifdef LIRC_SERIAL_TRANSMITTER
 static unsigned char wbuf[WBUF_LEN];
 unsigned long pulse_width = 13; /* pulse/space ratio of 50/50 */
 unsigned space_width = 13;      /* 1000000/freq-pulse_width */
@@ -112,7 +112,7 @@ static inline void soutp(int offset, int value)
 	outb(value, port + offset);
 }
 
-#ifndef LIRC_SERIAL_ANIMAX
+#ifdef LIRC_SERIAL_TRANSMITTER
 void on(void)
 {
 	soutp(UART_MCR,LIRC_ON);
@@ -454,7 +454,7 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
                      int n)
 #endif
 {
-#ifndef LIRC_SERIAL_ANIMAX
+#ifdef LIRC_SERIAL_TRANSMITTER
 	int retval,i,count;
 	unsigned long flags;
 	
@@ -488,11 +488,11 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
         int result;
 	unsigned long value;
 	unsigned long features=
+#       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	LIRC_CAN_SET_SEND_PULSE_WIDTH|
 	LIRC_CAN_SET_SEND_CARRIER|
 #       endif
-#       ifndef LIRC_SERIAL_ANIMAX
 	LIRC_CAN_SEND_PULSE|
 #       endif
 	LIRC_CAN_REC_MODE2;
@@ -510,7 +510,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		put_user(features,(unsigned long *) arg);
 #               endif
 		break;
-#       ifndef LIRC_SERIAL_ANIMAX
+#       ifdef LIRC_SERIAL_TRANSMITTER
 	case LIRC_GET_SEND_MODE:
 #               ifdef KERNEL_2_1
 		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
@@ -534,7 +534,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
 #               endif
 		break;
-#       ifndef LIRC_SERIAL_ANIMAX
+#       ifdef LIRC_SERIAL_TRANSMITTER
 	case LIRC_SET_SEND_MODE:
 #               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
@@ -560,7 +560,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #               endif
 		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
-#       ifndef LIRC_SERIAL_ANIMAX
+#       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	case LIRC_SET_SEND_PULSE_WIDTH:
 #               ifdef KERNEL_2_1

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.5 1999/08/03 18:16:52 columbus Exp $
+## $Id: Makefile.am,v 5.6 1999/08/06 18:12:48 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -42,6 +42,10 @@ hw_default_simrec.o: hw_default.c hw_default.h hardware.h ir_remote.h lircd.h  $
 
 install-exec-local: mkdev
 uninstall-local: rmdev
+
+install-data-local:
+	test "$(lircd_conf)" = ""  || test -e $(sysconfdir)/lircd.conf  || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircd.conf
+	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircmd.conf
 
 mkdev:
 	test -e @devdir@/lircd || @mknod@ @devdir@/lircd p

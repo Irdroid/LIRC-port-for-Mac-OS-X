@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.7 1999/08/04 19:18:26 columbus Exp $
+dnl $Id: configure.in,v 5.8 1999/08/06 18:12:48 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -81,13 +81,16 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, serial, parallel, irman, comX, lptX, 
-			  avermedia, hauppauge, fly98],
+                          none, serial, animax, packard_bell,
+			  parallel, irman, remotemaster, comX, lptX, 
+			  avermedia, hauppauge, fly98, pixelview],
 driver=${withval},
 driver="unset"
 )
 
 lirc_driver="$driver"
+lircd_conf=""
+lircmd_conf=""
 hw_module="hw_default.o"
 
 if test "$driver" = "none"; then
@@ -105,6 +108,16 @@ fi
 
 if test "$driver" = "serial"; then
   lirc_driver=lirc_serial
+fi
+if test "$driver" = "animax"; then
+  lirc_driver=lirc_serial
+  lircd_conf="animax/lircd.conf.animax"
+  lircmd_conf="animax/lircmd.conf.animax"
+  AC_DEFINE(LIRC_SERIAL_ANIMAX)
+fi
+if test "$driver" = "packard_bell"; then
+  lirc_driver=lirc_serial
+  lircd_conf="packard_bell/lircd.conf.packard_bell"
 fi
 if test "$driver" = "com1"; then
   lirc_driver=lirc_serial
@@ -132,15 +145,22 @@ if test "$driver" = "parallel"; then
 fi
 if test "$driver" = "avermedia"; then
   lirc_driver=lirc_aver;
+  lircd_conf="avermedia/lircd.conf.avermedia"
+  lircmd_conf="avermedia/lircmd.conf.avermedia"
 fi
 if test "$driver" = "hauppauge"; then
   lirc_driver=lirc_haup;
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
 fi
 if test "$driver" = "fly98"; then
   lirc_driver=lirc_fly98;
+  lircd_conf="life-view/lircd.conf.fly98"
+  lircmd_conf="life-view/lircmd.conf.fly98"
 fi
 if test "$driver" = "pixelview"; then
   lirc_driver=lirc_pixview;
+  lircd_conf="pixelview/lircd.conf.playtv"
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
@@ -254,11 +274,9 @@ AC_ARG_WITH(soft-carrier,
 test x${withval} = xyes && AC_DEFINE(LIRC_SERIAL_SOFTCARRIER),
 AC_DEFINE(LIRC_SERIAL_SOFTCARRIER))
 
-AC_ARG_WITH(animax,
-[  --with-animax           specify this if you have the animax hardware,
-                          as well as using the --with-driver=comX option],
-test x${withval} = xyes && AC_DEFINE(LIRC_SERIAL_ANIMAX)
-)
+AC_ARG_WITH(transmitter,
+[  --with-transmitter      use this if you use a transmitter diode],
+test x${withval} = xyes && AC_DEFINE(LIRC_SERIAL_TRANSMITTER))
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          enable debugging features],
@@ -279,6 +297,7 @@ prefix=$cur_prefix
 
 dnl tell the Makefiles what we decided
 AC_SUBST(devdir)
+AC_SUBST(sysconfdir)
 AC_SUBST(moduledir)
 AC_SUBST(lirc_major)
 AC_SUBST(lirc_driver)
@@ -287,6 +306,8 @@ AC_SUBST(vga_progs)
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
 AC_SUBST(irtty)
+AC_SUBST(lircd_conf)
+AC_SUBST(lircmd_conf)
 
 AC_SUBST(maintmode_daemons_extra)
 

@@ -23,8 +23,8 @@ LIRC_DRIVER="serial"
 LIRC_MAJOR=61
 SELECTED_DRIVER=""
 DRIVER_PARAMETER="com1"
-ANIMAX="off"
-SOFT_CARRIER="on"
+SOFT_CARRIER="off"
+TRANSMITTER="off"
 TIMER=65536
 X11_WINDOWS="on"
 DEBUG="off"
@@ -87,7 +87,7 @@ function GetPortAndIrq
            2> $TEMP
     if test "$?" = "0"; then
         {
-        set `cat $TEMP`
+	set `cat $TEMP`
         LIRC_PORT=$1
         LIRC_IRQ=$2
         }
@@ -97,7 +97,9 @@ function GetPortAndIrq
 
 function SetPortAndIrq
     {
-    if test "$LIRC_DRIVER" = "serial"; then
+    if test "$LIRC_DRIVER" = "serial" -o \
+	    "$LIRC_DRIVER" = "packard_bell" -o \
+	    "$LIRC_DRIVER" = "animax"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify port and IRQ of your hardware" \
@@ -110,7 +112,7 @@ function SetPortAndIrq
                2> $TEMP
         if test "$?" = "0"; then
             {
-            set `cat $TEMP`
+	    set `cat $TEMP`
             if   test "$1" = "1"; then DRIVER_PARAMETER="com1"
             elif test "$1" = "2"; then DRIVER_PARAMETER="com2"
             elif test "$1" = "3"; then DRIVER_PARAMETER="com3"
@@ -133,7 +135,7 @@ function SetPortAndIrq
                  2> $TEMP
         if test "$?" = "0"; then
             {
-            set `cat $TEMP`
+	    set `cat $TEMP`
             if   test "$1" = "1"; then DRIVER_PARAMETER="lpt1"
             elif test "$1" = "2"; then DRIVER_PARAMETER="lpt2"
             elif test "$1" = "3"; then DRIVER_PARAMETER="lpt3"
@@ -156,7 +158,7 @@ function SetPortAndIrq
 	}
         if test "$?" = "0"; then
             {
-            set `cat $TEMP`
+	    set `cat $TEMP`
             if   test "$1" = "1"; then DRIVER_PARAMETER="tty1"
             elif test "$1" = "2"; then DRIVER_PARAMETER="tty2"
             elif test "$1" = "3"; then DRIVER_PARAMETER="tty3"
@@ -177,20 +179,22 @@ function DriverOptions
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Driver specific Options" \
                --checklist "" 13 74 5 \
-                 1 "Use Animax Anir Multimedia Remote options" $ANIMAX \
-                 2 "Softcarrier" $SOFT_CARRIER \
+                 1 "With transmitter diode" $TRANSMITTER \
+                 2 "Software generated carrier" $SOFT_CARRIER \
                2> $TEMP
         if test "$?" = "0"; then
             {
-            set `cat $TEMP`
-            ANIMAX="off"; SOFT_CARRIER="off"
+	    set -- `cat $TEMP`
+            SOFT_CARRIER="off"
+	    TRANSMITTER="off"
             for ITEM in $@; do
                 {
-                if   test $ITEM = "\"1\""; then ANIMAX="on"
-                elif test $ITEM = "\"2\""; then SOFT_CARRIER="on"
+                if   test $ITEM = "\"1\""; then TRANSMITTER="on";
+                elif test $ITEM = "\"2\""; then SOFT_CARRIER="on";
                 fi
                 }
             done
+	    if test "$TRANSMITTER" = "off"; then SOFT_CARRIER="off"; fi
             }
         fi
         }
@@ -202,7 +206,7 @@ function DriverOptions
                2> $TEMP
         if test "$?" = "0"; then
             {
-            set `cat $TEMP`
+	    set `cat $TEMP`
             TIMER=$1
             }
         fi
@@ -216,16 +220,18 @@ function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 15 74 6 \
+           --menu "$CONFIG_DRIVER_TEXT" 15 74 8 \
              1 "Serial port driver" \
              2 "Parallel port driver" \
              3 "Irman" \
 	     4 "TV card" \
-	     5 "PixelView RemoteMaster RC2000/RC3000" 2> $TEMP
+	     5 "Packard Bell receiver" \
+	     6 "Anir Multimedia Magic" \
+             7 "PixelView RemoteMaster RC2000/RC3000" 2> $TEMP
 
     if test "$?" = "0"; then
         {
-        set `cat $TEMP`
+	set `cat $TEMP`
         if   test "$1" = "1"; then LIRC_DRIVER=serial;   DRIVER_PARAMETER=com1;
         elif test "$1" = "2"; then LIRC_DRIVER=parallel; DRIVER_PARAMETER=lpt1;
         elif test "$1" = "3"; then LIRC_DRIVER=irman;    DRIVER_PARAMETER=tty1;
@@ -249,7 +255,9 @@ function ConfigDriver
 	    else
 		return;
 	    fi;
-        elif test "$1" = "5"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
+        elif test "$1" = "5"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
+        elif test "$1" = "6"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
+        elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
         fi
         GetSelectedDriver
         SetPortAndIrq
@@ -272,7 +280,7 @@ function ConfigSoftware
 
     if test "$?" = "0"; then
         {
-        set `cat $TEMP`
+	set -- `cat $TEMP`
         X11_WINDOWS="off"; DEBUG="off"; NO_DAEMONIZE="off"; NO_LONG_CODES="off"
         for ITEM in $@; do
             {
@@ -297,8 +305,8 @@ function SaveConfig
     echo "LIRC_MAJOR=$LIRC_MAJOR" >>$CONFIG
     echo "IRTTY=$IRTTY" >>$CONFIG
     echo "DRIVER_PARAMETER=$DRIVER_PARAMETER" >>$CONFIG
-    echo "ANIMAX=$ANIMAX" >>$CONFIG
     echo "SOFT_CARRIER=$SOFT_CARRIER" >>$CONFIG
+    echo "TRANSMITTER=$TRANSMITTER" >>$CONFIG
     echo "TIMER=$TIMER" >>$CONFIG
     echo "X11_WINDOWS=$X11_WINDOWS" >>$CONFIG
     echo "DEBUG=$DEBUG" >>$CONFIG
@@ -312,8 +320,8 @@ function SaveConfig
     echo "--with-module-dir=/lib/modules/`uname -r`/misc \\" >>$START
     if   test "$LIRC_DRIVER" = "serial"; then
         {
-        if test "$ANIMAX" = "on"; then echo "--with-animax \\" >>$START; fi
         if test "$SOFT_CARRIER" = "off"; then echo "--without-soft-carrier \\" >>$START; fi
+        if test "$TRANSMITTER" = "on"; then echo "--with-transmitter \\" >>$START; fi
         }
     elif test "$LIRC_DRIVER" = "parallel"; then
         {
@@ -374,7 +382,7 @@ while test "$EXIT" != "yes"; do
         }
     else
         {
-        set `cat $TEMP`
+	set `cat $TEMP`
         if test "$1" = "1"; then ConfigDriver
         elif test "$1" = "2"; then ConfigSoftware
         elif test "$1" = "3"; then
