@@ -1,5 +1,7 @@
 FlyVideo 98 IR remote control driver
 
+YOU NEED 2.2.x KERNEL TO USE THIS DRIVER.
+
 This driver should support lirc interface in LIRC_MODE_CODE mode.
 This is not fully tested yet. The lirc_fly98.c file should be compiled
 as a kernel module ad you should apply included patch to the bttv-0.6.3
@@ -10,21 +12,18 @@ There is also a patch for a kernel bttv driver. This one is better tested
 now since I switched my machine to this driver (works better). 
 bttv patch will be better tested and corrected later.
 
-Remember to set KERNEL_SRC in Makefile.am before runing autogen !
-
 For examples of config files see remotes/fly98 directory.
 
 To install:
 
- - set the kernel location in drivers/lirc_fly98/Makefile.am 
  - apply the proper patch from drivers/lirc_fly98 
- - compile the kernel (turn OFF versioned kernel symbols and 
-   ON FlyVideo98 remote support)
+ - compile the kernel (turn ON BT848 and FlyVideo98 remote support)
  - run autogen.sh
  - run setup.sh from main directory and configure the fly98 driver 
  - run configure, run make 
- - copy lirc_fly98.o to /lib/modules/2.2.10/misc (or similar), 
- - run depmod
+ - run make install or 
+    copy lirc_fly98.o to /lib/modules/2.2.10/misc (or similar) and 
+    run depmod
  - copy lircd.conf and lircmd.conf from remotes/fly98 to /usr/local/etc 
    and lircrc to ~/.lircrc 
  - you should be ready now

@@ -4,8 +4,15 @@
     by lirc_fly98.o
 
 $Log: ChangeLog,v $
+Revision 1.3  1999/08/03 11:53:37  jochym
+Changed Makefile.am to conform to the rest of the tree. Small modyfication
+of kernel patch (tristate changed to bool in Config.in). Clean-ups.
+No real bugs found so far. README modyfied to adapt to this changes.
+Example configurations moved to live-view directory.
+
 Revision 1.2  1999/08/02 07:38:30  jochym
 Finally a working setup. Further clean-up of the kernel patch (got it
 even smaller). Configuration files for lircd, lircmd and ~/.lircrc.
 Lock-up in the bttv caused by wrong initialization order removed.
 External bttv patch not fully tested yet. Internal version 0.1. BETA.
+

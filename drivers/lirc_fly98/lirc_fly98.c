@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.6 1999/08/02 07:38:30 jochym Exp $
+ * $Id: lirc_fly98.c,v 1.7 1999/08/03 11:53:37 jochym Exp $
  *
  */
 
@@ -24,6 +24,12 @@
  *	  some clean-up.
  * From now on RCS log:
  * $Log: lirc_fly98.c,v $
+ * Revision 1.7  1999/08/03 11:53:37  jochym
+ * Changed Makefile.am to conform to the rest of the tree. Small modyfication
+ * of kernel patch (tristate changed to bool in Config.in). Clean-ups.
+ * No real bugs found so far. README modyfied to adapt to this changes.
+ * Example configurations moved to live-view directory.
+ *
  * Revision 1.6  1999/08/02 07:38:30  jochym
  * Finally a working setup. Further clean-up of the kernel patch (got it
  * even smaller). Configuration files for lircd, lircmd and ~/.lircrc.
@@ -43,7 +49,6 @@
 #include <linux/malloc.h>
 
 #if CONFIG_MODVERSIONS==1
-#define MODVERSIONS
 #include <linux/modversions.h>
 #endif        
 
@@ -54,8 +59,8 @@
                              * at present, but may help for compatibility
                              * with future versions of Linux */
 
-#include "bttv.h"
-#include "bt848.h"
+#include "../drivers/char/bttv.h"
+#include "../drivers/char/bt848.h"
 #include "lirc_fly98.h"
 
 #define SUCCESS 0

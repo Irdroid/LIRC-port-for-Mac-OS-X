@@ -6,7 +6,7 @@ diff -u --recursive linux/drivers/char/Config.in linux-irctl/drivers/char/Config
      dep_tristate 'BT848 Video For Linux' CONFIG_VIDEO_BT848 $CONFIG_VIDEO_DEV
    fi
 +  if [ "$CONFIG_VIDEO_BT848" != "n" ]; then
-+    dep_tristate 'FlyVideo98 Remote Control' CONFIG_BTTV_REMOTE $CONFIG_VIDEO_BT848
++    bool 'FlyVideo98 Remote Control' CONFIG_BTTV_REMOTE
 +  fi
    if [ "$CONFIG_PARPORT" != "n" ]; then
      dep_tristate 'Quickcam BW Video For Linux' CONFIG_VIDEO_BWQCAM $CONFIG_VIDEO_DEV $CONFIG_PARPORT
