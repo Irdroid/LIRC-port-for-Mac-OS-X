@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.40 2004/07/24 15:36:14 lirc Exp $
+## $Id: Makefile.am,v 5.41 2004/09/11 19:56:51 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,9 +12,11 @@ sbin_PROGRAMS = lircd lircmd
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h config_file.h \
 		hw-types.c hw-types.h hardware.h
-lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @daemon@
+lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
-EXTRA_lircd_SOURCES = hw_audio.c\
+EXTRA_lircd_SOURCES = \
+			hw_atilibusb.c \
+			hw_audio.c \
 			hw_audio_alsa.c \
 			hw_bte.c hw_bte.h \
 			hw_caraca.c hw_caraca.h \
@@ -49,9 +51,11 @@ bin_PROGRAMS = irrecord
 irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 		config_file.c config_file.h hardware.h \
 		hw-types.c hw-types.h ir_remote.c ir_remote.h
-irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@
+irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@
 irrecord_DEPENDENCIES = @hw_module@
-EXTRA_irrecord_SOURCES = hw_audio.c \
+EXTRA_irrecord_SOURCES = \
+			hw_atilibusb.c \
+			hw_audio.c \
 			hw_audio_alsa.c \
 			hw_bte.c hw_bte.h \
 			hw_caraca.c hw_caraca.h \

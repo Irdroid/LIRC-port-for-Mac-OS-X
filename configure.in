@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.128 2004/08/05 15:47:13 lirc Exp $
+dnl $Id: configure.in,v 5.129 2004/09/11 19:56:51 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -26,6 +26,7 @@ AC_PROG_MAKE_SET
 AC_PATH_PROG(mknod, mknod, /bin/mknod)
 AC_PATH_PROG(mkfifo, mkfifo, /usr/bin/mkfifo)
 AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
+AC_PATH_PROG(LIBUSB_CONFIG, libusb-config)
 AC_PROG_LN_S
 AM_PROG_LIBTOOL
 
@@ -149,6 +150,10 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_sasem) (lirc_dev lirc_serial) (lirc_dev lirc_sir)"
 fi
 
+if test -n "${LIBUSB_CONFIG}"; then
+  AC_DEFINE(HAVE_LIBUSB)
+  possible_drivers="${possible_drivers} (atilibusb)"
+fi
 AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
   possible_drivers="${possible_drivers} (caraca)"
@@ -182,24 +187,24 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, any, act200l, animax, atiusb, audio,
-			  avermedia, avermedia_vdomate, avermedia98,
-			  bestbuy, bestbuy2, breakoutbox, bte, caraca,
-			  chronos, comX, creative_infracd, dsp,
-			  cph03x, cph06x, creative, devinput, exaudio,
-			  flyvideo, gvbctv5pci, hauppauge,
-			  hauppauge_dvb, hercules_smarttv_stereo,
-			  igorplugusb, irdeo, irdeo_remote, irman,
-			  irreal, it87, knc_one, kworld, leadtek_0007,
-			  leadtek_0010, livedrive_midi, livedrive_seq,
-			  logitech, lptX, mceusb, mediafocusI,
-			  mp3anywhere, packard_bell, parallel, pcmak,
-			  pcmak_usb, pctv, pixelview_bt878,
-			  pixelview_pak, pixelview_pro, provideo,
-			  realmagic, remotemaster, sa1100, sasem,
-			  serial, silitek, sir, slinke, tekram,
-			  tekram_bt829, tira, tvbox, udp, uirt2,
-			  uirt2_raw],
+                          none, any, act200l, animax, atilibusb,
+                          atiusb, audio, avermedia, avermedia_vdomate,
+                          avermedia98, bestbuy, bestbuy2, breakoutbox,
+                          bte, caraca, chronos, comX,
+                          creative_infracd, dsp, cph03x, cph06x,
+                          creative, devinput, exaudio, flyvideo,
+                          gvbctv5pci, hauppauge, hauppauge_dvb,
+                          hercules_smarttv_stereo, igorplugusb, irdeo,
+                          irdeo_remote, irman, irreal, it87, knc_one,
+                          kworld, leadtek_0007, leadtek_0010,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, mceusb, mediafocusI, mp3anywhere,
+                          packard_bell, parallel, pcmak, pcmak_usb,
+                          pctv, pixelview_bt878, pixelview_pak,
+                          pixelview_pro, provideo, realmagic,
+                          remotemaster, sa1100, sasem, serial,
+                          silitek, sir, slinke, tekram, tekram_bt829,
+                          tira, tvbox, udp, uirt2, uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -213,6 +218,7 @@ irman_lib=""
 caraca_lib=""
 portaudio_lib=""
 alsa_lib=""
+atilibusb_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
 kernel_module=""
@@ -234,6 +240,11 @@ if test "$driver" = "any"; then
 			  -e's/-$//g'`
   for any_driver in ${any_possible_drivers}; do
   case ${any_driver} in
+	atilibusb)
+		hw_module="${hw_module} hw_atilibusb.o receive.o"
+		atilibusb_lib=`${LIBUSB_CONFIG} --libs`
+		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+		;;
 	audio)
 		hw_module="${hw_module} hw_audio.o receive.o"
 		portaudio_lib="-lportaudio ${portaudio_lib_other}"
@@ -374,6 +385,16 @@ fi
 if test "$driver" = "atiusb"; then
   lirc_driver="lirc_dev lirc_atiusb"
   lircd_conf="atiusb/lircd.conf.atiusb"
+fi
+
+if test "$driver" = "atilibusb"; then
+  lirc_driver="$driver"
+  hw_module="hw_atilibusb.o receive.o"
+  HW_DEFAULT="hw_atilibusb"
+  if test -n "${LIBUSB_CONFIG}"; then
+    atilibusb_lib=`${LIBUSB_CONFIG} --libs`
+    CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+  fi
 fi
 
 if test "$driver" = "audio"; then
@@ -829,6 +850,14 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
+  atilibusb)
+    AC_MSG_ERROR([*** you need to have libusb installed for this driver.
+
+Get it at:
+
+  http://libusb.sourceforge.net/
+])
+    ;;
   audio)
     AC_MSG_ERROR([*** you need to have the PortAudio library V18 installed
 to use the audio driver. You can get it at:
@@ -850,7 +879,13 @@ fi
 
 dnl now we've checked, we can rename things for the drivers/Makefile
 
-if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca" || test "$lirc_driver" = "audio" || test "$lirc_driver" = "audio_alsa"; then
+if test "$lirc_driver" = "none" || \
+	test "$lirc_driver" = "atilibusb" || \
+	test "$lirc_driver" = "audio" || \
+	test "$lirc_driver" = "audio_alsa" || \
+	test "$lirc_driver" = "caraca" || \
+	test "$lirc_driver" = "irman" || \
+	test "$lirc_driver" = "irman_sw"; then
   lirc_driver=
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
@@ -1017,6 +1052,7 @@ AC_SUBST(irman_lib)
 AC_SUBST(caraca_lib)
 AC_SUBST(portaudio_lib)
 AC_SUBST(alsa_lib)
+AC_SUBST(atilibusb_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
@@ -1038,7 +1074,6 @@ AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
 AC_DEFINE_UNQUOTED(LIRC_IRQ, $irq)
 AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
 AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
-  drivers/lirc_igorplugusb/Makefile
 AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
 dnl bug in automake/autoconf?

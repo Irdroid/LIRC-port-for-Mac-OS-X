@@ -97,6 +97,7 @@ hw_menu_entry: @hw-pda
 
 hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 RF Remote"
+	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
@@ -119,7 +120,7 @@ param_type: caraca creative irman logitech mp3anywhere pcmak pctv realmagic \
 param_type: pcmak_usb tira
         ttyUSB:
 
-param_type: atiusb audio audio_alsa avermedia avermedia98 \
+param_type: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
 		chronos cph03x cph06x creative_infracd devinput dsp \
 		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
@@ -129,7 +130,7 @@ param_type: atiusb audio audio_alsa avermedia avermedia98 \
 		pixelview_pro provideo sa1100 sasem tekram_bt829 tvbox udp
 	none:
 
-default_param: atiusb audio audio_alsa avermedia avermedia98 \
+default_param: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
 		cph03x cph06x creative_infracd devinput dsp exaudio \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
