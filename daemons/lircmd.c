@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.4 1999/11/07 20:20:34 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.5 2000/02/12 12:32:03 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -349,6 +349,8 @@ void activate()
 
 void deactivate()
 {
+	/* all buttons up */
+	mouse_button(0,BUTTON1|BUTTON2|BUTTON3,0);
 	ms.active=0;
 	mouse_circle(CIRCLE,-1,1);
 }
