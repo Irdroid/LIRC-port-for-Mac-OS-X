@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.2 2000/04/06 17:22:42 columbus Exp $
+ * $Id: lirc_dev.c,v 1.3 2000/04/11 13:52:38 columbus Exp $
  *
  */
 
@@ -35,9 +35,10 @@ static int debug = 0;
 MODULE_PARM(debug,"i");
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
-#define DECLARE_MUTEX(foo)         struct semaphore foo = MUTEX
-#define DECLARE_MUTEX_LOCKED(foo)  struct semaphore foo = MUTEX_LOCKED
-#define init_MUTEX(foo)            *(foo) = MUTEX
+#define DECLARE_MUTEX(foo)         	struct semaphore foo = MUTEX
+#define DECLARE_MUTEX_LOCKED(foo)  	struct semaphore foo = MUTEX_LOCKED
+#define init_MUTEX(foo)            	*(foo) = MUTEX
+#define DECLARE_WAITQUEUE(name,task) 	struct wait_queue name = { task, NULL }
 #endif
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
@@ -517,7 +518,7 @@ static ssize_t irctl_read(struct file *file,
 	unsigned char buf[BUFLEN];
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 	int ret;
-	struct wait_queue wait = { current, NULL };
+	DECLARE_WAITQUEUE(wait, current);
 
 	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
 
