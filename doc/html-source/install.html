@@ -136,6 +136,23 @@ manually. See <em>./configure --help</em> for a detailed description
 of the possible parameters. You will have to at least choose a driver
 with the <em>--with-driver=X</em> option.</P>
 
+</P>There are two special drivers:
+<DL>
+  <DT>none</DT>
+  <DD>
+	will only let lircd talk to other lircd's though the network and
+	not to any local hardware.
+  </DD>
+  <DT>any</DT>
+  <DD>
+	will build multiple drivers into lircd and runtime selection
+	will be possible.
+	However, not all drivers are included, so in some cases you
+	will have to select the appropriate driver and not <em>any</em>.
+  </DD>
+</DL>
+</P>
+
 
 <P>After having configured the package just type <em>make</em> and
 lean back.</P>

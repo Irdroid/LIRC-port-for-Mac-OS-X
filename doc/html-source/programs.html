@@ -7,7 +7,8 @@ domain socket</P>
 
 <PRE>
   <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> |
-  --permission=<em>mode</em>] [-d<em>device</em> |
+  --permission=<em>mode</em>] [-H<em>driver</em> |
+  --driver=<em>driver</em>] [-d<em>device</em> |
   --device=<em>device</em>] [-l[<em>port</em>] |
   --listen[=<em>port</em>]] [-c<em>host:[port]</em> ... |
   --connect=host[:port] ...] [config_file]
@@ -161,7 +162,7 @@ react itself only to their according entries in .lircrc.</P>
 <P>irpty - pseudo tty driver</P>
 
 <PRE>
-  <B>irpty</B> [-s socket_name] [-e] [-i] [-n] [-v] config_file -- program [args ...]
+  <B>irpty</B> [-s socket_name] [-h] [-V] [-e] [-i] [-n] [-v] config_file -- program [args ...]
 </PRE>
 
 <P>
@@ -178,23 +179,38 @@ description for details.
 irpty accepts the following options:
 </P>
     <DL>
-      <DT>-s socket_name</DT>
+      <DT>-h</DT>
+      <DT>--help</DT>
+      <DD>
+	display usage summary
+      </DD>
+      <DT>-V</DT>
+      <DT>--version</DT>
+      <DD>
+	display version
+      </DD>
+      <DT>-s</DT>
+      <DT>--socket=socket_name</DT>
       <DD>
 	select a non-default socket location
       </DD>
       <DT>-e</DT>
+      <DT>--no-echo</DT>
       <DD>
 	disable echo
       </DD>
       <DT>-i</DT>
+      <DT>--ignore-eof</DT>
       <DD>
 	ingore EOF
       </DD>
       <DT>-n</DT>
+      <DT>--non-interactive</DT>
       <DD>
 	force non-interactive mode
       </DD>
       <DT>-v</DT>
+      <DT>--verbose</DT>
       <DD>
 	verbose mode
       </DD>
@@ -403,6 +419,7 @@ LIRC</P>
 
 <PRE>
   <B>irrecord</B> [-d<em>device</em> | --device=<em>device</em>]
+           [-H<em>driver</em> | --driver=<em>driver</em>]
            [-f | --force] file
   <B>irrecord</B> -h | --help
   <B>irrecord</B> -v | --version
