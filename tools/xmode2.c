@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.3 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.4 1999/09/15 18:19:38 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -46,6 +46,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
@@ -119,6 +120,7 @@ int main(int argc, char **argv)
   int retval;
       
   int fd;
+  unsigned long mode;
   lirc_t data;
   lirc_t x1,y1,x2,y2;
   int result;
@@ -144,6 +146,12 @@ int main(int argc, char **argv)
     printf("error opening %s\n",LIRC_DRIVER_DEVICE);
     exit(1);
   };
+  if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+  {
+    printf("This program only works with receivers supporting the pulse/space layer.\n");
+    close(fd);
+    exit(1);
+  }
 	
   initscreen();
 	

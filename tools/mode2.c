@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.3 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: mode2.c,v 5.4 1999/09/15 18:19:38 columbus Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 
 #include "drivers/lirc.h"
 
@@ -27,6 +28,7 @@ int main()
 {
 	int fd;
 	lirc_t data;
+	unsigned long mode;
 	
 	fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
 	if(fd==-1)  {
@@ -34,7 +36,12 @@ int main()
 		perror("mode2");
 		exit(1);
 	};
-
+	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	{
+		printf("This program only works with receivers supporting the pulse/space layer.\n");
+		close(fd);
+		exit(1);
+	}
 	while(1)
 	{
 		int result;
