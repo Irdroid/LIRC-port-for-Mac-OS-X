@@ -222,7 +222,7 @@ function ConfigDriver
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
            --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
-             1 "Serial port driver" \
+             1 "8250/16450/16550A UART compatible serial port" \
              2 "Parallel port driver" \
              3 "Irman" \
 	     4 "TV card" \
