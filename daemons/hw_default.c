@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.1 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.2 1999/08/03 18:16:52 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -615,7 +615,6 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 	unsigned long deltas,deltap;
 	int retval;
 
-	if(exdelta==0) return(1);
 	if(rec_buffer.pendings>0)
 	{
 		deltas=get_next_space();
@@ -646,7 +645,6 @@ int expectspace(struct ir_remote *remote,int exdelta)
 	unsigned long deltas,deltap;
 	int retval;
 
-	if(exdelta==0) return(1);
 	if(rec_buffer.pendingp>0)
 	{
 		deltap=get_next_pulse();
@@ -676,7 +674,7 @@ inline int expectone(struct ir_remote *remote)
 {
 	if(is_shift(remote))
 	{
-		if(!expectspace(remote,remote->sone))
+		if(remote->sone>0 && !expectspace(remote,remote->sone))
 		{
 			unget_rec_buffer(1);
 			return(0);
@@ -685,14 +683,15 @@ inline int expectone(struct ir_remote *remote)
 	}
 	else
 	{
-		if(!expectpulse(remote,remote->pone))
+		if(remote->pone>0 && !expectpulse(remote,remote->pone))
 		{
 			unget_rec_buffer(1);
 			return(0);
 		}
 		if(remote->ptrail>0)
 		{
-			if(!expectspace(remote,remote->sone))
+			if(remote->sone>0 &&
+			   !expectspace(remote,remote->sone))
 			{
 				unget_rec_buffer(2);
 				return(0);
@@ -1149,7 +1148,7 @@ int default_decode(struct ir_remote *remote,
 				logprintf(1,"pre: %lx\n",pre);
 #                               endif
 #                               endif
-			}
+		}
 			
 			code=get_data(remote,remote->bits);
 			if(code==(ir_code) -1)
