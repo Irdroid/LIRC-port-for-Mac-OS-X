@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.14 2003/11/10 20:21:27 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.15 2003/11/10 20:35:25 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1248,8 +1248,12 @@ static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
 	struct lirc_code *codes;
 	
 	if(scan->code==NULL)
-		return(1);
-
+	{
+		return rep==0 ||
+			(scan->rep>0 && rep>scan->rep_delay &&
+			 ((rep-scan->rep_delay-1)%scan->rep)==0);
+	}
+	
 	if(scan->next_code->remote==LIRC_ALL || 
 	   strcasecmp(scan->next_code->remote,remote)==0)
 	{
