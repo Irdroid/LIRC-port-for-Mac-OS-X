@@ -401,7 +401,7 @@ function SaveConfig
 
 #############################################################################
 ## Main Program
-if ! which dialog >/dev/null; then
+if ! type dialog >/dev/null; then
     echo "dialog not found!"
     exit 1
 fi
