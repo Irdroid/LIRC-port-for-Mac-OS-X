@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.12 2001/04/24 19:33:05 lirc Exp $      */
+/*      $Id: hw_pixelview.c,v 5.13 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -37,7 +37,7 @@ struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code pre,code;
 
-struct hardware hw=
+struct hardware hw_pixelview=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -49,7 +49,9 @@ struct hardware hw=
 	pixelview_deinit,         /* deinit_func */
 	NULL,                     /* send_func */
 	pixelview_rec,            /* rec_func */
-	pixelview_decode          /* decode_func */
+	pixelview_decode,         /* decode_func */
+	NULL,                     /* readdata */
+	"pixelview"
 };
 
 int pixelview_decode(struct ir_remote *remote,

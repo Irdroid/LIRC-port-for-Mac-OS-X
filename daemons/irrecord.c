@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.28 2001/04/24 19:12:19 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.29 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -36,6 +36,7 @@
 #include "drivers/lirc.h"
 
 #include "hardware.h"
+#include "hw-types.h"
 #include "dump_config.h"
 #include "ir_remote.h"
 #include "config_file.h"
@@ -183,6 +184,7 @@ int main(int argc,char **argv)
 
 	progname=argv[0];
 	force=0;
+	hw_choose_driver(NULL);
 	while(1)
 	{
 		int c;
@@ -191,6 +193,7 @@ int main(int argc,char **argv)
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"device",required_argument,NULL,'d'},
+			{"driver",required_argument,NULL,'H'},
 			{"force",no_argument,NULL,'f'},
 #ifdef DEBUG
 			{"pre",no_argument,NULL,'p'},
@@ -199,9 +202,9 @@ int main(int argc,char **argv)
 			{0, 0, 0, 0}
 		};
 #ifdef DEBUG
-		c = getopt_long(argc,argv,"hvd:fpP",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:H:fpP",long_options,NULL);
 #else
-		c = getopt_long(argc,argv,"hvd:f",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:H:f",long_options,NULL);
 #endif
 		if(c==-1)
 			break;
@@ -212,11 +215,19 @@ int main(int argc,char **argv)
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -f --force\t\tforce raw mode\n");
+			printf("\t -H --driver=driver\tuse given driver\n");
 			printf("\t -d --device=device\tread from given device\n");
 			exit(EXIT_SUCCESS);
 		case 'v':
 			printf("irrecord %s\n",IRRECORD_VERSION);
 			exit(EXIT_SUCCESS);
+		case 'H':
+			if(hw_choose_driver(optarg) != 0){
+				fprintf(stderr, "Driver `%s' not supported.\n",
+					optarg);
+				hw_print_drivers(stderr);
+				exit (EXIT_FAILURE);
+			}
 		case 'd':
 			hw.device=optarg;
 			break;

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.28 2001/04/25 20:07:50 lirc Exp $      */
+/*      $Id: lircd.c,v 5.29 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -72,6 +72,7 @@
 #include "ir_remote.h"
 #include "config_file.h"
 #include "hardware.h"
+#include "hw-types.h"
 
 struct ir_remote *remotes;
 struct ir_remote *free_remotes=NULL;
@@ -1738,6 +1739,7 @@ int main(int argc,char **argv)
 	int nodaemon=0;
 	mode_t permission=S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 
+	hw_choose_driver(NULL);
 	while(1)
 	{
 		int c;
@@ -1747,6 +1749,7 @@ int main(int argc,char **argv)
 			{"version",no_argument,NULL,'v'},
 			{"nodaemon",no_argument,NULL,'n'},
 			{"permission",required_argument,NULL,'p'},
+			{"driver",required_argument,NULL,'H'},
 			{"device",required_argument,NULL,'d'},
 			{"listen",optional_argument,NULL,'l'},
 			{"connect",required_argument,NULL,'c'},
@@ -1756,9 +1759,9 @@ int main(int argc,char **argv)
 			{0, 0, 0, 0}
 		};
 #               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvnp:d:l::c:D::",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:H:d:l::c:D::",long_options,NULL);
 #               else
-		c = getopt_long(argc,argv,"hvnp:d:l::c:",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:H:d:l::c:",long_options,NULL);
 #               endif
 		if(c==-1)
 			break;
@@ -1770,6 +1773,7 @@ int main(int argc,char **argv)
 			printf("\t -v --version\t\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\t\tdon't fork to background\n");
 			printf("\t -p --permission=mode\t\tfile permissions for " LIRCD "\n");
+			printf("\t -H --driver=driver\t\tuse given driver\n");
 			printf("\t -d --device=device\t\tread from given device\n");
 			printf("\t -l --listen[=port]\t\tlisten for network connections on port\n");
 			printf("\t -c --connect=host[:port]\t\tconnect to remote lircd server\n");
@@ -1791,6 +1795,13 @@ int main(int argc,char **argv)
 			}
 			permission=oatoi(optarg);
 			break;
+		case 'H':
+			if(hw_choose_driver(optarg) != 0){
+				fprintf(stderr, "Driver `%s' not supported.\n",
+					optarg);
+				hw_print_drivers(stderr);
+				exit (EXIT_FAILURE);
+			}
 		case 'd':
 			hw.device=optarg;
 			break;

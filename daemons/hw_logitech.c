@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.10 2001/04/24 19:26:56 lirc Exp $      */
+/*      $Id: hw_logitech.c,v 1.11 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -41,7 +41,7 @@ struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code pre,code;
 
-struct hardware hw=
+struct hardware hw_logitech=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -53,7 +53,9 @@ struct hardware hw=
 	logitech_deinit,          /* deinit_func */
 	NULL,                     /* send_func */
 	logitech_rec,             /* rec_func */
-	logitech_decode           /* decode_func */
+	logitech_decode,          /* decode_func */
+	NULL,                     /* readdata */
+	"logitech"
 };
 
 int logitech_decode(struct ir_remote *remote,

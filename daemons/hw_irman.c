@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.4 2001/01/21 12:54:42 columbus Exp $      */
+/*      $Id: hw_irman.c,v 5.5 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -42,7 +42,7 @@ ir_code code;
 
 #define CODE_LENGTH 64
 
-struct hardware hw=
+struct hardware hw_irman=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -54,7 +54,9 @@ struct hardware hw=
 	irman_deinit,             /* deinit_func */
 	NULL,                     /* send_func */
 	irman_rec,                /* rec_func */
-	irman_decode              /* decode_func */
+	irman_decode,             /* decode_func */
+	NULL,                     /* readdata */
+	"irman"
 };
 
 int irman_decode(struct ir_remote *remote,

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.19 2000/12/08 23:36:29 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.20 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -60,7 +60,9 @@ unsigned long supported_rec_modes[]=
 	0
 };
 
-struct hardware hw=
+lirc_t default_readdata (void);
+
+struct hardware hw_default=
 {
 	LIRC_DRIVER_DEVICE, /* default device */
 	-1,                 /* fd */
@@ -73,13 +75,15 @@ struct hardware hw=
 	default_send,       /* send_func */
 	default_rec,        /* rec_func */
 	default_decode,     /* decode_func */
+	default_readdata,
+	"default"
 };
 
 /*
   decoding stuff
 */
 
-lirc_t readdata(void)
+lirc_t default_readdata(void)
 {
 	lirc_t data;
 	int ret;

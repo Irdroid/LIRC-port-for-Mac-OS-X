@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.16 2001/04/25 08:54:08 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.17 2001/06/11 08:29:38 ranty Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -119,6 +119,12 @@
 
 /* modifiable single-machine data */
 #define LOCALSTATEDIR           "/var"
+
+/* Define to include most drivers */
+#undef LIRC_DRIVER_ANY
+
+/* The name of the hw_* structure to use by default */
+#undef HW_DEFAULT
 
 /* system configuration directory */
 #define SYSCONFDIR		"/etc"

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.6 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: receive.c,v 5.7 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -17,8 +17,6 @@
 #include "hardware.h"
 #include "lircd.h"
 #include "receive.h"
-
-lirc_t readdata(void);
 
 extern struct hardware hw;
 extern struct ir_remote *last_remote;
@@ -46,7 +44,7 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 			lirc_t data;
 			
 			if(!waitfordata(maxusec)) return(0);
-			data=readdata();
+			data=hw.readdata();
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
@@ -125,7 +123,7 @@ int clear_rec_buffer()
 			rec_buffer.wptr=0;
 		}
 		
-		data=readdata();
+		data=hw.readdata();
 		
 		LOGPRINTF(3,"c%lu",(unsigned long) data&(PULSE_MASK));
 		

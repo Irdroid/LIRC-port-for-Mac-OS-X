@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.5 2001/04/24 19:26:56 lirc Exp $      */
+/*      $Id: hw_slinke.c,v 5.6 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -88,7 +88,9 @@ struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code pre,code;
 
-struct hardware hw = {
+lirc_t slinke_readdata(void);
+
+struct hardware hw_slinke = {
     LIRC_DRIVER_DEVICE, /* default device */
     -1,                 /* fd */
     LIRC_CAN_REC_MODE2, /* features */
@@ -99,7 +101,9 @@ struct hardware hw = {
     slinke_deinit,      /* deinit_func */
     NULL,               /* send_func */
     slinke_rec,         /* rec_func */
-    slinke_decode       /* decode_func */
+    slinke_decode,      /* decode_func */
+    slinke_readdata,	/* readdata */
+    "slinke"
 };
 
 /*****************************************************************************/
@@ -412,7 +416,7 @@ char *slinkePorts[] = {"SL0","SL1","SL2","SL3","IR0","PAR","SER","SYS"};
 #endif
 
 /*****************************************************************************/
-lirc_t readdata(void){
+lirc_t slinke_readdata(void){
     lirc_t result;
     if (signal_queue_buf == NULL) return 0;
     if (signal_queue_rd_idx < signal_queue_length){

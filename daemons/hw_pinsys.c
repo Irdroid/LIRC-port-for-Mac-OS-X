@@ -51,7 +51,7 @@ struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code code;
 
-struct hardware hw=
+struct hardware hw_pinsys=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -68,7 +68,9 @@ struct hardware hw=
 	pinsys_deinit,            /* deinit_func */
 	NULL,                     /* send_func */
 	pinsys_rec,               /* rec_func */
-	pinsys_decode             /* decode_func */
+	pinsys_decode,            /* decode_func */
+	NULL,                     /* readdata */
+	"pinsys"
 };
 
 /**** start of autodetect code ***************************/

@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.3 2001/01/21 12:54:42 columbus Exp $      */
+/*      $Id: hw_creative.c,v 5.4 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -67,7 +67,7 @@ unsigned char mapping[]=
  0xb8,
  0x00};
 
-struct hardware hw=
+struct hardware hw_creative=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -79,7 +79,9 @@ struct hardware hw=
 	creative_deinit,          /* deinit_func */
 	NULL,                     /* send_func */
 	creative_rec,             /* rec_func */
-	creative_decode           /* decode_func */
+	creative_decode,          /* decode_func */
+	NULL,                     /* readdata */
+	"creative"
 };
 
 int creative_decode(struct ir_remote *remote,

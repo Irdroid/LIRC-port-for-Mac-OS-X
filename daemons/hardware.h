@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.3 2000/12/08 23:36:29 columbus Exp $      */
+/*      $Id: hardware.h,v 5.4 2001/06/11 08:29:38 ranty Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -31,6 +31,11 @@ struct hardware
 	int (*decode_func)(struct ir_remote *remote,
 			   ir_code *prep,ir_code *codep,ir_code *postp,
 			   int *repeat_flag,lirc_t *remaining_gapp);
+	lirc_t (*readdata)(void);
+	char *name;
 };
 
+#ifndef LIRC_NETWORK_ONLY
+extern struct hardware hw;
+#endif
 #endif

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.60 2001/05/20 20:04:43 lirc Exp $
+dnl $Id: configure.in,v 5.61 2001/06/11 08:29:38 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -107,7 +107,7 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, animax, avermedia, avermedia98,
+                          none, any, animax, avermedia, avermedia98,
                           bestbuy, bestbuy2, caraca, chronos, comX,
                           cph03x, cph06x, creative, fly98, hauppauge,
                           ipaq, irdeo, irman, irreal, knc_one,
@@ -127,6 +127,7 @@ lircmd_conf=""
 irman_lib=""
 caraca_lib=""
 hw_module="hw_default.o receive.o transmit.o"
+HW_DEFAULT="hw_default"
 kernel_module=""
 
 if test "$driver" = "none"; then
@@ -135,14 +136,83 @@ if test "$driver" = "none"; then
   AC_DEFINE(LIRC_NETWORK_ONLY)
 fi
 
+if test "$driver" = "any"; then
+  AC_DEFINE(LIRC_DRIVER_ANY)
+  lirc_driver="none"
+  #include creative driver
+  hw_module="${hw_module} hw_creative.o serial.o"
+  
+  any_possible_drivers=`echo ${possible_drivers} | sed -e's/ /-/g' \
+			  -e's/)-(/ /g'  -e's/(//g' -e's/)//g' \
+			  -e's/-$//g'`
+  for any_driver in ${any_possible_drivers}; do
+  case ${any_driver} in
+	  remotemaster)
+	  hw_module="${hw_module} hw_pixelview.o serial.o"
+	  ;;
+	  pctv)
+	  hw_module="${hw_module} hw_pinsys.o serial.o"
+	  ;;
+	  logitech)
+	  hw_module="${hw_module} hw_logitech.o serial.o"
+	  ;;
+	  slinke)
+	  hw_module="${hw_module} hw_slinke.o serial.o receive.o"
+	  ;;
+	  silitek)
+	  hw_module="${hw_module} hw_silitek.o serial.o"
+	  ;;
+	  mediafocusI)
+	  ;;
+	  irreal)
+	  #hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
+	  ;;
+	  lirc_serial)
+	  ;;
+	  lirc_sir)
+	  ;;
+	  lirc_parallel)
+	  ;;
+	  lirc_aver)
+	  ;;
+	  lirc_dev-lirc_i2c)
+	  #lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
+	  ;;
+	  lirc_fly98)
+	  ;;
+	  lirc_dev-lirc_gpio)
+	  #lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
+	  ;;
+	  caraca)
+	  hw_module="${hw_module} hw_caraca.o"
+	  caraca_lib=-lcaraca_client
+	  ;;
+	  irman)
+	  hw_module="${hw_module} hw_irman.o serial.o"
+	  ;;
+	  irman_sw)
+	  hw_module="${hw_module} hw_irman.o serial.o"
+	  ;;
+  esac
+  done
+  #remove duplicates
+  #hw_module=`echo ${hw_module}| tr ' ' '\n' | sort -u | tr '\n' ' '`
+  hw_module=`echo ${hw_module}| sed \
+  			-e':again' \
+			-e's/\(.*\)\(\<.*\) \(.*\) \2\(.*\)$/\1\2 \3\4/' \
+			-e'tagain'`
+fi
+
 if test "$driver" = "irman"; then
   lirc_driver="irman"
   hw_module="hw_irman.o serial.o"
+  HW_DEFAULT="hw_irman"
   irman_lib=-lirman
 fi
 if test "$driver" = "irman_sw"; then
   lirc_driver="irman_sw"
   hw_module="hw_irman.o serial.o"
+  HW_DEFAULT="hw_irman"
   irman_lib=-lirman_sw
 fi
 
@@ -283,30 +353,35 @@ fi
 if test "$driver" = "remotemaster"; then
   lirc_driver="none"
   hw_module="hw_pixelview.o serial.o"
+  HW_DEFAULT="hw_pixelview"
   lircd_conf="pixelview/lircd.conf.remotemaster"
   lircmd_conf="pixelview/lircmd.conf.remotemaster"
 fi
 if test "$driver" = "realmagic"; then
   lirc_driver="none"
   hw_module="hw_pixelview.o serial.o"
+  HW_DEFAULT="hw_pixelview"
   lircd_conf="sigma_designs/lircd.conf.realmagic"
 #  lircmd_conf="sigma_designs/lircmd.conf.realmagic"
 fi
 if test "$driver" = "pctv"; then
   lirc_driver="none"
   hw_module="hw_pinsys.o serial.o"
+  HW_DEFAULT="hw_pinsys"
   lircd_conf="pinnacle_systems/lircd.conf.pctv"
 #  lircmd_conf="pinnacle_systems/lircmd.conf.pctv"
 fi
 if test "$driver" = "logitech"; then
   lirc_driver="none"
   hw_module="hw_logitech.o serial.o"
+  HW_DEFAULT="hw_logitech"
   lircd_conf="logitech/lircd.conf.logitech"
   lircmd_conf="logitech/lircmd.conf.logitech"
 fi
 if test "$driver" = "caraca"; then
   lirc_driver="caraca"
   hw_module="hw_caraca.o"
+  HW_DEFAULT="hw_caraca"
   caraca_lib=-lcaraca_client
   lircd_conf= "caraca/lircd.conf.caraca"
 #  lircmd_conf="caraca/lircmd.conf.caraca"
@@ -314,16 +389,19 @@ fi
 if test "$driver" = "slinke"; then
   lirc_driver="none"
   hw_module="hw_slinke.o serial.o receive.o"
+  HW_DEFAULT="hw_slinke"
 fi
 if test "$driver" = "silitek"; then
   lirc_driver="none"
   hw_module="hw_silitek.o serial.o"
+  HW_DEFAULT="hw_silitek"
   lircd_conf="silitek/lircd.conf.silitek"
   lircmd_conf="silitek/lircmd.conf.silitek"
 fi
 if test "$driver" = "irreal"; then
   lirc_driver="none"
   hw_module="hw_irreal.o serial.o receive.o transmit.o"
+  HW_DEFAULT="hw_irreal"
 fi
 if test "$driver" = "irdeo"; then
   lirc_driver=lirc_serial
@@ -337,6 +415,7 @@ fi
 if test "$driver" = "creative"; then
   lirc_driver="none"
   hw_module="hw_creative.o serial.o"
+  HW_DEFAULT="hw_creative"
   lircd_conf="creative/lircd.conf.creative"
 #  lircmd_conf="creative/lircmd.conf.creative"
 fi
@@ -345,6 +424,8 @@ if test "$driver" = "knc_one"; then
   lircd_conf="knc_one/lircd.conf.knc_one"
 #  lircmd_conf="knc_one/lircmd.conf.knc_one"
 fi
+
+AC_DEFINE_UNQUOTED(HW_DEFAULT, ${HW_DEFAULT})
 
 dnl now check to see if the user is behaving himself
 

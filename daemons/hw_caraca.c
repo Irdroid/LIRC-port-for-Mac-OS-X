@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.3 2001/01/21 12:54:42 columbus Exp $   */
+/*      $Id: hw_caraca.c,v 1.4 2001/06/11 08:29:38 ranty Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -43,7 +43,7 @@ struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code pre,code;
 
-struct hardware hw=
+struct hardware hw_caraca=
 {
 	NULL,                     /* default device */
 	-1,                       /* fd */
@@ -56,6 +56,8 @@ struct hardware hw=
 	NULL,                     /* send_func */
 	caraca_rec,               /* rec_func */
 	caraca_decode             /* decode_func */
+	NULL,                     /* readdata */
+	"caraca"
 };
 
 int caraca_decode(struct ir_remote *remote,

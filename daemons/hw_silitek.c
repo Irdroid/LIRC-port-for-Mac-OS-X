@@ -41,7 +41,7 @@ ir_code code;
 struct timeval current, last;
 int do_repeat;
 
-struct hardware hw=
+struct hardware hw_silitek=
 {
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
@@ -53,7 +53,9 @@ struct hardware hw=
 	silitek_deinit,           /* deinit_func */
 	NULL,                     /* send_func */
 	silitek_rec,              /* rec_func */
-	silitek_decode            /* decode_func */
+	silitek_decode,           /* decode_func */
+	NULL,                     /* readdata */
+	"silitek"
 };
 
 int silitek_read(int fd, unsigned char *data, long timeout) {
