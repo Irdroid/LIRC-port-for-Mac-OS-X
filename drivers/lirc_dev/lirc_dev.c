@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.4 2000/04/29 09:12:38 columbus Exp $
+ * $Id: lirc_dev.c,v 1.5 2000/05/04 05:15:05 columbus Exp $
  *
  */
 
@@ -28,6 +28,7 @@
 #ifdef LIRC_HAVE_DEVFS
 # include <linux/devfs_fs_kernel.h>
 #endif
+#include <linux/smp_lock.h>
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
 #include <linux/wrapper.h>
