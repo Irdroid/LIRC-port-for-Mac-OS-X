@@ -32,7 +32,7 @@
 #include <linux/pci.h>
 #include <linux/delay.h>
 
-#include "../lirc_dev/lirc_dev.h"
+#include "drivers/lirc_dev/lirc_dev.h"
 
 
 
