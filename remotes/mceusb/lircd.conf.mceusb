@@ -18,7 +18,7 @@ begin remote
   name mceusb
   bits           16
   flags RC6|CONST_LENGTH
-  eps            35
+  eps            30
   aeps          100
 
   header       2667   889
@@ -26,7 +26,7 @@ begin remote
   zero          444   444
   pre_data_bits 21
   pre_data      0x37FF0
-  gap           136500
+  gap          105000
   toggle_bit     22
   rc6_mask     0x100000000
 
