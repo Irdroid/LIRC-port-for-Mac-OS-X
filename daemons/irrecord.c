@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.18 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.19 2000/09/27 17:50:52 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -615,7 +615,7 @@ int main(int argc,char **argv)
 	}
 	if(!resethw())
 	{
-		fprintf(stderr,"%s: Could not reset hardware.\n",progname);
+		fprintf(stderr,"%s: could not reset hardware.\n",progname);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -671,6 +671,7 @@ int main(int argc,char **argv)
 	fprint_copyright(fout);
 	fprint_remotes(fout,remotes);
 	free_config(remotes);
+	printf("Successfully written config file.\n");
 	return(EXIT_SUCCESS);
 }
 
