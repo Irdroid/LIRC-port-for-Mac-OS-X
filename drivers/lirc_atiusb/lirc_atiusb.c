@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.41 2004/10/29 02:02:01 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.42 2004/10/29 02:16:29 pmiller9 Exp $
  */
 
 /*
@@ -347,7 +347,7 @@ static void set_use_dec(void *data)
 	MOD_DEC_USE_COUNT;
 }
 
-static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
+static void print_data(struct in_endpt *iep, char *buf, int len)
 {
 	char codes[USB_BUFLEN*3 + 1];
 	int i;
@@ -358,8 +358,8 @@ static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
 	for (i = 0; i < len && i < USB_BUFLEN; i++) {
 		snprintf(codes+i*3, 4, "%02x ", buf[i] & 0xFF);
 	}
-	printk(DRIVER_NAME "[%d]: data received %s (length=%d)\n",
-		ir->devnum, codes, len);
+	printk(DRIVER_NAME "[%d]: data received %s (ep=0x%x length=%d)\n",
+		iep->ir->devnum, codes, iep->ep->bEndpointAddress, len);
 }
 
 static int code_check(struct in_endpt *iep, int len)
@@ -444,7 +444,7 @@ static void usb_remote_recv(struct urb *urb)
 
 	len = urb->actual_length;
 	if (debug)
-		usb_remote_printdata(iep->ir,urb->transfer_buffer,len);
+		print_data(iep,urb->transfer_buffer,len);
 
 	switch (urb->status) {
 
@@ -557,8 +557,7 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
 	len -= (len % CODE_LENGTH);
 
-	dprintk(DRIVER_NAME ": acceptable inbound endpoint (0x%x) found\n", addr);
-	dprintk(DRIVER_NAME ": ep=0x%x maxp=%d len=%d\n", addr, maxp, len);
+	dprintk(DRIVER_NAME ": acceptable inbound endpoint (0x%x) found (maxp=%d len=%d)\n", addr, maxp, len);
 
 	mem_failure = 0;
 	if ( !(iep = kmalloc(sizeof(*iep), GFP_KERNEL)) ) {
@@ -904,7 +903,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.41 2004/10/29 02:02:01 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.42 2004/10/29 02:16:29 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
