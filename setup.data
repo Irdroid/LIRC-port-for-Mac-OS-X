@@ -20,8 +20,8 @@ hw_menu_entry: @hw-other
 	livedrive_midi: "Creative LiveDrive midi"
 	livedrive_seq: "Creative LiveDrive sequencer"
 	creative_infracd: "Creative iNFRA CDROM"
-	devinput: "Linux input layer (/dev/input/eventX)"
 	bte: "Ericsson mobile phone via Bluetooth"
+	devinput: "Linux input layer (/dev/input/eventX)"
 
 hw_menu_entry: @hw-other-serial
 	animax: "Anir Multimedia Magic"
@@ -96,6 +96,7 @@ hw_menu_entry: @hw-pda
 hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 RF Remote"
 	tira: "Home Electronics Tira USB device"
+	mceusb: "Windows Media Center Remotes"
 
 param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 		sir tekram
@@ -116,7 +117,7 @@ param_type: atiusb audio audio_alsa avermedia avermedia98 \
 		chronos cph03x cph06x creative_infracd devinput dsp \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
 		knc_one kworld leadtek_0007 leadtek_0010 \
-		livedrive_midi livedrive_seq mediafocusI none \
+		livedrive_midi livedrive_seq mceusb mediafocusI none \
 		pixelview_bt878 pixelview_pak pixelview_pro provideo \
 		sa1100 tekram_bt829 tvbox udp
 	none:
@@ -126,7 +127,7 @@ default_param: atiusb audio audio_alsa avermedia avermedia98 \
 		cph03x cph06x creative_infracd devinput dsp flyvideo \
 		gvbctv5pci hauppauge hauppauge_dvb it87 knc_one kworld \
 		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
-		livedrive_seq mediafocusI none pixelview_bt878 \
+		livedrive_seq mceusb mediafocusI none pixelview_bt878 \
 		pixelview_pak pixelview_pro provideo sa1100 \
 		tekram_bt829 tvbox udp
 	none:

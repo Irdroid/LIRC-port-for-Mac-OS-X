@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.26 2003/08/05 08:54:21 ranty Exp $
+ * $Id: lirc_dev.c,v 1.27 2004/01/13 13:59:48 lirc Exp $
  *
  */
 
@@ -537,7 +537,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	int result;
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
 
-	dprintk(LOGHEAD "poll called (%u)\n",
+	dprintk(LOGHEAD "ioctl called (%u)\n",
 		ir->p.name, ir->p.minor, cmd);
 
 	/* if the plugin has a ioctl function use it instead */
