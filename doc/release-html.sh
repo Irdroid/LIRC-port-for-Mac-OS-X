@@ -1,6 +1,7 @@
 #! /bin/sh
  
 SOURCE_DIR=html-source/
+MAN_HTML_DIR=man-html/
 DEST_DIR=html/
 
 if test ! -e ${DEST_DIR}; then
@@ -9,6 +10,8 @@ fi
 
 FILES1="doc.html"
 FILES2="install.html configure.html programs.html technical.html help.html"
+FILES3=" irexec.html irw.html irpty.html irrecord.html irxevent.html lircd.html
+lircmd.html mode2.html smode2.html xmode2.html"
 
 echo -n "Pass1:"
 for FILE in $FILES1; do
@@ -27,6 +30,17 @@ for FILE in $FILES2; do
     echo -n " $FILE"
     cat $SOURCE_DIR/head2.html > $DEST_DIR/$FILE
     cat $SOURCE_DIR/$FILE     >> $DEST_DIR/$FILE
+    cat $SOURCE_DIR/foot.html >> $DEST_DIR/$FILE
+    }
+done
+echo
+
+echo -n "Pass3:"
+for FILE in $FILES3; do
+    {
+    echo -n " $FILE"
+    cat $SOURCE_DIR/head2.html > $DEST_DIR/$FILE
+    cat $MAN_HTML_DIR/$FILE     >> $DEST_DIR/$FILE
     cat $SOURCE_DIR/foot.html >> $DEST_DIR/$FILE
     }
 done

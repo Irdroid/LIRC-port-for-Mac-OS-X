@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.5 2001/04/24 19:34:02 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.6 2001/11/20 15:12:33 ranty Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -75,6 +75,7 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -458,18 +459,48 @@ int check(char *s)
   return(0);
 }
 
+static struct option long_options[] =
+{
+	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
+	{0, 0, 0, 0}
+};
+
 int main(int argc, char *argv[])
 {
   char keyname[128];
   int pointer_button,pointer_x,pointer_y;
   char windowname[64];
   struct lirc_config *config;
+  char *config_file=NULL;
+  int c;
 
   progname=argv[0];
-  if(argc>2)  {
-    fprintf(stderr,"Usage: %s <config file>\n",argv[0]);
-    exit(1);
-  };
+
+  while ((c = getopt_long(argc, argv, "hV", long_options, NULL)) != EOF) {
+    switch (c) {
+    case 'h':
+      printf("Usage: %s [config file]\n", argv[0]);
+      printf("\t -h --help \t\tdisplay usage summary\n");
+      printf("\t -V --version \t\tdisplay version\n");
+      return(EXIT_SUCCESS);
+    case 'V':
+      printf("%s %s\n", progname, VERSION);
+      return(EXIT_SUCCESS);
+    case '?':
+      fprintf(stderr, "unrecognized option: -%c\n", optopt);
+      fprintf(stderr, "Try `%s --help' for more information.\n", progname);
+      return(EXIT_FAILURE);
+    }
+  }
+  
+  if (argc == optind+1){
+    config_file = argv[optind];
+  } else if (argc > optind+1){
+    fprintf(stderr, "%s: incorrect number of arguments.\n", progname);
+    fprintf(stderr, "Try `%s --help' for more information.\n", progname);
+    return(EXIT_FAILURE);
+  }
 
   dpy=XOpenDisplay(NULL);
   if(dpy==NULL) {
@@ -480,7 +511,7 @@ int main(int argc, char *argv[])
 
   if(lirc_init("irxevent",1)==-1) exit(EXIT_FAILURE);
 
-  if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,check)==0)
+  if(lirc_readconfig(config_file,&config,check)==0)
     {
       char *ir;
       char *c;

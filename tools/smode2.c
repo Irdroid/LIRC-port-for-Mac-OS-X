@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.6 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: smode2.c,v 5.7 2001/11/20 15:12:33 ranty Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 			printf("\t -t --timediv=value\tms per unit\n");
 			return(EXIT_SUCCESS);
 		case 'v':
-			printf("%s\n",progname);
+			printf("%s %s\n",progname, VERSION);
 			return(EXIT_SUCCESS);
 		case 'd':
 			device=optarg;

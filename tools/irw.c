@@ -1,4 +1,4 @@
-/*      $Id: irw.c,v 5.2 2001/04/24 19:32:04 lirc Exp $      */
+/*      $Id: irw.c,v 5.3 2001/11/20 15:12:33 ranty Exp $      */
 
 /****************************************************************************
  ** irw.c *******************************************************************
@@ -25,28 +25,60 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <errno.h>
+#include <getopt.h>
+
+static struct option long_options[] =
+{
+	{"help", no_argument, NULL, 'h'},
+	{"version", no_argument, NULL, 'V'},
+	{0, 0, 0, 0}
+};
 
 int main(int argc,char *argv[])
 {
 	int fd,i;
 	char buf[128];
 	struct sockaddr_un addr;
+	int c;
+	char *progname;
+
+	progname=argv[0];
 
 	addr.sun_family=AF_UNIX;
-	if(argc>2)  {
-		fprintf(stderr,"Usage: %s <socket>\n",argv[0]);
-		fprintf(stderr,"sends data from UNIX domain socket to stdout\n");
-		exit(1);
-	} else if(argc==2)  {
-		if(!strncmp(argv[1],"-h",2))  {
-			fprintf(stderr,"Usage: %s <socket>\n",argv[0]);
-			fprintf(stderr,"sends data from UNIX domain socket to stdout\n");
-			exit(1);
-		};
-		strcpy(addr.sun_path,argv[1]);
-	} else {
+
+	while ((c = getopt_long(argc, argv, "hV", long_options, NULL))
+	       != EOF) {
+		switch (c){
+		case 'h':
+			printf("Usage: %s [socket]\n",argv[0]);
+			printf("\t -h --help \t\tdisplay usage summary\n");
+			printf("\t -V --version \t\tdisplay version\n");
+			return(EXIT_SUCCESS);
+		case 'V':
+			printf("%s %s\n", progname, VERSION);
+			return(EXIT_SUCCESS);
+		case '?':
+			fprintf(stderr, "unrecognized option: -%c\n", optopt);
+			fprintf(stderr, "Try `%s --help' for more "
+				"information.\n",
+				progname);
+			return(EXIT_FAILURE);
+		}
+	}
+	if(argc == optind){
+		/* no arguments */
 		strcpy(addr.sun_path,LIRCD);
-	};
+	} else if (argc == optind+1){
+		/* one argument */
+		strcpy(addr.sun_path,argv[optind]);
+	} else {
+		fprintf(stderr, "%s: incorrect number of arguments.\n",
+			progname);
+		fprintf(stderr, "Try `%s --help' for more information.\n",
+			progname);
+		return(EXIT_FAILURE);
+	}
+
 	fd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(fd==-1)  {
 		perror("socket");

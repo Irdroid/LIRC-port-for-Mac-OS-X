@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.7 2001/01/27 18:58:36 columbus Exp $
+## $Id: Makefile.am,v 5.8 2001/11/20 15:12:32 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -8,6 +8,7 @@ AUTOMAKE_OPTIONS = 1.4 check-news
 
 EXTRA_DIST = setup.sh ANNOUNCE TODO
 
+## daemons/ and tools/ should appear before doc/ for help2man to work.
 SUBDIRS = drivers daemons tools doc
 
 ## From automake documentation:
