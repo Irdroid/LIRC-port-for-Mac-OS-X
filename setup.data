@@ -70,6 +70,7 @@ hw_menu_entry: @hw-tv-card
 	pixelview_pro: "Pixelview PlayTV pro (card=37)"
 	pixelview_bt878: "Pixelview PlayTV (bt878) \
 		(Prolink PV-BT878P+, card=16)"
+	pixelview_pro: "Prolink Pixelview PV-BT878P+ (Rev.4C,8E, card=70)"
 	pixelview_pak: "Prolink PV-BT878P+4E (card=50)"
 	pixelview_pro: "Prolink PV-BT878P+9B \
 		(PlayTV Pro rev.9B FM+NICAM) (card=72)"
