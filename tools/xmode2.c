@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.1 1999/08/24 19:21:43 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -25,6 +25,12 @@
  * 
  *
  * compile: gcc -o xmode2 xmode2.c -L/usr/X11R6/lib -lX11
+ *
+ * version 0.01  Feb 18 1999
+ *   initial release
+ *
+ * version 0.02  Aug 24 1999
+ *   using select() to make the whole thing more responsive
  *
  */
 
@@ -106,6 +112,10 @@ void closescreen(void)
 
 int main(int argc, char **argv)
 {
+  fd_set rfds;
+  struct timeval tv;
+  int retval;
+      
   int fd;
   int data;
   int x1,y1,x2,y2;
@@ -126,10 +136,10 @@ int main(int argc, char **argv)
 	}
     }
 
-  fd=open("/dev/lirc",O_RDONLY);
+  fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
   if(fd==-1)  {
     perror("mode2");
-    printf("error opening /dev/lirc\n");
+    printf("error opening %sn",LIRC_DRIVER_DEVICE);
     exit(1);
   };
 	
@@ -140,6 +150,7 @@ int main(int argc, char **argv)
   sprintf(textbuffer,"%d ms/div",div);
   for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
   XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
+  XFlush(d1);
   while(1)
     {
       if (XCheckWindowEvent(d1, w1, KeyPressMask|StructureNotifyMask, &event_return1))
@@ -167,34 +178,44 @@ int main(int argc, char **argv)
 	} 
       
       
+      /* Watch stdin (fd 0) to see when it has input. */
+      FD_ZERO(&rfds);
+      FD_SET(fd, &rfds);
+      /* Wait up to one second. */
+      tv.tv_sec = 1;
+      tv.tv_usec = 0;
       
-      result=read(fd,&data,4);
-      if (result!=0)
-	{
-	  //		    printf("%.8x\t",data);
-	  x2=(data&0xffffff)/(div*50);
-	  if (x2>400)
-	    {
-	      y1+=15;
-	      x1=0;
-	    }
-	  else
-	    {
-	      if (x1<w1_w) 
-		{
-		  XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1+x2, ((data&0x1000000)?y1:y1+10)) ;
-		  x1+=x2;
-		  XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1, ((data&0x1000000)?y1+10:y1)) ;
-		}
-	    }
-	  if (y1>w1_h) 
-	    {
-	      y1=20;
-	      XClearWindow(d1,w1);
-	      for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
-	      XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
-	    }
-	}
+      retval = select(fd+1, &rfds, NULL, NULL, &tv);
+  
+      if (FD_ISSET(fd,&rfds)) {
+	result=read(fd,&data,4);
+	if (result!=0)
+	  {
+	    //		    printf("%.8x\t",data);
+	    x2=(data&0xffffff)/(div*50);
+	    if (x2>400)
+	      {
+		y1+=15;
+		x1=0;
+	      }
+	    else
+	      {
+		if (x1<w1_w) 
+		  {
+		    XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1+x2, ((data&0x1000000)?y1:y1+10)) ;
+		    x1+=x2;
+		    XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1, ((data&0x1000000)?y1+10:y1)) ;
+		  }
+	      }
+	    if (y1>w1_h) 
+	      {
+		y1=20;
+		XClearWindow(d1,w1);
+		for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
+		XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
+	      }
+	  }
+      }
       //	       	gl_copyscreen(physicalscreen);
       //      XFlush(d1);
     };
