@@ -4,10 +4,14 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.3 2000/04/11 13:52:38 columbus Exp $
+ * $Id: lirc_dev.c,v 1.4 2000/04/29 09:12:38 columbus Exp $
  *
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+ 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
 #error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
@@ -21,6 +25,9 @@
 #include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <linux/poll.h>
+#ifdef LIRC_HAVE_DEVFS
+# include <linux/devfs_fs_kernel.h>
+#endif
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
 #include <linux/wrapper.h>
@@ -72,11 +79,15 @@ struct irctl
 	WAITQ wait_poll;
 
 	struct semaphore lock;
+#ifdef LIRC_HAVE_DEVFS
+	devfs_handle_t devfs_handle;
+#endif
 };
 
 DECLARE_MUTEX(plugin_lock);
 
 static struct irctl irctls[MAX_IRCTL_DEVICES];
+static struct file_operations fops;
 
 /*  helper function
  *  return 0 on success
@@ -209,6 +220,9 @@ int lirc_register_plugin(struct lirc_plugin *p)
 {
 	struct irctl *ir;
 	int minor;
+#ifdef LIRC_HAVE_DEVFS
+	char name[16];
+#endif
 	DECLARE_MUTEX_LOCKED(tn);
 
 	if (!p) {
@@ -304,6 +318,14 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	down(&tn);
 	ir->t_notify = NULL;
 
+#ifdef LIRC_HAVE_DEVFS
+	sprintf (name, DEV_LIRC "/%d", ir->p.minor);
+	ir->devfs_handle = devfs_register(NULL, name, 0, DEVFS_FL_DEFAULT,
+					  IRCTL_DEV_MAJOR, ir->p.minor,
+					  S_IFCHR | S_IRUSR | S_IWUSR, 0, 0,
+					  &fops, NULL);
+#endif
+
 	up(&plugin_lock);
 
 	MOD_INC_USE_COUNT;
@@ -346,6 +368,10 @@ int lirc_unregister_plugin(int minor)
 		up(&plugin_lock);
 		return FAIL;
 	}
+
+#ifdef LIRC_HAVE_DEVFS
+	devfs_unregister(ir->devfs_handle);
+#endif
 
 	/* end up polling thread */
 	if (ir->tpid >= 0) 
@@ -606,7 +632,11 @@ int lirc_dev_init(void)
 		init_waitqueue_head(&irctls[i].wait_poll);
 	}
 
-	i = module_register_chrdev(IRCTL_DEV_MAJOR, 
+#ifndef LIRC_HAVE_DEVFS
+	i = module_register_chrdev(IRCTL_DEV_MAJOR,
+#else
+	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
+#endif
 				   IRCTL_DEV_NAME,
 				   &fops);
 	
@@ -645,7 +675,11 @@ void cleanup_module(void)
 {
 	int ret;
 	
+#ifndef LIRC_HAVE_DEVFS
 	ret = module_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
+#else
+	ret = devfs_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
+#endif
  
 	if (0 > ret){
 		printk("lirc_dev: error in module_unregister_chrdev: %d\n", ret);

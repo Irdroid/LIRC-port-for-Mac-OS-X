@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.6 2000/04/18 20:14:57 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.7 2000/04/29 09:12:38 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -87,6 +87,9 @@
 
 /* Define if the software needs to generate the carrier frequency */
 #undef LIRC_SERIAL_SOFTCARRIER
+
+/* Define if devfs support is present in current kernel */
+#undef LIRC_HAVE_DEVFS
 
 /* system configuration directory */
 #define SYSCONFDIR		"/etc"
