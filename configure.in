@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.13 1999/10/27 13:15:38 columbus Exp $
+dnl $Id: configure.in,v 5.14 2000/01/18 19:10:08 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -183,8 +183,8 @@ fi
 if test "$driver" = "logitech"; then
   lirc_driver="none"
   hw_module="hw_logitech.o serial.o"
-#  lircd_conf="logitech/lircd.conf.logitech"
-#  lircmd_conf="logitech/lircmd.conf.logitech"
+  lircd_conf="logitech/lircd.conf.logitech"
+  lircmd_conf="logitech/lircmd.conf.logitech"
 fi
 
 dnl now check to see if the user is behaving himself
