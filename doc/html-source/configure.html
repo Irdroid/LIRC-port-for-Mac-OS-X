@@ -1,34 +1,29 @@
     <!-- lircd.conf --------------------------------------------------------->
 
 <A NAME="lircd.conf"><HR></A>
-<H1 ALIGN="CENTER">Creating a configfile for lircd (the lirc daemon)</H1>
+<H1 ALIGN="CENTER">Creating a config file for lircd (the LIRC daemon)</H1>
 <HR WIDTH="70%">
 
-<OL TYPE="a">
-<LI><B>cp remotes/animax/lircd.conf.animax /etc/lircd.conf</B><BR>&#160;<BR>
+<OL>
+<LI>Check if there is already a config file in
+<em>/usr/local/etc/lircd.conf</em>. If not</LI>
 
-    If you have an AnimaX remote control, this is the right step, if
-    you have another remote, look if it exists in the <B>remotes/</B>
-    directory, if not you can create a lirc.conf, for your remote control
-    by using:
-<BR>&#160;<BR></LI>
+<LI>check if there is a config file available for your remote control
+at the LIRC homepage and copy it to <em>/usr/local/etc/lircd.conf</em>. If
+not</LI>
 
-<LI><B>irrecord /etc/lircd.conf</B><BR>&#160;<BR>
-
-    Follow the instructions given to you by this program.<BR>&#160;<BR>
-
-    <B>NOTE:</B> irrecord needs a loaded device driver, either this is
-    already loaded from the <B>make testdriver</B> command, or you load it
-    with <B>insmod lirc</B>. This only works if the
-    driver was copied to the right module directory. You can
-    also load the driver from the <B>drivers/</B> directory with
-    the command <B>insmod -o lirc drivers/your_driver</B>.
-    Use <B>lsmod</B> to see which modules are already loaded.
-    If you use an Irman start lirmand first.
-<BR>&#160;<BR></LI>
+<LI>start <em>irrecord</em> (finish all applications that access
+<em>/dev/lirc</em> first) and follow the instructions given to you by
+this program. Copy the resulting file to
+<em>/usr/local/etc/lircd.conf</em>.
 </OL>
 
+<P>If you want to use more than one remote control you can simply
+concatenate the config files: <em>cat config1 config2 &gt;config</em></P>
 
+<P><B>Note:</B> If you already have a config file for the libirman
+package you can convert it using the <em>irman2lirc</em> script that
+you can find in the contrib directory.</P>
 
     <!-- lircd.conf fileformat ---------------------------------------------->
 
@@ -36,15 +31,14 @@
 <H1 ALIGN="CENTER">The lircd.conf file format</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
-
-
-
+<P>There's no description of the file format available. In fact you
+don't need to know anything about it except that it's maybe the most
+important part of the package.</P>
 
     <!-- lircmd.conf -------------------------------------------------------->
 
 <A NAME="lircmd.conf"><HR></A>
-<H1 ALIGN="CENTER">Creating a configfile for lircmd (the lirc mouse daemon)</H1>
+<H1 ALIGN="CENTER">Creating a config file for lircmd (the LIRC mouse daemon)</H1>
 <HR WIDTH="70%">
 
 <P>TODO</P>
