@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.3 2000/10/10 17:12:50 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.4 2000/11/01 15:15:15 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -30,6 +30,12 @@
 #include <linux/errno.h>
 #include <linux/malloc.h>
 #include <linux/i2c.h>
+
+#ifndef I2C_CLIENT_END
+#error "--- Sorry, this driver needs the new I2C stack. ---"
+#error "--- You can get it at http://www2.lm-sensors.nu/~lm78/. ---"
+#endif
+
 #include <asm/semaphore.h>
 
 #include "../lirc_dev/lirc_dev.h"
@@ -53,6 +59,7 @@ struct IR {
 	struct lirc_plugin l;
 	struct i2c_client  c;
 	int nextkey;
+	unsigned char b[3];
 };
 
 /* ----------------------------------------------------------------------- */
@@ -81,8 +88,8 @@ MODULE_PARM(minor,"i");
 static int get_key_haup(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
-        unsigned char b[3];
-	__u16 repeat_bit, code;
+        unsigned char buf[3];
+	__u16 toggle_bit, code;
 
 	if (ir->nextkey != -1) {
 		/* pass second byte */
@@ -92,19 +99,24 @@ static int get_key_haup(void* data, unsigned char* key, int key_no)
 	}
 
 	/* poll IR chip */
-	if (3 != i2c_master_recv(&ir->c,b,3)) {
+	if (3 == i2c_master_recv(&ir->c,buf,3)) {
+		ir->b[0] = buf[0];
+		ir->b[1] = buf[1];
+		ir->b[2] = buf[2];
+		dprintk(KERN_DEBUG DEVICE_NAME ": key (0x%02x/0x%02x)\n",
+			ir->b[0], ir->b[1]);
+	} else {
 		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
-		return -1;
+		/* keep last successfull read buffer */
 	}
 
 	/* key pressed ? */
-	if (b[0] != REPEAT_TOGGLE_0 && b[0] != REPEAT_TOGGLE_1)
+	if (ir->b[0] != REPEAT_TOGGLE_0 && ir->b[0] != REPEAT_TOGGLE_1)
 		return -1;
 		
 	/* look what we have */
-	dprintk(KERN_DEBUG DEVICE_NAME ": key (0x%02x/0x%02x)\n", b[0], b[1]);
-	repeat_bit=(b[0]&0x20) ? 0x800:0;
-	code = (0x1000 | repeat_bit | (b[1]>>2));
+	toggle_bit=(ir->b[0]&0x20) ? 0x800:0;
+	code = (0x1000 | toggle_bit | (ir->b[1]>>2));
 
 	/* return it */
 	*key        = (code >> 8) & 0xff;
