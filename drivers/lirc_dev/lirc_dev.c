@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.12 2000/09/07 16:05:22 columbus Exp $
+ * $Id: lirc_dev.c,v 1.13 2000/09/27 17:49:47 columbus Exp $
  *
  */
 
@@ -12,6 +12,11 @@
 # include <config.h>
 #endif
  
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
+/* fix for SuSE 7.0 */
+#undef LIRC_HAVE_DEVFS
+#endif
+
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
 #error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
@@ -26,7 +31,7 @@
 #include <linux/fs.h>
 #include <linux/poll.h>
 #ifdef LIRC_HAVE_DEVFS
-# include <linux/devfs_fs_kernel.h>
+#include <linux/devfs_fs_kernel.h>
 #endif
 #include <linux/smp_lock.h>
 #include <asm/uaccess.h>
