@@ -6,7 +6,10 @@
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
- *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
+ *     patch for the Winfast TV2000 by Juan Toledo
+ *     <toledo@users.sourceforge.net>
+ *     patch for the I-O Data GV-BCTV5/PCI by Jens C. Rasmussen
+ *     <jens.rasmussen@ieee.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.29 2003/05/04 17:44:13 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.30 2003/06/07 22:00:10 lirc Exp $
  *
  */
 
@@ -144,7 +147,10 @@ static struct rcv_info rcv_infos[] = {
 	 * based on the card id: */
 	{BTTV_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
 	/* default: */
-	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
+	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32},
+#ifdef BTTV_GVBCTV5PCI
+	{BTTV_GVBCTV5PCI,             0, 0x00f0b000,          0,         0,          0,   0, 20,  8},
+#endif
 };
 
 static unsigned char code_length = 0;

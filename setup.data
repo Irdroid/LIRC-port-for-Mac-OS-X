@@ -56,6 +56,7 @@ hw_menu_entry: @hw-tv-card
 	flyvideo: "Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner (card=36)"
 	hauppauge: "Hauppauge TV card (new I2C layer required)"
 	hauppauge_dvb: "Hauppauge DVB-s card (ver. 2.1)"
+	gvbctv5pci: "I-O Data Co. GV-BCTV5/PCI (card=81)"
 	kworld: "Jetway TV/Capture JW-TV878-FBK, Kworld KW-TV878RF (card=78)"
 	knc_one: "KNC ONE TV Station (-/SE/PRO/RDS)"
 	pixelview_pak: "Lenco MXTV-9578 CP (card=50)"
@@ -99,20 +100,20 @@ param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
 
 param_type: audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		bestbuy2 bte chronos cph03x cph06x creative_infracd \
-		dsp flyvideo hauppauge hauppauge_dvb it87 knc_one \
-		kworld leadtek_0007 leadtek_0010 livedrive_midi \
-		livedrive_seq mediafocusI none pixelview_bt878 \
-		pixelview_pak pixelview_pro provideo sa1100 \
-		tekram_bt829 tvbox udp
+		dsp flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
+		knc_one kworld leadtek_0007 leadtek_0010 \
+		livedrive_midi livedrive_seq mediafocusI none \
+		pixelview_bt878 pixelview_pak pixelview_pro provideo \
+		sa1100 tekram_bt829 tvbox udp
 	none:
 
 default_param: audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		bestbuy2 chronos cph03x cph06x creative_infracd dsp \
-		flyvideo hauppauge hauppauge_dvb it87 knc_one kworld \
-		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
-		livedrive_seq mediafocusI none pixelview_bt878 \
-		pixelview_pak pixelview_pro provideo sa1100 \
-		tekram_bt829 tvbox udp
+		flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
+		knc_one kworld leadtek leadtek_0007 leadtek_0010 \
+		livedrive_midi livedrive_seq mediafocusI none \
+		pixelview_bt878 pixelview_pak pixelview_pro provideo \
+		sa1100 tekram_bt829 tvbox udp
 	none:
 
 default_param: caraca creative irman logitech mp3anywhere pctv \
