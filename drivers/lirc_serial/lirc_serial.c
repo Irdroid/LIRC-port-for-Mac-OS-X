@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.61 2004/12/30 21:48:22 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.62 2004/12/31 14:08:20 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -63,7 +63,7 @@
 
 #include <linux/config.h>
 
-#ifndef CONFIG_SERIAL_MODULE
+#if defined(CONFIG_SERIAL) || defined(CONFIG_SERIAL_8250)
 #warning "******************************************"
 #warning " Your serial port driver is compiled into "
 #warning " the kernel. You will have to release the "
