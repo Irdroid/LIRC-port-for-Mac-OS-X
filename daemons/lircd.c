@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.31 2001/07/16 10:10:26 lirc Exp $      */
+/*      $Id: lircd.c,v 5.32 2001/08/16 20:51:08 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -698,11 +698,10 @@ void start_server(mode_t permission,int nodaemon)
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(sockfd==-1)
 	{
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not create socket\n",progname);
 		perror(progname);
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		exit(EXIT_FAILURE);
 	};
 	
@@ -714,12 +713,12 @@ void start_server(mode_t permission,int nodaemon)
 	ret=stat(LIRCD,&s);
 	if(ret==-1 && errno!=ENOENT)
 	{
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not get file information for %s\n",
 			progname,LIRCD);
 		perror(progname);
+		close(sockfd);
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		exit(EXIT_FAILURE);
 	}
 	if(ret!=-1)
@@ -728,12 +727,12 @@ void start_server(mode_t permission,int nodaemon)
 		ret=unlink(LIRCD);
 		if(ret==-1)
 		{
-			close(sockfd);
-			fclose(pidfile);
-			(void) unlink(PIDFILE);
 			fprintf(stderr,"%s: could not delete %s\n",
 				progname,LIRCD);
 			perror(NULL);
+			close(sockfd);
+			fclose(pidfile);
+			(void) unlink(PIDFILE);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -742,12 +741,12 @@ void start_server(mode_t permission,int nodaemon)
 	strcpy(serv_addr.sun_path,LIRCD);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
 	{
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not assign address to socket\n",
 			progname);
 		perror(progname);
+		close(sockfd);
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -756,12 +755,12 @@ void start_server(mode_t permission,int nodaemon)
 	   (chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
 	   )
 	{
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not set file permissions\n",
 			progname);
 		perror(progname);
+		close(sockfd);
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		exit(EXIT_FAILURE);
 	}
 	
@@ -776,12 +775,12 @@ void start_server(mode_t permission,int nodaemon)
 		sockinet=socket(PF_INET,SOCK_STREAM,IPPROTO_IP);
 		if(sockinet==-1)
 		{
-			close(sockfd);
-			fclose(pidfile);
-			(void) unlink(PIDFILE);
 			fprintf(stderr,"%s: could not create TCP/IP socket\n",
 				progname);
 			perror(progname);
+			close(sockfd);
+			fclose(pidfile);
+			(void) unlink(PIDFILE);
 			exit(EXIT_FAILURE);
 		};
 		(void) setsockopt(sockinet,SOL_SOCKET,SO_REUSEADDR,
@@ -793,13 +792,13 @@ void start_server(mode_t permission,int nodaemon)
 		if(bind(sockinet,(struct sockaddr *) &serv_addr_in,
 			sizeof(serv_addr_in))==-1)
 		{
+			fprintf(stderr,"%s: could not assign address to socket\n",
+				progname);
+			perror(progname);
 			close(sockinet);
 			close(sockfd);
 			fclose(pidfile);
 			(void) unlink(PIDFILE);
-			fprintf(stderr,"%s: could not assign address to socket\n",
-				progname);
-			perror(progname);
 			exit(EXIT_FAILURE);
 		}
 		
@@ -824,6 +823,8 @@ void start_server(mode_t permission,int nodaemon)
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
+		fprintf(stderr,"%s: could not open logfile\n",progname);
+		perror(progname);
 		if(listen_tcpip)
 		{
 			close(sockinet);
@@ -831,8 +832,6 @@ void start_server(mode_t permission,int nodaemon)
 		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
-		fprintf(stderr,"%s: could not open logfile\n",progname);
-		perror(progname);
 		exit(EXIT_FAILURE);
 	}
 	gethostname(hostname,HOSTNAME_LEN);
