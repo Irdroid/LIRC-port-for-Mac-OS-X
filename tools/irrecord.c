@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.3 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.4 1999/07/08 18:10:01 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -779,6 +779,14 @@ void merge_lengths(struct lengths *first)
 		}
 		l=l->next;
 	}
+#       ifdef DEBUG
+	l=first;
+	while(l!=NULL)
+	{
+		printf("%d x %ld [%ld,%ld]\n",l->count,l->sum/l->count,l->min,l->max);
+		l=l->next;
+	}
+#       endif
 }
 
 void get_header_length(struct ir_remote *remote,struct lengths **first_pulse,
