@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.12 2000/03/21 12:03:04 columbus Exp $      */
+/*      $Id: lircd.c,v 5.13 2000/04/15 20:28:51 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -114,6 +114,9 @@ int daemonized=0;
 
 extern struct hardware hw;
 
+static sig_atomic_t term=0,hup=0,alrm=0;
+static int termsig;
+
 inline int max(int a,int b)
 {
 	return(a>b ? a:b);
@@ -192,6 +195,14 @@ inline int read_timeout(int fd,char *buf,int len,int timeout)
 
 void sigterm(int sig)
 {
+	/* all signals are blocked now */
+	if(term) return;
+	term=1;
+	termsig=sig;
+}
+
+void dosigterm(int sig)
+{
 	int i;
 	
 	signal(SIGALRM,SIG_IGN);
@@ -217,6 +228,11 @@ void sigterm(int sig)
 
 void sighup(int sig)
 {
+	hup=1;
+}
+
+void dosighup(int sig)
+{
 	struct stat s;
 	int i;
 
@@ -224,14 +240,14 @@ void sighup(int sig)
 	logprintf(0,"closing logfile\n");
 	if(-1==fstat(fileno(lf),&s))		
 	{
-		exit(EXIT_FAILURE); /* shouldn't ever happen */
+		dosigterm(SIGTERM); /* shouldn't ever happen */
 	}
 	fclose(lf);
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
 		/* can't print any error messagees */
-		exit(EXIT_FAILURE);
+		dosigterm(SIGTERM);
 	}
 	logprintf(0,"reopened logfile\n");
 	if(-1==fchmod(fileno(lf),s.st_mode))
@@ -339,7 +355,7 @@ void add_client(void)
 	{
 		logprintf(0,"accept() failed\n");
 		logperror(0,NULL);
-		exit(EXIT_FAILURE);
+		dosigterm(SIGTERM);
 	};
 
 	if(fd>=FD_SETSIZE)
@@ -473,6 +489,11 @@ void daemonize(void)
 #endif DAEMONIZE
 
 void sigalrm(int sig)
+{
+	alrm=1;
+}
+
+void dosigalrm(int sig)
 {
 	struct itimerval repeat_timer;
 
@@ -1032,6 +1053,22 @@ int waitfordata(unsigned long maxusec)
 		
 		do{
 			do{
+				/* handle signals */
+				if(term)
+				{
+					dosigterm(termsig);
+					/* never reached */
+				}
+				if(hup)
+				{
+					dosigterm(SIGHUP);
+					hup=0;
+				}
+				if(alrm)
+				{
+					dosigalrm(SIGALRM);
+					alrm=0;
+				}
 				if(maxusec>0)
 				{
 					tv.tv_sec=0;
@@ -1180,7 +1217,7 @@ int main(int argc,char **argv)
 	start_server();
 	
 	act.sa_handler=sigterm;
-	sigemptyset(&act.sa_mask);
+	sigfillset(&act.sa_mask);
 	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
 	sigaction(SIGTERM,&act,NULL);
 	sigaction(SIGINT,&act,NULL);

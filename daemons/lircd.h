@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.3 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: lircd.h,v 5.4 2000/04/15 20:28:51 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -15,7 +15,9 @@
 #define WHITE_SPACE " \t"
 
 void sigterm(int sig);
+void dosigterm(int sig);
 void sighup(int sig);
+void dosighup(int sig);
 void config(void);
 void nolinger(int sock);
 void remove_client(int fd);
@@ -25,6 +27,7 @@ void logprintf(int level,char *format_str, ...);
 void logperror(int level,const char *s);
 void daemonize(void);
 void sigalrm(int sig);
+void dosigalrm(int sig);
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 	     struct ir_ncode **code,int n);
 int send_success(int fd,char *message);

@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.7 2000/04/02 10:36:54 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.8 2000/04/15 20:28:51 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -139,6 +139,8 @@ char *configfile=LIRCMDCFGFILE;
 
 int lircd,lircm;
 
+sig_atomic_t hup=0;
+
 struct trans_mouse *read_config(FILE *fd);
 
 void freetm(struct trans_mouse *tm_all)
@@ -159,18 +161,23 @@ void freetm(struct trans_mouse *tm_all)
 
 void sigterm(int sig)
 {
-	freetm(tm_first);
-
+	/* not safe in a signal handler *//*freetm(tm_first);*/
+	
 	shutdown(lircd,2);
 	close(lircd);
 	shutdown(lircm,2);
 	close(lircm);
-
+	
 	signal(sig,SIG_DFL);
 	raise(sig);
 }
 
 void sighup(int sig)
+{
+	hup=1;
+}
+
+void dohup(void)
 {
 	FILE *fd;
 	struct trans_mouse *tm_list;
@@ -178,7 +185,7 @@ void sighup(int sig)
 	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
-		syslog(LOG_WARNING,"could not open config file\n%m\n");
+		syslog(LOG_WARNING,"could not open config file:\n%m\n");
 		return;
 	}
 	tm_list=read_config(fd);
@@ -633,17 +640,29 @@ void loop()
 	char remote[PACKET_SIZE+1];
 	char *end;
 	int end_len=0;
-
+	sigset_t block;
+	
+	sigemptyset(&block);
+	sigaddset(&block,SIGHUP);
 	buffer[0]=0;
 	while(1)
 	{
+		if(hup)
+		{
+			dohup();
+			hup=0;
+		}
 		if(strchr(buffer,'\n')==NULL)
 		{
+
+			sigprocmask(SIG_UNBLOCK,&block,NULL);
 			len=read(lircd,buffer+end_len,PACKET_SIZE-end_len);
-		}
-		if(len<=0)
-		{
-			raise(SIGTERM);
+			sigprocmask(SIG_BLOCK,&block,NULL);
+			if(len<=0)
+			{
+				if(len==-1 && errno==EINTR) continue;
+				raise(SIGTERM);
+			}
 		}
 		buffer[len+end_len]=0;
 		ret=sscanf(buffer,"%*llx %x %s %s\n",&rep,button,remote);
@@ -669,6 +688,7 @@ int main(int argc,char **argv)
 	FILE *fd;
 	struct sigaction act;
 	struct sockaddr_un addr;
+	sigset_t block;
 
 	while(1)
 	{
@@ -772,16 +792,21 @@ int main(int argc,char **argv)
 	signal(SIGPIPE,SIG_IGN);
 
 	act.sa_handler=sigterm;
-	sigemptyset(&act.sa_mask);
+	sigfillset(&act.sa_mask);
 	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
 	sigaction(SIGTERM,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
 
+	/* block SIGHUP first */
+	sigemptyset(&block);
+	sigaddset(&block,SIGHUP);
+	sigprocmask(SIG_BLOCK,&block,NULL);
+
 	act.sa_handler=sighup;
 	sigemptyset(&act.sa_mask);
-	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
+	act.sa_flags=0;                    /* need EINTR in loop() */
 	sigaction(SIGHUP,&act,NULL);
-
+	
 	loop();
 	
 	/* never reached */
