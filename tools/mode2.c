@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.4 1999/09/15 18:19:38 columbus Exp $      */
+/*      $Id: mode2.c,v 5.5 1999/10/18 10:10:04 columbus Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -38,7 +38,8 @@ int main()
 	};
 	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
 	{
-		printf("This program only works with receivers supporting the pulse/space layer.\n");
+		printf("This program is only intended for receivers supporting the pulse/space layer.\n");
+		printf("Note that this is no error, but this program simply makes no sense for your\nreceiver.\n");
 		close(fd);
 		exit(1);
 	}
