@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.11 2001/01/18 21:32:23 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.12 2001/06/23 17:34:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -25,9 +25,13 @@
 #elif LINUX_VERSION_CODE >= 0x020200
 #define KERNEL_2_2
 #include <linux/config.h>
+#endif
+#if LINUX_VERSION_CODE >= 0x020400
+#define KERNEL_2_4
+#endif
+
 #ifdef CONFIG_SMP
 #error "--- Sorry, this driver is not SMP safe. ---"
-#endif
 #endif
 
 #include <linux/module.h>
@@ -75,7 +79,11 @@ unsigned int default_timer = LIRC_TIMER;
 static lirc_t wbuf[WBUF_SIZE];
 static lirc_t rbuf[RBUF_SIZE];
 
+#ifdef KERNEL_2_4
+DECLARE_WAIT_QUEUE_HEAD(lirc_wait);
+#else
 static struct wait_queue *lirc_wait=NULL;
+#endif
 
 unsigned int rptr=0,wptr=0;
 unsigned int lost_irqs=0;
@@ -117,11 +125,12 @@ void __inline__ out(int offset, int value)
 	case LIRC_LP_BASE:
 		parport_write_data(pport,value);
 		break;
-	case LIRC_LP_STATUS:
-		parport_write_status(pport,value);
-		break;
 	case LIRC_LP_CONTROL:
 		parport_write_control(pport,value);
+		break;
+	case LIRC_LP_STATUS:
+		printk(KERN_INFO "%s: attempt to write to status register\n",
+		       LIRC_DRIVER_NAME);
 		break;
 	}
 #else
@@ -383,7 +392,11 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 #endif
 	int result;
 	int count=0;
+#ifdef KERNEL_2_4
+	DECLARE_WAITQUEUE(wait, current);
+#else
 	struct wait_queue wait={current,NULL};
+#endif
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
