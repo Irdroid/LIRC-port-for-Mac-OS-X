@@ -19,25 +19,25 @@ button click. Read also the <A HREF="#daemons"><U>daemon note</U></A>.</P>
 
 
 
-<A NAME="lirmand"><HR></A>
-<H1 ALIGN="CENTER">lirmand</H1>
-<HR WIDTH="70%">
-
-<P>TODO</P>
-
 <A NAME="daemons"><P><B>Usage of the Daemons</B></P></A>
 
-<P>lircd, lircmd and lirmand (for Irman only) are daemons.
-   You should start them in some init script depending on your system.
-   There is an example sript for S.u.S.E. 5.0 in the examples directory.</P>
+<P>
+lircd and lircmd are daemons.  You should start them in some init
+script depending on your system.  There are some example sripts for
+different distributions in the <em>contrib</em> directory.
+</P>
 
-<P>lircd has its own logfile in /var/log/lircd. lircmd will use syslogd
-   to output error messages. It depends on your system configuration
-   where they will show up.</P>
+<P>
+lircd has its own logfile in <em>/var/log/lircd</em>. lircmd will use syslogd
+to output error messages. It depends on your system configuration
+where they will show up.
+</P>
 
-<P>lircd and lircmd will reread their config files if they receive the
-   HUP signal. Additionally lircd will reopen its logfile so that you can
-   remove old logfiles.</P>
+<P>
+lircd and lircmd will reread their config files if they receive the
+HUP signal. Additionally lircd will reopen its logfile so that you can
+remove old logfiles.
+</P>
 
 
 
