@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.5 2000/07/08 08:17:48 columbus Exp $
+## $Id: Makefile.am,v 5.6 2001/11/04 00:13:28 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -9,7 +9,7 @@ bin_PROGRAMS = irw irpty irexec mode2 @vga_progs@ @x_progs@
 irw_SOURCES = irw.c
 irpty_SOURCES = irpty.c
 irpty_DEPENDENCIES = liblirc_client.la
-irpty_LDADD = liblirc_client.la
+irpty_LDADD = liblirc_client.la @forkpty@
 irexec_SOURCES = irexec.c
 irexec_DEPENDENCIES = liblirc_client.la
 irexec_LDADD = liblirc_client.la @daemon@

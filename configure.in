@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.68 2001/11/04 00:11:03 ranty Exp $
+dnl $Id: configure.in,v 5.69 2001/11/04 00:13:28 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -54,6 +54,14 @@ if test "$ac_cv_func_daemon" != yes; then
   if test "$daemon" = ""; then
     AC_MSG_ERROR([*** daemon() function not available on this system])
   fi
+fi
+
+forkpty=""
+AC_CHECK_FUNCS(forkpty)
+if test "$ac_cv_func_forkpty" != yes; then
+  AC_CHECK_LIB(util,forkpty,[
+	  forkpty="-lutil"
+	  AC_DEFINE(HAVE_FORKPTY)])
 fi
 
 vga_progs=
@@ -630,6 +638,7 @@ prefix=$cur_prefix
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)
+AC_SUBST(forkpty)
 AC_SUBST(devdir)
 AC_SUBST(sysconfdir)
 AC_SUBST(moduledir)

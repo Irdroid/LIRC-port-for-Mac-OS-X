@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.4 2001/06/11 08:32:01 ranty Exp $      */
+/*      $Id: irpty.c,v 5.5 2001/11/04 00:13:28 ranty Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -179,6 +179,12 @@ void tty_atexit(void)
 		tty_reset(ttysavefd);
 }
 
+#ifdef HAVE_FORKPTY
+
+#define pty_fork(ptrfdm, slave_name, slave_termios, slave_winsize) \
+		forkpty(ptrfdm, slave_name, slave_termios, slave_winsize)
+
+#else
 /* Open the next free pty */
 
 int pty_open(char *pty_name)
@@ -267,6 +273,7 @@ pid_t pty_fork(int *ptrfdm, char *slave_name,
 	*ptrfdm = fdm;
 	return (pid);
 }
+#endif
 
 static void set_noecho(int fd)
 {
