@@ -1,5 +1,3 @@
-* write correct signal handlers
-
 * make the package portable (you will be able to use LIRC with an
   Irman on Solaris)
 

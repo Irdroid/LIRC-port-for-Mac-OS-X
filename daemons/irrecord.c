@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.10 2000/02/02 20:25:07 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.11 2000/04/17 20:45:39 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -391,7 +391,8 @@ int main(int argc,char **argv)
 				hw.rec_func(NULL);
 			}
 		}
-		printf("\nNow press button \"%s\".\n",buffer);fflush(stdout);
+		printf("\nNow hold down button \"%s\".\n",buffer);
+		fflush(stdout);
 		
 		if(remote.flags&RAW_CODES)
 		{
@@ -534,7 +535,7 @@ int main(int argc,char **argv)
 						break;
 					}
 					flushhw();
-					printf("Press button again. "
+					printf("Please try again. "
 					       "(%d retries left)\n",retries-1);
 				}
 				else
