@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.4 1999/09/13 05:52:41 columbus Exp $
+## $Id: Makefile.am,v 5.5 2000/07/08 08:17:48 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,7 +12,7 @@ irpty_DEPENDENCIES = liblirc_client.la
 irpty_LDADD = liblirc_client.la
 irexec_SOURCES = irexec.c
 irexec_DEPENDENCIES = liblirc_client.la
-irexec_LDADD = liblirc_client.la
+irexec_LDADD = liblirc_client.la @daemon@
 mode2_SOURCES = mode2.c
 
 ## vga programs

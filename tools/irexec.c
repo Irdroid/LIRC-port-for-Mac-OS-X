@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
+/*      $Id: irexec.c,v 5.3 2000/07/08 08:17:48 columbus Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <getopt.h>
 #include "lirc_client.h"
 
 char *progname;
@@ -28,21 +29,67 @@ char *progname;
 int main(int argc, char *argv[])
 {
 	struct lirc_config *config;
+	int daemonize=0;
 
-	progname=argv[0];
-	if(argc>2)
+	progname="irexec-" VERSION;
+	while(1)
 	{
-		fprintf(stderr,"Usage: %s <config file>\n",progname);
-		exit(EXIT_FAILURE);
+		int c;
+		static struct option long_options[] =
+		{
+			{"help",no_argument,NULL,'h'},
+			{"version",no_argument,NULL,'v'},
+			{"daemon",no_argument,NULL,'d'},
+			{0, 0, 0, 0}
+		};
+		c = getopt_long(argc,argv,"hvd",long_options,NULL);
+		if(c==-1)
+			break;
+		switch (c)
+		{
+		case 'h':
+			printf("Usage: %s [options] [config_file]\n",argv[0]);
+			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -d --daemon\t\trun in background\n");
+			return(EXIT_SUCCESS);
+		case 'v':
+			printf("%s\n",progname);
+			return(EXIT_SUCCESS);
+		case 'd':
+			daemonize=1;
+			break;
+		default:
+			printf("Usage: %s [options] [config_file]\n",argv[0]);
+			return(EXIT_FAILURE);
+		}
 	}
-	if(lirc_init("irexec",1)==-1) exit(EXIT_FAILURE);
+	if (optind < argc-1)
+	{
+		fprintf(stderr,"%s: too many arguments\n",progname);
+		return(EXIT_FAILURE);
+	}
+	
+	if(lirc_init("irexec",daemonize ? 0:1)==-1) exit(EXIT_FAILURE);
 
-	if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,NULL)==0)
+	if(lirc_readconfig(optind!=argc ? argv[optind]:NULL,&config,NULL)==0)
 	{
 		char *code;
 		char *c;
 		int ret;
 
+		if(daemonize)
+		{
+			if(daemon(0,0)==-1)
+			{
+				fprintf(stderr,"%s: can't daemonize\n",
+					progname);
+				perror(progname);
+				lirc_freeconfig(config);
+				lirc_deinit();
+				exit(EXIT_FAILURE);
+			}
+		}
 		while(lirc_nextcode(&code)==0)
 		{
 			if(code==NULL) continue;
@@ -50,7 +97,10 @@ int main(int argc, char *argv[])
 			      c!=NULL)
 			{
 #ifdef DEBUG
-				printf("Execing command \"%s\"\n",c);
+				if(!daemonize)
+				{
+					printf("Execing command \"%s\"\n",c);
+				}
 #endif
 				system(c);
 			}
