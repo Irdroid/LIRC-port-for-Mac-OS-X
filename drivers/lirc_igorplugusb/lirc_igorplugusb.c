@@ -246,7 +246,6 @@ struct irctl {
 
 	/* lirc */
 	struct lirc_plugin *p;
-	int connected;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -290,11 +289,9 @@ static int set_use_inc(void *data)
 
 	MOD_INC_USE_COUNT;
 
-	if (!ir->connected) {
-		if (!ir->usbdev)
-			return -ENODEV;
-
-		ir->connected = 1;
+	if (!ir->usbdev)
+	{
+		return -ENODEV;
 	}
 
 	return SUCCESS;
@@ -310,12 +307,6 @@ static void set_use_dec(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
-	if (ir->connected) {
-		IRLOCK;
-		ir->connected = 0;
-                unregister_from_lirc(ir);
-		IRUNLOCK;
-	}
 	MOD_DEC_USE_COUNT;
 }
 
@@ -557,7 +548,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	ir->devnum = devnum;
 	ir->usbdev = dev;
 	ir->len_in = DEVICE_BUFLEN+DEVICE_HEADERLEN;
-	ir->connected = 0;
 	ir->in_space = 1; /* First mode2 event is a space. */
 	do_gettimeofday(&ir->last_time);
 
