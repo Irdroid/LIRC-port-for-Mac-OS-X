@@ -3,16 +3,18 @@ FlyVideo 98 IR remote control driver
 YOU NEED 2.2.x KERNEL TO USE THIS DRIVER.
 
 This driver should support lirc interface in LIRC_MODE_CODE mode.
-This is not fully tested yet. The lirc_fly98.c file should be compiled
-as a kernel module ad you should apply included patch to the bttv-0.6.3
-driver tree (not the kernel bttv driver). You can get alternative patch
+This is working on my home system. No reports of problems so far.
+
+The lirc_fly98.c file should be compiled as a kernel module and 
+you should apply included patch to the bttv-0.6.3 driver tree 
+(not the kernel bttv driver). You can get alternative patch
 at http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
 
 There is also a patch for a kernel bttv driver. This one is better tested
 now since I switched my machine to this driver (works better). 
 bttv patch will be better tested and corrected later.
 
-For examples of config files see remotes/fly98 directory.
+For examples of config files see remotes/life-view directory.
 
 To install:
 
