@@ -151,10 +151,11 @@ you have a rescue disc nearby...</P>
 so others than <em>root</em> can connect to lircd. You can also create
 a special group for this purpose.</P>
 
-<P>If your hardware requires a kernel module you should make sure that 
+<P>If your hardware requires a kernel module you should make sure that
 the kernel will find the correct module if a program tries to access
 <em>/dev/lirc</em>. This can be done by inserting the following line
-to your <em>/etc/conf.modules</em>:<BR>
+to your <em>/etc/conf.modules</em> (<em>/etc/modules.conf</em> for
+current kernel versions):<BR>
 <PRE>
 	alias char-major-61  lirc_driver
 </PRE>
@@ -304,21 +305,28 @@ are not loaded yet.<BR>
 <LI><B>debug</B> (0) - value other than 0 (zero) enables printing more log
 messages</LI>
 <LI><B>card</B> (0) - number of TV card from which receive scan codes</LI>
-<LI><B>minor</B> (0) - minor device number for /dev/lirc device</LI>
-<LI><B>code_length</B> (5) - scan code length (in bits)</LI>
-<LI><B>gpio_shift</B> (8) - right shift GPIO value gpio_shift bits</LI>
-<LI><B>gpio_mask</B> (0x1f) - bit mask used for masking (bitwise
-&amp;) GPIO value (after shifting)</LI>
+<LI><B>minor</B> (-1) - minor device number for /dev/lirc device</LI>
+<LI><B>gpio_mask</B> (0x1f00) - bit mask used for extracting usable bits 
+from GPIO value</LI>
 <LI><B>gpio_lock_mask</B> (0x8000) - if this value "anded" with GPIO
 value is non zero than it indicates that scan code is not ready (value
 of 0 of this parameter disables checking)</LI>
-<LI><B>soft_gap</B> (300) - minimal gap (in milliseconds) between two
+<LI><B>gpio_xor_mask</B> (0) - bitmask applied (by xor operation) to 
+GPIO value before lock_mask is checked</LI>
+<LI><B>soft_gap</B> (500) - minimal gap (in milliseconds) between two
 scan codes (value of 0 disables checking)</LI>
-<LI><B>sample_rate</B> (10) - how often GPIO will be polled</LI>
+<LI><B>sample_rate</B> (12) - how often (times per second) GPIO will be polled</LI>
 </UL>
-
-Default values for parameters are suitable for <em>PixelView PlayTV
-pro</em> card.</P>
+</P>
+<P>
+ Supported hardware:
+<UL>
+<LI><B>Prolink - PixelView PlayTV pro</B> - parameters: gpio_mask=0x1f00, gpio_lock_mask=0x8000, 
+gpio_xor_mask=0, soft_gap=500, sample_rate=12</LI>
+<LI><B>AVerMedia - TVCapture98 and TVPhone98 (pre 98 also)</B> - parameters: gpio_mask=0xf88000, 
+gpio_lock_mask=0x10000, gpio_xor_mask=0x10000, soft_gap=0, sample_rate=12</LI>
+</UL>
+</P>
 
 <H3>lirc_gpio_i</H3>
 <P>
