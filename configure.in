@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.53 2001/01/21 11:10:39 columbus Exp $
+dnl $Id: configure.in,v 5.54 2001/01/21 13:18:29 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -210,6 +210,7 @@ if test "$driver" = "pixelview_bt878"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="pixelview/lircd.conf.pixelview_bt878"
 #  lircmd_conf="pixelview/lircmd.conf.pixelview_bt878"
+  AC_DEFINE(LIRC_I2C_PVFIX)
 fi
 if test "$driver" = "fly98"; then
   lirc_driver="lirc_dev lirc_gpio"

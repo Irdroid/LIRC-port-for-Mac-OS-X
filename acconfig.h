@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.13 2000/12/15 22:15:50 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.14 2001/01/21 13:18:29 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -106,6 +106,9 @@
 
 /* Define if you want to use a Tekram Irmate 210 */
 #undef LIRC_SIR_TEKRAM
+
+/* Define if you have a Pixelview PlayTV card */
+#undef LIRC_I2C_PVFIX
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS

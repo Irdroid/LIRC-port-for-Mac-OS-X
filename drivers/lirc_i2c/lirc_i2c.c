@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.8 2001/01/20 13:32:00 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.9 2001/01/21 13:18:29 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -321,30 +321,35 @@ static int ir_detach(struct i2c_client *client)
 
 static int ir_probe(struct i2c_adapter *adap)
 {
+#ifdef LIRC_I2C_PVFIX
         struct bttv *btv;
         int type,cardid;
+#endif
 	
-        btv=(struct bttv *) (adap->data);
-        
-        if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1)
-	{
-                dprintk(KERN_DEBUG DEVICE_NAME ": could not get card type\n");
-        }
-        else
-        {
-                dprintk(KERN_DEBUG DEVICE_NAME ": card type 0x%x, id 0x%x\n",
-                        type,cardid);
-		
-		/* the Pixelview IC is not found otherwise */
-		if(type==BTTV_PIXVIEWPLAYTV)
-		{
-			addr_data.force[0]=0x0;
-			addr_data.force[1]=0x64;
-		}
-        }
-
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
 	{
+#ifdef LIRC_I2C_PVFIX
+		btv=(struct bttv *) (adap->data);
+		
+		if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1)
+		{
+			dprintk(KERN_DEBUG DEVICE_NAME 
+				": could not get card type\n");
+		}
+		else
+		{
+			dprintk(KERN_DEBUG DEVICE_NAME 
+				": card type 0x%x, id 0x%x\n",
+				type,cardid);
+			
+			/* the Pixelview IC is not found otherwise */
+			if(type==BTTV_PIXVIEWPLAYTV)
+			{
+				addr_data.force[0]=0x0;
+				addr_data.force[1]=0x64;
+			}
+		}
+#endif
 		return i2c_probe(adap, &addr_data, ir_attach);
 	}
 	return 0;
