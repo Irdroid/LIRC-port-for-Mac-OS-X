@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.101 2003/02/16 19:06:55 lirc Exp $
+dnl $Id: configure.in,v 5.102 2003/03/31 18:44:45 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -570,7 +570,7 @@ if test "$driver" = "knc_one"; then
 fi
 if test "$driver" = "kworld"; then
   lirc_driver="lirc_dev lirc_gpio"
-#  lircd_conf="kworld/lircd.conf.kworld"
+  lircd_conf="kworld/lircd.conf.kworld"
 #  lircmd_conf="kworld/lircmd.conf.kworld"
 fi
 if test "$driver" = "dsp"; then
