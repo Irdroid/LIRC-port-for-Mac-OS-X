@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.45 2005/03/11 21:26:55 lirc Exp $
+## $Id: Makefile.am,v 5.46 2005/03/26 09:59:27 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -10,7 +10,7 @@ EXTRA_DIST = dump_config.c dump_config.h
 sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
-		lircd.h ir_remote.h config_file.h \
+		lircd.h ir_remote.h r_remote_types.h config_file.h \
 		hw-types.c hw-types.h hardware.h
 lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
@@ -53,7 +53,7 @@ bin_PROGRAMS = irrecord
 
 irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 		config_file.c config_file.h hardware.h \
-		hw-types.c hw-types.h ir_remote.c ir_remote.h
+		hw-types.c hw-types.h ir_remote.c ir_remote.h ir_remote_types.h
 irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = \
@@ -93,14 +93,14 @@ EXTRA_irrecord_SOURCES = \
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke
 noinst_PROGRAMS = @maintmode_daemons_extra@
 lircd_simsend_SOURCES = lircd.c ir_remote.c config_file.c \
-		lircd.h ir_remote.h config_file.h \
+		lircd.h ir_remote.h ir_remote_types.h config_file.h \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \
 		transmit.c transmit.h
 lircd_simsend_CFLAGS = -DSIM_SEND
 lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
-		lircd.h ir_remote.h config_file.h \
+		lircd.h ir_remote.h ir_remote_types.h config_file.h \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \
