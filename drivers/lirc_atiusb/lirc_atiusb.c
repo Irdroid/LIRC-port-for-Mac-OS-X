@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.24 2004/04/27 18:52:33 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.25 2004/04/27 19:04:43 lirc Exp $
  */
 
 /*
@@ -365,7 +365,11 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 #ifdef KERNEL_2_5
 	dev = interface_to_usbdev(intf);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
+	idesc = intf->cur_altsetting;
+#else
 	idesc = &intf->altsetting[intf->act_altsetting];
+#endif
 	if (idesc->desc.bNumEndpoints != 2)
 		return -ENODEV;
 	ep_in = &idesc->endpoint[0].desc;
