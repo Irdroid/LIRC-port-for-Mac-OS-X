@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.6 2001/11/20 15:12:33 ranty Exp $      */
+/*      $Id: irxevent.c,v 5.7 2002/06/16 13:29:57 ranty Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -127,6 +127,7 @@ static struct keymodlist_t keymodlist[]=
 
 const char *key_delimiter ="-";
 const char *active_window_name ="CurrentWindow";
+const char *root_window_name ="RootWindow";
 
 
 char *progname;
@@ -160,6 +161,8 @@ Window find_window(Window top,char *name)
   if (!strcmp(active_window_name,name)){
     XGetInputFocus(dpy, &foo, &revert_to_return);
     return(foo);
+  }  else if (!strcmp(root_window_name,name)){
+    return(root);
   }
   /* First the base case */
   if (XFetchName(dpy,top,&wname)){

@@ -66,9 +66,9 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow
+config = Key [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow | RootWindow
 config = Button <button> <x> <y> <windowname> | CurrentWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow
+config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow | RootWindow
 .RE
 .fi
 
@@ -95,7 +95,7 @@ KEY     = "Key" <MOD>Keyname
 MOD     = ["shift-"]["numlock-"]["ctrl-"]["alt-"]["meta-"]
           ["numlock-"]["mod3-"]["mod4-"]["scrlock-"]
 BUTTON  = "Button" <1..5> <x_position> <y_position>
-TARGET  = Windowname | "CurrentWindow"
+TARGET  = Windowname | "CurrentWindow" | "RootWindow"
 .fi
 
 .I Keyname:
@@ -118,6 +118,11 @@ the given Windowname information from XClassHint(3x) will be checked.
 .RS 2
 refers to the active window as returned by XGetInputFocus(3x). Most times this
 is the window with your mouse pointer in it.
+.RE
+.I RootWindow:
+.RS 2
+refers to the \fIroot\fR window as returned by RootWindow(3x). You may need
+this to send events to the window manager.
 .RE
 .RE
 
