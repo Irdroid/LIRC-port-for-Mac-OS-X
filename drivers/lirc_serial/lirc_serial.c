@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.46 2003/04/19 11:28:28 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.47 2003/07/21 20:59:52 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -832,6 +832,10 @@ static int set_use_inc(void* data)
 		return -EBUSY;
 	}
 	
+	/* Init read buffer. */
+	if (lirc_buffer_init(&rbuf, sizeof(lirc_t), RBUF_LEN) < 0)
+		return -ENOMEM;
+	
 	/* initialize timestamp */
 	do_gettimeofday(&lasttv);
 	
@@ -841,11 +845,13 @@ static int set_use_inc(void* data)
 	case -EBUSY:
 		printk(KERN_ERR LIRC_DRIVER_NAME ": IRQ %d busy\n", irq);
 		spin_unlock(&lirc_lock);
+                lirc_buffer_free(&rbuf);
 		return -EBUSY;
 	case -EINVAL:
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": Bad irq number or handler\n");
 		spin_unlock(&lirc_lock);
+                lirc_buffer_free(&rbuf);
 		return -EINVAL;
 	default:
 #               ifdef DEBUG
@@ -855,7 +861,6 @@ static int set_use_inc(void* data)
 		break;
 	};
 
-	/* finally enable interrupts. */
 	save_flags(flags);cli();
 	
 	/* Set DLAB 0. */
@@ -864,9 +869,6 @@ static int set_use_inc(void* data)
 	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
 	
 	restore_flags(flags);
-	
-	/* Init read buffer. */
-	lirc_buffer_init(&rbuf, sizeof(lirc_t), RBUF_LEN);
 	
 	MOD_INC_USE_COUNT;
 	spin_unlock(&lirc_lock);
