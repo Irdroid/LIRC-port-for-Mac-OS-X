@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.12 2003/04/19 09:24:23 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.13 2003/08/15 09:37:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -341,6 +341,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 				{
 					new_entry->prog=NULL;
 					new_entry->code=NULL;
+					new_entry->rep_delay=0;
 					new_entry->rep=0;
 					new_entry->config=NULL;
 					new_entry->change_mode=NULL;
@@ -444,6 +445,11 @@ int lirc_mode(char *token,char *token2,char **mode,
 					}
 				}
 				
+				if (new_entry->rep_delay==0 &&
+				    new_entry->rep>0)
+				{
+					new_entry->rep_delay=new_entry->rep-1;
+				}
 			}
 			else
 			{
@@ -716,6 +722,24 @@ int lirc_readconfig(char *file,
 							}
 						}
 					}
+				}
+				else if(strcasecmp(token,"delay")==0)
+				{
+					char *end;
+
+					errno=ERANGE+1;
+					new_entry->rep_delay=strtoul(token2,&end,0);
+					if((new_entry->rep_delay==ULONG_MAX 
+					    && errno==ERANGE)
+					   || end[0]!=0
+					   || strlen(token2)==0)
+					{
+						lirc_printf("%s: \"%s\" not"
+							    " a  valid number for "
+							    "delay\n",lirc_prog,
+							    token2);
+					}
+					free(token2);
 				}
 				else if(strcasecmp(token,"repeat")==0)
 				{
@@ -1012,6 +1036,7 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 		if(scan->next_code->button==LIRC_ALL || 
 		   strcasecmp(scan->next_code->button,button)==0)
 		{
+			int iscode=0;
 			if(scan->code->next==NULL || rep==0)
 			{
 				scan->next_code=scan->next_code->next;
@@ -1019,20 +1044,11 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 			if(scan->next_code==NULL)
 			{
 				scan->next_code=scan->code;
-                                if(scan->code->next!=NULL || 
-                                   (scan->rep==0 ? rep==0:(rep%scan->rep)==0))
-                                {
-                                        return(1);
-                                }
-                                else
-                                {
-                                        return(0);
-                                }
+				iscode=scan->code->next!=NULL || rep==0 ||
+				   (scan->rep>0 && rep>scan->rep_delay &&
+				    ((rep-scan->rep_delay-1)%scan->rep)==0);
                         }
-			else
-			{
-				return(0);
-			}
+			return iscode;
 		}
 	}
         if(rep!=0) return(0);
@@ -1114,7 +1130,7 @@ int lirc_code2char(struct lirc_config *config,char *code,char **string)
 	int quit_happened;
 
 	*string=NULL;
-	if(sscanf(code,"%*llx %x %*s %*s\n",&rep)==1)
+	if(sscanf(code,"%*x %x %*s %*s\n",&rep)==1)
 	{
 		backup=strdup(code);
 		if(backup==NULL) return(-1);

@@ -297,6 +297,7 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	remote	= ...
 	button	= ...
 	repeat	= ...
+	delay	= ...
 	config	= ...
 	mode	= ...
 	flags	= ...
@@ -305,7 +306,8 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       Bringing it to the point the above says which program
       (<em>prog</em>) should do what (<em>config</em>, <em>mode</em>,
       <em>flags</em>) if you press a certain button (<em>remote</em>,
-      <em>button</em>) a specified time (<em>repeat</em>).
+      <em>button</em>) a specified time (<em>repeat</em>,
+      <em>delay</em>).
     </P>
     <DL>
       <DT>prog</DT>
@@ -327,6 +329,13 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	other positive value 'n' tells the program to pass the config
 	string every 'n'-th time to the according application, when a
 	key is repeated. The default for repeat is zero.
+      </DD>
+      <DT>delay</DT>
+      <DD>tells the program to ignore the specified number of key repeats
+	before using the "repeat" configuration directive above. This is
+	used to prevent double triggers of events when using a fast repeat
+	rate. A value of zero, which also is the default, will disable the
+	delay function.
       </DD>
       <DT>config</DT>
       <DD>is the string that will be passed to the according

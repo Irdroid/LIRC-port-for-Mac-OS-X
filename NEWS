@@ -1,4 +1,5 @@
 0.7.0: future
+  * added delay directive to .lircrc config file (Tobias Blomberg)
   * added support for ATI RF Remote Wonder (Paul Miller)
   * added support for I-O Data GV-BCTV5/PCI TV card (Jens C. Rasmussen)
   * added support for Creative iNFRA CDROM (Leonid Froenchenko)

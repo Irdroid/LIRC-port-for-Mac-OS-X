@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.4 2000/11/09 17:51:00 columbus Exp $      */
+/*      $Id: lirc_client.h,v 5.5 2003/08/15 09:37:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -52,6 +52,7 @@ struct lirc_config_entry
 {
 	char *prog;
 	struct lirc_code *code;
+	unsigned int rep_delay;
 	unsigned int rep;
 	struct lirc_list *config;
 	char *change_mode;
