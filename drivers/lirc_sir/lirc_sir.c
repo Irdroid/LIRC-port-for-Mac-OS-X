@@ -701,14 +701,24 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 	int iir, lsr;
 
 	while ((iir = inb(iobase + UART_IIR) & UART_IIR_ID)) {
-		switch (iir) { /* FIXME toto treba preriedit */
+		switch (iir&UART_IIR_ID) { /* FIXME toto treba preriedit */
+		case UART_IIR_MSI:
+			(void) inb(iobase + UART_MSR);
+			break;
 		case UART_IIR_RLSI:
+			(void) inb(iobase + UART_LSR);
+			break;
+		case UART_IIR_THRI:
+#if 0
+			if (lsr & UART_LSR_THRE) /* FIFO is empty */
+				outb(data, iobase + UART_TX)
+#endif
 			break;
 		case UART_IIR_RDI:
 			/* avoid interference with timer */
 		 	spin_lock_irqsave(&timer_lock, flags);
-			while ((lsr = inb(iobase + UART_LSR))
-				& UART_LSR_DR) { /* data ready */
+			do
+			{
 				del_timer(&timerlist);
 				data = inb(iobase + UART_RX);
 				do_gettimeofday(&curr_tv);
@@ -762,13 +772,9 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 					add_timer(&timerlist);
 				}
 			}
+			while ((lsr = inb(iobase + UART_LSR))
+				& UART_LSR_DR); /* data ready */
 			spin_unlock_irqrestore(&timer_lock, flags);
-			break;
-		case UART_IIR_THRI:
-#if 0
-			if (lsr & UART_LSR_THRE) /* FIFO is empty */
-				outb(data, iobase + UART_TX)
-#endif
 			break;
 		default:
 			break;
@@ -850,21 +856,6 @@ static int init_hardware(void)
 		set_bitsy_egpio(EGPIO_BITSY_IR_ON);
 	}
 #endif
-#if 0
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR0: %02x\n",Ser2UTCR0);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR1: %02x\n",Ser2UTCR1);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR2: %02x\n",Ser2UTCR2);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR3: %02x\n",Ser2UTCR3);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR4: %02x\n",Ser2UTCR4);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTDR:  %02x\n",Ser2UTDR);
-	
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR0: %02x\n",Ser2UTSR0);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR1: %02x\n",Ser2UTSR1);
-
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR0: %02x\n",Ser2HSCR0);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR1: %02x\n",Ser2HSCR1);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2HSCR2: %02x\n",Ser2HSCR2);
-#endif
 	sr.hscr0=Ser2HSCR0;
 
 	sr.utcr0=Ser2UTCR0;
@@ -907,19 +898,6 @@ static int init_hardware(void)
 	/* clear status register to prevent unwanted interrupts */
 	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
 	
-#if 0
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR0: %02x\n",Ser2UTCR0);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR1: %02x\n",Ser2UTCR1);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR2: %02x\n",Ser2UTCR2);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR3: %02x\n",Ser2UTCR3);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTCR4: %02x\n",Ser2UTCR4);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTDR:  %02x\n",Ser2UTDR);
-	
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR0: %02x\n",Ser2UTSR0);
-	printk(KERN_INFO LIRC_DRIVER_NAME " Ser2UTSR1: %02x\n",Ser2UTSR1);
-#endif
-
-
 #elif defined(LIRC_SIR_TEKRAM)
 	/* disable FIFO */ 
 	soutp(UART_FCR,
@@ -1126,32 +1104,10 @@ MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
 EXPORT_NO_SYMBOLS;
 #endif
 
-#if 0
-lirc_sir Ser2UTCR0: 0a                                                        
-lirc_sir Ser2UTCR1: 00                                                        
-lirc_sir Ser2UTCR2: 01                                                        
-lirc_sir Ser2UTCR3: 0b                                                        
-lirc_sir Ser2UTCR4: 01                                                        
-lirc_sir Ser2UTDR:  ff                                                        
-lirc_sir Ser2UTSR0: 01                                                        
-lirc_sir Ser2UTSR1: 04                                                        
-lirc_sir Ser2HSCR0: 00                                                        
-lirc_sir Ser2HSCR1: 00                                                        
-lirc_sir Ser2HSCR2: c0000                                                     
-#endif
-
 int init_module(void)
 {
 	int retval;
 	
-#if 0
-	/*FIXME*/
-	/* 7N1 */
-	Ser2UTCR0=UTCR0_1StpBit|UTCR0_7BitData;
-	/* 115200 */
-	Ser2UTCR1=0;
-	Ser2UTCR2=1;
-#endif
 	retval=init_chrdev();
 	if(retval < 0)
 		return retval;
