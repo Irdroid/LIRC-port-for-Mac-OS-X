@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.8 2001/11/14 21:45:19 lirc Exp $      */
+/*      $Id: receive.c,v 5.9 2001/11/18 14:14:24 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -623,6 +623,7 @@ int receive_decode(struct ir_remote *remote,
 	ir_code pre,code,post,code_mask=0,post_mask=0;
 	lirc_t sync;
 	int header;
+	struct timeval current;
 
 	sync=0; /* make compiler happy */
 	code=pre=post=0;
@@ -758,7 +759,6 @@ int receive_decode(struct ir_remote *remote,
 		{
 			int i;
  			lirc_t sum;
- 			struct timeval current;
 
 #                       ifdef LONG_IR_CODE
 			LOGPRINTF(1,"decoded: %llx",rec_buffer.decoded);
