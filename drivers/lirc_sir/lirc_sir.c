@@ -408,7 +408,9 @@ static void add_read_queue(int flag, unsigned long val)
 	}
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
+#               ifdef DEBUG
 		printk(KERN_WARNING LIRC_DRIVER_NAME ": Buffer overrun.\n");
+#               endif
 		return;
 	}
 	rx_buf[rx_tail] = newval;
