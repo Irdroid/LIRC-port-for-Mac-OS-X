@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.15 2002/09/21 15:25:28 lirc Exp $      */
+/*      $Id: receive.c,v 5.16 2002/11/07 07:40:06 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -939,7 +939,7 @@ int receive_decode(struct ir_remote *remote,
 		/* Most TV cards don't pass each signal to the
                    driver. This heuristic should fix repeat in such
                    cases. */
-		if(time_elapsed(&remote->last_send,&current)<300000)
+		if(time_elapsed(&remote->last_send,&current)<325000)
 		{
 			*repeat_flagp=1;
 		}
