@@ -25,7 +25,9 @@ struct hardware *hw_list[] =
 #ifdef LIRC_DRIVER_ANY
 	&hw_default,
 	&hw_creative,
-	//&hw_irman,
+#ifdef HAVE_LIBIRMAN
+	&hw_irman,
+#endif
 	&hw_logitech,
 	&hw_pinsys,
 	&hw_pixelview,
