@@ -20,6 +20,7 @@
  */
 
 #include "hardware.h"
+#include "ir_remote.h"
 #include "hw_livedrive_common.h"
 
 char *livedrive_rec_midi(struct ir_remote *remotes)
