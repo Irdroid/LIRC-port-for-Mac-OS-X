@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.30 2001/07/04 16:52:24 uid26674 Exp $      */
+/*      $Id: lircd.c,v 5.31 2001/07/16 10:10:26 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -85,24 +85,7 @@ extern struct ir_ncode *repeat_code;
 static int repeat_fd=-1;
 static char *repeat_message=NULL;
 
-#ifdef LIRC_NETWORK_ONLY
-struct hardware hw=
-{
-	"/dev/null",        /* default device */
-	-1,                 /* fd */
-	0,                  /* features */
-	0,                  /* send_mode */
-	0,                  /* rec_mode */
-	0,                  /* code_length */
-	NULL,               /* init_func */
-	NULL,               /* deinit_func */
-	NULL,               /* send_func */
-	NULL,               /* rec_func */
-	NULL,               /* decode_func */
-};
-#else
 extern struct hardware hw;
-#endif
 
 char *progname="lircd-"VERSION;
 char *configfile=LIRCDCFGFILE;

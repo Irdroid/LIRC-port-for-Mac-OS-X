@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.31 2001/07/06 06:35:50 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.32 2001/07/16 10:10:26 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -69,11 +69,7 @@ int get_data_length(struct ir_remote *remote);
 int get_gap_length(struct ir_remote *remote);
 void fprint_copyright(FILE *fout);
 
-#ifdef LIRC_NETWORK_ONLY 
-struct hardware hw;
-#else
 extern struct hardware hw;
-#endif
 extern struct ir_remote *last_remote;
 
 char *progname;

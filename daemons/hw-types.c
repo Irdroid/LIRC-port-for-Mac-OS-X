@@ -32,12 +32,28 @@ struct hardware *hw_list[] =
 	&hw_silitek,
 	&hw_slinke,
 #else
+#ifndef LIRC_NETWORK_ONLY
 	&HW_DEFAULT,
+#endif
 #endif
 	NULL
 };
 
-struct hardware hw;
+struct hardware hw=
+{
+	"/dev/null",        /* default device */
+	-1,                 /* fd */
+	0,                  /* features */
+	0,                  /* send_mode */
+	0,                  /* rec_mode */
+	0,                  /* code_length */
+	NULL,               /* init_func */
+	NULL,               /* deinit_func */
+	NULL,               /* send_func */
+	NULL,               /* rec_func */
+	NULL,               /* decode_func */
+};
+
 // which one is HW_DEFAULT could be selected with autoconf in a similar
 // way as it is now done upstream
 
@@ -65,6 +81,7 @@ int hw_choose_driver (char *name)
 
 	return 0;
 } 
+
 void hw_print_drivers (FILE *file)
 {
 	int i;
