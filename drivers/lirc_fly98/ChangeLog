@@ -1,5 +1,9 @@
 
 $Log: ChangeLog,v $
+Revision 1.6  2000/05/05 09:51:50  jochym
+Documentation corrected. Patch for kernel 2.2.14 added.
+
+
 Revision 1.5  1999/09/24 08:36:23  jochym
 Typos corrected.
 
