@@ -396,7 +396,8 @@ function SaveConfig
     echo "--with-driver=$LIRC_DRIVER \\" >>$START
     echo "--with-major=$LIRC_MAJOR \\" >>$START
     echo "--with-port=$LIRC_PORT \\" >>$START
-    echo "--with-irq=$LIRC_IRQ" >>$START
+    echo "--with-irq=$LIRC_IRQ \\" >>$START
+    echo "\"\$@\"" >>$START
     chmod 755 $START
 
     MESSAGE="Configuration: $CONFIG, executable shell script: $START"

@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.3 2000/02/02 20:28:42 columbus Exp $      */
+/*      $Id: irxevent.c,v 5.4 2000/10/01 15:34:50 columbus Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -181,6 +181,11 @@ Window find_window(Window top,char *name)
 
   if(XGetClassHint(dpy,top,&xch))  {
     if(!strcmp(xch.res_class,name))  {
+      XFree(xch.res_name); XFree(xch.res_class);
+      debugprintf("res_class '%s' res_name '%s' %x \n", xch.res_class,xch.res_name,top);
+      return(top);  /* found it! */
+    };
+    if(!strcmp(xch.res_name,name))  {
       XFree(xch.res_name); XFree(xch.res_class);
       debugprintf("res_class '%s' res_name '%s' %x \n", xch.res_class,xch.res_name,top);
       return(top);  /* found it! */
@@ -443,9 +448,10 @@ int check(char *s)
 
   if(2!=sscanf(s,"Key %s %s\n",buffer,buffer) &&
      4!=sscanf(s,"Button %d %d %d %s\n",&d,&d,&d,buffer) &&
-     4!=sscanf(s,"xy_Key %s %d %d %s\n",buffer,&d,&d,buffer))
+     4!=sscanf(s,"xy_Key %d %d %s %s\n",&d,&d,buffer,buffer))
     {
       fprintf(stderr,"%s: bad config string \"%s\"\n",progname,s);
+      free(buffer);
       return(-1);
     }
   free(buffer);  
