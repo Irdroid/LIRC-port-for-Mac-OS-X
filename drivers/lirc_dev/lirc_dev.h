@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.2 2000/07/28 11:10:44 columbus Exp $
+ * $Id: lirc_dev.h,v 1.3 2000/12/03 18:02:55 columbus Exp $
  *
  */
 
@@ -12,10 +12,8 @@
 #define _LINUX_LIRC_DEV_H
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
-#define WAITQ struct wait_queue *
-#define init_waitqueue_head(wq) *(wq) = NULL;
-#else
-#define WAITQ wait_queue_head_t
+/* comes with bttv */
+#include "../drivers/char/kcompat24.h"
 #endif
 
 #define MAX_IRCTL_DEVICES 2
@@ -29,7 +27,7 @@ struct lirc_plugin
      int sample_rate;
      void* data;
      int (*get_key) (void* data, unsigned char* key, int key_no);
-     WAITQ* (*get_queue) (void* data);
+     wait_queue_head_t* (*get_queue) (void* data);
      void (*set_use_inc) (void* data);
      void (*set_use_dec) (void* data);
 };

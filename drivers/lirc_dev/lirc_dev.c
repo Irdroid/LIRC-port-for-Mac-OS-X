@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.14 2000/09/30 19:32:40 columbus Exp $
+ * $Id: lirc_dev.c,v 1.15 2000/12/03 18:02:54 columbus Exp $
  *
  */
 
@@ -15,7 +15,18 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
 /* fix for SuSE 7.0 */
+#ifdef LIRC_HAVE_DEVFS
+#error "********************************************************"
+#error " Looking at the kernel sources there seems to be devfs  "
+#error " support. But this is impossible because devfs support  "
+#error " was introduced in 2.4.x while this is 2.2.x. So you are"
+#error " probably trying to use a patched kernel supplied with  "
+#error " your distribution.                                     "
+#error " This won't work with LIRC. Please use a standard kernel"
+#error " which you can get from: http://www.kernel.org/         "
+#error "********************************************************"
 #undef LIRC_HAVE_DEVFS
+#endif
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
@@ -42,18 +53,12 @@
 #include <linux/unistd.h>
 
 #include "drivers/lirc.h"
+
 #include "lirc_dev.h"
 
 static int debug = 0;
 
 MODULE_PARM(debug,"i");
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
-#define DECLARE_MUTEX(foo)         	struct semaphore foo = MUTEX
-#define DECLARE_MUTEX_LOCKED(foo)  	struct semaphore foo = MUTEX_LOCKED
-#define init_MUTEX(foo)            	*(foo) = MUTEX
-#define DECLARE_WAITQUEUE(name,task) 	struct wait_queue name = { task, NULL }
-#endif
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
 #define IRLOCK            down_interruptible(&ir->lock)
@@ -82,7 +87,7 @@ struct irctl
 	int shutdown;
 	long jiffies_to_wait;
 
-	WAITQ wait_poll;
+	wait_queue_head_t wait_poll;
 
 	struct semaphore lock;
 #ifdef LIRC_HAVE_DEVFS
