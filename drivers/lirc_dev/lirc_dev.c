@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.39 2005/03/11 19:00:10 lirc Exp $
+ * $Id: lirc_dev.c,v 1.40 2005/03/11 20:17:42 lirc Exp $
  *
  */
 
@@ -108,7 +108,7 @@ static struct class_simple *lirc_class;
 static inline void init_irctl(struct irctl *ir)
 {
 	memset(&ir->p, 0, sizeof(struct lirc_plugin));
-	sem_init(&ir->buffer_sem, 1);
+	sema_init(&ir->buffer_sem, 1);
 	ir->p.minor = NOPLUG;
 
 	ir->tpid = -1;
