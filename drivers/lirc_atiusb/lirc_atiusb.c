@@ -11,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.28 2004/05/23 14:41:19 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.29 2004/08/07 08:14:53 lirc Exp $
  */
 
 /*
@@ -32,9 +32,9 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.2.4 or higher"
+#error "Sorry, this driver needs kernel version 2.4.0 or higher"
 #error "*******************************************************"
 #endif
 

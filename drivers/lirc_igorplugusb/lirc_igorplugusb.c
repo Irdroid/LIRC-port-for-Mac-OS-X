@@ -41,9 +41,9 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.2.4 or higher"
+#error "Sorry, this driver needs kernel version 2.4.0 or higher"
 #error "*******************************************************"
 #endif
 
