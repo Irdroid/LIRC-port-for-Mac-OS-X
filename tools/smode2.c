@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: smode2.c,v 5.1 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -34,6 +34,8 @@
 #include <sys/stat.h>
 #include <vga.h>
 #include <vgagl.h>
+
+#include "drivers/lirc.h"
 
 GraphicsContext *screen;
 GraphicsContext *physicalscreen;
@@ -91,8 +93,8 @@ void closescreen(void)
 int main(int argc, char **argv)
 {
 	int fd;
-	int data;
-	int x1,y1,x2,y2;
+	lirc_t data;
+	lirc_t x1,y1,x2,y2;
 	int result;
 	int c=10;
 	char textbuffer[80];
@@ -108,10 +110,10 @@ int main(int argc, char **argv)
 	    }
 	}
 
-	fd=open("/dev/lirc",O_RDONLY);
+	fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
 	if(fd==-1)  {
-		perror("mode2");
-		printf("error opening /dev/lirc\n");
+		perror("smode2");
+		printf("error opening " LIRC_DRIVER_DEVICE "\n",);
 		exit(1);
 	};
 	
@@ -130,11 +132,11 @@ int main(int argc, char **argv)
 
 	while(1)
 	{
-		result=read(fd,&data,4);
-		if (result!=0)
+		result=read(fd,&data,sizeof(data));
+		if (result==sizeof(data))
 		    {
-//		    printf("%.8x\t",data);
-		    x2=(data&0xffffff)/(div*50);
+//		    printf("%.8lx\t",(unsigned long) data);
+		    x2=(data&PULSE_MASK)/(div*50);
 		    if (x2>400)
 			{
 			y1+=15;
@@ -145,9 +147,9 @@ int main(int argc, char **argv)
 			{
 			if (x1<640) 
 			    {
-			    gl_line(x1, ((data&0x1000000)?y1:y1+10), x1+x2, ((data&0x1000000)?y1:y1+10), c) ;
+			    gl_line(x1, ((data&PULSE_BIT)?y1:y1+10), x1+x2, ((data&PULSE_BIT)?y1:y1+10), c) ;
 			    x1+=x2;
-			    gl_line(x1, ((data&0x1000000)?y1:y1+10), x1, ((data&0x1000000)?y1+10:y1), c) ;
+			    gl_line(x1, ((data&PULSE_BIT)?y1:y1+10), x1, ((data&PULSE_BIT)?y1+10:y1), c) ;
 			    }
 			}
 		    if (y1>480) 
@@ -161,5 +163,4 @@ int main(int argc, char **argv)
 //		gl_copyscreen(physicalscreen);
 	};
     closescreen();
-
 }

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.5 1999/07/27 16:58:26 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.6 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -7,7 +7,7 @@
  * lirc_parallel - device driver for infra-red signal receiving and
  *                 transmitting unit built by the author
  * 
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */ 
 
@@ -69,10 +69,10 @@ unsigned int default_timer = LIRC_TIMER;
 #endif
 
 #define WBUF_SIZE (256)
-#define RBUF_SIZE (256) /* this must be a power of 2 larger than 4 */
+#define RBUF_SIZE (256) /* this must be a power of 2 larger than 1 */
 
-static unsigned long wbuf[WBUF_SIZE/4];
-static unsigned long rbuf[RBUF_SIZE/4];
+static lirc_t wbuf[WBUF_SIZE];
+static lirc_t rbuf[RBUF_SIZE];
 
 static struct wait_queue *lirc_wait=NULL;
 
@@ -233,18 +233,18 @@ int lirc_claim(void)
  *************************   interrupt handler  ************************
  ***********************************************************************/
 
-static inline void rbuf_write(unsigned long signal)
+static inline void rbuf_write(lirc_t signal)
 {
 	unsigned int nwptr;
 
-	nwptr=(wptr+4) & (RBUF_SIZE-1);
+	nwptr=(wptr+1) & (RBUF_SIZE-1);
 	if(nwptr==rptr) /* no new signals will be accepted */
 	{
 		lost_irqs++;
 		printk(KERN_NOTICE "%s: buffer overrun\n",LIRC_DRIVER_NAME);
 		return;
 	}	
-	*((unsigned long *) (((char *) rbuf )+wptr))=signal;
+	rbuf[wptr]=signal;
 	wptr=nwptr;
 }
 
@@ -253,9 +253,10 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
 	struct timeval tv;
 	static struct timeval lasttv;
 	static int init=0;
-	unsigned long signal;
+	long signal;
+	lirc_t data;
 	unsigned int level,newlevel;
-	int timeout;
+	unsigned int timeout;
 
 	if(!MOD_IN_USE)
 		return;
@@ -285,15 +286,16 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
 	        signal=tv.tv_sec-lasttv.tv_sec;
 		if(signal>15)
 		{
-			signal=0xFFFFFF;  /* really long time */
+			data=PULSE_MASK;  /* really long time */
 		}
 		else
 		{
-			signal=signal*1000000+tv.tv_usec-lasttv.tv_usec
-			+LIRC_SFH506_DELAY;
+			data=(lirc_t) (signal*1000000+
+				       tv.tv_usec-lasttv.tv_usec+
+				       LIRC_SFH506_DELAY);
 		};
 
-		rbuf_write(signal); /* space */
+		rbuf_write(data); /* space */
 	}
 	else
 	{
@@ -329,21 +331,21 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
 	if(signal!=0)
 	{
 		/* ajust value to usecs */
-		signal=(unsigned int) ((unsigned long long) (signal*1000000)/timer);
+		signal=(long) (((unsigned long long) signal)*1000000)/timer;
 
 		if(signal>LIRC_SFH506_DELAY)
 		{
-			signal-=LIRC_SFH506_DELAY;
+			data=signal-LIRC_SFH506_DELAY;
 		}
 		else
 		{
-			signal=1;
+			data=1;
 		}
-		rbuf_write(0x01000000|signal); /* pulse */
+		rbuf_write(PULSE_BIT|data); /* pulse */
 	}
 	do_gettimeofday(&lasttv);
 #else
-		/* add your code here */
+	/* add your code here */
 #endif
 	
 	wake_up_interruptible(&lirc_wait);
@@ -381,6 +383,8 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 	int result;
 	int count=0;
 	
+	if(n%sizeof(lirc_t)) return(-EINVAL);
+	
 	result=verify_area(VERIFY_WRITE,buf,n);
 	if(result) return(result);
 	
@@ -389,12 +393,14 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 		if(rptr!=wptr)
 		{
 #ifdef KERNEL_2_2
-			copy_to_user(buf+count,(char *) rbuf+rptr,1);
+			copy_to_user(buf+count,(char *) &rbuf[rptr],
+				     sizeof(lirc_t));
 #else
-			memcpy_tofs(buf+count,(char *) rbuf+rptr,1);
+			memcpy_tofs(buf+count,(char *) &rbuf[rptr],
+				    sizeof(lirc_t));
 #endif
 			rptr=(rptr+1)&(RBUF_SIZE-1);
-			count++;
+			count+=sizeof(lirc_t);
 		}
 		else
 		{
@@ -434,7 +440,8 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	int result,count;
 	unsigned int i;
 	unsigned int level,newlevel;
-	unsigned long flags,counttimer;
+	unsigned long flags;
+	lirc_t counttimer;
 	
 #ifdef KERNEL_2_2
 	if(!is_claimed)
@@ -442,13 +449,13 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 		return(-EBUSY);
 	}
 #endif
-	if(n%sizeof(unsigned long)) return(-EINVAL);
+	if(n%sizeof(lirc_t)) return(-EINVAL);
 	result=verify_area(VERIFY_READ,buf,n);
 	if(result) return(result);
 	
-	count=n/sizeof(unsigned long);
+	count=n/sizeof(lirc_t);
 	
-	if(n>WBUF_SIZE || count%2==0) return(-EINVAL);
+	if(count>WBUF_SIZE || count%2==0) return(-EINVAL);
 	
 #ifdef KERNEL_2_2
 	copy_from_user(wbuf,buf,n);
@@ -470,7 +477,7 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	/* ajust values from usecs */
 	for(i=0;i<count;i++)
 	{
-		wbuf[i]=(unsigned long) (((double) wbuf[i])*timer/1000000);
+		wbuf[i]=(lirc_t) (((double) wbuf[i])*timer/1000000);
 	}
 	
 	save_flags(flags);cli();

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: dump_config.h,v 5.1 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.h ***********************************************************
@@ -16,7 +16,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 
 #include "ir_remote.h"
 

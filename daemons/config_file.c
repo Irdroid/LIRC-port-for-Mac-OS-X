@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.2 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: config_file.c,v 5.3 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -136,15 +136,13 @@ inline ir_code s_strtocode(char *val)
 	return(code);
 }
 
-unsigned long  s_strtoul(char *val)
+unsigned long s_strtoul(char *val)
 {
 	unsigned long n;
 	char *endptr;
 
-	errno=0;
 	n=strtoul(val,&endptr,0);
-	if((n==ULONG_MAX && errno==ERANGE)
-	   || strlen(endptr)!=0 || strlen(val)==0)
+	if(!*val || *endptr)
 	{
 		logprintf(0,"error in configfile line %d:\n",line);
 		logprintf(0,"\"%s\": must be a valid (unsigned long) "
@@ -161,23 +159,39 @@ int s_strtoi(char *val)
 	long n;
 	int h;
 	
-	errno=0;
 	n=strtol(val,&endptr,0);
 	h=(int) n;
-	if(((n==LONG_MAX || n==LONG_MIN) && errno==ERANGE)
-	   || strlen(endptr)!=0 || strlen(val)==0 || n!=((long) h))
+	if(!*val || *endptr || n!=((long) h))
 	{
 		logprintf(0,"error in configfile line %d:\n",line);
 		logprintf(0,"\"%s\": must be a valid (int) number\n",val);
 		parse_error=1;
 		return(0);
 	}
-	return(n);
+	return(h);
+}
+
+lirc_t s_strtolirc_t(char *val)
+{
+	unsigned long n;
+	lirc_t h;
+	char *endptr;
+	
+	n=strtoul(val,&endptr,0);
+	h=(lirc_t) n;
+	if(!*val || *endptr || n!=((unsigned long) h))
+	{
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (lirc_t) "
+			  "number\n",val);
+		parse_error=1;
+		return(0);
+	}
+	return(h);
 }
 
 int checkMode(int is_mode, int c_mode, char *error)
 {
-
         if (is_mode!=c_mode)
 	{
 		logprintf(0,"fatal error in configfile line %d:\n",line);
@@ -190,11 +204,11 @@ int checkMode(int is_mode, int c_mode, char *error)
 
 int addSignal(struct void_array *signals, char *val)
 {
-	unsigned long t;
+	lirc_t t;
 	
-	t=s_strtoul(val);
-	if (parse_error) return(0);
-	if (!add_void_array(signals, &t)){
+	t=s_strtolirc_t(val);
+	if(parse_error) return(0);
+	if(!add_void_array(signals, &t)){
 		return(0);
 	}
         return(1);
@@ -288,11 +302,11 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		return(1);
 	}
 	else if (strcasecmp("plead",key)==0){
-		rem->plead=s_strtoi(val);
+		rem->plead=s_strtolirc_t(val);
 		return(1);
 	}
 	else if (strcasecmp("ptrail",key)==0){
-		rem->ptrail=s_strtoi(val);
+		rem->ptrail=s_strtolirc_t(val);
 		return(1);
 	}
 	else if (strcasecmp("pre_data_bits",key)==0){
@@ -330,38 +344,38 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	else if (val2!=NULL)
 	{
 		if (strcasecmp("header",key)==0){
-			rem->phead=s_strtoi(val);
-			rem->shead=s_strtoi(val2);
+			rem->phead=s_strtolirc_t(val);
+			rem->shead=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("one",key)==0){
-			rem->pone=s_strtoi(val);
-			rem->sone=s_strtoi(val2);
+			rem->pone=s_strtolirc_t(val);
+			rem->sone=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("zero",key)==0){
-			rem->pzero=s_strtoi(val);
-			rem->szero=s_strtoi(val2);
+			rem->pzero=s_strtolirc_t(val);
+			rem->szero=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("foot",key)==0){
-			rem->pfoot=s_strtoi(val);
-			rem->sfoot=s_strtoi(val2);
+			rem->pfoot=s_strtolirc_t(val);
+			rem->sfoot=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("repeat",key)==0){
-			rem->prepeat=s_strtoi(val);
-			rem->srepeat=s_strtoi(val2);
+			rem->prepeat=s_strtolirc_t(val);
+			rem->srepeat=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("pre",key)==0){
-			rem->pre_p=s_strtoi(val);
-			rem->pre_s=s_strtoi(val2);
+			rem->pre_p=s_strtolirc_t(val);
+			rem->pre_s=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("post",key)==0){
-			rem->post_p=s_strtoi(val);
-			rem->post_s=s_strtoi(val2);
+			rem->post_p=s_strtolirc_t(val);
+			rem->post_s=s_strtolirc_t(val2);
 			return(2);
 		}
 	}
@@ -599,7 +613,7 @@ struct ir_remote * read_config(FILE *f)
 							break;
 						}
 						raw_code.code++;
-						init_void_array(&signals,50,sizeof(unsigned long));
+						init_void_array(&signals,50,sizeof(lirc_t));
 						mode=ID_raw_name;
 						if(!parse_error && val2!=NULL)
 						{

@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.2 1999/08/25 08:44:04 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.3 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -49,6 +49,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/cursorfont.h>
+
+#include "drivers/lirc.h"
 
 Display         *d1;
 Window          w0,w1; /*w0 = root*/
@@ -117,8 +119,8 @@ int main(int argc, char **argv)
   int retval;
       
   int fd;
-  int data;
-  int x1,y1,x2,y2;
+  lirc_t data;
+  lirc_t x1,y1,x2,y2;
   int result;
   char textbuffer[80];
   int d,div=5;
@@ -188,11 +190,11 @@ int main(int argc, char **argv)
       retval = select(fd+1, &rfds, NULL, NULL, &tv);
   
       if (FD_ISSET(fd,&rfds)) {
-	result=read(fd,&data,4);
+	result=read(fd,&data,sizeof(data));
 	if (result!=0)
 	  {
 	    //		    printf("%.8x\t",data);
-	    x2=(data&0xffffff)/(div*50);
+	    x2=(data&PULSE_MASK)/(div*50);
 	    if (x2>400)
 	      {
 		y1+=15;
@@ -202,9 +204,9 @@ int main(int argc, char **argv)
 	      {
 		if (x1<w1_w) 
 		  {
-		    XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1+x2, ((data&0x1000000)?y1:y1+10)) ;
+		    XDrawLine(d1,w1,gc2,x1, ((data&PULSE_BIT)?y1:y1+10), x1+x2, ((data&PULSE_BIT)?y1:y1+10)) ;
 		    x1+=x2;
-		    XDrawLine(d1,w1,gc2,x1, ((data&0x1000000)?y1:y1+10), x1, ((data&0x1000000)?y1+10:y1)) ;
+		    XDrawLine(d1,w1,gc2,x1, ((data&PULSE_BIT)?y1:y1+10), x1, ((data&PULSE_BIT)?y1+10:y1)) ;
 		  }
 	      }
 	    if (y1>w1_h) 

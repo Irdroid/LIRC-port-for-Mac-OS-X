@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.2 1999/08/13 18:59:54 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.3 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -38,7 +38,7 @@ extern struct ir_remote *repeat_remote,*last_remote;
 
 unsigned char b[NUMBYTES];
 struct timeval start,end,last;
-unsigned long gap,signal_length;
+lirc_t gap,signal_length;
 ir_code pre,code;
 
 struct hardware hw=
@@ -57,7 +57,7 @@ struct hardware hw=
 
 int logitech_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,unsigned long *remaining_gapp)
+		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
 	*prep=pre;
 	*codep=code;
@@ -88,9 +88,9 @@ int logitech_decode(struct ir_remote *remote,
 	logprintf(1,"pre: %llx\n",(unsigned long long) *prep);
 	logprintf(1,"code: %llx\n",(unsigned long long) *codep);
 	logprintf(1,"repeat_flag: %d\n",*repeat_flagp);
-	logprintf(1,"gap: %ld\n",gap);
-	logprintf(1,"rem: %ld\n",remote->remaining_gap);
-	logprintf(1,"signal length: %ld\n",signal_length);
+	logprintf(1,"gap: %lu\n",(unsigned long) gap);
+	logprintf(1,"rem: %lu\n",(unsigned long) remote->remaining_gap);
+	logprintf(1,"signal length: %lu\n",(unsigned long) signal_length);
 #       endif
 
 

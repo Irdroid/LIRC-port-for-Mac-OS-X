@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.4 1999/08/04 19:18:27 columbus Exp $
+## $Id: Makefile.am,v 5.5 1999/09/02 20:03:53 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -17,7 +17,7 @@ install-exec-local: mklink
 uninstall-local: rmlink
 
 mklink:
-	test "@irtty@" = "" || test -L @devdir@/lirc || (cd `dirname @irtty@` && $(LN_S) `basename @irtty@` lirc)
+	test "@irtty@" = "" || test "@lirc_driver@" = "irman" || test -L @devdir@/lirc || (cd `dirname @irtty@` && $(LN_S) `basename @irtty@` lirc)
 
 rmlink:
-	test "@irtty@" = "" || $(RM) @devdir@/lirc
+	test "@irtty@" = "" || test "@lirc_driver@" = "irman" || $(RM) @devdir@/lirc

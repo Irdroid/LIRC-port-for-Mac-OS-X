@@ -1,6 +1,6 @@
 /* lirmand.c, (c) 1998-1999 Tom Wheeley <tom.wheeley@bigfoot.com>   */
 /* This program is free software.  See file COPYING for details     */
-/* $Id: lirmand.c,v 5.3 1999/05/14 22:22:45 wheeley Exp $           */
+/* $Id: lirmand.c,v 5.4 1999/09/02 20:03:53 columbus Exp $           */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -38,6 +38,8 @@
 
 #include <irman.h>
 
+#include "drivers/lirc.h"
+
 /* default bit order is MSB_TO_LSB */
 #ifndef LSB_TO_MSB
 # ifndef MSB_TO_LSB	/* neither defined */
@@ -53,10 +55,10 @@
 #define STRERR	strerror(errno)
 
 /* codes sent to lircd */
-unsigned long gap 	=  0x00010000;
-unsigned long pulse	=  0x01000400;
-unsigned long one_space =  0x00000c00;
-unsigned long zero_space = 0x00000800;
+lirc_t gap 	=  0x00010000;
+lirc_t pulse	=  0x00000400|PULSE_BIT;
+lirc_t one_space =  0x00000c00;
+lirc_t zero_space = 0x00000800;
 
 char *progname = "lirmand";
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.6 1999/08/13 18:53:16 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.7 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -10,7 +10,7 @@
  * Copyright (C) 1996,97 Ralph Metzler <rjkm@thp.uni-koeln.de>
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
  * Copyright (C) 1998 Ben Pfaff <blp@gnu.org>
- * Copyright (C) 1999 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 
@@ -69,10 +69,10 @@
    buffer.  If you have a slow computer or non-busmastering IDE disks,
    maybe you will need to increase this.  */
 
-/* This MUST be a power of two!  It has to be larger than 4 as well. */
+/* This MUST be a power of two!  It has to be larger than 1 as well. */
 
-#define RBUF_LEN 1024
-#define WBUF_LEN 1024
+#define RBUF_LEN 256
+#define WBUF_LEN 256
 
 static int major = LIRC_MAJOR;
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
@@ -86,12 +86,12 @@ static struct wait_queue *lirc_wait_in = NULL;
 static int port = LIRC_PORT;
 static int irq = LIRC_IRQ;
 
-static unsigned char rbuf[RBUF_LEN];
+static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
 #ifdef LIRC_SERIAL_TRANSMITTER
-static unsigned char wbuf[WBUF_LEN];
+static lirc_t wbuf[WBUF_LEN];
 unsigned long pulse_width = 13; /* pulse/space ratio of 50/50 */
-unsigned space_width = 13;      /* 1000000/freq-pulse_width */
+unsigned long space_width = 13; /* 1000000/freq-pulse_width */
 unsigned long freq = 38000;     /* modulation frequency */
 #endif
 
@@ -163,30 +163,24 @@ void send_space(unsigned long length)
 }
 #endif
 
-#define PULSE_BIT  0x01000000
-#define PULSE_MASK 0x00FFFFFF
-
-static void inline rbwrite(unsigned long l)
+static void inline rbwrite(lirc_t l)
 {
 	unsigned int nrbt;
 
-	nrbt=(rbt+4) & (RBUF_LEN-1);
-	if(nrbt==rbh)      /* no new signals will be accepted;
-			      do NOT overwrite old signals because
-			      part of it may already has been read
-			      by the client */
+	nrbt=(rbt+1) & (RBUF_LEN-1);
+	if(nrbt==rbh)      /* no new signals will be accepted */
 	{
 		printk(KERN_WARNING  LIRC_DRIVER_NAME  ": Buffer overrun\n");
 		return;
 	}
-	*((unsigned long *) (rbuf+rbt)) = l;
+	rbuf[rbt]=l;
 	rbt=nrbt;
 }
 
-static void inline frbwrite(unsigned long l)
+static void inline frbwrite(lirc_t l)
 {
 	/* simple noise filter */
-	static unsigned long pulse=0L,space=0L;
+	static lirc_t pulse=0L,space=0L;
 	static unsigned int ptr=0;
 	
 	if(ptr>0 && (l&PULSE_BIT))
@@ -236,7 +230,8 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 {
 	struct timeval tv;
 	int status,counter,dcd;
-	unsigned long deltv;
+	long deltv;
+	lirc_t data;
 	static struct timeval lasttv = {0, 0};
 
 	counter=0;
@@ -257,15 +252,19 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			/* New mode, written by Trent Piepho 
 			   <xyzzy@u.washington.edu>. */
 			
-			/* This has a 4 byte packet format.
-			   The MSB is a one byte value that is either 0,
-			   meaning space, or 1, meaning pulse.
-			   The driver needs to know if your receiver
-			   is active high or active low, or the
-			   space/pulse sense could be inverted. The
-			   lower three bytes are the length in
-			   microseconds. Lengths greater than or equal
-			   to 16 seconds are clamped to 0xffffff.
+			/* The old format was not very portable.
+			   We now use the type lirc_t to pass pulses
+			   and spaces to user space.
+			   
+			   If PULSE_BIT is set a pulse has been
+			   received, otherwise a space has been
+			   received.  The driver needs to know if your
+			   receiver is active high or active low, or
+			   the space/pulse sense could be
+			   inverted. The bits denoted by PULSE_MASK are
+			   the length in microseconds. Lengths greater
+			   than or equal to 16 seconds are clamped to
+			   PULSE_MASK.  All other bits are unused.
 			   This is a much simpler interface for user
 			   programs, as well as eliminating "out of
 			   phase" errors with space/pulse
@@ -278,7 +277,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
 			{
-				deltv=PULSE_MASK;	/* really long time */
+				data=PULSE_MASK; /* really long time */
 				if(!(dcd^sense)) /* sanity check */
 				{
 				        /* detecting pulse while this
@@ -291,9 +290,11 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			}
 			else
 			{
-				deltv=deltv*1000000+tv.tv_usec-lasttv.tv_usec;
+				data=(lirc_t) (deltv*1000000+
+					       tv.tv_usec-
+					       lasttv.tv_usec);
 			};
-			frbwrite(dcd^sense ? deltv : (deltv | PULSE_BIT));
+			frbwrite(dcd^sense ? data : (data|PULSE_BIT));
 			lasttv=tv;
 			wake_up_interruptible(&lirc_wait_in);
 		}
@@ -460,22 +461,28 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 #endif
 {
 	int n = 0, retval = 0;
-	unsigned long flags;
-
+	/* unsigned long flags; */
+	
+	if(n%sizeof(lirc_t)) return(-EINVAL);
+	
 	while (n < count)
 	{
-		save_flags(flags);cli();
+		/* save_flags(flags);cli(); */ /* this is unnecessary
+		   because the interrupt handler only reads rbh
+		   and we don't overwrite old data */
 		if (rbt != rbh) {
 #                       ifdef KERNEL_2_1
-			copy_to_user((void *) buf+n,(void *) (rbuf+rbh),1);
+			copy_to_user((void *) buf+n,
+				     (void *) &rbuf[rbh],sizeof(lirc_t));
 #                       else
-			memcpy_tofs((void *) buf+n,(void *) (rbuf+rbh),1);
+			memcpy_tofs((void *) buf+n,
+				    (void *) &rbuf[rbh],sizeof(lirc_t));
 #                       endif
 			rbh = (rbh + 1) & (RBUF_LEN - 1);
-			n++;
-			restore_flags(flags);
+			n+=sizeof(lirc_t);
+			/* restore_flags(flags); */
 		} else {
-			restore_flags(flags);
+			/* restore_flags(flags); */
 			if (file->f_flags & O_NONBLOCK) {
 				retval = -EAGAIN;
 				break;
@@ -510,11 +517,11 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 	int retval,i,count;
 	unsigned long flags;
 	
-	if(n%sizeof(unsigned long) || n>WBUF_LEN) return(-EINVAL);
+	if(n%sizeof(lirc_t)) return(-EINVAL);
 	retval=verify_area(VERIFY_READ,buf,n);
 	if(retval) return(retval);
-	count=n/sizeof(unsigned long);
-	if(count%2==0) return(-EINVAL);
+	count=n/sizeof(lirc_t);
+	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
 #       ifdef KERNEL_2_1
 	copy_from_user(wbuf,buf,n);
 #       else
@@ -523,8 +530,8 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 	save_flags(flags);cli();
 	for(i=0;i<count;i++)
 	{
-		if(i%2) send_space(*((unsigned long *) (wbuf+i*4)));
-		else send_pulse(*((unsigned long *) (wbuf+i*4)));
+		if(i%2) send_space(wbuf[i]);
+		else send_pulse(wbuf[i]);
 	}
 	off();
 	restore_flags(flags);

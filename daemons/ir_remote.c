@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.10 1999/08/13 18:57:57 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.11 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -186,7 +186,7 @@ inline unsigned long time_elapsed(struct timeval *last,
 
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    int repeat_state,int repeat_flag,
-			    unsigned long remaining_gap)
+			    lirc_t remaining_gap)
 {
 	unsigned long long code;
 	struct timeval current;
@@ -242,8 +242,8 @@ char *decode_all(struct ir_remote *remotes)
 	ir_code pre,code,post;
 	struct ir_ncode *ncode;
 	int repeat_flag,repeat_state;
-	unsigned long remaining_gap;
-
+	lirc_t remaining_gap;
+	
 	/* use remotes carefully, it may be changed on SIGHUP */
 	decoding=remote=remotes;
 	while(remote)

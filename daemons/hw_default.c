@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.6 1999/08/15 18:17:14 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.7 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -86,8 +86,8 @@ inline void set_bit(ir_code *code,int bit,int data)
   sending stuff
 */
 
-inline unsigned long time_left(struct timeval *current,struct timeval *last,
-			       unsigned long gap)
+inline lirc_t time_left(struct timeval *current,struct timeval *last,
+			lirc_t gap)
 {
 	unsigned long secs,usecs,diff;
 	
@@ -96,7 +96,7 @@ inline unsigned long time_left(struct timeval *current,struct timeval *last,
 	
 	diff=1000000*secs+usecs;
 	
-	return(diff<gap ? gap-diff:0);
+	return((lirc_t) (diff<gap ? gap-diff:0));
 }
 
 inline void clear_send_buffer(void)
@@ -109,7 +109,7 @@ inline void clear_send_buffer(void)
 	send_buffer.sum=0;
 }
 
-inline void add_send_buffer(unsigned long data)
+inline void add_send_buffer(lirc_t data)
 {
 	if(send_buffer.wptr<WBUF_SIZE)
 	{
@@ -123,7 +123,7 @@ inline void add_send_buffer(unsigned long data)
 	}
 }
 
-inline void send_pulse(unsigned long data)
+inline void send_pulse(lirc_t data)
 {
 	if(send_buffer.pendingp>0)
 	{
@@ -140,7 +140,7 @@ inline void send_pulse(unsigned long data)
 	}
 }
 
-inline void send_space(unsigned long data)
+inline void send_space(lirc_t data)
 {
 	if(send_buffer.wptr==0 && send_buffer.pendingp==0)
 	{
@@ -414,20 +414,26 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
   decoding stuff
 */
 
-unsigned long readdata(void)
+lirc_t readdata(void)
 {
-	unsigned long data;
+	lirc_t data;
 	int ret;
 
 #if defined(SIM_REC) && !defined(DAEMONIZE)
 	while(1)
 	{
-		ret=fscanf(stdin,"space %ld\n",&data);
-		if(ret==1) break;
-		ret=fscanf(stdin,"pulse %ld\n",&data);
+		unsigned long scan;
+
+		ret=fscanf(stdin,"space %ld\n",&scan);
 		if(ret==1)
 		{
-			data|=PULSE_BIT;
+			data=(lirc_t) scan;
+			break;
+		}
+		ret=fscanf(stdin,"pulse %ld\n",&scan);
+		if(ret==1)
+		{
+			data=(lirc_t) scan|PULSE_BIT;
 			break;
 		}
 		ret=fscanf(stdin,"%*s\n");
@@ -437,29 +443,26 @@ unsigned long readdata(void)
 		}
 	}
 #else
-	do
+	ret=read(hw.fd,&data,sizeof(data));
+	if(ret!=sizeof(data))
 	{
-		ret=read(hw.fd,&data,sizeof(unsigned long));
 #               ifdef DEBUG
-		if(ret!=sizeof(unsigned long))
-		{
-			logprintf(1,"error reading from lirc\n");
-			logperror(1,NULL);
-		}
+		logprintf(1,"error reading from lirc\n");
+		logperror(1,NULL);
 #               endif
+		raise(SIGTERM);
 	}
-	while(ret!=sizeof(unsigned long));
 #endif
 	return(data);
 }
 
-unsigned long get_next_rec_buffer(unsigned long maxusec)
+lirc_t get_next_rec_buffer(unsigned long maxusec)
 {
 	if(rec_buffer.rptr<rec_buffer.wptr)
 	{
 #               ifdef DEBUG
-		logprintf(3,"<%ld\n",rec_buffer.data[rec_buffer.rptr]
-			  &(PULSE_BIT-1));
+		logprintf(3,"<%lu\n",(unsigned long)
+			  rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1));
 #               endif
 		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
 		return(rec_buffer.data[rec_buffer.rptr++]);
@@ -468,18 +471,19 @@ unsigned long get_next_rec_buffer(unsigned long maxusec)
 	{
 		if(rec_buffer.wptr<RBUF_SIZE)
 		{
-			unsigned long data;
+			lirc_t data;
 			
 			if(!waitfordata(maxusec)) return(0);
 			data=readdata();
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
-                        &(PULSE_BIT-1);
+				&(PULSE_BIT-1);
                         rec_buffer.wptr++;
                         rec_buffer.rptr++;
 #                       ifdef DEBUG
-                        logprintf(3,"+%ld\n",rec_buffer.data[rec_buffer.rptr-1]
+                        logprintf(3,"+%lu\n",(unsigned long)
+				  rec_buffer.data[rec_buffer.rptr-1]
                                   &(PULSE_BIT-1));
 #                       endif
                         return(rec_buffer.data[rec_buffer.rptr-1]);
@@ -532,14 +536,14 @@ int clear_rec_buffer()
 	}
 	else
 	{
-		unsigned long data;
+		lirc_t data;
 		
 		move=rec_buffer.wptr-rec_buffer.rptr;
 		if(move>0 && rec_buffer.rptr>0)
 		{
 			memmove(&rec_buffer.data[0],
 				&rec_buffer.data[rec_buffer.rptr],
-				sizeof(unsigned long)*move);
+				sizeof(rec_buffer.data[0])*move);
 			rec_buffer.wptr-=rec_buffer.rptr;
 		}
 		else
@@ -550,20 +554,20 @@ int clear_rec_buffer()
 		data=readdata();
 		
 #               ifdef DEBUG
-		logprintf(3,"c%ld\n",data&(PULSE_BIT-1));
+		logprintf(3,"c%lu\n",(unsigned long) data&(PULSE_BIT-1));
 #               endif
-
+		
 		rec_buffer.data[rec_buffer.wptr]=data;
 		rec_buffer.wptr++;
 	}
 	rec_buffer.rptr=0;
-
+	
 	rec_buffer.too_long=0;
 	rec_buffer.is_shift=0;
 	rec_buffer.pendingp=0;
 	rec_buffer.pendings=0;
 	rec_buffer.sum=0;
-
+	
 	return(1);
 }
 
@@ -590,9 +594,9 @@ inline void unget_rec_buffer(int count)
 	}
 }
 
-inline unsigned long get_next_pulse()
+inline lirc_t get_next_pulse()
 {
-	unsigned long data;
+	lirc_t data;
 
 	data=get_next_rec_buffer(0);
 	if(data==0) return(0);
@@ -606,9 +610,9 @@ inline unsigned long get_next_pulse()
 	return(data&(PULSE_BIT-1));
 }
 
-inline unsigned long get_next_space()
+inline lirc_t get_next_space()
 {
-	unsigned long data;
+	lirc_t data;
 
 	data=get_next_rec_buffer(0);
 	if(data==0) return(0);
@@ -624,7 +628,7 @@ inline unsigned long get_next_space()
 
 int expectpulse(struct ir_remote *remote,int exdelta)
 {
-	unsigned long deltas,deltap;
+	lirc_t deltas,deltap;
 	int retval;
 
 	if(rec_buffer.pendings>0)
@@ -654,7 +658,7 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 
 int expectspace(struct ir_remote *remote,int exdelta)
 {
-	unsigned long deltas,deltap;
+	lirc_t deltas,deltap;
 	int retval;
 
 	if(rec_buffer.pendingp>0)
@@ -751,15 +755,15 @@ inline int expectzero(struct ir_remote *remote)
 	return(1);
 }
 
-inline unsigned long sync_rec_buffer(struct ir_remote *remote)
+inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 {
 	int count;
-	unsigned long deltas,deltap;
-
+	lirc_t deltas,deltap;
+	
 	count=0;
 	deltas=get_next_space();
 	if(deltas==0) return(0);
-
+	
 	if(last_remote!=NULL)
 	{
 		while(deltas<last_remote->remaining_gap*
@@ -820,9 +824,9 @@ inline int get_trail(struct ir_remote *remote)
 	return(1);
 }
 
-inline int get_gap(struct ir_remote *remote,unsigned long gap)
+inline int get_gap(struct ir_remote *remote,lirc_t gap)
 {
-	unsigned long data;
+	lirc_t data;
 
 	data=get_next_rec_buffer(gap*(100-remote->eps)/100);
 	if(data==0) return(1);
@@ -954,11 +958,11 @@ ir_code get_post(struct ir_remote *remote)
 }
 
 int default_decode(struct ir_remote *remote,
-	   ir_code *prep,ir_code *codep,ir_code *postp,int *repeat_flagp,
-	   unsigned long *remaining_gapp)
+		   ir_code *prep,ir_code *codep,ir_code *postp,
+		   int *repeat_flagp,lirc_t *remaining_gapp)
 {
 	ir_code pre,code,post,code_mask=0,post_mask=0;
-	int sync;
+	lirc_t sync;
 
 	sync=0; /* make compiler happy */
 	code=pre=post=0;
@@ -1413,7 +1417,7 @@ int default_deinit(void)
 	return(1);
 }
 
-int write_send_buffer(int lirc,int length,unsigned long *signals)
+int write_send_buffer(int lirc,int length,lirc_t *signals)
 {
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
 	int i;
@@ -1422,11 +1426,11 @@ int write_send_buffer(int lirc,int length,unsigned long *signals)
 	{
 		for(i=0;;)
 		{
-			printf("pulse %ld\n",signals[i++]);
+			printf("pulse %lu\n",(unsigned long) signals[i++]);
 			if(i>=length) break;
-			printf("space %ld\n",signals[i++]);
+			printf("space %lu\n",(unsigned long) signals[i++]);
 		}
-		return(length*sizeof(unsigned long));
+		return(length*sizeof(lirc_t));
 	}
 	
 	if(send_buffer.wptr==0) 
@@ -1438,15 +1442,15 @@ int write_send_buffer(int lirc,int length,unsigned long *signals)
 	}
 	for(i=0;;)
 	{
-		printf("pulse %ld\n",send_buffer.data[i++]);
+		printf("pulse %lu\n",(unsigned long) send_buffer.data[i++]);
 		if(i>=send_buffer.wptr) break;
-		printf("space %ld\n",send_buffer.data[i++]);
+		printf("space %lu\n",(unsigned long) send_buffer.data[i++]);
 	}
-	return(send_buffer.wptr*sizeof(unsigned long));
+	return(send_buffer.wptr*sizeof(lirc_t));
 #else
 	if(send_buffer.wptr==0 && length>0 && signals!=NULL)
 	{
-		return(write(lirc,signals,length*sizeof(unsigned long)));
+		return(write(lirc,signals,length*sizeof(lirc_t)));
 	}
 	
 	if(send_buffer.wptr==0) 
@@ -1457,13 +1461,13 @@ int write_send_buffer(int lirc,int length,unsigned long *signals)
 		return(0);
 	}
 	return(write(lirc,send_buffer.data,
-		     send_buffer.wptr*sizeof(unsigned long)));
+		     send_buffer.wptr*sizeof(lirc_t)));
 #endif
 }
 
 int default_send(struct ir_remote *remote,struct ir_ncode *code)
 {
-	unsigned long remaining_gap;
+	lirc_t remaining_gap;
 
 	/* things are easy, because we only support one mode */
 	if(hw.send_mode!=LIRC_MODE_PULSE)
@@ -1509,7 +1513,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		gettimeofday(&remote->last_send,NULL);
 		remote->last_code=code;
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
-		printf("space %ld\n",remote->remaining_gap);
+		printf("space %lu\n",(unsigned long) remote->remaining_gap);
 #endif
 	}
 	return(1);

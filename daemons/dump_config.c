@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.1 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -77,28 +77,37 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  aeps        %5d\n\n",rem->aeps);
 		if(has_header(rem))
 		{
-			fprintf(f, "  header      %5d %5d\n",
-				rem->phead, rem->shead);
+			fprintf(f, "  header      %5lu %5lu\n",
+				(unsigned long) rem->phead,
+				(unsigned long) rem->shead);
 		}
-		fprintf(f, "  one         %5d %5d\n",rem->pone, rem->sone);
-		fprintf(f, "  zero        %5d %5d\n",rem->pzero, rem->szero);
+		fprintf(f, "  one         %5lu %5lu\n",
+			(unsigned long) rem->pone,
+			(unsigned long) rem->sone);
+		fprintf(f, "  zero        %5lu %5lu\n",
+			(unsigned long) rem->pzero,
+			(unsigned long)  rem->szero);
 		if(rem->ptrail!=0)
 		{
-			fprintf(f, "  ptrail      %5d\n",rem->ptrail);
+			fprintf(f, "  ptrail      %5lu\n",
+				(unsigned long) rem->ptrail);
 		}
 		if(rem->plead!=0)
 		{
-			fprintf(f, "  plead       %5d\n",rem->plead);
+			fprintf(f, "  plead       %5lu\n",
+				(unsigned long) rem->plead);
 		}
 		if(has_foot(rem))
 		{
-			fprintf(f, "  foot        %5d %5d\n",
-				rem->pfoot, rem->sfoot);
+			fprintf(f, "  foot        %5lu %5lu\n",
+				(unsigned long) rem->pfoot,
+				(unsigned long) rem->sfoot);
 		}
 		if(has_repeat(rem))
 		{
-			fprintf(f, "  repeat      %5d %5d\n",
-				rem->prepeat, rem->srepeat);
+			fprintf(f, "  repeat      %5lu %5lu\n",
+				(unsigned long) rem->prepeat,
+				(unsigned long) rem->srepeat);
 		}
 		if(rem->pre_data_bits>0)
 		{
@@ -120,18 +129,22 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		}
 		if(rem->pre_p!=0 && rem->pre_s!=0)
 		{
-			fprintf(f, "  pre         %5d %5d\n",
-				rem->pre_p, rem->pre_s);
+			fprintf(f, "  pre         %5lu %5lu\n",
+				(unsigned long) rem->pre_p,
+				(unsigned long) rem->pre_s);
 		}
 		if(rem->post_p!=0 && rem->post_s!=0)
 		{
-			fprintf(f, "  post        %5d %5d\n",
-				rem->post_p, rem->post_s);
+			fprintf(f, "  post        %5lu %5lu\n",
+				(unsigned long) rem->post_p,
+				(unsigned long) rem->post_s);
 		}
-		fprintf(f, "  gap          %lu\n",rem->gap);
+		fprintf(f, "  gap          %lu\n",
+			(unsigned long) rem->gap);
 		if(has_repeat_gap(rem))
 		{
-			fprintf(f, "  repeat_gap   %lu\n",rem->repeat_gap);
+			fprintf(f, "  repeat_gap   %lu\n",
+				(unsigned long) rem->repeat_gap);
 		}
 		fprintf(f, "  repeat_bit      %d\n\n",rem->repeat_bit);
 	}
@@ -141,9 +154,11 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprint_flags(f,rem->flags);
 		fprintf(f, "  eps         %5d\n",rem->eps);
 		fprintf(f, "  aeps        %5d\n\n",rem->aeps);
-		fprintf(f, "  ptrail      %5d\n",rem->ptrail);
-		fprintf(f, "  repeat %5d %5d\n",rem->prepeat, rem->srepeat);
-		fprintf(f, "  gap    %lu\n\n",rem->gap);
+		fprintf(f, "  ptrail      %5lu\n",(unsigned long) rem->ptrail);
+		fprintf(f, "  repeat %5lu %5lu\n",
+			(unsigned long) rem->prepeat,
+			(unsigned long) rem->srepeat);
+		fprintf(f, "  gap    %lu\n\n",(unsigned long) rem->gap);
 	}
 	if(rem->freq!=0)
 	{
@@ -190,11 +205,14 @@ void fprint_remote_signal(FILE *f,struct ir_remote *rem, struct ir_ncode *codes)
 		j=0;
 		for(i=0;i<codes->length;i++){
 			if (j==0){
-				fprintf(f, "          %7lu",codes->signals[i]);
+				fprintf(f, "          %7lu",
+					(unsigned long) codes->signals[i]);
 			}else if (j<5){
-				fprintf(f, " %7lu",codes->signals[i]);
+				fprintf(f, " %7lu",
+					(unsigned long) codes->signals[i]);
 			}else{
-				fprintf(f, " %7lu\n",codes->signals[i]);
+				fprintf(f, " %7lu\n",
+					(unsigned long) codes->signals[i]);
 				j=-1;
 			}
 			j++;

@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.1 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: hardware.h,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -29,7 +29,7 @@ struct hardware
 	char *(*rec_func)(struct ir_remote *remotes);
 	int (*decode_func)(struct ir_remote *remote,
 			   ir_code *prep,ir_code *codep,ir_code *postp,
-			   int *repeat_flag, unsigned long *remaining_gapp);
+			   int *repeat_flag,lirc_t *remaining_gapp);
 };
 
 #endif

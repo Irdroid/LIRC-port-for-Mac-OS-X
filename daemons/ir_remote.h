@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.5 1999/08/12 18:45:59 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.6 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -20,9 +20,9 @@
 #include <string.h>
 #include <math.h>
 
-struct hardware;
+#include "drivers/lirc.h"
 
-#define PULSE_BIT 0x1000000
+struct hardware;
 
 #ifdef LONG_IR_CODE
 typedef unsigned long long ir_code;
@@ -38,7 +38,7 @@ struct ir_ncode {
 	char *name;
 	ir_code code;
         int length;
-        unsigned long *signals;
+        lirc_t *signals;
 };
 
 /*
@@ -80,13 +80,13 @@ struct ir_remote
 	
 	/* pulse and space lengths of: */
 	
-	int phead,shead;            /* header */
-	int pone,sone;              /* 1 */
-	int pzero,szero;            /* 0 */
-	int plead;		    /* leading pulse */
-	int ptrail;                 /* trailing pulse */
-	int pfoot,sfoot;            /* foot */
-	int prepeat,srepeat;	    /* indicate repeating */
+	lirc_t phead,shead;         /* header */
+	lirc_t pone,sone;           /* 1 */
+	lirc_t pzero,szero;         /* 0 */
+	lirc_t plead;		    /* leading pulse */
+	lirc_t ptrail;              /* trailing pulse */
+	lirc_t pfoot,sfoot;         /* foot */
+	lirc_t prepeat,srepeat;	    /* indicate repeating */
 
 	int pre_data_bits;          /* length of pre_data */
 	ir_code pre_data;           /* data which the remote sends before
@@ -94,11 +94,11 @@ struct ir_remote
 	int post_data_bits;         /* length of post_data */
 	ir_code post_data;          /* data which the remote sends after
 				       actual keycode */
-	int pre_p,pre_s;            /* signal between pre_data and keycode */
-	int post_p, post_s;         /* signal between keycode and post_code */
+	lirc_t pre_p,pre_s;         /* signal between pre_data and keycode */
+	lirc_t post_p, post_s;      /* signal between keycode and post_code */
 
-	unsigned long gap;          /* time between signals in usecs */
-	unsigned long repeat_gap;   /* time between two repeat codes
+	lirc_t gap;                 /* time between signals in usecs */
+	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
 	int repeat_bit;             /* 1..bits */
 	unsigned long freq;         /* modulation frequency */
@@ -109,7 +109,7 @@ struct ir_remote
 	struct ir_ncode *last_code;
 	int reps;
 	struct timeval last_send;
-	unsigned long remaining_gap;/* remember gap for CONST_LENGTH remotes */
+	lirc_t remaining_gap;       /* remember gap for CONST_LENGTH remotes */
         struct ir_remote *next;
 };
 
@@ -127,12 +127,12 @@ static inline ir_code reverse(ir_code data,int bits)
 	return(c);
 }
 
-static inline int is_pulse(unsigned long data)
+static inline int is_pulse(lirc_t data)
 {
 	return(data&PULSE_BIT ? 1:0);
 }
 
-static inline int is_space(unsigned long data)
+static inline int is_space(lirc_t data)
 {
 	return(!is_pulse(data));
 }
@@ -193,7 +193,7 @@ static inline int has_foot(struct ir_remote *remote)
 
 /* check if delta is inside exdelta +/- exdelta*eps/100 */
 
-static inline int expect(struct ir_remote *remote,int delta,int exdelta)
+static inline int expect(struct ir_remote *remote,lirc_t delta,lirc_t exdelta)
 {
 	if(abs(exdelta-delta)<exdelta*remote->eps/100 ||
 	   abs(exdelta-delta)<remote->aeps)
@@ -208,7 +208,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			  int *repeat_bit);
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    int repeat_state,int repeat_flag,
-			    unsigned long remaining_gap);
+			    lirc_t remaining_gap);
 char *decode_all(struct ir_remote *remotes);
 
 #endif

@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.1 1999/05/07 17:50:49 columbus Exp $      */
+/*      $Id: mode2.c,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -21,11 +21,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "drivers/lirc.h"
+
 int main()
 {
 	int fd;
-	int data;
-
+	lirc_t data;
+	
 	fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
 	if(fd==-1)  {
 		printf("error opening " LIRC_DRIVER_DEVICE "\n");
@@ -37,14 +39,15 @@ int main()
 	{
 		int result;
 
-		result=read(fd,&data,4);
-		if(result!=4)
+		result=read(fd,&data,sizeof(data));
+		if(result!=sizeof(data))
 		{
 			fprintf(stderr,"read() failed\n");
 			break;
 		}
 		
-		printf("%s %d\n",(data&0x1000000)?"pulse":"space", data&0xffffff);
+		printf("%s %lu\n",(data&PULSE_BIT)?"pulse":"space",
+		       (unsigned long) (data&PULSE_MASK));
 		fflush(stdout);
 	};
 	return(0);

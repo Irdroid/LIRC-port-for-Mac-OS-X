@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: config_file.h,v 5.1 1999/09/02 20:03:53 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -15,7 +15,6 @@
 
 #include <sys/types.h>
 #include <unistd.h>
-
 
 #include "ir_remote.h"
 
@@ -70,6 +69,7 @@ char * s_strdup(char * string);
 ir_code s_strtocode(char *val);
 unsigned long  s_strtoul(char *val);
 int s_strtoi(char *val);
+lirc_t s_strtolirc_t(char *val);
 
 int checkMode(int is_mode, int c_mode, char *error);
 int parseFlags(char *val);
