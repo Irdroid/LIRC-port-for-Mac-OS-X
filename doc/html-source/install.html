@@ -653,3 +653,14 @@
       changed. Please use the config file in
       <em>remotes/leadtek/lircd.conf.RM-0010</em>.
     </P>
+    <P>
+      The lirc_sir now should generate better signals for some
+      remotes. Due to the change some old config files generated with
+      previous versions of the driver might stop working. In this case
+      you should just create a new config file using the new
+      driver. If you want to get the old behaviour of the driver
+      (deprecated) you can insert the module using the
+      <em>threshold=2</em> parameter. The default of
+      <em>threshold</em> is now set to 3. You might even want to try
+      higher values.
+    </P>

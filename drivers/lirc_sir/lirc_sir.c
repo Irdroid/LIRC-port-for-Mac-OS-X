@@ -166,6 +166,7 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #ifndef LIRC_ON_SA1100
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
+static int threshold = 3;
 #endif
 
 static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
@@ -728,9 +729,9 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 #ifdef DEBUG_SIGNAL
 				printk(KERN_DEBUG LIRC_DRIVER_NAME": t %lu , d %d\n",deltintrtv,(int)data);
 #endif
-				/* if nothing came in last 2 cycles,
+				/* if nothing came in last X cycles,
 				   it was gap */
-				if (deltintrtv > TIME_CONST * 2) {
+				if (deltintrtv > TIME_CONST * threshold) {
 					if (last_value) {
 #ifdef DEBUG_SIGNAL
 						printk(KERN_DEBUG LIRC_DRIVER_NAME ": GAP\n");
@@ -1280,6 +1281,8 @@ MODULE_PARM(io, "i");
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+MODULE_PARM(threshold, "i");
+MODULE_PARM_DESC(threshold, "space detection threshold (3)");
 #endif
 
 #ifdef MODULE_LICENSE
