@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.21 2004/08/28 10:07:27 lirc Exp $      */
+/*      $Id: receive.c,v 5.22 2004/11/20 19:16:18 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -1192,8 +1192,9 @@ int receive_decode(struct ir_remote *remote,
 		} /* end of mode specific code */
 	}
 	*prep=pre;*codep=code;*postp=post;
-	if(sync<=remote->remaining_gap*(100+remote->eps)/100
-	   || sync<=remote->remaining_gap+remote->aeps)
+	if(!has_repeat(remote) &&
+	   (sync<=remote->remaining_gap*(100+remote->eps)/100
+	    || sync<=remote->remaining_gap+remote->aeps))
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;
