@@ -240,7 +240,7 @@ function ConfigDriver
                 --title "Select your driver" \
 		--menu "$CONFIG_DRIVER_TEXT" 15 74 6 \
 			1 "Hauppauge TV card" \
-			2 "Avermadia TV card" \
+			2 "AverMedia TV card" \
 			3 "Fly98 TV card" \
 			4 "Pixelview PlayTV card" 2> $TEMP;
 	    if test "$?" = "0"; then
