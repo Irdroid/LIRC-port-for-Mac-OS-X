@@ -41,6 +41,10 @@ struct midi_packet
 	unsigned char sysex_end;
 };
 
+/* midi_packet.dev */
+#define REMOTE    0x60
+#define NONREMOTE 0x61
+
 int livedrive_decode(struct ir_remote *remote,
 		     ir_code * prep, ir_code * codep, ir_code * postp,
 		     int *repeat_flagp, lirc_t * remaining_gapp);

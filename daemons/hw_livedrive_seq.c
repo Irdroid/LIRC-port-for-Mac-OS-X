@@ -42,6 +42,8 @@ char *livedrive_rec_seq(struct ir_remote *remotes)
 
 	for (i = 0; i < sizeof(midi); i++) {
 		read(hw.fd, &seq, sizeof(seq));
+               if (midi.dev == NONREMOTE && i == 4)   /* skip 2 missing filler bytes for audigy2 non-infrared messages */
+                       i += 2;
 		*(bytep+i) = seq.data;
 	}
 	gettimeofday(&end, NULL);
