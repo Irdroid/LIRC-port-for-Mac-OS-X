@@ -1,4 +1,6 @@
 0.7.0: future
+  * renamed rc tool to irsend due to name clash with another rc program
+  * added support for AverMedia VDOMATE
   * added support for Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner
   * added support for Asus TV-Box (Stefan Jahn)
 

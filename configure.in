@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.93 2002/10/21 18:26:12 ranty Exp $
+dnl $Id: configure.in,v 5.94 2002/10/25 20:42:55 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -121,17 +121,17 @@ dnl here we see what driver the user wants.
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, act200l, animax, asus_tvbox,
-			  avermedia, avermedia98, bestbuy, bestbuy2,
-			  caraca, chronos, comX, dsp, cph03x, cph06x,
-			  creative, flyvideo, hauppauge,
-			  hauppauge_dvb, irdeo, irdeo_remote, irman,
-			  irreal, it87, knc_one, logitech, lptX,
-			  mediafocusI, packard_bell, parallel, pctv,
-			  pixelview_bt878, pixelview_pak,
-			  pixelview_pro, provideo, realmagic,
-			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, udp,
-			  winfast_tv2000],
+			  avermedia, avermedia_vdomate, avermedia98,
+			  bestbuy, bestbuy2, caraca, chronos, comX,
+			  dsp, cph03x, cph06x, creative, flyvideo,
+			  hauppauge, hauppauge_dvb, irdeo,
+			  irdeo_remote, irman, irreal, it87, knc_one,
+			  logitech, lptX, mediafocusI, packard_bell,
+			  parallel, pctv, pixelview_bt878,
+			  pixelview_pak, pixelview_pro, provideo,
+			  realmagic, remotemaster, sa1100, serial,
+			  silitek, sir, slinke, tekram, tekram_bt829,
+			  udp, winfast_tv2000],
 driver=${withval},
 driver="unset"
 )
@@ -327,6 +327,11 @@ if test "$driver" = "avermedia"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="avermedia/lircd.conf.avermedia"
   lircmd_conf="avermedia/lircmd.conf.avermedia"
+fi
+if test "$driver" = "avermedia_vdomate"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="avermedia/lircd.conf.vdomate"
+#  lircmd_conf="avermedia/lircmd.conf.vdomate"
 fi
 if test "$driver" = "avermedia98"; then
   lirc_driver="lirc_dev lirc_gpio"

@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.19 2002/10/15 08:37:39 ranty Exp $
+ * $Id: lirc_gpio.c,v 1.20 2002/10/25 20:42:55 lirc Exp $
  *
  */
 
@@ -106,6 +106,8 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVPHONE98,     0x00031461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
 	/* is this one correct? */
 	{BTTV_AVERMEDIA98,   0x00041461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
+	/* work-around for VDOMATE */
+	{BTTV_AVERMEDIA98,   0x03001461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
 	{BTTV_CHRONOS_VS2,            0, 0x000000f8,          0, 0x0000100,          0,   0, 20,  0},
 	/* CPH031 and CPH033 cards (?) */
 	/* MIRO was just a work-around */
@@ -486,6 +488,9 @@ int init_module(void)
 			rcv_infos[card_type].bttv_id = BTTV_AVERMEDIA98;
 		}
 		if (type==BTTV_AVERMEDIA98 && cardid==0x00041461) {
+			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
+		}
+		if (type==BTTV_AVERMEDIA98 && cardid==0x03001461) {
 			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
 		}
 		if (card_type == sizeof(rcv_infos)/sizeof(struct rcv_info)) {
