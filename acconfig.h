@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.18 2001/09/14 20:39:14 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.19 2001/11/14 18:05:52 ranty Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -56,6 +56,9 @@
 
 /* Define to run daemons as daemons */
 #undef DAEMONIZE
+
+/* Define if forkpty is available */
+#undef HAVE_FORKPTY
 
 /* Define if the caraca library is installed */
 #undef HAVE_LIBCARACA

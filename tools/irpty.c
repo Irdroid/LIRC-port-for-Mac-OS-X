@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.5 2001/11/04 00:13:28 ranty Exp $      */
+/*      $Id: irpty.c,v 5.6 2001/11/14 18:05:52 ranty Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -34,6 +34,10 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
+
+#ifdef HAVE_FORKPTY
+#include <pty.h>
+#endif
 
 #include "lirc_client.h"
 
