@@ -1,17 +1,14 @@
 #
-# this config file was automatically generated
-# using lirc-0.7.0pre1(livedrive) on Sun Feb  9 19:25:19 2003
+# contributed by Andrew de Quincey
 #
-# contributed by Stephen Beahm
-#
-# brand:                       rm900
+# brand:                       rm1000w
 # model no. of remote control: 
 # devices being controlled by this remote:
 #
 
 begin remote
 
-  name  rm900
+  name  rm1000w
   flags SPACE_ENC|CONST_LENGTH
   bits           16
   eps            30
@@ -63,6 +60,10 @@ begin remote
           left                     0x0000000000008778
           right                    0x000000000000758A
           ok                       0x000000000000817E
+	  power                    0x000000000000619e
+	  cmss                     0x000000000000718e
+	  record                   0x000000000000738c
+	  
       end codes
 
 end remote
