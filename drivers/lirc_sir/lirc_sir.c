@@ -664,9 +664,8 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id,
 		deltv = delta(&last_tv, &curr_tv);
 		do
 		{
-			dprintk("t %lu , d %d\n", deltintrtv, (int)data);
 			data=Ser2UTDR;
-			//printk("data: %d\n",data);
+			dprintk("%d data: %u\n", n, (unsigned int) data);
 			n++;
 		}
 		while(status&UTSR0_RID && /* do not empty fifo in
