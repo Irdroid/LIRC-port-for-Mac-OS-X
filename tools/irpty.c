@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
+/*      $Id: irpty.c,v 5.3 2000/03/25 12:09:41 columbus Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -67,6 +67,7 @@ static void copy_loop(int ptym, int ignoreeof)
 	pid_t child;
 	int nread;
 	char buf[BUFFSIZE];
+	struct sigaction act;
 
 	if ((child = fork()) < 0) {
 		die("fork error");
@@ -92,9 +93,9 @@ static void copy_loop(int ptym, int ignoreeof)
 				char *irchars;
 				int ret;
 				
-				while(lirc_nextcode(&ir)==0)
+				while((ret=lirc_nextcode(&ir))==0)
 				{
-					if(ir==NULL) continue;
+					if(ir==NULL) break;
 					while((ret=lirc_code2char
 					       (lconfig,ir,&irchars))==0 &&
 					      irchars!=NULL)
@@ -105,17 +106,21 @@ static void copy_loop(int ptym, int ignoreeof)
 					free(ir);
 					if(ret==-1) break;
 				}
+				if(ret==-1) break;
 			}
 		}
 		if (!ignoreeof)
 			kill(getppid(), SIGTERM);
 		lirc_freeconfig(lconfig);
 		lirc_deinit();
-		exit(0);
+		_exit(0);
 	}
-	if (signal(SIGTERM, sig_term) == SIG_ERR)
-		die("signal_intr error for SIGTERM");
 
+	act.sa_handler=sig_term;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags=0;           /* we need EINTR */
+	sigaction(SIGTERM,&act,NULL);
+	
 	while (1) {
 		if ((nread = read(ptym, buf, BUFFSIZE)) <= 0)
 			break;
