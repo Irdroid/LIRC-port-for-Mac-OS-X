@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.30 2005/01/14 16:07:12 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.31 2005/02/12 18:36:28 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -13,6 +13,8 @@
  *      Stefan Jahn <stefan@lkcc.org>
  * modified for inclusion into kernel sources by
  *      Jerome Brock <jbrock@users.sourceforge.net>
+ * modified for Leadtek Winfast PVR2000 by
+ *      Thomas Reitmayr (treitmayr@yahoo.com)
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -189,6 +191,37 @@ static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 }
 
 
+static int add_to_buf_pvr2000(void* data, struct lirc_buffer* buf)
+{
+	struct IR *ir = data;
+	unsigned char key;
+	s32 flags;
+	s32 code;
+
+	/* poll IR chip */
+	if (-1 == (flags = i2c_smbus_read_byte_data(&ir->c,0x10))) {
+		dprintk("read error\n");
+		return -ENODATA;
+	}
+	/* key pressed ? */
+	if (0 == (flags & 0x80))
+		return -ENODATA;
+
+	/* read actual key code */
+	if (-1 == (code = i2c_smbus_read_byte_data(&ir->c,0x00))) {
+		dprintk("read error\n");
+		return -ENODATA;
+	}
+
+	key = code & 0xFF;
+
+	dprintk("IR Key/Flags: (0x%02x/0x%02x)\n", key, flags & 0xFF);
+
+	/* return it */
+	lirc_buffer_write_1( buf, &key );
+	return 0;
+}
+
 static int add_to_buf_pixelview(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
@@ -355,9 +388,16 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		break;
 	case 0x18:
 	case 0x1a:
-		strcpy(ir->c.name,"Hauppauge IR");
-		ir->l.code_length = 13;
-		ir->l.add_to_buf=add_to_buf_haup;
+		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
+			strcpy(ir->c.name,"Hauppauge IR");
+			ir->l.code_length = 13;
+			ir->l.add_to_buf=add_to_buf_haup;
+		}
+		else {
+			strcpy(ir->c.name,"Leadtek IR");
+			ir->l.code_length = 8;
+			ir->l.add_to_buf=add_to_buf_pvr2000;
+		}
 		break;
 	case 0x30:
 		strcpy(ir->c.name,"KNC ONE IR");
@@ -436,6 +476,22 @@ static int ir_probe(struct i2c_adapter *adap) {
 		}
 	}
 
+#ifdef I2C_HW_B_CX2388x
+	/* Leadtek Winfast PVR2000 */
+	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2388x)) {
+		memset(&c,0,sizeof(c));
+		c.adapter = adap;
+		c.addr    = 0x18;
+		rc = i2c_master_recv(&c,&buf,1);
+		dprintk("probe 0x%02x @ %s: %s\n",
+			c.addr, adap->name, 
+			(1 == rc) ? "yes" : "no");
+		if (1 == rc) {
+			ir_attach(adap,c.addr,0,0);
+		}
+	}
+#endif
+
 	/* Asus TV-Box and Creative/VisionTek BreakOut-Box (PCF8574) */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_RIVA)) {
 		/* addresses to probe;
@@ -502,6 +558,7 @@ int init_module(void)
 	request_module("bttv");
 	request_module("rivatv");
 	request_module("ivtv");
+	request_module("cx8800");
 	i2c_add_driver(&driver);
 	return 0;
 }

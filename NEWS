@@ -1,4 +1,5 @@
 0.7.1: future
+  * added support for Winfast PVR2000 TV card (Thomas Reitmayr)
   * added support for Streamzap PC remote
   * added support for Soundgraph iMON MultiMedian IR/VFD (Venky Raju)
   * added support for X10 MouseRemote RF Receiver (Geoffrey Hausheer)
