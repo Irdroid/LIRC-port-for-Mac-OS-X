@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.23 2002/11/09 22:34:23 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.24 2002/11/11 19:19:27 lirc Exp $
  *
  */
 
@@ -114,6 +114,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_MIRO,                   0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_DYNALINK,               0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0,  0, 32},
+#ifdef BTTV_KWORLD
+	{BTTV_KWORLD,                 0, 0x00007f00,          0, 0x0004000,          0,   0, 12,  0},
+#endif
 	/* just a guess */
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
