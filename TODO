@@ -1,5 +1,3 @@
-* recognize stale lockfile
-
 * on_enter, on_leave in .lircrc modes
 
 * proper devfs

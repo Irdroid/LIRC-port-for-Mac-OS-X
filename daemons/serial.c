@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.7 2001/07/12 14:17:11 lirc Exp $      */
+/*      $Id: serial.c,v 5.8 2001/10/18 16:15:36 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <dirent.h>
+#include <signal.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -158,12 +159,12 @@ int tty_create_lock(char *name)
 	}
 	strcat(filename,s);
 	
+ tty_create_lock_retry:
 	if((len=snprintf(id,10+1+1,"%10d\n",getpid()))==-1)
 	{
 		logprintf(LOG_ERR,"invalid pid \"%d\"",getpid());
 		return(0);
 	}
-
 	lock=open(filename,O_CREAT|O_EXCL|O_WRONLY,0644);
 	if(lock==-1)
 	{
@@ -173,17 +174,48 @@ int tty_create_lock(char *name)
 		lock=open(filename,O_RDONLY);
 		if(lock!=-1)
 		{
-			len=read(lock,id,10+1);
-			if(len==10+1)
+			pid_t otherpid;
+			
+			id[10+1]=0;
+			if(read(lock,id,10+1)==10+1 &&
+			   read(lock,id,1)==0 &&
+			   sscanf(id,"%d\n",&otherpid)>0)
 			{
-				if(read(lock,id,1)==0)
+				if(kill(otherpid,0)==-1 && errno==ESRCH)
 				{
-					s=strchr(id,'\n');
-					if(s!=NULL) *s=0;
-					logprintf(LOG_ERR,
-						  "%s is locked by PID %s",
-						  name,id);
+					logprintf(LOG_WARNING,
+						  "detected stale "
+						  "lockfile %s",
+						  filename);
+					close(lock);
+					if(unlink(filename)!=-1)
+					{
+						logprintf(LOG_WARNING,
+							  "stale lockfile "
+							  "removed");
+						goto tty_create_lock_retry;
+					}
+					else
+					{
+						logprintf(LOG_ERR,
+							  "could not remove "
+							  "stale lockfile");
+						logperror(LOG_ERR,NULL);
+					}
+					return(0);
 				}
+				else
+				{
+					logprintf(LOG_ERR,
+						  "%s is locked by PID %d",
+						  name,otherpid);
+				}
+			}
+			else
+			{
+				logprintf(LOG_ERR,
+					  "invalid lockfile %s encountered",
+					  filename);
 			}
 			close(lock);
 		}

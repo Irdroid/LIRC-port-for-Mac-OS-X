@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.33 2001/08/25 16:17:44 lirc Exp $      */
+/*      $Id: lircd.c,v 5.34 2001/10/18 16:15:36 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -671,7 +671,7 @@ void start_server(mode_t permission,int nodaemon)
 	}
 	if(flock(fd,LOCK_EX|LOCK_NB)==-1)
 	{
-		int otherpid;
+		pid_t otherpid;
 		
 		if(fscanf(pidfile,"%d\n",&otherpid)>0)
 		{
@@ -1512,7 +1512,7 @@ int waitfordata(unsigned long maxusec)
 	while(1)
 	{
 		do{
-				/* handle signals */
+			/* handle signals */
 			if(term)
 			{
 				dosigterm(termsig);
