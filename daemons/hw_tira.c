@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.c,v 5.1 2003/09/21 13:53:14 lirc Exp $  */
+/*   $Id: hw_tira.c,v 5.2 2003/10/12 12:09:14 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.c ****************************************************************
  *****************************************************************************
@@ -112,7 +112,10 @@ int tira_setup(void)
 	char response[6];
 	int  i;
 	int ptr;
-
+	
+	/* Clear the port of any random data */
+	while (read(hw.fd, &ptr, 1) >= 0) ;
+	
 	/* Start off with the IP command. This was initially used to
 	   switch to timing mode on the Tira-1. The Tira-2 also
 	   supports this mode, however it does not switch the Tira-2
@@ -173,9 +176,12 @@ int tira_setup(void)
 		}
 		else
 		{
-			logprintf(LOG_INFO, "device online, "
-				   "ready to receive remote codes");
-			return 1;
+			if (strncmp(response, "OK", 2) == 0)
+			{
+				logprintf(LOG_INFO, "device online, "
+					  "ready to receive remote codes");
+				return 1;
+			}
 		}
 	}
 	logprintf(LOG_ERR, "unexpected response from device");

@@ -146,5 +146,5 @@ default_param: bte
 	btty:
 
 default_parm: tira
-	ttyUSB1:
+	ttyUSB:
 
