@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.15 2000/12/03 18:02:54 columbus Exp $
+ * $Id: lirc_dev.c,v 1.16 2000/12/09 11:02:02 columbus Exp $
  *
  */
 
@@ -30,7 +30,9 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
-#error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
+#error "********************************************************"
+#error " Sorry, this driver needs kernel version 2.2.4 or higher"
+#error "********************************************************"
 #endif
 
 #include <linux/config.h>
@@ -636,7 +638,7 @@ int lirc_dev_init(void)
 	}
 
 #ifndef LIRC_HAVE_DEVFS
- 	i = module_register_chrdev(IRCTL_DEV_MAJOR,
+ 	i = register_chrdev(IRCTL_DEV_MAJOR,
 #else
 	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
 #endif
@@ -679,7 +681,7 @@ void cleanup_module(void)
 	int ret;
 	
 #ifndef LIRC_HAVE_DEVFS
- 	ret = module_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
+ 	ret = unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 #else
 	ret = devfs_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 #endif
