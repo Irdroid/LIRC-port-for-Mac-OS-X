@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.22 2004/11/20 19:16:18 lirc Exp $      */
+/*      $Id: receive.c,v 5.23 2005/02/12 14:20:23 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -44,7 +44,9 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 {
 	if(rec_buffer.rptr<rec_buffer.wptr)
 	{
-		LOGPRINTF(3,"<%lu",(unsigned long)
+		LOGPRINTF(3,"<%c%lu",
+			  rec_buffer.data[rec_buffer.rptr]&PULSE_BIT ?
+			  'p':'s', (unsigned long)
 			  rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK));
 		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK);
 		return(rec_buffer.data[rec_buffer.rptr++]);
@@ -58,6 +60,7 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 			data=hw.readdata(2*maxusec<50000 ? 50000:2*maxusec);
 			if(!data)
 			{
+				LOGPRINTF(3,"timeout: %lu", maxusec);
 				return 0;
 			}
 
@@ -67,7 +70,9 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 				&(PULSE_MASK);
                         rec_buffer.wptr++;
                         rec_buffer.rptr++;
-			LOGPRINTF(3,"+%lu",(unsigned long)
+			LOGPRINTF(3,"+%c%lu",
+				  rec_buffer.data[rec_buffer.rptr-1]&
+				  PULSE_BIT ? 'p':'s', (unsigned long)
 				  rec_buffer.data[rec_buffer.rptr-1]
 				  &(PULSE_MASK));
                         return(rec_buffer.data[rec_buffer.rptr-1]);
@@ -146,14 +151,13 @@ int clear_rec_buffer(void)
 		else
 		{
 			rec_buffer.wptr=0;
+			data=hw.readdata(0);
+			
+			LOGPRINTF(3,"c%lu",(unsigned long) data&(PULSE_MASK));
+			
+			rec_buffer.data[rec_buffer.wptr]=data;
+			rec_buffer.wptr++;
 		}
-		
-		data=hw.readdata(0);
-		
-		LOGPRINTF(3,"c%lu",(unsigned long) data&(PULSE_MASK));
-		
-		rec_buffer.data[rec_buffer.wptr]=data;
-		rec_buffer.wptr++;
 	}
 
 	rewind_rec_buffer();

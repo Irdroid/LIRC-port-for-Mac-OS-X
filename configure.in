@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.137 2005/01/26 20:07:27 lirc Exp $
+dnl $Id: configure.in,v 5.138 2005/02/12 14:20:22 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -148,7 +148,8 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_igorplugusb) (lirc_dev lirc_imon) \
 	(lirc_dev lirc_it87) (lirc_dev lirc_mceusb) \
 	(lirc_dev lirc_parallel) (lirc_dev lirc_sasem) \
-	(lirc_dev lirc_serial) (lirc_dev lirc_sir)"
+	(lirc_dev lirc_serial) (lirc_dev lirc_sir) \
+	(lirc_dev lirc_streamzap)"
 fi
 
 if test -n "${LIBUSB_CONFIG}"; then
@@ -223,8 +224,9 @@ AC_ARG_WITH(driver,
                           pixelview_bt878, pixelview_pak,
                           pixelview_pro, provideo, realmagic,
                           remotemaster, sa1100, sasem, serial,
-                          silitek, sir, slinke, tekram, tekram_bt829,
-                          tira, tvbox, udp, uirt2, uirt2_raw],
+                          silitek, sir, slinke, streamzap, tekram,
+                          tekram_bt829, tira, tvbox, udp, uirt2,
+                          uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -332,6 +334,8 @@ if test "$driver" = "any"; then
 	lirc_dev-lirc_serial)
 		;;
 	lirc_dev-lirc_sir)
+		;;
+	lirc_dev-lirc_streamzap)
 		;;
 	lirc_flyvideo)
 		;;
@@ -844,6 +848,11 @@ if test "$driver" = "slinke"; then
   HW_DEFAULT="hw_slinke"
 fi
 
+if test "$driver" = "streamzap"; then
+  lirc_driver="lirc_dev lirc_streamzap"
+  lircd_conf="streamzap/lircd.conf.streamzap"
+fi
+
 if test "$driver" = "tekram"; then
   lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_SIR_TEKRAM)
@@ -1155,6 +1164,7 @@ AC_OUTPUT([
   drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile
   drivers/lirc_sir/Makefile
+  drivers/lirc_streamzap/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

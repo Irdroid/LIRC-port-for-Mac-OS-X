@@ -1,0 +1,9 @@
+.lirc_streamzap.o.flags
+.lirc_streamzap.ko.cmd
+.lirc_streamzap.mod.o.cmd
+.lirc_streamzap.o.cmd
+lirc_streamzap.ko
+lirc_streamzap.mod.c
+Makefile.in
+Makefile
+.deps
