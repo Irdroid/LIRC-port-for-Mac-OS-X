@@ -1,8 +1,4 @@
 Drivers notes:
 
-FlyVideo98:
-  Remember to check if KERNEL_SRC is set to the location of your kernel 
-  sources or bttv driver sources in drivers/lirc_fly98/Makefile.am before 
-  running autogen.sh !
   
   
