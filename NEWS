@@ -1,4 +1,4 @@
-0.6.6: future
+0.6.6pre1: 07/07/02
   * added UDP network driver for use with the IPC@Chip (Jim Paris)
   * added support for hardware connected to soundcard input (Pavel Machek)
   * added support for Tekram M230 Mach64 (Froenchenko Leonid)
