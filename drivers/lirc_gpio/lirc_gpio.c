@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.32 2003/10/12 14:27:49 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.33 2003/10/26 14:51:49 lirc Exp $
  *
  */
 
@@ -525,7 +525,7 @@ int init_module(void)
 			bttv_id = BTTV_AVPHONE98;
 		}
 		if (card_type == sizeof(rcv_infos)/sizeof(struct rcv_info)) {
-			printk(LOGHEAD "TV card type %x not supported!\n",
+			printk(LOGHEAD "TV card type 0x%x not supported!\n",
 			       minor, type);
 			return -EBADRQC;
 		}
