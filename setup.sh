@@ -267,14 +267,14 @@ function ConfigDriver
                 --title "Select your driver" \
 		--menu "$CONFIG_DRIVER_TEXT" 16 74 9\
 			1 "Hauppauge TV card (new I2C layer required)" \
-			2 "AverMedia TV card (TVCapture, TVPhone)" \
-			3 "AverMedia TV card (TVCapture98, TVPhone98)" \
+			2 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
+			3 "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)" \
 			4 "Fly98 TV card" \
-                        5 "Askey Magic TView CPH03x (use bttv settings for MIRO PCTV)" \
-                        6 "Dynalink Magic TView" \
-			7 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878)" \
-			8 "TView99 CPH063" \
-                        9 "Pixelview PlayTV pro card" 2> $TEMP;
+                        5 "Askey Magic TView CPH03x (card=1)" \
+                        6 "Dynalink Magic TView (card=48)" \
+			7 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
+			8 "TView99 CPH063 (card=38)" \
+                        9 "Pixelview PlayTV pro card (card=37)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
