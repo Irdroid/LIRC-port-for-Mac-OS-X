@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.30 2001/09/14 20:39:14 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.31 2001/09/17 10:39:06 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -956,7 +956,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #       endif
 	LIRC_CAN_SEND_PULSE|
 #       endif
-#       if defined(LIRC_SERIAL_IRDEO_REMOTE)
+#       if defined(LIRC_SERIAL_IRDEO_DONGLE)
 	0;
 #       else
 	LIRC_CAN_REC_MODE2;
