@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.23 2000/04/13 07:31:33 columbus Exp $
+dnl $Id: configure.in,v 5.24 2000/04/18 20:14:57 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -84,8 +84,8 @@ possible_drivers="(none) (remotemaster) (logitech)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
-	(lirc_parallel) (lirc_aver) (lirc_haup) \
-	(lirc_dev lirc_haup) (lirc_fly98) (lirc_dev lirc_gpio)"
+	(lirc_parallel) (lirc_aver) (lirc_dev lirc_haup) \
+        (lirc_fly98) (lirc_dev lirc_gpio)"
 fi
 
 AC_CHECK_LIB(irman, ir_strerror,
@@ -103,8 +103,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, comX, lptX, avermedia,
-                          hauppauge, hauppauge_new, fly98, pixelview_pro,
-                          logitech],
+                          hauppauge, fly98, pixelview_pro, logitech],
 driver=${withval},
 driver="unset"
 )
@@ -182,16 +181,9 @@ if test "$driver" = "avermedia"; then
   lircmd_conf="avermedia/lircmd.conf.avermedia"
 fi
 if test "$driver" = "hauppauge"; then
-  lirc_driver=lirc_haup
-  lircd_conf="hauppauge/lircd.conf.hauppauge"
-  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
-  test -f "${kerneldir}/include/linux/i2c-old.h" && AC_DEFINE(LIRC_OLD_I2C_LAYER)
-fi
-if test "$driver" = "hauppauge_new"; then
   lirc_driver="lirc_dev lirc_haup"
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
-  AC_DEFINE(LIRC_NEW_I2C_LAYER)
 fi
 if test "$driver" = "fly98"; then
   lirc_driver=lirc_fly98

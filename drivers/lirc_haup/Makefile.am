@@ -1,14 +1,13 @@
-## $Id: Makefile.am,v 1.7 2000/02/12 12:29:46 columbus Exp $
+## $Id: Makefile.am,v 1.8 2000/04/18 20:14:57 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
-EXTRA_DIST = patches/lirc_haup-linux-2.2.12.diff
+EXTRA_DIST = 
 
 ## this is so that Automake includes the C compiling definitions, and
 ## includes the source files in the distribution.
 EXTRA_PROGRAMS = automake_dummy
-automake_dummy_SOURCES = lirc_haup.c lirc_haup.h \
-			 lirc_haup_new.c lirc_haup_new.h
+automake_dummy_SOURCES = lirc_haup.c
 
 ## there is no *just* object file support in automake.  This is close enough
 module_DATA = lirc_haup.o
