@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.43 2004/11/14 22:47:36 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.44 2004/12/01 01:27:54 pmiller9 Exp $
  */
 
 /*
@@ -69,6 +69,16 @@
 #define CODE_MIN_LENGTH		3
 #define USB_BUFLEN		(CODE_LENGTH*4)
 
+#define RW2_MODENAV_KEYCODE	0x3F
+#define RW2_NULL_MODE		0xFF
+/* Fake (virtual) keycode indicating compass mouse usage */
+#define RW2_MOUSE_KEYCODE	0xFF
+#define RW2_PRESSRELEASE_KEYCODE	0xFE
+
+#define RW2_PRESS_CODE		1
+#define RW2_HOLD_CODE		2
+#define RW2_RELEASE_CODE	0
+
 /* module parameters */
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
@@ -83,7 +93,11 @@
 static int mask = 0xFFFF;	// channel acceptance bit mask
 static int unique = 0;		// enable channel-specific codes
 static int repeat = 10;		// repeat time in 1/100 sec
+static int emit_updown = 0;	// send seperate press/release codes (rw2)
+static int emit_modekeys = 0;	// send keycodes for aux1-aux4, pc, and mouse (rw2)
 static unsigned long repeat_jiffies; // repeat timeout
+static int mdeadzone = 0;	// mouse sensitivity >= 0
+static int mgradient = 375;	// 1000*gradient from cardinal direction
 
 /* get hi and low bytes of a 16-bits int */
 #define HI(a)			((unsigned char)((a) >> 8))
@@ -104,9 +118,6 @@ static unsigned long repeat_jiffies; // repeat timeout
 #define EP_MOUSE		1
 #define EP_MOUSE_ADDR		0x81
 #define EP_KEYS_ADDR		0x82
-
-#define ATI2_MOUSE_SENSITIVITY	4
-#define ATI2_MOUSE_MAGIC	32
 
 #define VENDOR_ATI1		0x0bc7
 #define VENDOR_ATI2		0x0471
@@ -194,6 +205,9 @@ struct irctl {
 		ATI1_COMPATIBLE,
 		ATI2_COMPATIBLE
 	} remote_type;
+
+	/* rw2 current mode (mirror's remote's state) */
+	int mode;
 
 	/* lirc */
 	struct lirc_plugin *p;
@@ -462,32 +476,34 @@ static int code_check(struct in_endpt *iep, int len)
  *
  *    Option 1 may seem useless since the mouse sends the same code, but one
  *    need only ignore in userspace any press of a mode-setting code that only
- *    reaffirms the current mode.  lirccd should be able to handle this
- *    easily enough.
+ *    reaffirms the current mode.  The 3rd party lirccd should be able to
+ *    handle this easily enough, but lircd doesn't keep the state necessary
+ *    for this.  TODO We could work around this in the driver by emitting a
+ *    single 02 (press) code for a mode key only if that mode is not currently
+ *    active.
  *
  *    Option 2 would be useful for those wanting super configurability,
  *    offering the ability to program 5 times the number actions based on the
  *    current mode.
  *
- * b. The rw2 apparently has its own built in repeat handling; however it
- *    doesn't seem to work very well.  From what I can tell, it is supposed to
- *    act like the following, emiting the given second byte according to:
+ * b. The rw2 has its own built in repeat handling; the keys endpoint
+ *    encodes this in the second byte as 1 for press, 2 for hold, and 0 for
+ *    release.  This is generally much more responsive than lirc's built-in
+ *    timeout handling.
  *
- *    	1: Receipt of first button press
- *    	2: button continues to be held
- *    	0: button is released
+ *    The problem is that the remote can send the release-recieve pair
+ *    (0,1) while one is still holding down the same button if the
+ *    transmission is momentarilly interrupted.  (It seems that the receiver
+ *    manages this count instead of the remote.)  By default, this information
+ *    is squashed to 2.
  *
- *    The problem is that the remote often sends the release-recieve pair
- *    (0,1) while one is still holding down the same button.
+ *    In order to expose the built-in repeat code, set the emit_updown
+ *    parameter as described below.
  *
- *    Thus, a parameter such as use_rw2repeat might be useful to
- *    enable/disable this built-in repeat handling "feature."  If disabled,
- *    the second byte would simply squish to zero.
- *
- * c. The mouse norb is much more sensitive than on the rw1.  It seems to be
- *    implemented as a joystick-like controller with the second byte
- *    representing the x-axis offset, and the third the y-axis.  Treated as
- *    signed integers, these axes range approximately as follows:
+ * c. The mouse norb is much more sensitive than on the rw1.  It emulates
+ *    a joystick-like controller with the second byte representing the x-axis
+ *    and the third, the y-axis.  Treated as signed integers, these axes range
+ *    approximately as follows:
  *
  *    	x: (left) -46 ... 46 (right) (0xd2..0x2e)
  *    	y: (up)   -46 ... 46 (down)  (0xd2..0x2e)
@@ -496,7 +512,9 @@ static int code_check(struct in_endpt *iep, int len)
  *    norb is pushed in a given direction, but rather seems to indicate the
  *    duration for which a given direction is held.
  *
- *    An option such as normalizemouse would probably do well here.
+ *    These are normalized to 8 cardinal directions for easy configuration via
+ *    lircd.conf.  The normalization can be fined tuned with the mdeadzone and
+ *    mgradient parameters as described below.
  *
  * d. The interrupt rate of the mouse vs. the normal keys is different.
  *
@@ -504,7 +522,7 @@ static int code_check(struct in_endpt *iep, int len)
  * 	keys:  ~10Hz (100ms between interrupts)
  *
  *    This means that the normal gap mechanism for lircd won't work as
- *    expected.
+ *    expected; is emit_updown>0 if you can get away with it.
  */
 static int process_ati2_input(struct in_endpt *iep, int len) {
 	struct irctl *ir = iep->ir;
@@ -525,30 +543,78 @@ static int process_ati2_input(struct in_endpt *iep, int len) {
 
 	if (iep->ep->bEndpointAddress == EP_KEYS_ADDR) {
 		/* ignore mouse navigation indicator key and mode-set (aux) keys */
-		if (buf[2] == 0x3F) {
-			dprintk(DRIVER_NAME "[%d]: ignore dummy code 0x%x (ep=0x%x)\n",
-				ir->devnum, buf[2], iep->ep->bEndpointAddress);
-			return -1;
+		if (buf[2] == RW2_MODENAV_KEYCODE) {
+			if (emit_modekeys >= 2) { /* emit raw */
+				buf[0] = mode;
+			} else if (emit_modekeys == 1) { /* translate */
+				buf[0] = mode;
+				if (ir->mode != mode) {
+					buf[1] = 0x03;
+					ir->mode = mode;
+					return SUCCESS;
+				}
+			} else {
+				dprintk(DRIVER_NAME "[%d]: ignore dummy code 0x%x (ep=0x%x)\n",
+					ir->devnum, buf[2], iep->ep->bEndpointAddress);
+				return -1;
+			}
 		}
 
-		/* squash repeat code; ignore key release */
-		if (buf[1]) buf[1] = 1;
-		else return -1;
+		if (buf[1] != 2) {
+			/* handle press/release codes */
+			if (emit_updown == 0) /* ignore */
+				return -1;
+			else if(emit_updown == 1) /* normalize keycode */
+				buf[2] = RW2_PRESSRELEASE_KEYCODE;
+			/* else emit raw */
+		}
+
 	} else {
-		/* Add a flag to the mode byte to indicate mouse activity */
-		buf[0] |= ATI2_MOUSE_MAGIC;
+		int x = (signed char)buf[1];
+		int y = (signed char)buf[2];
+		int code = 0x00;
+		int dir_ew, dir_ns;
 
-		/* normalize mouse position */
-		int axis;
-		for (axis = 1; axis <= 2; axis++) {
-			signed char pos = (signed char)buf[axis];
-			if (pos < -ATI2_MOUSE_SENSITIVITY) {
-				pos = -1;
-			} else if (pos > ATI2_MOUSE_SENSITIVITY) {
-				pos = 1;
-			} else pos = 0;
-			buf[axis] = (u8)pos;
+		buf[2] = RW2_MOUSE_KEYCODE;
+
+		/* sensitivity threshold (use L2norm^2) */
+		if (mdeadzone > (x*x+y*y)) {
+			buf[1] = 0x00;
+			return SUCCESS;
 		}
+
+/* Nybble encoding: xy, 2 is -1 (S or W); 1 (N or E) */
+#define MOUSE_N		0x01
+#define MOUSE_NE	0x11
+#define MOUSE_E		0x10
+#define MOUSE_SE	0x12
+#define MOUSE_S		0x02
+#define MOUSE_SW	0x22
+#define MOUSE_W		0x20
+#define MOUSE_NW	0x21
+
+		/* cardinal leanings: positive x -> E, positive y -> S */
+		dir_ew = (x > 0) ? MOUSE_E : MOUSE_W;
+		dir_ns = (y > 0) ? MOUSE_S : MOUSE_N;
+
+		/* convert coordintes(angle) into compass direction */
+		if (x == 0) {
+			code = dir_ns;
+		} else if (y == 0) {
+			code = dir_ew;
+		} else {
+			if (abs(1000*y/x) > mgradient)
+				code = dir_ns;
+			if (abs(1000*x/y) > mgradient)
+				code |= dir_ew;
+		}
+
+		buf[1] = code;
+		dprintk(DRIVER_NAME "[%d]: mouse compass=0x%x %s%s (%d,%d)\n",
+			ir->devnum, code,
+			(code & MOUSE_S ? "S" : (code & MOUSE_N ? "N" : "")),
+			(code & MOUSE_E ? "E" : (code & MOUSE_W ? "W" : "")),
+			x, y);
 	}
 
 	return SUCCESS;
@@ -927,6 +993,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			ir->p = plugin;
 			ir->remote_type = type;
 			ir->devnum = devnum;
+			ir->mode = RW2_NULL_MODE;
 
 			init_MUTEX(&ir->lock);
 			INIT_LIST_HEAD(&ir->iep_listhead);
@@ -1107,10 +1174,6 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 #endif
 
 	dprintk(DRIVER_NAME ": disconnecting remote %d:\n", (ir? ir->devnum: -1));
-	// TODO XXX only want to free_irctl once; same for unreg, etc.; but we
-	// want to do it the second time only.  Therefore we should remove
-	// from the list the first time, and set a death knell flag in ir?
-	// oh, use refcounting.
 	if (!ir || !ir->p)
 		return;
 
@@ -1140,7 +1203,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.43 2004/11/14 22:47:36 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.44 2004/12/01 01:27:54 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
@@ -1168,15 +1231,48 @@ MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, usb_remote_table);
 
 module_param(debug, bool, 0644);
-MODULE_PARM_DESC(debug, "Debug enabled or not");
+MODULE_PARM_DESC(debug, "Debug enabled or not (default: 0)");
 
-module_param(mask, int, 0444);
-MODULE_PARM_DESC(mask, "Set channel acceptance bit mask");
+module_param(mask, int, 0644);
+MODULE_PARM_DESC(mask, "Set channel acceptance bit mask (default: 0xFFFF)");
 
-module_param(unique, int, 0444);
-MODULE_PARM_DESC(unique, "Enable channel-specific codes");
+module_param(unique, bool, 0644);
+MODULE_PARM_DESC(unique, "Enable channel-specific codes (default: 0)");
 
-module_param(repeat, int, 0444);
-MODULE_PARM_DESC(repeat, "Repeat timeout (1/100 sec)");
+module_param(repeat, int, 0644);
+MODULE_PARM_DESC(repeat, "Repeat timeout (1/100 sec) (default: 10)");
+
+module_param(mdeadzone, int, 0644);
+MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
+
+/*
+ * Enabling this will cause the built-in Remote Wonder II repeate coding to
+ * not be squashed.  The second byte of the keys output will then be:
+ * 
+ * 	1 initial press (button down)
+ * 	2 holding (button remains pressed)
+ * 	0 release (button up)
+ *
+ * By default, the driver emits 2 for both 1 and 2, and emits nothing for 0.
+ * This is good for people having trouble getting their rw2 to send a good
+ * consistent signal to the receiver.
+ *
+ * However, if you have no troubles with the driver outputting up-down pairs
+ * at random points while you're still holding a button, then you can enable
+ * this parameter to get finer grain repeat control out of your remote:
+ * 
+ * 	1 Emit a single (per-channel) virtual code for all up/down events
+ * 	2 Emit the actual rw2 output
+ *
+ * 1 is easier to write lircd configs for; 2 allows full control.
+ */
+module_param(emit_updown, int, 0644);
+MODULE_PARM_DESC(emit_updown, "emit press/release codes (rw2): 0:don't (default), 1:emit 2 codes only, 2:code for each button");
+
+module_param(emit_modekeys, int, 0644);
+MODULE_PARM_DESC(emit_modekeys, "emit keycodes for aux1-aux4, pc, and mouse (rw2): 0:don't (default), 1:emit translated codes: one for mode switch, one for same mode, 2:raw codes");
+
+module_param(mgradient, int, 0644);
+MODULE_PARM_DESC(mgradient, "rw2 mouse: 1000*gradient from E to NE (default: 500 => .5 => ~27 degrees)");
 
 EXPORT_NO_SYMBOLS;
