@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.2 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.3 1999/05/15 15:34:04 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -13,6 +13,11 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+/* disable daemonise if maintainer mode SIM_REC / SIM_SEND defined */
+#if defined(SIM_REC) || defined (SIM_SEND)
+# undef DAEMONIZE
 #endif
 
 #include <stdlib.h>
