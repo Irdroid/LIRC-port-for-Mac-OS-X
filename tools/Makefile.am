@@ -1,14 +1,15 @@
-## $Id: Makefile.am,v 5.0 1999/04/29 21:30:59 columbus Exp $
+## $Id: Makefile.am,v 5.1 1999/05/07 17:50:49 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
-bin_PROGRAMS = irw irpty irexec irrecord @vga_progs@ @x_progs@
+bin_PROGRAMS = irw irpty irexec irrecord mode2 @vga_progs@ @x_progs@
 
 ## simple programs
 irw_SOURCES = irw.c
 irpty_SOURCES = irpty.c lirc_client.c lirc_client.h
 irexec_SOURCES = irexec.c lirc_client.c lirc_client.h
+mode2_SOURCES = mode2.c
 
 ## irrecord
 irrecord_SOURCES = irrecord.c
