@@ -1,5 +1,6 @@
 0.7.0: future
   * added support for Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner
+  * added support for Asus TV-Box (Stefan Jahn)
 
 0.6.6: 10/06/02
   * added rc tool for sending IR commands (previously included in xrc package)

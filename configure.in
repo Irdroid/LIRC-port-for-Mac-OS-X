@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.88 2002/10/06 16:03:30 lirc Exp $
+dnl $Id: configure.in,v 5.89 2002/10/06 16:49:38 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -119,9 +119,9 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, any, act200l, animax, avermedia,
-			  avermedia98, bestbuy, bestbuy2, caraca,
-			  chronos, comX, dsp, cph03x, cph06x,
+                          none, any, act200l, animax, asus_tvbox,
+			  avermedia, avermedia98, bestbuy, bestbuy2,
+			  caraca, chronos, comX, dsp, cph03x, cph06x,
 			  creative, flyvideo, hauppauge,
 			  hauppauge_dvb, irdeo, irdeo_remote, irman,
 			  irreal, it87, knc_one, logitech, lptX,
@@ -310,6 +310,10 @@ fi
 
 if test "$driver" = "parallel"; then
   lirc_driver=lirc_parallel
+fi
+if test "$driver" = "asus_tvbox"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="asus/lircd.conf.asus"
 fi
 if test "$driver" = "avermedia"; then
   lirc_driver="lirc_dev lirc_gpio"

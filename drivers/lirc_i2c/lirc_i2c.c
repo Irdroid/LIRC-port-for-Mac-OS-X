@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.13 2002/09/26 12:09:20 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.14 2002/10/06 16:49:38 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -9,6 +9,8 @@
  *      Christoph Bartelmus <lirc@bartelmus.de>
  * modified for KNC ONE TV Station/Anubis Typhoon TView Tuner by
  *      Ulrich Mueller <ulrich.mueller42@web.de>
+ * modified for Asus TV-Box by
+ *      Stefan Jahn <stefan@lkcc.org>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -91,8 +93,8 @@ MODULE_PARM(minor,"i");
 /*
  * If this key changes, a new key was pressed.
  */
-#define REPEAT_TOGGLE_0      192
-#define REPEAT_TOGGLE_1      224
+#define REPEAT_TOGGLE_0      0xC0
+#define REPEAT_TOGGLE_1      0xE0
 
 /* ----------------------------------------------------------------------- */
 
@@ -106,6 +108,38 @@ static inline int reverse(int data, int bits)
 	}
 
 	return c;
+}
+
+static int get_key_asus(void* data, unsigned char* key, int key_no)
+{
+	struct IR *ir = data;
+	int rc;
+
+	/* poll IR chip */
+	rc = i2c_smbus_write_byte(&ir->c, 0xff); /* send bit mask */
+	rc = i2c_smbus_read_byte(&ir->c);        /* receive scan code */
+
+	if (rc == -1) {
+		dprintk(DEVICE_NAME ": %s read error\n", ir->c.name);
+		return -1;
+	}
+
+	/* drop duplicate polls */
+	if (ir->b[0] == (rc & 0xff)) {
+		return -1;
+	}
+	ir->b[0] = rc & 0xff;
+
+	dprintk(DEVICE_NAME ": %s key 0x%02X %s\n",
+		ir->c.name, rc & ~0x07, (rc & 0x04) ? "released" : "pressed");
+
+	if (rc & 0x04) {
+		/* ignore released buttons */
+		return -1;
+	}
+
+	*key  = rc & ~0x07;
+	return 0;
 }
 
 static int get_key_haup(void* data, unsigned char* key, int key_no)
@@ -320,6 +354,12 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.code_length = 8;
 		ir->l.get_key=get_key_knc1;
 		break;
+	case 0x21:
+		strcpy(ir->c.name,"Asus TV-Box IR");
+		ir->l.code_length = 8;
+		ir->l.get_key=get_key_asus;
+		break;
+		
 	default:
 		/* shouldn't happen */
 		printk("lirc_i2c: Huh? unknown i2c address (0x%02x)?\n",addr);
@@ -381,6 +421,39 @@ static int ir_probe(struct i2c_adapter *adap) {
 			}
 		}
 	}
+
+	/* Asus TV-Box (PCF8574) */
+	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_RIVA)) {
+		/* addresses to probe;
+		   leave 0x24 and 0x25 because SAA7113H possibly uses it 
+		         0x21 and 0x22 possibly used by SAA7108E 
+			 0x21 is the correct address (channel 1 of PCF8574)
+		*/
+		static const int asus_probe[] = { 0x20, 0x21, 0x22, 0x23,
+						  0x24, 0x25, 0x26, 0x27, -1 };
+		int ret1, ret2, ret3, ret4;
+
+		memset(&c,0,sizeof(c));
+		c.adapter = adap;
+		for (i = 0; -1 != asus_probe[i]; i++) {
+			c.addr = asus_probe[i];
+			ret1 = i2c_smbus_write_byte(&c, 0xff);
+			ret2 = i2c_smbus_read_byte(&c);
+			ret3 = i2c_smbus_write_byte(&c, 0xfc);
+			ret4 = i2c_smbus_read_byte(&c);
+
+			/* ensure that the bitmask works correctly */
+			rc = (ret1 != -1) && (ret2 != -1) &&
+				(ret3 != -1) && (ret4 != -1) && 
+				((ret2 & 0x03) == 0x03) &&
+				((ret4 & 0x03) == 0x00);
+			dprintk(DEVICE_NAME ": probe 0x%02x @ %s: %s\n",
+				c.addr, adap->name, rc ? "yes" : "no");
+			if (rc)
+				ir_attach(adap,asus_probe[i],0,0);
+		}
+	}
+		
 	return 0;
 }
 
@@ -392,7 +465,7 @@ static int ir_command(struct i2c_client *client,unsigned int cmd, void *arg)
 
 /* ----------------------------------------------------------------------- */
 #ifdef MODULE
-MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller");
+MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller, Stefan Jahn");
 MODULE_DESCRIPTION("Infrared receiver driver for Hauppauge and Pixelview cards (i2c stack)");
 #ifdef MODULE_LICENSE
 MODULE_LICENSE("GPL");
@@ -407,6 +480,7 @@ int lirc_i2c_init(void)
 #endif
 {
 	request_module("bttv");
+	request_module("rivatv");
 	i2c_add_driver(&driver);
 	return 0;
 }
