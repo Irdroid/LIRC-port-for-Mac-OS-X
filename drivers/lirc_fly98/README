@@ -6,10 +6,8 @@ This driver should support lirc interface in LIRC_MODE_CODE mode.
 This is working on my home system. No reports of problems so far.
 
 The lirc_fly98.c file should be compiled as a kernel module and 
-you should apply included patch to the kernel tree. The patch for
-version 2.2.11 kernel should apply cleanly up to version 2.2.13.
-For 2.2.14 and up it needs small modifications. I'll produce 2.2.14 and
-2.2.15 patches soon.
+you should apply included patch to the kernel tree. There is a patch 
+for version 2.2.10/11/14 kernel. I'll produce 2.2.15 patch soon.
 
 There is also a patch for an external bttv driver in old version (0.6.3). 
 This one is not tested now since I switched my machine to kernel bttv driver 
