@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.1 1999/05/05 13:12:01 columbus Exp $
+## $Id: Makefile.am,v 5.2 1999/06/14 12:41:07 denis Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -12,7 +12,7 @@ EXTRA_PROGRAMS = dummy
 dummy_SOURCES = lirc_parallel.c lirc_parallel.h
 
 ## there is no *just* object file support in automake.  This is close enough
-module_SCRIPTS = lirc_parallel.o
+module_DATA = lirc_parallel.o
 
 lirc_parallel.o: lirc_parallel.c
 	$(COMPILE) $(M_CPPFLAGS) $(M_CFLAGS) -c lirc_parallel.c
@@ -26,5 +26,7 @@ mkdev:
 rmdev:
 	test -c @devdir@/lirc && $(RM) @devdir@/lirc
 
+install-data-local:
+	-@depmod@ -a
 
-CLEANFILES = lirc_parallel.o *~
+CLEANFILES = lirc_parallel.o *~ \#*\#
