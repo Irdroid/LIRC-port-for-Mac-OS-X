@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.21 2002/10/30 19:31:11 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.22 2002/11/03 16:00:39 lirc Exp $
  *
  */
 
@@ -113,6 +113,7 @@ static struct rcv_info rcv_infos[] = {
 	/* MIRO was just a work-around */
 	{BTTV_MIRO,                   0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_DYNALINK,               0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+	{BTTV_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	/* just a guess */
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
@@ -134,9 +135,9 @@ static struct rcv_info rcv_infos[] = {
 	 * 0x217d6606); as the bttv-0.7.100 * driver does not
 	 * distinguish between the two cards, we * enable the extra
 	 * bit based on the card id: */
-	{BTTV_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0,  0},
+	{BTTV_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
 	/* default: */
-	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0,  0}
+	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
 };
 
 static unsigned char code_length = 0;
@@ -281,6 +282,13 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		codes[3]=0x2F;
 		break;
 #endif
+	case BTTV_WINFAST2000:
+	case BTTV_WINVIEW_601:
+		codes[2] = reverse(codes[0],8);
+		codes[3] = (~codes[2])&0xff;
+		codes[0] = 0xC0;
+		codes[1] = 0x3F;
+		break;
 	default:
 		break;
 	}

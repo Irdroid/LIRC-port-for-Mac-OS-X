@@ -265,7 +265,7 @@ ConfigDriver ()
 		--menu "$CONFIG_DRIVER_TEXT" 19 74 12 \
 			1 "Anir Multimedia Magic" \
 			2 "CARACA" \
-			3 "Creative Infra Receiver" \
+			3 "Creative Infra Receiver/CIMR100" \
 			4 "IRdeo" \
 			5 "IRdeo Remote" \
 			6 "Irman / UIR" \
@@ -336,7 +336,8 @@ ConfigDriver ()
 			r "Tekram M230 Mach64 (and others bt829 based)" \
 			s "TView99 CPH063 (card=38)" \
 			t "Typhoon TView RDS / FM Stereo (card=53)" \
-			u "Winfast TV2000/XP (card=34)" 2> $TEMP;
+			u "Winfast TV2000/XP (card=34)" \
+			v "WinView 601 (card=17)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -371,7 +372,8 @@ ConfigDriver ()
 		elif test "$1" = "r"; then LIRC_DRIVER=tekram_bt829;      DRIVER_PARAMETER=none;
 		elif test "$1" = "s"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
 		elif test "$1" = "t"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
-		elif test "$1" = "u"; then LIRC_DRIVER=winfast_tv2000;    DRIVER_PARAMETER=none;
+		elif test "$1" = "u"; then LIRC_DRIVER=leadtek;           DRIVER_PARAMETER=none;
+		elif test "$1" = "v"; then LIRC_DRIVER=leadtek;           DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

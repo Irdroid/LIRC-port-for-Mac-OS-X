@@ -1,4 +1,5 @@
 0.7.0: future
+  * added support for Leadtek WinView 601 TV card
   * renamed rc tool to irsend due to name clash with another rc program
   * added support for AverMedia VDOMATE
   * added support for Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner
