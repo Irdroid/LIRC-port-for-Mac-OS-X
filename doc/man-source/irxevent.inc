@@ -66,10 +66,11 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> <windowname> | WindowID id 
+config = Key [shift-][ctrl-][alt-]<key> [Focus] <windowname> | WindowID <id> 
 	| CurrentWindow | RootWindow
-config = Button <button> <x> <y> <windowname> | CurrentWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> 
+config = Button <button> <x> <y> [Focus] <windowname> | WindowID <id> 
+	| CurrentWindow | RootWindow
+config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> [Focus] <windowname> 
 	| WindowID id | CurrentWindow | RootWindow
 .RE
 .fi
@@ -91,7 +92,8 @@ config = Key shift-Page_Up rxvt
 
 .RS 3
 .nf
-LINE    = "config =" <KEY|BUTTON|XYKEY> <TARGET>
+LINE    = "config =" <KEY|BUTTON|XYKEY> <TARGET> |
+          "config =" <KEY|BUTTON|XYKEY> "Focus" <TARGET>
 XYKEY   = "xy_Key" <x_position> <y_position> <MOD>Keyname
 KEY     = "Key" <MOD>Keyname
 MOD     = ["shift-"]["numlock-"]["ctrl-"]["alt-"]["meta-"]
@@ -131,6 +133,12 @@ this to send events to the window manager.
 refers to the window with window identifier \fIid\fR. \fIid\fR should be a
 decimal number. It is useful when irxevent can't find the desired window by
 other means.
+.RE
+.I Focus:
+.RS 2
+will send the specified event to the given window only if it currently has the
+input focus. This of course does not make much sense when combined with
+CurrentWindow.
 .RE
 .RE
 

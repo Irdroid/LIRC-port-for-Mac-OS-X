@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.10 2003/02/13 16:09:08 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.11 2004/03/25 20:02:24 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -92,7 +92,7 @@
 
 #include "lirc_client.h"
 
-/* #define DEBUG */
+#define DEBUG
 #ifdef DEBUG
 void debugprintf(char *format_str, ...)
 {
@@ -168,7 +168,7 @@ Window find_window(Window top,char *name)
   if (XFetchName(dpy,top,&wname)){
     if (!strncmp(wname,name,strlen(name)))  {
       XFree(wname);
-      debugprintf("found it by wname %x \n",top);
+      debugprintf("found it by wname 0x%x \n",top);
       return(top);  /* found it! */
     };
     XFree(wname);
@@ -177,7 +177,7 @@ Window find_window(Window top,char *name)
   if(XGetIconName(dpy,top,&iname)){
     if (!strncmp(iname,name,strlen(name)))  {
       XFree(iname);
-      debugprintf("found it by iname %x \n",top);
+      debugprintf("found it by iname 0x%x \n",top);
       return(top);  /* found it! */
     };
     XFree(iname);
@@ -186,12 +186,12 @@ Window find_window(Window top,char *name)
   if(XGetClassHint(dpy,top,&xch))  {
     if(!strcmp(xch.res_class,name))  {
       XFree(xch.res_name); XFree(xch.res_class);
-      debugprintf("res_class '%s' res_name '%s' %x \n", xch.res_class,xch.res_name,top);
+      debugprintf("res_class '%s' res_name '%s' 0x%x \n", xch.res_class,xch.res_name,top);
       return(top);  /* found it! */
     };
     if(!strcmp(xch.res_name,name))  {
       XFree(xch.res_name); XFree(xch.res_class);
-      debugprintf("res_class '%s' res_name '%s' %x \n", xch.res_class,xch.res_name,top);
+      debugprintf("res_class '%s' res_name '%s' 0x%x \n", xch.res_class,xch.res_name,top);
       return(top);  /* found it! */
     };
     XFree(xch.res_name); XFree(xch.res_class);
@@ -231,7 +231,7 @@ Window find_sub_sub_window(Window top,int *x, int *y)
     if(XGetGeometry(dpy, children[nc-1], &foo, &rel_x, &rel_y, 
 		    &width, &height, &border, &depth)){
       if ((rel_x<=*x)&&(*x<=rel_x+width)&&(rel_y<=*y)&&(*y<=rel_y+height)){
-	debugprintf("found a subwindow %x +%d +%d  %d x %d   \n",children[nc-1], rel_x,rel_y,width,height);
+	debugprintf("found a subwindow 0x%x +%d +%d  %d x %d   \n",children[nc-1], rel_x,rel_y,width,height);
 	if ((width*height)<targetsize){
 	  target=children[nc-1];
 	  targetsize=width*height;
@@ -275,7 +275,7 @@ Window find_sub_window(Window top,char *name,int *x, int *y)
     if(XGetGeometry(dpy, children[nc-1], &foo, &rel_x, &rel_y, 
 		    &width, &height, &border, &depth)){
       if ((rel_x<=*x)&&(*x<=rel_x+width)&&(rel_y<=*y)&&(*y<=rel_y+height)){
-	debugprintf("found a subwindow %x +%d +%d  %d x %d   \n",children[nc-1], rel_x,rel_y,width,height);
+	debugprintf("found a subwindow 0x%x +%d +%d  %d x %d   \n",children[nc-1], rel_x,rel_y,width,height);
 	if ((width*height)<targetsize){
 	  target=children[nc-1];
 	  targetsize=width*height;
@@ -296,6 +296,39 @@ Window find_sub_window(Window top,char *name,int *x, int *y)
     return base;
 }
 
+
+Window find_window_focused(Window top,char *name) 
+{
+  int tmp;
+  Window w, cur, *children, foo;
+  unsigned int n;
+
+ 
+  /* return the currently focused window if it is a direct match or a
+     subwindow of the named window */
+
+  if((w=find_window(top,name))) {
+    XGetInputFocus(dpy, &cur, &tmp);
+    debugprintf("current window: 0x%x named window: 0x%x\n",cur,w);
+
+    if( w == cur ) {
+      /* window matched */
+      return(cur);
+    } 
+    else if(XQueryTree(dpy,w,&foo,&foo,&children,&n) && children!=NULL) {
+      /* check all the sub windows of named window */
+      for(;n>0;n--)  {
+	if(children[n-1] == cur ) {
+	  XFree(children);
+	  return(cur);
+	}
+      }
+      XFree(children);
+    } 
+  }
+  
+  return(0);
+}
 
 void make_button(int button,int x,int y,XButtonEvent *xev)
 {
@@ -447,9 +480,18 @@ int check(char *s)
       return(-1);
     }
 
-  if(2!=sscanf(s,"Key %s %s\n",buffer,buffer) &&
-     4!=sscanf(s,"Button %d %d %d %s\n",&d,&d,&d,buffer) &&
-     4!=sscanf(s,"xy_Key %d %d %s %s\n",&d,&d,buffer,buffer))
+  if(2!=sscanf(s,"Key %s Focus %s %s",buffer,buffer,buffer) &&
+     2!=sscanf(s,"Key %s WindowID %i %s",buffer,&d,buffer) &&
+     2!=sscanf(s,"Key %s Focus WindowID %i %s",buffer,&d,buffer) &&
+     2!=sscanf(s,"Key %s %s %s",buffer,buffer,buffer) &&
+     4!=sscanf(s,"Button %d %d %d Focus %s %s",&d,&d,&d,buffer,buffer) &&
+     4!=sscanf(s,"Button %d %d %d WindowID %i %s",&d,&d,&d,&d,buffer) &&
+     4!=sscanf(s,"Button %d %d %d Focus WindowID %i %s",&d,&d,&d,&d,buffer) &&
+     4!=sscanf(s,"Button %d %d %d %s %s",&d,&d,&d,buffer,buffer) &&
+     4!=sscanf(s,"xy_Key %d %d %s Focus %s %s",&d,&d,buffer,buffer,buffer) &&
+     4!=sscanf(s,"xy_Key %d %d %s WindowID %i %s",&d,&d,buffer,&d,buffer) &&
+     4!=sscanf(s,"xy_Key %d %d %s Focus WindowID %i %s",&d,&d,buffer,&d,buffer) &&
+     4!=sscanf(s,"xy_Key %d %d %s %s",&d,&d,buffer,buffer))
     {
       fprintf(stderr,"%s: bad config string \"%s\"\n",progname,s);
       free(buffer);
@@ -523,57 +565,75 @@ int main(int argc, char *argv[])
 	  if(ir==NULL) continue;
 	  while((ret=lirc_code2char(config,ir,&c))==0 && c!=NULL)
 	    {
-	      debugprintf("Recieved code: %sSending event: ",ir);
-	      if(2==sscanf(c,"Key %s WindowID %d\n",keyname,&WindowID))
-		{
-		  debugprintf("keyname: %s \t WindowID: %d\n",keyname,WindowID);
-		  sendkey(keyname,1,1,(Window)WindowID,0);
-		}
-	      else if(2==sscanf(c,"Key %s %s\n",keyname,windowname))
-		{
-		  if((w=find_window(root,windowname)))
-		    {
-		      debugprintf("keyname: %s \t windowname: %s\n",keyname,windowname);
-		      sendkey(keyname,1,1,w,0);
-		    }
-		  else
-		    {
-		      debugprintf("target window '%s' not found \n",windowname);
-		    }
-		}
-	      else if(4==sscanf(c,"Button %d %d %d %s\n",
-				&pointer_button,&pointer_x,
-				&pointer_y,windowname))
-		{
+	      debugprintf("Recieved code: %s Sending event: \n",ir);
+	      
+	      *windowname=0;
+	      if(2==sscanf(c,"Key %s Focus WindowID %i",keyname,&WindowID) ||
+		 4==sscanf(c,"Button %d %d %d Focus WindowID %i",&pointer_button,&pointer_x,&pointer_y,&WindowID) ||
+		 4==sscanf(c,"xy_Key %d %d %s Focus WindowID %i",&pointer_x,&pointer_y,keyname,&WindowID) ||
+		 2==sscanf(c,"Key %s Focus %s",keyname,windowname) ||
+		 4==sscanf(c,"Button %d %d %d Focus %s",&pointer_button,&pointer_x,&pointer_y,windowname) ||
+		 4==sscanf(c,"xy_Key %d %d %s Focus %s",&pointer_x,&pointer_y,keyname,windowname))
+	      {
+		debugprintf("Focus\n");
+		/* focussed ? */
+		if(*windowname) {
+		  WindowID=find_window_focused(root,windowname);
+		  if(!WindowID) {
+		    debugprintf("target window '%s' doesn't have focus\n",windowname);
+		    continue;
+		  }
+		  debugprintf("focused:  %s\n",windowname);
+		} else {
+		  Window cur;
+		  int tmp;
 		  
-		  if((w=find_window(root,windowname)) &&
-		     (subw=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
-		    {
-		      if (w==subw) subw=0;
-		      debugprintf(" %s\n",c);
-		      sendbutton(pointer_button,pointer_x,pointer_y,w,subw);
-		    }
-		  else
-		    {
-		      debugprintf("target window '%s' not found \n",windowname);
-		    }
+		  XGetInputFocus(dpy, &cur, &tmp);
+		  if(WindowID != cur) {
+		    debugprintf("target window '0x%x' doesn't have focus\n",WindowID);
+		    continue;
+		  }
+		  debugprintf("focused:  0x%x\n",WindowID);
 		}
-	      else if(4==sscanf(c,"xy_Key %d %d %s %s\n",
-				&pointer_x,&pointer_y,
-				keyname,windowname))
-		{
-		  
-		  if((w=find_window(root,windowname))&& (subw=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
-		    {
-		      debugprintf(" %s\n",c);
-		      if (w==subw) subw=0;
-		      sendkey(keyname,pointer_x,pointer_y,w,subw);
-		    }
-		  else
-		    {
-		      debugprintf("target window '%s' not found \n",windowname);
-		    }
+	      } else if(2==sscanf(c,"Key %s WindowID %i",keyname,&WindowID) ||
+			4==sscanf(c,"Button %d %d %d WindowID %i",&pointer_button,&pointer_x,&pointer_y,&WindowID) ||
+			4==sscanf(c,"xy_Key %d %d %s WindowID %i",&pointer_x,&pointer_y,keyname,&WindowID)) {
+		debugprintf("WindowID:  0x%x\n",WindowID);
+		/* WindowID passed */
+	      } else if(2==sscanf(c,"Key %s %s",keyname,windowname) || 
+			4==sscanf(c,"Button %d %d %d %s",&pointer_button,&pointer_x,&pointer_y,windowname) ||
+			4==sscanf(c,"xy_Key %d %d %s %s\n",&pointer_x,&pointer_y,keyname,windowname)) {
+		debugprintf("name: %s\n",windowname);
+		WindowID=find_window(root,windowname);
+	      }
+	      
+	      switch(c[0])
+	      {
+	      case 'K': // Key
+		debugprintf("keyname: %s \t WindowID: 0x%x\n",keyname,WindowID);
+		debugprintf("%s\n",c);
+		sendkey(keyname,1,1,(Window)WindowID,0);
+		break;
+		
+	      case 'B': // Button
+	      case 'x': // xy_Key
+		subw=find_sub_window(root,windowname,&pointer_x,&pointer_y);
+		if(subw) {
+		  if (WindowID==subw) subw=0;
+		  debugprintf("%s\n",c);
+		  switch(c[0])
+		  {
+		  case 'B':
+		    sendbutton(pointer_button,pointer_x,pointer_y,WindowID,subw);
+		    break;
+		  case 'x':
+		    sendkey(keyname,pointer_x,pointer_y,WindowID,subw);
+		    break;
+		  }
 		}
+		break;
+		
+	      }
 	    }
 	  free(ir);
 	  if(ret==-1) break;
