@@ -110,6 +110,8 @@ end remote
 # supports one channel.  See the GATOS project for information
 # on how to change the channel.  Not tested.  Unknown channel.
 #
+# also reported by Jeffrey Barnhill to work with model 5000023600 while
+# the dedicated section below did not work
 
 begin remote
 
@@ -436,7 +438,14 @@ end remote
 # model no. of remote control: 
 # devices being controlled by this remote: ATI USB Receiver (X10).
 #
-# * remote is set to channel 1, driver reports channel 16. don't know which is true.
+# * remote is set to channel 1, driver reports channel 16. don't know 
+# which is true.
+
+#
+# P:  Vendor=0bc7 ProdID=0004 Rev= 1.00
+# S:  Manufacturer=X10 Wireless Technology Inc
+# S:  Product=USB Receiver
+#
 
 begin remote
 
