@@ -1,10 +1,10 @@
-/*      $Id: hw_slinke.c,v 5.4 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: hw_slinke.c,v 5.5 2001/04/24 19:26:56 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
  ****************************************************************************
  *
- * routines for Slinke reciever 
+ * routines for Slinke receiver 
  * 
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *  modified for logitech receiver by Isaac Lauer <inl101@alumni.psu.edu>

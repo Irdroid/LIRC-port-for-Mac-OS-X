@@ -10,7 +10,7 @@
 # The receiver that comes with it hooks into the serial port and works 
 # fine with lirc 0.5.4.
 #
-# The reciever that comes with the remote is near garbage. If 
+# The receiver that comes with the remote is near garbage. If 
 # you don't point almost directly at it, it will not detect. But
 # it's simpler than building your own. :-)
 #

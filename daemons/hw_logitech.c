@@ -1,13 +1,13 @@
-/*      $Id: hw_logitech.c,v 1.9 2001/01/21 12:54:42 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.10 2001/04/24 19:26:56 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
  ****************************************************************************
  *
- * routines for Logitech reciever 
+ * routines for Logitech receiver 
  * 
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
- * 	modified for logitech reciever by Isaac Lauer <inl101@alumni.psu.edu>
+ * 	modified for logitech receiver by Isaac Lauer <inl101@alumni.psu.edu>
  *
  */
 
