@@ -1,5 +1,5 @@
-/* lirc_usb - USB remote support for LIRC
- * (currently only supports ATI Remote Wonder USB)
+/* lirc_atiusb - USB remote support for LIRC
+ * (currently only supports X10 USB remotes)
  * Version 0.3  [beta status]
  *
  * Copyright (C) 2003-2004 Paul Miller <pmiller9@users.sourceforge.net>
@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.16 2004/01/24 16:26:11 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.17 2004/01/24 18:34:54 pmiller9 Exp $
  */
 
 /*
@@ -518,6 +518,8 @@ static int __init usb_remote_init(void)
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled\n");
+
+	request_module("lirc_dev");
 
 	if ((i = usb_register(&usb_remote_driver)) < 0) {
 		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
