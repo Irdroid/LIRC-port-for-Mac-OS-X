@@ -4,7 +4,7 @@
  *
  *  routines for Ericsson mobile phone receiver (BTE)
  * 
- *  Copyright (C) 2003 Vadim Shliakhov <vadp@fromru.com>
+ *  Copyright (C) 2003 Vadim Shliakhov <svadim@nm.ru>
  *
  *
  *  This program is free software; you can redistribute it and/or modify

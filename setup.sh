@@ -61,7 +61,7 @@ GetSelectedDriver ()
     LPT1="off"; LPT2="off"; LPT3="off"; USER="off"
     IRTTY="none"
 
-    if   test "$DRIVER_PARAMETER" = "btty"; then IRTTY="/dev/btty"; LIRC_PORT="none"; LIRC_IRQ="none"
+    if   test "$DRIVER_PARAMETER" = "btty"; then IRTTY="/dev/rfcomm0"; LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "ttyUSB1"; then COM1="on"; IRTTY="/dev/ttyUSB0"; LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "ttyUSB2"; then COM2="on"; IRTTY="/dev/ttyUSB1"; LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "ttyUSB3"; then COM3="on"; IRTTY="/dev/ttyUSB2"; LIRC_PORT="none"; LIRC_IRQ="none"
