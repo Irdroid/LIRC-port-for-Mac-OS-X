@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.11 2000/08/23 19:47:25 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.12 2000/09/27 18:13:49 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -128,7 +128,13 @@
  * compatibility and useability defines
  */
 
-#define LIRC_DRIVER_DEVICE	DEVDIR "/" DEV_LIRC
+/* FIXME */
+#ifdef LIRC_HAVE_DEVFS
+#define LIRC_DRIVER_DEVICE	DEVDIR "/" DEV_LIRC "/0"
+#else
+#define LIRC_DRIVER_DEVICE      DEVDIR "/" DEV_LIRC
+#endif /* LIRC_HAVE_DEVFS */
+
 #define LIRCD			DEVDIR "/" DEV_LIRCD
 #define LIRCM			DEVDIR "/" DEV_LIRCM
 
