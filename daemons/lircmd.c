@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.15 2004/04/25 16:29:24 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.16 2004/11/20 10:23:36 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -68,7 +68,7 @@ enum directive {move_n,move_ne,move_e,move_se,
 		button1_down,button1_up,button1_toggle,button1_click,
 		button2_down,button2_up,button2_toggle,button2_click,
 		button3_down,button3_up,button3_toggle,button3_click,
-		mouse_activate,mouse_toggle_activate
+		mouse_activate,mouse_toggle_activate,ignore
 };
 
 struct config_mouse
@@ -102,7 +102,8 @@ struct config_mouse config_table[]=
 	{"BUTTON3_UP"         ,button3_up      , 0, 0, 0,      0,BUTTON3, 0},
 	{"BUTTON3_TOGGLE"     ,button3_toggle  , 0, 0, 0,BUTTON3,BUTTON3, 1},
 	{"BUTTON3_CLICK"      ,button3_click   , 0, 0, 0,BUTTON3,BUTTON3, 0},
-	{NULL                 ,button3_click   , 0, 0, 0,      0,      0, 0}
+	{"IGNORE"             ,ignore          , 0, 0, 0,      0,      0, 0},
+	{NULL                 ,ignore          , 0, 0, 0,      0,      0, 0}
 };
 
 enum protocol {mouse_systems,imps_2,im_serial};
@@ -414,7 +415,8 @@ void mouse_conv(int rep,char *button,char *remote)
 			}
 		}
 		
-		if(ms.active || ms.always_active)
+		if(tm->tm_directive!=ignore &&
+		   (ms.active || ms.always_active))
 		{
 			int i;
 			for(i=0;config_table[i].string!=NULL;i++)

@@ -264,6 +264,15 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	  (x=2) or right (x=3) mouse button.
 	</P>
       </DD>
+      <DT>IGNORE&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT> 
+      <DD>
+	<P>
+	  Pressing ignored buttons won't cause the mouse daemon to deactivate.
+	  This is useful, for example, if your remote sends seperate press or
+	  release codes that you have mapped in your lircd.conf.  This only
+	  makes sense if you use ACTIVATE instead of TOGGLE_ACTIVATE.
+	</P>
+      </DD>
     </DL>
     
     <P>

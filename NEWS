@@ -1,4 +1,5 @@
 0.7.1: future
+  * added IGNORE directive to lircmd (Steven Mueller)
 
 0.7.0: 11/07/04
   * added userspace USB driver for ATI remotes (Michael Gold)
