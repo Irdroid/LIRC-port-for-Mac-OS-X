@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.25 2003/02/15 09:05:43 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.26 2003/05/01 20:23:05 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -23,6 +23,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 /* disable daemonise if maintainer mode SIM_REC / SIM_SEND defined */
 #if defined(SIM_REC) || defined (SIM_SEND)
@@ -160,16 +162,50 @@ int default_init()
 	/* FIXME: other modules might need this, too */
 	init_rec_buffer();
 	init_send_buffer();
-	if((hw.fd=open(hw.device,O_RDWR))<0)
+
+	if(stat(hw.device,&s)==-1)
 	{
-		logprintf(LOG_ERR,"could not open %s",hw.device);
+		logprintf(LOG_ERR,"could not get file information for %s",
+			  hw.device);
 		logperror(LOG_ERR,"default_init()");
 		return(0);
 	}
-	if(fstat(hw.fd,&s)==-1)
+	
+        /* file could be unix socket, fifo and native lirc device */
+        if(S_ISSOCK(s.st_mode))
 	{
-		default_deinit();
-		logprintf(LOG_ERR,"could not get file information");
+		struct sockaddr_un addr;
+        	addr.sun_family=AF_UNIX;
+                strncpy(addr.sun_path,hw.device,sizeof(addr.sun_path));
+
+                hw.fd=socket(AF_UNIX,SOCK_STREAM,0);
+                if(hw.fd==-1)
+		{
+			logprintf(LOG_ERR,"could not create socket");
+			logperror(LOG_ERR,"default_init()");
+			return(0);
+        	}
+		
+        	if(connect(hw.fd,(struct sockaddr *) &addr,sizeof(addr))==-1)
+		{
+			logprintf(LOG_ERR,"could not connect to unix socket %s",
+				  hw.device);
+			logperror(LOG_ERR,"default_init()");
+			default_deinit();
+            		close(hw.fd);
+            		return(0);
+        	}
+		
+        	LOGPRINTF(1,"using unix socket lirc device");
+        	hw.features=LIRC_CAN_REC_MODE2 | LIRC_CAN_SEND_PULSE;
+        	hw.rec_mode=LIRC_MODE_MODE2; /* this might change in future */
+        	hw.send_mode=LIRC_MODE_PULSE;
+        	return(1);
+        }
+	
+        if((hw.fd=open(hw.device,O_RDWR))<0)
+	{
+		logprintf(LOG_ERR,"could not open %s",hw.device);
 		logperror(LOG_ERR,"default_init()");
 		return(0);
 	}
