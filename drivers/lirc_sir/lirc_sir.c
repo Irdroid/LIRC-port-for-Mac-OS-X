@@ -1068,9 +1068,15 @@ static int init_port(void)
 
 static void drop_port(void)
 {
-	del_timer_sync(&timerlist);
 	disable_irq(irq);
 	free_irq(irq, NULL);
+#ifdef KERNEL_2_3
+	del_timer_sync(&timerlist);
+#else
+	start_bh_atomic();
+	del_timer(&timerlist);
+	end_bh_atomic();
+#endif
 #ifndef LIRC_ON_IPAQ
 	release_region(iobase, 8);
 #endif
