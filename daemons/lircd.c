@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.21 2000/07/26 19:49:16 columbus Exp $      */
+/*      $Id: lircd.c,v 5.22 2000/08/17 17:44:57 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -371,7 +371,12 @@ void remove_client(int fd)
 			logprintf(LOG_INFO,"removed client");
 			
 			clin--;
-			if(clin==0 && hw.deinit_func) hw.deinit_func();
+			if(clin==0 &&
+			   repeat_remote==NULL &&
+			   hw.deinit_func)
+			{
+				hw.deinit_func();
+			}
 			for(;i<clin;i++)
 			{
 				clis[i]=clis[i+1];
@@ -406,7 +411,7 @@ void add_client(void)
 	}
 	nolinger(fd);
 	clis[clin++]=fd;
-	if(clin==1)
+	if(clin==1 && repeat_remote==NULL)
 	{
 		if(hw.init_func)
 		{
@@ -654,6 +659,10 @@ void dosigalrm(int sig)
 	}
 	repeat_remote=NULL;
 	repeat_code=NULL;
+	if(clin==0 && repeat_remote==NULL && hw.deinit_func)
+	{
+		hw.deinit_func();
+	}
 }
 
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
@@ -939,6 +948,12 @@ int send_core(int fd,char *message,char *arguments,int once)
 		{
 			repeat_remote=NULL;
 			repeat_code=NULL;
+			if(clin==0 &&
+			   repeat_remote==NULL &&
+			   hw.deinit_func)
+			{
+				hw.deinit_func();
+			}
 			return(0);
 		}
 		setitimer(ITIMER_REAL,&repeat_timer,NULL);
@@ -981,6 +996,7 @@ int send_stop(int fd,char *message,char *arguments)
 		
 		repeat_remote=NULL;
 		repeat_code=NULL;
+		/* clin!=0, so we don't have to deinit hardware */
 		alrm=0;
 		return(send_success(fd,message));
 	}
