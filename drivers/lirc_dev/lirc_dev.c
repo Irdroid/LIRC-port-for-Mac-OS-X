@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.28 2004/02/29 11:53:25 lirc Exp $
+ * $Id: lirc_dev.c,v 1.29 2004/03/15 20:52:12 lirc Exp $
  *
  */
 
@@ -190,7 +190,7 @@ static int lirc_thread(void *irctl)
 			} else {
 				interruptible_sleep_on(ir->p.get_queue(ir->p.data));
 			}
-			if (ir->shutdown || !ir->open) {
+			if (ir->shutdown) {
 				break;
 			}
 			if (!add_to_buf(ir)) {
