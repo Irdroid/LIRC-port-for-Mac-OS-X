@@ -204,7 +204,8 @@ static int init_chrdev(void);
 static void drop_chrdev(void);
 #endif
 	/* Hardware */
-static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs);
+static irqreturn_t sir_interrupt(int irq, void * dev_id,
+				 struct pt_regs * regs);
 #ifndef LIRC_SIR_TEKRAM
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
@@ -350,7 +351,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 	/* disable receiver */
 	Ser2UTCR3=0;
 #endif
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	while (1) {
 		if (i >= n)
 			break;
@@ -363,7 +364,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 			send_space(tx_buf[i]);
 		i++;
 	}
-	restore_flags(flags);
+	local_irq_restore(flags);
 #ifdef LIRC_ON_SA1100
 	off();
 	udelay(1000); /* wait 1ms for IR diode to recover */
@@ -621,7 +622,8 @@ static void sir_timeout(unsigned long data)
 	spin_unlock_irqrestore(&timer_lock, flags);		
 }
 
-static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
+static irqreturn_t sir_interrupt(int irq, void * dev_id,
+				 struct pt_regs * regs)
 {
 	unsigned char data;
 	struct timeval curr_tv;
@@ -783,6 +785,7 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 		}
 	}
 #endif
+	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
 #ifdef LIRC_ON_SA1100
@@ -872,7 +875,7 @@ static inline int sa1100_irda_set_power_collie(int state)
 
 static int init_hardware(void)
 {
-	int flags;
+	unsigned long flags;
 	
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
@@ -1019,7 +1022,7 @@ static int init_hardware(void)
 
 static void drop_hardware(void)
 {
-	int flags;
+	unsigned long flags;
 
 	spin_lock_irqsave(&hardware_lock, flags);
 
@@ -1289,7 +1292,9 @@ MODULE_PARM_DESC(threshold, "space detection threshold (3)");
 MODULE_LICENSE("GPL");
 #endif
 
+#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
+#endif
 
 int init_module(void)
 {

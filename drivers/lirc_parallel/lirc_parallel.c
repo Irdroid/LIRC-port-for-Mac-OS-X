@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.19 2004/02/29 11:53:39 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.20 2004/03/28 15:20:56 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -67,6 +67,7 @@
 #include <linux/parport.h>
 
 #include "drivers/lirc.h"
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 #include "lirc_parallel.h"
@@ -448,7 +449,7 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 		wbuf[i]=(lirc_t) (((double) wbuf[i])*timer/1000000);
 	}
 	
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	i=0;
 	while(i<count)
 	{
@@ -463,7 +464,7 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 			if(in(1)&LP_PSELECD)
 			{
 				lirc_off();
-				restore_flags(flags); /* sti(); */
+				local_irq_restore(flags);
 				return(-EIO);
 			}
 		}
@@ -479,13 +480,13 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 			level=newlevel;
 			if(in(1)&LP_PSELECD)
 			{
-				restore_flags(flags); /* sti(); */
+				local_irq_restore(flags);
 				return(-EIO);
 			}
 		}
 		while(counttimer<wbuf[i]);i++;
 	}
-	restore_flags(flags); /* sti(); */
+	local_irq_restore(flags);
 #else
 	/* 
 	   place code that handles write
@@ -624,7 +625,9 @@ MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
 
+#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
+#endif
 
 int pf(void *handle);
 void kf(void *handle);

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.50 2004/02/29 11:53:39 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.51 2004/03/28 15:20:56 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -97,6 +97,7 @@
 #include <asm/fcntl.h>
 
 #include "drivers/lirc.h"
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 #if defined(LIRC_SERIAL_SOFTCARRIER) && !defined(LIRC_SERIAL_TRANSMITTER)
@@ -635,7 +636,7 @@ static void inline frbwrite(lirc_t l)
 	rbwrite(l);
 }
 
-void irq_handler(int i, void *blah, struct pt_regs *regs)
+irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 {
 	struct timeval tv;
 	int status,counter,dcd;
@@ -725,6 +726,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			wake_up_interruptible(&rbuf.wait_poll);
 		}
 	} while(!(sinp(UART_IIR) & UART_IIR_NO_INT)); /* still pending ? */
+	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
 static DECLARE_WAIT_QUEUE_HEAD(power_supply_queue);
@@ -751,7 +753,7 @@ static int init_port(void)
 	/* Reserve io region. */
 	request_region(io, 8, LIRC_DRIVER_NAME);
 	
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
@@ -795,7 +797,7 @@ static int init_port(void)
 		break;
 	}
 	
-	restore_flags(flags);
+	local_irq_restore(flags);
 	
 	/* Initialize pulse/space widths */
 	init_timing_params(duty_cycle, freq);
@@ -861,14 +863,14 @@ static int set_use_inc(void* data)
 		break;
 	};
 
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
 	
 	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
 	
-	restore_flags(flags);
+	local_irq_restore(flags);
 	
 	MOD_INC_USE_COUNT;
 	spin_unlock(&lirc_lock);
@@ -878,7 +880,7 @@ static int set_use_inc(void* data)
 static void set_use_dec(void* data)
 {	unsigned long flags;
 	
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
@@ -886,7 +888,7 @@ static void set_use_dec(void* data)
 	/* First of all, disable all interrupts */
 	soutp(UART_IER, sinp(UART_IER)&
 	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
-	restore_flags(flags);
+	local_irq_restore(flags);
 	
 	free_irq(irq, NULL);
 #       ifdef DEBUG
@@ -915,7 +917,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	count=n/sizeof(lirc_t);
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
 	copy_from_user(wbuf,buf,n);
-	save_flags(flags);cli();
+	local_irq_save(flags);
 	if(hardware[type].type==LIRC_IRDEO)
 	{
 		/* DTR, RTS down */
@@ -927,7 +929,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 		else delta=hardware[type].send_pulse(wbuf[i]);
 	}
 	off();
-	restore_flags(flags);
+	local_irq_restore(flags);
 	return(n);
 }
 
@@ -1050,7 +1052,9 @@ MODULE_PARM(softcarrier, "i");
 MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
 
 
+#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
+#endif
 
 int init_module(void)
 {

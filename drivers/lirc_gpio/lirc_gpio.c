@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.35 2004/02/29 11:53:38 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.36 2004/03/28 15:20:56 lirc Exp $
  *
  */
 
@@ -39,7 +39,9 @@
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/sched.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #include <linux/wrapper.h>
+#endif
 #include <linux/errno.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
@@ -58,6 +60,7 @@
 #error "*******************************************************"
 #endif
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 static int debug = 0;
@@ -430,7 +433,9 @@ int gpio_remote_init(void)
 	return SUCCESS;
 }
 
-EXPORT_NO_SYMBOLS; 
+#ifndef KERNEL_2_5
+EXPORT_NO_SYMBOLS;
+#endif
 
 /* Dont try to use it as a static version !  */
 

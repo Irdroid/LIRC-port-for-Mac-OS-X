@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.29 2004/03/15 20:52:12 lirc Exp $
+ * $Id: lirc_dev.c,v 1.30 2004/03/28 15:20:55 lirc Exp $
  *
  */
 
@@ -28,6 +28,12 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
 #define LIRC_HAVE_DEVFS
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#warning "**********************************************************"
+#warning "************ disabling devfs for 2.6 kernels *************"
+#warning "**********************************************************"
+#undef LIRC_HAVE_DEVFS
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
@@ -51,10 +57,13 @@
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
 #include <asm/errno.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #include <linux/wrapper.h>
+#endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc.h"
 
 #include "lirc_dev.h"
@@ -158,23 +167,10 @@ static int lirc_thread(void *irctl)
 {
 	struct irctl *ir = irctl;
 	
-	lock_kernel();
-	
 	/* This thread doesn't need any user-level access,
 	 * so get rid of all our resources
 	 */
-	exit_mm(current);
-	exit_files(current);
-	exit_fs(current);
-	current->session = 1;
-	current->pgrp = 1;
-	current->euid = 0;
-	current->tty = NULL;
-	sigfillset(&current->blocked);
-	
-	strcpy(current->comm, "lirc_dev");
-	
-	unlock_kernel();
+	daemonize("lirc_dev");
 	
 	if (ir->t_notify != NULL) {
 		up(ir->t_notify);
