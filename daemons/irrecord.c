@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.44 2003/01/04 16:10:48 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.45 2003/05/04 20:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -186,6 +186,7 @@ int main(int argc,char **argv)
 	int force;
 	int retries;
 	struct ir_remote *remotes=NULL;
+	char *device=NULL;
 #ifdef DEBUG
 	int get_pre=0,get_post=0,test=0,invert=0;
 #endif
@@ -239,7 +240,7 @@ int main(int argc,char **argv)
 				exit (EXIT_FAILURE);
 			}
 		case 'd':
-			hw.device=optarg;
+			device=optarg;
 			break;
 		case 'f':
 			force=1;
@@ -271,6 +272,10 @@ int main(int argc,char **argv)
 	{
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		exit(EXIT_FAILURE);
+	}
+	if(device!=NULL)
+	{
+		hw.device=device;
 	}
 	if(strcmp(hw.name, "null")==0)
 	{

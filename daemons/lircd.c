@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.50 2003/05/01 20:23:06 lirc Exp $      */
+/*      $Id: lircd.c,v 5.51 2003/05/04 20:15:10 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1758,6 +1758,7 @@ int main(int argc,char **argv)
 	struct sigaction act;
 	int nodaemon=0;
 	mode_t permission=S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
+	char *device=NULL;
 
 	hw_choose_driver(NULL);
 	while(1)
@@ -1837,7 +1838,7 @@ int main(int argc,char **argv)
 			}
 			break;
 		case 'd':
-			hw.device=optarg;
+			device=optarg;
 			break;
                 case 'i':
                         pidfile=optarg;
@@ -1901,6 +1902,10 @@ int main(int argc,char **argv)
 		return(EXIT_FAILURE);
 	}
 	
+	if(device!=NULL)
+	{
+		hw.device=device;
+	}
 	if(strcmp(hw.name, "null")==0 && peern==0)
 	{
 		fprintf(stderr,"%s: there's no hardware I can use and "
