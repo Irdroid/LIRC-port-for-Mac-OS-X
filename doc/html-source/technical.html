@@ -532,15 +532,35 @@ fi</PRE>
     <H1 ALIGN="CENTER">Known bugs</H1>
     <HR WIDTH="70%">
     
-    <P>
-      If you use the <em>lirc_serial</em> or <em>lirc_parallel</em>
-      driver regularly to transmit infra-red signals you might notice
-      that your system clock will slow down. During transmit the
-      driver turns off interrupts and hence some clock interrupts
-      might get lost causing system clock inaccuracy. Unfortunately in
-      order to ensure a good signal timing interrupts have to be
-      disabled. Currently no work-around is known for this problem
-      except using a program like <em>netdate</em> to synchronize your
-      system clock regularly.
-    </P>
+    <UL>
+      <LI>
+	<P>
+	  If you use the <em>lirc_serial</em> or
+	  <em>lirc_parallel</em> driver regularly to transmit
+	  infra-red signals you might notice that your system clock
+	  will slow down. During transmit the driver turns off
+	  interrupts and hence some clock interrupts might get lost
+	  causing system clock inaccuracy. Unfortunately in order to
+	  ensure a good signal timing interrupts have to be
+	  disabled. Currently no work-around is known for this problem
+	  except using a program like <em>netdate</em> to synchronize
+	  your system clock regularly.
+	</P>
+      </LI>
+      <LI>
+	<P>
+	  The <em>lirc_serial</em> and <em>lirc_parallel</em> drivers
+	  measure the time between interrupts on the serial resp.
+	  parallel port to get a pulse and space representation of the
+	  incoming infra-red signal. If interrupts are disabled by the
+	  CPU for a rather long time (&gt;100 &micro;s, which happens often
+	  e.g. during heavy IDE disk activity) some interrupts might
+	  get lost and the the incoming data stream becomes
+	  disturbed. In this case decoding of the infra-red signal
+	  will fail. This is the downside of the really simple
+	  receiver circuits and can't be addressed in software except
+	  keeping the time interrupts are disabled to a minimum.
+	</P>
+      </LI>
+    </UL>
     
