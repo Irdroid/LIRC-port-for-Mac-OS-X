@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.10 2003/05/02 14:46:19 ranty Exp $
+ * $Id: lirc_dev.h,v 1.11 2003/05/02 18:56:44 ranty Exp $
  *
  */
 
@@ -61,7 +61,7 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 }
 static inline int  lirc_buffer_full(struct lirc_buffer *buf)
 {
-	return (buf->fill == buf->size);
+	return (buf->fill >= buf->size);
 }
 static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
 {
