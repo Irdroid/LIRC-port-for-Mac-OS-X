@@ -336,7 +336,7 @@ ConfigDriver ()
 			r "Tekram M230 Mach64 (and others bt829 based)" \
 			s "TView99 CPH063 (card=38)" \
 			t "Typhoon TView RDS / FM Stereo (card=53)" \
-			u "Winfast TV2000 (card=34)" 2> $TEMP;
+			u "Winfast TV2000/XP (card=34)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{

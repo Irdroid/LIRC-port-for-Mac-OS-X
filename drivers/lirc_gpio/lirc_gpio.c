@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.20 2002/10/25 20:42:55 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.21 2002/10/30 19:31:11 lirc Exp $
  *
  */
 
@@ -127,9 +127,16 @@ static struct rcv_info rcv_infos[] = {
  	{BTTV_TYPHOON_TVIEW,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
 #ifdef BTTV_FLYVIDEO_98FM
 	/* smorar@alfonzo.smuts.uct.ac.za */
- 	{BTTV_FLYVIDEO_98FM,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
+	{BTTV_FLYVIDEO_98FM,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
 #endif
-        {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0,  0}
+	/* The Leadtek WinFast TV 2000 XP card (id 0x6606107d) uses an
+	 * extra gpio bit compared to the original * TV 2000 card (id
+	 * 0x217d6606); as the bttv-0.7.100 * driver does not
+	 * distinguish between the two cards, we * enable the extra
+	 * bit based on the card id: */
+	{BTTV_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0,  0},
+	/* default: */
+	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0,  0}
 };
 
 static unsigned char code_length = 0;

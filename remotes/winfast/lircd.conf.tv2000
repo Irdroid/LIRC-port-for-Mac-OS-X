@@ -3,18 +3,21 @@
 # using lirc-0.6.3(pixelview_pak) on Thu May 17 16:04:02 2001
 #
 # contributed by Juan Toledo (toledo@users.sourceforge.net)
+# modified by Markus Lischka (mlischka@users.sourceforge.net)
 #
 # brand:             Leadtek
 # model:             CoolCommand
-# supported devices: Leadtek CoolCommand (Winfast TV2000)
+# supported devices: Leadtek CoolCommand (Winfast TV2000/XP)
 #
 # Please notice that only the CH+/- and VOL+/- buttons
-# repeat codes when left pressed
+# repeat codes when left pressed. Codes >= 0x20 are only supported 
+# by the remote control bundled with the 
+# WinFast TV 2000 XP Deluxe card.
 
 begin remote
 
   name  Winfast-TV2000
-  bits            5
+  bits            6
   eps            30
   aeps          100
 
@@ -52,6 +55,21 @@ begin remote
           VOL_DOWN                 0x0000000000000008
           VOL_UP                   0x0000000000000004
           FULLSCREEN               0x0000000000000003
+          SLEEP                    0x0000000000000020
+          BOSS_KEY                 0x0000000000000029
+          RED                      0x000000000000002b
+          GREEN                    0x000000000000002c
+          YELLOW                   0x000000000000002d
+          BLUE                     0x000000000000002e
+          PIP                      0x000000000000002a
+          .                        0x0000000000000021
+          BACK                     0x0000000000000022
+          PLAY                     0x0000000000000023
+          NEXT                     0x0000000000000024
+          TIMESHIFT                0x0000000000000025
+          STOP                     0x0000000000000026
+          REC                      0x0000000000000027
+          SNAPSHOT                 0x0000000000000028
       end codes
 
 end remote
