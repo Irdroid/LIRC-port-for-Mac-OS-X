@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.10 2003/03/30 12:26:44 lirc Exp $      */
+/*      $Id: mode2.c,v 5.11 2004/02/11 16:12:01 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -90,6 +90,13 @@ int main(int argc,char **argv)
 	if ( (fstat(fd,&s)!=-1) && (S_ISFIFO(s.st_mode)) )
 	{
 		/* can't do ioctls on a pipe */
+	}
+	else if ( (fstat(fd,&s)!=-1) && (!S_ISCHR(s.st_mode)) )
+	{
+		fprintf(stderr,"%s: %s is not a character device\n",progname,device);
+		fprintf(stderr,"%s: use the -d option to specify the correct device\n",progname,device);
+		close(fd);
+		exit(EXIT_FAILURE);
 	}
 	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
 	{
