@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.5 2000/02/19 19:21:59 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.6 2000/03/02 15:10:53 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -82,6 +82,8 @@ int lirc_init(char *prog,int verbose)
 	{
 		lirc_printf("%s: could not open socket\n",lirc_prog);
 		lirc_perror(lirc_prog);
+		free(lirc_prog);
+		lirc_prog=NULL;
 		return(-1);
 	}
 	if(connect(lirc_lircd,(struct sockaddr *)&addr,sizeof(addr))==-1)
@@ -89,6 +91,8 @@ int lirc_init(char *prog,int verbose)
 		close(lirc_lircd);
 		lirc_printf("%s: could not connect to socket\n",lirc_prog);
 		lirc_perror(lirc_prog);
+		free(lirc_prog);
+		lirc_prog=NULL;
 		return(-1);
 	}
 	return(lirc_lircd);
