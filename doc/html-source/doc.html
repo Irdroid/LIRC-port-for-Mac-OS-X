@@ -1,0 +1,108 @@
+<A NAME="welcome"><HR></A>
+<H1 ALIGN="CENTER">Welcome to the LIRC Manual</H1>
+<HR WIDTH="70%">
+
+<P>LIRC (<B>L</B>inux <B>I</B>nfrared <B>R</B>emote <B>C</B>ontrol)
+gives you the possibility to control your Linux box
+with a remote control. You can use it with applications under X-Windows,
+or to control a application in a pseudo-terminal. Emulated
+mouse support is also included. All what you need is an IR-Receiver
+[on serial or parallel port], available as a ready-to-run-device with
+remotes like the Animax Remote Control and the Irman or a device build
+with your own hands ;) But that's not all, experimental IR sending
+support is also included, this means you can send IR-Commands and
+control your TV, VCR ....</P>
+
+<P ALIGN="RIGHT">karsten, 1999-FEB-14</P>
+
+<P>Since the pre0.5.5 Version of LIRC, there is also support for different TV-Cards:
+Hauppauge, Avermedia, Fly98. This support is in alpha stage don't expect
+a full working driver, the most problems discussed in the mailing list are
+related to this cards. Whether this drivers are included in the upcoming
+lirc-0.5.5 release depends from the drivers itself. If there are to many
+problems, the drivers will only be available in the CVS Tree or are removed
+completely if nobody develops them anymore.</P>
+
+<P>LIRC doesn't depend on special remotes, it is able to 'understand' new
+remotes by learning their codes. This is done with the
+<A HREF="html/programs.html#irrecord"><U>irrecord</U></A> program</P>
+
+<P ALIGN="RIGHT">karsten, 1999-SEP-04</P>
+
+<P>Copyright (C) 1996 Ralph J. K. Metzler (<A 
+HREF="mailto:rjkm@thp.uni-koeln.de"><U>rjkm@thp.uni-koeln.de</U></A>)<BR>
+Copyright (C) 1998 Trent Piepho (<A 
+HREF="mailto:xyzzy@u.washington.edu"><U>xyzzy@u.washington.edu</U></A>)<BR>
+Copyright (C) 1998,1999 Christoph Bartelmus (<A 
+HREF="mailto:lirc@bartelmus.de"><U>lirc@bartelmus.de</U></A>)<BR>
+Copyright (C) 1999 Karsten Scheibler (<A 
+HREF="mailto:karsten.scheibler@bigfoot.de"><U>karsten.scheibler@bigfoot.de</U></A>)
+</P>
+
+<OL>
+<LI><B><A HREF="html/install.html">Installation
+	    Instructions</A></B></LI>
+<P>
+<UL TYPE="disc">
+<LI><A HREF="html/install.html#dependencies"><U>Dependencies</U></A> - What other programs you need to use LIRC</LI>
+<LI><A HREF="html/install.html#hardware"><U>Overview of supported
+	    hardware</U></A></LI>
+<UL>
+      <LI><A HREF="html/install.html#tv_cards"><U>Preparations for TV
+	    cards</U></A> (kernel patches, etc.)</LI>
+</UL>
+<LI><A HREF="html/install.html#compiling"><U>Compiling</U></A></LI>
+<LI><A HREF="html/install.html#testing"><U>Testing the hardware</U></A></LI>
+<LI><A HREF="html/install.html#installing"><U>Installing</U></A></LI>
+<LI><A HREF="html/install.html#uninstall"><U>Uninstalling</U></A></LI>
+<LI><A HREF="html/install.html#updating"><U>Updating from lirc-0.5.4</U></A></LI>
+</UL>
+</P>
+
+<LI><B><A HREF="html/configure.html">Configuring LIRC</A></B></LI>
+<P>
+<UL TYPE="disc">
+<LI><A HREF="html/configure.html#lircd.conf"><U>Creating a config file for lircd</U></A> (lircd - the LIRC daemon)</LI>
+<LI><A HREF="html/configure.html#lircd.conf_format"><U>lircd.conf file format</U></A></LI>
+<LI><A HREF="html/configure.html#lircmd.conf"><U>Creating a config file for lircmd</U></A> (lircmd - the LIRC mouse daemon)</LI>
+<LI><A HREF="html/configure.html#lircmd.conf_format"><U>lircmd.conf file format</U></A></LI>
+<LI><A HREF="html/configure.html#lircmd.conf_format"><U>Configuring LIRC tools</U></A></LI>
+<LI><A HREF="html/configure.html#lircrc_format"><U>.lircrc file format</U></A></LI>
+</UL>
+</P>
+
+<LI><B><A HREF="html/programs.html">Description of programs (purpose, command line arguments, etc.)</A></B></LI>
+<P>
+<UL TYPE="disc">
+<LI><A HREF="html/programs.html#lircd"><U>lircd</U></A></LI>
+<LI><A HREF="html/programs.html#lircmd"><U>lircmd</U></A></LI>
+<LI><A HREF="html/programs.html#lirmand"><U>lirmand</U></A></LI>
+<LI><A HREF="html/programs.html#irexec"><U>irexec</U></A></LI>
+<LI><A HREF="html/programs.html#irpty"><U>irpty</U></A></LI>
+<LI><A HREF="html/programs.html#irxevent"><U>irxevent</U></A></LI>
+<LI><A HREF="html/programs.html#irrecord"><U>irrecord</U></A></LI>
+<LI><A HREF="html/programs.html#irw"><U>irw</U></A></LI>
+<LI><A HREF="html/programs.html#mode2"><U>mode2, smode2, xmode2</U></A></LI>
+</UL>
+</P>
+
+
+<LI><B><A HREF="html/technical.html">Technical</A></B></LI>
+<P>
+<UL TYPE="disc">
+<LI><A HREF="html/technical.html#overview"><U>How everything works</U></A></LI>
+<LI><A HREF="html/technical.html#applications"><U>Writing applications for LIRC</U></A></LI>
+</UL>
+</P>
+
+<LI><B><A HREF="html/help.html">Getting additional information</A></B></LI>
+<P>
+<UL TYPE="disc">
+<LI><A HREF="html/help.html#faq"><U>FAQ</U></A></LI>
+<LI><A HREF="html/help.html#bugs"><U>Reporting bugs</U></A></LI>
+<LI><A HREF="html/help.html#new_remote"><U>Adding new remote controls</U></A></LI>
+<LI><A HREF="html/help.html#list"><U>Mailing list</U></A></LI>
+<LI><A HREF="html/help.html#archive"><U>Mailing list archive</U></A></LI>
+</UL>
+</P>
+</OL>

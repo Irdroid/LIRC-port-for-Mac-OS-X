@@ -1,0 +1,111 @@
+    <!-- Overview ----------------------------------------------------------->
+
+<A NAME="overview"><HR></A>
+<CENTER><H1>Driver Model</H1></CENTER>
+<HR WIDTH="70%">
+
+<PRE>  |  +------------------------------------------------------+
+S |  | 'gpm -t msc -m /dev/lircm' or a well configured X    |
+O |  | (see INSTALL Chapter 'Configuring lircmd')           |
+F |  +--------------+---------------------------------------+
+T |                 |
+W |   /dev/lircm (named pipe (FIFO) ==> one connection)
+A |                 |
+R |     +-----------+-----------+   +-------------------------------+
+E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
+  |     | configured with       |   | configured with ~/.lircrc     |
+  |     | /etc/lircmd.conf      |   |                               |
+  |     +-----------+-----------+   +-----------+-------------------+
+  |                 |                           |
+  |                 +-------------+-------------+
+  |                               |
+  |                       /dev/lircd (socket ==> multiple connections)
+  |                               |
+S |              +----------------+--------------------------+
+O |              | decoder daemon (lircd), irrecord or mode2 |
+F |              | lircd is configured through               |
+T | Userspace    | /etc/lircd.conf                           |
+W |              +----------+---------------+----------------+
+A |                         |               |
+R |                         |       +-------+-------+
+E |                         |       |  Irman daemon |
+  |                         |       |   (lirmand)   |
+  |                         |       +-------+-------+
+  |                         |               |
+  +-------------------------+---------------+--------------------------
+  | Kernelspace             |               |       (character device
+  |                     /dev/lirc       /dev/ttyS?   driver ==> one
+  |                         |               |        connection)
+  |          +--------------+-----+  +---------------------+
+  |          | LIRC device driver |  | Linux serial driver |
+  |          +--------------+-----+  +--------+------------+
+  |                         |                 |
+--+-------------------------+-----------------+-----------------------
+  |                         |                 |
+  |          +--------------+---------+  +----+----+
+H |          | serial / parallel port |  |  Irman  |
+W |          +------------------------+  +---------+
+  |</PRE>
+
+
+
+
+<A NAME="formats"><HR></A>
+<H1 ALIGN="CENTER">Formats</H1>
+<HR WIDTH="70%">
+
+<UL>
+<LI><B>/dev/lirc:</B><BR>
+    outputs 4 byte packets containing an unsigned long value describing
+    a IR signal<BR>
+    <UL>
+        <LI>Bits 31-25 are 0</LI>
+        <LI>Bit 24 is either 0, meaning space, or 1, meaning pulse</LI>
+        <LI>Bits 23-0 contain the length of the pulse/space in microseconds</LI>
+    </UL>
+    Lengths greater than or equal to 16 seconds are clamped to 0xffffff.
+
+    <P>References:
+    <UL>
+        <LI>drivers/serial/lirc_serial.c</LI>
+        <LI>drivers/parallel/lirc_parallel.c</LI>
+        <LI>drivers/libirman-x.x/lirmand.c</LI>
+        <LI>tools/mode2.c (dumps the output from the lirc-driver to screen)</LI>
+    </UL></P>
+<BR>&#160;<BR></LI>
+<LI><B>/dev/lircd:</B><BR>
+    outputs strings containing all information about the remote and the
+    pressed button.
+    <P>References:
+    <UL>
+        <LI>daemons/lircd.c</LI>
+        <LI>tools/irw.c</LI>
+    </UL></P>
+<BR>&#160;<BR></LI>
+<LI><B>/dev/lircm:</B><BR>
+    outputs 5 Byte packages (MouseSystems format)
+    <UL>
+        <LI>Byte 1: Button Information</LI>
+        <LI>Byte 2: Change on X Axis</LI>
+        <LI>Byte 3: Change on Y Axis</LI>
+        <LI>Byte 4,5: 0</LI>
+    </UL>
+
+    <P>References:
+    <UL>
+        <LI>daemons/lircmd.c</LI>
+    </UL></P>
+    <P><B>IMPS/2 Protocol ?</B></P>
+</LI>
+</UL>
+
+
+
+
+    <!-- Writing LIRC Applications ------------------------------------------>
+
+<A NAME="applications"><HR></A>
+<H1 ALIGN="CENTER">Writing Applications for LIRC</H1>
+<HR WIDTH="70%">
+
+<P>TODO</P>

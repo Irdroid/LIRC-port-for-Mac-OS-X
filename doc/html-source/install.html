@@ -1,0 +1,234 @@
+    <!-- Dependencies ------------------------------------------------------>
+
+<A NAME="dependencies"><HR></A>
+<H1 ALIGN="CENTER">Dependencies</H1>
+<HR WIDTH="70%">
+
+<P>To compile the LIRC source code you need the
+properly installed kernel sources. This means that <B>autoconf.h</B>
+must exist. This file is created after a <B>make config</B> or
+something simular. Read the <B>README</B> file in the kernel sources
+directory to get more information on how to compile
+and set up an own kernel or get some more documentation at the
+<A HREF="http://sunsite.unc.edu/LDP/"><U>Linux Documentation Project</U></A>.
+
+<P>If you want to use all tools, you also need an
+installed svgalib (used by smode2) and the X Windows headerfiles
+(needed by irxevent). You can get svgalib from
+<A HREF="ftp://sunsite.unc.edu/pub/Linux/libs/graphics/"
+><U>ftp://sunsite.unc.edu/pub/Linux/libs/graphics/</U></A></P>
+
+<P><B>NOTE:</B> Perhaps you need to modify your settings
+for your generic serial port or parallel port driver, because the LIRC
+driver uses the same ressources.</P>
+
+
+
+    <!-- Supported Hardware ------------------------------------------------>
+
+<A NAME="hardware"><HR></A>
+<H1 ALIGN="CENTER">Supported Hardware</H1>
+<HR WIDTH="70%">
+
+<P>LIRC supports different types of Infrared Receiver Modules. The
+traditional ones are connected to the serial or parallel port. Since
+the pre0.5.5 Versions of LIRC there is also support for different
+TV Cards available [Hauppauge, Avermedia, Fly98]. If you want, you can
+build a receiver on your own.</P>
+
+<UL>
+<LI><A HREF="serial_transmitter.html"><U>Building a serial port transmitter</U></A></LI>
+<LI><A HREF="serial_receiver.html"><U>Building a serial port receiver</U></A></LI>
+<LI><A HREF="parallel_transmitter.html"><U>Building a parallel port transmitter</U></A></LI>
+</UL>
+
+
+
+    <!-- Preparations for TV Cards ----------------------------------------->
+
+<A NAME="tv_cards"><HR></A>
+<H1 ALIGN="CENTER">Preparations for TV Cards</H1>
+<HR WIDTH="70%">
+
+<P>TODO</P>
+
+
+
+
+    <!-- Compiling --------------------------------------------------------->
+
+<A NAME="compiling"><HR></A>
+<H1 ALIGN="CENTER">Compiling</H1>
+<HR WIDTH="70%">
+
+<P>Since the pre0.5.5 Versions of LIRC it is configured via automake.
+There are two ways now to setup and compile LIRC,
+The first: write all necessary parameters on
+the commandline together with configure manually, or the second: start
+<B>./setup.sh</B> which will use the <B>dialog</B> program to do all
+necessary things.</P>
+
+<P><B>NOTE:</B>In the CVS Version you won't find a <B>./configure</B> Script,
+you have to generate this, by executing <B>./autogen.sh</B>. You need
+automake 1.4 and above to do this properly.</P>
+
+<P>After a sucessful execution of configure either manually, or called by
+setup.sh you only have to type <B>make</B> which will compile the source
+files into executables.</P>
+
+<P ALIGN="RIGHT">karsten, 1999-SEP-04</P>
+
+
+
+
+
+    <!-- Testing ------------------------------------------------------------>
+
+<A NAME="testing"><HR></A>
+<H1 ALIGN="CENTER">Testing your Configuration</H1>
+<HR WIDTH="70%">
+
+<P>type <B>su</B> to get root privileges</P>
+
+<P><B>make testdriver</B></P>
+
+<P>This should load the compiled device driver into the kernel and start
+<A HREF="programs.html#mode2"><U>mode2</U></A> in the tools directory.
+For the Irman you have to run lirmand
+before you can use any other programs. lirmand receives IR signals from
+the Irman using the kernel's serial port driver and emulates a
+lirc style device driver at /dev/lirc.
+Hold your remote control to your IR receiver and press some
+buttons. You should see an output like this (the values of your
+remote could be different ;-) :</P>
+<PRE>	pulse 93
+	space 4965
+	pulse 108
+	space 4969
+	pulse 93
+	space 7496
+	pulse 93
+	space 7489
+	pulse 93
+	space 47915
+	pulse 138
+	space 7475
+	pulse 93
+	space 7494
+	pulse 93</PRE>
+
+<P>If you don't see anything, try to find out: (a) if all compiled right,
+(b) if you selected the correct driver with the correct settings (port,
+IRQ) and (c) if you use a remote which works.</P>
+
+<P>From time to time there should be long spaces (>30000).
+If you can see very long pulses this usually means that sense
+autodetection of your serial port IR receiver circuit has failed.
+You can override sense autodetection by loading the device driver
+with the following command:<BR>
+<B>insmod lirc sense=0</B><BR>
+if your receiver circuit is active high or<BR>
+<B>insmod lirc sense=1</B><BR>
+if your receiver circuit is active low.</P>
+
+<P>Well, the driver seems to work, now lets test if lircd also does
+its job. This only works, if lircd uses a
+<A HREF="configure.html#lircd.conf"><U>configfile</U></A> which fits to your
+remote control. Use <A HREF="programs.html#irrecord"><U>irrecord</U></A>
+in the case the lirc distribution doesn't provide a config file suitable
+to your remote.</P>
+
+<P>Remember that the according device driver for your hardware must
+be loaded before you start lircd [Usually this is done with
+<B>make testdriver</B>]. If you are using the Irman you
+have to run lirmand first. If you use kerneld to insert
+modules to the kernel if they are needed put the following line in
+your /etc/conf.modules:<BR>
+<PRE>
+	alias char-major-61  lirc
+</PRE>
+You can set the IRQ and port the parallel and serial port drivers
+shall use by giving the according paramters while calling insmod
+or adding the following line to /etc/conf.modules:<BR>
+<PRE>
+	options lirc irq=n port=0xabc
+</PRE>
+   Change the permissions of /dev/lircd to your needs.</P>
+
+<OL>
+<LI>if you are using the Irman:<BR>
+    <B>lirmand /dev/ttySX</B> - start the Irman daemon, it will use the
+    kernel's serial port driver.
+<BR>&#160;<BR></LI>
+<LI>else<BR>
+    <B>insmod lirc</B> - only needed if not already loaded,
+    use <B>lsmod</B> to see which modules are loaded.
+<BR>&#160;<BR></LI>
+</OL>
+
+<P>Then start the decoder daemon with (make sure it is in your
+search path): <B>lircd</B></P>
+
+<P>The following program dumps the decoded keycodes from lircd to screen:
+<B>irw</B></P>
+
+<P>This looks like this (depending on your remote):
+<PRE>	0000000000f40bf0 00 1_DOWN ANIMAX
+	0000000000f40bf0 01 1_DOWN ANIMAX
+	0000000000f40bf0 02 1_DOWN ANIMAX
+	0000000000f40bf0 03 1_DOWN ANIMAX
+	0000000000f40bf0 04 1_DOWN ANIMAX
+	0000000000f40bf0 05 1_DOWN ANIMAX
+	0000000000748bf0 00 1_UP ANIMAX
+	0000000000748bf0 01 1_UP ANIMAX
+	0000000000748bf0 02 1_UP ANIMAX
+	0000000000718ef0 00 RED_BUTTON_UP ANIMAX</PRE></P>
+
+<P><B>NOTE:</B> If the driver test worked, but you now see nothing,
+then check lircd and /etc/lircd.conf.</P>
+
+
+
+    <!-- Install LIRC ------------------------------------------------------->
+
+<A NAME="installing"><HR></A>
+<H1 ALIGN="CENTER">Installation</H1>
+<HR WIDTH="70%">
+
+<P><B>NOTE:</B> If you change the driver or something else, don't forget a
+<B>make clean</B> before recompiling.</P>
+
+<P>Installing the compiled programs is real easy, just type <B>make install</B></P>
+
+
+
+    <!-- Uninstall LIRC ----------------------------------------------------->
+
+<A NAME="uninstall"><HR></A>
+<H1 ALIGN="CENTER">Uninstall</H1>
+<HR WIDTH="70%">
+
+<OL>
+<LI>Remove the installed binaries, and device nodes<BR>
+    <B>make uninstall</B>
+<BR>&#160;<BR></LI>
+
+
+<LI>Remove the config files, if you don't need it anymore<BR>
+    <B>rm /etc/lircd.conf /etc/lircmd.conf ~/.lircrc</B>
+<BR>&#160;<BR></LI>
+</OL>
+
+
+
+
+    <!-- Update from lirc-0.5.4 --------------------------------------------->
+
+<A NAME="updating"><HR></A>
+<H1 ALIGN="CENTER">Updating from lirc-0.5.4</H1>
+<HR WIDTH="70%">
+
+<P>TODO</P>
+
+&#160;<BR>&#160;<BR>&#160;<BR>
+
