@@ -139,6 +139,41 @@ W | +------------------------+ +----------+ +-------------------------+
 
 
 
+
+<A NAME="lirc_dev"><HR></A>
+<H1 ALIGN="CENTER">Writing TV card drivers using lirc_dev</H1>
+<HR WIDTH="70%">
+
+<P>
+The <em>lirc_dev</em> module is a helper and abstraction layer for
+other modules.  It registers <em>/dev/lirc</em> device in a system and
+waits for plugin registration.  After that it serves device requests
+(open, read, poll, ioctl, close) and if needed calls callback
+functions from plugin(s) to communicate with the physical device.
+</P>
+<P>
+Plugins can be registered and unregistered many times. The current
+implementation allows two concurrent plugins, but can be easily
+changed by increasing the MAX_IRCTL_DEVICES definition. It also allows
+receiving of scan codes, which have more than 8 bits. Current limit
+for a scan code is 16*8 bits and also can be changed by increasing the
+BUFLEN definition.
+</P>
+<P>
+For an API description see <em>lirc_dev.h</em>. Modules lirc_gpio_[ip]
+can be treated as examples of using this API. This code contains many
+lines with debug messages (activated by <em>debug</em> option) and
+they will sustain until more tests will be performed.
+</P>
+<P>
+<B>Warning:</B>Due to the used kernel API it requires kernel 2.2.4 or
+higher. Any suggestions and questions are welcome. <A
+href="mailto:lipowski@comarch.pl">Artur Lipowski</A>
+</P>
+
+
+
+
     <!-- Writing LIRC Applications ------------------------------------------>
 
 <A NAME="applications"><HR></A>
