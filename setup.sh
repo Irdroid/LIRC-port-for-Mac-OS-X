@@ -281,7 +281,8 @@ function ConfigDriver
 			8 "Phoebe Tv Master + FM (card=22)" \
 			9 "TView99 CPH063 (card=38)" \
                         0 "Pixelview PlayTV pro card (card=37)" \
-			a "Chronos Video Shuttle II (card=35)" 2> $TEMP;
+			a "Chronos Video Shuttle II (card=35)" \
+			b "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -296,6 +297,7 @@ function ConfigDriver
 		elif test "$1" = "9"; then LIRC_DRIVER=cph06x; DRIVER_PARAMETER=none;
 		elif test "$1" = "0"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
 		elif test "$1" = "a"; then LIRC_DRIVER=chronos; DRIVER_PARAMETER=none;
+		elif test "$1" = "b"; then LIRC_DRIVER=pixelview_pak; DRIVER_PARAMETER=none;
 		fi
 		}
 	    else
@@ -401,7 +403,7 @@ function SaveConfig
 
 #############################################################################
 ## Main Program
-if ! type dialog >/dev/null; then
+if ! which dialog >/dev/null; then
     echo "dialog not found!"
     exit 1
 fi

@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.21 2000/09/21 19:11:27 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.22 2000/09/27 18:17:47 columbus Exp $
  *
  */
 
@@ -63,6 +63,9 @@ struct rcv_info {
 
 static struct rcv_info rcv_infos[] = {
 	{BTTV_UNKNOWN,                0,          0,         0,          0,   0,  1,  0},
+#ifdef BTTV_PXELVWPLTVPAK
+	{BTTV_PXELVWPLTVPAK, 0x00003e00,          0, 0x0010000,          0,   0, 15,  0},
+#endif
 	{BTTV_PXELVWPLTVPRO, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
 	{BTTV_AVERMEDIA,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10,  0},
 	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
