@@ -357,7 +357,7 @@ static int mceusb_open (struct inode *inode, struct file *file)
 	}
 	if ((subminor < 0) ||
 	    (subminor >= MAX_DEVICES)) {
-		dbg("subminor %d asldkjfasdkfj", subminor);
+		dbg("subminor %d", subminor);
 		return -ENODEV;
 	}
 
@@ -442,7 +442,8 @@ static int mceusb_release (struct inode *inode, struct file *file)
 	down (&dev->sem);
 
 	/* XXX TODO disabled while debugging; there is an issue where
-	   the open_count becomes invalid */
+	 * the open_count becomes invalid
+	 */
 #if 0
 	if (dev->open_count <= 0) {
 		printk (__FUNCTION__ " - device not opened\n");
@@ -532,7 +533,6 @@ static void set_use_dec(void* data)
 static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 {
 	int retries = 0;
-	int sequential_empty_reads = 0;
 	int words_to_read = 
 		(sizeof(dev->lircdata)/sizeof(lirc_t)) - dev->lirccnt;
 	int partial, this_read = 0;
@@ -622,12 +622,8 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 			/* check for empty reads (header only) */
 			if( this_read == 2 )
 			{
-				sequential_empty_reads++;
-
 				/* assume no data */
-				/* XXX cleanup */
-				if( dont_block &&
-				    sequential_empty_reads == 1 )
+				if( dont_block )
 				{
 					break;
 				}
@@ -638,11 +634,6 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 					( &dev->wait_q, 1 );
 				continue;
 			}
-			else
-			{
-				sequential_empty_reads = 0;
-			}
-            
 		}
 
 		/*
@@ -723,13 +714,6 @@ static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 			{
 				if( dev->last_space )
 				{
-					/* XXX short term hack */
-					if( dev->last_space > 40000 &&
-					    dev->last_space < 60000 )
-					{
-						dev->last_space = 68500;
-					}
-					
 					dev->lircdata[dev->lirccnt++] =
 						dev->last_space;
 					dev->last_space = 0;
