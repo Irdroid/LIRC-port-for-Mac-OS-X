@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.26 2003/05/01 20:23:05 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.27 2003/11/12 11:52:14 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -230,8 +230,21 @@ int default_init()
 		logprintf(LOG_ERR,"could not get hardware features");
 		logprintf(LOG_ERR,"this device driver does not "
 			  "support the new LIRC interface");
-		logprintf(LOG_ERR,"make sure you use a current "
-			  "version of the driver");
+		if(major(s.st_rdev) != LIRC_MAJOR)
+		{
+			logprintf(LOG_ERR, "major number of %s is %lu",
+				  hw.device,
+				  (unsigned long) major(s.st_rdev));
+			logprintf(LOG_ERR, "LIRC major number is %lu",
+				  (unsigned long) LIRC_MAJOR);
+			logprintf(LOG_ERR, "check if %s is a LIRC device",
+				  hw.device);
+		}
+		else
+		{
+			logprintf(LOG_ERR,"make sure you use a current "
+				  "version of the driver");
+		}
 		default_deinit();
 		return(0);
 	}
