@@ -1,6 +1,7 @@
 Makefile
 Makefile.in
 .deps
+.libs
 lircd.simrec
 lircd.simsend
 lircd
