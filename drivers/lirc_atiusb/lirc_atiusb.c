@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.42 2004/10/29 02:16:29 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.43 2004/11/14 22:47:36 pmiller9 Exp $
  */
 
 /*
@@ -53,6 +53,7 @@
 #include <linux/usb.h>
 #include <linux/poll.h>
 #include <linux/wait.h>
+#include <linux/list.h>
 
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
@@ -64,6 +65,7 @@
 #define DRIVER_NAME		"lirc_atiusb"
 
 #define CODE_LENGTH		5
+#define CODE_LENGTH_ATI2	3
 #define CODE_MIN_LENGTH		3
 #define USB_BUFLEN		(CODE_LENGTH*4)
 
@@ -95,10 +97,16 @@ static unsigned long repeat_jiffies; // repeat timeout
 #define SUCCESS			0
 #define SEND_FLAG_IN_PROGRESS	1
 #define SEND_FLAG_COMPLETE	2
+#define FREE_ALL		0xFF
 
 /* endpoints */
 #define EP_KEYS			0
 #define EP_MOUSE		1
+#define EP_MOUSE_ADDR		0x81
+#define EP_KEYS_ADDR		0x82
+
+#define ATI2_MOUSE_SENSITIVITY	4
+#define ATI2_MOUSE_MAGIC	32
 
 #define VENDOR_ATI1		0x0bc7
 #define VENDOR_ATI2		0x0471
@@ -131,6 +139,8 @@ static struct usb_device_id usb_remote_table [] = {
 
 
 struct in_endpt {
+	/* inner link in list of endpoints for the remote specified by ir */
+	struct list_head iep_list_link;
 	struct irctl *ir;
 	struct urb *urb;
 	struct usb_endpoint_descriptor *ep;
@@ -167,10 +177,15 @@ struct out_endpt {
 
 /* data structure for each usb remote */
 struct irctl {
+	/* inner link in list of all remotes managed by this module */
+	struct list_head remote_list_link;
+	/* Number of usb interfaces associated with this device */
+	int dev_refcount;
 
 	/* usb */
 	struct usb_device *usbdev;
-	struct in_endpt *in_keys, *in_mouse;
+	/* Head link to list of all inbound endpoints in this remote */
+	struct list_head iep_listhead;
 	struct out_endpt *out_init;
 	int devnum;
 
@@ -188,10 +203,13 @@ struct irctl {
 	struct semaphore lock;
 };
 
+/* list of all registered devices via the remote_list_link in irctl */
+static struct list_head remote_list;
 
-
-
-
+/* Convenience macros to retrieve a pointer to the surrounding struct from
+ * the given list_head reference within, pointed at by link. */
+#define get_iep_from_link(link)  list_entry((link), struct in_endpt, iep_list_link);
+#define get_irctl_from_link(link)  list_entry((link), struct irctl, remote_list_link);
 
 /* init strings */
 static char init1[] = {0x01, 0x00, 0x20, 0x14};
@@ -280,9 +298,12 @@ static int unregister_from_lirc(struct irctl *ir)
 	return SUCCESS;
 }
 
+
 static int set_use_inc(void *data)
 {
 	struct irctl *ir = data;
+	struct list_head *pos, *n;
+	struct in_endpt *iep;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
@@ -295,33 +316,27 @@ static int set_use_inc(void *data)
 	if (!ir->connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
-		if (ir->in_keys) {
-			ir->in_keys->urb->dev = ir->usbdev;
+
+		IRLOCK;
+		/* Iterate through the inbound endpoints */
+		list_for_each_safe(pos, n, &ir->iep_listhead) {
+			/* extract the current in_endpt */
+			iep = get_iep_from_link(pos);
+			iep->urb->dev = ir->usbdev;
 #ifdef KERNEL_2_5
-			if (usb_submit_urb(ir->in_keys->urb, SLAB_ATOMIC)) {
+			if (usb_submit_urb(iep->urb, SLAB_ATOMIC)) {
 #else
-			if (usb_submit_urb(ir->in_keys->urb)) {
+			if (usb_submit_urb(iep->urb)) {
 #endif
 				printk(DRIVER_NAME "[%d]: open result = -EIO error "
 					"submitting urb\n", ir->devnum);
-				MOD_DEC_USE_COUNT;
-				return -EIO;
-			}
-		}
-		if (ir->in_mouse) {
-			ir->in_mouse->urb->dev = ir->usbdev;
-#ifdef KERNEL_2_5
-			if (usb_submit_urb(ir->in_mouse->urb, SLAB_ATOMIC)) {
-#else
-			if (usb_submit_urb(ir->in_mouse->urb)) {
-#endif
-				printk(DRIVER_NAME "[%d]: open result = -EIO error "
-					"submitting urb\n", ir->devnum);
+				IRUNLOCK;
 				MOD_DEC_USE_COUNT;
 				return -EIO;
 			}
 		}
 		ir->connected = 1;
+		IRUNLOCK;
 	}
 
 	return SUCCESS;
@@ -330,6 +345,8 @@ static int set_use_inc(void *data)
 static void set_use_dec(void *data)
 {
 	struct irctl *ir = data;
+	struct list_head *pos, *n;
+	struct in_endpt *iep;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
@@ -339,8 +356,11 @@ static void set_use_dec(void *data)
 
 	if (ir->connected) {
 		IRLOCK;
-		if (ir->in_keys) usb_unlink_urb(ir->in_keys->urb);
-		if (ir->in_mouse) usb_unlink_urb(ir->in_mouse->urb);
+		/* Free inbound usb urbs */
+		list_for_each_safe(pos, n, &ir->iep_listhead) {
+			iep = get_iep_from_link(pos);
+			usb_unlink_urb(iep->urb);
+		}
 		ir->connected = 0;
 		IRUNLOCK;
 	}
@@ -386,15 +406,6 @@ static int code_check(struct in_endpt *iep, int len)
 		}
 		break;
 
-	case ATI2_COMPATIBLE:
-		chan = iep->buf[0];
-		if (!unique) iep->buf[0] = 0;
-		// ignore mouse navigation key
-//		if ((iep->type == EP_KEYS) && (iep->buf[1] == MOUSE_CODE)) {
-//			return -1;
-//		}
-		break;
-
 	default:
 		chan = 0;
 	}
@@ -405,20 +416,143 @@ static int code_check(struct in_endpt *iep, int len)
 	}
 	dprintk(DRIVER_NAME "[%d]: accept channel %d\n", ir->devnum, chan+1);
 
-	/* check for repeats */
-	if (memcmp(iep->old, iep->buf, len) == 0) {
-		if (iep->old_jiffies + repeat_jiffies > jiffies) {
-			return -1;
+	if (ir->remote_type == ATI1_COMPATIBLE) {
+		/* check for repeats */
+		if (memcmp(iep->old, iep->buf, len) == 0) {
+			if (iep->old_jiffies + repeat_jiffies > jiffies) {
+				return -1;
+			}
+		} else {
+			for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
+			memcpy(iep->old, iep->buf, CODE_LENGTH);
 		}
-	} else {
-		memcpy(iep->old, iep->buf, len);
-		for (i = len; i < CODE_LENGTH; i++) iep->old[i] = 0;
+		iep->old_jiffies = jiffies;
 	}
-	iep->old_jiffies = jiffies;
 
 	return SUCCESS;
 }
 
+/*
+ * Since the ATI Remote Wonder II has quite a different structure from the
+ * prior version, this function was seperated out to clarify the sanitization
+ * process.
+ *
+ * Here is a summary of the main differences:
+ *
+ * a. The rw2 has no sense of a transmission channel.  But, it does have an
+ *    auxilliary mode state, which is set by the mode buttons Aux1 through
+ *    Aux4 and "PC".  These map respectively to 0-4 in the first byte of the
+ *    recv buffer.  Any subsequent button press sends this mode number as its
+ *    "channel code."  Annoyingly enough, the mode setting buttons all send
+ *    the same key code (0x3f), and can only be distinguished via their mode
+ *    byte.
+ *
+ *    Because of this, old-style "unique"-parameter-enabled channel squashing
+ *    kills the functionality of the aux1-aux4 and PC buttons.  However, to
+ *    not do so would cause each remote key to send a different code depending
+ *    on the active aux.  Further complicating matters, using the mouse norb
+ *    also sends an identical code as would pushing the active aux button.  To
+ *    handle this we need a seperate parameter, like rw2modes, with the
+ *    following values and meanings:
+ *
+ *    	0: Don't squash any channel info
+ *    	1: Only squash channel data for non-mode setting keys
+ *    	2: Ignore aux keypresses, but don't squash channel
+ *    	3: Ignore aux keypresses and squash channel data
+ *
+ *    Option 1 may seem useless since the mouse sends the same code, but one
+ *    need only ignore in userspace any press of a mode-setting code that only
+ *    reaffirms the current mode.  lirccd should be able to handle this
+ *    easily enough.
+ *
+ *    Option 2 would be useful for those wanting super configurability,
+ *    offering the ability to program 5 times the number actions based on the
+ *    current mode.
+ *
+ * b. The rw2 apparently has its own built in repeat handling; however it
+ *    doesn't seem to work very well.  From what I can tell, it is supposed to
+ *    act like the following, emiting the given second byte according to:
+ *
+ *    	1: Receipt of first button press
+ *    	2: button continues to be held
+ *    	0: button is released
+ *
+ *    The problem is that the remote often sends the release-recieve pair
+ *    (0,1) while one is still holding down the same button.
+ *
+ *    Thus, a parameter such as use_rw2repeat might be useful to
+ *    enable/disable this built-in repeat handling "feature."  If disabled,
+ *    the second byte would simply squish to zero.
+ *
+ * c. The mouse norb is much more sensitive than on the rw1.  It seems to be
+ *    implemented as a joystick-like controller with the second byte
+ *    representing the x-axis offset, and the third the y-axis.  Treated as
+ *    signed integers, these axes range approximately as follows:
+ *
+ *    	x: (left) -46 ... 46 (right) (0xd2..0x2e)
+ *    	y: (up)   -46 ... 46 (down)  (0xd2..0x2e)
+ *
+ *    NB these values do not correspond to the pressure with which the mouse
+ *    norb is pushed in a given direction, but rather seems to indicate the
+ *    duration for which a given direction is held.
+ *
+ *    An option such as normalizemouse would probably do well here.
+ *
+ * d. The interrupt rate of the mouse vs. the normal keys is different.
+ *
+ * 	mouse: ~27Hz (37ms between interrupts)
+ * 	keys:  ~10Hz (100ms between interrupts)
+ *
+ *    This means that the normal gap mechanism for lircd won't work as
+ *    expected.
+ */
+static int process_ati2_input(struct in_endpt *iep, int len) {
+	struct irctl *ir = iep->ir;
+	int mode;
+	char *buf = iep->buf;
+
+	if (len != CODE_LENGTH_ATI2) {
+		dprintk(DRIVER_NAME
+			"[%d]: Huh?  Abnormal length (%d) buffer recieved.\n",
+			ir->devnum, len);
+		return -1;
+	}
+
+	mode = buf[0];
+
+	/* Squash the mode indicator if unique wasn't set non-zero */
+	if (!unique) buf[0] = 0;
+
+	if (iep->ep->bEndpointAddress == EP_KEYS_ADDR) {
+		/* ignore mouse navigation indicator key and mode-set (aux) keys */
+		if (buf[2] == 0x3F) {
+			dprintk(DRIVER_NAME "[%d]: ignore dummy code 0x%x (ep=0x%x)\n",
+				ir->devnum, buf[2], iep->ep->bEndpointAddress);
+			return -1;
+		}
+
+		/* squash repeat code; ignore key release */
+		if (buf[1]) buf[1] = 1;
+		else return -1;
+	} else {
+		/* Add a flag to the mode byte to indicate mouse activity */
+		buf[0] |= ATI2_MOUSE_MAGIC;
+
+		/* normalize mouse position */
+		int axis;
+		for (axis = 1; axis <= 2; axis++) {
+			signed char pos = (signed char)buf[axis];
+			if (pos < -ATI2_MOUSE_SENSITIVITY) {
+				pos = -1;
+			} else if (pos > ATI2_MOUSE_SENSITIVITY) {
+				pos = 1;
+			} else pos = 0;
+			buf[axis] = (u8)pos;
+		}
+	}
+
+	return SUCCESS;
+}
 
 
 #ifdef KERNEL_2_5
@@ -451,10 +585,13 @@ static void usb_remote_recv(struct urb *urb)
 	/* success */
 	case SUCCESS:
 
-		if (code_check(iep, len) < 0)
-			break;
+		if(iep->ir->remote_type == ATI2_COMPATIBLE) {
+			if (process_ati2_input(iep, len) < 0) break;
+		} else {
+			if (code_check(iep, len) < 0) break;
+		}
 
-		lirc_buffer_write_1(iep->ir->p->rbuf, iep->old);
+		lirc_buffer_write_1(iep->ir->p->rbuf, iep->buf);
 		wake_up(&iep->ir->p->rbuf->wait_poll);
 		break;
 
@@ -508,41 +645,56 @@ static void usb_remote_send(struct urb *urb)
 }
 
 
+/***************************************************************************
+ * Initialization and removal
+ ***************************************************************************/
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * Free iep according to mem_failure which specifies a checkpoint into the
+ * initialization sequence for rollback recovery.
+ */
 static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 {
 	struct irctl *ir;
+	dprintk(DRIVER_NAME ": free_in_endpt(%p, %d)\n", iep, mem_failure);
 	if (!iep) return;
 
 	ir = iep->ir;
+	if (!ir) {
+		dprintk(DRIVER_NAME ": free_in_endpt: WARNING! null ir\n");
+		return;
+	}
 	IRLOCK;
 	switch (mem_failure) {
+	case FREE_ALL:
+	case 5:
+		list_del(&iep->iep_list_link);
+		dprintk(DRIVER_NAME "[%d]: free_in_endpt removing ep=0x%0x from list\n", ir->devnum, iep->ep->bEndpointAddress);
 	case 4:
-		usb_unlink_urb(iep->urb);
-		usb_free_urb(iep->urb);
-#ifdef KERNEL_2_5
+		if (iep->urb) {
+			usb_unlink_urb(iep->urb);
+			usb_free_urb(iep->urb);
+			iep->urb = 0;
+		} else {
+			dprintk(DRIVER_NAME "[%d]: free_in_endpt null urb!\n", ir->devnum);
+		}
 	case 3:
+#ifdef KERNEL_2_5
 		usb_buffer_free(iep->ir->usbdev, iep->len, iep->buf, iep->dma);
 #else
-	case 3:
 		kfree(iep->buf);
 #endif
+		iep->buf = 0;
 	case 2:
 		kfree(iep);
 	}
 	IRUNLOCK;
 }
 
+/*
+ * Construct a new inbound endpoint for this remote, and add it to the list of
+ * in_epts in ir.
+ */
 static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descriptor *ep)
 {
 	struct usb_device *dev = ir->usbdev;
@@ -557,7 +709,7 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
 	len -= (len % CODE_LENGTH);
 
-	dprintk(DRIVER_NAME ": acceptable inbound endpoint (0x%x) found (maxp=%d len=%d)\n", addr, maxp, len);
+	dprintk(DRIVER_NAME "[%d]: acceptable inbound endpoint (0x%x) found (maxp=%d len=%d)\n", ir->devnum, addr, maxp, len);
 
 	mem_failure = 0;
 	if ( !(iep = kmalloc(sizeof(*iep), GFP_KERNEL)) ) {
@@ -584,32 +736,45 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 	}
 	if (mem_failure) {
 		free_in_endpt(iep, mem_failure);
-		printk(DRIVER_NAME ": ep=0x%x out of memory (code=%d)\n", addr, mem_failure);
+		printk(DRIVER_NAME "[%d]: ep=0x%x out of memory (code=%d)\n", ir->devnum, addr, mem_failure);
 		return NULL;
 	}
+	list_add_tail(&iep->iep_list_link, &ir->iep_listhead);
+	dprintk(DRIVER_NAME "[%d]: adding ep=0x%0x to list\n", ir->devnum, iep->ep->bEndpointAddress);
 	return iep;
 }
 
 static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 {
 	struct irctl *ir;
+	dprintk(DRIVER_NAME ": free_out_endpt(%p, %d)\n", oep, mem_failure);
 	if (!oep) return;
 
-	ir = oep->ir;
 	wake_up_all(&oep->wait);
 
+	ir = oep->ir;
+	if (!ir) {
+		dprintk(DRIVER_NAME ": free_out_endpt: WARNING! null ir\n");
+		return;
+	}
 	IRLOCK;
 	switch (mem_failure) {
+	case FREE_ALL:
 	case 4:
-		usb_unlink_urb(oep->urb);
-		usb_free_urb(oep->urb);
-#ifdef KERNEL_2_5
+		if (oep->urb) {
+			usb_unlink_urb(oep->urb);
+			usb_free_urb(oep->urb);
+			oep->urb = 0;
+		} else {
+			dprintk(DRIVER_NAME "[%d]: free_out_endpt: null urb!\n", ir->devnum);
+		}
 	case 3:
+#ifdef KERNEL_2_5
 		usb_buffer_free(oep->ir->usbdev, USB_BUFLEN, oep->buf, oep->dma);
 #else
-	case 3:
 		kfree(oep->buf);
 #endif
+		oep->buf = 0;
 	case 2:
 		kfree(oep);
 	}
@@ -622,7 +787,7 @@ static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_des
 	struct out_endpt *oep;
 	int mem_failure;
 
-	dprintk(DRIVER_NAME ": acceptable outbound endpoint (0x%x) found\n", ep->bEndpointAddress);
+	dprintk(DRIVER_NAME "[%d]: acceptable outbound endpoint (0x%x) found\n", ir->devnum, ep->bEndpointAddress);
 
 	mem_failure = 0;
 	if ( !(oep = kmalloc(sizeof(*oep), GFP_KERNEL)) ) {
@@ -649,7 +814,7 @@ static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_des
 	}
 	if (mem_failure) {
 		free_out_endpt(oep, mem_failure);
-		printk(DRIVER_NAME ": ep=0x%x out of memory (code=%d)\n", ep->bEndpointAddress, mem_failure);
+		printk(DRIVER_NAME "[%d]: ep=0x%x out of memory (code=%d)\n", ir->devnum, ep->bEndpointAddress, mem_failure);
 		return NULL;
 	}
 	return oep;
@@ -657,22 +822,53 @@ static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_des
 
 static void free_irctl(struct irctl *ir, int mem_failure)
 {
+	struct list_head *pos, *n;
+	struct in_endpt *in;
+	dprintk(DRIVER_NAME ": free_irctl(%p, %d)\n", ir, mem_failure);
+
 	if (!ir) return;
 
-	free_in_endpt(ir->in_keys, 0xFF);
-	free_in_endpt(ir->in_mouse, 0xFF);
-	free_out_endpt(ir->out_init, 0xFF);
-
-	switch (mem_failure) {
-	case 5:
-		lirc_buffer_free(ir->p->rbuf);
-	case 4:
-		kfree(ir->p->rbuf);
-	case 3:
-		kfree(ir->p);
-	case 2:
-		kfree(ir);
+	list_for_each_safe(pos, n, &ir->iep_listhead) {
+		in = get_iep_from_link(pos);
+		free_in_endpt(in, FREE_ALL);
 	}
+	if (ir->out_init) {
+		free_out_endpt(ir->out_init, FREE_ALL);
+		ir->out_init = NULL;
+	}
+
+	IRLOCK;
+	switch (mem_failure) {
+	case FREE_ALL:
+	case 6:
+	    	if (!--ir->dev_refcount) {
+			list_del(&ir->remote_list_link);
+			dprintk(DRIVER_NAME "[%d]: free_irctl: removing remote from list\n",
+				ir->devnum);
+		} else {
+			dprintk(DRIVER_NAME "[%d]: free_irctl: refcount at %d,"
+				"aborting free_irctl\n", ir->devnum, ir->dev_refcount);
+			IRUNLOCK;
+			return;
+		}
+	case 5:
+	case 4:
+	case 3:
+		if (ir->p) {
+			switch (mem_failure) {
+			case 5: lirc_buffer_free(ir->p->rbuf);
+			case 4: kfree(ir->p->rbuf);
+			case 3: kfree(ir->p);
+			}
+		} else {
+			printk(DRIVER_NAME "[%d]: ir->p is a null pointer!\n", ir->devnum);
+		}
+	case 2:
+		IRUNLOCK;
+		kfree(ir);
+		return;
+	}
+	IRUNLOCK;
 }
 
 static struct irctl *new_irctl(struct usb_device *dev)
@@ -680,8 +876,10 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	struct irctl *ir;
 	struct lirc_plugin *plugin;
 	struct lirc_buffer *rbuf;
-	int type;
+	int type, devnum;
 	int mem_failure;
+
+	devnum = dev->devnum;
 
 	/* determine remote type */
 	switch (dev->descriptor.idVendor) {
@@ -692,10 +890,10 @@ static struct irctl *new_irctl(struct usb_device *dev)
 		type = ATI2_COMPATIBLE;
 		break;
 	default:
-		dprintk(DRIVER_NAME ": unknown type\n");
+		dprintk(DRIVER_NAME "[%d]: unknown type\n", devnum);
 		return NULL;
 	}
-	dprintk(DRIVER_NAME ": remote type = %d\n", type);
+	dprintk(DRIVER_NAME "[%d]: remote type = %d\n", devnum, type);
 
 	/* allocate kernel memory */
 	mem_failure = 0;
@@ -703,6 +901,11 @@ static struct irctl *new_irctl(struct usb_device *dev)
 		mem_failure = 1;
 	} else {
 		memset(ir, 0, sizeof(*ir));
+		/* add this infrared remote struct to remote_list, keeping track of
+		 * the number of drivers registered. */
+		dprintk(DRIVER_NAME "[%d]: adding remote to list\n", devnum);
+		list_add_tail(&ir->remote_list_link, &remote_list);
+		ir->dev_refcount=1;
 
 		if (!(plugin = kmalloc(sizeof(*plugin), GFP_KERNEL))) {
 			mem_failure = 2;
@@ -723,19 +926,72 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			ir->usbdev = dev;
 			ir->p = plugin;
 			ir->remote_type = type;
-			ir->devnum = dev->devnum;
+			ir->devnum = devnum;
 
 			init_MUTEX(&ir->lock);
+			INIT_LIST_HEAD(&ir->iep_listhead);
 		}
 	}
 	if (mem_failure) {
 		free_irctl(ir, mem_failure);
-		printk(DRIVER_NAME ": out of memory (code=%d)\n", mem_failure);
+		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n", devnum, mem_failure);
 		return NULL;
 	}
 	return ir;
 }
 
+
+/*
+ * Scan the global list of remotes to see if the device listed is one of them.
+ * If it is, the corresponding irctl is returned, with its dev_refcount
+ * incremented.  Otherwise, returns null.
+ */
+static struct irctl *get_prior_reg_ir(struct usb_device *dev) {
+	struct list_head *pos;
+	struct irctl *ir = NULL;
+
+	dprintk(DRIVER_NAME "[%d]: scanning remote_list...\n", dev->devnum);
+	list_for_each(pos, &remote_list) {
+		ir = get_irctl_from_link(pos);
+		if (ir->usbdev != dev) {
+		    dprintk(DRIVER_NAME "[%d]: device %d isn't it...", dev->devnum, ir->devnum);
+		    ir = NULL;
+		} else {
+		    dprintk(DRIVER_NAME "[%d]: prior instance found.\n", dev->devnum);
+		    ir->dev_refcount++;
+		    break;
+		}
+	}
+	return ir;
+}
+
+/* If the USB interface has an out endpoint for control (eg, the first Remote
+ * Wonder) send the appropriate initialization packets. */
+static void send_outbound_init(struct irctl *ir) {
+	if (ir->out_init) {
+		struct out_endpt *oep = ir->out_init;
+		dprintk(DRIVER_NAME "[%d]: usb_remote_probe: initializing outbound ep\n", ir->devnum);
+		usb_fill_int_urb(oep->urb, ir->usbdev,
+			usb_sndintpipe(ir->usbdev, oep->ep->bEndpointAddress), oep->buf,
+			USB_BUFLEN, usb_remote_send, oep, oep->ep->bInterval);
+
+		send_packet(oep, 0x8004, init1);
+		send_packet(oep, 0x8007, init2);
+	}
+}
+
+/* Log driver and usb info */
+static void log_usb_dev_info(struct usb_device *dev) {
+	char buf[63], name[128]="";
+	if (dev->descriptor.iManufacturer
+		&& usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
+		strncpy(name, buf, 128);
+	if (dev->descriptor.iProduct
+		&& usb_string(dev, dev->descriptor.iProduct, buf, 63) > 0)
+		snprintf(name, 128, "%s %s", name, buf);
+	printk(DRIVER_NAME "[%d]: %s on usb%d:%d\n", dev->devnum, name,
+	       dev->bus->busnum, dev->devnum);
+}
 
 
 #ifdef KERNEL_2_5
@@ -752,11 +1008,12 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	struct usb_interface_descriptor *idesc;
 #endif
 	struct usb_endpoint_descriptor *ep;
+	struct in_endpt *iep;
 	struct irctl *ir;
-	int i, type, devnum;
-	char buf[63], name[128]="";
+	int i, type;
 
-	dprintk(DRIVER_NAME ": usb probe called\n");
+	dprintk(DRIVER_NAME "[%d]: usb_remote_probe: dev:%p, intf:%p, id:%p)\n",
+		dev->devnum, dev, intf, id);
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
 	idesc = intf->cur_altsetting;
@@ -764,7 +1021,10 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	idesc = &intf->altsetting[intf->act_altsetting];
 #endif
 
-	if ( !(ir = new_irctl(dev)) ) {
+	/* Check if a usb remote has already been registered for this device */
+	ir = get_prior_reg_ir(dev);
+
+	if ( !ir && !(ir = new_irctl(dev)) ) {
 #ifdef KERNEL_2_5
 		return -ENOMEM;
 #else
@@ -772,7 +1032,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #endif
 	}
 	type = ir->remote_type;
-	devnum = ir->devnum;
 
 	// step through the endpoints to find first in and first out endpoint
 	// of type interrupt transfer
@@ -783,16 +1042,14 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	for (i = 0; i < idesc->bNumEndpoints; ++i) {
 		ep = &idesc->endpoint[i];
 #endif
+		dprintk(DRIVER_NAME "[%d]: processing endpoint %d\n", dev->devnum, i);
 		if ( ((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN)
 			&& ((ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT)) {
 
-			// ATI2's ep 1 only reports mouse emulation, ep 2 reports both
-			if ((type == ATI2_COMPATIBLE) && (ir->in_mouse == NULL)) {
-				ir->in_mouse = new_in_endpt(ir,ep);
-				ir->in_mouse->type = EP_MOUSE;
-			} else if (ir->in_keys == NULL) {
-				ir->in_keys = new_in_endpt(ir,ep);
-				ir->in_keys->type = EP_KEYS;
+			if ((iep = new_in_endpt(ir,ep))) {
+				usb_fill_int_urb(iep->urb, dev,
+					usb_rcvintpipe(dev,iep->ep->bEndpointAddress), iep->buf,
+					iep->len, usb_remote_recv, iep, iep->ep->bInterval);
 			}
 		}
 
@@ -803,57 +1060,30 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			ir->out_init = new_out_endpt(ir,ep);
 		}
 	}
-	if ((ir->in_keys == NULL) && (ir->in_mouse == NULL)) {
-		dprintk(DRIVER_NAME ": inbound endpoint not found\n");
-		free_irctl(ir, 0xFF);
+	if (list_empty(&ir->iep_listhead)) {
+		printk(DRIVER_NAME "[%d]: inbound endpoint not found\n", ir->devnum);
+		free_irctl(ir, FREE_ALL);
 #ifdef KERNEL_2_5
 		return -ENODEV;
 #else
 		return NULL;
 #endif
 	}
-	if ((ir->p->minor = lirc_register_plugin(ir->p)) < 0) {
-		free_irctl(ir, 0xFF);
+	if (ir->dev_refcount == 1) {
+		if ((ir->p->minor = lirc_register_plugin(ir->p)) < 0) {
+			free_irctl(ir, FREE_ALL);
 #ifdef KERNEL_2_5
-		return -ENODEV;
+			return -ENODEV;
 #else
-		return NULL;
+			return NULL;
 #endif
-	}
+		}
 
+		/* Note new driver registration in kernel logs */
+		log_usb_dev_info(dev);
 
-	if (dev->descriptor.iManufacturer
-		&& usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
-		strncpy(name, buf, 128);
-	if (dev->descriptor.iProduct
-		&& usb_string(dev, dev->descriptor.iProduct, buf, 63) > 0)
-		snprintf(name, 128, "%s %s", name, buf);
-	printk(DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
-	       dev->bus->busnum, devnum);
-
-	/* inbound data */
-	if (ir->in_keys) {
-		struct in_endpt *iep = ir->in_keys;
-		usb_fill_int_urb(iep->urb, dev,
-			usb_rcvintpipe(dev,iep->ep->bEndpointAddress), iep->buf,
-			iep->len, usb_remote_recv, iep, iep->ep->bInterval);
-	}
-	if (ir->in_mouse) {
-		struct in_endpt *iep = ir->in_mouse;
-		usb_fill_int_urb(iep->urb, dev,
-			usb_rcvintpipe(dev,iep->ep->bEndpointAddress), iep->buf,
-			iep->len, usb_remote_recv, iep, iep->ep->bInterval);
-	}
-
-	/* outbound data (initialization) */
-	if (ir->out_init) {
-		struct out_endpt *oep = ir->out_init;
-		usb_fill_int_urb(oep->urb, dev,
-			usb_sndintpipe(dev, oep->ep->bEndpointAddress), oep->buf,
-			USB_BUFLEN, usb_remote_send, oep, oep->ep->bInterval);
-
-		send_packet(oep, 0x8004, init1);
-		send_packet(oep, 0x8007, init2);
+		/* outbound data (initialization) */
+		send_outbound_init(ir);
 	}
 
 #ifdef KERNEL_2_5
@@ -863,7 +1093,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	return ir;
 #endif
 }
-
 
 #ifdef KERNEL_2_5
 static void usb_remote_disconnect(struct usb_interface *intf)
@@ -877,16 +1106,22 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	struct irctl *ir = ptr;
 #endif
 
+	dprintk(DRIVER_NAME ": disconnecting remote %d:\n", (ir? ir->devnum: -1));
+	// TODO XXX only want to free_irctl once; same for unreg, etc.; but we
+	// want to do it the second time only.  Therefore we should remove
+	// from the list the first time, and set a death knell flag in ir?
+	// oh, use refcounting.
 	if (!ir || !ir->p)
 		return;
 
-	ir->usbdev = NULL;
+	if (ir->usbdev) {
+		/* Only unregister once */
+		ir->usbdev = NULL;
+		unregister_from_lirc(ir);
+	}
 
-	free_in_endpt(ir->in_keys, 0xFF);
-	free_in_endpt(ir->in_mouse, 0xFF);
-	free_out_endpt(ir->out_init, 0xFF);
-	unregister_from_lirc(ir);
-	free_irctl(ir, 0xFF);
+	/* This also removes the current remote from remote_list */
+	free_irctl(ir, FREE_ALL);
 }
 
 static struct usb_driver usb_remote_driver = {
@@ -901,9 +1136,11 @@ static int __init usb_remote_init(void)
 {
 	int i;
 
+	INIT_LIST_HEAD(&remote_list);
+
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.42 2004/10/29 02:16:29 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.43 2004/11/14 22:47:36 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
