@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.7 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_slinke.c,v 5.8 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -87,8 +87,6 @@ extern struct ir_remote *repeat_remote,*last_remote;
 struct timeval start,end,last;
 lirc_t gap,signal_length;
 ir_code pre,code;
-
-lirc_t slinke_readdata(void);
 
 struct hardware hw_slinke = {
     LIRC_DRIVER_DEVICE, /* default device */
@@ -417,8 +415,9 @@ char *slinkePorts[] = {"SL0","SL1","SL2","SL3","IR0","PAR","SER","SYS"};
 #endif
 
 /*****************************************************************************/
-lirc_t slinke_readdata(void){
+lirc_t slinke_readdata(int timeout){
     lirc_t result;
+
     if (signal_queue_buf == NULL) return 0;
     if (signal_queue_rd_idx < signal_queue_length){
        result = signal_queue_buf[signal_queue_rd_idx++];

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.38 2002/03/24 21:10:59 lirc Exp $      */
+/*      $Id: lircd.c,v 5.39 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1509,7 +1509,7 @@ void free_old_remotes()
 }
 
 
-int waitfordata(unsigned long maxusec)
+int waitfordata(long maxusec)
 {
 	fd_set fds;
 	int maxfd,i,ret,reconnect;

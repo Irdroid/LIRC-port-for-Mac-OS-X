@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.9 2001/11/24 09:45:08 ranty Exp $      */
+/*      $Id: lircd.h,v 5.10 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -80,7 +80,7 @@ int send_core(int fd,char *message,char *arguments,int once);
 int version(int fd,char *message,char *arguments);
 int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);
-int waitfordata(unsigned long maxusec);
+int waitfordata(long maxusec);
 void loop(void);
 
 

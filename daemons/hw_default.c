@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.23 2002/01/06 13:36:43 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.24 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -60,8 +60,6 @@ static unsigned long supported_rec_modes[]=
 	0
 };
 
-lirc_t default_readdata (void);
-
 struct hardware hw_default=
 {
 	LIRC_DRIVER_DEVICE, /* default device */
@@ -96,10 +94,13 @@ static int default_config_frequency();
  *
  **********************************************************************/
 
-lirc_t default_readdata(void)
+lirc_t default_readdata(lirc_t timeout)
 {
 	lirc_t data;
 	int ret;
+
+	if (!waitfordata((long) timeout))
+		return 0;
 
 #if defined(SIM_REC) && !defined(DAEMONIZE)
 	while(1)

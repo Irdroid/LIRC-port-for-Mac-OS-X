@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.11 2002/04/28 20:09:01 lirc Exp $      */
+/*      $Id: receive.c,v 5.12 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -43,8 +43,12 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 		{
 			lirc_t data;
 			
-			if(!waitfordata(maxusec)) return(0);
-			data=hw.readdata();
+			data=hw.readdata(maxusec);
+			if(!data)
+			{
+				return 0;
+			}
+
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
@@ -132,7 +136,7 @@ int clear_rec_buffer(void)
 			rec_buffer.wptr=0;
 		}
 		
-		data=hw.readdata();
+		data=hw.readdata(0);
 		
 		LOGPRINTF(3,"c%lu",(unsigned long) data&(PULSE_MASK));
 		

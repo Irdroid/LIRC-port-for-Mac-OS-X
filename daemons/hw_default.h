@@ -1,4 +1,4 @@
-/*      $Id: hw_default.h,v 5.6 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_default.h,v 5.7 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.h ************************************************************
@@ -27,4 +27,5 @@ char *default_rec(struct ir_remote *remotes);
 int default_decode(struct ir_remote *remote,
 		   ir_code *prep,ir_code *codep,ir_code *postp,
 		   int *repeat_flagp,lirc_t *remaining_gapp);
+lirc_t default_readdata (lirc_t timeout);
 #endif

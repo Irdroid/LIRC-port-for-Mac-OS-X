@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.38 2002/02/01 23:02:16 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.39 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -534,7 +534,6 @@ int main(int argc,char **argv)
 		{
 			lirc_t data,sum;
 			unsigned int count;
-			int ret;
 
 			count=0;sum=0;
 			while(count<MAX_SIGNALS)
@@ -543,7 +542,8 @@ int main(int argc,char **argv)
 				
 				if(count==0) timeout=10000000;
 				else timeout=remote.gap*5;
-				if(!waitfordata(timeout))
+				data=hw.readdata(timeout);
+				if(!data)
 				{
 					if(count==0)
 					{
@@ -553,18 +553,6 @@ int main(int argc,char **argv)
 						break;
 					}
 					data=remote.gap;
-				}
-				else
-				{
-					ret=read(hw.fd,&data,sizeof(data));
-					if(ret!=sizeof(unsigned long))
-					{
-						fprintf(stderr,"%s: read() failed\n",
-							progname);
-						perror(progname);
-						retval=EXIT_FAILURE;
-						break;
-					}
 				}
 				if(count==0)
 				{
@@ -1208,7 +1196,7 @@ inline lirc_t calc_signal(struct lengths *len)
 
 int get_lengths(struct ir_remote *remote,int force)
 {
-	int ret,retval;
+	int retval;
 	lirc_t data,average,sum,remaining_gap,header;
 	enum analyse_mode mode=MODE_GAP;
 	int first_signal;
@@ -1230,19 +1218,11 @@ int get_lengths(struct ir_remote *remote,int force)
 	first_length=0;
 	while(1)
 	{
-		if(!waitfordata(10000000))
+		data=hw.readdata(10000000);
+		if(!data)
 		{
 			fprintf(stderr,"%s: no data for 10 secs, aborting\n",
 				progname);
-			retval=0;
-			break;
-		}
-		ret=read(hw.fd,&data,sizeof(data));
-		if(ret!=sizeof(data))
-		{
-			fprintf(stderr,"%s: read() failed\n",
-				progname);
-			perror(progname);
 			retval=0;
 			break;
 		}
@@ -1657,6 +1637,7 @@ void get_scheme(struct ir_remote *remote)
 		   number of bits */
 		remote->bits=length;
 		remote->flags|=SPACE_ENC;
+		return;
 	}
 	else
 	{
@@ -1701,9 +1682,15 @@ void get_scheme(struct ir_remote *remote)
 					printf("RC-5 remote control found.\n");
 					remote->flags|=RC5;
 				}
+				return;
 			}
 		}
 	}
+	length++;
+	printf("Suspicious data length: %u.\n",length);
+	/* this is not yet the number of bits */
+	remote->bits=length;
+	remote->flags|=SPACE_ENC;
 }
 
 struct lengths *get_max_length(struct lengths *first,unsigned int *sump)

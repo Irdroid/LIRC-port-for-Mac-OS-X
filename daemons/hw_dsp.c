@@ -1,4 +1,4 @@
-/*      $Id: hw_dsp.c,v 5.1 2002/04/22 19:07:47 lirc Exp $      */
+/*      $Id: hw_dsp.c,v 5.2 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dsp.c ****************************************************************
@@ -7,7 +7,7 @@
  * routines for diode in microphone input
  * 
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
- * Copyright (C) 2001 Pavel Machek <pavel@ucw.cz>
+ * Copyright (C) 2001, 2002 Pavel Machek <pavel@ucw.cz>
  *
  * Distribute under GPL version 2 or later.
  *
@@ -46,8 +46,6 @@
 
 extern struct ir_remote *repeat_remote;
 
-lirc_t dsp_readdata (void);
-
 /*
   decoding stuff
 */
@@ -58,7 +56,7 @@ static int myfd = -1;
 #define SAMPLE 47999
 
 
-lirc_t dsp_readdata(void)
+lirc_t dsp_readdata(lirc_t timeout)
 {
 	lirc_t data;
 	static int lastlength, laststate;
@@ -66,26 +64,35 @@ lirc_t dsp_readdata(void)
 	signed short buf[BUFSIZE];
 	double energy = 0.0;
 	int state;
-	
-	if (read(myfd, buf, BUFSIZE*2)!=BUFSIZE*2)
-		logperror(LOG_ERR,"could not read in simple...");
-	
-	for (i=0; i<BUFSIZE-1; i++) {
-		energy += ((double) buf[i]-buf[i+1])*((double) buf[i]-buf[i+1]);
-	}
-	energy /= BUFSIZE;
-	energy /= 2E4;
 
-	state = (energy > 2.0);
-	if (state == laststate) {
-		lastlength += ((1000000 / SAMPLE) * BUFSIZE);
-	} else {
-		data = lastlength | (laststate ? PULSE_BIT : 0);
-		lastlength = ((1000000 / SAMPLE) * BUFSIZE);
-		laststate = state;
-		LOGPRINTF(1,"Pulse came %8lx,  %8d...",
-			  data, data & ~PULSE_BIT);
-		return data;
+	while(1) {
+		if (read(myfd, buf, BUFSIZE*2)!=BUFSIZE*2)
+		{
+			logperror(LOG_ERR,"could not read in simple...");
+		}
+	
+		for (i=0; i<BUFSIZE-1; i++) {
+			energy += ((double) buf[i]-buf[i+1])*
+				((double) buf[i]-buf[i+1]);
+		}
+		energy /= BUFSIZE;
+		energy /= 2E4;
+
+		state = (energy > 2.0);
+		if (state == laststate) {
+			lastlength += ((1000000 / SAMPLE) * BUFSIZE);
+		} else {
+			data = lastlength | (laststate ? PULSE_BIT : 0);
+			lastlength = ((1000000 / SAMPLE) * BUFSIZE);
+			laststate = state;
+			LOGPRINTF(1,"Pulse came %8lx,  %8d...",
+				  data, data & ~PULSE_BIT);
+			return data;
+		}
+
+		timeout -= BUFSIZE*1000000 / SAMPLE;
+		if (timeout <= 0)
+			return 0;
 	}
 	return 0;
 }

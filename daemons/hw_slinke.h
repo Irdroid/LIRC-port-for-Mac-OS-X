@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.h,v 5.1 2000/07/02 12:03:38 columbus Exp $      */
+/*      $Id: hw_slinke.h,v 5.2 2002/05/04 09:36:27 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.h *************************************************************
@@ -26,5 +26,6 @@ int slinke_decode(struct ir_remote *remote
 int slinke_init(void);
 int slinke_deinit(void);
 char *slinke_rec(struct ir_remote *remotes);
+lirc_t slinke_readdata(lirc_t timetout);
 
 #endif
