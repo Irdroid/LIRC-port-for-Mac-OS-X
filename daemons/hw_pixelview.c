@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.1 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.2 1999/08/12 18:45:59 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -43,7 +43,7 @@ struct hardware hw=
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
 	LIRC_CAN_REC_LIRCCODE,    /* rec_mode */
-	30,                       /* code_length */
+	24,                       /* code_length */
 	pixelview_init,           /* init_func */
 	pixelview_deinit,         /* deinit_func */
 	NULL,                     /* send_func */
@@ -98,7 +98,7 @@ int pixelview_decode(struct ir_remote *remote,
 
 int pixelview_init(void)
 {
-	signal_length=hw.code_length*1000000/1200;
+	signal_length=(hw.code_length+(hw.code_length/8)*2)*1000000/1200;
 	
 	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
 	{

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.6 1999/08/06 18:12:48 columbus Exp $
+## $Id: Makefile.am,v 5.7 1999/08/12 18:45:59 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -9,17 +9,29 @@ EXTRA_DIST = dump_config.c dump_config.h
 
 sbin_PROGRAMS = lircd lircmd
 
-
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h config_file.h \
 		hardware.h
 lircd_LDADD = @hw_module@
 lircd_DEPENDENCIES = @hw_module@
-
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
-			hw_pixelview.c hw_pixelview.h\
+			hw_pixelview.c hw_pixelview.h \
+			hw_logitech.c hw_logitech.h \
 			serial.c serial.h
+
 lircmd_SOURCES = lircmd.c
+
+bin_PROGRAMS = irrecord
+
+irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
+		config_file.c config_file.h hardware.h \
+		ir_remote.c ir_remote.h
+irrecord_LDADD = @hw_module@
+irrecord_DEPENDENCIES = @hw_module@
+EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
+			hw_pixelview.c hw_pixelview.h \
+			hw_logitech.c hw_logitech.h \
+			serial.c serial.h
 
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec
@@ -45,7 +57,7 @@ uninstall-local: rmdev
 
 install-data-local:
 	test "$(lircd_conf)" = ""  || test -e $(sysconfdir)/lircd.conf  || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircd.conf
-	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircmd.conf
+	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircmd_conf) $(sysconfdir)/lircmd.conf
 
 mkdev:
 	test -e @devdir@/lircd || @mknod@ @devdir@/lircd p
@@ -55,13 +67,4 @@ rmdev:
 	$(RM) @devdir@/lircd
 	$(RM) @devdir@/lircm
 
-
-
 CLEANFILES = *~
-
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.4 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.5 1999/08/12 18:45:59 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -21,6 +21,8 @@
 #include <math.h>
 
 struct hardware;
+
+#define PULSE_BIT 0x1000000
 
 #ifdef LONG_IR_CODE
 typedef unsigned long long ir_code;
@@ -125,6 +127,16 @@ static inline ir_code reverse(ir_code data,int bits)
 	return(c);
 }
 
+static inline int is_pulse(unsigned long data)
+{
+	return(data&PULSE_BIT ? 1:0);
+}
+
+static inline int is_space(unsigned long data)
+{
+	return(!is_pulse(data));
+}
+
 static inline int has_repeat(struct ir_remote *remote)
 {
 	if(remote->prepeat>0 && remote->srepeat>0) return(1);
@@ -134,6 +146,12 @@ static inline int has_repeat(struct ir_remote *remote)
 static inline int is_raw(struct ir_remote *remote)
 {
 	if(remote->flags&RAW_CODES) return(1);
+	else return(0);
+}
+
+static inline int is_shift(struct ir_remote *remote)
+{
+	if(remote->flags&SHIFT_ENC) return(1);
 	else return(0);
 }
 
@@ -158,6 +176,18 @@ static inline int has_pre(struct ir_remote *remote)
 static inline int has_post(struct ir_remote *remote)
 {
 	if(remote->post_data_bits>0) return(1);
+	else return(0);
+}
+
+static inline int has_header(struct ir_remote *remote)
+{
+	if(remote->phead>0 && remote->shead>0) return(1);
+	else return(0);
+}
+
+static inline int has_foot(struct ir_remote *remote)
+{
+	if(remote->pfoot>0 && remote->sfoot>0) return(1);
 	else return(0);
 }
 
