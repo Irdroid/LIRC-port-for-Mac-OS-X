@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.42 2002/07/13 09:30:17 ranty Exp $      */
+/*      $Id: irrecord.c,v 5.43 2002/12/02 20:27:16 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -186,7 +186,7 @@ int main(int argc,char **argv)
 	int retries;
 	struct ir_remote *remotes=NULL;
 #ifdef DEBUG
-	int get_pre=0,get_post=0;
+	int get_pre=0,get_post=0,test=0;
 #endif
 
 	progname=argv[0];
@@ -205,11 +205,12 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 			{"pre",no_argument,NULL,'p'},
 			{"post",no_argument,NULL,'P'},
+			{"test",no_argument,NULL,'t'},
 #endif
 			{0, 0, 0, 0}
 		};
 #ifdef DEBUG
-		c = getopt_long(argc,argv,"hvd:H:fpP",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:H:fpPt",long_options,NULL);
 #else
 		c = getopt_long(argc,argv,"hvd:H:f",long_options,NULL);
 #endif
@@ -247,6 +248,9 @@ int main(int argc,char **argv)
 			break;
 		case 'P':
 			get_post=1;
+			break;
+		case 't':
+			test=1;
 			break;
 #endif
 		default:
@@ -286,14 +290,17 @@ int main(int argc,char **argv)
 			exit(EXIT_FAILURE);
 		}
 #ifdef DEBUG
-		remove_pre_data(remotes);
-		remove_post_data(remotes);
-		if(get_pre) get_pre_data(remotes);
-		if(get_post) get_post_data(remotes);
+		if(test)
+		{
+			remove_pre_data(remotes);
+			remove_post_data(remotes);
+			if(get_pre) get_pre_data(remotes);
+			if(get_post) get_post_data(remotes);
 			
-		fprint_remotes(stdout,remotes);
-		free_config(remotes);
-		return(EXIT_SUCCESS);
+			fprint_remotes(stdout,remotes);
+			free_config(remotes);
+			return(EXIT_SUCCESS);
+		}
 #endif
 		remote=*remotes;
 		remote.name=NULL;
