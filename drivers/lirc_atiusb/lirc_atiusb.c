@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.44 2004/12/01 01:27:54 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.45 2005/01/26 00:37:39 pmiller9 Exp $
  */
 
 /*
@@ -273,6 +273,9 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 
 	set_current_state(TASK_RUNNING);
 	remove_wait_queue(&oep->wait, &wait);
+#ifdef KERNEL_2_5
+	oep->urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 	usb_unlink_urb(oep->urb);
 }
 
@@ -373,6 +376,9 @@ static void set_use_dec(void *data)
 		/* Free inbound usb urbs */
 		list_for_each_safe(pos, n, &ir->iep_listhead) {
 			iep = get_iep_from_link(pos);
+#ifdef KERNEL_2_5
+			iep->urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 			usb_unlink_urb(iep->urb);
 		}
 		ir->connected = 0;
@@ -693,6 +699,9 @@ static void usb_remote_send(struct urb *urb)
 	if (!urb)
 		return;
 	if (!(oep = urb->context)) {
+#ifdef KERNEL_2_5
+		urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -738,6 +747,9 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 		dprintk(DRIVER_NAME "[%d]: free_in_endpt removing ep=0x%0x from list\n", ir->devnum, iep->ep->bEndpointAddress);
 	case 4:
 		if (iep->urb) {
+#ifdef KERNEL_2_5
+			iep->urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 			usb_unlink_urb(iep->urb);
 			usb_free_urb(iep->urb);
 			iep->urb = 0;
@@ -828,6 +840,9 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 	case FREE_ALL:
 	case 4:
 		if (oep->urb) {
+#ifdef KERNEL_2_5
+			oep->urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 			usb_unlink_urb(oep->urb);
 			usb_free_urb(oep->urb);
 			oep->urb = 0;
@@ -1203,7 +1218,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.44 2004/12/01 01:27:54 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.45 2005/01/26 00:37:39 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
