@@ -130,6 +130,9 @@ do
   fi
 done
 
+echo "Creating setup-driver.sh ..."
+./data2setup.sh > setup-driver.sh
+
 # TW: we don't want autogen running configure for us -- there's far too
 #     many options which need setting
 
