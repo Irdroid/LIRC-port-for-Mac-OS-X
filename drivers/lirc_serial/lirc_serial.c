@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.22 2001/04/24 19:30:01 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.23 2001/06/23 17:36:19 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -35,11 +35,6 @@
 #warning " port you want to use for LIRC with:      "
 #warning "    setserial /dev/ttySx uart none        "
 #warning "******************************************"
-#if 0
-#error "--- Please compile your Linux kernel serial port    ---"
-#error "--- driver as a module. Read the LIRC documentation ---"
-#error "--- for further details.                            ---"
-#endif
 #endif
 
 #include <linux/module.h>
@@ -69,6 +64,16 @@
 #include <asm/fcntl.h>
 
 #include "drivers/lirc.h"
+
+#ifdef LIRC_SERIAL_ANIMAX
+#ifdef LIRC_SERIAL_TRANSMITTER
+#warning "******************************************"
+#warning " This receiver does not have a            "
+#warning " transmitter diode                        "
+#warning "******************************************"
+#undef LIRC_SERIAL_TRANSMITTER
+#endif
+#endif
 
 #ifdef LIRC_SERIAL_IRDEO
 
