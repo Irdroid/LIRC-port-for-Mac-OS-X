@@ -1,4 +1,4 @@
-/*      $Id: transmit.h,v 5.3 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: transmit.h,v 5.4 2001/08/25 16:17:44 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.h **************************************************************
@@ -31,12 +31,11 @@ struct sbuf
 static inline lirc_t time_left(struct timeval *current,struct timeval *last,
 			lirc_t gap)
 {
-	unsigned long secs,usecs,diff;
+	unsigned long secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
-	usecs=current->tv_usec-last->tv_usec;
 	
-	diff=1000000*secs+usecs;
+	diff=1000000*secs+current->tv_usec-last->tv_usec;
 	
 	return((lirc_t) (diff<gap ? gap-diff:0));
 }

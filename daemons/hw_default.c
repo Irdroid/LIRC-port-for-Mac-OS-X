@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.20 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: hw_default.c,v 5.21 2001/08/25 16:17:44 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -396,7 +396,15 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		
 		gettimeofday(&current,NULL);
 		usecs=time_left(&current,&remote->last_send,remaining_gap*2);
-		if(usecs>0) usleep(usecs);
+		if(usecs>0) 
+		{
+			if(repeat_remote==NULL ||
+			   remote!=repeat_remote ||
+			   remote->last_code!=code)
+			{
+				usleep(usecs);
+			}
+		}
 	}
 #endif
 

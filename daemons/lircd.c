@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.32 2001/08/16 20:51:08 lirc Exp $      */
+/*      $Id: lircd.c,v 5.33 2001/08/25 16:17:44 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1204,9 +1204,9 @@ int send_core(int fd,char *message,char *arguments,int once)
 	if(remote==NULL || code==NULL) return(1);
 	if(once)
 	{
-		if(remote==repeat_remote)
+		if(repeat_remote!=NULL)
 		{
-			return(send_error(fd,message,"remote is repeating\n"));
+			return(send_error(fd,message,"busy: repeating\n"));
 		}
 	}
 	else

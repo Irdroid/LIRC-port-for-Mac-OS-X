@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.17 2001/04/24 19:32:04 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.18 2001/08/25 16:17:44 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -120,9 +120,9 @@ struct ir_remote
 	
         int repeat_state;
 	int repeat_countdown;
-	struct ir_ncode *last_code;
+	struct ir_ncode *last_code; /* code received or sent last */
 	int reps;
-	struct timeval last_send;
+	struct timeval last_send;   /* time last_code was received or sent */
 	lirc_t remaining_gap;       /* remember gap for CONST_LENGTH remotes */
         struct ir_remote *next;
 };
@@ -233,15 +233,15 @@ static inline int expect(struct ir_remote *remote,lirc_t delta,lirc_t exdelta)
 	return 0;
 }
 
+/* only works if last <= current */
 static inline unsigned long time_elapsed(struct timeval *last,
 					 struct timeval *current)
 {
-	unsigned long secs,usecs,diff;
+	unsigned long secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
-	usecs=current->tv_usec-last->tv_usec;
 	
-	diff=1000000*secs+usecs;
+	diff=1000000*secs+current->tv_usec-last->tv_usec;
 	
 	return(diff);
 }

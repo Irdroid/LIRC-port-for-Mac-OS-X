@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.5 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: transmit.c,v 5.6 2001/08/25 16:17:44 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -299,7 +299,9 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 	if(repeat_remote==NULL || !(remote->flags&NO_FOOT_REP))
 		send_foot(remote);
 
-	if(repeat_remote==NULL && (remote->flags&(NO_HEAD_REP|CONST_LENGTH)))
+	if(repeat_remote==NULL &&
+	   remote->flags&NO_HEAD_REP &&
+	   remote->flags&CONST_LENGTH)
 	{
 		send_buffer.sum-=remote->phead+remote->shead;
 	}
