@@ -1,0 +1,68 @@
+diff -uNr driver.orig/Makefile driver/Makefile
+--- driver.orig/Makefile	Fri Oct 15 16:25:42 1999
++++ driver/Makefile	Fri Oct 15 16:40:03 1999
+@@ -74,8 +74,8 @@
+ # some magic for using linux kernel settings
+ # when compiling module(s)
+ 
+-M_OBJS       = bttv.o msp3400.o tea6300.o tda8425.o tuner.o #i2c_chardev.o
+-MX_OBJS      = videodev.o i2c.o
++M_OBJS       = msp3400.o tea6300.o tda8425.o tuner.o #i2c_chardev.o
++MX_OBJS      = bttv.o videodev.o i2c.o
+ EXTRA_CFLAGS = -DTUNER_DEFAULT=$(TUNER) -DCARD_DEFAULT=$(CARD)	\
+ 	-DBTTV_MAJOR=$(BTTV_MAJOR) $(INTERFACE) $(MSP) $(PLL)	\
+ 	 #-DVIDEODAT -DNODGA
+diff -uNr driver.orig/bttv.c driver/bttv.c
+--- driver.orig/bttv.c	Mon May  3 02:01:05 1999
++++ driver/bttv.c	Fri Oct 15 16:43:14 1999
+@@ -286,6 +286,41 @@
+ 	return 0;
+ }
+ 
++/* ----------------------------------------------------------------------- */
++/* GPIO functions (for use by lirc drivers)                                */
++
++int read_bt848_gpio(int card, int latch, unsigned long mask, unsigned long *val)
++{
++	struct bttv *btv;
++	
++	if(card >= BTTV_MAX)
++		return -1;
++
++	btv = &bttvs[card];
++
++	btand(~(latch? 0ul: mask), BT848_GPIO_REG_INP);
++
++	*val = (btread(BT848_GPIO_DATA) & mask);
++
++	return 0;
++}
++
++int write_bt848_gpio(int card, int latch, unsigned long mask, unsigned long val)
++{
++	struct bttv *btv;
++	
++	if(card >= BTTV_MAX)
++		return -1;
++
++	btv = &bttvs[card];
++
++	btand(~(latch? 0ul: mask), BT848_GPIO_REG_INP);
++
++	btaor(val & mask, ~mask, BT848_GPIO_DATA);
++
++	return 0;
++}
++
+ 
+ /* ----------------------------------------------------------------------- */
+ /* I2C functions                                                           */
+@@ -572,7 +607,7 @@
+ 	{ "Diamond DTV2000",
+           3, 0, 2, 3, { 2, 3, 1, 1}, { 0, 1, 0, 1, 3}},
+ 	{ "AVerMedia TVPhone",
+-          3, 0, 3,15, { 2, 3, 1, 1}, {12, 0,11,11, 0}},
++          3, 0, 3,15, { 2, 3, 1, 1}, {12, 4,11,11, 0}},
+         { "MATRIX-Vision MV-Delta",
+           5,-1, 3, 0, { 2, 3, 1, 0, 0}},
+         { "Fly Video II",
