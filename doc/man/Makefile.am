@@ -1,9 +1,9 @@
-## $Id: Makefile.am,v 1.3 2002/08/17 11:17:41 lirc Exp $
+## $Id: Makefile.am,v 1.4 2002/09/21 16:21:35 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 man_MANS= irexec.1 ircat.1 irpty.1 irrecord.1 irw.1 irxevent.1 \
-	lircd.8 lircmd.8 mode2.1 smode2.1 xmode2.1
+	lircd.8 lircmd.8 mode2.1 smode2.1 xmode2.1 rc.1
 
 EXTRA_DIST = $(man_MANS)
 
