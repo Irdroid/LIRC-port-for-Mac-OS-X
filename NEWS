@@ -1,4 +1,6 @@
 0.7.0: future
+  * enabled lircd to optinally (compile time setting) decode buttons
+    that are not included in the config file
   * added delay directive to .lircrc config file (Tobias Blomberg)
   * added support for ATI RF Remote Wonder (Paul Miller)
   * added support for I-O Data GV-BCTV5/PCI TV card (Jens C. Rasmussen)

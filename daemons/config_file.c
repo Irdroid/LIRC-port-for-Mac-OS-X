@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.13 2003/08/15 11:36:20 lirc Exp $      */
+/*      $Id: config_file.c,v 5.14 2003/08/15 12:56:29 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -300,6 +300,16 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		LOGPRINTF(1,"parsing %s remote",val);
 		return(1);
 	}
+#ifdef DYNCODES
+	if ((strcasecmp("dyncodes_name",key))==0){
+		if(rem->dyncodes_name!=NULL)
+		{
+			free(rem->dyncodes_name);
+		}
+		rem->dyncodes_name=s_strdup(val);
+		return(1);
+	}
+#endif
 	else if ((strcasecmp("bits",key))==0){
 		rem->bits=s_strtoi(val);
 		return(1);
@@ -588,6 +598,14 @@ struct ir_remote * read_config(FILE *f)
                                                 break;
                                         }
 
+#                                       ifdef DYNCODES
+					if(rem->dyncodes_name==NULL)
+					{
+						rem->dyncodes_name=s_strdup("unknown");
+					}
+					rem->dyncodes[0].name=rem->dyncodes_name;
+					rem->dyncodes[1].name=rem->dyncodes_name;
+#                                       endif
 					/* not really necessary because we
 					   clear the alloced memory */
                                         rem->next=NULL;
@@ -777,6 +795,9 @@ void free_config(struct ir_remote *remotes)
 	{
 		next=remotes->next;
 
+#               ifdef DYNCODES
+		if(remotes->dyncodes_name!=NULL) free(remotes->dyncodes_name);
+#               endif
 		if(remotes->name!=NULL) free(remotes->name);
 		if(remotes->codes!=NULL)
 		{

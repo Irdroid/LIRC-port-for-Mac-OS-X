@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.24 2003/08/15 11:36:20 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.25 2003/08/15 12:56:29 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -91,6 +91,11 @@ struct ir_remote
 				       this is an _absolute_ tolerance
 				       to solve this problem
 				       usually you can say 0 here */
+#       ifdef DYNCODES
+	char *dyncodes_name;         /* name for unknown buttons */
+	int dyncode;                 /* last received code */
+	struct ir_ncode dyncodes[2]; /* helper structs for unknown buttons*/
+#       endif
 	
 	/* pulse and space lengths of: */
 	

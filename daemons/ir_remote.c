@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.21 2003/08/15 11:36:20 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.22 2003/08/15 12:56:29 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -172,7 +172,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			}
 			if(bit==remote->post_data_bits+remote->bits)
 			{
-				affected=&post;
+				affected=&pre;
 				current_bit=0;
 			}
 			mask_bit=mask&1;
@@ -218,25 +218,39 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			if((codes->code|code_mask)==(code|code_mask))
 			{
 				found=codes;
-				if(has_toggle_mask(remote))
-				{
-					if(!(remote->toggle_mask_state%2))
-					{
-						remote->toggle_code=codes;
-						LOGPRINTF(1,
-							  "toggle_mask_start");
-						break;
-					}
-					if(codes!=remote->toggle_code)
-					{
-						remote->toggle_code=NULL;
-						return(NULL);
-					}
-					remote->toggle_code=NULL;
-				}
 				break;
 			}
 			codes++;
+		}
+	}
+#       ifdef DYNCODES
+	if(found==NULL)
+	{
+		if((remote->dyncodes[remote->dyncode].code|code_mask)!=
+		   (code|code_mask))
+		{
+			remote->dyncode++;
+			remote->dyncode%=2;
+		}
+		remote->dyncodes[remote->dyncode].code=code&(~code_mask);
+		found=&(remote->dyncodes[remote->dyncode]);
+	}
+#       endif
+	if(found!=NULL && has_toggle_mask(remote))
+	{
+		if(!(remote->toggle_mask_state%2))
+		{
+			remote->toggle_code=found;
+			LOGPRINTF(1,"toggle_mask_start");
+		}
+		else
+		{
+			if(found!=remote->toggle_code)
+			{
+				remote->toggle_code=NULL;
+				return(NULL);
+			}
+			remote->toggle_code=NULL;
 		}
 	}
 	*repeat_statep=repeat_state;

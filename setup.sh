@@ -32,6 +32,7 @@ X11_WINDOWS="on"
 DEBUG="off"
 NO_DAEMONIZE="off"
 NO_LONG_CODES="off"
+DYNCODES="off"
 USE_SYSLOG="off"
 
 #############################################################################
@@ -252,18 +253,19 @@ ConfigSoftware ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Software Configuration" \
-           --checklist "$CONFIG_SOFTWARE_TEXT" 13 74 5 \
+           --checklist "$CONFIG_SOFTWARE_TEXT" 14 74 6 \
              1 "Compile tools for X-Windows" $X11_WINDOWS \
              2 "Compile with DEBUG code" $DEBUG \
              3 "Disable daemonize" $NO_DAEMONIZE \
              4 "Disable long codes" $NO_LONG_CODES \
-             5 "Use syslogd instead of own log-file" $USE_SYSLOG 2>$TEMP
+             5 "Use syslogd instead of own log-file" $USE_SYSLOG \
+             6 "Enable dynamic codes" $DYNCODES 2>$TEMP
 
     if test "$?" = "0"; then
         {
 	set -- `cat $TEMP`
         X11_WINDOWS="off"; DEBUG="off"; NO_DAEMONIZE="off"; NO_LONG_CODES="off"
-        USE_SYSLOG="off"
+        USE_SYSLOG="off"; DYNCODES="off"
         for ITEM in $@; do
             {
             if   test $ITEM = "\"1\""; then X11_WINDOWS="on"
@@ -271,6 +273,7 @@ ConfigSoftware ()
             elif test $ITEM = "\"3\""; then NO_DAEMONIZE="on"
             elif test $ITEM = "\"4\""; then NO_LONG_CODES="on"
             elif test $ITEM = "\"5\""; then USE_SYSLOG="on"
+            elif test $ITEM = "\"6\""; then DYNCODES="on"
             fi
             }
         done
@@ -297,6 +300,7 @@ SaveConfig ()
     echo "NO_DAEMONIZE=$NO_DAEMONIZE" >>$CONFIG
     echo "NO_LONG_CODES=$NO_LONG_CODES" >>$CONFIG
     echo "USE_SYSLOG=$USE_SYSLOG" >>$CONFIG
+    echo "DYNCODES=$DYNCODES" >>$CONFIG
     chmod 666 $CONFIG
 
     echo '#!/bin/bash' >$START
@@ -325,6 +329,7 @@ SaveConfig ()
     if test "$NO_DAEMONIZE" = "on"; then echo "--disable-daemonize \\" >>$START; fi
     if test "$NO_LONG_CODES" = "on"; then echo "--disable-long-codes \\" >>$START; fi
     if test "$USE_SYSLOG" = "on"; then echo "--with-syslog \\" >>$START; fi
+    if test "$DYNCODES" = "on"; then echo "--enable-dyncodes \\" >>$START; fi
     echo "--with-driver=$LIRC_DRIVER \\" >>$START
     echo "--with-major=$LIRC_MAJOR \\" >>$START
     echo "--with-port=$LIRC_PORT \\" >>$START

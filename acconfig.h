@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.24 2003/04/21 14:14:43 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.25 2003/08/15 12:56:29 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -50,6 +50,9 @@
 
 /* Define to use long long IR codes */
 #undef LONG_IR_CODE
+
+/* Define to use dynamic IR codes */
+#undef DYNCODES
 
 /* Define to enable debugging output */
 #undef DEBUG
