@@ -46,7 +46,7 @@ important part of the package.</P>
 control. Depending on the config file described in the next section it
 converts IR signals into mouse events. It currently supports two mouse
 protocols. For compatibility reasons the default protocol is the
-MouseSystems protocol but the prefered is the IMPS/2 protocol. The
+MouseSystems protocol but the preferred is the IMPS/2 protocol. The
 advantage of this protocol is its wheel-mouse support. That way you
 can for example configure Netscape to scroll if you press certain
 buttons.</P>
@@ -70,24 +70,24 @@ addition to your normal one.</P>
         EndSubsection
     EndSection
 </PRE>
-Additionaly you might have to add
+Additionally you might have to add
 <PRE>
         Buttons 5
 </PRE>
 to your normal &quot;Pointer&quot; Section in order to make the wheel
-buttons work. Of couse you have to replace IMPS/2 with MouseSystems if
-you really want to use this protocol. Colas Nahaboo <A
+buttons work. Of course you have to replace IMPS/2 with MouseSystems if
+you really want to use this protocol. Colas Nahaboo's <A
 HREF="http://www.inria.fr/koala/colas/mouse-wheel-scroll/">X mouse
 wheel scroll page</A> gives you further information how to make use of
 your new wheel mouse.</P>
 
 <P>Make sure you use a current version of X11. There seems to be a bug
 in X version 3.3 that can make X crash if you use both mouse and
-remote control mouse simultanously. At least I coulndn't reproduce
+remote control mouse simultaneously. At least I couldn't reproduce
 this with other versions. I also received some notes that lircmd does
 not work with certain X11 versions. But almost always at least one of
 the protocols did work. So try them both before trying another X11
-version. But always remember that you have to modify both XFConfig and
+version. But always remember that you have to modify both XF86Config and
 lircmd.conf so they use the same protocol.</P>
 
 <H3>gpm</H3>
@@ -113,7 +113,7 @@ to lircmd:
 killall -HUP lircmd
 </PRE>
 This instructs lircmd to reread its config file. The same is true for
-lircd if you change lircd.conf. lircd will also reopen its logfile on
+lircd if you change lircd.conf. lircd will also reopen its log file on
 SIGHUP.</P>
 
 
@@ -140,7 +140,7 @@ is MouseSystems protocol.
 <DD>
 <P>
 Change the values here if your mouse pointer is moving too
-fast/slow. Usually the mouse pointer moves 1 pixel everytime it
+fast/slow. Usually the mouse pointer moves 1 pixel every time it
 receives a signal. The values here specify how much mouse movement
 accelerates if you hold down the according button on your remote
 control for a longer timer. The <em>start</em> value is the threshold
@@ -163,14 +163,14 @@ the daemon will always be active.
 <DT>MOVE_ [ N [ E | W ] | E | S [ E | W ] | W ]&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT>
 <DD>
 <P>
-The obvious functionality. You can even get better granulatity by
+The obvious functionality. You can even get better granularity by
 combing different commands (copied from the config file for AnimaX
 remotes):
 <PRE>
 MOVE_N    ANIMAX_MOUSE_PAD   MOUSE_NNE
 MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE
 </PRE>
-This also demontrates that all commands are executed begining at the
+This also demonstrates that all commands are executed beginning at the
 top.
 </P>
 </DD>
@@ -183,7 +183,7 @@ the wheel.
 </DD>
 </DL>
 
-'*' is allowed as wildcard for button and remote. Please note that
+'*' is allowed as wild card for button and remote. Please note that
 every line that fits to the received signal will be executed. Parsing
 starts at the top of the file.</P>
 
@@ -203,7 +203,7 @@ modes explained later.</P>
 
 <P>First I will explain the syntax of the .lircrc file itself.  The
 config file for LIRC tools consists of one or more of the following
-constuctions:</P>
+constructions:</P>
 
 <PRE>
     begin
@@ -217,7 +217,7 @@ constuctions:</P>
     end
 </PRE>
 
-<P>Bringing it to the point the above sais which program
+<P>Bringing it to the point the above says which program
 (<em>prog</em>) should do what (<em>config</em>, <em>mode</em>,
 <em>flags</em>) if you press a certain button (<em>remote</em>,
 <em>button</em>) a specified time (<em>repeat</em>).</P>
@@ -228,10 +228,10 @@ constuctions:</P>
     string given in config.
 </DD>
 <DT>remote, button</DT>
-<DD>specify a key of a remote control that lauches
+<DD>specify a key of a remote control that launches
     an action. Key sequences can be specified by giving more then
     one remote/button string. The character '*' can be used as a
-    wildcard for remote or button. The default for remote is '*'.
+    wild card for remote or button. The default for remote is '*'.
 </DD>
 <DT>repeat</DT>
 <DD>tells the program what shall happen if a key is repeated.
@@ -245,7 +245,16 @@ constuctions:</P>
     whenever the specified key sequence is received by lircd. If you
     give more than one config string, the config strings will be passed
     to the applications by turns. With this feature you can for example
-    implement toggle buttons.
+    implement toggle buttons.<BR>
+
+    You can pass non-printable characters to applications with all
+    standard C escape sequences (most common are: \n = line-feed, \r =
+    carriage return, \t = tab, \e = escape, \&lt;<em>n</em>&gt; = ASCII
+    code in octal representation, \x&lt;<em>n</em>&gt; = ASCII code in
+    hexadecimal representation, \\ = backslash). Additionally you can
+    supply Ctrl-X by specifying \X where X is an upper character or
+    @. For example \C is Ctrl-C.
+
 </DD>
 <DT>mode</DT>
 <DD>tells the program to enter a special mode.
@@ -279,7 +288,7 @@ The following are valid flags:
 </DD>
 <DT>quit</DT>
 <DD>Usually all configurations are examined if they have
-    to be executed. You can stop this immediatly with this flag.
+    to be executed. You can stop this immediately with this flag.
 </DD>
 <DT>mode</DT>
 <DD>This is only allowed within a mode block. It tells the
