@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.98 2003/01/26 12:57:59 lirc Exp $
+dnl $Id: configure.in,v 5.99 2003/01/26 21:44:40 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -103,7 +103,7 @@ case "${host_os}" in
     dnl Mac OS X configuration
 
     dnl PortAudio for mac os x
-    portaudio_LDFLAGS="-lportaudio -framework CoreAudio -framework AudioToolbox"
+    portaudio_lib_other="-framework CoreAudio -framework AudioToolbox"
 
     dnl default devdir, on mac os x/darwin, /dev/ can not be used without kernel programming, so use a fifo somewhere else
     devdir_default="/usr/lirc/dev/"
@@ -113,7 +113,7 @@ case "${host_os}" in
     dnl Unix OSS configuration
 
     dnl PortAudio for UNIX OSS
-    portaudio_LDFLAGS="-lportaudio -lm -lpthread ${forkpty}"
+    portaudio_lib_other="-lm -lpthread ${forkpty}"
 
     dnl default devdir
     devdir_default="/dev"
@@ -158,12 +158,11 @@ AC_CHECK_LIB(irman_sw, ir_strerror,
   possible_drivers="${possible_drivers} (irman_sw)"
 )
 dnl audio driver requires PortAudio library installed and some linker flags
-AC_SUBST(PORTAUDIO_LDFLAGS)
-LDFLAGS="${portaudio_LDFLAGS} ${LDFLAGS}"
-AC_CHECK_HEADERS(portaudio.h,
-	[AC_CHECK_LIB(portaudio, Pa_Initialize,
- 		possible_drivers="${possible_drivers} (audio)"
-	)]
+AC_CHECK_HEADERS(portaudio.h,[
+  AC_CHECK_LIB(portaudio, Pa_Initialize,[
+    possible_drivers="${possible_drivers} (audio)"
+    ],,${portaudio_lib_other}
+  )]
 )
 
 dnl here we see what driver the user wants.
@@ -194,6 +193,7 @@ lircd_conf=""
 lircmd_conf=""
 irman_lib=""
 caraca_lib=""
+portaudio_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
 kernel_module=""
@@ -272,7 +272,7 @@ if test "$driver" = "any"; then
 	  ;;
 	  audio)
 	  hw_module="${hw_module} hw_audio.o receive.o"
-	  PORTAUDIO_LDFLAGS="${portaudio_LDFLAGS}"
+	  portaudio_lib="-lportaudio ${portaudio_lib_other}"
 	  ;;
 	  udp)
 	  hw_module="${hw_module} hw_udp.o receive.o"
@@ -570,7 +570,7 @@ if test "$driver" = "audio"; then
   lirc_driver="audio"
   hw_module="hw_audio.o receive.o"
   HW_DEFAULT="hw_audio"
-  PORTAUDIO_LDFLAGS="${portaudio_LDFLAGS}"
+  portaudio_lib="-lportaudio ${portaudio_lib_other}"
 fi
 if test "$driver" = "udp"; then
   lirc_driver="none"
@@ -778,13 +778,13 @@ AC_SUBST(driver)
 AC_SUBST(lirc_driver)
 AC_SUBST(irman_lib)
 AC_SUBST(caraca_lib)
+AC_SUBST(portaudio_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
 AC_SUBST(irtty)
 AC_SUBST(lircd_conf)
 AC_SUBST(lircmd_conf)
-
 AC_SUBST(maintmode_daemons_extra)
 
 dnl tell the C code what we decided

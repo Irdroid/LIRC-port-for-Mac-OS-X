@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.25 2002/10/21 18:26:12 ranty Exp $
+## $Id: Makefile.am,v 5.26 2003/01/26 21:44:40 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,7 +12,7 @@ sbin_PROGRAMS = lircd lircmd
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h config_file.h \
 		hw-types.c hw-types.h hardware.h
-lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @daemon@
+lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
@@ -22,7 +22,7 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_irman.c hw_irman.h \
 			hw_creative.c hw_creative.h \
 			hw_silitek.c hw_silitek.h \
-		        hw_dsp.c \
+		        hw_dsp.c hw_audio.c\
 			hw_caraca.c hw_caraca.h \
 			hw_udp.c \
 			receive.c receive.h \
@@ -37,7 +37,7 @@ bin_PROGRAMS = irrecord
 irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 		config_file.c config_file.h hardware.h \
 		hw-types.c hw-types.h ir_remote.c ir_remote.h
-irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@
+irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
@@ -47,7 +47,7 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_irman.c hw_irman.h \
 			hw_creative.c hw_creative.h \
 			hw_silitek.c hw_silitek.h \
-			hw_dsp.c \
+			hw_dsp.c hw_audio.c \
 			hw_caraca.c hw_caraca.h \
 			hw_udp.c \
 			receive.c receive.h \
