@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.46 2005/03/26 09:59:27 lirc Exp $
+## $Id: Makefile.am,v 5.47 2005/03/26 10:01:50 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -10,7 +10,7 @@ EXTRA_DIST = dump_config.c dump_config.h
 sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
-		lircd.h ir_remote.h r_remote_types.h config_file.h \
+		lircd.h ir_remote.h ir_remote_types.h config_file.h \
 		hw-types.c hw-types.h hardware.h
 lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
