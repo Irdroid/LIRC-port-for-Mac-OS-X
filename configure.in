@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.25 2000/04/29 09:12:38 columbus Exp $
+dnl $Id: configure.in,v 5.26 2000/05/03 13:51:06 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -50,7 +50,7 @@ daemon=""
 AC_CHECK_FUNCS(daemon)
 if test "$ac_cv_func_daemon" != yes; then
   AC_CHECK_LIB(bsd,daemon,daemon="-lbsd")
-  if test "$daemon" == ""; then
+  if test "$daemon" = ""; then
     AC_MSG_ERROR([*** daemon() function not available on this system])
   fi
 fi
