@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.27 2001/08/04 17:55:43 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.28 2001/08/04 18:24:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -87,7 +87,7 @@
 
 #include "drivers/lirc.h"
 
-#ifdef rdtsc
+#if defined(rdtsc) && defined(KERNEL_2_1)
 #define USE_RDTSC
 #warning "Note: using rdtsc instruction"
 #endif
@@ -274,8 +274,12 @@ void calc_pulse_lengths_in_clocks(void)
 {
 	unsigned long long loops_per_sec,work;
 
+#ifdef KERNEL_2_3
 	loops_per_sec=current_cpu_data.loops_per_jiffy;
 	loops_per_sec*=HZ;
+#else
+	loops_per_sec=current_cpu_data.loops_per_sec;
+#endif
 	
 	/* How many clocks in a microsecond?, avoiding long long divide */
 	work=loops_per_sec;
