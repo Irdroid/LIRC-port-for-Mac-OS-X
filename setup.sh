@@ -452,7 +452,7 @@ SaveConfig ()
 	echo "--with-tty=$IRTTY \\" >>$START
 	}
     fi
-    if test "$X11_WINDOWS" = "on"; then echo "--with-x \\" >>$START; fi
+    if test "$X11_WINDOWS" = "on"; then echo "--with-x \\" >>$START; else echo "--without-x \\" >>$START; fi
     if test "$DEBUG" = "on"; then echo "--enable-debug \\" >>$START; fi
     if test "$NO_DAEMONIZE" = "on"; then echo "--disable-daemonize \\" >>$START; fi
     if test "$NO_LONG_CODES" = "on"; then echo "--disable-long-codes \\" >>$START; fi
