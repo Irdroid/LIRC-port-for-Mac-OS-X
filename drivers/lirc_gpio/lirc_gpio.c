@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.39 2004/08/07 09:52:45 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.40 2004/08/07 10:06:08 lirc Exp $
  *
  */
 
@@ -365,7 +365,7 @@ static struct lirc_plugin plugin = {
 /*
  *
  */
-int gpio_remote_init(void)
+static int gpio_remote_init(void)
 {  	
 	int ret;
 	unsigned int mask;

@@ -139,11 +139,11 @@ static int irq=IRQ_Ser2ICP;
 #define LIRC_ON_SA1100_TRANSMITTER_LATENCY 0
 
 /* pulse/space ratio of 50/50 */
-unsigned long pulse_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
+static unsigned long pulse_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
 /* 1000000/freq-pulse_width */
-unsigned long space_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
-unsigned int freq = 38000;      /* modulation frequency */
-unsigned int duty_cycle = 50;   /* duty cycle of 50% */
+static unsigned long space_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
+static unsigned int freq = 38000;      /* modulation frequency */
+static unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 
 #endif
 
@@ -227,12 +227,12 @@ int init_module(void);
 void cleanup_module(void);
 
 #ifdef LIRC_ON_SA1100
-void inline on(void)
+static void inline on(void)
 {
 	PPSR|=PPC_TXD2;
 }
   
-void inline off(void)
+static void inline off(void)
 {
 	PPSR&=~PPC_TXD2;
 }
@@ -562,7 +562,7 @@ static struct lirc_plugin plugin = {
 
 
 #ifdef MODULE
-int init_chrdev(void)
+static int init_chrdev(void)
 {
 	plugin.minor = lirc_register_plugin(&plugin);
 	if (plugin.minor < 0) {
@@ -781,7 +781,7 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id,
 }
 
 #ifdef LIRC_ON_SA1100
-void send_pulse(unsigned long length)
+static void send_pulse(unsigned long length)
 {
 	unsigned long k,delay;
 	int flag;
@@ -807,7 +807,7 @@ void send_pulse(unsigned long length)
 	off();
 }
 
-void send_space(unsigned long length)
+static void send_space(unsigned long length)
 {
 	if(length==0) return;
 	off();
@@ -1158,7 +1158,7 @@ static void drop_port(void)
 
 static void init_act200(void)
 {
-  int i;
+	int i;
 	__u8 control[] = {
 		ACT200L_REG15,
 		ACT200L_REG13 | ACT200L_SHDW,
@@ -1237,7 +1237,7 @@ static void init_act200(void)
 }
 #endif
 
-int init_lirc_sir(void)
+static int init_lirc_sir(void)
 {
 	int retval;
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.54 2004/08/07 09:52:46 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.55 2004/08/07 10:06:09 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -140,21 +140,21 @@ struct lirc_serial
 #define LIRC_IGOR            4
 
 #ifdef LIRC_SERIAL_IRDEO
-int type=LIRC_IRDEO;
+static int type=LIRC_IRDEO;
 #elif defined(LIRC_SERIAL_IRDEO_REMOTE)
-int type=LIRC_IRDEO_REMOTE;
+static int type=LIRC_IRDEO_REMOTE;
 #elif defined(LIRC_SERIAL_ANIMAX)
-int type=LIRC_ANIMAX;
+static int type=LIRC_ANIMAX;
 #elif defined(LIRC_SERIAL_IGOR)
-int type=LIRC_IGOR;
+static int type=LIRC_IGOR;
 #else
-int type=LIRC_HOMEBREW;
+static int type=LIRC_HOMEBREW;
 #endif
 
 #ifdef LIRC_SERIAL_SOFTCARRIER
-int softcarrier=1;
+static int softcarrier=1;
 #else
-int softcarrier=0;
+static int softcarrier=0;
 #endif
 static int debug = 0;
 #define dprintk(fmt, args...)                                 \
@@ -164,12 +164,12 @@ static int debug = 0;
 	}while(0)
 
 /* forward declarations */
-long send_pulse_irdeo(unsigned long length);
-long send_pulse_homebrew(unsigned long length);
-void send_space_irdeo(long length);
-void send_space_homebrew(long length);
+static long send_pulse_irdeo(unsigned long length);
+static long send_pulse_homebrew(unsigned long length);
+static void send_space_irdeo(long length);
+static void send_space_homebrew(long length);
 
-struct lirc_serial hardware[]=
+static struct lirc_serial hardware[]=
 {
 	/* home-brew receiver/transmitter */
 	{
@@ -276,13 +276,13 @@ static struct lirc_buffer rbuf;
 
 static lirc_t wbuf[WBUF_LEN];
 
-unsigned int freq = 38000;
-unsigned int duty_cycle = 50;
+static unsigned int freq = 38000;
+static unsigned int duty_cycle = 50;
 
 /* Initialized in init_timing_params() */
-unsigned long period = 0;
-unsigned long pulse_width = 0;
-unsigned long space_width = 0;
+static unsigned long period = 0;
+static unsigned long pulse_width = 0;
+static unsigned long space_width = 0;
 
 #if defined(__i386__)
 /*
@@ -365,7 +365,7 @@ static inline void safe_udelay(unsigned long usecs)
  */
 
 /* So send_pulse can quickly convert microseconds to clocks */
-unsigned long conv_us_to_clocks = 0;
+static unsigned long conv_us_to_clocks = 0;
 
 static inline int init_timing_params(unsigned int new_duty_cycle,
 		unsigned int new_freq)
@@ -423,7 +423,7 @@ static inline int init_timing_params(unsigned int new_duty_cycle,
 
 /* return value: space length delta */
 
-long send_pulse_irdeo(unsigned long length)
+static long send_pulse_irdeo(unsigned long length)
 {
 	long rawbits;
 	int i;
@@ -548,7 +548,7 @@ static inline long send_pulse_homebrew_softcarrier(unsigned long length)
 }
 #endif /* USE_RDTSC */
 
-long send_pulse_homebrew(unsigned long length)
+static long send_pulse_homebrew(unsigned long length)
 {
 	if(length<=0) return 0;
 	if(softcarrier)
@@ -563,13 +563,13 @@ long send_pulse_homebrew(unsigned long length)
 	}
 }
 
-void send_space_irdeo(long length)
+static void send_space_irdeo(long length)
 {
 	if(length<=0) return;
 	safe_udelay(length);
 }
 
-void send_space_homebrew(long length)
+static void send_space_homebrew(long length)
 {
         off();
 	if(length<=0) return;
@@ -635,7 +635,7 @@ static void inline frbwrite(lirc_t l)
 	rbwrite(l);
 }
 
-irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
+static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 {
 	struct timeval tv;
 	int status,counter,dcd;

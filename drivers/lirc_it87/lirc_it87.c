@@ -406,7 +406,7 @@ static struct lirc_plugin plugin = {
 
 
 #ifdef MODULE
-int init_chrdev(void)
+static int init_chrdev(void)
 {
 	plugin.minor = lirc_register_plugin(&plugin);
 	
@@ -875,7 +875,7 @@ static void drop_port(void)
 }
 
 
-int init_lirc_it87(void)
+static int init_lirc_it87(void)
 {
 	int retval;
 	

@@ -35,25 +35,25 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-int poll_main(void);
-int atir_init_start(void);
+static int poll_main(void);
+static int atir_init_start(void);
 
-void write_index(unsigned char index,unsigned int value);
-unsigned int read_index(unsigned char index);
+static void write_index(unsigned char index,unsigned int value);
+static unsigned int read_index(unsigned char index);
 
-void do_i2c_start(void);
-void do_i2c_stop(void);
+static void do_i2c_start(void);
+static void do_i2c_stop(void);
 
-void seems_wr_byte(unsigned char al);
-unsigned char seems_rd_byte(void);
+static void seems_wr_byte(unsigned char al);
+static unsigned char seems_rd_byte(void);
 
-unsigned int read_index(unsigned char al);
-void write_index(unsigned char ah,unsigned int edx);
+static unsigned int read_index(unsigned char al);
+static void write_index(unsigned char ah,unsigned int edx);
 
-void cycle_delay(int cycle);
+static void cycle_delay(int cycle);
 
-void do_set_bits(unsigned char bl);
-unsigned char do_get_bits(void);
+static void do_set_bits(unsigned char bl);
+static unsigned char do_get_bits(void);
 
 #define DATA_PCI_OFF 0x7FFC00
 #define WAIT_CYCLE   20
@@ -64,12 +64,12 @@ static int debug = 0;
 		if(debug) printk(KERN_DEBUG fmt, ## args);    \
 	}while(0)
 
-int atir_minor;
-unsigned long pci_addr_phys, pci_addr_lin;
+static int atir_minor;
+static unsigned long pci_addr_phys, pci_addr_lin;
 
-struct lirc_plugin atir_plugin;
+static struct lirc_plugin atir_plugin;
 
-int do_pci_probe(void)
+static int do_pci_probe(void)
 {
 	struct pci_dev *my_dev;
 #ifndef KERNEL_2_5
@@ -98,8 +98,7 @@ int do_pci_probe(void)
 	return 1;
 }
 
-
-int atir_add_to_buf (void* data, struct lirc_buffer* buf)
+static int atir_add_to_buf (void* data, struct lirc_buffer* buf)
 {
 	unsigned char key;
 	int status;
@@ -114,14 +113,14 @@ int atir_add_to_buf (void* data, struct lirc_buffer* buf)
 	return -ENODATA;
 }
 
-int atir_set_use_inc(void* data)
+static int atir_set_use_inc(void* data)
 {
 	MOD_INC_USE_COUNT;
 	dprintk("ATIR driver is opened\n");
 	return 0;
 }
 
-void atir_set_use_dec(void* data)
+static void atir_set_use_dec(void* data)
 {
 	MOD_DEC_USE_COUNT;
 	dprintk("ATIR driver is closed\n");
@@ -159,7 +158,7 @@ void cleanup_module(void)
 }
 
 
-int atir_init_start(void)
+static int atir_init_start(void)
 {
 	pci_addr_lin = (unsigned long)ioremap(pci_addr_phys + DATA_PCI_OFF,0x400);
 	if ( pci_addr_lin == 0 ) {
@@ -169,13 +168,13 @@ int atir_init_start(void)
 	return 1;
 }
 
-void cycle_delay(int cycle)
+static void cycle_delay(int cycle)
 {
 	udelay(WAIT_CYCLE*cycle);
 }
 
 
-int poll_main()
+static int poll_main()
 {
 	unsigned char status_high, status_low;
 	
@@ -196,7 +195,7 @@ int poll_main()
 	return (status_high << 8) | status_low;
 }
 
-void do_i2c_start(void)
+static void do_i2c_start(void)
 {
 	do_set_bits(3);
 	cycle_delay(4);
@@ -208,7 +207,7 @@ void do_i2c_start(void)
 	cycle_delay(2);
 }
 
-void do_i2c_stop(void)
+static void do_i2c_stop(void)
 {
 	unsigned char bits;
 	bits =  do_get_bits() & 0xFD;
@@ -226,8 +225,7 @@ void do_i2c_stop(void)
 	cycle_delay(2);
 }
 
-
-void seems_wr_byte(unsigned char value)
+static void seems_wr_byte(unsigned char value)
 {
 	int i;
 	unsigned char reg;
@@ -267,7 +265,7 @@ void seems_wr_byte(unsigned char value)
 	cycle_delay(3);
 }
 
-unsigned char seems_rd_byte(void)
+static unsigned char seems_rd_byte(void)
 {
 	int i;
 	int rd_byte;
@@ -312,7 +310,7 @@ unsigned char seems_rd_byte(void)
 	return rd_byte;
 }
 
-void do_set_bits(unsigned char new_bits)
+static void do_set_bits(unsigned char new_bits)
 {
 	int reg_val;
 	reg_val = read_index(0x34);
@@ -336,7 +334,7 @@ void do_set_bits(unsigned char new_bits)
 	write_index(0x31,reg_val);
 }
 
-unsigned char do_get_bits(void)
+static unsigned char do_get_bits(void)
 {
 	unsigned char bits;
 	int reg_val;
@@ -362,7 +360,7 @@ unsigned char do_get_bits(void)
 	return bits;
 }
 
-unsigned int read_index(unsigned char index)
+static unsigned int read_index(unsigned char index)
 {
 	unsigned int addr, value;
 	//  addr = pci_addr_lin + DATA_PCI_OFF + ((index & 0xFF) << 2);
@@ -371,7 +369,7 @@ unsigned int read_index(unsigned char index)
 	return value;
 }
 
-void write_index(unsigned char index,unsigned int reg_val)
+static void write_index(unsigned char index,unsigned int reg_val)
 {
 	unsigned int addr;
 	addr = pci_addr_lin + ((index & 0xFF) << 2);

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.34 2004/08/07 09:52:45 lirc Exp $
+ * $Id: lirc_dev.c,v 1.35 2004/08/07 10:06:08 lirc Exp $
  *
  */
 
@@ -131,8 +131,7 @@ static inline void init_irctl(struct irctl *ir)
  *  buffer free space is checked and locking performed
  *  returns 0 on success
  */
-
-inline static int add_to_buf(struct irctl *ir)
+static inline int add_to_buf(struct irctl *ir)
 {
 	if (lirc_buffer_full(ir->buf)) {
 		dprintk(LOGHEAD "buffer overflow\n",
@@ -739,7 +738,7 @@ EXPORT_SYMBOL(lirc_unregister_plugin);
 /*
  *
  */
-int lirc_dev_init(void)
+static int lirc_dev_init(void)
 {  	
 	int i;
 

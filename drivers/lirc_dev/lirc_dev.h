@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.13 2004/04/09 15:33:40 lirc Exp $
+ * $Id: lirc_dev.h,v 1.14 2004/08/07 10:06:08 lirc Exp $
  *
  */
 
@@ -72,11 +72,11 @@ static inline int  lirc_buffer_available(struct lirc_buffer *buf)
 {
     return (buf->size - buf->fill);
 }
-extern inline void lirc_buffer_lock(struct lirc_buffer *buf, unsigned long *flags)
+static inline void lirc_buffer_lock(struct lirc_buffer *buf, unsigned long *flags)
 {
 	spin_lock_irqsave(&buf->lock, *flags);
 }
-extern inline void lirc_buffer_unlock(struct lirc_buffer *buf, unsigned long *flags)
+static inline void lirc_buffer_unlock(struct lirc_buffer *buf, unsigned long *flags)
 {
 	spin_unlock_irqrestore(&buf->lock, *flags);
 }

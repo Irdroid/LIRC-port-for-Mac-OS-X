@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.24 2004/08/07 09:52:46 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.25 2004/08/07 10:06:09 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -106,7 +106,7 @@ int is_claimed=0;
  *************************   Interne Funktionen  ***********************
  ***********************************************************************/
 
-unsigned int __inline__ in(int offset)
+static unsigned int __inline__ in(int offset)
 {
 	switch(offset)
 	{
@@ -120,7 +120,7 @@ unsigned int __inline__ in(int offset)
 	return(0); /* make compiler happy */
 }
 
-void __inline__ out(int offset, int value)
+static void __inline__ out(int offset, int value)
 {
 	switch(offset)
 	{
@@ -137,27 +137,27 @@ void __inline__ out(int offset, int value)
 	}
 }
 
-unsigned int __inline__ lirc_get_timer(void)
+static unsigned int __inline__ lirc_get_timer(void)
 {
 	return(in(LIRC_PORT_TIMER)&LIRC_PORT_TIMER_BIT);
 }
 
-unsigned int __inline__  lirc_get_signal(void)
+static unsigned int __inline__  lirc_get_signal(void)
 {
 	return(in(LIRC_PORT_SIGNAL)&LIRC_PORT_SIGNAL_BIT);
 }
 
-void __inline__ lirc_on(void)
+static void __inline__ lirc_on(void)
 {
 	out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
 }
 
-void __inline__ lirc_off(void)
+static void __inline__ lirc_off(void)
 {
 	out(LIRC_PORT_DATA,0);
 }
 
-unsigned int init_lirc_timer(void)
+static unsigned int init_lirc_timer(void)
 {
 	struct timeval tv,now;
 	unsigned int level,newlevel,timeelapsed,newtimer;
@@ -216,7 +216,7 @@ unsigned int init_lirc_timer(void)
 	}
 }
 
-int lirc_claim(void)
+static int lirc_claim(void)
 {
 	if(parport_claim(ppdevice)!=0)
 	{
@@ -255,7 +255,7 @@ static inline void rbuf_write(lirc_t signal)
 	wptr=nwptr;
 }
 
-void irq_handler(int i,void *blah,struct pt_regs * regs)
+static void irq_handler(int i,void *blah,struct pt_regs * regs)
 {
 	struct timeval tv;
 	static struct timeval lasttv;
@@ -615,8 +615,8 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
-int pf(void *handle);
-void kf(void *handle);
+static int pf(void *handle);
+static void kf(void *handle);
 
 static struct timer_list poll_timer;
 static void poll_state(unsigned long ignored);
@@ -641,15 +641,14 @@ static void poll_state(unsigned long ignored)
 	}
 }
 
-int pf(void *handle)
+static int pf(void *handle)
 {
 	pport->ops->disable_irq(pport);
 	is_claimed=0;
 	return(0);
 }
 
-
-void kf(void *handle)
+static void kf(void *handle)
 {
 	if(!is_open)
 		return;
