@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.43 2002/08/17 11:17:41 lirc Exp $      */
+/*      $Id: lircd.c,v 5.44 2002/08/30 07:28:54 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -569,6 +569,7 @@ void connect_to_peers()
 	struct	hostent *host;
 	struct	sockaddr_in	addr;
 	struct timeval now;
+	int enable;
 	
 	gettimeofday(&now,NULL);
 	for(i=0;i<peern;i++)
@@ -593,10 +594,12 @@ void connect_to_peers()
 				continue;
 			}
 			
+			(void) setsockopt(peers[i]->socket,SOL_SOCKET,
+					  SO_KEEPALIVE,&enable,sizeof(enable));
+			
 			addr.sin_family=host->h_addrtype;;
 			addr.sin_addr=*((struct in_addr *)host->h_addr);
 			addr.sin_port=htons(peers[i]->port);
-			
 			if(connect(peers[i]->socket,(struct sockaddr *) &addr,
 				   sizeof(addr))==-1)
 			{
@@ -611,6 +614,8 @@ void connect_to_peers()
 				peers[i]->socket=-1;
 				continue;
 			}
+			logprintf(LOG_NOTICE, "connected to %s",
+				  peers[i]->host);
 			peers[i]->connection_failure=0;
 		}
 	}
