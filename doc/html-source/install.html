@@ -51,10 +51,17 @@ either at least kernel version 2.4.0 or you use Gerd Knorr's current
 <A HREF="http://www.in-berlin.de/User/kraxel/bttv.html">bttv</A>
 package together with a kernel version of 2.2.4 or higher. In some
 cases (eg. PixelView PlayTV) the latter solution will require Gerd
-Knorr's bttv package version 0.7.20 or higher. As LIRC during
+Knorr's bttv package version 0.7.37 or higher. As LIRC during
 compilation uses the bttv header files you will have to copy the
 current bttv files into your kernel sources. No further kernel patches
 are necessary that way.
+</P>
+<P>
+For TV cards that use the lirc_gpio_p module we rely on bttv
+autodetection of TV cards. That way you don't have to give any
+parameters to the module as they are selected internally depending on
+the information the bttv module gives us. This means that you should
+pay attention that your TV card is detected correctly by bttv.
 </P>
 
     <!-- Supported Hardware ------------------------------------------------>
