@@ -265,7 +265,7 @@ DriverOptions ()
 
 ConfigDriver ()
     {
-    . setup-driver.sh
+    . ./setup-driver.sh
     if test "$?" = "0"; then
         GetSelectedDriver
         SetPortAndIrq
@@ -379,7 +379,7 @@ fi
 if test -f $CONFIG; then
     {
     echo "Loading saved configuration from $CONFIG"
-    . $CONFIG
+    . ./$CONFIG
     sleep 1
     }
 fi
