@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.13 2002/05/05 10:23:52 lirc Exp $      */
+/*      $Id: receive.c,v 5.14 2002/06/28 07:47:53 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -13,6 +13,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
+#include <limits.h>
 
 #include "hardware.h"
 #include "lircd.h"

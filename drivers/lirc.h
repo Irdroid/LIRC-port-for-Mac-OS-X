@@ -1,21 +1,20 @@
-/*      $Id: lirc.h,v 5.5 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: lirc.h,v 5.6 2002/06/28 07:47:53 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
 
-#include <limits.h>
+#ifndef __KERNEL__
+#  include <sys/types.h>
+#endif
 
-#include <linux/ioctl.h>
-#include <asm/types.h>
+#  include <asm/types.h>
+#  include <linux/ioctl.h>
+
 
 #define PULSE_BIT  0x01000000
 #define PULSE_MASK 0x00FFFFFF
 
-#if INT_MAX>=PULSE_BIT
-typedef int lirc_t;
-#else
-#error "No appropriate type for lirc data available."
-#endif
+typedef int32_t lirc_t;
 
 
 /*
