@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.8 2003/01/26 12:58:00 lirc Exp $      */
+/*      $Id: irpty.c,v 5.9 2005/03/11 11:03:00 lirc Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -39,7 +39,11 @@
 #ifdef __APPLE__
 #include <util.h>
 #else
+#if defined (__FreeBSD__)
+#include <libutil.h>
+#else
 #include <pty.h>
+#endif
 #endif
 #endif
 
