@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.22 2004/04/10 01:45:39 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.23 2004/04/10 07:48:44 lirc Exp $
  */
 
 /*
@@ -39,12 +39,6 @@
 #error "*******************************************************"
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#define KERNEL26		1
-#else
-#define KERNEL26		0
-#endif
-
 #include <linux/config.h>
 
 #include <linux/kernel.h>
@@ -61,6 +55,7 @@
 #include <linux/wait.h>
 
 #include "drivers/lirc.h"
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 #define DRIVER_VERSION		"0.3"
@@ -106,7 +101,7 @@ struct irctl {
 	unsigned char *buf_in;
 	unsigned char *buf_out;
 	unsigned int len_in;
-#if KERNEL26
+#ifdef KERNEL_2_5
 	dma_addr_t dma_in;
 	dma_addr_t dma_out;
 #endif
@@ -147,7 +142,7 @@ static void send_packet(struct irctl *ir, u16 cmd, unsigned char *data)
 	set_current_state(TASK_INTERRUPTIBLE);
 	add_wait_queue(&ir->wait_out, &wait);
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 	if (usb_submit_urb(ir->urb_out, SLAB_ATOMIC)) {
 #else
 	if (usb_submit_urb(ir->urb_out)) {
@@ -227,7 +222,7 @@ static int set_use_inc(void *data)
 		if (!ir->usbdev)
 			return -ENOENT;
 		ir->urb_in->dev = ir->usbdev;
-#if KERNEL26
+#ifdef KERNEL_2_5
 		if (usb_submit_urb(ir->urb_in, SLAB_ATOMIC)) {
 #else
 		if (usb_submit_urb(ir->urb_in)) {
@@ -261,7 +256,7 @@ static void set_use_dec(void *data)
 }
 
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_recv(struct urb *urb)
@@ -306,14 +301,14 @@ static void usb_remote_recv(struct urb *urb)
 	}
 
 	/* resubmit urb */
-#if KERNEL26
+#ifdef KERNEL_2_5
 	usb_submit_urb(urb, SLAB_ATOMIC);
 #else
 	usb_submit_urb(urb);
 #endif
 }
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 static void usb_remote_send(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_send(struct urb *urb)
@@ -340,7 +335,7 @@ static void usb_remote_send(struct urb *urb)
 		wake_up(&ir->wait_out);
 }
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
@@ -364,7 +359,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	dprintk(DRIVER_NAME ": usb probe called\n");
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 	dev = interface_to_usbdev(intf);
 	idesc = &intf->altsetting[intf->act_altsetting];
 	if (idesc->desc.bNumEndpoints != 2)
@@ -412,7 +407,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			mem_failure = 3;
 		} else if (lirc_buffer_init(rbuf, bytes_in_key, USB_BUFLEN/bytes_in_key)) {
 			mem_failure = 4;
-#if KERNEL26
+#ifdef KERNEL_2_5
 		} else if (!(ir->buf_in = usb_buffer_alloc(dev, buf_len, SLAB_ATOMIC, &ir->dma_in))) {
 			mem_failure = 5;
 		} else if (!(ir->buf_out = usb_buffer_alloc(dev, USB_BUFLEN, SLAB_ATOMIC, &ir->dma_out))) {
@@ -461,7 +456,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		usb_free_urb(ir->urb_out);
 	case 7:
 		usb_free_urb(ir->urb_in);
-#if KERNEL26
+#ifdef KERNEL_2_5
 	case 6:
 		usb_buffer_free(dev, USB_BUFLEN, ir->buf_out, ir->dma_out);
 	case 5:
@@ -481,7 +476,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	case 1:
 		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n",
 			devnum, mem_failure);
-#if KERNEL26
+#ifdef KERNEL_2_5
 		return -ENOMEM;
 #else
 		return NULL;
@@ -513,7 +508,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	send_packet(ir, 0x8004, init1);
 	send_packet(ir, 0x8007, init2);
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 	usb_set_intfdata(intf, ir);
 	return SUCCESS;
 #else
@@ -522,7 +517,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 }
 
 
-#if KERNEL26
+#ifdef KERNEL_2_5
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
@@ -545,7 +540,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	usb_unlink_urb(ir->urb_out);
 	usb_free_urb(ir->urb_in);
 	usb_free_urb(ir->urb_out);
-#if KERNEL26
+#ifdef KERNEL_2_5
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
 	usb_buffer_free(dev, USB_BUFLEN, ir->buf_out, ir->dma_out);
 #else
@@ -618,7 +613,7 @@ MODULE_DEVICE_TABLE (usb, usb_remote_id_table);
 MODULE_PARM(debug, "i");
 MODULE_PARM_DESC(debug, "enable driver debug mode");
 
-#if !KERNEL26
+#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
 #endif
 
