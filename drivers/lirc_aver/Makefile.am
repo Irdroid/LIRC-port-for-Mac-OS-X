@@ -1,7 +1,8 @@
-## $Id: Makefile.am,v 1.5 1999/10/19 14:29:56 denis Exp $
+## $Id: Makefile.am,v 1.6 1999/10/20 16:56:44 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
-EXTRA_DIST = patches/lirc_aver-kernel-2.2.10.diff patches/lirc_aver-kernel-2.2.12.diff
+EXTRA_DIST = patches/lirc_aver-kernel-2.2.10.diff \
+             patches/lirc_aver-kernel-2.2.12.diff \
 	     patches/lirc_aver-bttv-0.6.4.diff
 
 ## this is so that Automake includes the C compiling definitions, and
