@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.27 2003/04/20 08:00:42 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.28 2003/05/04 09:37:46 ranty Exp $
  *
  */
 
@@ -361,16 +361,11 @@ static wait_queue_head_t* get_queue(void* data)
 }
 
 static struct lirc_plugin plugin = {
-	"lirc_gpio  ",
-	0,
-	0,
-	0,
-	0,
-	NULL,
-	get_key,
-	get_queue,
-	set_use_inc,
-	set_use_dec
+	.name		= "lirc_gpio  ",
+	.get_key	= get_key,
+	.get_queue	= get_queue,
+	.set_use_inc	= set_use_inc,
+	.set_use_dec	= set_use_dec,
 };
 
 /*
