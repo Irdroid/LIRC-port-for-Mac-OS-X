@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.5 1999/08/13 18:53:16 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.6 1999/08/15 18:17:14 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -760,20 +760,22 @@ inline unsigned long sync_rec_buffer(struct ir_remote *remote)
 	deltas=get_next_space();
 	if(deltas==0) return(0);
 
-	logprintf(0,"%ld\n",deltas);
-	while(deltas<remote->remaining_gap*(100-remote->eps)/100
-	      && deltas<remote->remaining_gap-remote->aeps)
+	if(last_remote!=NULL)
 	{
-		deltap=get_next_pulse();
-		if(deltap==0) return(0);
-		deltas=get_next_space();
-		logprintf(0,"%ld\n",deltas);
-		if(deltas==0) return(0);
-		count++;
-		if(count>REC_SYNC) /* no sync found, 
-				      let's try a diffrent remote */
+		while(deltas<last_remote->remaining_gap*
+		      (100-last_remote->eps)/100 &&
+		      deltas<last_remote->remaining_gap-last_remote->aeps)
 		{
-			return(0);
+			deltap=get_next_pulse();
+			if(deltap==0) return(0);
+			deltas=get_next_space();
+			if(deltas==0) return(0);
+			count++;
+			if(count>REC_SYNC) /* no sync found, 
+					      let's try a diffrent remote */
+			{
+				return(0);
+			}
 		}
 	}
 	rec_buffer.sum=0;
@@ -1162,7 +1164,7 @@ int default_decode(struct ir_remote *remote,
 				logprintf(1,"pre: %lx\n",pre);
 #                               endif
 #                               endif
-		}
+			}
 			
 			code=get_data(remote,remote->bits);
 			if(code==(ir_code) -1)
