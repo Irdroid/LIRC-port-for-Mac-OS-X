@@ -372,8 +372,8 @@ ConfigDriver ()
 		elif test "$1" = "r"; then LIRC_DRIVER=tekram_bt829;      DRIVER_PARAMETER=none;
 		elif test "$1" = "s"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
 		elif test "$1" = "t"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
-		elif test "$1" = "u"; then LIRC_DRIVER=leadtek;           DRIVER_PARAMETER=none;
-		elif test "$1" = "v"; then LIRC_DRIVER=leadtek;           DRIVER_PARAMETER=none;
+		elif test "$1" = "u"; then LIRC_DRIVER=leadtek_0010;      DRIVER_PARAMETER=none;
+		elif test "$1" = "v"; then LIRC_DRIVER=leadtek_0007;      DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

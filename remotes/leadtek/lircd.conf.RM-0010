@@ -14,6 +14,10 @@
 # modifications based on the config files from 
 # Juan Toledo <toledo@users.sourceforge.net> and 
 # Markus Lischka <mlischka@users.sourceforge.net>
+# 
+# Only CH_UP, CH_DOWN, VOL_UP and VOL_DOWN will repeat. This seems to
+# be a hardware limitation.
+#
 
 
 begin remote

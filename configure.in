@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.95 2002/11/03 16:00:38 lirc Exp $
+dnl $Id: configure.in,v 5.96 2002/11/09 22:34:23 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -126,8 +126,8 @@ AC_ARG_WITH(driver,
 			  dsp, cph03x, cph06x, creative, flyvideo,
 			  hauppauge, hauppauge_dvb, irdeo,
 			  irdeo_remote, irman, irreal, it87, knc_one,
-			  leadtek, logitech, lptX, mediafocusI,
-			  packard_bell, parallel, pctv,
+			  leadtek_0007, leadtek_0010, logitech, lptX,
+			  mediafocusI,packard_bell, parallel, pctv,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
@@ -394,10 +394,15 @@ if test "$driver" = "bestbuy"; then
   lircd_conf="bestbuy/lircd.conf.bestbuy"
   lircmd_conf="bestbuy/lircmd.conf.bestbuy"
 fi
-if test "$driver" = "leadtek"; then
+if test "$driver" = "leadtek_0007"; then
   lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="leadtek/lircd.conf.leadtek"
-  lircmd_conf="leadtek/lircmd.conf.leadtek"
+  lircd_conf="leadtek/lircd.conf.RM-0007"
+  lircmd_conf="leadtek/lircmd.conf.RM-0007"
+fi
+if test "$driver" = "leadtek_0010"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="leadtek/lircd.conf.RM-0010"
+  lircmd_conf="leadtek/lircmd.conf.RM-0010"
 fi
 if test "$driver" = "bestbuy2"; then
   lirc_driver="lirc_dev lirc_gpio"

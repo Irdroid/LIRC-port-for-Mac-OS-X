@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.22 2002/11/03 16:00:39 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.23 2002/11/09 22:34:23 lirc Exp $
  *
  */
 
@@ -113,7 +113,7 @@ static struct rcv_info rcv_infos[] = {
 	/* MIRO was just a work-around */
 	{BTTV_MIRO,                   0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_DYNALINK,               0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
-	{BTTV_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+	{BTTV_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0,  0, 32},
 	/* just a guess */
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
@@ -458,13 +458,13 @@ int init_module(void)
 	 * instead of autodetecting TV card
 	 */
 	if (gpio_mask) {
-		if (2 > sample_rate || 50 < sample_rate) {
+		if (sample_rate!=0 && (2 > sample_rate || 50 < sample_rate)) {
 			printk(LOGHEAD "parameter sample_rate "
 			       "must be beetween 2 and 50!\n", minor);
 			return -EBADRQC;
 		}
 
-		if (soft_gap && 
+		if (sample_rate!=0 && soft_gap && 
 		    ((2000/sample_rate) > soft_gap || 1000 < soft_gap)) {
 			printk(LOGHEAD "parameter soft_gap "
 			       "must be beetween %d and 1000!\n",
