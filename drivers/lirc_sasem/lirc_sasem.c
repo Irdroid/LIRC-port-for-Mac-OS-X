@@ -39,6 +39,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
+#error "**********************************************************"
+#error " Sorry, this driver is not yet available for 2.6 kernels. "
+#error "**********************************************************"
+#endif
+
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/kernel.h>
