@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.3 2002/10/21 18:26:13 ranty Exp $
+## $Id: Makefile.am,v 1.4 2002/10/27 15:53:25 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -39,9 +39,9 @@ mkdev:
 rmdev:
 	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
 
-install-data-local:
 if SANDBOXED
 else
+install-data-local: install-moduleDATA
 	-@depmod@ -a
 endif
 

@@ -36,9 +36,9 @@ mkdev:
 rmdev:
 	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
 
-install-data-local:
 if SANDBOXED
 else
+install-data-local: install-moduleDATA
 	-@depmod@ -a
 endif
 
