@@ -379,14 +379,14 @@ static ssize_t lirc_haup_read(struct file * file, char * buffer,
 
 	/* if input buffer is empty, wait for input */
 	if (remote.head==remote.tail) {
-		spin_unlock(remote_lock);
+		spin_unlock(&remote_lock);
 		if (file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
 		if (signal_pending(current))
 			return -ERESTARTSYS;
 		interruptible_sleep_on(&remote.wait_poll);
 		current->state = TASK_RUNNING;
-		spin_lock(remote_lock);
+		spin_lock(&remote_lock);
 	}
 	
 	data[0]=(unsigned char) ((remote.buffer[remote.head]>>8)&0x1f);
