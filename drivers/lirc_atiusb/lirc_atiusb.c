@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.10 2003/11/11 03:10:19 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.11 2003/11/13 15:53:24 pmiller9 Exp $
  */
 
 /*
@@ -64,9 +64,9 @@
 #define DRIVER_DESC			"USB remote driver for LIRC"
 #define DRIVER_NAME			"lirc_atiusb"
 
-#define BUFLEN				16
 #define CODE_LENGTH			5
 #define CODE_MIN_LENGTH		4
+#define BUFLEN				(CODE_LENGTH*4)
 
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
@@ -263,7 +263,7 @@ static void usb_remote_irq(struct urb *urb)
 	if (urb->actual_length < CODE_MIN_LENGTH || urb->actual_length > CODE_LENGTH) return;
 
 	ptr = urb->transfer_buffer;
-	for (i = 0; i < urb->actual_length; i++) buf[i] = *ptr++;
+	for (i = 0; i < urb->actual_length; i++) buf[i] = *(ptr++);
 	for (; i < CODE_LENGTH; i++) buf[i] = 0;
 
 	lirc_buffer_write_1(ir->p->rbuf, buf);
