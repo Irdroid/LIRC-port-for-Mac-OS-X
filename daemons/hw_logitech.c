@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.1 1999/08/12 18:49:17 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.2 1999/08/13 18:59:54 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -47,7 +47,7 @@ struct hardware hw=
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
 	LIRC_CAN_REC_LIRCCODE,    /* rec_mode */
-	24,                       /* code_length */
+	16,                       /* code_length */
 	logitech_init,            /* init_func */
 	logitech_deinit,          /* deinit_func */
 	NULL,                     /* send_func */

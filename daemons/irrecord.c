@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.1 1999/08/12 18:45:59 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.2 1999/08/13 18:59:54 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -13,6 +13,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
+#define DEBUG
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,11 +40,10 @@
 #include "ir_remote.h"
 #include "config_file.h"
 
-void logprintf(int level,char *format_str, ...) {}
-void logperror(int level,const char *s) {}
 void flushhw(void);
 int resethw(void);
 int waitfordata(unsigned long maxusec);
+int availabledata(void);
 void get_repeat_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
@@ -60,6 +61,7 @@ int get_header_length(struct ir_remote *remote);
 int get_data_length(struct ir_remote *remote);
 
 extern struct hardware hw;
+extern struct ir_remote *last_remote;
 
 char *progname;
 
@@ -77,6 +79,9 @@ struct ir_ncode ncode;
 /* the longest signal I've seen up to now was 48-bit signal with header */
 
 #define MAX_SIGNALS 200
+
+unsigned long signals[MAX_SIGNALS];
+
 #define AEPS 100
 #define EPS 30
 
@@ -93,6 +98,48 @@ struct ir_ncode ncode;
 
 #define SAMPLES 80
 
+#if 0
+int debug=10;
+FILE *lf=NULL;
+char *hostname="k6";
+int daemonized=0;
+
+void logprintf(int level,char *format_str, ...)
+{
+	time_t current;
+	char *currents;
+	va_list ap;  
+	
+	if(level>debug) return;
+	
+	current=time(&current);
+	currents=ctime(&current);
+	
+	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
+	if(!daemonized) fprintf(stderr,"%s: ",progname);
+	va_start(ap,format_str);
+	if(lf) {vfprintf(lf,format_str,ap);fflush(lf);}
+	if(!daemonized) {vfprintf(stderr,format_str,ap);fflush(stderr);}
+	va_end(ap);
+}
+
+void logperror(int level,const char *s)
+{
+	if(level>debug) return;
+
+	if(s!=NULL)
+	{
+		logprintf(level,"%s: %s\n",s,strerror(errno));
+	}
+	else
+	{
+		logprintf(level,"%s\n",strerror(errno));
+	}
+}
+#else
+void logprintf(int level,char *format_str, ...) {}
+void logperror(int level,const char *s) {}
+#endif
 int main(int argc,char **argv)
 {
 	char *filename;
@@ -211,36 +258,37 @@ int main(int argc,char **argv)
 	       "lirc@bartelmus.de\n\n");
 	
 	remote.name=filename;
-	if(hw.rec_mode==LIRC_MODE_MODE2)
+	switch(hw.rec_mode)
 	{
-		get_lengths(&remote);
+	case LIRC_MODE_MODE2:
+		if(!get_lengths(&remote))
+		{
+			if(remote.gap==0)
+			{
+				fprintf(stderr,"%s: gap not found,"
+					" can´t continue\n",progname);
+				fclose(fout);
+				unlink(filename);
+				if(hw.deinit_func) hw.deinit_func();
+				exit(EXIT_FAILURE);
+			}
+			printf("Creating config file in raw mode.\n");
+			remote.flags&=~(SPACE_ENC|SHIFT_ENC);
+			remote.flags|=RAW_CODES;
+			break;
+		}
+		
 		printf("%d %d %d %d %d %d %d %d %d %ld\n",
 		       remote.bits,remote.pone,remote.sone,remote.pzero,
 		       remote.szero,remote.ptrail,remote.flags,
 		       remote.eps,remote.aeps,remote.gap);
-#if 0
-		remote.bits=10;
-		remote.pone=800;
-		remote.sone=2400;
-		remote.pzero=800;
-		remote.szero=800;
-		remote.ptrail=800;
-		remote.flags=SPACE_ENC|CONST_LENGTH;
-		remote.eps=30;
-		remote.aeps=600;
-		remote.gap=60000;
-
-		remote.bits=11;
-		remote.pone=170;
-		remote.sone=7440;
-		remote.pzero=170;
-		remote.szero=4930;
-		remote.ptrail=170;
-		remote.flags=SPACE_ENC|CONST_LENGTH;
-		remote.eps=30;
-		remote.aeps=120;
-		remote.gap=121400;
-#endif
+		break;
+	case LIRC_MODE_CODE:
+		remote.bits=CHAR_BIT;
+		break;
+	case LIRC_MODE_LIRCCODE:
+		remote.bits=hw.code_length;
+		break;
 	}
 	
 	printf("Now enter the names for the buttons.\n");
@@ -276,33 +324,147 @@ int main(int argc,char **argv)
 			printf("Please try again.\n");
 			continue;
 		}
-		if(buffer[0]=='#')
-		{
-			printf("The name must not start with '#'.\n");
-			printf("Please try again.\n");
-			continue;			
-		}
 		if(strlen(buffer)==0)
 		{
 			break;
 		}
 		
+		if(remote.flags&RAW_CODES)
+		{
+			flushhw();
+		}
+		else
+		{
+			while(availabledata())
+			{
+				hw.rec_func(NULL);
+				hw.decode_func(&remote,&pre,&code,&post,
+					       &repeat_flag,&remaining_gap);
+			}
+		}
 		printf("\nNow press button \"%s\".\n",buffer);
 		
+		if(remote.flags&RAW_CODES)
+		{
+			unsigned long data;
+			unsigned int count,sum;
+			int ret;
+
+			count=0;sum=0;
+			while(count<MAX_SIGNALS)
+			{
+				unsigned long timeout;
+				
+				if(count==0) timeout=10000000;
+				else timeout=remote.gap*5;
+				if(!waitfordata(timeout))
+				{
+					if(count==0)
+					{
+						fprintf(stderr,"%s: no data for 10 secs,"
+							" aborting\n",progname);
+						retval=EXIT_FAILURE;
+						break;
+					}
+					data=remote.gap;
+				}
+				else
+				{
+					ret=read(hw.fd,&data,sizeof(unsigned long));
+					if(ret!=sizeof(unsigned long))
+					{
+						fprintf(stderr,"%s: read() failed\n",
+							progname);
+						perror(progname);
+						retval=EXIT_FAILURE;
+						break;
+					}
+				}
+				if(count==0)
+				{
+					if(!is_space(data) ||
+					   data<remote.gap-remote.gap*remote.eps/100)
+					{
+						printf("Sorry, something "
+						       "went wrong.\n");
+						sleep(3);
+						printf("Try again.\n");
+						flushhw();
+						count=0;
+						continue;
+					}
+				}
+				else
+				{
+					if(is_space(data) && 
+					   (is_const(&remote) ? 
+					    data>(remote.gap>sum ? (remote.gap-sum)*(100-remote.eps)/100:0)
+					    :
+					    data>remote.gap*(100-remote.eps)/100))
+					{
+						printf("Got it.\n");
+						printf("Signal length is %d\n",
+						       count-1);
+						if(count%2)
+						{
+							printf("That's weird because "
+							       "the signal length "
+							       "must be odd!\n");
+							sleep(3);
+							printf("Try again.\n");
+							flushhw();
+							count=0;
+							continue;
+						}
+						else
+						{
+							ncode.name=buffer;
+							ncode.length=count-1;
+							ncode.signals=signals;
+							fprint_remote_signal(fout,
+									     &remote,
+									     &ncode);
+							break;
+						}
+					}
+					signals[count-1]=data&(PULSE_BIT-1);
+					sum+=data&(PULSE_BIT-1);
+				}
+				count++;
+			}
+			if(count==MAX_SIGNALS)
+			{
+				printf("Signal is too long.\n");
+			}
+			if(retval==EXIT_FAILURE) break;
+			continue;
+		}
 		retries=RETRIES;
 		while(retries>0)
 		{
-			flushhw();
+			int flag;
+
 			if(!waitfordata(10000000))
 			{
-				printf("%s: no data for 10 secs, aborting\n",
-				       progname);
+				fprintf(stderr,"%s: no data for 10 secs,"
+					" aborting\n",progname);
 				retval=EXIT_FAILURE;
 				break;
 			}
-			hw.rec_func(NULL);
-			if(hw.decode_func(&remote,&pre,&code,&post,
-					  &repeat_flag,&remaining_gap))
+			last_remote=NULL;
+			flag=0;
+			sleep(1);
+			while(availabledata())
+			{
+				hw.rec_func(NULL);
+				if(hw.decode_func(&remote,&pre,&code,&post,
+						  &repeat_flag,&remaining_gap))
+				{
+					flag=1;
+					break;
+				}
+			}
+			if(flag)
 			{
 				ncode.name=buffer;
 				ncode.code=code;
@@ -312,16 +474,24 @@ int main(int argc,char **argv)
 			else
 			{
 				printf("Something went wrong. ");
-				fflush(stdout);sleep(3);
-				if(!resethw())
+				if(retries>1)
 				{
-					fprintf(stderr,"%s: Could not reset "
-						"hardware.\n",progname);
-					retval=EXIT_FAILURE;
-					break;
+					fflush(stdout);sleep(3);
+					if(!resethw())
+					{
+						fprintf(stderr,"%s: Could not reset "
+							"hardware.\n",progname);
+						retval=EXIT_FAILURE;
+						break;
+					}
+					flushhw();
+					printf("Press button again. "
+					       "(%d retries left)\n",retries-1);
 				}
-				printf("Press button again. "
-				       "(%d retries left)\n",retries);
+				else
+				{
+					printf("\n");
+				}
 				retries--;
 				continue;
 			}
@@ -339,6 +509,10 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
+	if(remote.flags&RAW_CODES)
+	{
+		return(EXIT_SUCCESS);
+	}
 	if(!resethw())
 	{
 		fprintf(stderr,"%s: Could not reset hardware.\n",progname);
@@ -373,11 +547,15 @@ int main(int argc,char **argv)
 	
 	printf("Checking for repeat bit.\n");
 	printf("Please press an arbitrary button repeatedly.\n");
-	retries=RETRIES;flag=0;first=0;
+	retries=30;flag=0;first=0;
 	while(retval==EXIT_SUCCESS && retries>0)
 	{
-
-		flushhw();
+		while(availabledata())
+		{
+			hw.rec_func(NULL);
+			hw.decode_func(&remote,&pre,&code,&post,
+				       &repeat_flag,&remaining_gap);
+		}
 		if(!waitfordata(10000000))
 		{
 			printf("%s: no data for 10 secs, aborting\n",
@@ -385,6 +563,7 @@ int main(int argc,char **argv)
 			retval=EXIT_FAILURE;
 			break;
 		}
+		printf(".");fflush(stdout);
 		hw.rec_func(NULL);
 		if(hw.decode_func(&remote,&pre,&code,&post,
 				  &repeat_flag,&remaining_gap))
@@ -400,10 +579,10 @@ int main(int argc,char **argv)
 				{
 					get_repeat_bit(remotes,first^code);
 					if(remotes->repeat_bit>0)
-						printf("Repeat bit is %d.\n",
+						printf("\nRepeat bit is %d.\n",
 						       remotes->repeat_bit);
 					else
-						printf("Invalid repeat bit.\n");
+						printf("\nInvalid repeat bit.\n");
 					break;
 				}
 				retries--;
@@ -415,7 +594,7 @@ int main(int argc,char **argv)
 		}
 		if(retries==0)
 		{
-			printf("No repeat bit found.\n");
+			printf("\nNo repeat bit found.\n");
 		}
 	}
 	if(hw.deinit_func) hw.deinit_func();
@@ -517,6 +696,37 @@ int waitfordata(unsigned long maxusec)
 			return(1);
                 }	
 	}
+}
+
+int availabledata(void)
+{
+	fd_set fds;
+	int ret;
+	struct timeval tv;
+
+	FD_ZERO(&fds);
+	FD_SET(hw.fd,&fds);
+	do{
+		do{
+			tv.tv_sec=0;
+			tv.tv_usec=0;
+			ret=select(hw.fd+1,&fds,NULL,NULL,&tv);
+		}
+		while(ret==-1 && errno==EINTR);
+		if(ret==-1)
+		{
+			logprintf(0,"select() failed\n");
+			logperror(0,NULL);
+			continue;
+		}
+	}
+	while(ret==-1);
+	
+	if(FD_ISSET(hw.fd,&fds))
+	{
+		return(1);
+	}	
+	return(0);
 }
 
 void get_repeat_bit(struct ir_remote *remote,ir_code xor)
@@ -664,17 +874,11 @@ struct lengths *first_sum=NULL,*first_gap=NULL;
 struct lengths *first_headerp=NULL,*first_headers=NULL;
 struct lengths *first_lead=NULL,*first_trail=NULL;
 struct lengths *first_repeatp=NULL,*first_repeats=NULL;
-unsigned long signals[MAX_SIGNALS];
 unsigned long lengths[MAX_SIGNALS];
 unsigned int count,count_spaces,count_repeats,count_signals;
 
 int get_lengths(struct ir_remote *remote)
 {
-	fd_set fds;
-	struct timeval timeout;
-	char *filename;
-	FILE *fout,*fin;
-	struct ir_remote *remotes;
 	int ret,retval;
 	unsigned long data,average,sum,remaining_gap;
 	enum analyse_mode mode=MODE_GAP;
@@ -689,31 +893,19 @@ int get_lengths(struct ir_remote *remote)
 	average=0;sum=0;count=0;count_spaces=0;count_repeats=0;count_signals=0;
 	while(1)
 	{
-		FD_ZERO(&fds);
-		FD_SET(hw.fd,&fds);
-		/* timeout after 10 secs */
-		timeout.tv_sec=10;
-		timeout.tv_usec=0;
-		ret=select(hw.fd+1,&fds,NULL,NULL,&timeout);
-		if(ret==-1)
-		{
-			fprintf(stderr,"%s: select() failed\n",progname);
-			perror(progname);
-			retval=0;
-			break;
-		}
-		else if(ret==0)
+		if(!waitfordata(10000000))
 		{
 			fprintf(stderr,"%s: no data for 10 secs, aborting\n",
 				progname);
 			retval=0;
 			break;
 		}
-
 		ret=read(hw.fd,&data,sizeof(unsigned long));
 		if(ret!=sizeof(unsigned long))
 		{
-			fprintf(stderr,"%s: read() failed\n",progname);
+			fprintf(stderr,"%s: read() failed\n",
+				progname);
+			perror(progname);
 			retval=0;
 			break;
 		}
@@ -806,7 +998,7 @@ int get_lengths(struct ir_remote *remote)
 			}
 			if(count>10000)
 			{
-				fprintf(stderr,"\n%s: could not find gap.n",
+				fprintf(stderr,"\n%s: could not find gap.\n",
 					progname);
 				retval=0;
 				break;
@@ -872,6 +1064,8 @@ int get_lengths(struct ir_remote *remote)
 
 						printf(".");fflush(stdout);
 						count_signals++;
+						add_length(&first_lead,signals[0]);
+						merge_lengths(first_lead);
 						add_length(&first_headerp,signals[0]);
 						merge_lengths(first_headerp);
 						add_length(&first_headers,signals[1]);
@@ -899,6 +1093,7 @@ int get_lengths(struct ir_remote *remote)
 				else
 				{
 					fprintf(stderr,"%s: wrong gap\n",progname);
+					remote->gap=0;
 					retval=0;
 					break;
 				}
@@ -1034,9 +1229,7 @@ void merge_lengths(struct lengths *first)
 		}
 		l=l->next;
 	}
-	/* FIXME */
-#if 0
-#       ifdef DEBUG
+#       ifdef 0
 	l=first;
 	while(l!=NULL)
 	{
@@ -1044,7 +1237,6 @@ void merge_lengths(struct lengths *first)
 		l=l->next;
 	}
 #       endif
-#endif
 }
 
 void get_scheme(struct ir_remote *remote)
@@ -1130,7 +1322,7 @@ int get_trail_length(struct ir_remote *remote)
 		return(1);
 	}
 	printf("No trail pulse found.\n");
-	return(0);
+	return(1);
 }
 
 int get_lead_length(struct ir_remote *remote)
@@ -1153,7 +1345,7 @@ int get_lead_length(struct ir_remote *remote)
 		return(1);
 	}
 	printf("No lead pulse found.\n");
-	return(0);
+	return(1);
 }
 
 int get_header_length(struct ir_remote *remote)
@@ -1198,6 +1390,7 @@ void unlink_length(struct lengths **first,struct lengths *remove)
 	if(remove==*first)
 	{
 		*first=remove->next;
+		remove->next=NULL;
 		return;
 	}
 	else
@@ -1209,6 +1402,7 @@ void unlink_length(struct lengths **first,struct lengths *remove)
 			if(scan==remove)
 			{
 				last->next=remove->next;
+				remove->next=NULL;
 				return;
 			}
 			last=scan;
@@ -1336,13 +1530,16 @@ int get_data_length(struct ir_remote *remote)
 			else
 			{
 				remote->bits=(remote->bits-
-					      (has_header(remote) ? 2:0)-
-					      (remote->ptrail>0 ? 1:0))/2;
+					      (has_header(remote) ? 2:0)+
+					      1-(remote->ptrail>0 ? 2:0))/2;
 			}
 			printf("Signal length is %d\n",remote->bits);
+			free_lengths(max_plength);
+			free_lengths(max_slength);
 			return(1);
 		}
+		free_lengths(max_plength);
 	}
-	printf("Could not find data lengts.\n");
+	printf("Could not find data lengths.\n");
 	return(0);
 }
