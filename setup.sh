@@ -92,6 +92,8 @@ GetPortAndIrq ()
         LIRC_PORT=$1
         LIRC_IRQ=$2
         }
+    else 
+	return 1;
     fi
     }
 
@@ -126,6 +128,8 @@ SetPortAndIrq ()
             fi
             GetSelectedDriver
             }
+	else
+	    return 1;
         fi
         }
     elif test "$LIRC_DRIVER" = "parallel"; then
@@ -148,6 +152,8 @@ SetPortAndIrq ()
             fi
             GetSelectedDriver
             }
+	else
+	    return 1;
         fi
         }
     elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
@@ -174,8 +180,11 @@ SetPortAndIrq ()
             fi
             GetSelectedDriver
             }
+	else
+	    return 1;
         fi
     fi
+    return 0;
     }
 
 
@@ -204,6 +213,8 @@ DriverOptions ()
             done
 #	    if test "$TRANSMITTER" = "off"; then SOFT_CARRIER="off"; fi
             }
+	else
+	    return 1;
         fi
         }
     elif test "$LIRC_DRIVER" = "parallel"; then
@@ -217,9 +228,12 @@ DriverOptions ()
 	    set `cat $TEMP`
             TIMER=$1
             }
+	else
+	    return 1;
         fi
         }
     fi
+    return 0;
     }
 
 ConfigDriver ()
@@ -233,7 +247,7 @@ ConfigDriver ()
 	     4 "Other serial port devices" \
 	     5 "TV card" \
 	     6 "IrDA hardware" \
-	     7 "iPAQ" \
+	     7 "PDAs" \
 	     8 "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
@@ -358,25 +372,47 @@ ConfigDriver ()
         elif test "$1" = "6"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 10 74 3 \
+		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
 			1 "SIR IrDA (built-in IR ports)" \
-			2 "ITE IT8712/IT8705 CIR port (experimantal, 2.4.x required)" 2> $TEMP;
+			2 "Tekram Irmate 210 (16x50 UART compatible serial port)" \
+			3 "ITE IT8712/IT8705 CIR port (experimantal, 2.4.x required)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
 		if   test "$1" = "1"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
-		elif test "$1" = "2"; then LIRC_DRIVER=it87;         DRIVER_PARAMETER=none;
+		elif test "$1" = "2"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "3"; then LIRC_DRIVER=it87;         DRIVER_PARAMETER=none;
 		fi
 		}
 	    else
 		return;
 	    fi;
-	elif test "$1" = "7"; then LIRC_DRIVER=ipaq;         DRIVER_PARAMETER=none;
+	elif test "$1" = "7"; then 
+	    dialog --clear --backtitle "$BACKTITLE" \
+                --title "Select your driver" \
+		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
+			1 "HP iPAQ" \
+			2 "Sharp Zaurus" 2> $TEMP;
+	    if test "$?" = "0"; then
+		{
+		set `cat $TEMP`
+		if   test "$1" = "1"; then LIRC_DRIVER=sa1100; DRIVER_PARAMETER=none;
+		elif test "$1" = "2"; then LIRC_DRIVER=sa1100; DRIVER_PARAMETER=none;
+		fi
+		}
+	    else
+		return 1;
+	    fi;
+
         elif test "$1" = "8"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
-    fi
-        GetSelectedDriver
-        SetPortAndIrq
-        DriverOptions
+	fi
+	if test "$?" = "0"; then
+	    GetSelectedDriver
+	    SetPortAndIrq
+	    if test "$?" = "0"; then
+		DriverOptions
+	    fi
+	fi
         }
     fi
     }

@@ -52,7 +52,7 @@
  
 #include <linux/config.h>
 
-#if !defined(LIRC_ON_IPAQ) && !defined(CONFIG_SERIAL_MODULE)
+#if !defined(LIRC_ON_SA1100) && !defined(CONFIG_SERIAL_MODULE)
 #warning "******************************************"
 #warning " Your serial port driver is compiled into "
 #warning " the kernel. You will have to release the "
@@ -84,7 +84,7 @@
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 #include <asm/hardware.h>
 #ifdef CONFIG_SA1100_COLLIE
 #include <asm/arch/tc35143.h>
@@ -116,8 +116,8 @@
 
 #endif
 
-/******************************** iPAQ ********************************/
-#ifdef LIRC_ON_IPAQ
+/******************************* SA1100 ********************************/
+#ifdef LIRC_ON_SA1100
 struct sa1100_ser2_registers
 {
 	/* HSSP control register */
@@ -135,12 +135,12 @@ struct sa1100_ser2_registers
 
 static int irq=IRQ_Ser2ICP;
 
-#define LIRC_ON_IPAQ_TRANSMITTER_LATENCY 0
+#define LIRC_ON_SA1100_TRANSMITTER_LATENCY 0
 
 /* pulse/space ratio of 50/50 */
-unsigned long pulse_width = (13-LIRC_ON_IPAQ_TRANSMITTER_LATENCY);
+unsigned long pulse_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
 /* 1000000/freq-pulse_width */
-unsigned long space_width = (13-LIRC_ON_IPAQ_TRANSMITTER_LATENCY);
+unsigned long space_width = (13-LIRC_ON_SA1100_TRANSMITTER_LATENCY);
 unsigned int freq = 38000;      /* modulation frequency */
 unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 
@@ -165,7 +165,7 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 
 static int major = LIRC_MAJOR;
 
-#ifndef LIRC_ON_IPAQ
+#ifndef LIRC_ON_SA1100
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
 #endif
@@ -228,7 +228,7 @@ static void drop_port(void);
 int init_module(void);
 void cleanup_module(void);
 
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 void inline on(void)
 {
 	PPSR|=PPC_TXD2;
@@ -393,7 +393,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 	copy_from_user(tx_buf, buf, n);
 	i = 0;
 	n/=sizeof(lirc_t);
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	/* disable receiver */
 	Ser2UTCR3=0;
 #endif
@@ -411,7 +411,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 		i++;
 	}
 	restore_flags(flags);
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	off();
 	udelay(1000); /* wait 1ms for IR diode to recover */
 	Ser2UTCR3=0;
@@ -429,7 +429,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
 	int retval = 0;
 	unsigned long value = 0;
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	unsigned int ivalue;
 #endif
 
@@ -440,7 +440,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		value = 0;
 	else if (cmd == LIRC_GET_REC_MODE)
 		value = LIRC_MODE_MODE2;
-#elif defined(LIRC_ON_IPAQ)
+#elif defined(LIRC_ON_SA1100)
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_SEND_PULSE |
 			LIRC_CAN_SET_SEND_DUTY_CYCLE |
@@ -486,7 +486,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		retval = get_user(value, (unsigned long *) arg);
 #endif
 		break;
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	case LIRC_SET_SEND_DUTY_CYCLE:
 #               ifdef KERNEL_2_1
 		retval=get_user(ivalue,(unsigned int *) arg);
@@ -502,10 +502,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		duty_cycle=ivalue;
 		pulse_width=(unsigned long) duty_cycle*10000/freq;
 		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
-			space_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		if(pulse_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			space_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 	case LIRC_SET_SEND_CARRIER:
 #               ifdef KERNEL_2_1
@@ -521,10 +521,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		freq=ivalue;
 		pulse_width=(unsigned long) duty_cycle*10000/freq;
 		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_ON_IPAQ_TRANSMITTER_LATENCY)
-			space_width-=LIRC_ON_IPAQ_TRANSMITTER_LATENCY;
+		if(pulse_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			space_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 #endif
 	default:
@@ -659,7 +659,7 @@ static void sir_timeout(unsigned long data)
  	spin_lock_irqsave(&timer_lock, flags);
 	if (last_value)
 	{
-#ifndef LIRC_ON_IPAQ
+#ifndef LIRC_ON_SA1100
 		/* clear unread bits in UART and restart */
 		outb(UART_FCR_CLEAR_RCVR, io + UART_FCR);
 #endif
@@ -681,7 +681,7 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 	unsigned char data;
 	struct timeval curr_tv;
 	static unsigned long deltv;
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	int status;
 	static int n=0;
 	
@@ -840,7 +840,7 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 #endif
 }
 
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 void send_pulse(unsigned long length)
 {
 	unsigned long k,delay;
@@ -931,7 +931,7 @@ static int init_hardware(void)
 	
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 #ifdef CONFIG_SA1100_BITSY
 	if (machine_is_bitsy()) {
 		printk("Power on IR module\n");
@@ -1075,7 +1075,7 @@ static void drop_hardware(void)
 
 	spin_lock_irqsave(&hardware_lock, flags);
 
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 	Ser2UTCR3=0;
 	
 	Ser2UTCR0=sr.utcr0;
@@ -1106,7 +1106,7 @@ static int init_port(void)
 {
 	int retval;
 	
-#ifndef LIRC_ON_IPAQ
+#ifndef LIRC_ON_SA1100
 	/* get I/O port access and IRQ line */
 	retval = check_region(io, 8);
 	if (retval < 0) {
@@ -1124,7 +1124,7 @@ static int init_port(void)
 			irq);
 		return retval;
 	}
-#ifndef LIRC_ON_IPAQ
+#ifndef LIRC_ON_SA1100
 	request_region(io, 8, LIRC_DRIVER_NAME);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": I/O port 0x%.4x, IRQ %d.\n",
@@ -1149,7 +1149,7 @@ static void drop_port(void)
 	del_timer(&timerlist);
 	end_bh_atomic();
 #endif
-#ifndef LIRC_ON_IPAQ
+#ifndef LIRC_ON_SA1100
 	release_region(io, 8);
 #endif
 }
@@ -1181,7 +1181,7 @@ MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
 MODULE_LICENSE("GPL");
 #endif
 #else
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
 #ifdef MODULE_LICENSE
@@ -1195,7 +1195,7 @@ MODULE_LICENSE("GPL");
 #endif
 #endif
 #endif
-#ifdef LIRC_ON_IPAQ
+#ifdef LIRC_ON_SA1100
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (16)");
 #else
