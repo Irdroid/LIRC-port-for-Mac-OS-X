@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.12 2001/12/12 20:26:01 ranty Exp $      */
+/*      $Id: lirc_i2c.c,v 1.13 2002/09/26 12:09:20 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -45,7 +45,7 @@
 #include <linux/timer.h>
 #include <linux/delay.h>
 #include <linux/errno.h>
-#include <linux/malloc.h>
+#include <linux/slab.h>
 #include <linux/i2c.h>
 
 #ifndef I2C_CLIENT_END
