@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.97 2002/11/11 19:19:26 lirc Exp $
+dnl $Id: configure.in,v 5.98 2003/01/26 12:57:59 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -24,6 +24,7 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PATH_PROG(mknod, mknod, /bin/mknod)
+AC_PATH_PROG(mkfifo, mkfifo, /usr/bin/mkfifo)
 AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
 AC_PROG_LN_S
 AM_PROG_LIBTOOL
@@ -60,8 +61,8 @@ forkpty=""
 AC_CHECK_FUNCS(forkpty)
 if test "$ac_cv_func_forkpty" != yes; then
   AC_CHECK_LIB(util,forkpty,[
-	  forkpty="-lutil"
-	  AC_DEFINE(HAVE_FORKPTY)])
+    forkpty="-lutil"
+    AC_DEFINE(HAVE_FORKPTY)])
 fi
 
 vga_progs=
@@ -81,6 +82,47 @@ AC_PATH_XTRA
 if test "$no_x" = "yes"; then
   x_progs=
 fi
+
+dnl getopt_long support
+AC_CHECK_FUNCS(getopt_long,,
+  [AC_CHECK_LIB(gnugetopt,getopt_long,LDFLAGS="${LDFLAGS} -lgnugetopt",
+    [AC_MSG_ERROR([*** your libc doesn't provide the getopt_long function.
+Therfore you need to have \"libgnugetopt\" installed to compile LIRC.
+You can get a version from:
+  http://www.inf.ethz.ch/~mringwal/downloads/libgnugetopt-1.2.tar.gz
+Extract the package and do a \"./configure  && make && sudo make install\"
+in its directory.
+])]
+  )]
+)
+	
+
+dnl Determine default configuration based on OS
+case "${host_os}" in
+  darwin*)
+    dnl Mac OS X configuration
+
+    dnl PortAudio for mac os x
+    portaudio_LDFLAGS="-lportaudio -framework CoreAudio -framework AudioToolbox"
+
+    dnl default devdir, on mac os x/darwin, /dev/ can not be used without kernel programming, so use a fifo somewhere else
+    devdir_default="/usr/lirc/dev/"
+    use_fifos="yes"
+    ;;
+  *)
+    dnl Unix OSS configuration
+
+    dnl PortAudio for UNIX OSS
+    portaudio_LDFLAGS="-lportaudio -lm -lpthread ${forkpty}"
+
+    dnl default devdir
+    devdir_default="/dev"
+    use_fifos="no"
+    ;;
+esac
+
+# use fifo instead of devnode (required on mac os x)
+AM_CONDITIONAL(USE_FIFOS, test "$use_fifos" = "yes")
 
 
 dnl look for Linux kernel source
@@ -115,12 +157,20 @@ AC_CHECK_LIB(irman_sw, ir_strerror,
   AC_DEFINE(HAVE_LIBIRMAN_SW)
   possible_drivers="${possible_drivers} (irman_sw)"
 )
+dnl audio driver requires PortAudio library installed and some linker flags
+AC_SUBST(PORTAUDIO_LDFLAGS)
+LDFLAGS="${portaudio_LDFLAGS} ${LDFLAGS}"
+AC_CHECK_HEADERS(portaudio.h,
+	[AC_CHECK_LIB(portaudio, Pa_Initialize,
+ 		possible_drivers="${possible_drivers} (audio)"
+	)]
+)
 
 dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, any, act200l, animax, asus_tvbox,
+                          none, any, act200l, animax, asus_tvbox, audio,
 			  avermedia, avermedia_vdomate, avermedia98,
 			  bestbuy, bestbuy2, caraca, chronos, comX,
 			  dsp, cph03x, cph06x, creative, flyvideo,
@@ -219,6 +269,10 @@ if test "$driver" = "any"; then
 	  #;;
 	  dsp)
 	  hw_module="${hw_module} hw_dsp.o receive.o"
+	  ;;
+	  audio)
+	  hw_module="${hw_module} hw_audio.o receive.o"
+	  PORTAUDIO_LDFLAGS="${portaudio_LDFLAGS}"
 	  ;;
 	  udp)
 	  hw_module="${hw_module} hw_udp.o receive.o"
@@ -512,6 +566,12 @@ if test "$driver" = "dsp"; then
   hw_module="hw_dsp.o receive.o"
   HW_DEFAULT="hw_dsp"
 fi
+if test "$driver" = "audio"; then
+  lirc_driver="audio"
+  hw_module="hw_audio.o receive.o"
+  HW_DEFAULT="hw_audio"
+  PORTAUDIO_LDFLAGS="${portaudio_LDFLAGS}"
+fi
 if test "$driver" = "udp"; then
   lirc_driver="none"
   hw_module="hw_udp.o receive.o"
@@ -544,6 +604,14 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
+  audio*)
+    AC_MSG_ERROR([*** you need to have the PortAudio library V18 installed
+to use the audio driver. You can get it at:
+  http://www.inf.ethz.ch/~mringwal/downloads/portaudio_v18_with_configure.zip
+Extract the package and do a \"./configure && make && sudo make install\"
+in its directory.
+])
+    ;;
   *)
     AC_MSG_ERROR([*** it is not possible to install the specified driver
 	on this system])
@@ -553,7 +621,7 @@ fi
 
 dnl now we've checked, we can rename things for the drivers/Makefile
 
-if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca"; then
+if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca"  || test "$lirc_driver" = "audio"; then
   lirc_driver=
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
@@ -585,7 +653,7 @@ AM_CONDITIONAL(SANDBOXED, test x$enable_sandboxed = xyes)
 AC_ARG_WITH(devdir,
 [  --with-devdir=DIR       Install device files in DIR (/dev)],
 devdir=${withval},
-devdir=/dev)
+devdir=${devdir_default})
 
 default_moduledir=/lib/modules/`uname -r`/misc
 AC_ARG_WITH(moduledir,

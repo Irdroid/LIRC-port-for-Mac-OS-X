@@ -244,7 +244,7 @@ ConfigDriver ()
            --menu "$CONFIG_DRIVER_TEXT" 16 74 9 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
-	     3 "Home-brew (soundcard input, EXPERIMENTAL)" \
+	     3 "Home-brew (soundcard input)" \
 	     4 "Other serial port devices" \
 	     5 "TV card" \
 	     6 "IrDA hardware" \
@@ -257,7 +257,23 @@ ConfigDriver ()
 	set `cat $TEMP`
         if   test "$1" = "1"; then LIRC_DRIVER=serial;   DRIVER_PARAMETER=com1;
         elif test "$1" = "2"; then LIRC_DRIVER=parallel; DRIVER_PARAMETER=lpt1;
-        elif test "$1" = "3"; then LIRC_DRIVER=dsp;      DRIVER_PARAMETER=none;
+        elif test "$1" = "3"; then 
+	    dialog --clear --backtitle "$BACKTITLE" \
+		--title "Select your driver" \
+		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
+		    1 "Simple IR diode (EXPERIMENTAL)" \
+		    2 "IR receiver IC connected to auido input (EXPERIMENTAL)" 2> $TEMP;
+
+	    if test "$?" = "0"; then
+		{
+		set `cat $TEMP`
+		if   test "$1" = "1"; then LIRC_DRIVER=dsp;   DRIVER_PARAMETER=none;
+		elif test "$1" = "2"; then LIRC_DRIVER=audio; DRIVER_PARAMETER=none;
+		fi
+		}
+	    else
+		return;
+	    fi;
         elif test "$1" = "4"; then
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.46 2002/09/21 15:25:28 lirc Exp $      */
+/*      $Id: lircd.c,v 5.47 2003/01/26 12:57:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1636,8 +1636,8 @@ int waitfordata(long maxusec)
 			gettimeofday(&start,NULL);
 			if(maxusec>0)
 			{
-				tv.tv_sec=0;
-				tv.tv_usec=maxusec;
+				tv.tv_sec= maxusec / 1000000;
+				tv.tv_usec=maxusec % 1000000;
 			}
 #ifdef SIM_REC
 			ret=select(maxfd+1,&fds,NULL,NULL,NULL);

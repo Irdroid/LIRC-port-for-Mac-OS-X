@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.7 2002/08/17 11:17:41 lirc Exp $      */
+/*      $Id: irpty.c,v 5.8 2003/01/26 12:58:00 lirc Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -36,7 +36,11 @@
 #include <unistd.h>
 
 #ifdef HAVE_FORKPTY
+#ifdef __APPLE__
+#include <util.h>
+#else
 #include <pty.h>
+#endif
 #endif
 
 #include "lirc_client.h"
