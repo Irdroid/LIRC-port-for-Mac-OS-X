@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.6 2000/05/21 15:25:39 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.7 2000/05/22 14:58:43 columbus Exp $
  *
  */
 
@@ -23,6 +23,10 @@
 
 #include "../lirc_dev/lirc_dev.h"
 #include "../drivers/char/bttv.h"
+#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,28)
+#error "!!! Sorry, this driver needs bttv version 0.7.28 or higher   !!!"
+#error "!!! If you are using the bttv package, copy it to the kernel !!!"
+#endif
 
 /* default parameters value are suitable for the PixelView Play TVPro card
  */
@@ -59,15 +63,9 @@ struct rcv_info {
 
 static struct rcv_info rcv_infos[] = {
 	{BTTV_UNKNOWN, 0, 0, 0, 0, 1, 0},
-#ifdef BTTV_PXELVWPLTVPRO
 	{BTTV_PXELVWPLTVPRO, 0x1f00, 0x8000, 0, 500, 12, 0},
-#endif
-#ifdef BTTV_AVERMEDIA
 	{BTTV_AVERMEDIA, 0x0f88000, 0x010000, 0x010000, 0, 10, 0},
-#endif
-#ifdef BTTV_AVERMEDIA98
-	{BTTV_AVERMEDIA98, 0x0f88000, 0x010000, 0x010000, 0, 10, 32}
-#endif
+	{BTTV_AVPHONE98, 0x0f88000, 0x010000, 0x010000, 0, 10, 32}
 };
 
 static unsigned char code_length = 0;
@@ -106,7 +104,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	
 	switch(rcv_infos[card_type].bttv_id)
 	{
-	case BTTV_AVERMEDIA98:
+	case BTTV_AVPHONE98:
 		codes[2]=((codes[0]&(~0x1))<<2)&0xff;
 		codes[3]=(~codes[2])&0xff;
 		if(codes[0]&0x1)
