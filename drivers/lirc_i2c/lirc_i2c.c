@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.4 2000/11/01 15:15:15 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.5 2000/11/30 19:41:03 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -39,6 +39,11 @@
 #include <asm/semaphore.h>
 
 #include "../lirc_dev/lirc_dev.h"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
+#include "../drivers/char/bttv.h"
+#else
+#include "../drivers/media/video/bttv.h"
+#endif
 
 /* Addresses to scan */
 static unsigned short normal_i2c[] = {I2C_CLIENT_END};
@@ -47,7 +52,8 @@ static unsigned short probe[2]        = { I2C_CLIENT_END, I2C_CLIENT_END };
 static unsigned short probe_range[2]  = { I2C_CLIENT_END, I2C_CLIENT_END };
 static unsigned short ignore[2]       = { I2C_CLIENT_END, I2C_CLIENT_END };
 static unsigned short ignore_range[2] = { I2C_CLIENT_END, I2C_CLIENT_END };
-static unsigned short force[2]        = { I2C_CLIENT_END, I2C_CLIENT_END };
+static unsigned short force[4]        = { I2C_CLIENT_END, I2C_CLIENT_END,
+					  I2C_CLIENT_END, I2C_CLIENT_END };
 static struct i2c_client_address_data addr_data = {
 	normal_i2c, normal_i2c_range, 
 	probe, probe_range, 
@@ -212,7 +218,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 
 	switch(addr)
 	{
-	case 0:
+	case 0x64:
 		strcpy(ir->c.name,"Pixelview IR");
 		ir->l.code_length = 8;
 		ir->l.get_key=get_key_pixelview;
@@ -258,8 +264,32 @@ static int ir_detach(struct i2c_client *client)
 
 static int ir_probe(struct i2c_adapter *adap)
 {
+        struct bttv *btv;
+        int type,cardid;
+	
+        btv=(struct bttv *) (adap->data);
+        
+        if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1)
+	{
+                dprintk(KERN_DEBUG DEVICE_NAME ": could not get card type\n");
+        }
+        else
+        {
+                dprintk(KERN_DEBUG DEVICE_NAME ": card type 0x%x, id 0x%x\n",
+                        type,cardid);
+		
+		/* the Pixelview IC is not found otherwise */
+		if(type==BTTV_PIXVIEWPLAYTV)
+		{
+			addr_data.force[0]=0x0;
+			addr_data.force[1]=0x64;
+		}
+        }
+
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
+	{
 		return i2c_probe(adap, &addr_data, ir_attach);
+	}
 	return 0;
 }
 
