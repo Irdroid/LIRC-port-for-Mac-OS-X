@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.9 2004/09/05 16:48:48 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.10 2004/12/25 16:31:00 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -148,6 +148,42 @@ typedef void irqreturn_t;
 
 #if !defined(pci_pretty_name)
 #define pci_pretty_name(dev) ((dev)->name)
+#endif
+
+/*************************** I2C specific *****************************/
+#include <linux/i2c.h>
+
+#ifndef I2C_CLIENT_END
+#error "********************************************************"
+#error " Sorry, this driver needs the new I2C stack.            "
+#error " You can get it at http://www2.lm-sensors.nu/~lm78/.    "
+#error "********************************************************"
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
+
+#undef i2c_use_client
+#define i2c_use_client(client_ptr) do { \
+	if ((client_ptr)->adapter->inc_use) \
+		(client_ptr)->adapter->inc_use((client_ptr)->adapter); \
+} while (0)
+
+#undef i2c_release_client
+#define i2c_release_client(client_ptr) do { \
+	if ((client_ptr)->adapter->dec_use) \
+		(client_ptr)->adapter->dec_use((client_ptr)->adapter); \
+} while (0)
+
+#undef i2c_get_clientdata
+#define i2c_get_clientdata(client) ((client)->data)
+
+
+#undef i2c_set_clientdata
+#define i2c_set_clientdata(client_ptr, new_data) do { \
+	(client_ptr)->data = new_data; \
+} while (0)
+
+
 #endif
 
 #endif /* _KCOMPAT_H */

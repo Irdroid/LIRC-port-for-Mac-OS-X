@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.27 2004/12/01 18:53:12 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.28 2004/12/25 16:31:00 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -11,6 +11,8 @@
  *      Ulrich Mueller <ulrich.mueller42@web.de>
  * modified for Asus TV-Box and Creative/VisionTek BreakOut-Box by
  *      Stefan Jahn <stefan@lkcc.org>
+ * modified for inclusion into kernel sources by
+ *      Jerome Brock <jbrock@users.sourceforge.net>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -30,15 +32,12 @@
  *
  */
 
-#include <linux/version.h>
-#if LINUX_VERSION_CODE < 0x020200
-#error "--- Sorry, this driver needs kernel version 2.2.0 or higher. ---"
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/kernel.h>
@@ -49,25 +48,14 @@
 #include <linux/errno.h>
 #include <linux/slab.h>
 #include <linux/i2c.h>
-
-#ifndef I2C_CLIENT_END
-#error "********************************************************"
-#error " Sorry, this driver needs the new I2C stack.            "
-#error " You can get it at http://www2.lm-sensors.nu/~lm78/.    "
-#error "********************************************************"
-#endif
-
 #include <linux/i2c-algo-bit.h>
 
 #include <asm/semaphore.h>
 
+#include "../drivers/media/video/bttv.h"
+
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
-#include "../drivers/char/bttv.h"
-#else
-#include "../drivers/media/video/bttv.h"
-#endif
 
 struct IR {
 	struct lirc_plugin l;
@@ -264,12 +252,7 @@ static int set_use_inc(void* data)
 	/* lock bttv in memory while /dev/lirc is in use  */
 	/* this is completely broken code. lirc_unregister_plugin()
 	   must be possible even when the device is open */
-#ifdef KERNEL_2_5
 	i2c_use_client(&ir->c);
-#else
-	if (ir->c.adapter->inc_use) 
-		ir->c.adapter->inc_use(ir->c.adapter);
-#endif
 
 	MOD_INC_USE_COUNT;
 	return 0;
@@ -279,12 +262,7 @@ static void set_use_dec(void* data)
 {
 	struct IR *ir = data;
 
-#ifdef KERNEL_2_5
 	i2c_release_client(&ir->c);
-#else
-	if (ir->c.adapter->dec_use) 
-		ir->c.adapter->dec_use(ir->c.adapter);
-#endif
 	MOD_DEC_USE_COUNT;
 }
 
@@ -332,11 +310,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	
 	ir->c.adapter = adap;
 	ir->c.addr    = addr;
-#ifdef KERNEL_2_5
 	i2c_set_clientdata(&ir->c, ir);
-#else
-	ir->c.data    = ir;
-#endif
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
@@ -385,31 +359,17 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	/* register device */
 	i2c_attach_client(&ir->c);
 	ir->l.minor = lirc_register_plugin(&ir->l);
-#ifdef KERNEL_2_5
 	i2c_use_client(&ir->c);
-#else
-	if (ir->c.adapter->inc_use) 
-		ir->c.adapter->inc_use(ir->c.adapter);
-#endif
 	
 	return 0;
 }
 
 static int ir_detach(struct i2c_client *client)
 {
-#ifdef KERNEL_2_5
 	struct IR *ir = i2c_get_clientdata(client);
-#else
-        struct IR *ir = client->data;
-#endif
 	
 	/* unregister device */
-#ifdef KERNEL_2_5
 	i2c_release_client(&ir->c);
-#else
-	if (ir->c.adapter->dec_use) 
-		ir->c.adapter->dec_use(ir->c.adapter);
-#endif
 	lirc_unregister_plugin(ir->l.minor);
 	i2c_detach_client(&ir->c);
 
@@ -524,7 +484,7 @@ void cleanup_module(void)
 }
 
 MODULE_DESCRIPTION("Infrared receiver driver for Hauppauge and Pixelview cards (i2c stack)");
-MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller, Stefan Jahn");
+MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, Ulrich Mueller, Stefan Jahn, Jerome Brock");
 MODULE_LICENSE("GPL");
 
 module_param(minor, int, 0444);
