@@ -224,7 +224,7 @@ function ConfigDriver
            --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
-             3 "Irman" \
+             3 "Irman / UIR" \
 	     4 "TV card" \
 	     5 "Packard Bell receiver" \
 	     6 "Anir Multimedia Magic" \
