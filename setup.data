@@ -90,33 +90,12 @@ param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 		sir tekram
 	com:
 
-old_hardware_param_old:
-	com1: "COM1 ($COM1_PORT, $COM1_IRQ)"
-	com2: "COM2 ($COM2_PORT, $COM2_IRQ)"
-	com3: "COM3 ($COM3_PORT, $COM3_IRQ)"
-	com4: "COM4 ($COM4_PORT, $COM4_IRQ)"
-	user: "Other (custom values)"
-
 param_type: parallel
 	lpt:
-
-old_hardware_param_old:
-	lpt1: "LPT1 ($LPT1_PORT, $LPT1_IRQ)"
-	lpt2: "LPT2 ($LPT2_PORT, $LPT2_IRQ)"
-	lpt3: "LPT3 ($LPT3_PORT, $LPT3_IRQ)"
-	user: "Other (custom values)"
 
 param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
 		remotemaster silitek slinke
 	tty:
-
-old_hardware_param_old:
-	TITLE="Select tty to use"
-	CONFIG_TEXT="Choose the tty where your hardware is available."
-	tty1: "COM1 (/dev/ttyS0)"
-	tty2: "COM2 (/dev/ttyS1)"
-	tty3: "COM3 (/dev/ttyS2)"
-	tty4: "COM4 (/dev/ttyS3)"
 
 param_type: audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		bestbuy2 bte chronos cph03x cph06x creative_infracd \
