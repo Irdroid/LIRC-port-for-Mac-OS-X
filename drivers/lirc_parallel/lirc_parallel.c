@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.17 2002/10/12 15:31:48 ranty Exp $      */
+/*      $Id: lirc_parallel.c,v 5.18 2002/11/19 20:22:07 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -583,11 +583,12 @@ static struct file_operations lirc_fops =
 	release: lirc_close
 };
 
-static void set_use_inc(void* data)
+static int set_use_inc(void* data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
        MOD_INC_USE_COUNT;
 #endif
+       return 0;
 }
 
 static void set_use_dec(void* data)

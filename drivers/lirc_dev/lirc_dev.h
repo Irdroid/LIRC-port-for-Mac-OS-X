@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.6 2002/10/15 08:37:39 ranty Exp $
+ * $Id: lirc_dev.h,v 1.7 2002/11/19 20:22:06 ranty Exp $
  *
  */
 
@@ -20,11 +20,13 @@ struct lirc_plugin
      int minor;
      int code_length;
      int sample_rate;
+     unsigned long features;
      void* data;
      int (*get_key) (void* data, unsigned char* key, int key_no);
      wait_queue_head_t* (*get_queue) (void* data);
-     void (*set_use_inc) (void* data);
+     int (*set_use_inc) (void* data);
      void (*set_use_dec) (void* data);
+     int (*ioctl) (struct inode *,struct file *,unsigned int, unsigned long);
      struct file_operations *fops;
 };
 /* name:

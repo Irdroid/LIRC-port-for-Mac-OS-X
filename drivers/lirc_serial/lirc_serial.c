@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.43 2002/10/27 16:16:12 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.44 2002/11/19 20:22:08 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -805,7 +805,7 @@ static int init_port(void)
 	return 0;
 }
 
-static int lirc_open(struct inode *ino, struct file *filep)
+static int set_use_inc(void* data)
 {
 	int result;
 	unsigned long flags;
@@ -858,7 +858,7 @@ static int lirc_open(struct inode *ino, struct file *filep)
 	return 0;
 }
 
-static int lirc_close(struct inode *node, struct file *file)
+static void set_use_dec(void* data)
 {	unsigned long flags;
 	
 	save_flags(flags);cli();
@@ -877,8 +877,6 @@ static int lirc_close(struct inode *node, struct file *file)
 #       endif
 	
 	MOD_DEC_USE_COUNT;
-	
-	return 0;
 }
 
 static unsigned int lirc_poll(struct file *file, poll_table * wait)
@@ -967,12 +965,6 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	
 	switch(cmd)
 	{
-	case LIRC_GET_FEATURES:
-		result=put_user(hardware[type].features,
-				(unsigned long *) arg);
-		if(result) return(result); 
-		break;
-		
 	case LIRC_GET_SEND_MODE:
 		if(!(hardware[type].features&LIRC_CAN_SEND_MASK))
 		{
@@ -981,18 +973,6 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		
 		result=put_user(LIRC_SEND2MODE
 				(hardware[type].features&LIRC_CAN_SEND_MASK),
-				(unsigned long *) arg);
-		if(result) return(result); 
-		break;
-		
-	case LIRC_GET_REC_MODE:
-		if(!(hardware[type].features&LIRC_CAN_REC_MASK))
-		{
-			return(-ENOIOCTLCMD);
-		}
-		
-		result=put_user(LIRC_REC2MODE
-				(hardware[type].features&LIRC_CAN_REC_MASK),
 				(unsigned long *) arg);
 		if(result) return(result); 
 		break;
@@ -1009,16 +989,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(value!=LIRC_MODE_PULSE) return(-ENOSYS);
 		break;
 		
-	case LIRC_SET_REC_MODE:
-		if(!(hardware[type].features&LIRC_CAN_REC_MASK))
-		{
-			return(-ENOIOCTLCMD);
-		}
-		
-		result=get_user(value,(unsigned long *) arg);
-		if(result) return(result);
-		/* only LIRC_MODE_MODE2 supported */
-		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
+	case LIRC_GET_LENGTH:
+		return(-ENOSYS);
 		break;
 		
 	case LIRC_SET_SEND_DUTY_CYCLE:
@@ -1062,24 +1034,8 @@ static struct file_operations lirc_fops =
 	read:    lirc_read,
 	write:   lirc_write,
 	poll:    lirc_poll,
-	ioctl:   lirc_ioctl,
-	open:    lirc_open,
-	release: lirc_close
 };
 
-static void set_use_inc(void* data)
-{
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_INC_USE_COUNT;
-#endif
-}
-
-static void set_use_dec(void* data)
-{
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_DEC_USE_COUNT;
-#endif
-}
 static struct lirc_plugin plugin = {
 	name:		LIRC_DRIVER_NAME,
 	minor:		-1,
@@ -1090,6 +1046,7 @@ static struct lirc_plugin plugin = {
 	get_queue:	NULL,
 	set_use_inc:	set_use_inc,
 	set_use_dec:	set_use_dec,
+	ioctl:		lirc_ioctl,
 	fops:		&lirc_fops,
 };
 
@@ -1142,6 +1099,7 @@ int init_module(void)
 	}
 	if ((result = init_port()) < 0)
 		return result;
+	plugin.features = hardware[type].features;
 	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": register_chrdev failed!\n");

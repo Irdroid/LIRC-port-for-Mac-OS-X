@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.24 2002/11/11 19:19:27 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.25 2002/11/19 20:22:06 ranty Exp $
  *
  */
 
@@ -339,9 +339,10 @@ static int get_key(void* data, unsigned char *key, int key_no)
 	return SUCCESS;
 }
 
-static void set_use_inc(void* data)
+static int set_use_inc(void* data)
 {
 	MOD_INC_USE_COUNT;
+	return 0;
 }
 
 static void set_use_dec(void* data)
@@ -356,6 +357,7 @@ static wait_queue_head_t* get_queue(void* data)
 
 static struct lirc_plugin plugin = {
 	"lirc_gpio  ",
+	0,
 	0,
 	0,
 	0,

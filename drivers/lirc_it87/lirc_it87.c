@@ -378,11 +378,12 @@ static struct file_operations lirc_fops = {
 	release: lirc_close,
 };
 
-static void set_use_inc(void* data)
+static int set_use_inc(void* data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
        MOD_INC_USE_COUNT;
 #endif
+       return 0;
 }
 
 static void set_use_dec(void* data)

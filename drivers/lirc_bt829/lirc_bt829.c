@@ -106,9 +106,10 @@ int atir_get_key (void* data, unsigned char* key, int key_no)
 	return (status & 0xFF) ? 0 : -1;
 }
 
-void atir_set_use_inc(void* data)
+int atir_set_use_inc(void* data)
 {
 	printk(KERN_DEBUG "ATIR driver is opened\n");
+	return 0;
 }
 
 void atir_set_use_dec(void* data)

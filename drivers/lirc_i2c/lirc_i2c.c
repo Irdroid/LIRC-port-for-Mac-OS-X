@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.15 2002/10/12 15:31:47 ranty Exp $      */
+/*      $Id: lirc_i2c.c,v 1.16 2002/11/19 20:22:07 ranty Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -261,7 +261,7 @@ static int get_key_knc1(void *data, unsigned char *key, int key_no)
 	return 0;
 }
 
-static void set_use_inc(void* data)
+static int set_use_inc(void* data)
 {
 	struct IR *ir = data;
 
@@ -270,6 +270,7 @@ static void set_use_inc(void* data)
 		ir->c.adapter->inc_use(ir->c.adapter);
 
 	MOD_INC_USE_COUNT;
+	return 0;
 }
 
 static void set_use_dec(void* data)

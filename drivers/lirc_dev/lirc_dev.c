@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.22 2002/11/09 22:13:15 lirc Exp $
+ * $Id: lirc_dev.c,v 1.23 2002/11/19 20:22:06 ranty Exp $
  *
  */
 
@@ -77,7 +77,6 @@ struct irctl
 	struct lirc_plugin p;
 	int open;
 
-	unsigned long features;
 	unsigned int buf_len;
 	int bytes_in_key;
 
@@ -115,7 +114,6 @@ static inline void init_irctl(struct irctl *ir)
 
 	ir->buf_len = 0;
 	ir->bytes_in_key = 0;
-	ir->features = 0;
 
 	ir->tpid = -1;
 	ir->t_notify = NULL;
@@ -279,7 +277,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			return -EBADRQC;
 		}
 	} else {
-		if (!p->fops->read || !p->fops->poll || !p->fops->ioctl) {
+		if (!p->fops->read || !p->fops->poll 
+				|| (!p->fops->ioctl && !p->ioctl)) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "neither read, poll nor ioctl can be NULL!\n");
 			return -EBADRQC;
@@ -325,8 +324,9 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	/* this simplifies boundary checking during buffer access */
 	ir->buf_len = BUFLEN - (BUFLEN%ir->bytes_in_key);
 
-	ir->features = (p->code_length > 8) ?
-		       LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_CODE;
+	if (p->features==0)
+		p->features = (p->code_length > 8) ?
+			LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_CODE;
 
 	ir->p = *p;
 	ir->p.minor = minor;
@@ -442,6 +442,7 @@ int lirc_unregister_plugin(int minor)
 static int irctl_open(struct inode *inode, struct file *file)
 {
 	struct irctl *ir;
+	int retval;
 	
 	if (MINOR(inode->i_rdev) >= MAX_IRCTL_DEVICES) {
 		dprintk("lirc_dev [%d]: open result = -ENODEV\n",
@@ -480,9 +481,14 @@ static int irctl_open(struct inode *inode, struct file *file)
 	ir->in_buf = 0;
 
 	++ir->open;
-	ir->p.set_use_inc(ir->p.data);
+	retval = ir->p.set_use_inc(ir->p.data);
 
 	up(&plugin_lock);
+
+	if (retval != SUCCESS) {
+		--ir->open;
+		return retval;
+	}
 
 	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, SUCCESS);
 
@@ -543,7 +549,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
                        unsigned int cmd, unsigned long arg)
 {
 	unsigned long mode;
-	int result = SUCCESS;
+	int result;
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
 
 	dprintk(LOGHEAD "poll called (%u)\n",
@@ -559,20 +565,39 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		return -ENODEV;
 	}
 
+	/* Give the plugin a chance to handle the ioctl */
+	if(ir->p.ioctl){
+		result = ir->p.ioctl(inode, file, cmd, arg);
+		if (result != -ENOIOCTLCMD)
+			return result;
+	}
+	/* The plugin can't handle cmd */
+	result = SUCCESS;
+
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
-		result = put_user(ir->features, (unsigned long*)arg);
+		result = put_user(ir->p.features, (unsigned long*)arg);
 		break;
 	case LIRC_GET_REC_MODE:
-		result = put_user(LIRC_REC2MODE(ir->features),
+		if(!(ir->p.features&LIRC_CAN_REC_MASK))
+			return(-ENOSYS);
+		
+		result = put_user(LIRC_REC2MODE
+				  (ir->p.features&LIRC_CAN_REC_MASK),
 				  (unsigned long*)arg);
 		break;
 	case LIRC_SET_REC_MODE:
+		if(!(ir->p.features&LIRC_CAN_REC_MASK))
+			return(-ENOSYS);
+
 		result = get_user(mode, (unsigned long*)arg);
-		if(!result && !(LIRC_MODE2REC(mode) & ir->features)) {
+		if(!result && !(LIRC_MODE2REC(mode) & ir->p.features)) {
 			result = -EINVAL;
 		}
+		/* FIXME: We should actually set the mode somehow 
+		 * but for now, lirc_serial doesn't support mode changin
+		 * eighter */
 		break;
 	case LIRC_GET_LENGTH:
 		result = put_user((unsigned long)ir->p.code_length, 
