@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.5 2000/05/04 05:15:05 columbus Exp $
+ * $Id: lirc_dev.c,v 1.6 2000/05/05 11:07:06 columbus Exp $
  *
  */
 
@@ -306,6 +306,14 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	ir->p = *p;
 	ir->p.minor = minor;
 
+#ifdef LIRC_HAVE_DEVFS
+	sprintf (name, DEV_LIRC "/%d", ir->p.minor);
+	ir->devfs_handle = devfs_register(NULL, name, 0, DEVFS_FL_DEFAULT,
+					  IRCTL_DEV_MAJOR, ir->p.minor,
+					  S_IFCHR | S_IRUSR | S_IWUSR, 0, 0,
+					  &fops, NULL);
+#endif
+
 	/* try to fire up polling thread */
 	ir->t_notify = &tn;
 	ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
@@ -318,15 +326,6 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	}
 	down(&tn);
 	ir->t_notify = NULL;
-
-#ifdef LIRC_HAVE_DEVFS
-	sprintf (name, DEV_LIRC "/%d", ir->p.minor);
-	ir->devfs_handle = devfs_register(NULL, name, 0, DEVFS_FL_DEFAULT,
-					  IRCTL_DEV_MAJOR, ir->p.minor,
-					  S_IFCHR | S_IRUSR | S_IWUSR, 0, 0,
-					  &fops, NULL);
-#endif
-
 	up(&plugin_lock);
 
 	MOD_INC_USE_COUNT;
@@ -370,10 +369,6 @@ int lirc_unregister_plugin(int minor)
 		return FAIL;
 	}
 
-#ifdef LIRC_HAVE_DEVFS
-	devfs_unregister(ir->devfs_handle);
-#endif
-
 	/* end up polling thread */
 	if (ir->tpid >= 0) 
 	{
@@ -385,6 +380,10 @@ int lirc_unregister_plugin(int minor)
 
 	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
 		ir->p.name, ir->p.minor);
+
+#ifdef LIRC_HAVE_DEVFS
+	devfs_unregister(ir->devfs_handle);
+#endif
 
 	init_irctl(ir);
 
@@ -634,7 +633,7 @@ int lirc_dev_init(void)
 	}
 
 #ifndef LIRC_HAVE_DEVFS
-	i = module_register_chrdev(IRCTL_DEV_MAJOR,
+ 	i = module_register_chrdev(IRCTL_DEV_MAJOR,
 #else
 	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
 #endif
@@ -677,7 +676,7 @@ void cleanup_module(void)
 	int ret;
 	
 #ifndef LIRC_HAVE_DEVFS
-	ret = module_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
+ 	ret = module_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 #else
 	ret = devfs_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 #endif
