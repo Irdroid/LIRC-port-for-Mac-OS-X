@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.6 1999/08/02 19:56:48 columbus Exp $
+dnl $Id: configure.in,v 5.7 1999/08/04 19:18:26 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -64,7 +64,8 @@ AC_MSG_RESULT()
 possible_drivers="(none) (remotemaster)"
 
 if test x${no_kernel} != xyes; then
-  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) (lirc_aver) (lirc_haup) (lirc_fly98)"
+  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) \
+	(lirc_aver) (lirc_haup) (lirc_fly98) (lirc_pixview)"
 fi
 
 AC_CHECK_LIB(irman, ir_get_code,
@@ -137,6 +138,9 @@ if test "$driver" = "hauppauge"; then
 fi
 if test "$driver" = "fly98"; then
   lirc_driver=lirc_fly98;
+fi
+if test "$driver" = "pixelview"; then
+  lirc_driver=lirc_pixview;
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
@@ -311,6 +315,7 @@ AC_OUTPUT([
   drivers/lirc_aver/Makefile
   drivers/lirc_haup/Makefile
   drivers/lirc_fly98/Makefile
+  drivers/lirc_pixview/Makefile
   drivers/irman/Makefile
   daemons/Makefile
   tools/Makefile

@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.2 1999/08/03 18:11:09 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.3 1999/08/04 19:18:27 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -594,7 +594,7 @@ struct trans_mouse *read_config(FILE *fd)
 			if(config_table[i].string==NULL)
 			{
 				syslog(LOG_WARNING,
-				       "unknown direcitve \"%s\" ignored\n",
+				       "unknown directive \"%s\" ignored\n",
 				       directives);
 				continue;
 			}
