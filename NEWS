@@ -1,6 +1,6 @@
 0.7.0: future
   * added support for Creative iNFRA CDROM (Leonid Froenchenko)
-  * added support for VisionTek BreakOut-Box (Stefan Jahn)
+  * added support for Creative BreakOut-Box (Stefan Jahn)
   * added support for Igor Ceska's receiver variation
   * added support for Ericsson mobile phone via Bluetooth (Vadim Shliakhov)
   * added support for X10 MP3 Anywhere RF receiver (Shawn Nycz)

@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.18 2003/04/27 19:14:34 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.19 2003/05/24 20:16:51 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -9,7 +9,7 @@
  *      Christoph Bartelmus <lirc@bartelmus.de>
  * modified for KNC ONE TV Station/Anubis Typhoon TView Tuner by
  *      Ulrich Mueller <ulrich.mueller42@web.de>
- * modified for Asus TV-Box and VisionTek BreakOut-Box by
+ * modified for Asus TV-Box and Creative BreakOut-Box by
  *      Stefan Jahn <stefan@lkcc.org>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
@@ -417,13 +417,13 @@ static int ir_probe(struct i2c_adapter *adap) {
 		}
 	}
 
-	/* Asus TV-Box and VisionTek BreakOut-Box (PCF8574) */
+	/* Asus TV-Box and Creative BreakOut-Box (PCF8574) */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_RIVA)) {
 		/* addresses to probe;
 		   leave 0x24 and 0x25 because SAA7113H possibly uses it 
 		   0x21 and 0x22 possibly used by SAA7108E 
 		   Asus:      0x21 is a correct address (channel 1 of PCF8574)
-		   VisionTek: 0x23 is a correct address (channel 3 of PCF8574)
+		   Creative:  0x23 is a correct address (channel 3 of PCF8574)
 		*/
 		static const int asus_probe[] = { 0x20, 0x21, 0x22, 0x23,
 						  0x24, 0x25, 0x26, 0x27, -1 };
@@ -446,7 +446,7 @@ static int ir_probe(struct i2c_adapter *adap) {
 				if (((ret2 & 0x03) == 0x03) && 
 				    ((ret4 & 0x03) == 0x00))
 					rc = 1;
-				/* in the VisionTek BreakOut-Box: bit 7-5 */
+				/* in the Creative BreakOut-Box: bit 7-5 */
 				if (((ret2 & 0xe0) == 0xe0) && 
 				    ((ret4 & 0xe0) == 0x00))
 					rc = 1;
