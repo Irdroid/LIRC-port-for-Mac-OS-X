@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.3 2000/04/29 09:12:38 columbus Exp $
+## $Id: acinclude.m4,v 1.4 2000/10/23 07:45:43 columbus Exp $
 ##
 ## additional m4 macros
 ##
@@ -27,11 +27,13 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
 
   if test x${no_kernel} != xyes; then
     if test -f ${kerneldir}/Makefile; then
-      kernelcc=`grep "^CC.*=" ${kerneldir}/Makefile|sed -e "s/=/=\'/g" -e "s/	//g" -e 's/\\$/\\\\$/g'`\'
-      ac_save_cc="${CC}"
-      eval ${kernelcc}
-      kernelcc="${CC}"
-      CC="${ac_save_cc}"
+      ac_pkss_makefile=`mktemp /tmp/temp.XXXXXX`
+      cat ${kerneldir}/Makefile >${ac_pkss_makefile}
+      echo "lirc_tell_me_what_cc_is:" >>${ac_pkss_makefile}
+      echo "	echo \$(CC)" >>${ac_pkss_makefile}
+
+      kernelcc=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_cc_is`
+      rm -f ${ac_pkss_makefile}
     else
       kerneldir="no Makefile found"
       no_kernel=yes
