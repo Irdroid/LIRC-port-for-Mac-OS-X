@@ -206,9 +206,9 @@ DriverOptions ()
 	    IGOR="off"
             for ITEM in $@; do
                 {
-                if   test $ITEM = "\"1\""; then TRANSMITTER="on";
-                elif test $ITEM = "\"2\""; then SOFT_CARRIER="on";
-                elif test $ITEM = "\"3\""; then IGOR="on";
+                if   test $ITEM = "1" || test $ITEM = "\"1\""; then TRANSMITTER="on";
+                elif test $ITEM = "2" || test $ITEM = "\"2\""; then SOFT_CARRIER="on";
+                elif test $ITEM = "3" || test $ITEM = "\"3\""; then IGOR="on";
                 fi
                 }
             done
@@ -270,12 +270,12 @@ ConfigSoftware ()
         USE_SYSLOG="off"; DYNCODES="off"
         for ITEM in $@; do
             {
-            if   test $ITEM = "\"1\""; then X11_WINDOWS="on"
-            elif test $ITEM = "\"2\""; then DEBUG="on"
-            elif test $ITEM = "\"3\""; then NO_DAEMONIZE="on"
-            elif test $ITEM = "\"4\""; then NO_LONG_CODES="on"
-            elif test $ITEM = "\"5\""; then USE_SYSLOG="on"
-            elif test $ITEM = "\"6\""; then DYNCODES="on"
+            if   test $ITEM = "1" || test $ITEM = "\"1\""; then X11_WINDOWS="on"
+            elif test $ITEM = "2" || test $ITEM = "\"2\""; then DEBUG="on"
+            elif test $ITEM = "3" || test $ITEM = "\"3\""; then NO_DAEMONIZE="on"
+            elif test $ITEM = "4" || test $ITEM = "\"4\""; then NO_LONG_CODES="on"
+            elif test $ITEM = "5" || test $ITEM = "\"5\""; then USE_SYSLOG="on"
+            elif test $ITEM = "6" || test $ITEM = "\"6\""; then DYNCODES="on"
             fi
             }
         done
