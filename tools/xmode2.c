@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.5 1999/10/18 10:10:04 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.6 2000/03/16 18:01:10 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -211,6 +211,12 @@ int main(int argc, char **argv)
 	      }
 	    else
 	      {
+		if (x1==0)
+		  {
+		    XDrawLine(d1,w1,gc2,x1, y1+10, x1+10, y1+10) ;
+		    x1+=10;
+		    XDrawLine(d1,w1,gc2,x1, y1+10, x1, y1) ;
+		  }
 		if (x1<w1_w) 
 		  {
 		    XDrawLine(d1,w1,gc2,x1, ((data&PULSE_BIT)?y1:y1+10), x1+x2, ((data&PULSE_BIT)?y1:y1+10)) ;

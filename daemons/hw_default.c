@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.8 1999/10/18 10:14:54 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.9 2000/03/16 18:01:10 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -1301,6 +1301,14 @@ int default_init()
 		hw.features=LIRC_CAN_REC_MODE2;
 		hw.rec_mode=LIRC_MODE_MODE2; /* this might change in future */
 		return(1);
+	}
+	else if(!S_ISCHR(s.st_mode))
+	{
+		default_deinit();
+		logprintf(0,"%s is not a character device!!!\n",
+			  LIRC_DRIVER_DEVICE);
+		logperror(0,"something went wrong during installation\n");
+		return(0);
 	}
 	else if(ioctl(hw.fd,LIRC_GET_FEATURES,&hw.features)==-1)
 	{
