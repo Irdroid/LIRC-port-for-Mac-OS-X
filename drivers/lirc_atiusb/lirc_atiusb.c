@@ -12,6 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
+ * $Id: lirc_atiusb.c,v 1.8 2003/11/07 00:14:24 pmiller9 Exp $
  */
 
 /*
@@ -62,10 +63,6 @@
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC			"USB remote driver for LIRC"
 #define DRIVER_NAME			"lirc_atiusb"
-#define DRIVER_LOG			DRIVER_NAME "  "
-
-#define MAX_DEVICES			16
-#define DRIVER_MAJOR		USB_MAJOR
 
 #define BUFLEN				16
 
@@ -252,10 +249,11 @@ static void usb_remote_irq(struct urb *urb)
 		usb_unlink_urb(urb);
 		return;
 	}
-
-	dprintk(DRIVER_NAME "[%d]: usb irq called\n", ir->devnum);
-
 	if (urb->status) return;
+
+	dprintk(DRIVER_NAME "[%d]: data received (length %d)\n",
+			ir->devnum, urb->actual_length);
+
 	if (urb->actual_length != ir->p->code_length/8) return;
 
 	lirc_buffer_write_1(ir->p->rbuf, urb->transfer_buffer);
@@ -351,7 +349,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		return NULL;
 	}
 
-	strcpy(plugin->name, DRIVER_LOG);
+	strcpy(plugin->name, DRIVER_NAME " ");
 	plugin->minor = -1;
 	plugin->code_length = bytes_in_key*8;
 	plugin->features = features;
