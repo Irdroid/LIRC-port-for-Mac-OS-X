@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.26 2002/12/02 20:32:35 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.27 2003/04/20 08:00:42 lirc Exp $
  *
  */
 
@@ -117,7 +117,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_DYNALINK,               0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0,  0, 32},
 #ifdef BTTV_KWORLD
-	{BTTV_KWORLD,                 0, 0x00007f00,          0, 0x0004000,          0,   0, 12,  0},
+	{BTTV_KWORLD,                 0, 0x00007f00,          0, 0x0004000,          0,   0, 12, 32},
 #endif
 	/* just a guess */
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
@@ -266,6 +266,9 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_PXELVWPLTVPRO:
 #ifdef BTTV_PV_BT878P_9B
 	case BTTV_PV_BT878P_9B:
+#endif
+#ifdef BTTV_KWORLD
+	case BTTV_KWORLD:
 #endif
 		codes[2] = reverse(codes[0],8);
 		codes[3] = (~codes[2])&0xff;
