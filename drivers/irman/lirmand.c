@@ -1,7 +1,6 @@
-/*      $Id: lirmand.c,v 5.2 1999/05/06 22:08:12 wheeley Exp $      */
-
-/* lirmand.c v0.5.5 (c) 1998-1999 Tom Wheeley <tomw@tsys.demon.co.uk> */
-/* This program is free software.  See file COPYING for details       */
+/* lirmand.c, (c) 1998-1999 Tom Wheeley <tom.wheeley@bigfoot.com>   */
+/* This program is free software.  See file COPYING for details     */
+/* $Id: lirmand.c,v 5.3 1999/05/14 22:22:45 wheeley Exp $           */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -53,6 +52,7 @@
 /* how lazy... */
 #define STRERR	strerror(errno)
 
+/* codes sent to lircd */
 unsigned long gap 	=  0x00010000;
 unsigned long pulse	=  0x01000400;
 unsigned long one_space =  0x00000c00;
@@ -138,11 +138,9 @@ int eprintf(char *format, ...)
 }
 
 
-/* Here I have attempted to implement REC-80 encoding, but it is quite likely
- * I've not done it right as I wrote this without the specs in front of me
- */
+/* Here we write out a single bit using REC-80 encoding */
 
-void write_encoded_bit(int value)
+int write_encoded_bit(int value)
 {
   if (value != 0) {
     write(lirc, &one_space, sizeof one_space);
@@ -153,7 +151,7 @@ void write_encoded_bit(int value)
 }
 
 
-/* brrrr */
+/* brrrr.  (default is MSB_TO_LSB, I see no reason for this to change) */
 #ifdef MSB_TO_LSB
 #  define ORDER(X)	(bit)
 #else
@@ -168,7 +166,6 @@ void write_encoded_uchar(unsigned char value, int numbits)
   for (bit=0; bit<numbits; bit++) {
     write_encoded_bit((value & (max >> ORDER(bit))) ? 1 : 0);
   } 
-
 }
 
 
@@ -268,6 +265,7 @@ void loop()
 
 }
 
+
 int main(int argc, char **argv)
 {
   char *filename;
@@ -287,6 +285,16 @@ int main(int argc, char **argv)
       exit(0);
     }
   }
+
+/* daemonize moved here on suggestion from Vandoorselaere Yoann, to avoid
+ * problems with the child doing all the work with the parent's files
+ */
+
+#ifdef DAEMONIZE
+  daemonize();
+#else
+  fprintf(stderr, "%s running (non daemon)\n", progname);
+#endif
 
   errno = 0;  
   if (ir_init(filename) < 0) {
@@ -318,11 +326,6 @@ int main(int argc, char **argv)
   signal(SIGTERM,sigterm);
   signal(SIGINT,sigterm);
 
-#ifdef DAEMONIZE
-  daemonize();
-#else
-  fprintf(stderr, "%s running (non daemon)\n", progname);
-#endif
 
   loop();
 
