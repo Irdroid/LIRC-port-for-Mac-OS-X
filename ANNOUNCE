@@ -12,14 +12,8 @@ http://fsinfo.cs.uni-sb.de/~columbus/lirc/
 Former versions focussed on home-brew hardware connected to the serial
 or parallel port. Descriptions how to build this hardware can be found
 on the LIRC homepage. Current versions of LIRC also support a variety
-of other hardware. The state of the drivers for this hardware however
-differs very much. Support for the following devices is very stable:
-Home-brew serial and parallel port hardware, Irman, Anir Multimedia
-Magic, Packard Bell receivers, PixelView RemoteMaster.  The drivers
-for the following TV cards might still have problems and are not
-tested very well: many Hauppauge models, Fly Video 98. Experimental
-drivers for the Logitech/AST and built-in IrDA ports (SIR mode) is
-also included.
+of other hardware. An up-to-date list of all supported devices and the
+status of the according drivers is available on the LIRC homepage.
 
 The most important part of LIRC is the lircd daemon that will decode
 IR signals received by the device drivers and provide the information

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.2 2000/04/06 17:24:25 columbus Exp $
+## $Id: Makefile.am,v 1.3 2000/07/21 20:30:28 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -8,7 +8,7 @@ EXTRA_PROGRAMS = automake_dummy
 automake_dummy_SOURCES = lirc_gpio_p.c lirc_gpio_i.c
 
 ## there is no *just* object file support in automake.  This is close enough
-module_DATA = @gpio_module@
+module_DATA = @gpio_module@.o
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@

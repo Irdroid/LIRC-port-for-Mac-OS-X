@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.11 2000/07/13 18:59:55 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.12 2000/07/21 20:30:28 columbus Exp $
  *
  */
 
@@ -103,9 +103,11 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	unsigned long mask = gpio_mask;
 	unsigned char shift = 0;
 
+#if 0
 	/* FIXME FIXME FIXME FIXME FIXME FIXME */
 	printk("lirc_gpio_p: gpio_val is %lx\n",(unsigned long) gpio_val);
 	/* FIXME FIXME FIXME FIXME FIXME FIXME */
+#endif
 	
 	gpio_val ^= gpio_xor_mask;
 	
@@ -149,9 +151,11 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		gpio_val >>= 1;
 	}
 	
+#if 0
 	/* FIXME FIXME FIXME FIXME FIXME FIXME */
 	printk("lirc_gpio_p: code is %lx\n",(unsigned long) codes[0]);
 	/* FIXME FIXME FIXME FIXME FIXME FIXME */
+#endif
 	switch(rcv_infos[card_type].bttv_id)
 	{
 	case BTTV_AVPHONE98:

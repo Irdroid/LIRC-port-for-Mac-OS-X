@@ -1,4 +1,4 @@
-0.6.1: future
+0.6.1: 07/22/00
   * added support for PCTV (pro) receiver by Pinnacle Systems (Bart Alewijnse)
   * lircd now can be configured to use syslogd for log output
     Thanks to Rainer Clasen for the suggestion.
@@ -11,6 +11,8 @@
   * hardware is only initialized if clients have connected to lircd
     That way modules don't have to be loaded until they are really
     needed. Thanks to Gilles Chanteperdrix for suggestion and patches.
+  * added support for the following TV cards:
+    Hauppauge, AVerMedia, Fly Video 98, Pixelview PlayTV pro
   * added hardware abstraction layer for TV cards (Artur Lipowski
     <lipowski@comarch.pl>)
 
