@@ -280,7 +280,7 @@ end remote
 # this config file was automatically generated
 # using lirc-0.7.0(any) on Tue Mar 29 17:33:06 2005
 #
-# contributed by Raphaël Doursenaud (rdoursenaud|free.fr)
+# contributed by Raphaël Doursenaud (rdoursenaud@free.fr)
 #
 # brand: Sapphire (ATI)
 # model no. of remote control: 5000023600
@@ -343,14 +343,14 @@ begin remote
           vol-up                   0x00000014DD080000
           chan-down                0x00000014E10C0000
           chan-up                  0x00000014E00B0000
-          mouse-up                 0x000000144A750000
+          mouse-up                 0x0000001447720000
           mouse-down               0x0000001448730000
           mouse-left               0x0000001445700000
           mouse-right              0x0000001446710000
-          mouse-left_up            0x0000001447720000
-          mouse-left_down          0x0000001448730000
+          mouse-left_up            0x0000001449740000
+          mouse-left_down          0x000000144C770000
           mouse-right_up           0x000000144A750000
-          mouse-right_down         0x0000001448730000
+          mouse-right_down         0x000000144B760000
           dvd-root_menu            0x00000014EB160000
           launch_setup             0x00000014ED180000
       end codes
