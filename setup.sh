@@ -379,7 +379,10 @@ fi
 if test -f $CONFIG; then
     {
     echo "Loading saved configuration from $CONFIG"
-    . ./$CONFIG
+    case $CONFIG in
+    */*) . $CONFIG ;;
+    *) . ./$CONFIG ;;
+    esac
     sleep 1
     }
 fi
