@@ -69,10 +69,17 @@ begin remote
           CHANELS	           0x00000000000047B8
           REV                      0x0000000000008778
           FWD                      0x000000000000C738
-          VIDEO                    0x0000000000007788
+          VIDEO                    0x0000000000008877
 
 # from FlyVideo II config file
           Audio                    0x000000000000A857
+# newly added by Jarek Zuk
+          SQUARE                   0x000000000000B847
+          TAB_LEFT                 0x0000000000007887
+          TAB_RIGHT                0x00000000000038C7
+          CENTER                   0x000000000000C837
+          LEFT                     0x00000000000048B7
+ 
       end codes
 
 end remote
