@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.31 2003/05/03 13:17:00 ranty Exp $
+## $Id: Makefile.am,v 5.32 2003/05/07 17:30:40 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -17,6 +17,7 @@ lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
+			hw_creative_infracd.c hw_creative_infracd.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
@@ -45,6 +46,7 @@ irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
+			hw_creative_infracd.c hw_creative_infracd.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \

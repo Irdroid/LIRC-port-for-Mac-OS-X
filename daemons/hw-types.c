@@ -8,6 +8,7 @@
 /* Hardware types */
 extern struct hardware hw_default;
 extern struct hardware hw_creative;
+extern struct hardware hw_creative_infracd;
 extern struct hardware hw_irman;
 extern struct hardware hw_logitech;
 extern struct hardware hw_mp3anywhere;
@@ -54,6 +55,7 @@ struct hardware *hw_list[] =
 #endif
 	&hw_bte,
 	&hw_creative,
+	&hw_creative_infracd,
 	&hw_dsp,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,
