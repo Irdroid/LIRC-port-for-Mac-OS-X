@@ -7,7 +7,7 @@
 <PRE>
   |  +------------------------------------------------------+
 S |  | 'gpm -t msc -m /dev/lircm' or a well configured X    |
-O |  | (see INSTALL Chapter 'Configuring lircmd')           |
+O |  | (see section 'Configuring lircmd') for details       |
 F |  +--------------+---------------------------------------+
 T |                 |
 W |   /dev/lircm (named pipe (FIFO) ==> one connection)
@@ -24,8 +24,8 @@ E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
   |                               |
 S |              +----------------+--------------------------+
 O |              | decoder daemon (lircd), irrecord or mode2 |
-F |              | lircd is configured through               |
-T | User space   | lircd.conf                                |
+F |              | lircd is configured through lircd.conf    |
+T | User space   |                                           |
 W |              +------------------+------------------------+
 A |                                 |
 R |                                 |
@@ -33,20 +33,27 @@ E |                                 |
   |                                 |
   |                                 |
   |                                 |
-  +-------------------------+-------+-------+--------------------------
-  | Kernel space             |               |       (character device
-  |                     /dev/lirc       /dev/ttyS?   driver ==> one
-  |                         |               |        connection)
-  |          +--------------+-----+  +---------------------+
-  |          | LIRC device driver |  | Linux serial driver |
-  |          +--------------+-----+  +--------+------------+
-  |                         |                 |
---+-------------------------+-----------------+-----------------------
-  |                         |                 |
-  |          +--------------+---------+  +----+----+
-H |          | serial / parallel port |  |  Irman  |
-W |          +------------------------+  +---------+
-  |</PRE>
+  +---------------------------------+----------------------------------
+  | Kernel space                    |              (character device
+  |                                 |                  driver ==>
+  |                    +------------+----------+    one connection)
+  |                    |                       |  
+  |                /dev/lirc               /dev/ttySx
+  |                    |                       |
+  |       +------------+-------------+   +-----+---------------+
+  |       |  LIRC device driver      |   | Linux serial driver |
+  |       | (with ioctl-interface)   |   |                     |
+  |       +------------+-------------+   +----------+----------+
+  |                    |                            |
+--+--------------------+----------------------------+------------------
+  |                    |                            |
+  |         +----------+------------+               |
+  |         |                       |               |
+  | +-------+----------------+ +----+-----+ +-------+-----------------+
+H | | serial / parallel port | | TV cards | | Irman/RemoteMaster/etc. |
+W | +------------------------+ +----------+ +-------------------------+
+  |
+</PRE>
 
 
 
@@ -57,23 +64,46 @@ W |          +------------------------+  +---------+
 
 <UL>
 <LI><B>/dev/lirc:</B><BR>
-    outputs 4 byte packets containing an unsigned long value describing
-    a IR signal<BR>
+    <P>
+    highly depends on the mode selected with ioctls:
+    </P>
+    <DL>
+    <DT>LIRC_MODE_MODE2</DT>
+    <DD>
+    <P>
+    outputs packets containing an int value describing a IR signal<BR>
     <UL>
-        <LI>Bits 31-25 are 0</LI>
-        <LI>Bit 24 is either 0, meaning space, or 1, meaning pulse</LI>
-        <LI>Bits 23-0 contain the length of the pulse/space in microseconds</LI>
+        <LI>bits 0-23 contain the length of the pulse/space in
+        microseconds</LI>
+        <LI>bit 24 is either 0, meaning space, or 1, meaning
+        pulse</LI>
+       <LI>all other bits are unused</LI>
     </UL>
-    Lengths greater than or equal to 16 seconds are clamped to 0xffffff.
-
+    Lengths greater than or equal to 16 seconds are clamped to
+    0xffffff.
+    </P>
     <P>References:
     <UL>
-        <LI>drivers/serial/lirc_serial.c</LI>
-        <LI>drivers/parallel/lirc_parallel.c</LI>
-        <LI>drivers/libirman-x.x/lirmand.c</LI>
-        <LI>tools/mode2.c (dumps the output from the lirc-driver to screen)</LI>
-    </UL></P>
-<BR>&#160;<BR></LI>
+        <LI>drivers/lirc_serial/lirc_serial.c</LI>
+        <LI>drivers/lirc_parallel/lirc_parallel.c</LI>
+        <LI>tools/mode2.c (dumps the output from the driver to stdout)</LI>
+    </UL>
+    </P>
+    </DD>
+    <DT>LIRC_MODE_CODE</DT>
+    <DD>
+    <P>
+    outputs chars (8 bits)
+    </P>
+    </DD>
+    <DT>LIRC_MODE_LIRCCODE</DT>
+    <DD>
+    <P>
+    outputs codes of configurable length in big endian byte order
+    </P>
+    </DD>
+    </DL>
+</LI>
 <LI><B>/dev/lircd:</B><BR>
     outputs strings containing all information about the remote and the
     pressed button.
@@ -82,21 +112,27 @@ W |          +------------------------+  +---------+
         <LI>daemons/lircd.c</LI>
         <LI>tools/irw.c</LI>
     </UL></P>
-<BR>&#160;<BR></LI>
+</LI>
 <LI><B>/dev/lircm:</B><BR>
-    outputs 5 Byte packages (MouseSystems format)
     <UL>
-        <LI>Byte 1: Button Information</LI>
-        <LI>Byte 2: Change on X Axis</LI>
-        <LI>Byte 3: Change on Y Axis</LI>
-        <LI>Byte 4,5: 0</LI>
+    <LI>MouseSystems<BR>
+    5 byte packets:
+    <UL>
+        <LI>byte 1: button information</LI>
+        <LI>byte 2: change on X axis</LI>
+        <LI>byte 3: change on Y axis</LI>
+        <LI>byte 4,5: 0</LI>
+    </UL>
+    </LI>
+    <LI>IMPS/2<BR>
+    4 byte packets: check the source code for details
+    </LI>
     </UL>
 
     <P>References:
     <UL>
         <LI>daemons/lircmd.c</LI>
     </UL></P>
-    <P><B>IMPS/2 Protocol ?</B></P>
 </LI>
 </UL>
 
@@ -226,7 +262,7 @@ you don't want to mess with all the protocol stuff you can use the
 as this:
 
 <PRE>
-/*      &#36;Id: irw.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
+/*      &#36;Id: irexec.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -258,9 +294,9 @@ int main(int argc, char *argv[])
 	struct lirc_config *config;
 
 	progname=argv[0];
-	if(argc>2)
+	if(argc&gt;2)
 	{
-		fprintf(stderr,"Usage: %s <config file>\n",progname);
+		fprintf(stderr,"Usage: %s &lt;config file&gt;\n",progname);
 		exit(EXIT_FAILURE);
 	}
 	if(lirc_init("irexec",1)==-1) exit(EXIT_FAILURE);
@@ -273,6 +309,7 @@ int main(int argc, char *argv[])
 
 		while(lirc_nextcode(&code)==0)
 		{
+			if(code==NULL) continue;
 			while((ret=lirc_code2char(config,code,&c))==0 &&
 			      c!=NULL)
 			{
@@ -327,9 +364,10 @@ int lirc_readconfig(char *file,struct lirc_config **config,
 </PRE>
 If you want to load the default config file you should pass NULL as
 first argument. If you want to load some other config file the
-<em>file</em> argument should contain the complete path to the file.
-You should also be able to load multiple config files by calling this
-function several times.<BR> 
+<em>file</em> argument should contain the complete path to the
+file. Your program should give the user the possibility to use an
+other than the default config file. You should also be able to load
+multiple config files by calling this function several times.<BR>
 
 The <em>config</em> argument is used to pass the pointer to the config
 file data structures back to your application. You will need it for
@@ -432,13 +470,3 @@ There is also a more complex m4 macro in the contrib directory of the
 current LIRC distribution if you plan to add LIRC support to your
 application without using the lirc_client library.
 </P>
-<!--  LocalWords:  SIGHUP xrc IR lirc irw columbus Exp irexec Trent Piepho int
- -->
-<!--  LocalWords:  ifdef endif errno unistd stdarg stdlib progname argc argv Qt
- -->
-<!--  LocalWords:  struct fprintf stderr init readconfig ret nextcode deinit
- -->
-<!--  LocalWords:  freeconfig prog lircrc GUI gdk gtk QSocketNotifier SIGIO dnl
- -->
-<!--  LocalWords:  NONBLOCK fcntl xirw homepage autoconf automake
- -->
