@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.49 2004/02/04 10:50:48 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.50 2004/02/05 19:44:50 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -2128,6 +2128,11 @@ int get_data_length(struct ir_remote *remote)
 					remote->sone=s1;
 					remote->pzero=min(p1,p2);
 					remote->szero=s1;
+					if(expect(remote,remote->ptrail,p1) ||
+					   expect(remote,remote->ptrail,p2))
+					{
+						remote->ptrail=0;
+					}
 				}
 				else
 				{
