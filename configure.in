@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.4 1999/07/27 16:58:26 columbus Exp $
+dnl $Id: configure.in,v 5.5 1999/07/30 21:07:46 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -197,7 +197,7 @@ devdir=/dev)
 
 default_moduledir=/lib/modules/`uname -r`/misc
 AC_ARG_WITH(moduledir,
-[  --with-moduledir=DIR    kernel modules in DIR ($default_moduledir)], 
+[  --with-moduledir=DIR    kernel modules in DIR (/lib/modules/`uname -r`/misc)], 
 moduledir=${withval},
 moduledir=${default_moduledir})
 
@@ -207,7 +207,7 @@ test x${enableval} = xyes && AC_DEFINE(LONG_IR_CODE),
 AC_DEFINE(LONG_IR_CODE))
 
 AC_ARG_WITH(major,
-[  --with-major=value      specify the device major for the driver (def. 61)],
+[  --with-major=value      specify the device major for the driver (61)],
 lirc_major=${withval},
 lirc_major=61)
 

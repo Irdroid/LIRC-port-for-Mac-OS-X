@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.3 1999/07/27 16:58:26 columbus Exp $
+## $Id: Makefile.am,v 5.4 1999/07/30 21:07:46 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -16,7 +16,7 @@ KERNEL_LOCATION=@kerneldir@
 # some magic for using linux kernel settings
 # when compiling module(s)
 CC           = @kernelcc@
-M_OBJS       = $(module_DATA)
+MI_OBJS      = $(module_DATA)
 EXTRA_CFLAGS = $(DEFS)
 
   ifndef MAKING_MODULES
@@ -38,6 +38,6 @@ rmdev:
 install-data-local:
 	-@depmod@ -a
 
-CLEANFILES = $(module_DATA) *~ \#*\#
+CLEANFILES = $(module_DATA) .$(module_DATA).flags *~
 
 include $(KERNEL_LOCATION)/Rules.make
