@@ -14,6 +14,7 @@
 # modifications based on the config files from 
 # Juan Toledo <toledo@users.sourceforge.net> and 
 # Markus Lischka <mlischka@users.sourceforge.net>
+# Reza Naima
 # 
 # Only CH_UP, CH_DOWN, VOL_UP and VOL_DOWN will repeat. This seems to
 # be a hardware limitation.
@@ -73,22 +74,26 @@ begin remote
 # The following are only supported by the remote control bundled with
 # the WinFast TV 2000 XP Deluxe card.
 
-          SLEEP                    0x00000000000004FB
-          BOSS_KEY                 0x000000000000946B
-          RED                      0x000000000000D42B
-          GREEN                    0x00000000000034CB
-          YELLOW                   0x000000000000B44B
-          BLUE                     0x000000000000748B
-          PIP                      0x00000000000054AB
-          .                        0x000000000000847B
-          BACK                     0x00000000000044BB
-          PLAY                     0x000000000000C43B
-          NEXT                     0x00000000000024DB
-          TIMESHIFT                0x000000000000A45B
-          STOP                     0x000000000000649B
-          REC                      0x000000000000E41B
-          SNAPSHOT                 0x00000000000014EB
+          SLEEP                    0x00000000000002FD
+          BOSS_KEY                 0x000000000000926D
+          RED                      0x000000000000D22D
+          GREEN                    0x00000000000032CD
+          YELLOW                   0x000000000000B24D
+          BLUE                     0x000000000000728D
+          PIP                      0x00000000000052AD
+          .                        0x000000000000827D
+          BACK                     0x00000000000042BD
+          PLAY                     0x000000000000C23D
+          NEXT                     0x00000000000022DD
+          TIMESHIFT                0x000000000000A25D
+          STOP                     0x000000000000629D
+          REC                      0x000000000000E21D
+          SNAPSHOT                 0x00000000000012ED
 
+# Only found on CoolCommand remote
+
+          REPEAT                   0x000000000000884B
+          TELETEXT                 0x000000000000F807
       end codes
 
 end remote

@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.30 2003/06/07 22:00:10 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.31 2003/09/28 09:41:05 lirc Exp $
  *
  */
 
@@ -298,6 +298,8 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		break;
 #endif
 	case BTTV_WINFAST2000:
+		/* shift extra bit */
+		codes[0] = (codes[0]&0x1f) | ((codes[0]&0x20) << 1);
 	case BTTV_WINVIEW_601:
 		codes[2] = reverse(codes[0],8);
 		codes[3] = (~codes[2])&0xff;
