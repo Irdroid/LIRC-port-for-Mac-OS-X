@@ -1,0 +1,5 @@
+.lirc_gpio_i.o.flags
+.lirc_gpio_p.o.flags
+Makefile.in
+Makefile
+.deps

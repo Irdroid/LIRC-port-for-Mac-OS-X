@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.19 2000/03/30 10:33:54 columbus Exp $
+dnl $Id: configure.in,v 5.20 2000/04/02 13:07:20 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
 fi
 
 
-AM_INIT_AUTOMAKE(lirc, 0.6.0)
+AM_INIT_AUTOMAKE(lirc, 0.6.1)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -76,8 +76,8 @@ possible_drivers="(none) (remotemaster) (logitech)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
-	(lirc_parallel) (lirc_aver) (lirc_haup) (lirc_haup_new) \
-	(lirc_fly98) (lirc_pixview)"
+	(lirc_parallel) (lirc_aver) (lirc_haup) \
+	(lirc_dev lirc_haup) (lirc_fly98) (lirc_dev lirc_gpio)"
 fi
 
 AC_CHECK_LIB(irman, ir_strerror,
@@ -95,7 +95,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, comX, lptX, avermedia,
-                          hauppauge, hauppauge_new, fly98, pixelview,
+                          hauppauge, hauppauge_new, fly98, pixelview_pro,
                           logitech],
 driver=${withval},
 driver="unset"
@@ -180,7 +180,7 @@ if test "$driver" = "hauppauge"; then
   test -f "${kerneldir}/include/linux/i2c-old.h" && AC_DEFINE(LIRC_OLD_I2C_LAYER)
 fi
 if test "$driver" = "hauppauge_new"; then
-  lirc_driver=lirc_haup
+  lirc_driver="lirc_dev lirc_haup"
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
   AC_DEFINE(LIRC_NEW_I2C_LAYER)
@@ -190,10 +190,9 @@ if test "$driver" = "fly98"; then
   lircd_conf="life-view/lircd.conf.fly98"
   lircmd_conf="life-view/lircmd.conf.fly98"
 fi
-if test "$driver" = "pixelview"; then
-  AC_MSG_ERROR([sorry, the selected driver is not available any more])
-  lirc_driver=lirc_pixview
-  lircd_conf="pixelview/lircd.conf.playtv"
+if test "$driver" = "pixelview_pro"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="pixelview/lircd.conf.playtv_pro"
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
@@ -383,6 +382,8 @@ AC_OUTPUT([
   drivers/lirc_parallel/Makefile
   drivers/lirc_haup/Makefile
   drivers/lirc_fly98/Makefile
+  drivers/lirc_gpio/Makefile
+  drivers/lirc_dev/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

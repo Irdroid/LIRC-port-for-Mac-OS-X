@@ -1,6 +1,6 @@
 #! /bin/bash
 
-LIRC_VERSION="0.6.0"
+LIRC_VERSION="0.6.1"
 
 #############################################################################
 ## Default Values
@@ -225,7 +225,7 @@ function ConfigDriver
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
              3 "Irman" \
-	     4 "TV card (EXPERIMENTAL, read README.tv)" \
+	     4 "TV card" \
 	     5 "Packard Bell receiver" \
 	     6 "Anir Multimedia Magic" \
              7 "PixelView RemoteMaster RC2000/RC3000" \
@@ -246,7 +246,7 @@ function ConfigDriver
 			2 "Hauppauge TV card (new I2C layer)" \
 			3 "AverMedia TV card" \
 			4 "Fly98 TV card" \
-			5 "Pixelview PlayTV card" 2> $TEMP;
+			5 "Pixelview PlayTV pro card" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -254,7 +254,7 @@ function ConfigDriver
 		elif test "$1" = "2"; then LIRC_DRIVER=hauppauge_new; DRIVER_PARAMETER=none;
 		elif test "$1" = "3"; then LIRC_DRIVER=avermedia; DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=fly98;     DRIVER_PARAMETER=none;
-		elif test "$1" = "5"; then LIRC_DRIVER=pixelview; DRIVER_PARAMETER=none;
+		elif test "$1" = "5"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

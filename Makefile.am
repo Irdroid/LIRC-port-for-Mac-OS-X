@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.5 2000/03/30 10:33:54 columbus Exp $
+## $Id: Makefile.am,v 5.6 2000/04/02 13:07:20 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -6,7 +6,7 @@
 ## we need version 1.4 of automake for DIST_SUBDIRS to work.
 AUTOMAKE_OPTIONS = 1.4 check-news
 
-EXTRA_DIST = setup.sh ANNOUNCE TODO README.tv
+EXTRA_DIST = setup.sh ANNOUNCE TODO
 
 SUBDIRS = drivers daemons tools doc
 

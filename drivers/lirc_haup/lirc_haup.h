@@ -1,3 +1,5 @@
+/*      $Id: lirc_haup.h,v 1.5 2000/04/02 13:07:21 columbus Exp $      */
+
 #ifndef _LIRC_HAUP_H_
 #define _LIRC_HAUP_H_
 
@@ -107,5 +109,3 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote);
 static char *         keyname(unsigned char v);
  
 #endif /* _LIRC_HAUP_H_ */
-
-

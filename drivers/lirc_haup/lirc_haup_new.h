@@ -1,3 +1,5 @@
+/*      $Id: lirc_haup_new.h,v 1.2 2000/04/02 13:07:21 columbus Exp $      */
+
 #ifndef _LIRC_HAUP_H_
 #define _LIRC_HAUP_H_
 
@@ -81,4 +83,3 @@ static int remote_command (struct i2c_client *client,
 	unsigned int cmd, void *arg);
 
 #endif /* _LIRC_HAUP_H_ */
-

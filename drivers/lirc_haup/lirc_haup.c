@@ -1,3 +1,5 @@
+/*      $Id: lirc_haup.c,v 1.13 2000/04/02 13:07:21 columbus Exp $      */
+
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < 0x020200
 #error "--- Sorry, this driver needs kernel version 2.2.0 or higher. ---"
