@@ -6,5 +6,9 @@ as a kernel module ad you shoul apply included patch to the bttv-0.6.3
 driver tree (not the kernel bttv driver). You can get alternative patch
 at http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
 
+There is also a patch for a kernel bttv driver.
+
+Remember to set KERNEL_SRC in Makefile.am before runing autogen !
+
 You can contact me at jochym@ifj.edu.pl
 
