@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.86 2002/09/21 15:25:28 lirc Exp $
+dnl $Id: configure.in,v 5.87 2002/10/06 09:21:08 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
   exit 0
 fi
 
-AM_INIT_AUTOMAKE(lirc, 0.6.6pre2)
+AM_INIT_AUTOMAKE(lirc, 0.6.6)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
