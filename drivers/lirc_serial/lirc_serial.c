@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.41 2002/10/12 15:31:48 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.42 2002/10/27 16:00:18 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -709,21 +709,15 @@ static int init_port(void)
 	
         if((check_region(io,8))==-EBUSY)
 	{
-#if 0
-		/* this is the correct behaviour but many people have
-                   the serial driver compiled into the kernel... */
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": port %04x already in use\n", io);
-		return(-EBUSY);
-#else
-		printk(KERN_ERR LIRC_DRIVER_NAME  
-		       ": port %04x already in use, proceeding anyway\n", io);
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
-		       ": compile the serial port driver as module and\n");
+		       ": use 'setserial /dev/ttySX uart none'\n");
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": or compile the serial port driver as module and\n");
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
 		       ": make sure this module is loaded first\n");
-		release_region(io,8);
-#endif
+		return(-EBUSY);
 	}
 	
 	/* Reserve io region. */
