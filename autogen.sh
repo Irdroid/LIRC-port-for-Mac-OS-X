@@ -9,7 +9,7 @@ DIE=0
   echo
   echo "**Error**: You must have \`autoconf' installed to compile lirc."
   echo "Download the appropriate package for your distribution,"
-  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/autoconf-2.13.tar.gz"
   DIE=1
 }
 
@@ -19,7 +19,7 @@ DIE=0
  {
     echo
     echo "**Error**: You must have \`libtool' installed to compile lirc."
-    echo "Get ftp://ftp.gnu.org/pub/gnu/libtool-1.2.tar.gz"
+    echo "Get ftp://ftp.gnu.org/pub/gnu/libtool/libtool-1.3.3.tar.gz"
     echo "(or a newer version if it is available)"
     DIE=1
   }
@@ -39,7 +39,7 @@ grep "^AM_GNU_GETTEXT" $srcdir/configure.in >/dev/null && {
 (automake --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`automake' installed to compile lirc."
-  echo "Get ftp://ftp.gnu.org/pub/gnu/automake-1.4.tar.gz"
+  echo "Get ftp://ftp.gnu.org/pub/gnu/automake/automake-1.5.tar.gz"
   echo "(or a newer version if it is available)"
   DIE=1
   NO_AUTOMAKE=yes
@@ -51,7 +51,7 @@ test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: Missing \`aclocal'.  The version of \`automake'"
   echo "installed doesn't appear recent enough."
-  echo "Get ftp://ftp.gnu.org/pub/gnu/automake-1.4.tar.gz"
+  echo "Get ftp://ftp.gnu.org/pub/gnu/automake/automake-1.5.tar.gz"
   echo "(or a newer version if it is available)"
   DIE=1
 }
