@@ -31,6 +31,7 @@ hw_menu_entry: @hw-other-serial
 	irdeo_remote: "IRdeo Remote"
 	irman: "Irman / UIR"
 	logitech: "Logitech/AST"
+	pcmak: "PCMAK serial receiver"
 	pctv: "Miro PCTV receiver"
 	packard_bell: "Packard Bell receiver"
 	pctv: "Pinnacle Systems PCTV (pro) receiver"
@@ -98,6 +99,7 @@ hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 RF Remote"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	tira: "Home Electronics Tira USB device"
+	pcmak_usb: "PCMAK USB receiver"
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card"
 	mceusb: "Windows Media Center Remotes"
@@ -109,11 +111,11 @@ param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 param_type: parallel
 	lpt:
 
-param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
+param_type: caraca creative irman logitech mp3anywhere pcmak pctv realmagic \
 		remotemaster silitek slinke uirt2 uirt2_raw
 	tty:
 
-param_type: tira
+param_type: pcmak_usb tira
         ttyUSB:
 
 param_type: atiusb audio audio_alsa avermedia avermedia98 \
@@ -137,7 +139,7 @@ default_param: atiusb audio audio_alsa avermedia avermedia98 \
 		tekram_bt829 tvbox udp
 	none:
 
-default_param: caraca creative irman logitech mp3anywhere pctv \
+default_param: caraca creative irman logitech mp3anywhere pcmak pctv \
 		realmagic remotemaster silitek uirt2 uirt2_raw
 	tty1:
 
@@ -157,6 +159,6 @@ default_param: sir
 default_param: bte
 	btty:
 
-default_parm: tira
-	ttyUSB:
+default_param: pcmak_usb tira
+	ttyUSB1:
 

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.125 2004/07/18 12:58:54 lirc Exp $
+dnl $Id: configure.in,v 5.126 2004/07/24 15:36:14 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -137,8 +137,9 @@ AC_MSG_RESULT()
 
 possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
 	(exaudio) (irreal) (livedrive_midi) (livedrive_seq) (logitech) \
-	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
-	(slinke) (tira) (uirt2) (uirt2_raw) (udp)"
+	(mediafocusI) (mp3anywhere) (pcmak) (pcmak_usb) (pctv) |
+	(remotemaster) (silitek) (slinke) (tira) (uirt2) (uirt2_raw) \
+	(udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -192,8 +193,8 @@ AC_ARG_WITH(driver,
 			  knc_one, kworld, leadtek_0007, leadtek_0010,
 			  livedrive_midi, livedrive_seq, logitech,
 			  lptX, mceusb, mediafocusI, mp3anywhere,
-			  packard_bell, parallel, pctv,
-			  pixelview_bt878, pixelview_pak,
+			  packard_bell, parallel, pcmak, pcmak_usb,
+			  pctv, pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, sasem, serial, silitek,
 			  sir, slinke, tekram, tekram_bt829, tira,
@@ -308,6 +309,9 @@ if test "$driver" = "any"; then
 		;;
 	mp3anywhere)
 		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
+		;;
+	pcmak*)
+		hw_module="${hw_module} hw_pcmak.o serial.o"
 		;;
 	pctv)
 		hw_module="${hw_module} hw_pinsys.o serial.o"
@@ -653,6 +657,14 @@ fi
 
 if test "$driver" = "parallel"; then
   lirc_driver="lirc_dev lirc_parallel"
+fi
+
+if test "$driver" = "pcmak" -o "$driver" = "pcmak_usb"; then
+  lirc_driver="none"
+  hw_module="hw_pcmak.o serial.o"
+  HW_DEFAULT="hw_pcmak"
+  lircd_conf="pcmak/lircd.conf.pcmak"
+  lircmd_conf="pcmak/lircmd.conf.pcmak"
 fi
 
 if test "$driver" = "pctv"; then

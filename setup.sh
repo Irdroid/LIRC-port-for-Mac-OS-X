@@ -62,8 +62,10 @@ GetSelectedDriver ()
     IRTTY="none"
 
     if   test "$DRIVER_PARAMETER" = "btty"; then IRTTY="/dev/btty"; LIRC_PORT="none"; LIRC_IRQ="none"
-    elif test "$DRIVER_PARAMETER" = "ttyUSB1"; then IRTTY="/dev/ttyUSB0"; LIRC_PORT="none"; LIRC_IRO="none"
-    elif test "$DRIVER_PARAMETER" = "ttyUSB2"; then IRTTY="/dev/ttyUSB1"; LIRC_PORT="none"; LIRC_IRO="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB1"; then COM1="on"; IRTTY="/dev/ttyUSB0"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB2"; then COM2="on"; IRTTY="/dev/ttyUSB1"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB3"; then COM3="on"; IRTTY="/dev/ttyUSB2"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB4"; then COM4="on"; IRTTY="/dev/ttyUSB3"; LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "com1"; then COM1="on"; LIRC_PORT=$COM1_PORT; LIRC_IRQ=$COM1_IRQ
     elif test "$DRIVER_PARAMETER" = "com2"; then COM2="on"; LIRC_PORT=$COM2_PORT; LIRC_IRQ=$COM2_IRQ
     elif test "$DRIVER_PARAMETER" = "com3"; then COM3="on"; LIRC_PORT=$COM3_PORT; LIRC_IRQ=$COM3_IRQ
@@ -175,6 +177,30 @@ SetPortAndIrq ()
             elif test "$1" = "2"; then DRIVER_PARAMETER="tty2"
             elif test "$1" = "3"; then DRIVER_PARAMETER="tty3"
             elif test "$1" = "4"; then DRIVER_PARAMETER="tty4"
+            fi
+            GetSelectedDriver
+            }
+	else
+	    return 1;
+        fi
+    elif test "$DRIVER_PARAM_TYPE" = "ttyUSB"; then
+	{
+        dialog --clear --backtitle "$BACKTITLE" \
+               --title "Select tty to use" \
+               --radiolist "$SET_TTY_TEXT" 13 74 6 \
+                 1 "/dev/ttyUSB0" $COM1 \
+                 2 "/dev/ttyUSB1" $COM2 \
+                 3 "/dev/ttyUSB2" $COM3 \
+                 4 "/dev/ttyUSB3" $COM4 \
+               2> $TEMP
+	}
+        if test "$?" = "0"; then
+            {
+	    set `cat $TEMP`
+            if   test "$1" = "1"; then DRIVER_PARAMETER="ttyUSB1"
+            elif test "$1" = "2"; then DRIVER_PARAMETER="ttyUSB2"
+            elif test "$1" = "3"; then DRIVER_PARAMETER="ttyUSB3"
+            elif test "$1" = "4"; then DRIVER_PARAMETER="ttyUSB4"
             fi
             GetSelectedDriver
             }

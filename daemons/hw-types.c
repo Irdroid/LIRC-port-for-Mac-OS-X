@@ -19,6 +19,7 @@ extern struct hardware hw_livedrive_midi;
 extern struct hardware hw_livedrive_seq;
 extern struct hardware hw_logitech;
 extern struct hardware hw_mp3anywhere;
+extern struct hardware hw_pcmak;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
@@ -75,6 +76,7 @@ struct hardware *hw_list[] =
 	&hw_logitech,
 	&hw_mp3anywhere,
 	&hw_null,
+	&hw_pcmak,
 	&hw_pinsys,
 	&hw_pixelview,
 	&hw_silitek,
