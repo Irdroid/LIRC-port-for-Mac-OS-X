@@ -1,7 +1,7 @@
 /*
  * LIRC base driver
  * 
- * (L) by Artur Lipowski <alipowski@kki.net.pl>
+ * (L) by Artur Lipowski <alipowski@interia.pl>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.20 2002/10/12 15:31:47 ranty Exp $
+ * $Id: lirc_dev.c,v 1.21 2002/10/15 08:37:39 ranty Exp $
  *
  */
 

@@ -2,7 +2,7 @@
  * Remote control driver for the TV-card
  * key codes are obtained from GPIO port
  * 
- * (L) by Artur Lipowski <alipowski@kki.net.pl>
+ * (L) by Artur Lipowski <alipowski@interia.pl>
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.18 2002/10/12 15:31:47 ranty Exp $
+ * $Id: lirc_gpio.c,v 1.19 2002/10/15 08:37:39 ranty Exp $
  *
  */
 

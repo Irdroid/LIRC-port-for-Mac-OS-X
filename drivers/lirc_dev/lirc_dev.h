@@ -1,10 +1,10 @@
 /*
  * LIRC base driver
  * 
- * (L) by Artur Lipowski <alipowski@kki.net.pl>
+ * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.5 2002/10/12 15:31:47 ranty Exp $
+ * $Id: lirc_dev.h,v 1.6 2002/10/15 08:37:39 ranty Exp $
  *
  */
 

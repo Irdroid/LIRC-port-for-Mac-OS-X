@@ -1,7 +1,7 @@
 #
 # This is an example of ~/.lircrc file
 # It is a copy of actual setup from my home machine.
-# Contributed by Artur Lipowski <lipowski@kki.net.pl>
+# Contributed by Artur Lipowski <alipowski@interia.pl>
 #
     begin 
 	prog 	= 	irexec
