@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.21 2000/11/10 20:46:32 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.22 2000/11/13 20:31:23 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -173,7 +173,7 @@ int main(int argc,char **argv)
 	lirc_t remaining_gap;
 	int force;
 	int retries;
-	struct ir_remote *remotes;
+	struct ir_remote *remotes=NULL;
 
 	progname=argv[0];
 	force=0;
@@ -222,26 +222,54 @@ int main(int argc,char **argv)
 	fin=fopen(filename,"r");
 	if(fin!=NULL)
 	{
-#ifdef DEBUG
+		char *filename_new;
+		
 		remotes=read_config(fin);
 		fclose(fin);
 		if(remotes==(void *) -1 || remotes==NULL)
 		{
+			fprintf(stderr,
+				"%s: file \"%s\" does not contain valid "
+				"data\n",progname,filename);
 			exit(EXIT_FAILURE);
 		}
+#ifdef DEBUG
 		remove_pre_data(remotes);
 		remove_post_data(remotes);
 		get_pre_data(remotes);
 		//get_post_data(remotes);
-		
+			
 		fprint_remotes(stdout,remotes);
 		free_config(remotes);
 		return(EXIT_SUCCESS);
 #endif
-		fclose(fin);
-		fprintf(stderr,"%s: file \"%s\" already exists\n",progname,
-			filename);
-		exit(EXIT_FAILURE);
+		remote=*remotes;
+		remote.name=NULL;
+		remote.codes=NULL;
+		remote.last_code=NULL;
+		remote.next=NULL;
+		remote.toggle_bit=0;
+		remote.bits=remote.pre_data_bits+
+			remote.bits+
+			remote.post_data_bits;
+		remote.pre_data_bits=0;
+		remote.post_data_bits=0;
+		if(remotes->next!=NULL)
+		{
+			fprintf(stderr,
+				"%s: only first remote definition "
+				"in file \"%s\" used\n",
+				progname,filename);
+		}
+		filename_new=malloc(strlen(filename)+10);
+		if(filename_new==NULL)
+		{
+			fprintf(stderr,"%s: out of memory\n",
+				progname);
+			exit(EXIT_FAILURE);
+		}
+		strcpy(filename_new,filename);
+		strcat(filename,".conf");
 	}
 	fout=fopen(filename,"w");
 	if(fout==NULL)
@@ -327,7 +355,7 @@ int main(int argc,char **argv)
 	switch(hw.rec_mode)
 	{
 	case LIRC_MODE_MODE2:
-		if(!get_lengths(&remote,force))
+		if(remotes==NULL && !get_lengths(&remote,force))
 		{
 			if(remote.gap==0)
 			{
