@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.12 2000/04/18 19:46:21 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.13 2000/04/19 11:22:33 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1040,6 +1040,7 @@ int get_lengths(struct ir_remote *remote,int force)
 					}
 					if(scan!=NULL)
 					{
+						printf("Please keep on pressing buttons like described above.\n");
 						mode=MODE_HAVE_GAP;
 						sum=0;
 						count=0;
