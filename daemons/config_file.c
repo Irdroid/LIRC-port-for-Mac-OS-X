@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.17 2004/02/08 20:42:35 lirc Exp $      */
+/*      $Id: config_file.c,v 5.18 2005/02/05 10:07:40 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -239,6 +239,7 @@ int addSignal(struct void_array *signals, char *val)
 	      
 struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
 {
+	memset(code, 0, sizeof(*code));
         code->name=s_strdup(key);
         code->code=s_strtocode(val);
 #       ifdef LONG_IR_CODE
