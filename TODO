@@ -1,3 +1,5 @@
+* on_enter, on_leave in .lircrc modes
+
 * proper devfs
 
 * make the package portable (you will be able to use LIRC with an

@@ -9,7 +9,7 @@
  *     patch for the Winfast TV2000 by Juan Toledo <toledo@users.sourceforge.net>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.9 2001/05/20 20:04:43 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.10 2001/06/14 15:49:16 lirc Exp $
  *
  */
 
@@ -106,6 +106,10 @@ static struct rcv_info rcv_infos[] = {
         {BTTV_BESTBUY_EASYTV2,        0, 0x00007F00,          0, 0x0008000,          0,   0, 10,  8},
 #endif
  	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
+#ifdef BTTV_FLYVIDEO_98FM
+	/* smorar@alfonzo.smuts.uct.ac.za */
+ 	{BTTV_FLYVIDEO_98FM,          0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
+#endif
         {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
 };
 
