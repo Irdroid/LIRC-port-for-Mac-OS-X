@@ -241,7 +241,7 @@ ConfigDriver ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 16 74 9 \
+           --menu "$CONFIG_DRIVER_TEXT" 17 74 10 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
 	     3 "Home-brew (soundcard input)" \
@@ -250,7 +250,8 @@ ConfigDriver ()
 	     6 "IrDA hardware" \
 	     7 "PDAs" \
 	     8 "Network (UDP)" \
-	     9 "None (network connections only)" 2> $TEMP
+	     9 "Other (MIDI, etc.)" \
+	     A "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -397,6 +398,7 @@ ConfigDriver ()
 	    else
 		return;
 	    fi;
+
         elif test "$1" = "6"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
@@ -433,9 +435,22 @@ ConfigDriver ()
 	    else
 		return 1;
 	    fi;
-
         elif test "$1" = "8"; then LIRC_DRIVER=udp;     DRIVER_PARAMETER=none;
-        elif test "$1" = "9"; then LIRC_DRIVER=none;    DRIVER_PARAMETER=none;
+        elif test "$1" = "9"; then
+	    dialog --clear --backtitle "$BACKTITLE" \
+                --title "Select your driver" \
+		--menu "$CONFIG_DRIVER_TEXT" 8 74 1 \
+			1 "Creative LiveDrive" 2> $TEMP;
+	    if test "$?" = "0"; then
+		{
+		set `cat $TEMP`
+		if   test "$1" = "1"; then LIRC_DRIVER=livedrive;    DRIVER_PARAMETER=none;
+		fi
+		}
+	    else
+		return;
+	    fi;
+        elif test "$1" = "A"; then LIRC_DRIVER=none;    DRIVER_PARAMETER=none;
 	fi
 	if test "$?" = "0"; then
 	    GetSelectedDriver
@@ -560,7 +575,7 @@ while test "$EXIT" != "yes"; do
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Mainmenu" \
-           --menu "$MAIN_MENU_TEXT" 14 74 5 \
+           --menu "$MAIN_MENU_TEXT" 13 74 5 \
              1 "Driver configuration ($SELECTED_DRIVER)" \
              2 "Software configuration" \
              3 "Save configuration & run configure" \

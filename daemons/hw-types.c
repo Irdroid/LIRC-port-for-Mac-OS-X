@@ -15,6 +15,7 @@ extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
 extern struct hardware hw_dsp;
+extern struct hardware hw_livedrive;
 extern struct hardware hw_audio;
 extern struct hardware hw_udp;
 
@@ -55,6 +56,7 @@ struct hardware *hw_list[] =
 	&hw_silitek,
 	&hw_slinke,
 	&hw_dsp,
+	&hw_livedrive,
 	&hw_audio,
 	&hw_udp,
 	&hw_null,

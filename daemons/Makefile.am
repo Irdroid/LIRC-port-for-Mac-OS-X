@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.26 2003/01/26 21:44:40 lirc Exp $
+## $Id: Makefile.am,v 5.27 2003/02/15 09:45:24 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -24,7 +24,7 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_silitek.c hw_silitek.h \
 		        hw_dsp.c hw_audio.c\
 			hw_caraca.c hw_caraca.h \
-			hw_udp.c \
+			hw_udp.c hw_livedrive.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -49,7 +49,7 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_silitek.c hw_silitek.h \
 			hw_dsp.c hw_audio.c \
 			hw_caraca.c hw_caraca.h \
-			hw_udp.c \
+			hw_udp.c hw_livedrive.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h

@@ -1,4 +1,7 @@
 0.7.0: future
+  * added support for Creative LiveDrive (Stephen Beahm)
+  * added command line options to lircd that allow running multiple
+    instances of the daemon (Kir Kostuchenko)
   * added support for IR receiver connected to soundcard input,
     most parts now compile on Mac OS X/Darwin (Matthias Ringwald)
   * fixed show-stopper bug in RC-6 transmit code
