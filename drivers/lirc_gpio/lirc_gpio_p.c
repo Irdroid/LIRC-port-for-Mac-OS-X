@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.14 2000/07/28 11:10:44 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.15 2000/07/29 06:52:20 columbus Exp $
  *
  */
 
@@ -73,7 +73,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_DYNALINK,      0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	/* just a guess */
 	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
- 	{BTTV_MAGICTVIEW063, 0x00001f00,          0, 0x0004000,          0,   0, 20, 32}
+ 	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
 };
 
 static unsigned char code_length = 0;
@@ -164,13 +164,13 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_AVERMEDIA98:
 		break;
         case BTTV_MAGICTVIEW061:
+        case BTTV_MAGICTVIEW063:
 		codes[0] = (codes[0]&0x01)
 			|(codes[0]&0x02<<1)
 			|(codes[0]&0x04<<2)
 			|(codes[0]&0x08>>2)
 			|(codes[0]&0x10>>1);
 		/* FALLTHROUGH */
-        case BTTV_MAGICTVIEW063:
 	case BTTV_MIRO:
 	case BTTV_DYNALINK:
 		codes[2] = reverse(codes[0],8);
