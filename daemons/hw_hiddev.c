@@ -60,7 +60,6 @@ static int main_code_length = 32;
 
 static unsigned int pre_code;
 static signed int main_code = 0;
-static int last_dvico_code = -1;
 
 static int repeat_flag = 0;
 
@@ -132,18 +131,12 @@ char *hiddev_rec(struct ir_remote *remotes)
 	 * I don't have any other hid devices to test...
 	 */
 	if (event.hid == 0x10046) {
-		int base_code = (main_code & ~dvico_repeat_mask);
-		repeat_flag = 
-			/* repeat flag in hid event */
-			((main_code & dvico_repeat_mask) &&
-			 /* same key code */
-			(last_dvico_code == base_code));
-		last_dvico_code = main_code = base_code;
+		repeat_flag = (main_code & dvico_repeat_mask);
+		main_code = (main_code & ~dvico_repeat_mask);
+		return decode_all(remotes);
 	}
-	else
-	{
-		return 0;
-	}
-	
-	return decode_all(remotes);
+
+	/* insert decoding logic for other hiddev remotes here */
+
+	return 0;
 }
