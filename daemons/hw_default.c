@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.4 1999/08/12 18:35:48 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.5 1999/08/13 18:53:16 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -414,90 +414,42 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
   decoding stuff
 */
 
-unsigned long readdata(unsigned long maxusec)
+unsigned long readdata(void)
 {
-	/* simple noise filter */
-	static unsigned long filter[3];
-	static int ptr=0;
 	unsigned long data;
 	int ret;
 
-	if(maxusec>0)
-	{
-		unsigned long sum;
-		int i;
-
-		for(i=0,sum=0;i<ptr;i++) sum+=filter[i]&(PULSE_BIT-1);
-		if(sum>=maxusec) return(0);
-		maxusec-=sum;
-	}
+#if defined(SIM_REC) && !defined(DAEMONIZE)
 	while(1)
 	{
-		if(ptr==0 || (is_space(filter[0]) && ptr<3))
+		ret=fscanf(stdin,"space %ld\n",&data);
+		if(ret==1) break;
+		ret=fscanf(stdin,"pulse %ld\n",&data);
+		if(ret==1)
 		{
-			if(!waitfordata(maxusec)) return(0);
-#if defined(SIM_REC) && !defined(DAEMONIZE)
-			while(1)
-			{
-				ret=fscanf(stdin,"space %ld\n",&data);
-				if(ret==1) break;
-				ret=fscanf(stdin,"pulse %ld\n",&data);
-				if(ret==1)
-				{
-					data|=PULSE_BIT;
-					break;
-				}
-				ret=fscanf(stdin,"%*s\n");
-				if(ret==EOF)
-				{
-					raise(SIGTERM);
-				}
-			}
-#else
-			do
-			{
-				ret=read(hw.fd,&data,sizeof(unsigned long));
-#                               ifdef DEBUG
-				if(ret!=sizeof(unsigned long))
-				{
-					logprintf(1,"error reading from "
-						  "lirc\n");
-					logperror(1,NULL);
-				}
-#                               endif
-			}
-			while(ret!=sizeof(unsigned long));
-#endif
-			filter[ptr++]=data;
+			data|=PULSE_BIT;
+			break;
 		}
-		if(is_space(filter[0]))
+		ret=fscanf(stdin,"%*s\n");
+		if(ret==EOF)
 		{
-			if(maxusec>0)
-			{
-				if((data&(PULSE_BIT-1))>=maxusec) return(0);
-				else maxusec-=(data&(PULSE_BIT-1));
-			}
-			if(ptr<3) continue;
-			
-			if(filter[0]>10000 &&
-			   (filter[1]&(PULSE_BIT-1))<250 &&
-			   filter[2]>10000)
-			{
-				filter[0]+=(filter[1]&(PULSE_BIT-1))+filter[2];
-				if(filter[0]>(PULSE_BIT-1))
-				{
-					filter[0]=PULSE_BIT-1;
-				}
-				ptr=1;
-				continue;
-			}
+			raise(SIGTERM);
 		}
-		data=filter[0];
-		filter[0]=filter[1];
-		filter[1]=filter[2];
-		ptr--;
-		break;
 	}
+#else
+	do
+	{
+		ret=read(hw.fd,&data,sizeof(unsigned long));
+#               ifdef DEBUG
+		if(ret!=sizeof(unsigned long))
+		{
+			logprintf(1,"error reading from lirc\n");
+			logperror(1,NULL);
+		}
+#               endif
+	}
+	while(ret!=sizeof(unsigned long));
+#endif
 	return(data);
 }
 
@@ -518,8 +470,8 @@ unsigned long get_next_rec_buffer(unsigned long maxusec)
 		{
 			unsigned long data;
 			
-			if((data=readdata(maxusec))==0) return(0);
-			
+			if(!waitfordata(maxusec)) return(0);
+			data=readdata();
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
@@ -595,7 +547,7 @@ int clear_rec_buffer()
 			rec_buffer.wptr=0;
 		}
 		
-		data=readdata(0);
+		data=readdata();
 		
 #               ifdef DEBUG
 		logprintf(3,"c%ld\n",data&(PULSE_BIT-1));

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.5 1999/08/06 18:12:48 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.6 1999/08/13 18:53:16 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -163,7 +163,10 @@ void send_space(unsigned long length)
 }
 #endif
 
-static inline void rbwrite(unsigned long l)
+#define PULSE_BIT  0x01000000
+#define PULSE_MASK 0x00FFFFFF
+
+static void inline rbwrite(unsigned long l)
 {
 	unsigned int nrbt;
 
@@ -178,6 +181,55 @@ static inline void rbwrite(unsigned long l)
 	}
 	*((unsigned long *) (rbuf+rbt)) = l;
 	rbt=nrbt;
+}
+
+static void inline frbwrite(unsigned long l)
+{
+	/* simple noise filter */
+	static unsigned long pulse=0L,space=0L;
+	static unsigned int ptr=0;
+	
+	if(ptr>0 && (l&PULSE_BIT))
+	{
+		pulse+=l&PULSE_MASK;
+		if(pulse>250)
+		{
+			rbwrite(space);
+			rbwrite(pulse|PULSE_BIT);
+			ptr=0;
+			pulse=0;
+		}
+		return;
+	}
+	if(!(l&PULSE_BIT))
+	{
+		if(ptr==0)
+		{
+			if(l>20000)
+			{
+				space=l;
+				ptr++;
+				return;
+			}
+		}
+		else
+		{
+			if(l>20000)
+			{
+				space+=pulse;
+				if(space>PULSE_MASK) space=PULSE_MASK;
+				space+=l;
+				if(space>PULSE_MASK) space=PULSE_MASK;
+				pulse=0;
+				return;
+			}
+			rbwrite(space);
+			rbwrite(pulse|PULSE_BIT);
+			ptr=0;
+			pulse=0;
+		}
+	}
+	rbwrite(l);
 }
 
 void irq_handler(int i, void *blah, struct pt_regs *regs)
@@ -226,7 +278,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
 			{
-				deltv=0xFFFFFF;	/* really long time */
+				deltv=PULSE_MASK;	/* really long time */
 				if(!(dcd^sense)) /* sanity check */
 				{
 				        /* detecting pulse while this
@@ -241,7 +293,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			{
 				deltv=deltv*1000000+tv.tv_usec-lasttv.tv_usec;
 			};
-			rbwrite(dcd^sense ? deltv : (deltv | 0x1000000));
+			frbwrite(dcd^sense ? deltv : (deltv | PULSE_BIT));
 			lasttv=tv;
 			wake_up_interruptible(&lirc_wait_in);
 		}
