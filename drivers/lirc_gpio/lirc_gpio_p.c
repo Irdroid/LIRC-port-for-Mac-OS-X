@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.5 2000/05/10 19:03:02 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.6 2000/05/21 15:25:39 columbus Exp $
  *
  */
 
@@ -93,33 +93,34 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		return -1;
 	}
 
+	/* extract bits from "raw" GPIO value using gpio_mask */
+	codes[0] = 0;
+	gpio_val >>= gpio_pre_shift;
+	while (mask) {
+		if (mask & 1u) {
+			codes[0] |= (gpio_val & 1u) << shift++;
+		}
+		mask >>= 1;
+		gpio_val >>= 1;
+	}
+	
 	switch(rcv_infos[card_type].bttv_id)
 	{
 	case BTTV_AVERMEDIA98:
-		if(gpio_val&0x8000) {
+		codes[2]=((codes[0]&(~0x1))<<2)&0xff;
+		codes[3]=(~codes[2])&0xff;
+		if(codes[0]&0x1)
+		{
 			codes[0] = 0xc0;
 			codes[1] = 0x3f;
-		} else {
+		}
+		else
+		{
 			codes[0] = 0x40;
 			codes[1] = 0xbf;
 		}
-		gpio_val &= gpio_mask;
-		gpio_val >>= 16;
-		codes[2] = gpio_val   & 0xff;
-		codes[3] = ~(gpio_val)& 0xff;
 		break;
-
 	default:
-		/* extract bits from "raw" GPIO value using gpio_mask */
-		codes[0] = 0;
-		gpio_val >>= gpio_pre_shift;
-		while (mask) {
-			if (mask & 1u) {
-				codes[0] |= (gpio_val & 1u) << shift++;
-			}
-			mask >>= 1;
-			gpio_val >>= 1;
-		}
 		break;
 	}
 
