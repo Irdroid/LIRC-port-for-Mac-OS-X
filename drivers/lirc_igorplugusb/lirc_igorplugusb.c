@@ -85,7 +85,10 @@
         static int debug = 0;
 #endif
 
-#define dprintk                 if (debug) printk
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG fmt, ## args);    \
+	}while(0)
 
 /* general constants */
 #define SUCCESS                 0

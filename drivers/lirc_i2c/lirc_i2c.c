@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.24 2004/08/07 08:44:22 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.25 2004/08/07 09:52:45 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -79,16 +79,20 @@ struct IR {
 };
 
 /* ----------------------------------------------------------------------- */
+
+#define DEVICE_NAME "lirc_i2c"
+
+/* ----------------------------------------------------------------------- */
 /* insmod parameters                                                       */
 
 static int debug   = 0;    /* debug output */
 static int minor   = -1;   /* minor number */
 
-#define dprintk if (debug) printk
-
-/* ----------------------------------------------------------------------- */
-
-#define DEVICE_NAME "lirc_i2c"
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
+				 DEVICE_NAME, ## args);       \
+	}while(0)
 
 /* ----------------------------------------------------------------------- */
 
@@ -124,7 +128,7 @@ static int add_to_buf_pcf8574(void* data, struct lirc_buffer* buf)
 	rc = i2c_smbus_read_byte(&ir->c);
 
 	if (rc == -1) {
-		dprintk(DEVICE_NAME ": %s read error\n", ir->c.name);
+		dprintk("%s read error\n", ir->c.name);
 		return -EIO;
 	}
 
@@ -134,8 +138,7 @@ static int add_to_buf_pcf8574(void* data, struct lirc_buffer* buf)
 	}
 	ir->b[0] = rc & all;
 
-	dprintk(DEVICE_NAME ": %s key 0x%02X %s\n",
-		ir->c.name, rc & ir->bits,
+	dprintk("%s key 0x%02X %s\n", ir->c.name, rc & ir->bits,
 		(rc & ir->flag) ? "released" : "pressed");
 
 	if (rc & ir->flag) {
@@ -161,10 +164,9 @@ static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 		ir->b[0] = keybuf[0];
 		ir->b[1] = keybuf[1];
 		ir->b[2] = keybuf[2];
-		dprintk(KERN_DEBUG DEVICE_NAME ": key (0x%02x/0x%02x)\n",
-			ir->b[0], ir->b[1]);
+		dprintk("key (0x%02x/0x%02x)\n", ir->b[0], ir->b[1]);
 	} else {
-		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		dprintk("read error\n");
 		/* keep last successfull read buffer */
 	}
 
@@ -190,10 +192,10 @@ static int add_to_buf_pixelview(void* data, struct lirc_buffer* buf)
 	
 	/* poll IR chip */
 	if (1 != i2c_master_recv(&ir->c,&key,1)) {
-		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		dprintk("read error\n");
 		return -1;
 	}
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
+	dprintk("key %02x\n", key);
 
 	/* return it */
 	lirc_buffer_write_1( buf, &key );
@@ -208,13 +210,13 @@ static int add_to_buf_pv951(void* data, struct lirc_buffer* buf)
 	
 	/* poll IR chip */
 	if (1 != i2c_master_recv(&ir->c,&key,1)) {
-		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		dprintk("read error\n");
 		return -ENODATA;
 	}
 	/* ignore 0xaa */
 	if (key==0xaa)
 		return -ENODATA;
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
+	dprintk("key %02x\n", key);
 
 	codes[0] = 0x61;
 	codes[1] = 0xD6;
@@ -233,7 +235,7 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer* buf)
 	
 	/* poll IR chip */
 	if (1 != i2c_master_recv(&ir->c,&key,1)) {
-		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		dprintk("read error\n");
 		return -ENODATA;
 	}
 	
@@ -241,7 +243,7 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer* buf)
 	   down, while 0xFF indicates that no button is hold
 	   down. 0xFE sequences are sometimes interrupted by 0xFF */
 	
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
+	dprintk("key %02x\n", key);
 	
 	if( key == 0xFF )
 		return -ENODATA;
@@ -436,7 +438,7 @@ static int ir_probe(struct i2c_adapter *adap) {
 		for (i = 0; -1 != probe[i]; i++) {
 			c.addr = probe[i];
 			rc = i2c_master_recv(&c,&buf,1);
-			dprintk("lirc_i2c: probe 0x%02x @ %s: %s\n",
+			dprintk("probe 0x%02x @ %s: %s\n",
 				probe[i], adap->name, 
 				(1 == rc) ? "yes" : "no");
 			if (1 == rc)
@@ -488,7 +490,7 @@ static int ir_probe(struct i2c_adapter *adap) {
 					rc = 1;
 				}
 			}
-			dprintk(DEVICE_NAME ": probe 0x%02x @ %s: %s\n",
+			dprintk("probe 0x%02x @ %s: %s\n",
 				c.addr, adap->name, rc ? "yes" : "no");
 			if (rc)
 				ir_attach(adap,pcf_probe[i],bits|(flag<<8),0);

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.53 2004/08/07 08:44:23 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.54 2004/08/07 09:52:46 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -119,6 +119,8 @@
 #endif
 #endif
 
+#define LIRC_DRIVER_NAME "lirc_serial"
+
 struct lirc_serial
 {
 	int type;
@@ -154,6 +156,12 @@ int softcarrier=1;
 #else
 int softcarrier=0;
 #endif
+static int debug = 0;
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
+				 LIRC_DRIVER_NAME, ## args);  \
+	}while(0)
 
 /* forward declarations */
 long send_pulse_irdeo(unsigned long length);
@@ -240,8 +248,6 @@ struct lirc_serial hardware[]=
 	}
 	
 };
-
-#define LIRC_DRIVER_NAME "lirc_serial"
 
 #define RS_ISR_PASS_LIMIT 256
 
@@ -386,13 +392,11 @@ static inline int init_timing_params(unsigned int new_duty_cycle,
 
 	pulse_width = period*duty_cycle/100;
 	space_width = period - pulse_width;
-#ifdef DEBUG
-	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": in init_timing_params, freq=%d, duty_cycle=%d, "
-	       "clk/jiffy=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
-	       freq, duty_cycle, current_cpu_data.loops_per_jiffy,
-	       pulse_width, space_width, conv_us_to_clocks);
-#endif
+	dprintk("in init_timing_params, freq=%d, duty_cycle=%d, "
+		"clk/jiffy=%ld, pulse=%ld, space=%ld, "
+		"conv_us_to_clocks=%ld\n",
+		freq, duty_cycle, current_cpu_data.loops_per_jiffy,
+		pulse_width, space_width, conv_us_to_clocks);
 	return 0;
 }
 #else /* ! USE_RDTSC */
@@ -410,11 +414,8 @@ static inline int init_timing_params(unsigned int new_duty_cycle,
 	period=256*1000000L/freq;
 	pulse_width=period*duty_cycle/100;
 	space_width=period-pulse_width;
-#ifdef DEBUG
-	printk(KERN_WARNING LIRC_DRIVER_NAME
-	       ": in init_timing_params, freq=%d pulse=%ld, "
-	       "space=%ld\n", freq, pulse_width, space_width);
-#endif
+	dprintk("in init_timing_params, freq=%d pulse=%ld, "
+		"space=%ld\n", freq, pulse_width, space_width);
 	return 0;
 }
 #endif /* USE_RDTSC */
@@ -579,9 +580,7 @@ static void inline rbwrite(lirc_t l)
 {
 	if(lirc_buffer_full(&rbuf))    /* no new signals will be accepted */
 	{
-#               ifdef DEBUG
-		printk(KERN_WARNING  LIRC_DRIVER_NAME  ": Buffer overrun\n");
-#               endif
+		dprintk("Buffer overrun\n");
 		return;
 	}
 	_lirc_buffer_write_1(&rbuf, (void *)&l);
@@ -686,13 +685,10 @@ irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
 			{
-#ifdef DEBUG
-				printk(KERN_WARNING LIRC_DRIVER_NAME
-				       ": AIEEEE: %d %d %lx %lx %lx %lx\n",
-				       dcd,sense,
-				       tv.tv_sec,lasttv.tv_sec,
-				       tv.tv_usec,lasttv.tv_usec);
-#endif
+				dprintk("AIEEEE: %d %d %lx %lx %lx %lx\n",
+					dcd,sense,
+					tv.tv_sec,lasttv.tv_sec,
+					tv.tv_usec,lasttv.tv_usec);
 				data=PULSE_MASK; /* really long time */
 				if(!(dcd^sense)) /* sanity check */
 				{
@@ -856,10 +852,7 @@ static int set_use_inc(void* data)
                 lirc_buffer_free(&rbuf);
 		return -EINVAL;
 	default:
-#               ifdef DEBUG
-		printk(KERN_INFO LIRC_DRIVER_NAME
-		       ": Interrupt %d, port %04x obtained\n", irq, io);
-#               endif
+		dprintk("Interrupt %d, port %04x obtained\n", irq, io);
 		break;
 	};
 
@@ -891,9 +884,7 @@ static void set_use_dec(void* data)
 	local_irq_restore(flags);
 	
 	free_irq(irq, NULL);
-#       ifdef DEBUG
-	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
-#       endif
+	dprintk("freed IRQ %d\n", irq);
 	lirc_buffer_free(&rbuf);
 	
 	MOD_DEC_USE_COUNT;
@@ -971,9 +962,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		break;
 		
 	case LIRC_SET_SEND_DUTY_CYCLE:
-#               ifdef DEBUG
-		printk(KERN_WARNING LIRC_DRIVER_NAME ": SET_SEND_DUTY_CYCLE\n");
-#               endif
+		dprintk("SET_SEND_DUTY_CYCLE\n");
 		if(!(hardware[type].features&LIRC_CAN_SET_SEND_DUTY_CYCLE))
 		{
 			return(-ENOIOCTLCMD);
@@ -986,9 +975,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		break;
 		
 	case LIRC_SET_SEND_CARRIER:
-#               ifdef DEBUG
-		printk(KERN_WARNING LIRC_DRIVER_NAME ": SET_SEND_CARRIER\n");
-#               endif
+		dprintk("SET_SEND_CARRIER\n");
 		if(!(hardware[type].features&LIRC_CAN_SET_SEND_CARRIER))
 		{
 			return(-ENOIOCTLCMD);
@@ -1064,9 +1051,7 @@ void cleanup_module(void)
 {
 	release_region(io, 8);
 	lirc_unregister_plugin(plugin.minor);
-#       ifdef DEBUG
-	printk(KERN_INFO  LIRC_DRIVER_NAME  ": cleaned up module\n");
-#       endif
+	dprintk("cleaned up module\n");
 }
 
 MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
@@ -1089,6 +1074,9 @@ MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
 
 module_param(softcarrier, bool, 0444);
 MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;
 

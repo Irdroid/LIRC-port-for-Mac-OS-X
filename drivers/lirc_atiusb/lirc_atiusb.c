@@ -11,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.30 2004/08/07 08:44:21 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.31 2004/08/07 09:52:45 lirc Exp $
  */
 
 /*
@@ -72,7 +72,11 @@
 #else
 	static int debug = 0;
 #endif
-#define dprintk			if (debug) printk
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG fmt, ## args);    \
+	}while(0)
+
 static int mask = 0xFFFF;	// channel acceptance bit mask
 static int unique = 0;		// enable channel-specific codes
 static int repeat = 10;		// repeat time in 1/100 sec

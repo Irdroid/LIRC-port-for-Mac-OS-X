@@ -188,6 +188,13 @@ static lirc_t rx_buf[RBUF_LEN]; unsigned int rx_tail = 0, rx_head = 0;
 static lirc_t tx_buf[WBUF_LEN];
 #endif
 
+static int debug = 0;
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
+				 LIRC_DRIVER_NAME, ## args);  \
+	}while(0)
+
 /* SECTION: Prototypes */
 
 /* Communication with user-space */
@@ -484,11 +491,7 @@ static void add_read_queue(int flag, unsigned long val)
 	unsigned int new_rx_tail;
 	lirc_t newval;
 
-#ifdef DEBUG_SIGNAL
-	printk(KERN_DEBUG LIRC_DRIVER_NAME
-		": add flag %d with val %lu\n",
-		flag,val);
-#endif
+	dprintk("add flag %d with val %lu\n", flag, val);
 
 	newval = val & PULSE_MASK;
 
@@ -512,9 +515,7 @@ static void add_read_queue(int flag, unsigned long val)
 	}
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
-#               ifdef DEBUG
-		printk(KERN_WARNING LIRC_DRIVER_NAME ": Buffer overrun.\n");
-#               endif
+		dprintk("Buffer overrun.\n");
 		return;
 	}
 	rx_buf[rx_tail] = newval;
@@ -612,10 +613,7 @@ static void sir_timeout(unsigned long data)
 #endif
 		/* determine 'virtual' pulse end: */
 	 	pulse_end = delta(&last_tv, &last_intr_tv);
-#ifdef DEBUG_SIGNAL
-		printk(KERN_DEBUG LIRC_DRIVER_NAME
-			": timeout add %d for %lu usec\n",last_value,pulse_end);
-#endif
+		dprintk("timeout add %d for %lu usec\n",last_value,pulse_end);
 		add_read_queue(last_value,pulse_end);
 		last_value = 0;
 		last_tv=last_intr_tv;
@@ -642,18 +640,18 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id,
 	while (status & UTSR0_EIF)
 	{
 		int bstat;
+
+		if(debug) {
+			dprintk("EIF\n");
+			bstat = Ser2UTSR1;
 		
-#ifdef DEBUG
-		printk("EIF\n");
-		bstat = Ser2UTSR1;
-		
-		if (bstat & UTSR1_FRE)
-			printk("frame error\n");
-		if (bstat & UTSR1_ROR)
-			printk("receive fifo overrun\n");
-		if(bstat&UTSR1_PRE)
-			printk("parity error\n");
-#endif
+			if (bstat & UTSR1_FRE)
+				dprintk("frame error\n");
+			if (bstat & UTSR1_ROR)
+				dprintk("receive fifo overrun\n");
+			if (bstat & UTSR1_PRE)
+				dprintk("parity error\n");
+		}
 		
 		bstat = Ser2UTDR;
 		n++;
@@ -666,10 +664,7 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id,
 		deltv = delta(&last_tv, &curr_tv);
 		do
 		{
-#ifdef DEBUG_SIGNAL
-			printk(KERN_DEBUG LIRC_DRIVER_NAME": t %lu , d %d\n",
-			       deltintrtv,(int)data);
-#endif
+			dprintk("t %lu , d %d\n", deltintrtv, (int)data);
 			data=Ser2UTDR;
 			//printk("data: %d\n",data);
 			n++;
@@ -729,16 +724,12 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id,
 				do_gettimeofday(&curr_tv);
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
-#ifdef DEBUG_SIGNAL
-				printk(KERN_DEBUG LIRC_DRIVER_NAME": t %lu , d %d\n",deltintrtv,(int)data);
-#endif
+				dprintk("t %lu , d %d\n", deltintrtv, (int)data);
 				/* if nothing came in last X cycles,
 				   it was gap */
 				if (deltintrtv > TIME_CONST * threshold) {
 					if (last_value) {
-#ifdef DEBUG_SIGNAL
-						printk(KERN_DEBUG LIRC_DRIVER_NAME ": GAP\n");
-#endif
+						dprintk("GAP\n");
 						/* simulate signal change */
 						add_read_queue(last_value,
 							       deltv-
@@ -1314,6 +1305,9 @@ MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
 module_param(threshold, int, 0444);
 MODULE_PARM_DESC(threshold, "space detection threshold (3)");
 #endif
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;
 

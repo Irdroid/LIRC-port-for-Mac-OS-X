@@ -81,6 +81,14 @@ static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 /* must be longer than TIME_CONST */
 #define IT87_TIMEOUT	(HZ*5/100)
 
+/* insmod parameters */
+static int debug = 0;
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
+				 LIRC_DRIVER_NAME, ## args);  \
+	}while(0)
+
 static int io = IT87_CIR_DEFAULT_IOBASE;
 static int irq = IT87_CIR_DEFAULT_IRQ;
 static unsigned char it87_freq = 38; /* kHz */
@@ -302,10 +310,8 @@ static int lirc_ioctl(struct inode *node,
 			      (it87_freq - IT87_CIR_FREQ_MIN) << 3),
 			     io + IT87_CIR_TCR2);
 			spin_unlock_irqrestore(&hardware_lock, hw_flags);
-#ifdef DEBUG
-			printk(KERN_DEBUG LIRC_DRIVER_NAME 
-			       " demodulation frequency: %d kHz\n", it87_freq);
-#endif
+			dprintk("demodulation frequency: %d kHz\n",
+				it87_freq);
 		}
 
 		break;
@@ -333,11 +339,7 @@ static void add_read_queue(int flag,
 	unsigned int new_rx_tail;
 	lirc_t newval;
 
-#ifdef DEBUG_SIGNAL
-	printk(KERN_DEBUG LIRC_DRIVER_NAME
-	       ": add flag %d with val %lu\n",
-	       flag,val);
-#endif
+	dprintk("add flag %d with val %lu\n", flag,val);
 	
 	newval = val & PULSE_MASK;
 
@@ -357,9 +359,7 @@ static void add_read_queue(int flag,
 	}
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
-#ifdef DEBUG
-		printk(KERN_WARNING LIRC_DRIVER_NAME ": Buffer overrun.\n");
-#endif
+		dprintk("Buffer overrun.\n");
 		return;
 	}
 	rx_buf[rx_tail] = newval;
@@ -457,12 +457,8 @@ static void it87_timeout(unsigned long data)
 	if (last_value) {
 		/* determine 'virtual' pulse end: */
 	 	pulse_end = delta(&last_tv, &last_intr_tv);
-#ifdef DEBUG_SIGNAL
-		printk(KERN_DEBUG LIRC_DRIVER_NAME
-		       ": timeout add %d for %lu usec\n",
-		       last_value,
-		       pulse_end);
-#endif
+		dprintk("timeout add %d for %lu usec\n", 
+			last_value, pulse_end);
 		add_read_queue(last_value,
 			       pulse_end);
 		last_value = 0;
@@ -492,10 +488,7 @@ static irqreturn_t it87_interrupt(int irq,
 		lsr = inb(io + IT87_CIR_RSR) & (IT87_CIR_RSR_RXFTO |
 						    IT87_CIR_RSR_RXFBC);
 		fifo = lsr & IT87_CIR_RSR_RXFBC;
-#ifdef DEBUG_SIGNAL
-		printk(KERN_DEBUG LIRC_DRIVER_NAME
-		       "iir: 0x%x fifo: 0x%x\n", iir, lsr);
-#endif
+		dprintk("iir: 0x%x fifo: 0x%x\n", iir, lsr);
 	
 		/* avoid interference with timer */
 		spin_lock_irqsave(&timer_lock, flags);
@@ -503,27 +496,20 @@ static irqreturn_t it87_interrupt(int irq,
 		do {
 			del_timer(&timerlist);
 			data = inb(io + IT87_CIR_DR);
-#ifdef DEBUG_SIGNAL
-			printk(KERN_DEBUG LIRC_DRIVER_NAME
-			       ": data=%.2x\n",
-			       data);
-#endif
+
+			dprintk("data=%.2x\n", data);
 			do_gettimeofday(&curr_tv);
 			deltv = delta(&last_tv, &curr_tv);
 			deltintrtv = delta(&last_intr_tv, &curr_tv);
-#ifdef DEBUG_SIGNAL
-			printk(KERN_DEBUG LIRC_DRIVER_NAME
-			       ": t %lu , d %d\n",
-			       deltintrtv,
-			       (int)data);
-#endif
+
+			dprintk("t %lu , d %d\n", deltintrtv, (int)data);
+			
 			/* if nothing came in last 2 cycles,
 			   it was gap */
 			if (deltintrtv > TIME_CONST * 2) {
 				if (last_value) {
-#ifdef DEBUG_SIGNAL
-					printk(KERN_DEBUG LIRC_DRIVER_NAME ": GAP\n");
-#endif
+					dprintk("GAP\n");
+
 					/* simulate signal change */
 					add_read_queue(last_value,
 						       deltv-
@@ -575,10 +561,7 @@ static irqreturn_t it87_interrupt(int irq,
 
 	default:
 		/* not our irq */
-#ifdef DEBUG_SIGNAL
-		printk(KERN_DEBUG LIRC_DRIVER_NAME
-		       "unknown IRQ (shouldn't happen) !!\n");
-#endif
+		dprintk("unknown IRQ (shouldn't happen) !!\n");
 		return IRQ_RETVAL(IRQ_NONE);
 	}
 }
@@ -593,12 +576,8 @@ static void send_it87(unsigned long len,
 	long time_left = 0;
 	static unsigned char byte_out = 0;
 
-#ifdef DEBUG_SIGNAL
-	printk(KERN_DEBUG LIRC_DRIVER_NAME
-	       "send_it87: len=%ld, sb=%d\n",
-	       len,
-	       send_byte);
-#endif
+	dprintk("%s: len=%ld, sb=%d\n", __FUNCTION__, len, send_byte);
+
 	time_left = (long)len - (long)count * (long)stime;
 	count += ((2 * time_left) / stime);
 	while (count) {
@@ -608,13 +587,11 @@ static void send_it87(unsigned long len,
 			it87_bits_in_byte_out++;
 		}
 		if (it87_bits_in_byte_out == 8) {
-#ifdef DEBUG_SIGNAL
-			printk(KERN_DEBUG LIRC_DRIVER_NAME
-			       "out=0x%x, tsr_txfbc: 0x%x\n",
-			       byte_out,
-			       inb(io + IT87_CIR_TSR) &
-			       IT87_CIR_TSR_TXFBC);
-#endif
+			dprintk("out=0x%x, tsr_txfbc: 0x%x\n",
+				byte_out,
+				inb(io + IT87_CIR_TSR) &
+				IT87_CIR_TSR_TXFBC);
+
 			while ((inb(io + IT87_CIR_TSR) &
 				IT87_CIR_TSR_TXFBC) >= IT87_CIR_FIFO_SIZE);
 			{
@@ -952,6 +929,9 @@ MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
 module_param(it87_enable_demodulator, bool, 0444);
 MODULE_PARM_DESC(it87_enable_demodulator, 
 		 "Receiver demodulator enable/disable (1/0), default: 0");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;
 

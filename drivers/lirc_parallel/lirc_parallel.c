@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.23 2004/08/07 08:44:23 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.24 2004/08/07 09:52:46 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -78,6 +78,7 @@
  *************************   Globale Variablen   ***********************
  ***********************************************************************/
 
+static int debug = 0;
 unsigned int irq = LIRC_IRQ;
 unsigned int io = LIRC_PORT;
 #ifdef LIRC_TIMER
@@ -703,9 +704,10 @@ int init_module(void)
 	out(LIRC_LP_CONTROL,LP_PSELECP|LP_PINITP);
 
 #ifdef LIRC_TIMER
-#       ifdef DEBUG
-	out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
-#       endif
+	if(debug) 
+	{
+		out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
+	}
 	
 	timer=init_lirc_timer();
 
@@ -719,9 +721,10 @@ int init_module(void)
 	}
 	
 #       endif
-#       ifdef DEBUG
-	out(LIRC_PORT_DATA,0);
-#       endif
+	if(debug)
+	{
+		out(LIRC_PORT_DATA,0);
+	}
 #endif 
 
 	is_claimed=0;
@@ -753,6 +756,9 @@ MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
 
 module_param(irq, int, 0444);
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;
 

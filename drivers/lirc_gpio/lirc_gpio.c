@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.38 2004/08/07 08:44:22 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.39 2004/08/07 09:52:45 lirc Exp $
  *
  */
 
@@ -76,8 +76,10 @@ static unsigned long gpio_xor_mask = 0;
 static int soft_gap = 0;
 static int sample_rate = 10;
 
-#undef dprintk
-#define dprintk  if (debug) printk
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG fmt, ## args);    \
+	}while(0)
 
 struct rcv_info {
 	int bttv_id;

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.33 2004/08/07 08:44:22 lirc Exp $
+ * $Id: lirc_dev.c,v 1.34 2004/08/07 09:52:45 lirc Exp $
  *
  */
 
@@ -71,12 +71,14 @@
 #include "lirc_dev.h"
 
 static int debug = 0;
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG fmt, ## args);    \
+	}while(0)
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
 #define SUCCESS           0
 #define NOPLUG            -1
-#define dprintk           if (debug) printk
-
 #define LOGHEAD           "lirc_dev (%s[%d]): "
 
 struct irctl

@@ -111,7 +111,7 @@
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
 #else
-	static int debug;
+	static int debug = 0;
 #endif
 
 #include "drivers/kcompat.h"
@@ -121,8 +121,11 @@
 
 
 /* Use our own dbg macro */
-#undef dbg
-#define dbg(format, arg...) do { if (debug) printk(KERN_DEBUG __FILE__ ": " format "\n" , ## arg); } while (0)
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG "%s: " fmt "\n",  \
+				 __FILE__, ## args);          \
+	}while(0)
 
 /* Version Information */
 #define DRIVER_VERSION "v0.2"
@@ -236,16 +239,15 @@ static inline void usb_mceusb_debug_data (const char *function, int size,
 					  const unsigned char *data)
 {
 	int i;
-
 	if (!debug)
 		return;
 	
-	printk (KERN_DEBUG __FILE__": %s - length = %d, data = ", 
-		function, size);
+	printk(KERN_DEBUG __FILE__": %s - length = %d, data = ", 
+	       function, size);
 	for (i = 0; i < size; ++i) {
-		printk ("%.2x ", data[i]);
+		printk(KERN_DEBUG "%.2x ", data[i]);
 	}
-	printk ("\n");
+	printk(KERN_DEBUG "\n");
 }
 
 /**
@@ -253,7 +255,7 @@ static inline void usb_mceusb_debug_data (const char *function, int size,
  */
 static inline void mceusb_delete (struct usb_skel *dev)
 {
-	dbg("%s",__func__);
+	dprintk("%s", __func__);
 	minor_table[dev->minor] = NULL;
 #ifdef KERNEL_2_5
 	usb_buffer_free(dev->udev, dev->bulk_in_size, dev->bulk_in_buffer, dev->dma_in);
@@ -282,7 +284,8 @@ static void mceusb_setup( struct usb_device *udev )
 			      0, 0, data, 2, HZ * 3);
     
 	/*    res = usb_get_status( udev, 0, 0, data ); */
-	dbg("%s - res = %d status = 0x%x 0x%x",__func__,res,data[0],data[1]);
+	dprintk("%s - res = %d status = 0x%x 0x%x", __func__,
+		res, data[0], data[1]);
     
 	/* This is a strange one. They issue a set address to the device
 	 * on the receive control pipe and expect a certain value pair back
@@ -292,8 +295,9 @@ static void mceusb_setup( struct usb_device *udev )
 	res = usb_control_msg( udev, usb_rcvctrlpipe(udev, 0),
 			       5, USB_TYPE_VENDOR, 0, 0,
 			       data, 2, HZ * 3 );
-	dbg("%s - res = %d, devnum = %d", __func__, res, udev->devnum);
-	dbg("%s - data[0] = %d, data[1] = %d", __func__, data[0], data[1] );
+	dprintk("%s - res = %d, devnum = %d", __func__, res, udev->devnum);
+	dprintk("%s - data[0] = %d, data[1] = %d", __func__,
+		data[0], data[1] );
 
     
 	/* set feature */
@@ -301,7 +305,7 @@ static void mceusb_setup( struct usb_device *udev )
 			       USB_REQ_SET_FEATURE, USB_TYPE_VENDOR,
 			       0xc04e, 0x0000, NULL, 0, HZ * 3 );
     
-	dbg("%s - res = %d", __func__, res);
+	dprintk("%s - res = %d", __func__, res);
 
 	/* These two are sent by the windows driver, but stall for
 	 * me. I dont have an analyzer on the linux side so i can't
@@ -314,14 +318,14 @@ static void mceusb_setup( struct usb_device *udev )
 			       0x04, USB_TYPE_VENDOR,
 			       0x0808, 0x0000, NULL, 0, HZ * 3 );
     
-	dbg("%s - res = %d", __func__, res);
+	dprintk("%s - res = %d", __func__, res);
     
 	/* this is another custom control message they send */
 	res = usb_control_msg( udev, usb_sndctrlpipe(udev, 0),
 			       0x02, USB_TYPE_VENDOR,
 			       0x0000, 0x0100, NULL, 0, HZ * 3 );
     
-	dbg("%s - res = %d", __func__, res);
+	dprintk("%s - res = %d", __func__, res);
 #endif
 }
 
@@ -670,11 +674,12 @@ static void mceusb_write_bulk_callback (struct urb *urb)
 {
 	struct usb_skel *dev = (struct usb_skel *)urb->context;
 
-	dbg("%s - minor %d", __func__, dev->minor);
+	dprintk("%s - minor %d", __func__, dev->minor);
 
 	if ((urb->status != -ENOENT) && 
 	    (urb->status != -ECONNRESET)) {
-		dbg("%s - nonzero write buld status received: %d\n", __func__, urb->status);
+		dprintk("%s - nonzero write buld status received: %d",
+			__func__, urb->status);
 		return;
 	}
 
@@ -713,7 +718,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	/* See if the device offered us matches what we can accept */
 	if ((udev->descriptor.idVendor != USB_MCEUSB_VENDOR_ID) ||
 	    (udev->descriptor.idProduct != USB_MCEUSB_PRODUCT_ID)) {
-	    	dbg("Wrong Vendor/Product IDs");
+	    	dprintk("Wrong Vendor/Product IDs");
 #ifdef KERNEL_2_5
 		return -ENODEV;
 #else
@@ -769,7 +774,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) &&
 		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) ==
 		     USB_ENDPOINT_XFER_BULK)) {
-			dbg("we found a bulk in endpoint");
+			dprintk("we found a bulk in endpoint");
 			buffer_size = endpoint->wMaxPacketSize;
 			dev->bulk_in_size = buffer_size;
 			dev->bulk_in_endpointAddr = endpoint->bEndpointAddress;
@@ -788,7 +793,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		if (((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == 0x00) &&
 		    ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) ==
 		     USB_ENDPOINT_XFER_BULK)) {
-			dbg("we found a bulk out endpoint");
+			dprintk("we found a bulk out endpoint");
 #ifdef KERNEL_2_5
 			dev->write_urb = usb_alloc_urb(0, GFP_KERNEL);
 #else
@@ -912,7 +917,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
  error:
 	mceusb_delete (dev);
 	dev = NULL;
-	dbg("%s: retval = %x",__func__,retval);
+	dprintk("%s: retval = %x", __func__, retval);
 	up (&minor_table_mutex);
 #ifdef KERNEL_2_5
 	return retval;

@@ -58,6 +58,11 @@ unsigned char do_get_bits(void);
 #define DATA_PCI_OFF 0x7FFC00
 #define WAIT_CYCLE   20
 
+static int debug = 0;
+#define dprintk(fmt, args...)                                 \
+	do{                                                   \
+		if(debug) printk(KERN_DEBUG fmt, ## args);    \
+	}while(0)
 
 int atir_minor;
 unsigned long pci_addr_phys, pci_addr_lin;
@@ -112,14 +117,14 @@ int atir_add_to_buf (void* data, struct lirc_buffer* buf)
 int atir_set_use_inc(void* data)
 {
 	MOD_INC_USE_COUNT;
-	printk(KERN_DEBUG "ATIR driver is opened\n");
+	dprintk("ATIR driver is opened\n");
 	return 0;
 }
 
 void atir_set_use_dec(void* data)
 {
 	MOD_DEC_USE_COUNT;
-	printk(KERN_DEBUG "ATIR driver is closed\n");
+	dprintk("ATIR driver is closed\n");
 }
 
 int init_module(void)
@@ -142,7 +147,7 @@ int init_module(void)
 	atir_plugin.set_use_dec = atir_set_use_dec;
 
 	atir_minor = lirc_register_plugin(&atir_plugin);
-	printk(KERN_DEBUG "ATIR driver is registered on minor %d\n",atir_minor);
+	dprintk("ATIR driver is registered on minor %d\n",atir_minor);
 
 	return 0;
 }
@@ -376,6 +381,9 @@ void write_index(unsigned char index,unsigned int reg_val)
 MODULE_AUTHOR("Froenchenko Leonid");
 MODULE_DESCRIPTION("IR remote driver for bt829 based TV cards");
 MODULE_LICENSE("GPL");
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Debug enabled or not");
 
 EXPORT_NO_SYMBOLS;
 
