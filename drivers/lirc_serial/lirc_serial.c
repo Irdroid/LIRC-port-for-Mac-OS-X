@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.31 2001/09/17 10:39:06 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.32 2001/09/18 09:03:36 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -46,6 +46,10 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
 #define KERNEL_2_3
 #endif
+#endif
+
+#if LINUX_VERSION_CODE >= 0x020212
+#define LIRC_LOOPS_PER_JIFFY
 #endif
 
 #include <linux/config.h>
@@ -279,7 +283,7 @@ void calc_pulse_lengths_in_clocks(void)
 {
 	unsigned long long loops_per_sec,work;
 
-#ifdef KERNEL_2_3
+#ifdef LIRC_LOOPS_PER_JIFFY
 	loops_per_sec=current_cpu_data.loops_per_jiffy;
 	loops_per_sec*=HZ;
 #else
@@ -301,7 +305,7 @@ void calc_pulse_lengths_in_clocks(void)
 	pulse_width = period*duty_cycle/100;
 	space_width = period - pulse_width;
 #ifdef DEBUG
-#ifdef KERNEL_2_3
+#ifdef LIRC_LOOPS_PER_JIFFY
 	printk(KERN_INFO LIRC_DRIVER_NAME
 	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
 	       "clk/jiffy=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
