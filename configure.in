@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.122 2004/05/23 21:17:27 lirc Exp $
+dnl $Id: configure.in,v 5.123 2004/06/19 06:56:28 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -144,7 +144,8 @@ if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
 	(lirc_dev lirc_sir) (lirc_dev lirc_parallel) (lirc_dev lirc_i2c) \
 	(lirc_dev lirc_gpio) (lirc_dev) (lirc_dev lirc_it87) \
-	(lirc_dev lirc_bt829) (lirc_dev lirc_atiusb) (lirc_dev lirc_mceusb)"
+	(lirc_dev lirc_bt829) (lirc_dev lirc_atiusb) \
+	(lirc_dev lirc_mceusb) (lirc_dev lirc_sasem)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -194,9 +195,9 @@ AC_ARG_WITH(driver,
 			  packard_bell, parallel, pctv,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
-			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, tira, tvbox,
-			  udp, uirt2, uirt2_raw],
+			  remotemaster, sa1100, sasem, serial, silitek,
+			  sir, slinke, tekram, tekram_bt829, tira,
+			  tvbox, udp, uirt2, uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -283,6 +284,8 @@ if test "$driver" = "any"; then
 	lirc_dev-lirc_mceusb)
 		;;
 	lirc_dev-lirc_parallel)
+		;;
+	lirc_dev-lirc_sasem)
 		;;
 	lirc_dev-lirc_serial)
 		;;
@@ -698,6 +701,11 @@ if test "$driver" = "sa1100"; then
   AC_DEFINE(LIRC_ON_SA1100)
 fi
 
+if test "$driver" = "sasem"; then
+  lirc_driver="lirc_dev lirc_sasem"
+  lircd_conf="sasem/lircd.conf.sasem"
+fi
+
 if test "$driver" = "serial"; then
   lirc_driver="lirc_dev lirc_serial"
 fi
@@ -1022,6 +1030,7 @@ AC_OUTPUT([
   drivers/lirc_bt829/Makefile
   drivers/lirc_atiusb/Makefile
   drivers/lirc_mceusb/Makefile
+  drivers/lirc_sasem/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

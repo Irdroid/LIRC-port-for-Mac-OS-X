@@ -1,0 +1,9 @@
+.lirc_sasem.o.flags
+.lirc_sasem.ko.cmd
+.lirc_sasem.mod.o.cmd
+.lirc_sasem.o.cmd
+lirc_sasem.ko
+lirc_sasem.mod.c
+Makefile.in
+Makefile
+.deps
