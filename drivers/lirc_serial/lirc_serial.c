@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.59 2004/12/25 16:26:03 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.60 2004/12/25 23:13:21 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -268,6 +268,7 @@ static struct lirc_serial hardware[]=
 #define WBUF_LEN 256
 
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
+static int txsense = 0;   /* 0 = active high, 1 = active low */
 
 static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 
@@ -334,12 +335,26 @@ static inline void soutp(int offset, int value)
 
 static inline void on(void)
 {
-	soutp(UART_MCR,hardware[type].on);
+	if (txsense)
+	{
+		soutp(UART_MCR,hardware[type].off);
+	}
+	else
+	{
+		soutp(UART_MCR,hardware[type].on);
+	}
 }
   
 static inline void off(void)
 {
-	soutp(UART_MCR,hardware[type].off);
+	if (txsense)
+	{
+		soutp(UART_MCR,hardware[type].on);
+	}
+	else
+	{
+		soutp(UART_MCR,hardware[type].off);
+	}
 }
 
 #ifndef MAX_UDELAY_MS
@@ -772,7 +787,7 @@ static int init_port(void)
 	sinp(UART_MSR);
 	
 	/* Set line for power source */
-	soutp(UART_MCR, hardware[type].off);
+	off();
 	
 	/* Clear registers again to be sure. */
 	sinp(UART_LSR);
@@ -1086,6 +1101,12 @@ MODULE_PARM_DESC(share_irq, "Share interrupts (0 = off, 1 = on)");
 module_param(sense, bool, 0444);
 MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
 		 " (0 = active high, 1 = active low )");
+
+#ifdef LIRC_SERIAL_TRANSMITTER
+module_param(txsense, bool, 0444);
+MODULE_PARM_DESC(txsense, "Sense of transmitter circuit"
+		 " (0 = active high, 1 = active low )");
+#endif
 
 module_param(softcarrier, bool, 0444);
 MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
