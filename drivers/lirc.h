@@ -1,21 +1,15 @@
-/*      $Id: lirc.h,v 5.6 2002/06/28 07:47:53 lirc Exp $      */
+/*      $Id: lirc.h,v 5.7 2002/07/01 20:35:21 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
 
-#ifndef __KERNEL__
-#  include <sys/types.h>
-#endif
-
-#  include <asm/types.h>
-#  include <linux/ioctl.h>
-
+#include <asm/types.h>
+#include <linux/ioctl.h>
 
 #define PULSE_BIT  0x01000000
 #define PULSE_MASK 0x00FFFFFF
 
-typedef int32_t lirc_t;
-
+typedef int lirc_t;
 
 /*
  * lirc compatible hardware features
