@@ -1,5 +1,7 @@
 Makefile
 Makefile.in
 html
-index.html
-
+.libs
+.deps
+man2html
+man-html
