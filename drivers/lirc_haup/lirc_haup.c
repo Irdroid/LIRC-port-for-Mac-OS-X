@@ -10,6 +10,8 @@
 #include <linux/poll.h>
 #include <linux/kmod.h>
 
+/*#include <linux/i2c-old.h> -- use this after applying the lm_sensors
+                                patches to kernel!*/
 #include <linux/i2c.h>
 
 #include "drivers/lirc.h"
@@ -82,9 +84,11 @@ static void lirc_haup_do_timer(unsigned long data)
 	}
 
 	if (remote->attached) {
-	        spin_unlock(&remote_lock);
+		/* keep the remote_lock during the execution
+		   of read_raw_keypress */
+	        /* spin_unlock(&remote_lock); */
 		code = read_raw_keypress(remote); /* get key from the remote */
-		spin_lock(&remote_lock);
+		/* spin_lock(&remote_lock); */
 		if( (remote->status_changed) ) {
 			/* if buffer is full, drop input */
 			if (((remote->tail+1)%BUFLEN)==remote->head) {
@@ -111,14 +115,15 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 	struct lirc_haup_i2c_info *t = remote->i2c_remote;
 	
         LOCK_FLAGS;
-        
+
+	/* remote_lock locking is now performed by the caller */
+	
+	/* spin_lock(&remote_lock); */
         LOCK_I2C_BUS(t->bus);
 	/* Starting bus */
 	i2c_start(t->bus);
 	/* Resetting bus */
-	spin_lock(&remote_lock);
 	i2c_sendbyte(t->bus, ir_read, 0);
-	spin_unlock(&remote_lock);
 	/* Read first byte: Toggle byte (192 or 224) */
 	b1 = i2c_readbyte(t->bus, 0);
 	/* Read 2. byte: Key pressed by user */
@@ -129,21 +134,15 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 	i2c_stop(t->bus);
         UNLOCK_I2C_BUS(t->bus);
        
-	spin_lock(&remote_lock);
-
 	/* Turn off the red light: Read 5 bytes from the bus */
+	/*
         LOCK_I2C_BUS(t->bus);
         i2c_read(t->bus, ir_read);
-        UNLOCK_I2C_BUS(t->bus);
-        LOCK_I2C_BUS(t->bus);
+        i2c_read(t->bus, ir_read);
+        i2c_read(t->bus, ir_read);
         i2c_read(t->bus, ir_read);
         UNLOCK_I2C_BUS(t->bus);
-        LOCK_I2C_BUS(t->bus);
-        i2c_read(t->bus, ir_read);
-        UNLOCK_I2C_BUS(t->bus);
-        LOCK_I2C_BUS(t->bus);
-        i2c_read(t->bus, ir_read);
-        UNLOCK_I2C_BUS(t->bus);
+	*/
 
 	if (b1 == REPEAT_TOGGLE_0 || b1 == REPEAT_TOGGLE_1) {
 		remote->status_changed = 1;
@@ -158,7 +157,7 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 		b1 = b2 = 0xff;
 	}
 
-	spin_unlock(&remote_lock);
+	/* spin_unlock(&remote_lock); */
 
 	repeat_bit=(b1&0x20) ? 0x800:0;
 	return (__u16) (0x1000 | repeat_bit | (b2>>2));
@@ -326,11 +325,11 @@ static int lirc_haup_open(struct inode *inode, struct file *file)
 	lirc_haup_timer.expires  = jiffies + polling;
 	add_timer(&lirc_haup_timer);
 
-	spin_unlock(&remote_lock);
-
 	/* initialize input buffer pointers */
 	remote.head=remote.tail=0;
 	
+	spin_unlock(&remote_lock);
+
 	/* Make sure that the module isn't removed while the file is open by 
 	 * incrementing the usage count (the number of opened references to the
 	 * module, if it's not zero rmmod will fail)
@@ -467,7 +466,7 @@ int init_module(void)
 	lirc_haup_i2c_driver.addr_h = ir_read;
 
 	spin_unlock(&remote_lock);
-	
+
 	return SUCCESS;
 }
 
