@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.4 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: serial.c,v 5.5 2000/09/30 17:47:31 columbus Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -171,13 +171,20 @@ int tty_create_lock(char *name)
 			  filename);
 		logperror(LOG_ERR,NULL);
 		lock=open(filename,O_RDONLY);
-		if(lock==-1) return(0);
-		len=read(lock,id,10+1);
-		if(len<10+1) return(0);
-		if(read(lock,id,1)!=0) return(0);
-		logprintf(LOG_ERR,"%s is locked by PID %s",name,id);
-		close(lock);
-		return(0);
+		if(lock!=-1)
+		{
+			len=read(lock,id,10+1);
+			if(len==10+1)
+			{
+				if(read(lock,id,1)==0)
+				{
+					logprintf(LOG_ERR,
+						  "%s is locked by PID %s",
+						  name,id);
+				}
+			}
+			close(lock);
+		}
 	}
 	if(write(lock,id,len)!=len)
 	{
@@ -317,6 +324,7 @@ int tty_delete_lock(void)
 			lock=open(filename,O_RDONLY);
 			if(lock==-1) {retval=0;continue;}
 			len=read(lock,id,20);
+			close(lock);
 			if(len<=0) {retval=0;continue;}
 			id[len]=0;
 			pid=strtol(id,&endptr,10);

@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.8 2000/09/19 17:55:07 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.9 2000/09/30 17:47:31 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1174,25 +1174,15 @@ int lirc_nextcode(char **code)
 	if(lirc_buffer==NULL)
 	{
 		lirc_buffer=(char *) malloc(packet_size+1);
+		if(lirc_buffer==NULL)
+		{
+			return(-1);
+		}
 		lirc_buffer[0]=0;
-	}
-	if(lirc_buffer==NULL)
-	{
-		return(-1);
 	}
 	while((end=strchr(lirc_buffer,'\n'))==NULL)
 	{
-		if(end_len<packet_size)
-		{
-			len=read(lirc_lircd,lirc_buffer+end_len,
-				 packet_size-end_len);
-			if(len<=0)
-			{
-				if(len==-1 && errno==EAGAIN) return(0);
-				else return(-1);
-			}
-		}
-		else
+		if(end_len>=packet_size)
 		{
 			char *new_buffer;
 
@@ -1203,21 +1193,23 @@ int lirc_nextcode(char **code)
 				return(-1);
 			}
 			lirc_buffer=new_buffer;
-			len=read(lirc_lircd,lirc_buffer+end_len,
-				 packet_size-end_len);
-			if(len<=0)
-			{
-				if(len==-1 && errno==EAGAIN) return(0);
-				else return(-1);
-			}
+		}
+		len=read(lirc_lircd,lirc_buffer+end_len,packet_size-end_len);
+		if(len<=0)
+		{
+			if(len==-1 && errno==EAGAIN) return(0);
+			else return(-1);
 		}
 		end_len+=len;
 		lirc_buffer[end_len]=0;
+		/* return if next code not yet available completely */
 		if((end=strchr(lirc_buffer,'\n'))==NULL)
 		{
 			return(0);
 		}
 	}
+	/* copy first line to buffer (code) and move remaining chars to
+	   lirc_buffers start */
 	end++;
 	end_len=strlen(end);
 	c=end[0];
