@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.20 2000/11/23 19:38:03 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.21 2000/11/24 19:52:13 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -29,10 +29,12 @@
 #include <linux/config.h>
 
 #ifndef CONFIG_SERIAL_MODULE
-#warning "--- Your serial port driver is compiled into the  ---"
-#warning "--- kernel. You will have to release the port you ---"
-#warning "--- want to use for LIRC with:                    ---"
-#warning "---     setserial /dev/ttySx uart none            ---"
+#warning "******************************************"
+#warning " Your serial port driver is compiled into "
+#warning " the kernel. You will have to release the "
+#warning " port you want to use for LIRC with:      "
+#warning "    setserial /dev/ttySx uart none        "
+#warning "******************************************"
 #if 0
 #error "--- Please compile your Linux kernel serial port    ---"
 #error "--- driver as a module. Read the LIRC documentation ---"
@@ -123,8 +125,15 @@ static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
 #ifdef LIRC_SERIAL_TRANSMITTER
 static lirc_t wbuf[WBUF_LEN];
-unsigned long pulse_width = 13; /* pulse/space ratio of 50/50 */
-unsigned long space_width = 13; /* 1000000/freq-pulse_width */
+
+/* 1 is substracted from the actual value to compensate the port
+   access latency */
+#define LIRC_SERIAL_TRANSMITTER_LATENCY 1
+
+/* pulse/space ratio of 50/50 */
+unsigned long pulse_width = (13-LIRC_SERIAL_TRANSMITTER_LATENCY);
+/* 1000000/freq-pulse_width */
+unsigned long space_width = (13-LIRC_SERIAL_TRANSMITTER_LATENCY);
 unsigned int freq = 38000;      /* modulation frequency */
 unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #endif
@@ -793,6 +802,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		duty_cycle=ivalue;
 		pulse_width=(unsigned long) duty_cycle*10000/freq;
 		space_width=(unsigned long) 1000000L/freq-pulse_width;
+		if(pulse_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
+			space_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
 		break;
 	case LIRC_SET_SEND_CARRIER:
 #               ifdef KERNEL_2_1
@@ -808,6 +821,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		freq=ivalue;
 		pulse_width=(unsigned long) duty_cycle*10000/freq;
 		space_width=(unsigned long) 1000000L/freq-pulse_width;
+		if(pulse_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
+			pulse_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
+		if(space_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
+			space_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
 		break;
 #       endif
 #       endif

@@ -285,7 +285,7 @@ function ConfigDriver
 			8 "Hauppauge TV card (new I2C layer required)" \
 			9 "Phoebe Tv Master + FM (card=22)" \
                         0 "Pixelview PlayTV pro (card=37)" \
-                        a "Pixelview PlayTV (bt878) (PV-BT878P+, card=16)" \
+                        a "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
 			b "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
 			c "TView99 CPH063 (card=38)" 2> $TEMP;
 	    if test "$?" = "0"; then

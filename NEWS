@@ -1,4 +1,5 @@
 0.6.3: future
+  * changes to transmit code in lirc_serial (read update hints for details)
   * added support for Pixelview PlayTV (bt878) card
   * moved lirc_haup to lirc_i2c
   * added support for Chronos Video Shuttle II TV card (Tonu Raitviir)
