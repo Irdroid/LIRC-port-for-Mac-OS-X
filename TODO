@@ -1,6 +1,9 @@
 
 * explain programming interface in tools/lirc_client.c
 
+* putting the code in tools/lirc_client.c into a library,
+  add functions to create config files
+
 * make the package protable (you will be able to use lirc with an
   Irman on Solaris)
 

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.5 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.6 1999/09/12 13:52:18 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1511,7 +1511,7 @@ int get_repeat_length(struct ir_remote *remote)
 			       (unsigned long) repeats);
 			remote->prepeat=repeatp;
 			remote->srepeat=repeats;
-			if(remote->flags&CONST_LENGTH)
+			if(!(remote->flags&CONST_LENGTH))
 			{
 				max_slength=get_max_length(first_repeat_gap,
 							   NULL);
