@@ -131,9 +131,8 @@ static int init_chrdev(void);
 static void drop_chrdev(void);
 #endif
 	/* Hardware */
-static void it87_interrupt(int irq,
-			   void * dev_id,
-			   struct pt_regs * regs);
+static irqreturn_t it87_interrupt(int irq, void * dev_id,
+				 struct pt_regs * regs);
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
 static void init_send(void);
@@ -473,9 +472,9 @@ static void it87_timeout(unsigned long data)
 }
 
 
-static void it87_interrupt(int irq,
-			   void * dev_id,
-			   struct pt_regs * regs)
+static irqreturn_t it87_interrupt(int irq,
+				 void * dev_id,
+				 struct pt_regs * regs)
 {
 	unsigned char data;
 	struct timeval curr_tv;
@@ -571,7 +570,8 @@ static void it87_interrupt(int irq,
 		while (fifo != 0);
 		spin_unlock_irqrestore(&hardware_lock, hw_flags);
 		spin_unlock_irqrestore(&timer_lock, flags);
-		break;
+		
+		return IRQ_RETVAL(IRQ_HANDLED);
 
 	default:
 		/* not our irq */
@@ -579,7 +579,7 @@ static void it87_interrupt(int irq,
 		printk(KERN_DEBUG LIRC_DRIVER_NAME
 		       "unknown IRQ (shouldn't happen) !!\n");
 #endif
-		break;
+		return IRQ_RETVAL(IRQ_NONE);
 	}
 }
 
@@ -930,7 +930,9 @@ MODULE_PARM_DESC(it87_enable_demodulator,
 MODULE_LICENSE("GPL");
 #endif
 
+#ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
+#endif
 
 
 int init_module(void)

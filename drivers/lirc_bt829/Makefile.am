@@ -1,3 +1,5 @@
+## $Id: Makefile.am,v 1.5 2004/04/09 15:33:40 lirc Exp $
+
 ## Process this file with automake to produce Makefile.in
 
 ## this is so that Automake includes the C compiling definitions, and
@@ -47,6 +49,4 @@ install-data-local: install-moduleDATA
 endif
 
 CLEANFILES = $(module_DATA) .$(module_DATA).flags *~
-
-include $(KERNEL_LOCATION)/Rules.make
 

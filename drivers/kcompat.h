@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.5 2004/04/04 10:18:18 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.6 2004/04/09 15:33:40 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -61,4 +61,8 @@ typedef void irqreturn_t;
 #endif
 #if !defined(local_irq_restore)
 #define local_irq_restore(flags) do{ restore_flags(flags); } while(0)
+#endif
+
+#if !defined(pci_pretty_name)
+#define pci_pretty_name(dev) ((dev)->name)
 #endif

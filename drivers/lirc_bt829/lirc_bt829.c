@@ -32,6 +32,7 @@
 #include <linux/pci.h>
 #include <linux/delay.h>
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 
@@ -72,12 +73,16 @@ struct lirc_plugin atir_plugin;
 int do_pci_probe(void)
 {
 	struct pci_dev *my_dev;
+#ifndef KERNEL_2_5
+	/* unnecessary with recent kernels */
 	if ( !pci_present() ) {
 		printk(KERN_ERR "ATIR: no pci in this kernel\n");
 	}
+#endif
 	my_dev = (struct pci_dev *)pci_find_device(PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_264VT,NULL);
 	if ( my_dev ) {
-		printk(KERN_ERR "ATIR: Using device: %s\n",my_dev->name);
+		printk(KERN_ERR "ATIR: Using device: %s\n",
+		       pci_pretty_name(my_dev));
 		pci_addr_phys = 0;
 		if ( my_dev->resource[0].flags & IORESOURCE_MEM ) {
 			pci_addr_phys = my_dev->resource[0].start;

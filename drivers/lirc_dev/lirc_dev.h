@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.12 2004/02/29 11:53:38 lirc Exp $
+ * $Id: lirc_dev.h,v 1.13 2004/04/09 15:33:40 lirc Exp $
  *
  */
 
@@ -21,6 +21,7 @@
 #define mod(n, div) ((n) % (div))
 #endif
 #include <linux/slab.h>
+#include <linux/fs.h>
 struct lirc_buffer
 {
         wait_queue_head_t wait_poll;

@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.22 2004/03/02 19:34:21 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.23 2004/04/09 15:33:41 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -61,6 +61,7 @@
 
 #include <asm/semaphore.h>
 
+#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
@@ -262,8 +263,14 @@ static int set_use_inc(void* data)
 	struct IR *ir = data;
 
 	/* lock bttv in memory while /dev/lirc is in use  */
+	/* this is completely broken code. lirc_unregister_plugin()
+	   must be possible even when the device is open */
+#ifdef KERNEL_2_5
+	i2c_use_client(&ir->c);
+#else
 	if (ir->c.adapter->inc_use) 
 		ir->c.adapter->inc_use(ir->c.adapter);
+#endif
 
 	MOD_INC_USE_COUNT;
 	return 0;
@@ -273,8 +280,12 @@ static void set_use_dec(void* data)
 {
 	struct IR *ir = data;
 
+#ifdef KERNEL_2_5
+	i2c_release_client(&ir->c);
+#else
 	if (ir->c.adapter->dec_use) 
 		ir->c.adapter->dec_use(ir->c.adapter);
+#endif
 	MOD_DEC_USE_COUNT;
 }
 
@@ -322,7 +333,11 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	
 	ir->c.adapter = adap;
 	ir->c.addr    = addr;
+#ifdef KERNEL_2_5
+	i2c_set_clientdata(&ir->c, ir);
+#else
 	ir->c.data    = ir;
+#endif
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
@@ -371,19 +386,31 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	/* register device */
 	i2c_attach_client(&ir->c);
 	ir->l.minor = lirc_register_plugin(&ir->l);
-	if (ir->c.adapter->inc_use)
+#ifdef KERNEL_2_5
+	i2c_use_client(&ir->c);
+#else
+	if (ir->c.adapter->inc_use) 
 		ir->c.adapter->inc_use(ir->c.adapter);
+#endif
 	
 	return 0;
 }
 
 static int ir_detach(struct i2c_client *client)
 {
+#ifdef KERNEL_2_5
+	struct IR *ir = i2c_get_clientdata(client);
+#else
         struct IR *ir = client->data;
+#endif
 	
 	/* unregister device */
-	if (ir->c.adapter->dec_use)
+#ifdef KERNEL_2_5
+	i2c_release_client(&ir->c);
+#else
+	if (ir->c.adapter->dec_use) 
 		ir->c.adapter->dec_use(ir->c.adapter);
+#endif
 	lirc_unregister_plugin(ir->l.minor);
 	i2c_detach_client(&ir->c);
 
