@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.26 2001/07/28 07:39:58 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.27 2001/08/04 17:55:43 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -14,18 +14,26 @@
  *
  */
 
-/* Steve's changes to improve transmission quality:
-     - non-integer pulse/space lengths, done using fixed point binary.  So
-       much more accurate carrier frequency.
+/* Steve's changes to improve transmission fidelity:
+     - for systems with the rdtsc instruction and the clock counter, a 
+       send_pule that times the pulses directly using the counter.
+       This means that the LIRC_SERIAL_TRANSMITTER_LATENCY fudge is
+       not needed. Measurement shows very stable waveform, even where
+       PCI activity slows the access to the UART, which trips up other
+       versions.
+     - For other system, non-integer-microsecond pulse/space lengths,
+       done using fixed point binary. So, much more accurate carrier
+       frequency.
      - fine tuned transmitter latency, taking advantage of fractional
-       microseconds.
+       microseconds in previous change
      - Fixed bug in the way transmitter latency was accounted for by
-       tuning the pulse lengths down - the send_pulse routine ignored this
-       overhead as it timed the overall pulse length - so the pulse
-       frequency was right but overall pulse length was too long.  Fixed by
-       accounting for latency on each pulse/space iteration.
+       tuning the pulse lengths down - the send_pulse routine ignored
+       this overhead as it timed the overall pulse length - so the
+       pulse frequency was right but overall pulse length was too
+       long. Fixed by accounting for latency on each pulse/space
+       iteration.
 
-   Steve Davies <steve@daviesfam.org>
+   Steve Davies <steve@daviesfam.org>  July 2001
 */
 
 #ifdef HAVE_CONFIG_H
@@ -78,6 +86,11 @@
 #include <asm/fcntl.h>
 
 #include "drivers/lirc.h"
+
+#ifdef rdtsc
+#define USE_RDTSC
+#warning "Note: using rdtsc instruction"
+#endif
 
 #ifdef LIRC_SERIAL_ANIMAX
 #ifdef LIRC_SERIAL_TRANSMITTER
@@ -144,7 +157,42 @@ static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
 
 #ifdef LIRC_SERIAL_TRANSMITTER
+
 static lirc_t wbuf[WBUF_LEN];
+
+unsigned int freq = 38000;
+unsigned int duty_cycle = 50;
+
+#ifdef USE_RDTSC
+
+/* This version does sub-microsecond timing using rdtsc instruction,
+ * and does away with the fudged LIRC_SERIAL_TRANSMITTER_LATENCY
+ * Implicitly i586 architecture...  - Steve
+ */
+
+/* When we use the rdtsc instruction to measure clocks, we keep the
+ * pulse and space widths as clock cycles.  As this is CPU speed
+ * dependent, the widths must be calculated in init_port and ioctl
+ * time
+ */
+
+unsigned long period = 0;
+unsigned long pulse_width = 0;
+unsigned long space_width = 0;
+
+/* So send_pulse can quickly convert microseconds to clocks */
+unsigned long conv_us_to_clocks = 0;
+
+#else /* USE_RDTSC */
+
+/* Version using udelay() */
+
+/* period, pulse/space width are kept with 8 binary places -
+   IE multiplied by 256. */
+
+unsigned long period = 6736; /* 256*1000000L/freq; */
+unsigned long pulse_width = 3368; /* (period*duty_cycle/100) */
+unsigned long space_width = 3368; /* (period - pulse_width) */
 
 #if defined(__i386__)
 /*
@@ -160,7 +208,6 @@ static lirc_t wbuf[WBUF_LEN];
   to delay.
   [...]
 */
-
 /* transmitter latency 1.5625us 0x1.90 - this figure arrived at from
  * comment above plus trimming to match actual measured frequency.
  * This will be sensitive to cpu speed, though hopefully most of the 1.5us
@@ -168,26 +215,22 @@ static lirc_t wbuf[WBUF_LEN];
  * 1.13GHz Athlon system - Steve
  */
 
-#define LIRC_SERIAL_TRANSMITTER_LATENCY 400
+/* changed from 400 to 450 as this works better on slower machines;
+   faster machines will use the rdtsc code anyway */
+
+#define LIRC_SERIAL_TRANSMITTER_LATENCY 450
 
 #else
 
 /* does anybody have information on other platforms ? */
 /* 256 = 1<<8 */
 #define LIRC_SERIAL_TRANSMITTER_LATENCY 256
-#endif
 
-/* period, pulse/space width are kept with 8 binary places -
-   IE multiplied by 256. */
+#endif  /* __i386__ */
 
-unsigned int freq = 38000;
-unsigned int duty_cycle = 50;
+#endif /* USE_RDTSC */
 
-unsigned long period = 6736; /* 256*1000000L/freq; */
-unsigned long pulse_width = 3368; /* (period*duty_cycle/100) */
-unsigned long space_width = 3368; /* (period - pulse_width) */
-
-#endif
+#endif /* LIRC_SERIAL_TRANSMITTER */
 
 #ifdef LIRC_SERIAL_ANIMAX
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
@@ -222,9 +265,47 @@ void off(void)
 	soutp(UART_MCR,LIRC_OFF);
 }
 
+#if defined(LIRC_SERIAL_SOFTCARRIER) && defined(USE_RDTSC)
+
+/* This is an overflow/precision juggle, complicated in that we can't
+   do long long divide in the kernel */
+
+void calc_pulse_lengths_in_clocks(void)
+{
+	unsigned long long loops_per_sec,work;
+
+	loops_per_sec=current_cpu_data.loops_per_jiffy;
+	loops_per_sec*=HZ;
+	
+	/* How many clocks in a microsecond?, avoiding long long divide */
+	work=loops_per_sec;
+	work*=4295;  /* 4295 = 2^32 / 1e6 */
+	conv_us_to_clocks=(work>>32);
+	
+	/* Carrier period in clocks, approach good up to 32GHz clock,
+           gets carrier frequency within 8Hz */
+	period=loops_per_sec>>3;
+	period/=(freq>>3);
+
+	/* Derive pulse and space from the period */
+
+	pulse_width = period*duty_cycle/100;
+	space_width = period - pulse_width;
+#ifdef DEBUG
+	printk(KERN_INFO LIRC_DRIVER_NAME
+	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
+	       "clk/jiffy=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
+	       freq, duty_cycle, current_cpu_data.loops_per_jiffy,
+	       pulse_width, space_width, conv_us_to_clocks);
+#endif
+}
+
+#endif
+
+
 /* return value: space length delta */
 
-long send_pulse(long length)
+long send_pulse(unsigned long length)
 {
 #ifdef LIRC_SERIAL_IRDEO
 	long rawbits;
@@ -266,20 +347,60 @@ long send_pulse(long length)
 	}
 #else
 #ifdef LIRC_SERIAL_SOFTCARRIER
+#ifdef USE_RDTSC
+	unsigned long target, start, now;
+#else
 	unsigned long actual, target, d;
+#endif
 	int flag;
 #endif
 
 	if(length<=0) return 0;
 #ifdef LIRC_SERIAL_SOFTCARRIER
+#ifdef USE_RDTSC
+	/* Version that uses Pentium rdtsc instruction to measure clocks */
+
+	/* Get going quick as we can */
+	rdtscl(start);on();
+	/* Convert length from microseconds to clocks */
+	length*=conv_us_to_clocks;
+	/* And loop till time is up - flipping at right intervals */
+	now=start;
+	target=pulse_width;
+	flag=1;
+	while((now-start)<length)
+	{
+		/* Delay till flip time */
+		do
+		{
+			rdtscl(now);
+		}
+		while ((now-start)<target);
+		/* flip */
+		if(flag)
+		{
+			rdtscl(now);off();
+			target+=space_width;
+		}
+		else
+		{
+			rdtscl(now);on();
+			target+=pulse_width;
+		}
+		flag=!flag;
+	}
+	rdtscl(now);
+	return(((now-start)-length)/conv_us_to_clocks);
+#else
 	/* here we use fixed point arithmetic, with 8 fractional bits.
 	   that gets us within 0.1% or so of the right average frequency,
 	   albeit with some jitter in pulse length - Steve */
 
-	length <<= 8; /* To match 8 fractional bits used for
-			 pulse/space length */
+	/* To match 8 fractional bits used for pulse/space length */
+	length<<=8;
+	
 	actual=target=0; flag=0;
-	while (actual<length)
+	while(actual<length)
 	{
 		if(flag)
 		{
@@ -291,15 +412,16 @@ long send_pulse(long length)
 			on();
 			target+=pulse_width;
 		}
-		d = (target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
+		d=(target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
 		/* Note - we've checked in ioctl that the pulse/space
-		   widths are big enough that d is > 0 */
+                   widths are big enough so that d is > 0 */
 		udelay(d);
 		actual+=(d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
 		flag=!flag;
 	}
         return((actual-length)>>8);
-#else
+#endif
+#else /* SOFT_CARRIER */
 	on();
 	udelay(length);
 	return(0);
@@ -556,6 +678,13 @@ static int init_port(void)
 	
 	restore_flags(flags);
 	
+#ifdef LIRC_SERIAL_TRANSMITTER
+#ifdef USE_RDTSC
+	/* Initialize pulse/space widths */
+	calc_pulse_lengths_in_clocks();
+#endif
+#endif
+
 	/* If pin is high, then this must be an active low receiver. */
 	if(sense==-1)
 	{
@@ -888,6 +1017,10 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		ivalue=get_user((unsigned int *) arg);
 #               endif
 		if(ivalue<=0 || ivalue>100) return(-EINVAL);
+#ifdef USE_RDTSC
+		duty_cycle=ivalue;
+		calc_pulse_lengths_in_clocks();
+#else
 		if(256*1000000L/freq*ivalue/100<=
 		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		if(256*1000000L/freq*(100-ivalue)/100<=
@@ -896,6 +1029,13 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		period=256*1000000L/freq;
 		pulse_width=period*duty_cycle/100;
 		space_width=period-pulse_width;
+#endif
+#               ifdef DEBUG
+		printk(KERN_WARNING LIRC_DRIVER_NAME
+		       ": after SET_SEND_DUTY_CYCLE, freq=%d pulse=%ld, "
+		       "space=%ld, conv_us_to_clocks=%ld\n",
+		       freq, pulse_width, space_width, conv_us_to_clocks);
+#               endif
 		break;
 	case LIRC_SET_SEND_CARRIER:
 #               ifdef KERNEL_2_1
@@ -908,22 +1048,25 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		ivalue=get_user((unsigned int *) arg);
 #               endif
 		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
-		if(256000000L/freq*ivalue/100<=
+#               ifdef USE_RDTSC
+		freq=ivalue;
+		calc_pulse_lengths_in_clocks();
+#               else /* !USE_RDTSC */
+		if(256*1000000L/freq*ivalue/100<=
 		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
-		if(256000000L/freq*(100-ivalue)/100<=
+		if(256*1000000L/freq*(100-ivalue)/100<=
 		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		freq=ivalue;
 		period=256*1000000L/freq;
 		pulse_width=period*duty_cycle/100;
 		space_width=period-pulse_width;
-
+#               endif /* USE_RDTSC */
 #               ifdef DEBUG
-		printk(KERN_INFO LIRC_DRIVER_NAME
-		       ": after LIRC_SET_SEND_CARRIER:"
-		       " freq=%d, pulse_width=%ld, space_width=%ld\n",
-		       freq,pulse_width,space_width);
+		printk(KERN_WARNING LIRC_DRIVER_NAME
+		       ": after SET_SEND_CARRIER, freq=%d pulse=%ld, "
+		       "space=%ld, conv_us_to_clocks=%ld\n",
+		       freq, pulse_width, space_width, conv_us_to_clocks);
 #               endif
-
 		break;
 #       endif
 #       endif
