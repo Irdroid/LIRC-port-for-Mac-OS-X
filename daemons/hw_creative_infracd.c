@@ -1,4 +1,4 @@
-/*      $Id: hw_creative_infracd.c,v 5.1 2003/05/07 17:30:40 lirc Exp $      */
+/*      $Id: hw_creative_infracd.c,v 5.2 2003/05/24 21:24:26 lirc Exp $      */
 
 /*
  * Remote control driver for the Creative iNFRA CDrom
@@ -135,7 +135,7 @@ int test_device_command(int fd)
 		{ MODE_SENSE_10, 0, 0, 0, 0, 0, 0, 0, MAX_SCSI_REPLY_LEN, 0 };
 
 	unsigned char sense_buffer[255];
-	unsigned char Buff[SCSI_INQ_CMD_LEN];
+	unsigned char Buff[MAX_SCSI_REPLY_LEN];
         unsigned int *i_Buff = (unsigned int *)Buff;
 
 	memset(&io_hdr, 0, sizeof(sg_io_hdr_t));
