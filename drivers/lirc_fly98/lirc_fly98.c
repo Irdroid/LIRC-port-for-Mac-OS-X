@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.8 2000/02/05 12:57:28 columbus Exp $
+ * $Id: lirc_fly98.c,v 1.9 2000/06/18 09:28:01 columbus Exp $
  *
  */
 
@@ -24,6 +24,10 @@
  *	  some clean-up.
  * From now on RCS log:
  * $Log: lirc_fly98.c,v $
+ * Revision 1.9  2000/06/18 09:28:01  columbus
+ * fixes for latest kernel,
+ * thanks to wollny for the patch
+ *
  * Revision 1.8  2000/02/05 12:57:28  columbus
  * corrected EINTR semantics
  *
@@ -309,16 +313,11 @@ static int Major;
  * init_module. NULL is for unimplemented functions. */
 
 struct file_operations Fops = {
-  NULL,   /* seek */
-  irctl_read, 
-  NULL,   /* write */
-  NULL,   /* readdir */
-  irctl_poll,   /* poll */
-  irctl_ioctl,   /* ioctl */
-  NULL,   /* mmap */
-  irctl_open,
-  NULL,   /* flush */
-  irctl_release  /* a.k.a. close */
+	read:    irctl_read,
+	poll:    irctl_poll,
+	ioctl:   irctl_ioctl,
+	open:    irctl_open,
+	release: irctl_release
 };
 
 
@@ -390,11 +389,3 @@ void cleanup_module(void)
  * c-basic-offset: 8
  * End:
  */
-
-
-
-
-
-
-
-

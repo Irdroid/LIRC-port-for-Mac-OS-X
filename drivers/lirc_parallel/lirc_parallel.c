@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.9 2000/06/02 14:15:56 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.10 2000/06/18 09:28:01 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -697,26 +697,17 @@ static void lirc_close(struct inode* node,struct file* filep)
 
 static struct file_operations lirc_fops = 
 {
-	lirc_lseek,	 /* lseek */
-	lirc_read,   	 /* read */
-	lirc_write,      /* write */
-	NULL,		 /* readdir */
+	llseek:  lirc_lseek,
+	read:    lirc_read,
+	write:   lirc_write,
 #ifdef KERNEL_2_2
-	lirc_poll,       /* poll */
+	poll:    lirc_poll,
 #else
-	lirc_select,     /* select */
+	select:  lirc_select,
 #endif
-	lirc_ioctl,
-	NULL,            /* mmap  */
-	lirc_open,
-#ifdef KERNEL_2_2
-	NULL,
-#endif
-	lirc_close,
-	NULL,            /* fsync */
-	NULL,            /* fasync */
-	NULL,            /* check_media_change */
-	NULL             /* revalidate */
+	ioctl:   lirc_ioctl,
+	open:    lirc_open,
+	release: lirc_close
 };
 
 #ifdef MODULE

@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.7 2000/06/02 14:15:56 columbus Exp $
+ * $Id: lirc_dev.c,v 1.8 2000/06/18 09:28:01 columbus Exp $
  *
  */
 
@@ -599,17 +599,14 @@ static ssize_t irctl_read(struct file *file,
 
 
 static struct file_operations fops = {
-	NULL,   /* seek */
-	irctl_read, 
-	NULL,   /* write */
-	NULL,   /* readdir */
-	irctl_poll,
-	irctl_ioctl,
-	NULL,   /* mmap */
-	irctl_open,
-	NULL,   /* flush */
-	irctl_close
+	read:    irctl_read, 
+	poll:    irctl_poll,
+	ioctl:   irctl_ioctl,
+	open:    irctl_open,
+	release: irctl_close
 };
+
+
 
 
 EXPORT_SYMBOL(lirc_register_plugin);

@@ -309,29 +309,16 @@ static void add_read_queue(int flag, unsigned long val)
 
 static struct file_operations lirc_fops =
 {
-	NULL,			/* llseek */
-	lirc_read,		/* read */
-	lirc_write,		/* write */
-	NULL,			/* readdir */
+	read:    lirc_read,
+	write:   lirc_write,
 #ifdef KERNEL_2_1
-	lirc_poll,		/* poll */
+	poll:    lirc_poll,
 #else
-	lirc_select,		/* poll */
+	select:  lirc_select,
 #endif
-	lirc_ioctl,		/* ioctl */
-	NULL,			/* mmap  */
-	lirc_open,		/* open */
-#ifdef KERNEL_2_1	
-	NULL,			/* flush */
-#endif
-	lirc_close,		/* release */
-	NULL,			/* fsync */
-	NULL,			/* fasync */
-	NULL,			/* check_media_change */
-	NULL			/* revalidate */
-#ifdef KERNEL_2_1
-	, NULL			/* lock */
-#endif
+	ioctl:   lirc_ioctl,
+	open:    lirc_open,
+	release: lirc_close,
 };
 
 #ifdef MODULE

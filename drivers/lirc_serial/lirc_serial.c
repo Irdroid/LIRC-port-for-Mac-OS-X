@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.13 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.14 2000/06/18 09:28:01 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -724,26 +724,16 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 
 static struct file_operations lirc_fops =
 {
-	NULL,			/* lseek */
-	lirc_read,		/* read */
-	lirc_write,		/* write */
-	NULL,			/* readdir */
+	read:    lirc_read,
+	write:   lirc_write,
 #       ifdef KERNEL_2_1
-	lirc_poll,		/* poll */
+	poll:    lirc_poll,
 #       else
-	lirc_select,		/* select */
+	select:  lirc_select,
 #       endif
-	lirc_ioctl,		/* ioctl */
-	NULL,			/* mmap  */
-	lirc_open,		/* open */
-#       ifdef KERNEL_2_1
-	NULL,
-#       endif
-	lirc_close,		/* release */
-	NULL,			/* fsync */
-	NULL,			/* fasync */
-	NULL,			/* check_media_change */
-	NULL			/* revalidate */
+	ioctl:   lirc_ioctl,
+	open:    lirc_open,
+	release: lirc_close
 };
 
 #ifdef MODULE
