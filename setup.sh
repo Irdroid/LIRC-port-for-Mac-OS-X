@@ -333,7 +333,7 @@ ConfigDriver ()
 		elif test "$1" = "g"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
 		elif test "$1" = "h"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
 		elif test "$1" = "i"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "l"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "j"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
 		elif test "$1" = "k"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
 		elif test "$1" = "l"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
 		fi
