@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.32 2001/07/16 10:10:26 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.33 2001/08/10 22:35:44 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1785,8 +1785,16 @@ int get_header_length(struct ir_remote *remote)
 	lirc_t headerp,headers;
 	struct lengths *max_plength,*max_slength;
 
-	max_plength=get_max_length(first_headerp,&sum);
-	max_count=max_plength->count;
+	if(first_headerp!=NULL)
+	{
+		max_plength=get_max_length(first_headerp,&sum);
+		max_count=max_plength->count;
+	}
+	else
+	{
+		printf("No header data.\n");
+		return(1);
+	}
 #       ifdef DEBUG
 	printf("get_header_length(): sum: %u, max_count %u\n",sum,max_count);
 #       endif
