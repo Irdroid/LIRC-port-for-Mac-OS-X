@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.53 2004/03/02 19:22:54 lirc Exp $      */
+/*      $Id: lircd.c,v 5.54 2004/11/21 11:34:41 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1257,7 +1257,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 	}
 	if(once)
 	{
-		remote->repeat_countdown=max(remote->min_repeat,reps);
+		remote->repeat_countdown=max(remote->repeat_countdown,reps);
 	}
 	else
 	{

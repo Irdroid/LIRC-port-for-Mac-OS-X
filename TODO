@@ -4,8 +4,6 @@
 
 * accept comments not only at beginning of line
 
-* transmit behaviour: if(min_repeat>0 && remaining_gap<10000) directly send out all signals (should fix problems with JVC/Echostar dish box described by Karl Bongers)
-
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes

@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.14 2004/11/20 11:43:35 lirc Exp $      */
+/*      $Id: transmit.c,v 5.15 2004/11/21 11:34:41 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -6,7 +6,7 @@
  *
  * functions that prepare IR codes for transmitting
  * 
- * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
+ * Copyright (C) 1999-2004 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 
@@ -14,11 +14,17 @@
 # include <config.h>
 #endif
 
+/* if the gap is lower than this value, we will concatenate the
+   signals and send the signal chain at a single blow */
+#define LIRCD_EXACT_GAP_THRESHOLD 10000
+
 #include "lircd.h"
 #include "transmit.h"
 
 extern struct ir_remote *repeat_remote;
 struct sbuf send_buffer;
+
+static void send_signals(lirc_t *signals, int n);
 
 inline void set_bit(ir_code *code,int bit,int data)
 {
@@ -37,6 +43,7 @@ void init_send_buffer(void)
 
 inline void clear_send_buffer(void)
 {
+	LOGPRINTF(3, "clearing transmit buffer");
 	send_buffer.wptr=0;
 	send_buffer.too_long=0;
 	send_buffer.is_biphase=0;
@@ -49,6 +56,7 @@ inline void add_send_buffer(lirc_t data)
 {
 	if(send_buffer.wptr<WBUF_SIZE)
 	{
+		LOGPRINTF(3, "adding to transmit buffer: %lu", data);
 		send_buffer.sum+=data;
 		send_buffer._data[send_buffer.wptr]=data;
 		send_buffer.wptr++;
@@ -268,8 +276,20 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 	}
 }
 
+static void send_signals(lirc_t *signals, int n)
+{
+	int i;
+	
+	for(i=0; i<n; i++)
+	{
+		add_send_buffer(signals[i]);
+	}
+}
+
 int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
+	int i, repeat=0;
+	
 	if(is_rcmm(remote) || is_grundig(remote) || 
 	   is_goldstar(remote) || is_serial(remote))
 	{
@@ -281,7 +301,13 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		send_buffer.is_biphase=1;
 	}
-	if(repeat_remote!=NULL && has_repeat(remote))
+	if(repeat_remote==NULL)
+	{
+		remote->repeat_countdown=remote->min_repeat;
+	}
+	
+ init_send_loop:
+	if((repeat || repeat_remote!=NULL) && has_repeat(remote))
 	{
 		if(remote->flags&REPEAT_HEADER && has_header(remote))
 		{
@@ -323,8 +349,19 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 				logprintf(LOG_ERR, "no signals for raw send");
 				return 0;
 			}
-			send_buffer.data=code->signals;
-			send_buffer.wptr=code->length;
+			if(send_buffer.wptr>0)
+			{
+				send_signals(code->signals, code->length);
+			}
+			else
+			{
+				send_buffer.data=code->signals;
+				send_buffer.wptr=code->length;
+				for(i=0; i<code->length; i++)
+				{
+					send_buffer.sum+=code->signals[i];
+				}
+			}
 		}
 	}
 	sync_send_buffer();
@@ -333,7 +370,13 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		logprintf(LOG_ERR,"buffer too small");
 		return(0);
 	}
-	if(is_const(remote))
+	if(has_repeat_gap(remote) &&
+	   (repeat || repeat_remote!=NULL) &&
+	   has_repeat(remote))
+	{
+		remote->remaining_gap=remote->repeat_gap;
+	}
+	else if(is_const(remote))
 	{
 		if(remote->gap>send_buffer.sum)
 		{
@@ -349,16 +392,32 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	}
 	else
 	{
-		if(has_repeat_gap(remote) &&
-		   repeat_remote!=NULL &&
-		   has_repeat(remote))
-		{
-			remote->remaining_gap=remote->repeat_gap;
-		}
-		else
-		{
-			remote->remaining_gap=remote->gap;
-		}
+		remote->remaining_gap=remote->gap;
 	}
+	if(remote->repeat_countdown>0 &&
+	   remote->remaining_gap<LIRCD_EXACT_GAP_THRESHOLD)
+	{
+		if(send_buffer.data!=send_buffer._data)
+		{
+			lirc_t *signals;
+			int n;
+			
+			LOGPRINTF(1, "unrolling raw signal optimisation");
+			signals=send_buffer.data;
+			n=send_buffer.wptr;
+			send_buffer.data=send_buffer._data;
+			send_buffer.wptr=0;
+			
+			send_signals(signals, n);
+		}
+		LOGPRINTF(1, "concatenating low gap signals");
+		remote->repeat_countdown--;
+		add_send_buffer(remote->remaining_gap);
+		send_buffer.sum=0;
+		
+		repeat=1;
+		goto init_send_loop;
+	}
+	LOGPRINTF(3, "transmit buffer ready");
 	return(1);
 }
