@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.6 2000/04/02 13:07:20 columbus Exp $
+## $Id: Makefile.am,v 5.7 2001/01/27 18:58:36 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -20,6 +20,9 @@ dist-hook:
 		cp -pr $(srcdir)/$$f $(distdir)/$$f; done
 	rm -r `find $(distdir) -name "CVS"`
 	-rcs2log >$(distdir)/ChangeLog
+
+dist-bz2: dist
+	gunzip -c @PACKAGE@-@VERSION@.tar.gz | bzip2 >@PACKAGE@-@VERSION@.tar.bz2
 
 DISTCLEANFILES = configure.sh .setup.config
 
