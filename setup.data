@@ -14,6 +14,7 @@ hw_menu_entry: @any
 hw_menu_entry: @hw-soundcard
 	dsp: "Simple IR diode (EXPERIMENTAL)"
 	audio: "IR receiver IC connected to auido input (EXPERIMENTAL)"
+	audio_alsa: "IR receiver IC connected to auido input using ALSA (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other
 	livedrive_midi: "Creative LiveDrive midi"
@@ -110,22 +111,24 @@ param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
 param_type: tira
         ttyUSB:
 
-param_type: atiusb audio avermedia avermedia98 avermedia_vdomate \
-		bestbuy bestbuy2 breakoutbox bte chronos cph03x cph06x \
-		creative_infracd devinput dsp flyvideo gvbctv5pci \
-		hauppauge hauppauge_dvb it87 knc_one kworld \
-		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
-		mediafocusI none pixelview_bt878 pixelview_pak \
-		pixelview_pro provideo sa1100 tekram_bt829 tvbox udp
+param_type: atiusb audio audio_alsa avermedia avermedia98 \
+		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
+		chronos cph03x cph06x creative_infracd devinput dsp \
+		flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
+		knc_one kworld leadtek_0007 leadtek_0010 \
+		livedrive_midi livedrive_seq mediafocusI none \
+		pixelview_bt878 pixelview_pak pixelview_pro provideo \
+		sa1100 tekram_bt829 tvbox udp
 	none:
 
-default_param: atiusb audio avermedia avermedia98 avermedia_vdomate \
-		bestbuy bestbuy2 breakoutbox chronos cph03x cph06x \
-		creative_infracd devinput dsp flyvideo gvbctv5pci \
-		hauppauge hauppauge_dvb it87 knc_one kworld leadtek \
-		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
-		mediafocusI none pixelview_bt878 pixelview_pak \
-		pixelview_pro provideo sa1100 tekram_bt829 tvbox udp
+default_param: atiusb audio audio_alsa avermedia avermedia98 \
+		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
+		cph03x cph06x creative_infracd devinput dsp flyvideo \
+		gvbctv5pci hauppauge hauppauge_dvb it87 knc_one kworld \
+		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
+		livedrive_seq mediafocusI none pixelview_bt878 \
+		pixelview_pak pixelview_pro provideo sa1100 \
+		tekram_bt829 tvbox udp
 	none:
 
 default_param: caraca creative irman logitech mp3anywhere pctv \

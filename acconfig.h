@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.25 2003/08/15 12:56:29 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.26 2003/12/30 15:26:34 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -74,6 +74,9 @@
 
 /* Define if the portaudio library is installed */
 #undef HAVE_LIBPORTAUDIO
+
+/* Define if the ALSA library is installed */
+#undef HAVE_LIBALSA
 
 /* Define if the complete vga libraries (vga, vgagl) are installed */
 #undef HAVE_LIBVGA

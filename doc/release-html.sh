@@ -8,7 +8,8 @@ if test ! -e ${DEST_DIR}; then
     mkdir $DEST_DIR;
 fi
 
-FILES1="index.html install.html configure.html programs.html technical.html help.html"
+FILES1="index.html install.html configure.html programs.html technical.html help.html
+audio-alsa.html"
 FILES2=" irexec.html ircat.html irw.html irpty.html irrecord.html irxevent.html lircd.html
 lircmd.html mode2.html smode2.html xmode2.html irsend.html"
 

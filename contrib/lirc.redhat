@@ -15,6 +15,9 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:$PATH
 
+# Load LIRC config
+[ -f /etc/sysconfig/lirc ] && . /etc/sysconfig/lirc
+
 # See how we were called.
 case "$1" in
   start)

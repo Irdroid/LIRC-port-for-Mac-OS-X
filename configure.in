@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.115 2003/11/23 12:15:43 lirc Exp $
+dnl $Id: configure.in,v 5.116 2003/12/30 15:26:34 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -167,6 +167,14 @@ AC_CHECK_HEADERS(portaudio.h,[
     ],,${portaudio_lib_other}
   )]
 )
+dnl audio_alsa driver requires ALSA library installed and some linker flags
+AC_CHECK_HEADERS(alsa/asoundlib.h,[
+  AC_CHECK_LIB(asound, snd_pcm_open,[
+    AC_DEFINE(HAVE_LIBALSA)
+    possible_drivers="${possible_drivers} (audio_alsa)"
+    ],,
+  )]
+)
 
 dnl here we see what driver the user wants.
 
@@ -200,6 +208,7 @@ lircmd_conf=""
 irman_lib=""
 caraca_lib=""
 portaudio_lib=""
+alsa_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
 kernel_module=""
@@ -224,6 +233,10 @@ if test "$driver" = "any"; then
 	audio)
 		hw_module="${hw_module} hw_audio.o receive.o"
 		portaudio_lib="-lportaudio ${portaudio_lib_other}"
+		;;
+	audio_alsa)
+		hw_module="${hw_module} hw_audio_alsa.o receive.o"
+		alsa_lib=-lasound
 		;;
 	bte)
 		hw_module="${hw_module} hw_bte.o serial.o"
@@ -348,6 +361,13 @@ if test "$driver" = "audio"; then
   hw_module="hw_audio.o receive.o"
   HW_DEFAULT="hw_audio"
   portaudio_lib="-lportaudio ${portaudio_lib_other}"
+fi
+
+if test "$driver" = "audio_alsa"; then
+  lirc_driver="audio_alsa"
+  hw_module="hw_audio_alsa.o receive.o"
+  HW_DEFAULT="hw_audio_alsa"
+  alsa_lib=-lasound
 fi
 
 if test "$driver" = "avermedia"; then
@@ -760,13 +780,17 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
-  audio*)
+  audio)
     AC_MSG_ERROR([*** you need to have the PortAudio library V18 installed
 to use the audio driver. You can get it at:
   http://www.inf.ethz.ch/~mringwal/downloads/portaudio_v18_with_configure.zip
 Extract the package and do a \"./configure && make && sudo make install\"
 in its directory.
 ])
+    ;;
+  audio_alsa)
+    AC_MSG_ERROR([*** you need to have the ALSA headers and libraries
+	for this driver])
     ;;
   *)
     AC_MSG_ERROR([*** it is not possible to install the specified driver
@@ -777,7 +801,7 @@ fi
 
 dnl now we've checked, we can rename things for the drivers/Makefile
 
-if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca"  || test "$lirc_driver" = "audio"; then
+if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca" || test "$lirc_driver" = "audio" || test "$lirc_driver" = "audio_alsa"; then
   lirc_driver=
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
@@ -943,6 +967,7 @@ AC_SUBST(lirc_driver)
 AC_SUBST(irman_lib)
 AC_SUBST(caraca_lib)
 AC_SUBST(portaudio_lib)
+AC_SUBST(alsa_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)

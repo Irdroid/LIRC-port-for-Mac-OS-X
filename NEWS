@@ -1,4 +1,6 @@
 0.7.0: future
+  * added support for alternative IR receiver circuit connected to
+    soundcard input using ALSA (Andrew Zabolotny)
   * added include command to .lircrc config file (Ingo van Lil)
   * added support for Prolink Pixelview PV-BT878P+ (Rev.4C,8E)
   * added support for UIRT2 (Mikael Magnusson)

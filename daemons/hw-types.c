@@ -7,6 +7,7 @@
 #include "hw-types.h"
 /* Hardware types */
 extern struct hardware hw_audio;
+extern struct hardware hw_audio_alsa;
 extern struct hardware hw_bte;
 extern struct hardware hw_creative;
 extern struct hardware hw_creative_infracd;
@@ -56,6 +57,9 @@ struct hardware *hw_list[] =
 #ifdef LIRC_DRIVER_ANY
 #ifdef HAVE_LIBPORTAUDIO
 	&hw_audio,
+#endif
+#ifdef HAVE_LIBALSA
+	&hw_audio_alsa,
 #endif
 	&hw_bte,
 	&hw_creative,
