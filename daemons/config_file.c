@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.11 2002/07/01 18:54:01 lirc Exp $      */
+/*      $Id: config_file.c,v 5.12 2003/02/15 09:00:56 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -103,7 +103,7 @@ inline ir_code s_strtocode(char *val)
 
 	errno=0;
 #       ifdef LONG_IR_CODE
-	code=strtouq(val,&endptr,0);
+	code=strtoull(val,&endptr,0);
 	if((code==(unsigned long long) -1 && errno==ERANGE) ||
 	    strlen(endptr)!=0 || strlen(val)==0)
 	{
@@ -565,7 +565,7 @@ struct ir_remote * read_config(FILE *f)
 						if(raw_code.length%2==0)
 						{
 							logprintf(LOG_ERR,"error in configfile line %d:",line);
-							logprintf(LOG_ERR,"bad signal length",val);
+							logprintf(LOG_ERR,"bad signal length");
 							parse_error=1;
 						}
 						if(!add_void_array(&raw_codes, &raw_code))
@@ -649,7 +649,7 @@ struct ir_remote * read_config(FILE *f)
 							if(raw_code.length%2==0)
 							{
 								logprintf(LOG_ERR,"error in configfile line %d:",line);
-								logprintf(LOG_ERR,"bad signal length",val);
+								logprintf(LOG_ERR,"bad signal length");
 								parse_error=1;
 							}
 							if(!add_void_array(&raw_codes, &raw_code))

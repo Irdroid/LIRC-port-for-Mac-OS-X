@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.47 2003/01/26 12:57:59 lirc Exp $      */
+/*      $Id: lircd.c,v 5.48 2003/02/15 09:00:57 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -57,14 +57,14 @@
 #include <sys/file.h>
 
 #ifndef timersub
-#define timersub(a, b, result)                                                \
-  do {                                                                        \
-    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                             \
-    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                          \
-    if ((result)->tv_usec < 0) {                                              \
-      --(result)->tv_sec;                                                     \
-      (result)->tv_usec += 1000000;                                           \
-    }                                                                         \
+#define timersub(a, b, result)                                            \
+  do {                                                                    \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                         \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                      \
+    if ((result)->tv_usec < 0) {                                          \
+      --(result)->tv_sec;                                                 \
+      (result)->tv_usec += 1000000;                                       \
+    }                                                                     \
   } while (0)
 #endif
 
@@ -89,8 +89,12 @@ extern struct hardware hw;
 
 char *progname="lircd " VERSION;
 char *configfile=LIRCDCFGFILE;
+#ifndef USE_SYSLOG
 char *logfile=LOGFILE;
-FILE *pidfile;
+#endif
+FILE *pidf;
+char *pidfile = PIDFILE;
+char *lircdfile = LIRCD;
 
 struct protocol_directive directives[] =
 {
@@ -286,8 +290,8 @@ void dosigterm(int sig)
 		shutdown(sockinet,2);
 		close(sockinet);
 	}
-	fclose(pidfile);
-	(void) unlink(PIDFILE);
+	fclose(pidf);
+	(void) unlink(pidfile);
 	if(clin>0 && hw.deinit_func) hw.deinit_func();
 #ifdef USE_SYSLOG
 	closelog();
@@ -466,7 +470,7 @@ void add_client(int sock)
 	if(client_addr.sa_family==AF_UNIX)
 	{
 		cli_type[clin]=CT_LOCAL;
-		logprintf(LOG_NOTICE,"accepted new client on %s",LIRCD);
+		logprintf(LOG_NOTICE,"accepted new client on %s",lircdfile);
 	}
 	else if(client_addr.sa_family==AF_INET)
 	{
@@ -673,11 +677,11 @@ void start_server(mode_t permission,int nodaemon)
 	int fd;
 	
 	/* create pid lockfile in /var/run */
-	if((fd=open(PIDFILE,O_RDWR|O_CREAT,0644))==-1 ||
-	   (pidfile=fdopen(fd,"r+"))==NULL)
+	if((fd=open(pidfile,O_RDWR|O_CREAT,0644))==-1 ||
+	   (pidf=fdopen(fd,"r+"))==NULL)
 	{
 		fprintf(stderr,"%s: can't open or create %s\n",
-			progname,PIDFILE);
+			progname,pidfile);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
@@ -685,26 +689,26 @@ void start_server(mode_t permission,int nodaemon)
 	{
 		pid_t otherpid;
 		
-		if(fscanf(pidfile,"%d\n",&otherpid)>0)
+		if(fscanf(pidf,"%d\n",&otherpid)>0)
 		{
 			fprintf(stderr,"%s: there seems to already be "
 				"a lircd process with pid %d\n",
 				progname,otherpid);
 			fprintf(stderr,"%s: otherwise delete stale "
-				"lockfile %s\n",progname,PIDFILE);
+				"lockfile %s\n",progname,pidfile);
 		}
 		else
 		{
 			fprintf(stderr,"%s: invalid %s encountered\n",
-				progname,PIDFILE);
+				progname,pidfile);
 		}
 		exit(EXIT_FAILURE);
 	}
 	(void) fcntl(fd,F_SETFD,FD_CLOEXEC);
-	rewind(pidfile);
-	(void) fprintf(pidfile,"%d\n",getpid());
-	(void) fflush(pidfile);
-	(void) ftruncate(fileno(pidfile),ftell(pidfile));
+	rewind(pidf);
+	(void) fprintf(pidf,"%d\n",getpid());
+	(void) fflush(pidf);
+	(void) ftruncate(fileno(pidf),ftell(pidf));
 
 	/* create socket*/
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
@@ -712,68 +716,55 @@ void start_server(mode_t permission,int nodaemon)
 	{
 		fprintf(stderr,"%s: could not create socket\n",progname);
 		perror(progname);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
-		exit(EXIT_FAILURE);
-	};
+		goto start_server_failed0;
+	}
 	
 	/* 
 	   get owner, permissions, etc.
 	   so new socket can be the same since we
 	   have to delete the old socket.  
 	*/
-	ret=stat(LIRCD,&s);
+	ret=stat(lircdfile,&s);
 	if(ret==-1 && errno!=ENOENT)
 	{
 		fprintf(stderr,"%s: could not get file information for %s\n",
-			progname,LIRCD);
+			progname,lircdfile);
 		perror(progname);
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
-		exit(EXIT_FAILURE);
+		goto start_server_failed1;
 	}
 	if(ret!=-1)
 	{
 		new=0;
-		ret=unlink(LIRCD);
+		ret=unlink(lircdfile);
 		if(ret==-1)
 		{
 			fprintf(stderr,"%s: could not delete %s\n",
-				progname,LIRCD);
+				progname,lircdfile);
 			perror(NULL);
-			close(sockfd);
-			fclose(pidfile);
-			(void) unlink(PIDFILE);
-			exit(EXIT_FAILURE);
+			goto start_server_failed1;
 		}
 	}
 	
 	serv_addr.sun_family=AF_UNIX;
-	strcpy(serv_addr.sun_path,LIRCD);
+	strcpy(serv_addr.sun_path,lircdfile);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
 	{
 		fprintf(stderr,"%s: could not assign address to socket\n",
 			progname);
 		perror(progname);
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
-		exit(EXIT_FAILURE);
+		goto start_server_failed1;
 	}
 	
 	if(new ?
-	   chmod(LIRCD,permission):
-	   (chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
+	   chmod(lircdfile,permission):
+	   (chmod(lircdfile,s.st_mode)==-1 ||
+	    chown(lircdfile,s.st_uid,s.st_gid)==-1)
 	   )
 	{
 		fprintf(stderr,"%s: could not set file permissions\n",
 			progname);
 		perror(progname);
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
-		exit(EXIT_FAILURE);
+		goto start_server_failed1;
 	}
 	
 	listen(sockfd,3);
@@ -790,11 +781,8 @@ void start_server(mode_t permission,int nodaemon)
 			fprintf(stderr,"%s: could not create TCP/IP socket\n",
 				progname);
 			perror(progname);
-			close(sockfd);
-			fclose(pidfile);
-			(void) unlink(PIDFILE);
-			exit(EXIT_FAILURE);
-		};
+			goto start_server_failed1;
+		}
 		(void) setsockopt(sockinet,SOL_SOCKET,SO_REUSEADDR,
 				  &enable,sizeof(enable));
 		serv_addr_in.sin_family=AF_INET;
@@ -804,14 +792,11 @@ void start_server(mode_t permission,int nodaemon)
 		if(bind(sockinet,(struct sockaddr *) &serv_addr_in,
 			sizeof(serv_addr_in))==-1)
 		{
-			fprintf(stderr,"%s: could not assign address to socket\n",
+			fprintf(stderr,
+				"%s: could not assign address to socket\n",
 				progname);
 			perror(progname);
-			close(sockinet);
-			close(sockfd);
-			fclose(pidfile);
-			(void) unlink(PIDFILE);
-			exit(EXIT_FAILURE);
+			goto start_server_failed2;
 		}
 		
 		listen(sockinet,3);
@@ -837,18 +822,24 @@ void start_server(mode_t permission,int nodaemon)
 	{
 		fprintf(stderr,"%s: could not open logfile\n",progname);
 		perror(progname);
-		if(listen_tcpip)
-		{
-			close(sockinet);
-		}
-		close(sockfd);
-		fclose(pidfile);
-		(void) unlink(PIDFILE);
-		exit(EXIT_FAILURE);
+		goto start_server_failed2;
 	}
 	gethostname(hostname,HOSTNAME_LEN);
 #endif
 	LOGPRINTF(1,"started server socket");
+	return;
+
+ start_server_failed2:
+	if(listen_tcpip)
+	{
+		close(sockinet);
+	}
+ start_server_failed1:
+	close(sockfd);
+ start_server_failed0:
+	fclose(pidf);
+	(void) unlink(pidfile);
+	exit(EXIT_FAILURE);
 }
 
 #ifndef USE_SYSLOG
@@ -903,10 +894,10 @@ void daemonize(void)
 		dosigterm(SIGTERM);
 	}
 	umask(0);
-	rewind(pidfile);
-	(void) fprintf(pidfile,"%d\n",getpid());
-	(void) fflush(pidfile);
-	(void) ftruncate(fileno(pidfile),ftell(pidfile));
+	rewind(pidf);
+	(void) fprintf(pidf,"%d\n",getpid());
+	(void) fflush(pidf);
+	(void) ftruncate(fileno(pidf),ftell(pidf));
 	daemonized=1;
 }
 
@@ -1782,16 +1773,24 @@ int main(int argc,char **argv)
 			{"device",required_argument,NULL,'d'},
 			{"listen",optional_argument,NULL,'l'},
 			{"connect",required_argument,NULL,'c'},
+                        {"output",required_argument,NULL,'o'},
+                        {"pidfile",required_argument,NULL,'P'},
+#                       ifndef USE_SYSLOG
+                        {"logfile",required_argument,NULL,'L'},
+#                       endif
 #                       ifdef DEBUG
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{0, 0, 0, 0}
 		};
-#               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvnp:H:d:l::c:D::",long_options,NULL);
-#               else
-		c = getopt_long(argc,argv,"hvnp:H:d:l::c:",long_options,NULL);
-#               endif
+		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l:c:"
+#                               ifndef USE_SYSLOG
+				"L:"
+#                               endif
+#                               ifdef DEBUG
+				"D::"
+#                               endif
+				,long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
@@ -1805,7 +1804,12 @@ int main(int argc,char **argv)
 			printf("\t -H --driver=driver\t\tuse given driver\n");
 			printf("\t -d --device=device\t\tread from given device\n");
 			printf("\t -l --listen[=port]\t\tlisten for network connections on port\n");
-			printf("\t -c --connect=host[:port]\t\tconnect to remote lircd server\n");
+			printf("\t -c --connect=host[:port]\tconnect to remote lircd server\n");
+                        printf("\t -o --output=socket\t\toutput socket filename\n");
+                        printf("\t -P --pidfile=file\t\tdaemon pid file\n");
+#                       ifndef USE_SYSLOG
+                        printf("\t -L --logfile=file\t\tdaemon log file\n");
+#                       endif
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
@@ -1835,6 +1839,17 @@ int main(int argc,char **argv)
 		case 'd':
 			hw.device=optarg;
 			break;
+                case 'i':
+                        pidfile=optarg;
+                        break;
+#                       ifndef USE_SYSLOG
+                case 'L':
+                        logfile=optarg;
+                        break;
+#                       endif
+                case 'o':
+                        lircdfile=optarg;
+                        break;
 		case 'l':
 			listen_tcpip=1;
 			if(optarg)

@@ -29,6 +29,16 @@ The --connect option allows you to connect to other lircd servers that
 provide a network socket at the given host and port number. The number
 of such connections is currently limited to 100.
 
+With the --output option you can select Unix domain socket, which lircd
+will write remote key codes to. The default currently is /dev/lircd.
+
+With the --pidfile option you can select the lircd daemon pid file.
+The default currently is /var/run/lircd.pid.
+
+With the --logfile option you can select the lircd daemon log file.
+The default currently is /var/log/lircd. Note that this option will
+only be available if you compiled lircd without syslog support.
+
 [FILES]
 
 The config file for lircd is located in /etc/lircd.conf. lircd

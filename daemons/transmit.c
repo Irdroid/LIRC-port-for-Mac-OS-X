@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.10 2002/11/21 19:56:23 lirc Exp $      */
+/*      $Id: transmit.c,v 5.11 2003/02/15 09:00:59 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -326,7 +326,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 		else
 		{
-			logprintf(LOG_ERR,"too short gap: %lu",remote->gap);
+			logprintf(LOG_ERR,"too short gap: %u",remote->gap);
 			remote->remaining_gap=remote->gap;
 			return(0);
 		}

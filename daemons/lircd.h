@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.11 2002/07/28 08:53:27 lirc Exp $      */
+/*      $Id: lircd.h,v 5.12 2003/02/15 09:00:58 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -55,7 +55,7 @@ void start_server(mode_t permission,int nodaemon);
 
 #ifdef USE_SYSLOG
 #define logprintf syslog
-#define logperror(prio,s) syslog(prio,(s)!=NULL ? "%s: %m\n":"%m\n",s)
+#define logperror(prio,s) if((s)!=NULL) syslog(prio,"%s: %m\n",(char *) s); else syslog(prio,"%m\n")
 #else
 void logprintf(int prio,char *format_str, ...);
 void logperror(int prio,const char *s);
