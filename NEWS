@@ -1,4 +1,4 @@
-0.6.2: future
+0.6.2: 09/10/00
   * Added support for IRdeo (www.pofahl.de/irdeo.htm). Many thanks to
     Hans-Hermann Redenius for contributing a device.
   * Konrad Riedel has added support for CARACA (caraca.sourceforge.net)

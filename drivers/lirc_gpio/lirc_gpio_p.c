@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.18 2000/09/07 16:05:22 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.19 2000/09/17 17:49:30 columbus Exp $
  *
  */
 
@@ -73,7 +73,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_DYNALINK,      0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	/* just a guess */
 	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
- 	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
+ 	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_PHOEBE_TVMAS,  0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
 };
 
