@@ -45,6 +45,34 @@ begin remote
     F_TV                     0x0000000000000026
     F_TELETEXT               0x0000000000000029
     F_RADIO                  0x000000000000002A
+
+#
+# here are some extra buttons a new version of the remote seems to have
+#
+# contributed by Robbert Monna <rjmonna@kabelfoon.nl>
+#
+# brand:             Pinnacle Systems
+# model:             PCTV Remote (newest version?)
+# supported devices: dongle on serial port (from TV-Card)
+#
+          L                        0x000000000000001F
+          Zoom                     0x000000000000001E
+          vol+                     0x000000000000001B
+          vol-                     0x000000000000000F
+          channel+                 0x0000000000000017
+          channel-                 0x000000000000001C
+          middle                   0x000000000000001A
+          Menu                     0x000000000000001D
+          next                     0x0000000000000019
+          undo                     0x0000000000000016
+          pause                    0x0000000000000015
+          redo                     0x0000000000000013
+          Rewind                   0x000000000000000E
+          Play                     0x000000000000000D
+          Stop                     0x000000000000000B
+          FForward                 0x0000000000000007
+          EPG                      0x0000000000000018
+
   end codes
 end remote
 
