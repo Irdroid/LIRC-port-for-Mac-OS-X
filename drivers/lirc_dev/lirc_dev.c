@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.16 2000/12/09 11:02:02 columbus Exp $
+ * $Id: lirc_dev.c,v 1.17 2000/12/23 11:23:57 columbus Exp $
  *
  */
 
@@ -13,20 +13,8 @@
 #endif
  
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
-/* fix for SuSE 7.0 */
-#ifdef LIRC_HAVE_DEVFS
-#error "********************************************************"
-#error " Looking at the kernel sources there seems to be devfs  "
-#error " support. But this is impossible because devfs support  "
-#error " was introduced in 2.4.x while this is 2.2.x. So you are"
-#error " probably trying to use a patched kernel supplied with  "
-#error " your distribution.                                     "
-#error " This won't work with LIRC. Please use a standard kernel"
-#error " which you can get from: http://www.kernel.org/         "
-#error "********************************************************"
-#undef LIRC_HAVE_DEVFS
-#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#define LIRC_HAVE_DEVFS
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)

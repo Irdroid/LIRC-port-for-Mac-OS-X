@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.5 2000/11/23 19:35:36 columbus Exp $
+## $Id: acinclude.m4,v 1.6 2000/12/23 11:23:57 columbus Exp $
 ##
 ## additional m4 macros
 ##
@@ -69,29 +69,5 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE,
   AC_SUBST(kerneldir)
   AC_SUBST(kernelcc)
   AC_MSG_RESULT(${kerneldir})
-]
-)
-
-AC_DEFUN(AC_KERNEL_HEADER_DEVFS,
-[
-  AC_REQUIRE([AC_PATH_KERNEL_SOURCE])
-  AC_MSG_CHECKING(for Linux kernel devfs support)
-
-  AC_CACHE_VAL(ac_cv_kernel_header_devfs,
-  [
-    if test -f "${kerneldir}/include/linux/devfs_fs_kernel.h"; then
-      ac_cv_kernel_header_devfs="have_devfs=yes"
-    else
-      ac_cv_kernel_header_devfs="have_devfs=no"
-    fi
-  ]
-  )
-  
-  eval "$ac_cv_kernel_header_devfs"
-  if test $have_devfs = "yes"; then
-    AC_DEFINE(LIRC_HAVE_DEVFS)
-  fi
-
-  AC_MSG_RESULT(${have_devfs})
 ]
 )
