@@ -73,7 +73,7 @@ livedrive_decode(struct ir_remote *remote,
 	else {
 		gap = time_elapsed(&last, &start);
 
-		if (gap < 500000)
+		if (gap < 300000)
 			*repeat_flagp = 1;
 		else
 			*repeat_flagp = 0;

@@ -24,7 +24,9 @@
 
 char *livedrive_rec_midi(struct ir_remote *remotes)
 {
+	int i;
 	struct midi_packet midi;
+	unsigned char *bytep = (unsigned char *) &midi;
 	unsigned char buf;
 	ir_code bit[4];
 
@@ -34,12 +36,14 @@ char *livedrive_rec_midi(struct ir_remote *remotes)
 	/* poll for system exclusive status byte so we don't try to
 	   record other midi events */
 	do {
-		read(hw.fd, &buf, 1);
-		usleep(1);
+		read(hw.fd, &buf, sizeof(buf));
 	}
 	while (buf != SYSEX);
 
-	read(hw.fd, &midi, sizeof(midi));
+	for (i = 0; i < sizeof(midi); i++) {
+		read(hw.fd, &buf, sizeof(buf));
+		*(bytep+i) = buf;
+	}
 	gettimeofday(&end, NULL);
 
 	/* test for correct system exclusive end byte so we don't try

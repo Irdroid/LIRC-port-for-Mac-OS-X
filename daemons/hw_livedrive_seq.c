@@ -42,7 +42,7 @@ char *livedrive_rec_seq(struct ir_remote *remotes)
 
 	for (i = 0; i < sizeof(midi); i++) {
 		read(hw.fd, &seq, sizeof(seq));
-		*bytep++ = seq.data;
+		*(bytep+i) = seq.data;
 	}
 	gettimeofday(&end, NULL);
 
