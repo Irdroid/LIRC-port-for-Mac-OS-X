@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.11 2000/03/25 12:12:34 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.12 2000/04/02 20:48:21 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -517,8 +517,12 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 		     int count)
 #endif
 {
-	int n = 0, retval = 0;
+	int n=0,retval=0;
+#ifdef KERNEL_2_3
+	DECLARE_WAITQUEUE(wait,current);
+#else
 	struct wait_queue wait={current,NULL};
+#endif
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
