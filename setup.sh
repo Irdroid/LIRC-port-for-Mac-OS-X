@@ -146,7 +146,7 @@ function SetPortAndIrq
             }
         fi
         }
-    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "logitech"; then
+    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "slinke"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to usefy Port And IRQ of your Hardware" \
@@ -230,7 +230,8 @@ function ConfigDriver
 	     6 "Anir Multimedia Magic" \
              7 "PixelView RemoteMaster RC2000/RC3000" \
              8 "Logitech/AST" \
-             9 "SIR IrDA (built-in IR ports)" 2> $TEMP
+             9 "Slinke-e" \
+             10 "SIR IrDA (built-in IR ports)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -246,7 +247,7 @@ function ConfigDriver
 			2 "AverMedia TV card" \
 			3 "Fly98 TV card" \
                         4 "Askey Magic TView CPH03x (use bttv settings for MIRO PCTV)" \
-			5 "Pixelview PlayTV pro card" 2> $TEMP;
+                        5 "Pixelview PlayTV pro card" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -263,8 +264,9 @@ function ConfigDriver
         elif test "$1" = "5"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
         elif test "$1" = "6"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
         elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
-	elif test "$1" = "8"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1
-        elif test "$1" = "9"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3
+	elif test "$1" = "8"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
+        elif test "$1" = "9"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
+        elif test "$1" = "10"; then LIRC_DRIVER=sir;         DRIVER_PARAMETER=com3;
     fi
         GetSelectedDriver
         SetPortAndIrq
@@ -336,7 +338,7 @@ function SaveConfig
 	else echo "--without-timer \\" >>$START;
 	fi
         }
-    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "logitech"; then
+    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "slinke"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

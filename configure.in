@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.29 2000/06/22 20:55:23 columbus Exp $
+dnl $Id: configure.in,v 5.30 2000/07/02 12:03:38 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -81,7 +81,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (remotemaster) (logitech) (irreal)"
+possible_drivers="(none) (remotemaster) (logitech) (slinke) (irreal)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
@@ -104,7 +104,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, comX, lptX, avermedia,
-                          hauppauge, fly98, cph03x, pixelview_pro, logitech, irreal],
+                          hauppauge, fly98, pixelview_pro, logitech, slinke, irreal],
 
 driver=${withval},
 driver="unset"
@@ -225,6 +225,10 @@ if test "$driver" = "logitech"; then
   hw_module="hw_logitech.o serial.o"
   lircd_conf="logitech/lircd.conf.logitech"
   lircmd_conf="logitech/lircmd.conf.logitech"
+fi
+if test "$driver" = "slinke"; then
+  lirc_driver="none"
+  hw_module="hw_slinke.o serial.o receive.o"
 fi
 if test "$driver" = "irreal"; then
   lirc_driver="none"

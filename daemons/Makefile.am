@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.11 2000/06/12 10:05:07 columbus Exp $
+## $Id: Makefile.am,v 5.12 2000/07/02 12:03:38 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -17,6 +17,7 @@ lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_logitech.c hw_logitech.h \
+			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
 			hw_irreal.c hw_irreal.h \
 			receive.c receive.h \
@@ -36,6 +37,7 @@ irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_logitech.c hw_logitech.h \
+			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
 			hw_irreal.c hw_irreal.h \
 			serial.c serial.h

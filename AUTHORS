@@ -25,6 +25,7 @@ Hauppauge driver:
   Thomas Letsch <thommy@bigfoot.de>
   Roger Hardiman <roger@freebsd.org>
   Ryan Gammon <rggammon@engmail.uwaterloo.ca>
+  Gerd Knorr <kraxel@goldbach.in-berlin.de>
 
 SIR IrDA driver:
   Milan Pikula <www@fornax.sk>
@@ -39,6 +40,12 @@ X Window system tools:
 
 smode2:
   Sinkovics Zoltan <sinko@szarvas.hu>
+
+GPIO support:
+  Artur Lipowski <lipowski@comarch.pl>
+
+Slinke support:
+  Max Spring <mspring@employees.org>
 
 I have only pieced this together by grepping the source for @ signs
 and then guessing the contribution.
