@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.47 2005/02/22 15:45:09 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.48 2005/02/22 16:05:18 pmiller9 Exp $
  */
 
 /*
@@ -67,7 +67,6 @@
 #define CODE_LENGTH		5
 #define CODE_LENGTH_ATI2	3
 #define CODE_MIN_LENGTH		3
-#define USB_BUFLEN		(CODE_LENGTH*4)
 
 #define RW2_MODENAV_KEYCODE	0x3F
 #define RW2_NULL_MODE		0xFF
@@ -145,7 +144,11 @@ static struct usb_device_id usb_remote_table [] = {
 };
 
 
+/* init strings */
+#define USB_OUTLEN		7
 
+static char init1[] = {0x01, 0x00, 0x20, 0x14};
+static char init2[] = {0x01, 0x00, 0x20, 0x14, 0x20, 0x20, 0x20};
 
 
 
@@ -225,17 +228,13 @@ static struct list_head remote_list;
 #define get_iep_from_link(link)  list_entry((link), struct in_endpt, iep_list_link);
 #define get_irctl_from_link(link)  list_entry((link), struct irctl, remote_list_link);
 
-/* init strings */
-static char init1[] = {0x01, 0x00, 0x20, 0x14};
-static char init2[] = {0x01, 0x00, 0x20, 0x14, 0x20, 0x20, 0x20};
-
 /* send packet - used to initialize remote */
 static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 {
 	struct irctl *ir = oep->ir;
 	DECLARE_WAITQUEUE(wait, current);
 	int timeout = HZ; /* 1 second */
-	unsigned char buf[USB_BUFLEN];
+	unsigned char buf[USB_OUTLEN];
 
 	dprintk(DRIVER_NAME "[%d]: send called (%#x)\n", ir->devnum, cmd);
 
@@ -389,13 +388,13 @@ static void set_use_dec(void *data)
 
 static void print_data(struct in_endpt *iep, char *buf, int len)
 {
-	char codes[USB_BUFLEN*3 + 1];
+	char codes[CODE_LENGTH*3 + 1];
 	int i;
 
 	if (len <= 0)
 		return;
 
-	for (i = 0; i < len && i < USB_BUFLEN; i++) {
+	for (i = 0; i < len && i < CODE_LENGTH; i++) {
 		snprintf(codes+i*3, 4, "%02x ", buf[i] & 0xFF);
 	}
 	printk(DRIVER_NAME "[%d]: data received %s (ep=0x%x length=%d)\n",
@@ -779,9 +778,9 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 	pipe = usb_rcvintpipe(dev, addr);
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
-	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
-	len -= (len % CODE_LENGTH);
-	if (len < CODE_LENGTH) len = CODE_LENGTH;
+//	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
+//	len -= (len % CODE_LENGTH);
+	len = CODE_LENGTH;
 
 	dprintk(DRIVER_NAME "[%d]: acceptable inbound endpoint (0x%x) found (maxp=%d len=%d)\n", ir->devnum, addr, maxp, len);
 
@@ -847,7 +846,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 		}
 	case 3:
 #ifdef KERNEL_2_5
-		usb_buffer_free(oep->ir->usbdev, USB_BUFLEN, oep->buf, oep->dma);
+		usb_buffer_free(oep->ir->usbdev, USB_OUTLEN, oep->buf, oep->dma);
 #else
 		kfree(oep->buf);
 #endif
@@ -876,13 +875,13 @@ static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_des
 		init_waitqueue_head(&oep->wait);
 
 #ifdef KERNEL_2_5
-		if ( !(oep->buf = usb_buffer_alloc(dev, USB_BUFLEN, SLAB_ATOMIC, &oep->dma)) ) {
+		if ( !(oep->buf = usb_buffer_alloc(dev, USB_OUTLEN, SLAB_ATOMIC, &oep->dma)) ) {
 			mem_failure = 2;
 		} else if ( !(oep->urb = usb_alloc_urb(0, GFP_KERNEL)) ) {
 			mem_failure = 3;
 		}
 #else
-		if ( !(oep->buf = kmalloc(USB_BUFLEN, GFP_KERNEL)) ) {
+		if ( !(oep->buf = kmalloc(USB_OUTLEN, GFP_KERNEL)) ) {
 			mem_failure = 2;
 		} else if ( !(oep->urb = usb_alloc_urb(0)) ) {
 			mem_failure = 3;
@@ -988,7 +987,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			mem_failure = 2;
 		} else if (!(rbuf = kmalloc(sizeof(*rbuf), GFP_KERNEL))) {
 			mem_failure = 3;
-		} else if (lirc_buffer_init(rbuf, CODE_LENGTH, USB_BUFLEN/CODE_LENGTH)) {
+		} else if (lirc_buffer_init(rbuf, CODE_LENGTH, 1)) {
 			mem_failure = 4;
 		} else {
 			memset(plugin, 0, sizeof(*plugin));
@@ -1052,7 +1051,7 @@ static void send_outbound_init(struct irctl *ir) {
 		dprintk(DRIVER_NAME "[%d]: usb_remote_probe: initializing outbound ep\n", ir->devnum);
 		usb_fill_int_urb(oep->urb, ir->usbdev,
 			usb_sndintpipe(ir->usbdev, oep->ep->bEndpointAddress), oep->buf,
-			USB_BUFLEN, usb_remote_send, oep, oep->ep->bInterval);
+			USB_OUTLEN, usb_remote_send, oep, oep->ep->bInterval);
 
 		send_packet(oep, 0x8004, init1);
 		send_packet(oep, 0x8007, init2);
@@ -1215,7 +1214,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.47 2005/02/22 15:45:09 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.48 2005/02/22 16:05:18 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
