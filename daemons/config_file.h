@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.1 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: config_file.h,v 5.2 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -69,6 +69,7 @@ char * s_strdup(char * string);
 ir_code s_strtocode(char *val);
 unsigned long  s_strtoul(char *val);
 int s_strtoi(char *val);
+unsigned int s_strtoui(char *val);
 lirc_t s_strtolirc_t(char *val);
 
 int checkMode(int is_mode, int c_mode, char *error);

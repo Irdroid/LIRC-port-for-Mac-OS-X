@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.3 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: config_file.c,v 5.4 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -165,6 +165,24 @@ int s_strtoi(char *val)
 	{
 		logprintf(0,"error in configfile line %d:\n",line);
 		logprintf(0,"\"%s\": must be a valid (int) number\n",val);
+		parse_error=1;
+		return(0);
+	}
+	return(h);
+}
+
+unsigned int s_strtoui(char *val)
+{
+	char *endptr;
+	unsigned long n;
+	unsigned int h;
+	
+	n=strtoul(val,&endptr,0);
+	h=(unsigned int) n;
+	if(!*val || *endptr || n!=((unsigned long) h))
+	{
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (unsigned int) number\n",val);
 		parse_error=1;
 		return(0);
 	}
@@ -338,7 +356,11 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		return(1);
 	}
 	else if (strcasecmp("frequency",key)==0){
-		rem->freq=s_strtoi(val);
+		rem->freq=s_strtoui(val);
+		return(1);
+	}
+	else if (strcasecmp("duty_cycle",key)==0){
+		rem->duty_cycle=s_strtoui(val);
 		return(1);
 	}
 	else if (val2!=NULL)

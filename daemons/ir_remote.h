@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.9 1999/10/18 10:14:55 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.10 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -98,7 +98,8 @@ struct ir_remote
 	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
 	int repeat_bit;             /* 1..bits */
-	unsigned long freq;         /* modulation frequency */
+	unsigned int freq;          /* modulation frequency */
+	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	
 	/* end of user editable values */
 

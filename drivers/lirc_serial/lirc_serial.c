@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.12 2000/04/02 20:48:21 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.13 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -95,7 +95,8 @@ static int rbh, rbt;
 static lirc_t wbuf[WBUF_LEN];
 unsigned long pulse_width = 13; /* pulse/space ratio of 50/50 */
 unsigned long space_width = 13; /* 1000000/freq-pulse_width */
-unsigned long freq = 38000;     /* modulation frequency */
+unsigned int freq = 38000;      /* modulation frequency */
+unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #endif
 
 #ifdef LIRC_SERIAL_ANIMAX
@@ -606,10 +607,11 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
         int result;
 	unsigned long value;
+	unsigned int ivalue;
 	unsigned long features=
 #       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
-	LIRC_CAN_SET_SEND_PULSE_WIDTH|
+	LIRC_CAN_SET_SEND_DUTY_CYCLE|
 	LIRC_CAN_SET_SEND_CARRIER|
 #       endif
 	LIRC_CAN_SEND_PULSE|
@@ -681,34 +683,36 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		break;
 #       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
-	case LIRC_SET_SEND_PULSE_WIDTH:
+	case LIRC_SET_SEND_DUTY_CYCLE:
 #               ifdef KERNEL_2_1
-		result=get_user(value,(unsigned long *) arg);
+		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
 #               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
+		result=verify_area(VERIFY_READ,(unsigned int *) arg,
+				   sizeof(unsigned int));
 		if(result) return(result);
-		value=get_user((unsigned long *) arg);
+		ivalue=get_user((unsigned int *) arg);
 #               endif
-		if(value>=1000000/freq) return(-EINVAL);
-		pulse_width=value;
-		space_width=1000000/freq-pulse_width;
+		if(ivalue<=0 || ivalue>100) return(-EINVAL);
+		/* (ivalue/100)*(1000000/freq) */
+		duty_cycle=ivalue;
+		pulse_width=(unsigned long) duty_cycle*10000/freq;
+		space_width=(unsigned long) 1000000L/freq-pulse_width;
 		break;
 	case LIRC_SET_SEND_CARRIER:
 #               ifdef KERNEL_2_1
-		result=get_user(value,(unsigned long *) arg);
+		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
 #               else
-		result=verify_area(VERIFY_READ,(unsigned long *) arg,
-				   sizeof(unsigned long));
+		result=verify_area(VERIFY_READ,(unsigned int *) arg,
+				   sizeof(unsigned int));
 		if(result) return(result);
-		value=get_user((unsigned long *) arg);
+		ivalue=get_user((unsigned int *) arg);
 #               endif
-		if(value>500000 || value <20000) return(-EINVAL);
-		freq=value;
-		pulse_width=1000000/2/value;
-		space_width=1000000/freq-pulse_width;
+		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
+		freq=ivalue;
+		pulse_width=(unsigned long) duty_cycle*10000/freq;
+		space_width=(unsigned long) 1000000L/freq-pulse_width;
 		break;
 #       endif
 #       endif

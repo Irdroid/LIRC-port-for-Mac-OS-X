@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.3 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -162,7 +162,11 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 	}
 	if(rem->freq!=0)
 	{
-		fprintf(f, "  frequency    %lu\n",rem->freq);
+		fprintf(f, "  frequency    %u\n",rem->freq);
+	}
+	if(rem->duty_cycle!=0)
+	{
+		fprintf(f, "  duty_cycle   %u\n",rem->duty_cycle);
 	}
 }
 

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.10 2000/04/18 19:46:21 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.11 2000/04/24 19:41:42 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -1500,12 +1500,24 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 #if !defined(SIM_SEND) || defined(DAEMONIZE)
 	if(hw.features&LIRC_CAN_SET_SEND_CARRIER)
 	{
-		unsigned long freq;
+		unsigned int freq;
 		
 		freq=remote->freq==0 ? 38000:remote->freq;
 		if(ioctl(hw.fd,LIRC_SET_SEND_CARRIER,&freq)==-1)
 		{
 			logprintf(0,"could not set modulation frequency\n");
+			logperror(0,NULL);
+			return(0);
+		}
+	}
+	if(hw.features&LIRC_CAN_SET_SEND_DUTY_CYCLE)
+	{
+		unsigned int duty_cycle;
+		
+		duty_cycle=remote->duty_cycle==0 ? 50:remote->duty_cycle;
+		if(ioctl(hw.fd,LIRC_SET_SEND_DUTY_CYCLE,&duty_cycle)==-1)
+		{
+			logprintf(0,"could not set duty cycle\n");
 			logperror(0,NULL);
 			return(0);
 		}
