@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.5 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.6 2000/02/05 12:54:50 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -55,8 +55,10 @@ int pixelview_decode(struct ir_remote *remote,
 		     ir_code *prep,ir_code *codep,ir_code *postp,
 		     int *repeat_flagp,lirc_t *remaining_gapp)
 {
+#if 0
 	if(remote->pone!=0  ||  remote->sone!=833) return(0);
 	if(remote->pzero!=833 || remote->szero!=0) return(0);
+#endif
 
 	*prep=pre;
 	*codep=code;
@@ -139,6 +141,7 @@ char *pixelview_rec(struct ir_remote *remotes)
 	char *m;
 	int i;
 	
+	last=end;
 	gettimeofday(&start,NULL);
 	for(i=0;i<3;i++)
 	{
@@ -167,6 +170,5 @@ char *pixelview_rec(struct ir_remote *remotes)
 	code|=(reverse((ir_code) b[2],8)<<1)|1;
 	
 	m=decode_all(remotes);
-	last=end;
 	return(m);
 }
