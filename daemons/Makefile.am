@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.38 2004/01/13 12:25:51 lirc Exp $
+## $Id: Makefile.am,v 5.39 2004/02/29 12:03:51 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -70,10 +70,11 @@ EXTRA_irrecord_SOURCES = hw_audio.c \
 			hw_slinke.c hw_slinke.h \
 			hw_tira.c hw_tira.h \
 			hw_udp.c \
+			hw_uirt2.c hw_uirt2_raw.c \
+			hw_uirt2_common.c hw_uirt2_common.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
-			serial.c serial.h \
-			hw_uirt2.c hw_uirt2_raw.c uirt2.c uirt2.c
+			serial.c serial.h
 
 
 ## maintainer mode stuff
