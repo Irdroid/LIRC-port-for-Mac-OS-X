@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: lircd.h,v 5.2 1999/06/21 13:22:22 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -51,5 +51,5 @@ struct protocol_directive
 };
 
 extern int lirc;
-
+extern unsigned long features;
 #endif _LIRCD_H

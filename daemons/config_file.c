@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: config_file.c,v 5.1 1999/06/21 13:22:22 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -321,6 +321,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("repeat_bit",key)==0){
 		rem->repeat_bit=s_strtoi(val);
+		return(1);
+	}
+	else if (strcasecmp("frequency",key)==0){
+		rem->freq=s_strtoi(val);
 		return(1);
 	}
 	else if (val2!=NULL)

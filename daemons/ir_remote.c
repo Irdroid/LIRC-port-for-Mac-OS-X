@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.4 1999/06/21 12:21:05 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.5 1999/06/21 13:22:22 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <limits.h>
+
+#include <sys/ioctl.h>
 
 #include "drivers/lirc.h"
 
@@ -464,6 +466,19 @@ int send_command(struct ir_remote *remote,struct ir_ncode *code)
 		usecs=time_left(&current,&remote->last_send,
 				remote->remaining_gap);
 		if(usecs>0) usleep(usecs);
+	}
+
+	if(features&LIRC_CAN_SET_SEND_CARRIER)
+	{
+		unsigned long freq;
+		
+		freq=remote->freq==0 ? 38000:remote->freq;
+		if(ioctl(lirc,LIRC_SET_SEND_CARRIER,&freq)==-1)
+		{
+			logprintf("could not set modulation frequency\n");
+			logperror(NULL);
+			return(0);
+		}
 	}
 #endif
 

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.1 1999/06/21 13:22:22 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -144,6 +144,10 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  ptrail      %5d\n",rem->ptrail);
 		fprintf(f, "  repeat %5d %5d\n",rem->prepeat, rem->srepeat);
 		fprintf(f, "  gap    %lu\n\n",rem->gap);
+	}
+	if(rem->freq!=0)
+	{
+		fprintf(f, "  frequency    %lu\n",rem->freq);
 	}
 }
 

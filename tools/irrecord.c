@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.2 1999/05/07 17:48:10 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.3 1999/06/21 13:22:22 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -66,6 +66,7 @@ struct lengths
 };
 
 int lirc;
+unsigned long features;
 
 struct ir_remote remote;
 struct ir_ncode code;
