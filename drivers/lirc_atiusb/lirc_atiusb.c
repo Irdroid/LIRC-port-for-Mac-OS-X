@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.11 2003/11/13 15:53:24 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.12 2003/11/14 05:38:24 pmiller9 Exp $
  */
 
 /*
@@ -66,7 +66,7 @@
 
 #define CODE_LENGTH			5
 #define CODE_MIN_LENGTH		4
-#define BUFLEN				(CODE_LENGTH*4)
+#define USB_BUFLEN			(CODE_LENGTH*4)
 
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
@@ -97,10 +97,10 @@ struct irctl {
 	struct urb irq, out;
 
 	struct lirc_plugin *p;
-	unsigned char buf[BUFLEN];
+	unsigned char buf[USB_BUFLEN];
 
 	wait_queue_head_t wait_out;
-	unsigned char buf_out[BUFLEN];
+	unsigned char buf_out[USB_BUFLEN];
 
 	int devnum;
 	int send_flags;
@@ -246,8 +246,7 @@ static void usb_remote_irq(struct urb *urb)
 {
 	struct irctl *ir = urb->context;
 	char buf[CODE_LENGTH];
-	char *ptr;
-	int i;
+	int i, len;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: usb irq called with no context\n");
@@ -260,11 +259,11 @@ static void usb_remote_irq(struct urb *urb)
 			ir->devnum, urb->actual_length);
 
 	/* some remotes emit both 4 and 5 byte length codes. */
-	if (urb->actual_length < CODE_MIN_LENGTH || urb->actual_length > CODE_LENGTH) return;
+	len = urb->actual_length;
+	if (len < CODE_MIN_LENGTH || len > CODE_LENGTH) return;
 
-	ptr = urb->transfer_buffer;
-	for (i = 0; i < urb->actual_length; i++) buf[i] = *(ptr++);
-	for (; i < CODE_LENGTH; i++) buf[i] = 0;
+	memcpy(buf,urb->transfer_buffer,len);
+	for (i = len; i < CODE_LENGTH; i++) buf[i] = 0;
 
 	lirc_buffer_write_1(ir->p->rbuf, buf);
 	wake_up(&ir->p->rbuf->wait_poll);
@@ -328,7 +327,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	bytes_in_key = CODE_LENGTH;
 
 
-	len = (maxp > BUFLEN) ? BUFLEN : maxp;
+	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
 	buf_len = len - (len % bytes_in_key);
 
 	if (!(ir = kmalloc(sizeof(struct irctl), GFP_KERNEL))) {
@@ -389,7 +388,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		     usb_remote_irq, ir, endpoint->bInterval);
 	FILL_INT_URB(&ir->out, dev,
 		     usb_sndintpipe(dev, epout->bEndpointAddress), ir->buf_out,
-		     BUFLEN, usb_remote_out, ir, epout->bInterval);
+		     USB_BUFLEN, usb_remote_out, ir, epout->bInterval);
 
 	if (dev->descriptor.iManufacturer
 	    && usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
