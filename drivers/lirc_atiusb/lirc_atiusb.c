@@ -1,6 +1,6 @@
 /* lirc_atiusb - USB remote support for LIRC
  * (currently only supports X10 USB remotes)
- * Version 0.3  [beta status]
+ * Version 0.4  [beta status]
  *
  * Copyright (C) 2003-2004 Paul Miller <pmiller9@users.sourceforge.net>
  *
@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.25 2004/04/27 19:04:43 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.26 2004/04/28 04:42:58 pmiller9 Exp $
  */
 
 /*
@@ -67,12 +67,15 @@
 #define CODE_MIN_LENGTH		4
 #define USB_BUFLEN		(CODE_LENGTH*4)
 
+/* module parameters */
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
 #else
 	static int debug = 0;
 #endif
 #define dprintk			if (debug) printk
+static int mask = 0xFFFF;	// channel acceptance bit mask
+static int unique = 0;		// enable channel-specific codes
 
 /* get hi and low bytes of a 16-bits int */
 #define HI(a)			((unsigned char)((a) >> 8))
@@ -217,9 +220,9 @@ static int set_use_inc(void *data)
 		return -EIO;
 	}
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
-	
+
 	MOD_INC_USE_COUNT;
-	
+
 	if (!ir->connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
@@ -259,6 +262,20 @@ static void set_use_dec(void *data)
 	MOD_DEC_USE_COUNT;
 }
 
+static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
+{
+	char codes[USB_BUFLEN*3 + 1];
+	int i;
+
+	if (len <= 0)
+		return;
+
+	for (i = 0; i < len && i < USB_BUFLEN; i++) {
+		snprintf(codes+i*3, 4, "%02x ", buf[i] & 0xFF);
+	}
+	printk(DRIVER_NAME "[%d]: data received %s (length=%d)\n",
+		ir->devnum, codes, len);
+}
 
 #ifdef KERNEL_2_5
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
@@ -269,6 +286,7 @@ static void usb_remote_recv(struct urb *urb)
 	struct irctl *ir;
 	char buf[CODE_LENGTH];
 	int i, len;
+	int chan;
 
 	if (!urb)
 		return;
@@ -278,22 +296,35 @@ static void usb_remote_recv(struct urb *urb)
 		return;
 	}
 
-	dprintk(DRIVER_NAME "[%d]: data received (length %d)\n",
-		ir->devnum, urb->actual_length);
+	len = urb->actual_length;
+	if (debug)
+		usb_remote_printdata(ir,urb->transfer_buffer,len);
 
 	switch (urb->status) {
 
 	/* success */
 	case SUCCESS:
 		/* some remotes emit both 4 and 5 byte length codes. */
-		len = urb->actual_length;
 		if (len < CODE_MIN_LENGTH || len > CODE_LENGTH) return;
-
 		memcpy(buf,urb->transfer_buffer,len);
 		for (i = len; i < CODE_LENGTH; i++) buf[i] = 0;
 
-		lirc_buffer_write_1(ir->p->rbuf, buf);
-		wake_up(&ir->p->rbuf->wait_poll);
+		// *** channel not tested with 4/5-byte Dutch remotes ***
+		chan = ((buf[len-1]>>4) & 0x0F);
+		if ((1<<chan) & mask) {
+			dprintk(DRIVER_NAME "[%d]: accept channel %d\n",
+				ir->devnum, chan+1);
+
+			if (!unique)
+				buf[len-1] &= 0x0F;
+
+			lirc_buffer_write_1(ir->p->rbuf, buf);
+			wake_up(&ir->p->rbuf->wait_poll);
+
+		} else {
+			dprintk(DRIVER_NAME "[%d]: ignore channel %d\n",
+				ir->devnum, chan+1);
+		}
 		break;
 
 	/* unlink */
@@ -620,6 +651,10 @@ MODULE_DEVICE_TABLE (usb, usb_remote_id_table);
 
 MODULE_PARM(debug, "i");
 MODULE_PARM_DESC(debug, "enable driver debug mode");
+MODULE_PARM(mask, "i");
+MODULE_PARM_DESC(mask, "set channel acceptance bit mask");
+MODULE_PARM(unique, "i");
+MODULE_PARM_DESC(unique, "enable channel-specific codes");
 
 #ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
