@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.9 2001/11/18 14:14:24 lirc Exp $      */
+/*      $Id: receive.c,v 5.10 2002/02/06 20:27:44 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -65,12 +65,21 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 	return(0);
 }
 
-void init_rec_buffer()
+void init_rec_buffer(void)
 {
 	memset(&rec_buffer,0,sizeof(rec_buffer));
 }
 
-int clear_rec_buffer()
+void rewind_rec_buffer(void)
+{
+	rec_buffer.rptr=0;
+	rec_buffer.too_long=0;
+	rec_buffer.pendingp=0;
+	rec_buffer.pendings=0;
+	rec_buffer.sum=0;
+}
+
+int clear_rec_buffer(void)
 {
 	int move,i;
 
@@ -130,24 +139,11 @@ int clear_rec_buffer()
 		rec_buffer.data[rec_buffer.wptr]=data;
 		rec_buffer.wptr++;
 	}
-	rec_buffer.rptr=0;
-	
-	rec_buffer.too_long=0;
+
+	rewind_rec_buffer();
 	rec_buffer.is_biphase=0;
-	rec_buffer.pendingp=0;
-	rec_buffer.pendings=0;
-	rec_buffer.sum=0;
 	
 	return(1);
-}
-
-void rewind_rec_buffer()
-{
-	rec_buffer.rptr=0;
-	rec_buffer.too_long=0;
-	rec_buffer.pendingp=0;
-	rec_buffer.pendings=0;
-	rec_buffer.sum=0;
 }
 
 inline void unget_rec_buffer(int count)
