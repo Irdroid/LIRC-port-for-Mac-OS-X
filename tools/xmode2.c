@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.1 1999/08/24 19:21:43 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.2 1999/08/25 08:44:04 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -138,8 +138,8 @@ int main(int argc, char **argv)
 
   fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
   if(fd==-1)  {
-    perror("mode2");
-    printf("error opening %sn",LIRC_DRIVER_DEVICE);
+    perror("xmode2");
+    printf("error opening %s\n",LIRC_DRIVER_DEVICE);
     exit(1);
   };
 	
