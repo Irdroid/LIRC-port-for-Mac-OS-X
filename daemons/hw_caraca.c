@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.1 2000/08/25 19:21:17 columbus Exp $   */
+/*      $Id: hw_caraca.c,v 1.2 2000/12/08 23:36:29 columbus Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -45,6 +45,7 @@ ir_code pre,code;
 
 struct hardware hw=
 {
+	NULL,                     /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.8 2000/09/18 20:14:13 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.9 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -126,45 +127,82 @@ int main(int argc, char **argv)
   lirc_t x1,y1,x2,y2;
   int result;
   char textbuffer[80];
-  int d,div=5;
+  int div=5;
   int dmode=0;
   
-  while ((d = getopt (argc, argv, "t:Tm")) != EOF)
-    {
-      switch (d)
-	{
-	case 't':				// timediv
-	  div = strtol(optarg,NULL,10);
-	  break;
-	case 'T':				// timediv
-	  div = strtol(optarg,NULL,10);
-	  break;
-	case 'm':
-	  dmode=1;
-          break;
-	}
-        
-    }
+	char *device=LIRC_DRIVER_DEVICE;
+	char *progname;
 
-  fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
-  if(fd==-1)  {
-    perror("xmode2");
-    printf("error opening %s\n",LIRC_DRIVER_DEVICE);
-    exit(1);
-  };
-  if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
-  {
-    printf("This program is only intended for receivers supporting the pulse/space layer.\n");
-    printf("Note that this is no error, but this program simply makes no sense for your\nreceiver.\n");
-    close(fd);
-    exit(1);
-  }
+	progname="xmode2";
+	while(1)
+	{
+		int c;
+		static struct option long_options[] =
+		{
+			{"help",no_argument,NULL,'h'},
+			{"version",no_argument,NULL,'v'},
+			{"device",required_argument,NULL,'d'},
+			{"timediv",required_argument,NULL,'t'},
+			{"mode",required_argument,NULL,'m'},
+			{0, 0, 0, 0}
+		};
+		c = getopt_long(argc,argv,"hvd:t:m",long_options,NULL);
+		if(c==-1)
+			break;
+		switch (c)
+		{
+		case 'h':
+			printf("Usage: %s [options]\n",progname);
+			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -d --device=device\tread from given device\n");
+			printf("\t -t --timediv=value\tms per unit\n");
+			printf("\t -m --mode\t\tenable alternative display mode\n");
+			return(EXIT_SUCCESS);
+		case 'v':
+			printf("%s\n",progname);
+			return(EXIT_SUCCESS);
+		case 'd':
+			device=optarg;
+			break;
+		case 't': /* timediv */
+			div = strtol(optarg,NULL,10);
+			break;
+		case 'm':
+			dmode=1;
+			break;
+		default:
+			printf("Usage: %s [options]\n",progname);
+			return(EXIT_FAILURE);
+		}
+	}
+	if (optind < argc-1)
+	{
+		fprintf(stderr,"%s: too many arguments\n",progname);
+		return(EXIT_FAILURE);
+	}
+	
+	fd=open(device,O_RDONLY);
+	if(fd==-1)  {
+		perror(progname);
+		fprintf(stderr,"%s: error opening %s\n",progname,device);
+		exit(EXIT_FAILURE);
+	};
+	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	{
+		printf("This program is only intended for receivers "
+		       "supporting the pulse/space layer.\n");
+		printf("Note that this is no error, but this program simply "
+		       "makes no sense for your\nreceiver.\n");
+		close(fd);
+		exit(EXIT_FAILURE);
+	}
 	
   initscreen();
 	
   y1=20;
   x1=x2=0;
-  sprintf(textbuffer,"%d ms/div",div);
+  sprintf(textbuffer,"%d ms/unit",div);
   for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
   XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
   XFlush(d1);
@@ -210,7 +248,7 @@ int main(int argc, char **argv)
 	  {
 	    //		    printf("%.8x\t",data);
 	    x2=(data&PULSE_MASK)/(div*50);
-	    if (x2>400)
+	    if(x2>400)
 	      {
                 if(!dmode) { y1+=15; } else { y1++; }
 		x1=0;
@@ -254,4 +292,5 @@ int main(int argc, char **argv)
       //	       	gl_copyscreen(physicalscreen);
       //      XFlush(d1);
     };
+  exit(EXIT_SUCCESS);
 }

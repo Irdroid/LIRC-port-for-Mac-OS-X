@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.6 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.7 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -43,6 +43,7 @@ ir_code pre,code;
 
 struct hardware hw=
 {
+	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
@@ -98,14 +99,14 @@ int logitech_init(void)
 {
 	signal_length=hw.code_length*1000000/1200;
 	
-	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
+	if(!tty_create_lock(hw.device))
 	{
 		logprintf(LOG_ERR,"could not create lock files");
 		return(0);
 	}
-	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
+	if((hw.fd=open(hw.device,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 	{
-		logprintf(LOG_ERR,"could not open lirc");
+		logprintf(LOG_ERR,"could not open %s",hw.device);
 		logperror(LOG_ERR,"logitech_init()");
 		tty_delete_lock();
 		return(0);

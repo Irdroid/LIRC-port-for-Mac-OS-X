@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.3 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: hw_slinke.c,v 5.4 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -89,6 +89,7 @@ lirc_t gap,signal_length;
 ir_code pre,code;
 
 struct hardware hw = {
+    LIRC_DRIVER_DEVICE, /* default device */
     -1,                 /* fd */
     LIRC_CAN_REC_MODE2, /* features */
     0,                  /* send_mode */
@@ -316,13 +317,13 @@ int slinke_init(void){
     logprintf(LOG_INFO,"slinke_init");
     signal_length=hw.code_length*1000000/1200;
     
-    if(!tty_create_lock(LIRC_DRIVER_DEVICE)){
+    if(!tty_create_lock(hw.device)){
         logprintf(LOG_ERR,"could not create lock files");
         return(0);
     } /* if */
 
-    if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NOCTTY))<0){
-        logprintf(LOG_ERR,"could not open lirc");
+    if((hw.fd=open(hw.device,O_RDWR|O_NOCTTY))<0){
+        logprintf(LOG_ERR,"could not open %s",hw.device);
         logperror(LOG_ERR,"slinke_init()");
         tty_delete_lock();
         return(0);

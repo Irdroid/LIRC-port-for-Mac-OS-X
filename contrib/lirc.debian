@@ -12,7 +12,7 @@ test -f /usr/local/sbin/lircmd || exit 0
 case "$1" in
   start)
     echo -n "Starting lirc daemon: lircd"
-    start-stop-daemon --start --quiet --exec /usr/local/sbin/lircd
+    start-stop-daemon --start --quiet --exec /usr/local/sbin/lircd -- --device=/dev/lirc
     echo -n " lircmd"
     start-stop-daemon --start --quiet --exec /usr/local/sbin/lircmd
     echo "."
@@ -35,7 +35,7 @@ case "$1" in
     start-stop-daemon --stop --quiet --exec /usr/local/sbin/lircd
     sleep 1
     echo -n "Starting lirc daemon: lircd"
-    start-stop-daemon --start --quiet --exec /usr/local/sbin/lircd
+    start-stop-daemon --start --quiet --exec /usr/local/sbin/lircd -- --device=/dev/lirc
     echo -n " lircmd"
     start-stop-daemon --start --quiet --exec /usr/local/sbin/lircmd
     echo "."

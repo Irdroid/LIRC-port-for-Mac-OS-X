@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.5 2000/03/25 12:14:55 columbus Exp $      */
+/*      $Id: smode2.c,v 5.6 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <getopt.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -101,29 +102,67 @@ int main(int argc, char **argv)
 	int c=10;
 	char textbuffer[80];
 	int d,div=5;
+	char *device=LIRC_DRIVER_DEVICE;
+	char *progname;
 
-	while ((d = getopt (argc, argv, "t:")) != EOF)
+	progname="smode2";
+	while(1)
 	{
-	switch (d)
-	    {
-	    case 't':				// timediv
-		div = strtol(optarg,NULL,10);
-		break;
-	    }
+		int c;
+		static struct option long_options[] =
+		{
+			{"help",no_argument,NULL,'h'},
+			{"version",no_argument,NULL,'v'},
+			{"device",required_argument,NULL,'d'},
+			{"timediv",required_argument,NULL,'t'},
+			{0, 0, 0, 0}
+		};
+		c = getopt_long(argc,argv,"hvd:t:",long_options,NULL);
+		if(c==-1)
+			break;
+		switch (c)
+		{
+		case 'h':
+			printf("Usage: %s [options]\n",progname);
+			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -d --device=device\tread from given device\n");
+			printf("\t -t --timediv=value\tms per unit\n");
+			return(EXIT_SUCCESS);
+		case 'v':
+			printf("%s\n",progname);
+			return(EXIT_SUCCESS);
+		case 'd':
+			device=optarg;
+			break;
+		case 't': /* timediv */
+			div = strtol(optarg,NULL,10);
+			break;
+		default:
+			printf("Usage: %s [options]\n",progname);
+			return(EXIT_FAILURE);
+		}
 	}
-
-	fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
+	if (optind < argc-1)
+	{
+		fprintf(stderr,"%s: too many arguments\n",progname);
+		return(EXIT_FAILURE);
+	}
+	
+	fd=open(device,O_RDONLY);
 	if(fd==-1)  {
-		perror("smode2");
-		printf("error opening " LIRC_DRIVER_DEVICE "\n");
-		exit(1);
+		perror(progname);
+		fprintf(stderr,"%s: error opening %s\n",progname,device);
+		exit(EXIT_FAILURE);
 	};
 	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
 	{
-		printf("This program is only intended for receivers supporting the pulse/space layer.\n");
-		printf("Note that this is no error, but this program simply makes no sense for your\nreceiver.\n");
+		printf("This program is only intended for receivers "
+		       "supporting the pulse/space layer.\n");
+		printf("Note that this is no error, but this program simply "
+		       "makes no sense for your\nreceiver.\n");
 		close(fd);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	
 	initscreen();
@@ -133,7 +172,7 @@ int main(int argc, char **argv)
 	printf("5\n");
 	for (y2=0;y2<640;y2+=20) gl_line(y2,0,y2,480,1);
 	printf("6\n");
-	sprintf(textbuffer,"%d ms/div",div);
+	sprintf(textbuffer,"%d ms/unit",div);
 	printf("7\n");
 	gl_write(500,10,textbuffer);
 	printf("7\n");
@@ -172,4 +211,5 @@ int main(int argc, char **argv)
 //		gl_copyscreen(physicalscreen);
 	};
     closescreen();
+    exit(EXIT_SUCCESS);
 }

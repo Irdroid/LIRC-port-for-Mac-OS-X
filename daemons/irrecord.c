@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.23 2000/11/23 19:36:07 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.24 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -72,7 +72,7 @@ extern struct hardware hw;
 extern struct ir_remote *last_remote;
 
 char *progname;
-const char *usage="Usage: %s --help | --version | [--force] file\n";
+const char *usage="Usage: %s --help | --version | [-d | --device=device] | [--force] file\n";
 
 struct ir_remote remote;
 struct ir_ncode ncode;
@@ -110,8 +110,11 @@ lirc_t signals[MAX_SIGNALS];
 
 #ifdef DEBUG
 int debug=10;
+#else
+int debug=0;
+#endif
 FILE *lf=NULL;
-char *hostname="k6";
+char *hostname="";
 int daemonized=0;
 
 void logprintf(int prio,char *format_str, ...)
@@ -152,10 +155,6 @@ void logperror(int prio,const char *s)
 		logprintf(prio,"%s",strerror(errno));
 	}
 }
-#else
-void logprintf(int prio,char *format_str, ...) {}
-void logperror(int prio,const char *s) {}
-#endif
 
 void dosigterm(int sig)
 {
@@ -184,10 +183,11 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+			{"device",required_argument,NULL,'d'},
 			{"force",no_argument,NULL,'f'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvf",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:f",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
@@ -197,10 +197,14 @@ int main(int argc,char **argv)
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -f --force\t\tforce raw mode\n");
+			printf("\t -d --device=device\tread from given device\n");
 			exit(EXIT_SUCCESS);
 		case 'v':
 			printf("irrecord %s\n",IRRECORD_VERSION);
 			exit(EXIT_SUCCESS);
+		case 'd':
+			hw.device=optarg;
+			break;
 		case 'f':
 			force=1;
 			break;
@@ -291,7 +295,8 @@ int main(int argc,char **argv)
 		if(!hw.init_func())
 		{
 			fprintf(stderr,"%s: could not init hardware"
-				" (lircd running ? --> close it)\n",progname);
+				" (lircd running ? --> close it, "
+				"check permissions)\n",progname);
 			fclose(fout);
 			unlink(filename);
 			exit(EXIT_FAILURE);

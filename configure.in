@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.45 2000/12/08 19:24:22 columbus Exp $
+dnl $Id: configure.in,v 5.46 2000/12/08 23:36:29 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -518,7 +518,6 @@ AC_OUTPUT([
   drivers/lirc_sir/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_i2c/Makefile
-  drivers/lirc_fly98/Makefile
   drivers/lirc_gpio/Makefile
   drivers/lirc_dev/Makefile
   daemons/Makefile

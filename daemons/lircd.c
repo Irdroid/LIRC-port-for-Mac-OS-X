@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.23 2000/11/25 10:31:11 columbus Exp $      */
+/*      $Id: lircd.c,v 5.24 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1376,15 +1376,16 @@ int main(int argc,char **argv)
 			{"version",no_argument,NULL,'v'},
 			{"nodaemon",no_argument,NULL,'n'},
 			{"permission",required_argument,NULL,'p'},
+			{"device",required_argument,NULL,'d'},
 #                       ifdef DEBUG
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{0, 0, 0, 0}
 		};
 #               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvnp:D::",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:d:D::",long_options,NULL);
 #               else
-		c = getopt_long(argc,argv,"hvnp:",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:d:",long_options,NULL);
 #               endif
 		if(c==-1)
 			break;
@@ -1396,6 +1397,7 @@ int main(int argc,char **argv)
 			printf("\t -v --version\t\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\t\tdon't fork to background\n");
 			printf("\t -p --permission=mode\t\tfile permissions for " LIRCD "\n");
+			printf("\t -d --device=device\t\tread from given device\n");
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
@@ -1413,6 +1415,9 @@ int main(int argc,char **argv)
 				return(EXIT_FAILURE);
 			}
 			permission=oatoi(optarg);
+			break;
+		case 'd':
+			hw.device=optarg;
 			break;
 #               ifdef DEBUG
 		case 'D':

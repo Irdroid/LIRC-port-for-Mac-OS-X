@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hardware.h,v 5.3 2000/12/08 23:36:29 columbus Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -18,6 +18,7 @@
 
 struct hardware
 {
+	char *device;
 	int fd;
 	unsigned long features;
 	unsigned long send_mode;

@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.2 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: hw_irman.c,v 5.3 2000/12/08 23:36:30 columbus Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -44,6 +44,7 @@ ir_code code;
 
 struct hardware hw=
 {
+	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
@@ -132,14 +133,14 @@ int irman_decode(struct ir_remote *remote,
 
 int irman_init(void)
 {
-	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
+	if(!tty_create_lock(hw.device))
 	{
 		logprintf(LOG_ERR,"could not create lock files");
 		return(0);
 	}
-	if((hw.fd=ir_init(LIRC_DRIVER_DEVICE))<0)
+	if((hw.fd=ir_init(hw.device))<0)
 	{
-		logprintf(LOG_ERR,"could not open lirc");
+		logprintf(LOG_ERR,"could not open %s",hw.device);
 		logperror(LOG_ERR,"irman_init()");
 		tty_delete_lock();
 		return(0);

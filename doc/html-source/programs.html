@@ -6,7 +6,8 @@
 domain socket</P>
 
 <PRE>
-  <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> | --permission=<em>mode</em>] [config_file]
+  <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> | --permission=<em>mode</em>] 
+        [-d<em>device</em> | --device=<em>device</em>] [config_file]
   <B>lircd</B> -h | --help
   <B>lircd</B> -v | --version
 </PRE>
@@ -31,6 +32,12 @@ details. If no --permission option is given when the socket is
 initially created the default is to give all users read and write
 permissions (0666 in octal representation). If /dev/lircd already
 exists this option has no effect.
+</P>
+
+<P>
+With the --device option you can select the character device which
+lircd should read from. The default currently is /dev/lirc but it
+probably will change in future.
 </P>
 
 <P>
@@ -380,7 +387,8 @@ HREF="mailto:heinrich@mad.scientist.com">me</A> an email.
 LIRC</P>
 
 <PRE>
-  <B>irrecord</B> [-f | --force] file
+  <B>irrecord</B> [-d<em>device</em> | --device=<em>device</em>]
+           [-f | --force] file
   <B>irrecord</B> -h | --help
   <B>irrecord</B> -v | --version
 </PRE>
@@ -439,11 +447,20 @@ argument it will watch /dev/lircd. Useful for debugging.
 signals</P>
 
 <PRE>
-  <B>mode2</B>
-  <B>smode2</B> [-t ms/div]
-  <B>xmode2</B> [-t ms/div]
-</PRE>
+  <B>mode2</B> [-d<em>device</em> | --device=<em>device</em>]
+  <B>mode2</B> -h | --help
+  <B>mode2</B> -v | --version
 
+  <B>smode2</B> [-d<em>device</em> | --device=<em>device</em>]
+         [-t<em>ms/unit</em> | --timediv=<em>ms/unit</em>]
+  <B>smode2</B> -h | --help
+  <B>smode2</B> -v | --version
+
+  <B>xmode2</B> [-d<em>device</em> | --device=<em>device</em>]
+         [-t<em>ms/unit</em> | --timediv=<em>ms/unit</em>] [-m | --mode]
+  <B>xmode2</B> -h | --help
+  <B>xmode2</B> -v | --version
+</PRE>
 
 <P>
 The main purpose of these programs is to check operation of your
@@ -459,15 +476,17 @@ mode2 will simply print pulse&amp;space lengths to stdout.
 
 <P>
 smode2 uses the svgalib to show the IR waveform in a graphical
-representation.  The time division is variable from 1 ms/div to
+representation.  The time division is variable from 1 ms/unit to
 extremely high values (integer type) but there is no point increasing
-this value above 20 ms/div, because one pulse is about 1 ms. This kind
+this value above 20 ms/unit, because one pulse is about 1 ms. This kind
 of presentation is much more exciting than the simple pulse&amp;space
 output showed by mode2.
 </P>
 
 <P>
-xmode2 is based on smode2 by Sinkovics Zoltan. It is just a
-conversion from svga to X with some basic support for resizing.
+xmode2 is based on smode2 by Sinkovics Zoltan. It is just a conversion
+from svga to X with some basic support for resizing. The only
+differnance is that the --mode option enables an alternative display
+mode.
 </P>
 

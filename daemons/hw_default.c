@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.18 2000/11/25 10:31:11 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.19 2000/12/08 23:36:29 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -62,16 +62,17 @@ unsigned long supported_rec_modes[]=
 
 struct hardware hw=
 {
-	-1,               /* fd */
-	0,                /* features */
-	0,                /* send_mode */
-	0,                /* rec_mode */
-	0,                /* code_length */
-	default_init,     /* init_func */
-	default_deinit,   /* deinit_func */
-	default_send,     /* send_func */
-	default_rec,      /* rec_func */
-	default_decode,   /* decode_func */
+	LIRC_DRIVER_DEVICE, /* default device */
+	-1,                 /* fd */
+	0,                  /* features */
+	0,                  /* send_mode */
+	0,                  /* rec_mode */
+	0,                  /* code_length */
+	default_init,       /* init_func */
+	default_deinit,     /* deinit_func */
+	default_send,       /* send_func */
+	default_rec,        /* rec_func */
+	default_decode,     /* decode_func */
 };
 
 /*
@@ -141,9 +142,9 @@ int default_init()
 	/* FIXME: other modules might need this, too */
 	init_rec_buffer();
 	init_send_buffer();
-	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
+	if((hw.fd=open(hw.device,O_RDWR))<0)
 	{
-		logprintf(LOG_ERR,"could not open lirc");
+		logprintf(LOG_ERR,"could not open %s",hw.device);
 		logperror(LOG_ERR,"default_init()");
 		return(0);
 	}
@@ -165,7 +166,7 @@ int default_init()
 	{
 		default_deinit();
 		logprintf(LOG_ERR,"%s is not a character device!!!",
-			  LIRC_DRIVER_DEVICE);
+			  hw.device);
 		logperror(LOG_ERR,"something went wrong during "
 			  "installation");
 		return(0);

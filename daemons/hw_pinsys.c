@@ -53,6 +53,7 @@ ir_code code;
 
 struct hardware hw=
 {
+	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
@@ -186,19 +187,20 @@ int pinsys_init(void)
 {
 	signal_length=(hw.code_length+(hw.code_length/8)*2)*1000000/1200;
 
-	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
+	if(!tty_create_lock(hw.device))
 	{
 		logprintf(LOG_ERR,"could not create lock files");
 		return(0);
 	}
-	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
+	if((hw.fd=open(hw.device,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 	{
 		int detected;
 		/* last character gets overwritten */
 		char auto_lirc_device[]="/dev/ttyS_";
 		
-		logprintf(LOG_WARNING,"could not open the lirc device, "
-			  "autodetecting on /dev/ttyS[0-3]\n");
+		tty_delete_lock();
+		logprintf(LOG_WARNING,"could not open %s, "
+			  "autodetecting on /dev/ttyS[0-3]",hw.device);
 		logperror(LOG_WARNING,"pinsys_init()");
 		/* it can also mean you compiled serial support as a
 		   module and it isn't inserted, but that's unlikely
@@ -215,14 +217,14 @@ int pinsys_init(void)
 		else /* detected */
 		{
 			auto_lirc_device[9]='0'+detected;
-
-			if((hw.fd=open(auto_lirc_device,
+			hw.device=auto_lirc_device;
+			if((hw.fd=open(hw.device,
 				       O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 			{
 				/* unlikely, but hey. */
 				logprintf(LOG_ERR,"couldn't open "
 					  "autodetected device \"%s\"",
-					  auto_lirc_device);
+					  hw.device);
 				logperror(LOG_ERR,"pinsys_init()");
 				tty_delete_lock();
 				return(0);

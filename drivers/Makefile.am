@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.12 2000/12/08 19:24:22 columbus Exp $
+## $Id: Makefile.am,v 5.13 2000/12/08 23:36:30 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -22,7 +22,7 @@ rmlink:
 	test "@irtty@" = "" || $(RM) @devdir@/lirc
 
 mkdev:
-	test "@driver@" = "mediafocusI" && test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
+	test "@driver@" != "mediafocusI" || test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
 
 rmdev:
-	test "@driver@" = "mediafocusI" && test -c @devdir@/lirc && $(RM) @devdir@/lirc
+	test "@driver@" != "mediafocusI" || test -c @devdir@/lirc && $(RM) @devdir@/lirc
