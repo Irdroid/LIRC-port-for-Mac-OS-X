@@ -34,6 +34,31 @@
 #include "receive.h"
 
 
+static int devinput_init();
+static int devinput_deinit(void);
+static int devinput_decode(struct ir_remote *remote,
+			   ir_code *prep, ir_code *codep, ir_code *postp,
+			   int *repeat_flagp, lirc_t *remaining_gapp);
+static char *devinput_rec(struct ir_remote *remotes);
+
+struct hardware hw_devinput=
+{
+	"/dev/input/event0",	/* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	32,			/* code_length */
+	devinput_init,		/* init_func */
+	NULL,			/* config_func */
+	devinput_deinit,	/* deinit_func */
+	NULL,			/* send_func */
+	devinput_rec,		/* rec_func */
+	devinput_decode,	/* decode_func */
+	NULL,			/* readdata */
+	"dev/input"
+};
+
 static ir_code code;
 static int repeat_flag=0;
 
@@ -74,9 +99,12 @@ int devinput_decode(struct ir_remote *remote,
 {
 	logprintf(LOG_DEBUG, "devinput_decode");
 
-	*prep = 0;
-	*codep = code;
-	*postp = 0;
+        if(!map_code(remote,prep,codep,postp,
+                     0,0,hw_devinput.code_length,code,0,0))
+        {
+                return(0);
+        }
+	
 	*repeat_flagp = repeat_flag;
 	*remaining_gapp = 0;
 	
@@ -112,23 +140,3 @@ char *devinput_rec(struct ir_remote *remotes)
 
 	return decode_all(remotes);
 }
-
-
-
-struct hardware hw_devinput=
-{
-	"/dev/input/event0",	/* "device" */
-	-1,			/* fd (device) */
-	LIRC_CAN_REC_LIRCCODE,	/* features */
-	0,			/* send_mode */
-	LIRC_MODE_LIRCCODE,	/* rec_mode */
-	32,			/* code_length */
-	devinput_init,		/* init_func */
-	NULL,			/* config_func */
-	devinput_deinit,	/* deinit_func */
-	NULL,			/* send_func */
-	devinput_rec,		/* rec_func */
-	devinput_decode,	/* decode_func */
-	NULL,			/* readdata */
-	"dev/input"
-};
