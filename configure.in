@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.118 2004/01/13 13:59:48 lirc Exp $
+dnl $Id: configure.in,v 5.119 2004/03/29 20:02:14 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -866,9 +866,9 @@ AC_ARG_WITH(port,
 [  --with-port=port        specify the port number for the lirc device.],
 port=${withval},
 [case $lirc_driver in
-lirc_serial)   port=${port:-0x3f8} ;;
-lirc_sir)   port=${port:-0x3f8} ;;
-lirc_parallel) port=${port:-0x378} ;;
+*lirc_serial)   port=${port:-0x3f8} ;;
+*lirc_sir)   port=${port:-0x3f8} ;;
+*lirc_parallel) port=${port:-0x378} ;;
 esac]
 )
 
@@ -876,9 +876,9 @@ AC_ARG_WITH(irq,
 [  --with-irq=irq          specify the irq line for the lirc device.],
 irq=${withval},
 [case $lirc_driver in
-lirc_serial)   irq=${irq:-4} ;;
-lirc_sir)   irq=${irq:-4} ;;
-lirc_parallel) irq=${irq:-7} ;;
+*lirc_serial)   irq=${irq:-4} ;;
+*lirc_sir)   irq=${irq:-4} ;;
+*lirc_parallel) irq=${irq:-7} ;;
 esac]
 )
 
