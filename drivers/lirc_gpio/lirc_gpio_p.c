@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.10 2000/06/22 20:55:23 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.11 2000/07/13 18:59:55 columbus Exp $
  *
  */
 
@@ -67,7 +67,10 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0},
 	/* CPH031 and CPH033 cards (?) */
-	{BTTV_MIRO,          0x00001f00,          0, 0x0004000,          0,   0, 10, 32}
+	{BTTV_MIRO,          0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+	/* just a guess */
+	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 50, 32},
+ 	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 50, 32}
 };
 
 static unsigned char code_length = 0;
@@ -100,6 +103,10 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	unsigned long mask = gpio_mask;
 	unsigned char shift = 0;
 
+	/* FIXME FIXME FIXME FIXME FIXME FIXME */
+	printk("lirc_gpio_p: gpio_val is %lx\n",(unsigned long) gpio_val);
+	/* FIXME FIXME FIXME FIXME FIXME FIXME */
+	
 	gpio_val ^= gpio_xor_mask;
 	
 	if (gpio_lock_mask && (gpio_val & gpio_lock_mask)) {
@@ -163,6 +170,14 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		break;
 	case BTTV_AVERMEDIA98:
 		break;
+        case BTTV_MAGICTVIEW061:
+        case BTTV_MAGICTVIEW063:
+		codes[0]=(codes[0]&0x01)
+			|(codes[0]&0x02<<1)
+			|(codes[0]&0x04<<2)
+			|(codes[0]&0x08>>2)
+			|(codes[0]&0x10>>1);
+		/* FALLTHROUGH */
 	case BTTV_MIRO:
 		codes[2]=reverse(codes[0],8);
 		codes[3]=(~codes[2])&0xff;

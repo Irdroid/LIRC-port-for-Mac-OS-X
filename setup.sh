@@ -265,12 +265,14 @@ function ConfigDriver
         elif test "$1" = "4"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 14 74 5 \
+		--menu "$CONFIG_DRIVER_TEXT" 14 74 7 \
 			1 "Hauppauge TV card (new I2C layer required)" \
 			2 "AverMedia TV card" \
 			3 "Fly98 TV card" \
                         4 "Askey Magic TView CPH03x (use bttv settings for MIRO PCTV)" \
-                        5 "Pixelview PlayTV pro card" 2> $TEMP;
+			5 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878)" \
+			6 "TView99 CPH063" \
+                        7 "Pixelview PlayTV pro card" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -278,7 +280,9 @@ function ConfigDriver
 		elif test "$1" = "2"; then LIRC_DRIVER=avermedia; DRIVER_PARAMETER=none;
 		elif test "$1" = "3"; then LIRC_DRIVER=fly98;     DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=cph03x; DRIVER_PARAMETER=none;
-		elif test "$1" = "5"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
+		elif test "$1" = "5"; then LIRC_DRIVER=cph06x; DRIVER_PARAMETER=none;
+		elif test "$1" = "6"; then LIRC_DRIVER=cph06x; DRIVER_PARAMETER=none;
+		elif test "$1" = "7"; then LIRC_DRIVER=pixelview_pro; DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.32 2000/07/08 17:33:34 columbus Exp $
+dnl $Id: configure.in,v 5.33 2000/07/13 18:59:55 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -105,7 +105,8 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, pctv, comX, lptX, avermedia,
-                          hauppauge, fly98, pixelview_pro, logitech, slinke, irreal],
+                          hauppauge, fly98, pixelview_pro, cph03x, cph06x,
+                          logitech, slinke, irreal],
 
 driver=${withval},
 driver="unset"
@@ -199,6 +200,12 @@ if test "$driver" = "cph03x"; then
   lircd_conf="cph03x/lircd.conf.cph03x"
 #  lircmd_conf="cph03x/lircmd.conf.cph03x"
 fi
+if test "$driver" = "cph06x"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  gpio_module="lirc_gpio_p.o"
+  lircd_conf="cph03x/lircd.conf.cph03x"
+#  lircmd_conf="cph03x/lircmd.conf.cph03x"
+fi
 if test "$driver" = "pixelview_pro"; then
   lirc_driver="lirc_dev lirc_gpio"
   gpio_module="lirc_gpio_p.o"
@@ -282,7 +289,7 @@ AC_ARG_ENABLE(maintainer-mode,
 [  --enable-maintainer-mode    enable maintainer specific things],
 [
 AC_DEFINE(MAINTAINER_MODE)
-maintmode_daemons_extra="lircd.simrec lircd.simsend"
+maintmode_daemons_extra="lircd.simrec lircd.simsend slinke"
 ])
 
 AC_ARG_WITH(devdir,
