@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.7 2002/11/19 20:22:06 ranty Exp $
+ * $Id: lirc_dev.h,v 1.8 2002/12/15 08:49:21 ranty Exp $
  *
  */
 
@@ -13,6 +13,108 @@
 
 #define MAX_IRCTL_DEVICES 2
 #define BUFLEN            16
+
+//#define LIRC_BUFF_POWER_OF_2
+#ifdef LIRC_BUFF_POWER_OF_2
+#define mod(n, div) ((n) & ((div) -1))
+#else
+#define mod(n, div) ((n) % (div))
+#endif
+#include <linux/slab.h>
+struct lirc_buffer
+{
+        wait_queue_head_t wait_poll;
+	struct semaphore lock;
+
+	unsigned char *data;
+	unsigned int chunk_size;
+	unsigned int size; /* in chunks */
+	unsigned int fill; /* in chunks */
+	int head, tail;    /* in chunks */
+	/* Using chunks instead of bytes pretends to simplify boundary checking 
+	 * And should allow for some performance fine tunning later */
+};
+static inline int lirc_buffer_init(struct lirc_buffer *buf,
+				    unsigned int chunk_size,
+				    unsigned int size)
+{
+	/* Adjusting size to the next power of 2 would allow for
+	 * inconditional LIRC_BUFF_POWER_OF_2 optimization */
+	init_waitqueue_head(&buf->wait_poll);
+	init_MUTEX(&buf->lock);
+	buf->head = buf->tail = buf->fill = 0;
+	buf->chunk_size = chunk_size;
+	buf->size = size;
+	buf->data = kmalloc(size*chunk_size, GFP_KERNEL);
+	if (buf->data == NULL)
+		return -1;
+	memset(buf->data, 0, size*chunk_size);
+	return 0;
+}
+static inline void lirc_buffer_free(struct lirc_buffer *buf)
+{
+	kfree(buf->data);
+	buf->data = NULL;
+	buf->head = buf->tail = buf->fill = 0;
+	buf->chunk_size = 0;
+	buf->size = 0;
+}
+static inline int  lirc_buffer_full(struct lirc_buffer *buf)
+{
+	return (buf->fill == buf->size);
+}
+static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
+{
+	return !(buf->fill);
+}
+static inline void lirc_buffer_lock(struct lirc_buffer *buf)
+{
+#warning maybe this should be an spinlock
+	down_interruptible(&buf->lock);
+}
+static inline void lirc_buffer_unlock(struct lirc_buffer *buf)
+{
+	up(&buf->lock);
+}
+static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
+{
+	buf->head = mod(buf->head+1, buf->size);
+	buf->fill -= 1;
+}
+static inline void lirc_buffer_remove_1(struct lirc_buffer *buf)
+{
+	lirc_buffer_lock(buf);
+	_lirc_buffer_remove_1(buf);
+	lirc_buffer_unlock(buf);
+}
+static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
+				     unsigned char *dest)
+{
+	memcpy(dest, &buf->data[buf->head*buf->chunk_size], buf->chunk_size);
+	buf->head = mod(buf->head+1, buf->size);
+	buf->fill -= 1;
+}
+static inline void lirc_buffer_read_1(struct lirc_buffer *buf,
+				      unsigned char *dest)
+{
+	lirc_buffer_lock(buf);
+	_lirc_buffer_read_1(buf, dest);
+	lirc_buffer_unlock(buf);
+}
+static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
+				      unsigned char *orig)
+{
+	memcpy(&buf->data[buf->tail*buf->chunk_size], orig, buf->chunk_size);
+	buf->tail = mod(buf->tail+1, buf->size);
+	buf->fill++;
+}
+static inline void lirc_buffer_write_1(struct lirc_buffer *buf,
+				       unsigned char *orig)
+{
+	lirc_buffer_lock(buf);
+	_lirc_buffer_write_1(buf, orig);
+	lirc_buffer_unlock(buf);
+}
 
 struct lirc_plugin
 {
@@ -24,6 +126,7 @@ struct lirc_plugin
      void* data;
      int (*get_key) (void* data, unsigned char* key, int key_no);
      wait_queue_head_t* (*get_queue) (void* data);
+     struct lirc_buffer *rbuf;
      int (*set_use_inc) (void* data);
      void (*set_use_dec) (void* data);
      int (*ioctl) (struct inode *,struct file *,unsigned int, unsigned long);

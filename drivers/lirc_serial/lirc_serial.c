@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.44 2002/11/19 20:22:08 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.45 2002/12/15 08:49:21 ranty Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -236,8 +236,6 @@ struct lirc_serial hardware[]=
 
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 
-static DECLARE_WAIT_QUEUE_HEAD(lirc_wait_in);
-
 static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 
 static int io = LIRC_PORT;
@@ -245,8 +243,7 @@ static int irq = LIRC_IRQ;
 
 static struct timeval lasttv = {0, 0};
 
-static lirc_t rbuf[RBUF_LEN];
-static int rbh, rbt;
+static struct lirc_buffer rbuf;
 
 static lirc_t wbuf[WBUF_LEN];
 
@@ -557,18 +554,14 @@ void send_space_homebrew(long length)
 
 static void inline rbwrite(lirc_t l)
 {
-	unsigned int nrbt;
-
-	nrbt=(rbt+1) & (RBUF_LEN-1);
-	if(nrbt==rbh)      /* no new signals will be accepted */
+	if(lirc_buffer_full(&rbuf))    /* no new signals will be accepted */
 	{
 #               ifdef DEBUG
 		printk(KERN_WARNING  LIRC_DRIVER_NAME  ": Buffer overrun\n");
 #               endif
 		return;
 	}
-	rbuf[rbt]=l;
-	rbt=nrbt;
+	_lirc_buffer_write_1(&rbuf, (void *)&l);
 }
 
 static void inline frbwrite(lirc_t l)
@@ -707,7 +700,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			}
 			frbwrite(dcd^sense ? data : (data|PULSE_BIT));
 			lasttv=tv;
-			wake_up_interruptible(&lirc_wait_in);
+			wake_up_interruptible(&rbuf.wait_poll);
 		}
 	} while(!(sinp(UART_IIR) & UART_IIR_NO_INT)); /* still pending ? */
 }
@@ -850,8 +843,8 @@ static int set_use_inc(void* data)
 	
 	restore_flags(flags);
 	
-	/* Init read buffer pointers. */
-	rbh = rbt = 0;
+	/* Init read buffer. */
+	lirc_buffer_init(&rbuf, sizeof(lirc_t), RBUF_LEN);
 	
 	MOD_INC_USE_COUNT;
 	spin_unlock(&lirc_lock);
@@ -875,51 +868,9 @@ static void set_use_dec(void* data)
 #       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 #       endif
+	lirc_buffer_free(&rbuf);
 	
 	MOD_DEC_USE_COUNT;
-}
-
-static unsigned int lirc_poll(struct file *file, poll_table * wait)
-{
-	poll_wait(file, &lirc_wait_in, wait);
-	if (rbh != rbt)
-		return POLLIN | POLLRDNORM;
-	return 0;
-}
-
-static ssize_t lirc_read(struct file *file, char *buf,
-			 size_t count, loff_t * ppos)
-{
-	int n=0,retval=0;
-	DECLARE_WAITQUEUE(wait,current);
-	
-	if(n%sizeof(lirc_t)) return(-EINVAL);
-	
-	add_wait_queue(&lirc_wait_in,&wait);
-	current->state=TASK_INTERRUPTIBLE;
-	while (n < count)
-	{
-		if (rbt != rbh) {
-			copy_to_user((void *) buf+n,
-				     (void *) &rbuf[rbh],sizeof(lirc_t));
-			rbh = (rbh + 1) & (RBUF_LEN - 1);
-			n+=sizeof(lirc_t);
-		} else {
-			if (file->f_flags & O_NONBLOCK) {
-				retval = -EAGAIN;
-				break;
-			}
-			if (signal_pending(current)) {
-				retval = -ERESTARTSYS;
-				break;
-			}
-			schedule();
-			current->state=TASK_INTERRUPTIBLE;
-		}
-	}
-	remove_wait_queue(&lirc_wait_in,&wait);
-	current->state=TASK_RUNNING;
-	return (n ? n : retval);
 }
 
 static ssize_t lirc_write(struct file *file, const char *buf,
@@ -1031,9 +982,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 
 static struct file_operations lirc_fops =
 {
-	read:    lirc_read,
 	write:   lirc_write,
-	poll:    lirc_poll,
 };
 
 static struct lirc_plugin plugin = {
@@ -1044,6 +993,7 @@ static struct lirc_plugin plugin = {
 	data:		NULL,
 	get_key:	NULL,
 	get_queue:	NULL,
+	rbuf:		&rbuf,
 	set_use_inc:	set_use_inc,
 	set_use_dec:	set_use_dec,
 	ioctl:		lirc_ioctl,
