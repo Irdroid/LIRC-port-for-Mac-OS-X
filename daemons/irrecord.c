@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.33 2001/08/10 22:35:44 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.34 2001/11/09 21:40:47 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -73,7 +73,7 @@ extern struct hardware hw;
 extern struct ir_remote *last_remote;
 
 char *progname;
-const char *usage="Usage: %s --help | --version | [-d | --device=device] | [--force] file\n";
+const char *usage="Usage: %s [options] file\n";
 
 struct ir_remote remote;
 struct ir_ncode ncode;

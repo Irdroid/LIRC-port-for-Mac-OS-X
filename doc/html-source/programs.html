@@ -58,7 +58,7 @@ of such connections is currently limited to 100.
 
 <P>
 The config file for lircd is located in
-<em>/usr/local/etc/lircd.conf</EM>. lircd has its own log file in
+<em>/etc/lircd.conf</EM>. lircd has its own log file in
 <em>/var/log/lircd</em> (beginning with LIRC version 0.6.1 you can
 configure lircd to use syslogd for log messages; then it depends on
 your system configuration where log messages will show up). You can
@@ -85,9 +85,8 @@ LIRC mouse daemon - translates infrared signals into mouse events
 <P>This daemon can simulate a MouseSystems or IMPS/2 type mouse. It
 gets the received buttons from lircd and converts them to mouse
 events. To make this possible, lircmd needs a config file located in
-<em>/usr/local/etc/lircmd.conf</em>. In this file you have to
-determine which button from which remote causes a mouse move or a
-mouse button click.
+<em>/etc/lircmd.conf</em>. In this file you have to determine which
+button from which remote causes a mouse move or a mouse button click.
 </P>
 
 <P>
