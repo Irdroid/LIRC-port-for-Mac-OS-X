@@ -69,10 +69,16 @@ struct hardware *hw_list[] =
 #endif
 	&hw_bte,
 	&hw_creative,
+#ifdef HAVE_SCSI
 	&hw_creative_infracd,
+#endif
 	&hw_default,
+#ifdef HAVE_LINUX_DEVINPUT
 	&hw_devinput,
+#endif
+#ifdef HAVE_SOUNDCARD
 	&hw_dsp,
+#endif
 	&hw_ea65,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,

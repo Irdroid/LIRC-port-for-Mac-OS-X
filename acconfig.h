@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.29 2004/09/11 19:56:51 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.30 2004/12/18 18:55:30 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -83,6 +83,15 @@
 
 /* Define if the complete vga libraries (vga, vgagl) are installed */
 #undef HAVE_LIBVGA
+
+/* defined if Linux input interface is available */
+#undef HAVE_LINUX_DEVINPUT
+
+/* defined if SCSI API is available */
+#undef HAVE_SCSI
+
+/* defined if soundcard API is available */
+#undef HAVE_SOUNDCARD
 
 /* define if you have vsyslog( prio, fmt, va_arg ) */
 #undef HAVE_VSYSLOG
