@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.1 2000/09/30 19:32:40 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.2 2000/10/07 09:04:35 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -163,22 +163,18 @@ static int ir_probe(struct i2c_adapter *adap);
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg);
 
 static struct i2c_driver driver = {
-        "i2c ir driver",
-        /* FIXME */ I2C_DRIVERID_EXP3,
-        I2C_DF_NOTIFY,
-        ir_probe,
-        ir_detach,
-        ir_command,
+        name:           "i2c ir driver",
+        id:             I2C_DRIVERID_EXP3, /* FIXME */
+        flags:          I2C_DF_NOTIFY,
+        attach_adapter: ir_probe,
+        detach_client:  ir_detach,
+        command:        ir_command,
 };
 
 static struct i2c_client client_template = 
 {
-        "ir",
-        -1,
-        0,
-        0,
-        NULL,
-        &driver
+        name:   "unset",
+        driver: &driver
 };
 
 static int ir_attach(struct i2c_adapter *adap, int addr,
@@ -200,18 +196,29 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
+	ir->nextkey   = -1;
+
 	switch(addr)
 	{
 	case 0:
+		strcpy(ir->c.name,"Pixelview IR");
 		ir->l.code_length = 8;
 		ir->l.get_key=get_key_pixelview;
 		break;
-	case 1:
+	case 0x18:
+	case 0x19:
+	case 0x1a:
+		strcpy(ir->c.name,"Hauppauge IR");
 		ir->l.code_length = 13;
 		ir->l.get_key=get_key_haup;
 		break;
+	default:
+		/* should'nt happen */
+		printk("lirc_i2c: Huh? unknown i2c address (0x%02x)?\n",addr);
+		kfree(ir);
+		return -1;
 	}
-	ir->nextkey = -1;
+	printk("lirc_i2c: chip found @ 0x%02x (%s)\n",addr,ir->c.name);
 	
 	/* register device */
 	i2c_attach_client(&ir->c);
