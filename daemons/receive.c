@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.7 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: receive.c,v 5.8 2001/11/14 21:45:19 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -901,6 +901,17 @@ int receive_decode(struct ir_remote *remote,
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;
+	if(hw.rec_mode==LIRC_MODE_CODE ||
+	   hw.rec_mode==LIRC_MODE_LIRCCODE)
+	{
+		/* Most TV cards don't pass each signal to the
+                   driver. This heuristic should fix repeat in such
+                   cases. */
+		if(time_elapsed(&remote->last_send,&current)<300000)
+		{
+			*repeat_flagp=1;
+		}
+	}
 	if(is_const(remote))
 	{
 		*remaining_gapp=remote->gap>rec_buffer.sum ?
