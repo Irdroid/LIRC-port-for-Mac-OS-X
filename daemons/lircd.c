@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.39 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: lircd.c,v 5.40 2002/06/16 18:18:57 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -439,6 +439,7 @@ void add_client(int sock)
 	int fd;
 	int clilen;
 	struct sockaddr client_addr;
+	int flags;
 
 	clilen=sizeof(client_addr);
 	fd=accept(sock,(struct sockaddr *)&client_addr,&clilen);
@@ -457,6 +458,11 @@ void add_client(int sock)
 		return;
 	}
 	nolinger(fd);
+	flags=fcntl(fd,F_GETFL,0);
+	if(flags!=-1)
+	{
+		fcntl(fd,F_SETFL,flags|O_NONBLOCK);
+	}
 	if(client_addr.sa_family==AF_UNIX)
 	{
 		cli_type[clin]=CT_LOCAL;
