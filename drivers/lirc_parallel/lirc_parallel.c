@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.25 2004/08/07 10:06:09 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.26 2004/08/21 21:24:11 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -447,7 +447,7 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 	/* ajust values from usecs */
 	for(i=0;i<count;i++)
 	{
-		wbuf[i]=(lirc_t) (((double) wbuf[i])*timer/1000000);
+		wbuf[i]=(lirc_t) (((unsigned long long) wbuf[i])*timer/1000000);
 	}
 	
 	local_irq_save(flags);
