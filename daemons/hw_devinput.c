@@ -46,7 +46,16 @@ int devinput_init()
 		logprintf(LOG_ERR, "unable to open '%s'", hw.device);
 		return 0;
 	}
-
+	
+#ifdef EVIOCGRAB
+	if (ioctl(hw.fd, EVIOCGRAB) == -1)
+	{
+		logprintf(LOG_WARNING, "can't get exclusive access to events "
+			  "comming from `%s' interface",
+			  hw.device);
+	}
+#endif
+			
 	return 1;
 }
 
