@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.5 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.6 2003/02/16 19:00:55 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -193,9 +193,7 @@ char *creative_rec(struct ir_remote *remotes)
 			return(NULL);
 		}
 		if(b[0]!=0x4d ||
-		   b[1]!=0x05 ||
-		   b[4]!=0xac ||
-		   b[5]!=0x21)
+		   b[1]!=0x05 /* || b[4]!=0xac || b[5]!=0x21 */)
 		{
 			logprintf(LOG_ERR,"bad envelope");
 			return(NULL);
@@ -212,7 +210,8 @@ char *creative_rec(struct ir_remote *remotes)
 	}
 	gettimeofday(&end,NULL);
 
-	pre=0x8435;
+	/* pre=0x8435; */
+	pre=reverse((((ir_code) b[4])<<8) | ((ir_code) b[5]),16);
 	for(i=0;mapping[i]!=0x00;i++)
 	{
 		if(mapping[i]==b[3])
