@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.8 1999/09/06 14:56:04 columbus Exp $
+## $Id: Makefile.am,v 5.9 1999/10/08 18:56:57 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -57,8 +57,8 @@ install-exec-local: mkdev
 uninstall-local: rmdev
 
 install-data-local:
-	test "$(lircd_conf)" = ""  || test -e $(sysconfdir)/lircd.conf  || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircd.conf
-	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircmd_conf) $(sysconfdir)/lircmd.conf
+	test "$(lircd_conf)" = ""  || test -e $(sysconfdir)/lircd.conf  || ($(mkinstalldirs) $(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(sysconfdir)/lircd.conf)
+	test "$(lircmd_conf)" = "" || test -e $(sysconfdir)/lircmd.conf || ($(mkinstalldirs) $(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircmd_conf) $(sysconfdir)/lircmd.conf)
 
 mkdev:
 	test -e @devdir@/lircd || @mknod@ @devdir@/lircd p
