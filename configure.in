@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.55 2001/04/24 19:18:25 lirc Exp $
+dnl $Id: configure.in,v 5.56 2001/04/24 21:20:41 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
 fi
 
 
-AM_INIT_AUTOMAKE(lirc, 0.6.3)
+AM_INIT_AUTOMAKE(lirc, 0.6.4-CVS)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -113,7 +113,7 @@ AC_ARG_WITH(driver,
 			  cph03x, cph06x, logitech, caraca, slinke, silitek,
                           irdeo, irreal, chronos, pixelview_pak, pixelview_bt878,
 			  realmagic, mediafocusI, tekram, creative, provideo,
-			  bestbuy],
+			  bestbuy, knc_one],
 
 driver=${withval},
 driver="unset"
@@ -323,6 +323,11 @@ if test "$driver" = "creative"; then
   hw_module="hw_creative.o serial.o"
   lircd_conf="creative/lircd.conf.creative"
 #  lircmd_conf="creative/lircmd.conf.creative"
+fi
+if test "$driver" = "knc_one"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="knc_one/lircd.conf.knc_one"
+#  lircmd_conf="knc_one/lircmd.conf.knc_one"
 fi
 
 dnl now check to see if the user is behaving himself

@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.10 2001/04/24 19:21:29 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.11 2001/04/24 21:20:41 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -6,6 +6,8 @@
  * modified for PixelView (BT878P+W/FM) by
  *      Michal Kochanowicz <mkochano@pld.org.pl>
  *      Christoph Bartelmus <lirc@bartelmus.de>
+ * modified for KNC ONE TV Station/Anubis Typhoon TView Tuner by
+ *      Ulrich Mueller <ulrich.mueller42@web.de>
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -181,6 +183,35 @@ static int get_key_pv951(void* data, unsigned char* key, int key_no)
 	return 0;
 }
 
+static int get_key_knc1(void *data, unsigned char *key, int key_no)
+{
+	struct IR *ir = data;
+	unsigned char b;
+	static unsigned char last_button = 0xFF;
+	
+	/* poll IR chip */
+	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		return -1;
+	}
+	
+	/* it seems that 0xFE indicates that a button is still hold
+	   down, while 0xFF indicates that no button is hold
+	   down. 0xFE sequences are sometimes interrupted by 0xFF */
+	
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
+	
+	if( b == 0xFF )
+		return -1;
+	
+	if ( b == 0xFE )
+		b = last_button;
+	
+	*key = b;
+	last_button = b;
+	return 0;
+}
+
 static void set_use_inc(void* data)
 {
 	struct IR *ir = data;
@@ -269,6 +300,11 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.code_length = 13;
 		ir->l.get_key=get_key_haup;
 		break;
+	case 0x30:
+		strcpy(ir->c.name,"KNC ONE IR");
+		ir->l.code_length = 8;
+		ir->l.get_key=get_key_knc1;
+		break;
 	default:
 		/* shouldn't happen */
 		printk("lirc_i2c: Huh? unknown i2c address (0x%02x)?\n",addr);
@@ -312,7 +348,7 @@ static int ir_probe(struct i2c_adapter *adap) {
 	   That's why we probe 0x1a (~0x34) first. CB 
 	*/
 	
-	static const int probe[] = { 0x1a, 0x18, 0x4b, 0x64, -1};
+	static const int probe[] = { 0x1a, 0x18, 0x4b, 0x64, 0x30, -1};
 	struct i2c_client c; char buf; int i,rc;
 
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
@@ -325,7 +361,9 @@ static int ir_probe(struct i2c_adapter *adap) {
 				probe[i], adap->name, 
 				(1 == rc) ? "yes" : "no");
 			if (1 == rc)
+			{
 				ir_attach(adap,probe[i],0,0);
+			}
 		}
 	}
 	return 0;
