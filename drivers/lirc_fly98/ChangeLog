@@ -1,0 +1,4 @@
+1/08/1999:
+    Even smaller kernel patch. Remote driver removed from the kernel.
+    Only GPIO monitor function implanted into the bttv. The rest is handled
+    by lirc_fly98.o
