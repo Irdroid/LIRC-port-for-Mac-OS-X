@@ -80,7 +80,6 @@ struct lirc_haup_status {
 	struct lirc_haup_i2c_info *i2c_remote;
 	unsigned char last_b1;
 	unsigned int open:1;
-	unsigned int status_changed:1;
 	unsigned int attached:1;       
 };
 

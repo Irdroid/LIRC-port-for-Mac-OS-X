@@ -10,7 +10,7 @@
 #include <linux/poll.h>
 #include <linux/kmod.h>
 
-/*#include <linux/i2c-old.h> -- use this after applying the lm_sensors
+/*#include <linux/i2c-old.h>*/ /*-- use this after applying the lm_sensors
                                 patches to kernel!*/
 #include <linux/i2c.h>
 
@@ -86,13 +86,11 @@ static void lirc_haup_do_timer(unsigned long data)
 	if (remote->attached) {
 		/* keep the remote_lock during the execution
 		   of read_raw_keypress */
-	        /* spin_unlock(&remote_lock); */
 		code = read_raw_keypress(remote); /* get key from the remote */
-		/* spin_lock(&remote_lock); */
-		if( (remote->status_changed) ) {
+		if( (code!=0xffff) ) {
 			/* if buffer is full, drop input */
 			if (((remote->tail+1)%BUFLEN)==remote->head) {
-				dprintk("Input buffer overflow\n");
+				dprintk("lirc_haup: input buffer overflow\n");
 			} else {
 				/* put new code to the buffer */
 				remote->buffer[remote->tail++]=code;
@@ -116,9 +114,6 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 	
         LOCK_FLAGS;
 
-	/* remote_lock locking is now performed by the caller */
-	
-	/* spin_lock(&remote_lock); */
         LOCK_I2C_BUS(t->bus);
 	/* Starting bus */
 	i2c_start(t->bus);
@@ -132,35 +127,27 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
         b3 = i2c_readbyte(t->bus, 0);
 	/* Stopping bus */
 	i2c_stop(t->bus);
-        UNLOCK_I2C_BUS(t->bus);
        
 	/* Turn off the red light: Read 5 bytes from the bus */
-	/*
-        LOCK_I2C_BUS(t->bus);
         i2c_read(t->bus, ir_read);
         i2c_read(t->bus, ir_read);
         i2c_read(t->bus, ir_read);
         i2c_read(t->bus, ir_read);
         UNLOCK_I2C_BUS(t->bus);
-	*/
 
 	if (b1 == REPEAT_TOGGLE_0 || b1 == REPEAT_TOGGLE_1) {
-		remote->status_changed = 1;
 		dprintk("key %s (0x%02x/0x%02x)\n", keyname(b2), b1, b2);
 		if (b1 == remote->last_b1) { /* repeat */
 			dprintk("Repeat\n");
 		} else {
 			remote->last_b1 = b1;
 		}
+		repeat_bit=(b1&0x20) ? 0x800:0;
+		return (__u16) (0x1000 | repeat_bit | (b2>>2));
+		
 	} else {
-		remote->status_changed = 0;
-		b1 = b2 = 0xff;
+		return (__u16) 0xffff;
 	}
-
-	/* spin_unlock(&remote_lock); */
-
-	repeat_bit=(b1&0x20) ? 0x800:0;
-	return (__u16) (0x1000 | repeat_bit | (b2>>2));
 }
 
 static char * keyname(unsigned char v){
@@ -258,8 +245,7 @@ static unsigned int lirc_haup_poll(struct file *file,
         poll_wait(file, &remote.wait_poll, wait);
 
 	spin_lock(&remote_lock);
-	if(remote.status_changed) {
-		remote.status_changed = 0;
+	if(remote.head!=remote.tail) {
 		spin_unlock(&remote_lock);
 		return POLLIN | POLLRDNORM;
 	} else {
@@ -317,7 +303,6 @@ static int lirc_haup_open(struct inode *inode, struct file *file)
 	init_waitqueue_head(&remote.wait_poll);
 	init_waitqueue_head(&remote.wait_cleanup);
 #endif
-	remote.status_changed = 0;
 
 	init_timer(&lirc_haup_timer);
 	lirc_haup_timer.function = lirc_haup_do_timer;
