@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.1 2000/07/02 12:03:38 columbus Exp $      */
+/*      $Id: hw_slinke.c,v 5.2 2000/07/05 09:13:36 columbus Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -10,10 +10,12 @@
  *  modified for logitech receiver by Isaac Lauer <inl101@alumni.psu.edu>
  *  modified for Slink-e receiver Max Spring <mspring@employees.org>
  *
- *  Early first cut:
+ *  07/01/2000 0.0 Early first cut:
  *  - Slink-e must be configured for 19200,8N1.
  *  - Only receiving is implemented so far, no sending of IR codes.
  *  - Existing remote control definition files may not work with Slink-e.
+ *
+ *  07/02/2000 0.1 Made memory allocations safer; Freeing allocations.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,10 +39,33 @@
 #include "receive.h"
 #include "hw_slinke.h"
 
+void *slinke_malloc(size_t size){
+    void *ptr = malloc(size);
+    if (ptr == NULL){
+        logprintf(0,"slinke_malloc: out of memory\n");
+        return NULL;
+    }else{
+        memset(ptr,0,size);
+        return ptr;
+    } /* if */
+} /* slinke_malloc */
+
+void *slinke_realloc(void *optr, size_t size){
+    void *nptr;
+    nptr = realloc(optr,size);
+    if (nptr == NULL){
+        logprintf(0,"realloc: out of memory\n");
+        return NULL;
+    }else{
+        return nptr;
+    } /* if */
+} /* slinke_realloc */
+
 #define TIMEOUT 200000
 
 #define MAX_PORT_COUNT 8
 #define QUEUE_BUF_INIT_SIZE 32
+#define QUEUE_BUF_MAX_SIZE 4096
 struct port_queue_rec{
     unsigned char port_id,msg_id;
     int length,bufsize;
@@ -202,17 +227,15 @@ struct hardware hw = {
 #ifdef DEBUG
 /*****************************************************************************/
 char *to_byte_string(unsigned char *b, int n){
-    static char *buf = NULL; 
-    static int buflen = 0; 
-    int i,reqlen = 3*n+1; 
+    static char *buf = NULL;
+    static int buflen = 0;
+    int i,reqlen = 3*n+1;
     char t[10];
 
-    if (buf == NULL){
-       buflen = n*3+1; 
-       buf = (char*)malloc(buflen);  
-    }else if (reqlen > buflen){
-       buflen = reqlen; 
-       buf = (char*)realloc(buf,buflen);  
+    if (buf == NULL || reqlen > buflen){
+        buflen = reqlen;
+        buf = (char*)slinke_realloc(buf,buflen);
+        if (buf == NULL) return "";
     } /* if */
     
     sprintf(buf,"%02x",b[0]); 
@@ -329,7 +352,12 @@ int slinke_init(void){
        queue[i].port_id = (unsigned char)i; 
        queue[i].length  = 0; 
        queue[i].bufsize = QUEUE_BUF_INIT_SIZE; 
-       queue[i].buf     = (unsigned char*)malloc(QUEUE_BUF_INIT_SIZE); 
+       queue[i].buf     = (unsigned char*)slinke_malloc(QUEUE_BUF_INIT_SIZE);
+       if (queue[i].buf == NULL){
+           logprintf(0,"could not create port queue buffer\n");
+           slinke_deinit();
+           return(0);
+       } /* if */
     } /* for */
     
     return(1);
@@ -337,8 +365,21 @@ int slinke_init(void){
 
 /*****************************************************************************/
 int slinke_deinit(void){
+    int i;
+    
     close(hw.fd);
     tty_delete_lock();
+    
+    if (signal_queue_buf != NULL)
+	free(signal_queue_buf);
+
+    if (slinke_settings.version != NULL)
+        free(slinke_settings.version);
+    
+    for (i=0; i<MAX_PORT_COUNT ; i++){
+       if(queue[i].buf!=NULL) free(queue[i].buf);
+    } /* for */
+    
     return(1);
 } /* slinke_deinit */
 
@@ -368,10 +409,11 @@ static lirc_t *signal_queue_buf = NULL;
 /*****************************************************************************/
 lirc_t readdata(void){
     lirc_t result;
+    if (signal_queue_buf == NULL) return 0;
     if (signal_queue_rd_idx < signal_queue_length){
-       result = signal_queue_buf[signal_queue_rd_idx++]; 
+       result = signal_queue_buf[signal_queue_rd_idx++];
     }else{
-       result = 0; 
+       result = 0;
     } /* if */
 
 #   ifdef DEBUG
@@ -383,7 +425,12 @@ lirc_t readdata(void){
 static void reset_signal_queue(){
     if (signal_queue_buf == NULL){
         signal_queue_bufsize = 32; 
-        signal_queue_buf = (lirc_t*)malloc(signal_queue_bufsize*sizeof(lirc_t)); 
+	signal_queue_buf = (lirc_t*)slinke_malloc(signal_queue_bufsize*
+						  sizeof(lirc_t));
+	if (signal_queue_buf == NULL){
+            logprintf(0,"could not create signal queue buffer\n");
+            return;
+        } /* if */
     } /* if */
     signal_queue_buf[0] = PULSE_MASK; /* sync space */ 
     signal_queue_length = 1; 
@@ -391,20 +438,29 @@ static void reset_signal_queue(){
 } /* reset_signal_queue */
 
 static void app_signal(int is_pulse, int period_len){
-    lirc_t signal = (slinke_settings.sample_period > 0)
-                  ? (period_len * slinke_settings.sample_period) / 5 
-                  : period_len; 
+    lirc_t signal;
+    
+    if (signal_queue_buf == NULL) return;
+    signal = (slinke_settings.sample_period > 0)
+           ? (period_len * slinke_settings.sample_period) / 5
+           : period_len;
     if (signal > PULSE_MASK) signal = PULSE_MASK; 
     if (is_pulse) signal |= PULSE_BIT;
 
     if (signal_queue_length >= signal_queue_bufsize){
         signal_queue_bufsize *= 2;
-        signal_queue_buf = (lirc_t*)realloc(signal_queue_buf,signal_queue_bufsize*sizeof(lirc_t)); 
+        signal_queue_buf = (lirc_t*)slinke_realloc
+		(signal_queue_buf,signal_queue_bufsize*sizeof(lirc_t));
+        if (signal_queue_buf == NULL){
+            logprintf(0,"could not enlarge signal queue buffer\n");
+            return;
+        } /* if */
     } /* if */
     signal_queue_buf[signal_queue_length++] = signal; 
 } /* app_signal */
 
 static void end_of_signals(){
+    if (signal_queue_buf == NULL) return;
     if (signal_queue_length > 0){
         int last_signal_idx = signal_queue_length-1; 
         if (is_space(signal_queue_buf[last_signal_idx])){
@@ -417,13 +473,15 @@ static void end_of_signals(){
 
 #ifdef DEBUG
 static char *signal_queue_to_string(){
-    static char buf[5000];
+    static char buf[10*QUEUE_BUF_MAX_SIZE];
     char s[30];
     int i;
     
+    if (signal_queue_buf == NULL) return "";
     sprintf(buf,"{%d",signal_to_int(signal_queue_buf[0]));
     for (i=1; i<signal_queue_length; i++){
         sprintf(s,",%d",signal_to_int(signal_queue_buf[i]));
+	if (strlen(buf)+strlen(s)+2 >= sizeof(buf)) break;
         strcat(buf,s); 
     } /* for */
     strcat(buf,"}"); 
@@ -486,8 +544,14 @@ static char *process_rx_bytes(struct port_queue_rec *q, struct ir_remote *remote
              sprintf(s,"%d.%d"
                     ,(unsigned)((buf[0] >> 4) & 0xf)
                     ,(unsigned)( buf[0]       & 0xf)); 
+             if (slinke_settings.version != NULL)
+	         free(slinke_settings.version);
              slinke_settings.version = strdup(s);
-             logprintf(0,"Slink-e version %s\n",slinke_settings.version);
+             if (slinke_settings.version == NULL){
+                 logprintf(0,"could not allocate version string\n");
+             }else{
+                 logprintf(0,"Slink-e version %s\n",slinke_settings.version);
+             } /* if */
          } /* if */
          }break; 
     } /* switch */
@@ -498,9 +562,23 @@ static char *process_rx_bytes(struct port_queue_rec *q, struct ir_remote *remote
 
 /*****************************************************************************/
 static void enqueue_byte(struct port_queue_rec *q, unsigned char b){
+    if (q->buf == NULL) return;
     if (q->length > q->bufsize){
+       if (q->bufsize >= QUEUE_BUF_MAX_SIZE){
+#          ifdef DEBUG
+           if (q->bufsize == QUEUE_BUF_MAX_SIZE){
+               logprintf(1,"maximum port queue buffer size reached\n");
+           } /* if */
+#          endif
+           return;
+       } /* if */
+       
        q->bufsize *= 2;
-       q->buf = (unsigned char*)realloc(q->buf,q->bufsize); 
+       q->buf = (unsigned char*)slinke_realloc(q->buf,q->bufsize);
+       if (q->buf == NULL){
+            logprintf(0,"could not enlarge port queue buffer\n");
+            return;
+       } /* if */
     } /* if */
     q->buf[q->length++] = b; 
 } /* enqueue_byte */
