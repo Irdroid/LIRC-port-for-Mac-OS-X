@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.16 2001/01/30 09:39:30 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.17 2001/04/24 19:32:04 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "drivers/lirc.h"
 
