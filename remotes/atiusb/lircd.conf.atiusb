@@ -276,6 +276,88 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.0(any) on Tue Mar 29 17:33:06 2005
+#
+# contributed by Raphaël Doursenaud (rdoursenaud|free.fr)
+#
+# brand: Sapphire (ATI)
+# model no. of remote control: 5000023600
+# devices being controlled by this remote: xmms, tvtime
+#
+
+begin remote
+
+  name  SAPPHIRE_ATIUSB_5000023600
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          227990
+  toggle_bit      0
+
+
+      begin codes
+          1                        0x00000014E20D0000
+          2                        0x00000014E30E0000
+          3                        0x00000014E40F0000
+          4                        0x00000014E5100000
+          5                        0x00000014E6110000
+          6                        0x00000014E7120000
+          7                        0x00000014E8130000
+          8                        0x00000014E9140000
+          9                        0x00000014EA150000
+          a                        0x00000014D5000000
+          b                        0x00000014D6010000
+          power                    0x00000014D7020000
+          tv                       0x00000014D8030000
+          dvd                      0x00000014D9040000
+          web                      0x00000014DA050000
+          media_library            0x00000014DB060000
+          drag                     0x00000014DC070000
+          0                        0x00000014EC170000
+          c                        0x00000014EE190000
+          d                        0x00000014F01B0000
+          mute                     0x00000014DF0A0000
+          tv_on_demand             0x00000014F11C0000
+          max_window               0x00000014F5200000
+          e                        0x00000014F6210000
+          f                        0x00000014F8230000
+          ok                       0x00000014F31E0000
+          left                     0x00000014F21D0000
+          right                    0x00000014F41F0000
+          up                       0x00000014EF1A0000
+          down                     0x00000014F7220000
+          rewind                   0x00000014F9240000
+          play                     0x00000014FA250000
+          forward                  0x00000014FB260000
+          record                   0x00000014FC270000
+          stop                     0x00000014FD280000
+          pause                    0x00000014FE290000
+          mouse_button_left        0x000000144D780000
+          mouse_button_right       0x00000014517C0000
+          vol-down                 0x00000014DE090000
+          vol-up                   0x00000014DD080000
+          chan-down                0x00000014E10C0000
+          chan-up                  0x00000014E00B0000
+          mouse-up                 0x000000144A750000
+          mouse-down               0x0000001448730000
+          mouse-left               0x0000001445700000
+          mouse-right              0x0000001446710000
+          mouse-left_up            0x0000001447720000
+          mouse-left_down          0x0000001448730000
+          mouse-right_up           0x000000144A750000
+          mouse-right_down         0x0000001448730000
+          dvd-root_menu            0x00000014EB160000
+          launch_setup             0x00000014ED180000
+      end codes
+
+end remote
+
+
 # lircd.conf for X-10 Lola remote
 #
 # this config file was automatically generated
