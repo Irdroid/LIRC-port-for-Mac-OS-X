@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.41 2004/09/11 19:56:51 lirc Exp $
+## $Id: Makefile.am,v 5.42 2004/11/20 13:43:48 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -39,6 +39,7 @@ EXTRA_lircd_SOURCES = \
 			hw_udp.c \
 			hw_uirt2.c hw_uirt2_raw.c \
 			hw_uirt2_common.c hw_uirt2_common.h \
+			hw_ea65.h hw_ea65.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -78,6 +79,7 @@ EXTRA_irrecord_SOURCES = \
 			hw_udp.c \
 			hw_uirt2.c hw_uirt2_raw.c \
 			hw_uirt2_common.c hw_uirt2_common.h \
+			hw_ea65.h hw_ea65.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h

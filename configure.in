@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.133 2004/11/20 10:08:31 lirc Exp $
+dnl $Id: configure.in,v 5.134 2004/11/20 13:43:48 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -137,10 +137,10 @@ AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
 possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
-	(exaudio) (irreal) (livedrive_midi) (livedrive_seq) (logitech) \
-	(mediafocusI) (mp3anywhere) (pcmak) (pcmak_usb) (pctv) \
-	(remotemaster) (silitek) (slinke) (tira) (uirt2) (uirt2_raw) \
-	(udp)"
+	(ea65) (exaudio) (irreal) (livedrive_midi) (livedrive_seq) \
+	(logitech) (mediafocusI) (mp3anywhere) (pcmak) (pcmak_usb) \
+	(pctv) (remotemaster) (silitek) (slinke) (tira) (uirt2) \
+	(uirt2_raw) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev) (lirc_dev lirc_atiusb) \
@@ -192,7 +192,7 @@ AC_ARG_WITH(driver,
                           avermedia98, bestbuy, bestbuy2, breakoutbox,
                           bte, caraca, chronos, comX,
                           creative_infracd, dsp, cph03x, cph06x,
-                          creative, devinput, exaudio, flyvideo,
+                          creative, devinput, ea65, exaudio, flyvideo,
                           gvbctv5pci, hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, igorplugusb, irdeo,
                           irdeo_remote, irman, irreal, it87, knc_one,
@@ -268,6 +268,9 @@ if test "$driver" = "any"; then
 		;;
 	dsp)
 		hw_module="${hw_module} hw_dsp.o receive.o"
+		;;
+	ea65)
+		hw_module="${hw_module} hw_ea65.o serial.o"
 		;;
 	exaudio)
 		;;
@@ -524,6 +527,13 @@ if test "$driver" = "dsp"; then
   lirc_driver="none"
   hw_module="hw_dsp.o receive.o"
   HW_DEFAULT="hw_dsp"
+fi
+
+if test "$driver" = "ea65"; then
+  lirc_driver="none"
+  hw_module="hw_ea65.o  serial.o"
+  HW_DEFAULT="hw_ea65"
+  lircd_conf="ea65/lircd.conf.ea65"
 fi
 
 if test "$driver" = "exaudio"; then

@@ -17,6 +17,7 @@ hw_menu_entry: @hw-soundcard
 	audio_alsa: "IR receiver IC connected to auido input using ALSA (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other
+	ea65: "AOpen XC Cube EA65, EA65-II"
 	livedrive_midi: "Creative LiveDrive midi"
 	livedrive_seq: "Creative LiveDrive sequencer"
 	creative_infracd: "Creative iNFRA CDROM"
@@ -114,8 +115,8 @@ param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 param_type: parallel
 	lpt:
 
-param_type: caraca creative irman logitech mp3anywhere pcmak pctv realmagic \
-		remotemaster silitek slinke uirt2 uirt2_raw
+param_type: caraca creative ea65 irman logitech mp3anywhere pcmak pctv \
+		realmagic remotemaster silitek slinke uirt2 uirt2_raw
 	tty:
 
 param_type: pcmak_usb tira
@@ -146,6 +147,9 @@ default_param: caraca creative irman logitech mp3anywhere pcmak pctv \
 		realmagic remotemaster silitek uirt2 uirt2_raw
 	tty1:
 
+default_param: ea65
+	tty2:
+
 default_param: slinke
 	tty3:
 
@@ -164,4 +168,3 @@ default_param: bte
 
 default_param: pcmak_usb tira
 	ttyUSB1:
-
