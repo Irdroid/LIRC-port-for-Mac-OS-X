@@ -285,17 +285,19 @@ function ConfigDriver
 			2 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
 			3 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
 			4 "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)" \
-			5 "Chronos Video Shuttle II (card=35)" \
-                        6 "Dynalink Magic TView (card=48)" \
-			7 "Fly98 TV card" \
-			8 "Hauppauge TV card (new I2C layer required)" \
-			9 "Phoebe Tv Master + FM (card=22)" \
-                        0 "Pixelview PlayTV pro (card=37)" \
-                        a "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
-			b "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
-			c "ProVideo PV951 (card=42)" \
-			d "Technisat MediaFocus I" \
-			e "TView99 CPH063 (card=38)" 2> $TEMP;
+			5 "BestBuy Easy TV (card=55)" \
+			6 "Chronos Video Shuttle II (card=35)" \
+                        7 "Dynalink Magic TView (card=48)" \
+			8 "Fly98 TV card" \
+			9 "Hauppauge TV card (new I2C layer required)" \
+			0 "Phoebe Tv Master + FM (card=22)" \
+                        a "Pixelview PlayTV pro (card=37)" \
+                        b "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
+			c "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
+			d "ProVideo PV951 (card=42)" \
+			e "Technisat MediaFocus I" \
+			f "TView99 CPH063 (card=38)" 2> $TEMP;
+
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -303,17 +305,18 @@ function ConfigDriver
 		elif test "$1" = "2"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
 		elif test "$1" = "3"; then LIRC_DRIVER=avermedia;       DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=avermedia98;     DRIVER_PARAMETER=none;
-		elif test "$1" = "5"; then LIRC_DRIVER=chronos;         DRIVER_PARAMETER=none;
-		elif test "$1" = "6"; then LIRC_DRIVER=cph03x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "7"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
-		elif test "$1" = "8"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
-		elif test "$1" = "9"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "0"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
-		elif test "$1" = "a"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
-		elif test "$1" = "b"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
-		elif test "$1" = "c"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
-		elif test "$1" = "d"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "e"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "5"; then LIRC_DRIVER=bestbuy;		DRIVER_PARAMETER=none;
+		elif test "$1" = "6"; then LIRC_DRIVER=chronos;         DRIVER_PARAMETER=none;
+		elif test "$1" = "7"; then LIRC_DRIVER=cph03x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "8"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
+		elif test "$1" = "9"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
+		elif test "$1" = "0"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "a"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
+		elif test "$1" = "b"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
+		elif test "$1" = "c"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "d"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
+		elif test "$1" = "e"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
+		elif test "$1" = "f"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

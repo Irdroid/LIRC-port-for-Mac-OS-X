@@ -5,9 +5,10 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
+ *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.6 2001/01/18 21:35:24 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.7 2001/01/21 11:10:39 columbus Exp $
  *
  */
 
@@ -89,7 +90,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVERMEDIA98,   0x00021461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
 	{BTTV_AVPHONE98,     0x00031461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
 	/* is this one correct? */
-	{BTTV_AVERMEDIA98,   0x00041461, 0x003b8000,          0, 0x0800000, 0x00800000,   0, 10, 32}, /*mapped to Phone98*/
+	{BTTV_AVERMEDIA98,   0x00041461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
 	{BTTV_CHRONOS_VS2,            0, 0x000000f8,          0, 0x0000100,          0,   0, 20,  0},
 	/* CPH031 and CPH033 cards (?) */
 	/* MIRO was just a work-around */
@@ -99,6 +100,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_PHOEBE_TVMAS,           0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
+#ifdef BTTV_BESTBUY
+        {BTTV_BESTBUY,                0, 0x00007F00,          0, 0x0004000,          0,   0, 10,  8},
+#endif
  	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0}
 };
 

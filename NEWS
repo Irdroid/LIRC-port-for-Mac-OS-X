@@ -1,4 +1,6 @@
 0.6.3: future
+  * added support for BestBuy EasyTV (Miguel A. Alvarez
+    <maacruz@navegalia.com>)
   * added support for ProVideo PV951 (Bogdan Gaspar)
   * added support for Creative Infra receiver (PC-DVD remote, Stephen White)
   * major changes to the SIR driver, if you used this driver before

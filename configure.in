@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.52 2001/01/20 13:32:00 columbus Exp $
+dnl $Id: configure.in,v 5.53 2001/01/21 11:10:39 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -112,7 +112,8 @@ AC_ARG_WITH(driver,
 			  avermedia98, hauppauge, fly98, pixelview_pro,
 			  cph03x, cph06x, logitech, caraca, slinke, irdeo,
                           irreal, chronos, pixelview_pak, pixelview_bt878,
-			  realmagic, mediafocusI, tekram, creative, provideo],
+			  realmagic, mediafocusI, tekram, creative, provideo,
+			  bestbuy],
 
 driver=${withval},
 driver="unset"
@@ -232,7 +233,7 @@ if test "$driver" = "pixelview_pro"; then
 fi
 if test "$driver" = "provideo"; then
   lirc_driver="lirc_dev lirc_i2c"
-#  lircd_conf="provideo/lircd.conf.pv951"
+  lircd_conf="provideo/lircd.conf.pv951"
 #  lircmd_conf="provideo/lircmd.conf.pv951"
 fi
 if test "$driver" = "chronos"; then
@@ -245,6 +246,11 @@ if test "$driver" = "pixelview_pak"; then
 # the config files are the same as for the PlayTV pro
   lircd_conf="pixelview/lircd.conf.playtv_pro"
   lircmd_conf="pixelview/lircmd.conf.playtv_pro"
+fi
+if test "$driver" = "bestbuy"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="bestbuy/lircd.conf.bestbuy"
+  lircmd_conf="bestbuy/lircmd.conf.bestbuy"
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
