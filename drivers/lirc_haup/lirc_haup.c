@@ -1,4 +1,4 @@
-/*      $Id: lirc_haup.c,v 1.14 2000/04/18 20:14:57 columbus Exp $      */
+/*      $Id: lirc_haup.c,v 1.15 2000/04/29 09:04:15 columbus Exp $      */
 
 /*
  * hauppauge IR lirc plugin - new 2.3.x i2c stack
@@ -193,7 +193,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 
 	/* register device */
 	i2c_attach_client(&ir->c);
-	lirc_register_plugin(&ir->l);
+	ir->l.minor = lirc_register_plugin(&ir->l);
 	
 	return 0;
 }
