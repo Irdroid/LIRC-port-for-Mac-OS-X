@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: irxevent.c,v 5.1 1999/09/07 18:44:00 columbus Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -54,6 +54,14 @@
  * 0.4.3
  *     -changed DEBUG functions to actually produce some output :)
  *
+ * 0.5.0
+ *     -fixed finding subwindows recursively
+ *     -added xy_Key (though xterm and xemacs still don´t like me)
+ *     -added compilation patch from Ben Hochstedler 
+ *      <benh@eeyore.moneng.mei.com> for compiling on systems 
+ * 	without strsep() (like some solaris)
+ *
+ *
  * see http://www.wh9.tu-dresden.de/~heinrich/lirc/irxevent/irxevent.keys
  * for a the key names. (this one is for you Pablo :-) )
  *
@@ -83,7 +91,7 @@
 
 #include "lirc_client.h"
 
-//#define DEBUG
+/* #define DEBUG */
 #ifdef DEBUG
 void debugprintf(char *format_str, ...)
 {
@@ -124,7 +132,7 @@ char *progname;
 Display *dpy;
 Window root;
 XEvent xev;
-Window w;
+Window w,subw;
 
 Time fake_timestamp()
      /*seems that xfree86 computes the timestamps like this     */
@@ -193,6 +201,50 @@ Window find_window(Window top,char *name)
   return(top);
 }
 
+Window find_sub_sub_window(Window top,int *x, int *y)
+{
+  Window base;
+  Window *children,foo,target=0;
+  unsigned int nc,
+    rel_x,rel_y,width,height,border,depth,
+    new_x=1,new_y=1,
+    targetsize=1000000;
+
+  base=top;
+  if (!base) {return base;};
+  if(!XQueryTree(dpy,base,&foo,&foo,&children,&nc) || children==NULL) {
+    return(base);  /* no more windows here */
+  };
+  debugprintf("found subwindows %d\n",nc);
+
+  /* check if we hit a sub window and find the smallest one */
+  for(;nc>0;nc--)  {
+    if(XGetGeometry(dpy, children[nc-1], &foo, &rel_x, &rel_y, 
+		    &width, &height, &border, &depth)){
+      if ((rel_x<=*x)&&(*x<=rel_x+width)&&(rel_y<=*y)&&(*y<=rel_y+height)){
+	debugprintf("found a subwindow %x +%d +%d  %d x %d   \n",children[nc-1], rel_x,rel_y,width,height);
+	if ((width*height)<targetsize){
+	  target=children[nc-1];
+	  targetsize=width*height;
+	  new_x=*x-rel_x;
+	  new_y=*y-rel_y;
+	  /*bull's eye ...*/
+	  target=find_sub_sub_window(target,&new_x,&new_y);
+	}
+      }	
+    }
+  };
+  if(children!=NULL) XFree(children);
+  if (target){
+    *x=new_x;
+    *y=new_y;
+    return target;
+  }else
+    return base;
+}
+
+
+
 Window find_sub_window(Window top,char *name,int *x, int *y)
 {
   Window base;
@@ -207,6 +259,7 @@ Window find_sub_window(Window top,char *name,int *x, int *y)
   if(!XQueryTree(dpy,base,&foo,&foo,&children,&nc) || children==NULL) {
     return(base);  /* no more windows here */
   };
+  debugprintf("found subwindows %d\n",nc);
 
   /* check if we hit a sub window and find the smallest one */
   for(;nc>0;nc--)  {
@@ -220,6 +273,7 @@ Window find_sub_window(Window top,char *name,int *x, int *y)
 	  new_x=*x-rel_x;
 	  new_y=*y-rel_y;
 	  /*bull's eye ...*/
+	  target=find_sub_sub_window(target,&new_x,&new_y);
 	}
       }	
     }
@@ -250,10 +304,14 @@ void make_button(int button,int x,int y,XButtonEvent *xev)
   return;
 }
 
-void make_key(char *keyname,XKeyEvent *xev)
+void make_key(char *keyname,int x, int y,XKeyEvent *xev)
 {
   char *part, *part2;
   struct keymodlist_t *kmlptr;
+#ifndef HAVE_STRSEP
+  char tmpkeyname[128];
+  strncpy(tmpkeyname,keyname,128);
+#endif
   part2=malloc(128);
 
   xev->type = KeyPress;
@@ -261,12 +319,16 @@ void make_key(char *keyname,XKeyEvent *xev)
   xev->root=root;
   xev->subwindow = None;
   xev->time=fake_timestamp();
-  xev->x=1; xev->y=1;
+  xev->x=x; xev->y=y;
   xev->x_root=1; xev->y_root=1;
   xev->same_screen = True;
 
   xev->state=0;
+#ifdef HAVE_STRSEP
   while ((part=strsep(&keyname, key_delimiter)))
+#else
+  while ((part=strtok(tmpkeyname, key_delimiter)))
+#endif
     {
       part2=strncpy(part2,part,128);
       //      debugprintf("-   %s \n",part);
@@ -284,6 +346,7 @@ void make_key(char *keyname,XKeyEvent *xev)
   //  debugprintf("*** %s \n",part2);
   xev->keycode=XKeysymToKeycode(dpy,XStringToKeysym(part2));
   debugprintf("state 0x%x, keycode 0x%x\n",xev->state, xev->keycode);
+  free(part2);
   return ;
 }
 
@@ -298,11 +361,11 @@ void sendfocus(Window w,int in_out)
   focev.detail=NotifyPointer;
   XSendEvent(dpy,w,True,FocusChangeMask,(XEvent*)&focev);
   XSync(dpy,True);
-
+  
   return;
 }
 
-void sendpointer(Window w,int in_out)
+void sendpointer_enter_or_leave(Window w,int in_out)
 {
   XCrossingEvent crossev;
   crossev.type=in_out;
@@ -325,49 +388,46 @@ void sendpointer(Window w,int in_out)
   return;
 }
 
-void sendkey(char *keyname,Window w)
+void sendkey(char *keyname,int x,int y,Window w,Window s)
 {
-  make_key(keyname ,(XKeyEvent*)&xev);
+  make_key(keyname ,x,y,(XKeyEvent*)&xev);
   xev.xkey.window=w;
-  /*  sendfocus(w,FocusIn);*/
+  xev.xkey.subwindow=s;
+
+  if (s) sendfocus(s,FocusIn);
+
   XSendEvent(dpy,w,True,KeyPressMask,&xev);
   xev.type = KeyRelease;
-  usleep(200000);
+  usleep(2000);
   xev.xkey.time = fake_timestamp();
+  if (s) sendfocus(s,FocusOut);
   XSendEvent(dpy,w,True,KeyReleaseMask,&xev);
   XSync(dpy,True);
-  /*  sendfocus(w,FocusOut);*/
   return;
 }
 
-void sendbutton(int button, int x, int y, Window w)
+void sendbutton(int button, int x, int y, Window w,Window s)
 {
   make_button(button,x,y,(XButtonEvent*)&xev);
   xev.xbutton.window=w;
-  sendpointer(w,EnterNotify);
-  /*XWarpPointer(dpy, None, w, 0,0,0,0, x,y);*/
+  xev.xbutton.subwindow=s;
+  sendpointer_enter_or_leave(w,EnterNotify);
+  sendpointer_enter_or_leave(s,EnterNotify);
 
   XSendEvent(dpy,w,True,ButtonPressMask,&xev);
   XSync(dpy,True);
   xev.type = ButtonRelease;
   xev.xkey.state|=0x100;
-  usleep(100000);
+  usleep(1000);
   xev.xkey.time = fake_timestamp(); 
   XSendEvent(dpy,w,True,ButtonReleaseMask,&xev);
-  sendpointer(w,LeaveNotify);
+  sendpointer_enter_or_leave(s,LeaveNotify);
+  sendpointer_enter_or_leave(w,LeaveNotify);
   XSync(dpy,True);
 
   return;
 }
 
-void die(char *fmt,...)
-{
-  va_list args;
-
-  va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
-  exit(1);
-}
 
 int check(char *s)
 {
@@ -382,11 +442,13 @@ int check(char *s)
     }
 
   if(2!=sscanf(s,"Key %s %s\n",buffer,buffer) &&
-     4!=sscanf(s,"Button %d %d %d %s\n",&d,&d,&d,buffer))
+     4!=sscanf(s,"Button %d %d %d %s\n",&d,&d,&d,buffer) &&
+     4!=sscanf(s,"xy_Key %s %d %d %s\n",buffer,&d,&d,buffer))
     {
       fprintf(stderr,"%s: bad config string \"%s\"\n",progname,s);
       return(-1);
     }
+  free(buffer);  
   return(0);
 }
 
@@ -404,7 +466,10 @@ int main(int argc, char *argv[])
   };
 
   dpy=XOpenDisplay(NULL);
-  if(dpy==NULL) die("Can't open DISPLAY.\n");
+  if(dpy==NULL) {
+    fprintf(stderr,"Can't open DISPLAY.\n");
+    exit(1);
+  }
   root=RootWindow(dpy,DefaultScreen(dpy));
 
   if(lirc_init("irxevent")==-1) exit(EXIT_FAILURE);
@@ -424,7 +489,7 @@ int main(int argc, char *argv[])
 		  if((w=find_window(root,windowname)))
 		    {
 		      debugprintf("keyname: %s \t windowname: %s\n",keyname,windowname);
-		      sendkey(keyname,w);
+		      sendkey(keyname,1,1,w,0);
 		    }
 		  else
 		    {
@@ -436,10 +501,27 @@ int main(int argc, char *argv[])
 				&pointer_y,windowname))
 		{
 		  
-		  if((w=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
+		  if((w=find_window(root,windowname))&& (w=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
+		    {
+		      if (w==subw) subw=0;
+		      debugprintf(" %s\n",c);
+		      sendbutton(pointer_button,pointer_x,pointer_y,w,subw);
+		    }
+		  else
+		    {
+		      debugprintf("target window '%s' not found \n",windowname);
+		    }
+		}
+	      else if(4==sscanf(c,"xy_Key %d %d %s %s\n",
+				&pointer_x,&pointer_y,
+				keyname,windowname))
+		{
+		  
+		  if((w=find_window(root,windowname))&& (subw=find_sub_window(root,windowname,&pointer_x,&pointer_y)))
 		    {
 		      debugprintf(" %s\n",c);
-		      sendbutton(pointer_button,pointer_x,pointer_y,w);
+		      if (w==subw) subw=0;
+		      sendkey(keyname,pointer_x,pointer_y,w,subw);
 		    }
 		  else
 		    {

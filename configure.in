@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.10 1999/09/06 14:56:04 columbus Exp $
+dnl $Id: configure.in,v 5.11 1999/09/07 18:44:00 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -33,7 +33,7 @@ AC_STRUCT_TM
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(gethostname gettimeofday mkfifo select socket strdup strerror strtoul snprintf)
+AC_CHECK_FUNCS(gethostname gettimeofday mkfifo select socket strdup strerror strtoul snprintf strsep)
 
 
 vga_progs=
@@ -343,7 +343,6 @@ AC_OUTPUT([
   drivers/lirc_haup/Makefile
   drivers/lirc_fly98/Makefile
   drivers/lirc_pixview/Makefile
-  drivers/irman/Makefile
   daemons/Makefile
   tools/Makefile
 ])
