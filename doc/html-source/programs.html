@@ -6,7 +6,7 @@
 domain socket</P>
 
 <PRE>
-  <B>lircd</B> [config file]
+  <B>lircd</B> [config_file]
   <B>lircd</B> -h | --help
   <B>lircd</B> -v | --version
 </PRE>
@@ -21,10 +21,10 @@ codes received by lircd and they can send commands to lircd.
 
 <P>
 The config file for lircd is located in
-<em>/usr/local/etc/lircd.conf</EM>. lircd has its own logfile in
+<em>/usr/local/etc/lircd.conf</EM>. lircd has its own log file in
 <em>/var/log/lircd</em>. You can make lircd reread its config file and
-reopen its logfile by sending the HUP signal to the program. That way
-you can rotate old logfiles.
+reopen its log file by sending the HUP signal to the program. That way
+you can rotate old log files.
 </P>
 
 <P>Read also the <A HREF="#daemons">daemon note</A>.</P>
@@ -34,17 +34,17 @@ you can rotate old logfiles.
 <HR WIDTH="70%">
 
 <P>
-LIRC mouse daemon - translate infrared signals to mouse events
+LIRC mouse daemon - translates infrared signals into mouse events
 </P>
 
 <PRE>
-  <B>lircmd</B> [config file]
+  <B>lircmd</B> [config_file]
   <B>lircmd</B> -h | --help
   <B>lircmd</B> -v | --version
 </PRE>
 
 <P>This daemon can simulate a MouseSystems or IMPS/2 type mouse. It
-gets the received buttons from lircd and converts it into mouse
+gets the received buttons from lircd and converts them to mouse
 events. To make this possible, lircmd needs a config file located in
 <em>/usr/local/etc/lircmd.conf</em>. In this file you have to
 determine which button from which remote causes a mouse move or a
@@ -62,7 +62,7 @@ system configuration where they will show up.
 
 <P>
 lircd and lircmd are daemons.  You should start them in some init
-script depending on your system.  There are some example sripts for
+script depending on your system.  There are some example scripts for
 different distributions in the <em>contrib</em> directory. lircmd has
 to be started after lircd as it connects to the socket lircd provides.
 </P>
@@ -78,10 +78,10 @@ daemons. Daemons always run in background.
 <H1 ALIGN="CENTER">irexec</H1>
 <HR WIDTH="70%">
 
-<P>irexec - run program from keystrokes</P>
+<P>irexec - run programs with one button press</P>
 
 <PRE>
-  <B>irexec</B> [config file]
+  <B>irexec</B> [config_file]
 </PRE>
 
 <P>This program lets you execute arbitrary commands on an IR signal
@@ -96,7 +96,7 @@ don't want that.
 
 <P><B>Note:</B> If you start irexec, it reads your <A
 HREF="configure.html#lircrc_format">~/.lircrc</A> and reacts only on
-<TT>prog=</TT> entries that point to irexec. If you have included more
+<em>prog=</em> entries that point to irexec. If you have included more
 than one program in your .lircrc, then start all these programs, they
 react itself only to their according entries in .lircrc.</P>
 
@@ -108,17 +108,46 @@ react itself only to their according entries in .lircrc.</P>
 <P>irpty - pseudo tty driver</P>
 
 <PRE>
-  <B>irpty</B> [-s socket name] [-e] [-i] [-n] [-v]
+  <B>irpty</B> [-s socket_name] [-e] [-i] [-n] [-v] config_file program [args ...]
 </PRE>
-<P>irpty connects to lircd to receive infra-red codes and converts
-them to key strokes. E.g., type <em>irpty ~/.lircrc workbone</em> to
-control the CD-player program workbone. Of couse you will have to
-create an appropriate config file for this purpose first.  The config
-string will be passed to the desired application.</P>
 
+<P>
+irpty connects to lircd to receive infrared codes and converts them to
+key strokes. E.g. type <em>irpty ~/.lircrc workbone</em> to control
+the CD-player program workbone. Of couse you will have to create an
+appropriate config file for this purpose first.  The config string
+will be passed to the desired application. Note that you can use
+escape sequences to specify non printable characters. Have a look at
+the .lircrc <A HREF="configure.html#lircrc_format">file format</A>
+descriptions for details.
+</P>
+<P>
+irpty accepts the following options:
+</P>
+    <DL>
+      <DT>-s socket_name</DT>
+      <DD>
+	select a non-default socket location
+      </DD>
+      <DT>-e</DT>
+      <DD>
+	disable echo
+      </DD>
+      <DT>-i</DT>
+      <DD>
+	ingore EOF
+      </DD>
+      <DT>-n</DT>
+      <DD>
+	force non-interactive mode
+      </DD>
+      <DT>-v</DT>
+      <DD>
+	verbose mode
+      </DD>
+    </DL>      
 
-<A NAME="irxevent"><HR></A>
-<H1 ALIGN="CENTER">irxevent</H1>
+<A NAME="irxevent"><HR></A> <H1 ALIGN="CENTER">irxevent</H1>
 <HR WIDTH="70%">
 
 <P>infra-red xevent sender. Look at the irxevent.README file
@@ -133,15 +162,48 @@ strings in the new config file format.</P>
 <H1 ALIGN="CENTER">irrecord</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
+<P>irrecord - application for recording IR-codes for usage with
+LIRC</P>
 
+<PRE>
+  <B>irrecord</B> [-f | --force] file
+  <B>irrecord</B> -h | --help
+  <B>irrecord</B> -v | --version
+</PRE>
 
+<P>
+This program will record the signals from your remote control and
+create a config file for lircd. A proper config file for lircd is
+maybe the most vital part of this package, so you should invest some
+time to create a working config file.  Although I put a good deal of
+effort in this program it is often not possible to automatically
+recognize all features of a remote control.
+</P>
+<P>
+If the program fails to recognize the protocol of the remote control
+you should use the --force option to at least create a config file in
+raw mode.
+</P>
+<P>
+This program is provided to you free of charge. So it'd be only fair
+to respect its license.
+</P>
 
 <A NAME="irw"><HR></A>
 <H1 ALIGN="CENTER">irw</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
+<P>irw - sends data from Unix domain socket to stdout</P>
+
+<PRE>
+  <B>irw</B> [socket_name]
+</PRE>
+
+<P>
+irw will connect to any Unix domain socket and will print the data
+that it receives to stdout. If you don't give it a socket name
+argument it will watch /dev/lircd. Useful for debugging.
+</P>
 
 
 
@@ -149,5 +211,39 @@ strings in the new config file format.</P>
 <H1 ALIGN="CENTER">mode2, smode2, xmode2</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
+<P>mode2, smode2, xmode2 - shows the pulse/space length of infrared
+signals</P>
+
+<PRE>
+  <B>mode2</B>
+  <B>smode2</B> [-t ms/div]
+  <B>xmode2</B> [-t ms/div]
+</PRE>
+
+
+<P>
+The main purpose of these programs is to check operation of LIRC
+receiver hardware and to see the IR waveform of the remote controller
+without an expensive oscilloscope. Very useful for debugging. Of
+course it does not make sense to use this programs with hardware that
+decodes the signals itself.
+</P>
+
+<P>
+mode2 will simply print pulse&amp;space lengths to stdout.
+</P>
+
+<P>
+smode2 uses the svgalib to show the IR waveform in a graphical
+representation.  The time division is variable from 1 ms/div to
+extremely high values (integer type) but there is no point increasing
+this value above 20 ms/div, because one pulse is about 1 ms. This kind
+of presentation is much more exciting than the simple pulse&amp;space
+output showed by mode2.
+</P>
+
+<P>
+xmode2 is based on smode2 by Sinkovics Zoltan. It is just a
+conversion from svga to X with some basic support for resizing.
+</P>
 

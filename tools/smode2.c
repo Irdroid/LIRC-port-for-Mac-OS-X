@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.4 1999/10/18 10:10:04 columbus Exp $      */
+/*      $Id: smode2.c,v 5.5 2000/03/25 12:14:55 columbus Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -8,18 +8,18 @@
  *
  * Copyright (C) 1998.11.18 Sinkovics Zoltan <sinko@szarvas.hu>
  *
- * This program is based on the mode2.c file which is a part of the LIRC
- * distribution. The main purpose of this program to check operation of lirc
- * receiver hardware, and to see the ir waveform of the remote controller 
- * without an expensive oscilloscope. The time division is variable from 
- * 1 ms/div to extremly high valiues (integer type) but there is no point about
- * increasing this value above 20 ms/div, because one pulse is about 1 ms.
- * I think this kind of show is much more exciting as the simple pulse&space 
- * showed by mode2.
+ * This program is based on the mode2.c file which is a part of the
+ * LIRC distribution. The main purpose of this program is to check
+ * operation of LIRC receiver hardware, and to see the IR waveform of
+ * the remote controller without an expensive oscilloscope. The time
+ * division is variable from 1 ms/div to extremely high values (integer
+ * type) but there is no point increasing this value above 20 ms/div,
+ * because one pulse is about 1 ms. I think this kind of presentation
+ * is much more exciting than the simple pulse&space output showed by
+ * mode2.
  *
  * Usage: smode2 [-t (ms/div)] , default division is 5 ms/div
- *
- */ 
+ * */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>

@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.6 2000/03/16 18:01:10 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.7 2000/03/25 12:14:56 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -12,14 +12,17 @@
  * This program is based on the smode2.c file by Sinkovics Zoltan
  * <sinko@szarvas.hu> which is a part of the LIRC distribution. It is
  * just a conversion from svga to X with some basic support for resizing. 
- * I copied most of this comment. 
- * The main purpose of this program to check operation of lirc
- * receiver hardware, and to see the ir waveform of the remote
- * controller without an expensive oscilloscope. The time division is
- * variable from 1 ms/div to extremly high valiues (integer type) but
- * there is no point about increasing this value above 20 ms/div,
- * because one pulse is about 1 ms.  I think this kind of show is much
- * more exciting as the simple pulse&space showed by mode2.
+ * I copied most of this comment.
+ *
+ * This program is based on the mode2.c file which is a part of the
+ * LIRC distribution. The main purpose of this program is to check
+ * operation of LIRC receiver hardware, and to see the IR waveform of
+ * the remote controller without an expensive oscilloscope. The time
+ * division is variable from 1 ms/div to extremely high values (integer
+ * type) but there is no point increasing this value above 20 ms/div,
+ * because one pulse is about 1 ms. I think this kind of presentation
+ * is much more exciting than the simple pulse&space output showed by
+ * mode2.
  *
  * Usage: xmode2 [-t (ms/div)] , default division is 5 ms/div
  * 
@@ -31,8 +34,7 @@
  *
  * version 0.02  Aug 24 1999
  *   using select() to make the whole thing more responsive
- *
- */
+ * */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>

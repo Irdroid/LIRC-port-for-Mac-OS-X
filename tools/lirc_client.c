@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.6 2000/03/02 15:10:53 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.7 2000/03/25 12:14:55 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -188,7 +188,9 @@ char lirc_parse_escape(char **s,int line)
 	case 'b':
 		return('\b');
 	case 'e':
-	case 'E':
+#if 0
+	case 'E': /* this should become ^E */
+#endif
 		return(033);
 	case 'f':
 		return('\f');

@@ -1,3 +1,180 @@
+Thu Mar 23 20:07:47 2000  Christoph Bartelmus  <columbus@k6>
+
+	* NEWS, TODO, drivers/lirc_serial/lirc_serial.c:
+	SMP support, fixed many minor implementation drawbacks
+
+	* drivers/lirc_parallel/lirc_parallel.c: fixed minor flaw
+
+Tue Mar 21 12:03:04 2000  Christoph Bartelmus  <columbus@k6>
+
+	* TODO, daemons/lircd.c, daemons/lircmd.c:
+	finally fixed daemonize code (I hope)
+
+Sat Mar 18 13:01:19 2000  Christoph Bartelmus  <columbus@k6>
+
+	* setup.sh: made clear serial port requirements
+
+Thu Mar 16 18:01:10 2000  Christoph Bartelmus  <columbus@k6>
+
+	* daemons/hw_default.c, doc/html-source/install.html, tools/xmode2.c:
+	some small fixes
+
+Tue Mar 14 09:59:35 2000  Christoph Bartelmus  <columbus@k6>
+
+	* doc/html-source/help.html, doc/html-source/install.html, doc/html-source/configure.html, doc/html-source/doc.html, doc/html-source/foot.html:
+	only section 3 missing
+
+Sun Mar 12 12:30:32 2000  Christoph Bartelmus  <columbus@k6>
+
+	* configure.in: better use some default values than :
+
+Fri Mar 10 20:56:03 2000  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/Makefile.am: removed Hauppauge driver too early
+
+Thu Mar  9 21:13:18 2000  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/lirc_sir/.cvsignore: fixed file name
+
+	* ANNOUNCE, configure.in, drivers/Makefile.am:
+	started removing unmaintained drivers
+
+	* doc/html-source/configure.html, doc/html-source/doc.html, doc/html-source/install.html, doc/html-source/technical.html:
+	doc 75% ready
+
+Tue Mar  7 20:59:04 2000  Christoph Bartelmus  <columbus@k6>
+
+	* doc/html-source/doc.html, doc/html-source/install.html, doc/html-source/configure.html:
+	documentation starts becoming useful
+
+Fri Mar  3 20:10:30 2000  Christoph Bartelmus  <columbus@k6>
+
+	* AUTHORS, NEWS, TODO, configure.in, drivers/Makefile.am, drivers/lirc_sir/.cvsignore, drivers/lirc_sir/Makefile.am, drivers/lirc_sir/lirc_sir.c, setup.sh:
+	added SIR IrDA driver from Milan Pikula
+
+Thu Mar  2 15:10:53 2000  Christoph Bartelmus  <columbus@k6>
+
+	* tools/lirc_client.c:
+	fixed some more init problems (again thanks to Crispin Flowerday)
+
+Sat Feb 19 19:21:59 2000  Christoph Bartelmus  <columbus@k6>
+
+	* tools/lirc_client.c:
+	fixed reinit problem (thanks to Crispin Flowerday for the hint)
+
+Sat Feb 12 12:32:03 2000  Christoph Bartelmus  <columbus@k6>
+
+	* daemons/lircmd.c: release buttons when deactivated
+
+	* acconfig.h, configure.in, drivers/lirc_haup/Makefile.am, drivers/lirc_haup/lirc_haup.c, drivers/lirc_haup/lirc_haup_new.c, drivers/lirc_haup/lirc_haup_new.h, setup.sh:
+	added Hauppauge driver that uses new I2C layer,
+	thanks to Tom Lees for the port to the new layer
+
+Mon Feb  7 11:03:20 2000  Christoph Bartelmus  <columbus@k6>
+
+	* remotes/pixelview/lircd.conf.remotemaster, remotes/pixelview/lircmd.conf.remotemaster:
+	added config file for lircmd
+
+Sat Feb  5 12:57:28 2000  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/lirc_fly98/lirc_fly98.c, drivers/lirc_haup/lirc_haup.c, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_serial/lirc_serial.c:
+	corrected EINTR semantics
+
+	* daemons/hw_pixelview.c, remotes/pixelview/lircd.conf.remotemaster:
+	PixelView RemoteMaster 2000 should work now
+
+Wed Feb  2 20:28:42 2000  Christoph Bartelmus  <columbus@k6>
+
+	* doc/html-source/technical.html, tools/irexec.c, tools/irpty.c, tools/irxevent.c, tools/lirc_client.c, tools/lirc_client.h:
+	cleaned up library interface
+
+	* daemons/irrecord.c: added help string
+
+	* acconfig.h: fixed --disable-long-codes
+
+Mon Jan 24 18:45:08 2000  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/lirc_haup/lirc_haup.c, drivers/lirc_haup/lirc_haup.h:
+	bug hunting
+
+	* daemons/irrecord.c: minor fixes
+
+	* remotes/README: pointer to remotes
+
+Sun Jan 23 18:37:06 2000  Christoph Bartelmus  <columbus@k6>
+
+	* daemons/lircd.c: minor protocol bug fixed
+
+Thu Jan 20 19:17:04 2000  Christoph Bartelmus  <columbus@k6>
+
+	* Makefile.am: remove CVS traces from distribution
+
+Tue Jan 18 19:17:46 2000  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/lirc_fly98/Makefile.am: correctec typo
+
+	* configure.in, remotes/logitech/lircd.conf.logitech, remotes/logitech/lircmd.conf.logitech:
+	added config files for Logitech receiver
+
+Wed Dec 29 08:56:04 1999  jochym  <jochym@k6>
+
+	* drivers/lirc_fly98/Attic/kbttv2210-gpiomon.diff, drivers/lirc_fly98/Attic/kbttv2211-gpiomon.diff, drivers/lirc_fly98/patches/lirc_fly98-bttv-0.6.3.diff, drivers/lirc_fly98/patches/lirc_fly98-kernel-2.2.10.diff, drivers/lirc_fly98/patches/lirc_fly98-kernel-2.2.11.diff, drivers/lirc_fly98/Attic/bttv063-gpiomon.diff:
+	Diff files moved to the patches directory and commited to cvs.
+
+	* drivers/lirc_fly98/Makefile.am, drivers/lirc_fly98/README:
+	Patches renamed and moved to patches subdirectory.
+	Makefile.am modified to include distribution of patches.
+
+Sun Dec 12 19:02:12 1999  Christoph Bartelmus  <columbus@k6>
+
+	* doc/html-source/help.html, doc/html-source/technical.html:
+	some more docs
+
+Mon Nov 22 20:40:45 1999  Christoph Bartelmus  <columbus@k6>
+
+	* doc/html-source/doc.html, doc/html-source/help.html, doc/html-source/technical.html:
+	some more docs
+
+	* drivers/lirc_haup/lirc_haup.c:
+	uploaded patch from Mike <rickettm@ox.compsoc.net> for 2.3.x kernels
+
+	* drivers/lirc_serial/lirc_serial.c:
+	removed autodetection failure warning
+
+Sun Nov  7 20:20:34 1999  Christoph Bartelmus  <columbus@k6>
+
+	* daemons/lircd.c, daemons/lircmd.c:
+	glibc-2.1 seems to choke on fclose(stdin), hmm...
+
+	* doc/html-source/doc.html, doc/html-source/foot.html, doc/html-source/help.html, doc/html-source/technical.html:
+	updated docs
+
+Wed Oct 27 13:15:38 1999  Christoph Bartelmus  <columbus@k6>
+
+	* configure.in: fixed check for libirman
+
+Wed Oct 20 16:56:44 1999  Christoph Bartelmus  <columbus@k6>
+
+	* drivers/lirc_aver/Makefile.am: corrected EXTRA_DIST line
+
+Tue Oct 19 14:29:56 1999  denis  <denis@k6>
+
+	* drivers/lirc_aver/Attic/lirc-aver-2.2.10.patch.gz, drivers/lirc_aver/Makefile.am, drivers/lirc_aver/patches/lirc_aver-bttv-0.6.4.diff, drivers/lirc_aver/patches/lirc_aver-kernel-2.2.10.diff, drivers/lirc_aver/patches/lirc_aver-kernel-2.2.12.diff:
+	Added patches with lirc stuff for kernel-2.2.10/2.2.12 and bttv-0.6.4
+
+Mon Oct 18 10:21:08 1999  Christoph Bartelmus  <columbus@k6>
+
+	* daemons/.cvsignore: added .libs
+
+	* contrib/lircd.suse6: init script for S.u.S.E. 6.2
+
+	* daemons/ir_remote.h, daemons/irrecord.c, ChangeLog, daemons/hw_default.c:
+	NO_HEAD_REP now works
+	many thanks to Ti Leggett for his help
+
+	* tools/mode2.c, tools/smode2.c, tools/xmode2.c:
+	more understandable error message
+
 Thu Oct 14 15:45:03 1999  Christoph Bartelmus  <columbus@k6>
 
 	* doc/html-source/doc.html, doc/html-source/help.html: doc updates
@@ -50,7 +227,7 @@ Thu Sep 16 18:43:20 1999  Christoph Bartelmus  <columbus@k6>
 
 Thu Sep 16 16:14:53 1999  denis  <denis@k6>
 
-	* drivers/lirc_aver/lirc-aver-2.2.10.patch.gz:
+	* drivers/lirc_aver/Attic/lirc-aver-2.2.10.patch.gz:
 	Patch against kernel 2.2.10 for AverMedia lirc driver functionality.
 
 Wed Sep 15 18:19:38 1999  Christoph Bartelmus  <columbus@k6>
@@ -88,13 +265,13 @@ Tue Sep  7 18:53:37 1999  Christoph Bartelmus  <columbus@k6>
 
 Mon Sep  6 14:56:04 1999  Christoph Bartelmus  <columbus@k6>
 
-	* NEWS, TODO, configure.in, daemons/Makefile.am, daemons/hw_irman.c, daemons/hw_irman.h, daemons/hw_logitech.c, daemons/hw_logitech.h, daemons/hw_pixelview.c, daemons/hw_pixelview.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/irrecord.c, daemons/serial.c, drivers/Makefile.am:
+	* NEWS, TODO, configure.in, daemons/Makefile.am, daemons/hw_irman.c, daemons/hw_irman.h, daemons/hw_logitech.c, daemons/hw_logitech.h, daemons/hw_pixelview.c, daemons/hw_pixelview.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/irrecord.c, daemons/serial.c, drivers/Makefile.am, drivers/irman/Attic/.cvsignore, drivers/irman/Attic/Makefile.am, drivers/irman/Attic/lirmand.c:
 	removed lirmand,
 	added support of shift encoded remotes to irrecord
 
 Thu Sep  2 20:03:53 1999  Christoph Bartelmus  <columbus@k6>
 
-	* daemons/config_file.c, daemons/config_file.h, daemons/dump_config.c, daemons/dump_config.h, daemons/hardware.h, daemons/hw_default.c, daemons/hw_default.h, daemons/hw_logitech.c, daemons/hw_logitech.h, daemons/hw_pixelview.c, daemons/hw_pixelview.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/irrecord.c, drivers/Makefile.am, drivers/lirc.h, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_serial/lirc_serial.c, tools/mode2.c, tools/smode2.c, tools/xmode2.c:
+	* daemons/config_file.c, daemons/config_file.h, daemons/dump_config.c, daemons/dump_config.h, daemons/hardware.h, daemons/hw_default.c, daemons/hw_default.h, daemons/hw_logitech.c, daemons/hw_logitech.h, daemons/hw_pixelview.c, daemons/hw_pixelview.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/irrecord.c, drivers/Makefile.am, drivers/irman/Attic/lirmand.c, drivers/lirc.h, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_serial/lirc_serial.c, tools/mode2.c, tools/smode2.c, tools/xmode2.c:
 	changed type of all signal related data to lirc_t,
 	this should fix incompatibilities with Alphas
 
@@ -118,7 +295,7 @@ Wed Aug 18 06:36:22 1999  Christoph Bartelmus  <columbus@k6>
 
 Mon Aug 16 08:03:12 1999  jochym  <jochym@k6>
 
-	* drivers/lirc_fly98/kbttv2211-gpiomon.diff:
+	* drivers/lirc_fly98/Attic/kbttv2211-gpiomon.diff:
 	Small bugs (typos) in the patch fixed.
 	Verified that it works with stock 2.2.11 kernel.
 
@@ -128,7 +305,7 @@ Sun Aug 15 18:17:14 1999  Christoph Bartelmus  <columbus@k6>
 
 Sun Aug 15 09:14:36 1999  jochym  <jochym@k6>
 
-	* drivers/lirc_fly98/kbttv2211-gpiomon.diff:
+	* drivers/lirc_fly98/Attic/kbttv2211-gpiomon.diff:
 	Added patch for version 2.2.11 of the linux kernel.
 
 Fri Aug 13 18:59:54 1999  Christoph Bartelmus  <columbus@k6>
@@ -177,7 +354,7 @@ Wed Aug  4 19:18:27 1999  Christoph Bartelmus  <columbus@k6>
 
 Tue Aug  3 19:49:52 1999  Christoph Bartelmus  <columbus@k6>
 
-	* .cvsignore, daemons/.cvsignore, drivers/.cvsignore, drivers/lirc_aver/.cvsignore, drivers/lirc_fly98/.cvsignore, drivers/lirc_haup/.cvsignore, drivers/lirc_parallel/.cvsignore, drivers/lirc_serial/.cvsignore, tools/.cvsignore:
+	* .cvsignore, daemons/.cvsignore, drivers/.cvsignore, drivers/irman/Attic/.cvsignore, drivers/lirc_aver/.cvsignore, drivers/lirc_fly98/.cvsignore, drivers/lirc_haup/.cvsignore, drivers/lirc_parallel/.cvsignore, drivers/lirc_serial/.cvsignore, tools/.cvsignore:
 	added .cvsignore files
 
 	* drivers/lirc_aver/Makefile.am, drivers/lirc_fly98/Makefile.am, drivers/lirc_haup/Makefile.am, drivers/lirc_parallel/Makefile.am, drivers/lirc_serial/Makefile.am:
@@ -199,7 +376,7 @@ Tue Aug  3 12:03:03 1999  jochym  <jochym@k6>
 
 	* drivers/lirc_fly98/README: *** empty log message ***
 
-	* drivers/lirc_fly98/ChangeLog, drivers/lirc_fly98/Makefile.am, drivers/lirc_fly98/README, drivers/lirc_fly98/kbttv2210-gpiomon.diff, drivers/lirc_fly98/lirc_fly98.c, drivers/lirc_fly98/lirc_fly98.h:
+	* drivers/lirc_fly98/Attic/kbttv2210-gpiomon.diff, drivers/lirc_fly98/ChangeLog, drivers/lirc_fly98/Makefile.am, drivers/lirc_fly98/README, drivers/lirc_fly98/lirc_fly98.c, drivers/lirc_fly98/lirc_fly98.h:
 	Changed Makefile.am to conform to the rest of the tree. Small modyfication
 	of kernel patch (tristate changed to bool in Config.in). Clean-ups.
 	No real bugs found so far. README modyfied to adapt to this changes.
@@ -222,7 +399,7 @@ Mon Aug  2 11:52:36 1999  jochym  <jochym@k6>
 
 	* drivers/lirc_fly98/README: nstalation instructions added
 
-	* README, drivers/lirc_fly98/ChangeLog, drivers/lirc_fly98/README, drivers/lirc_fly98/bttv063-gpiomon.diff, drivers/lirc_fly98/lirc_fly98.c, drivers/lirc_fly98/lirc_fly98.h, remotes/fly98/Attic/lircd.conf.fly98, remotes/fly98/Attic/lircmd.conf.fly98, remotes/fly98/Attic/lircrc.fly98:
+	* README, drivers/lirc_fly98/Attic/bttv063-gpiomon.diff, drivers/lirc_fly98/ChangeLog, drivers/lirc_fly98/README, drivers/lirc_fly98/lirc_fly98.c, drivers/lirc_fly98/lirc_fly98.h, remotes/fly98/Attic/lircd.conf.fly98, remotes/fly98/Attic/lircmd.conf.fly98, remotes/fly98/Attic/lircrc.fly98:
 	Finally a working setup. Further clean-up of the kernel patch (got it
 	even smaller). Configuration files for lircd, lircmd and ~/.lircrc.
 	Lock-up in the bttv caused by wrong initialization order removed.
@@ -230,7 +407,7 @@ Mon Aug  2 11:52:36 1999  jochym  <jochym@k6>
 
 Sun Aug  1 08:40:07 1999  jochym  <jochym@k6>
 
-	* drivers/lirc_fly98/kbttv2210-gpiomon.diff:
+	* drivers/lirc_fly98/Attic/kbttv2210-gpiomon.diff:
 	Even smaller patch. Only gpiomonitor function added. remote.c removed
 	from the kernel - all is handled by the lirc_fly98.o module.
 	Better integrated with menuconfig of the kernel.
@@ -283,7 +460,7 @@ Tue Jul 27 12:46:57 1999  jochym  <jochym@k6>
 	Minor cleanup of the driver. Poll function added. Bugfixes.
 	Supports patched kernel and external bttv drivers.
 
-	* drivers/lirc_fly98/bttv063-gpiomon.diff, drivers/lirc_fly98/kbttv2210-gpiomon.diff:
+	* drivers/lirc_fly98/Attic/bttv063-gpiomon.diff, drivers/lirc_fly98/Attic/kbttv2210-gpiomon.diff:
 	Patches for bttv-0.6.3 and kernel bttv 2.2.10.
 	They implement GPIO monitoring hook into the bttv driver.
 	Version 0.0.3
@@ -397,7 +574,9 @@ Sat May 15 15:34:04 1999  Christoph Bartelmus  <columbus@k6>
 
 	* daemons/Makefile.am, daemons/ir_remote.c: added maintainer mode
 
-Fri May 14 22:22:06 1999  wheeley  <wheeley@k6>
+Fri May 14 22:22:45 1999  wheeley  <wheeley@k6>
+
+	* drivers/irman/Attic/lirmand.c: hopefully fixed buggy daemonization
 
 	* drivers/Makefile.am: added lirc.h to distribution
 
@@ -415,7 +594,9 @@ Fri May  7 17:50:49 1999  Christoph Bartelmus  <columbus@k6>
 
 	* tools/Attic/irrecord.c: added some debug code
 
-Thu May  6 22:07:31 1999  wheeley  <wheeley@k6>
+Thu May  6 22:08:12 1999  wheeley  <wheeley@k6>
+
+	* drivers/irman/Attic/lirmand.c: incorporated signal patch from yoann
 
 	* autogen.sh: added to repository
 
@@ -432,6 +613,10 @@ Wed May  5 14:57:55 1999  Christoph Bartelmus  <columbus@k6>
 	* drivers/lirc_aver/Makefile.am, drivers/lirc_fly98/Makefile.am, drivers/lirc_haup/Makefile.am, drivers/lirc_parallel/Makefile.am, drivers/lirc_serial/Makefile.am:
 	corrected mknod call
 
+Tue May  4 23:34:03 1999  wheeley  <wheeley@k6>
+
+	* drivers/irman/Attic/lirmand.c: fixed signal problem in lirmand.c
+
 Tue May  4 04:41:20 1999  rggammon  <rggammon@k6>
 
 	* AUTHORS, Attic/lirc-bttv-2.2.7.patch.gz, configure.in, daemons/ir_remote.c, daemons/lircd.c, drivers/Makefile.am, drivers/lirc.h, drivers/lirc_aver/Makefile.am, drivers/lirc_aver/lirc_aver.c, drivers/lirc_fly98/Attic/lirc_fly89.c, drivers/lirc_fly98/Makefile.am, drivers/lirc_haup/Makefile.am, drivers/lirc_haup/lirc_haup.c, remotes/avermedia/lircd.conf.avermedia, remotes/avermedia/lircmd.conf.avermedia, remotes/fly98/Attic/lircd.conf.fly98, remotes/fly98/Attic/lircmd.conf.fly98:
@@ -446,7 +631,7 @@ Mon May  3 19:54:25 1999  Christoph Bartelmus  <columbus@k6>
 
 Thu Apr 29 21:30:59 1999  Christoph Bartelmus  <columbus@k6>
 
-	* ANNOUNCE, AUTHORS, COPYING, ChangeLog, Makefile.am, NEWS, TODO, acconfig.h, configure.in, contrib/irman2lirc, contrib/lirc.debian, contrib/lirc.suse, contrib/lircd.conf, contrib/lircmd.conf, contrib/lircrc, daemons/Makefile.am, daemons/config_file.c, daemons/config_file.h, daemons/dump_config.c, daemons/dump_config.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/lircd.c, daemons/lircd.h, daemons/lircmd.c, drivers/Makefile.am, drivers/lirc_parallel/Makefile.am, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h, drivers/lirc_serial/Makefile.am, drivers/lirc_serial/lirc_serial.c, remotes/animax/lircd.conf.animax, remotes/animax/lircmd.conf.animax, remotes/hauppauge/lircd.conf.hauppauge, remotes/life-view/lircd.conf.FlyVideo_II, remotes/packard_bell/lircd.conf.packard_bell, tools/Attic/irrecord.c, tools/Makefile.am, tools/irexec.c, tools/irpty.c, tools/irw.c, tools/irxevent.c, tools/lirc_client.c, tools/lirc_client.h, tools/smode2.c, tools/xmode2.c:
+	* ANNOUNCE, AUTHORS, COPYING, ChangeLog, Makefile.am, NEWS, TODO, acconfig.h, configure.in, contrib/irman2lirc, contrib/lirc.debian, contrib/lirc.suse, contrib/lircd.conf, contrib/lircmd.conf, contrib/lircrc, daemons/Makefile.am, daemons/config_file.c, daemons/config_file.h, daemons/dump_config.c, daemons/dump_config.h, daemons/ir_remote.c, daemons/ir_remote.h, daemons/lircd.c, daemons/lircd.h, daemons/lircmd.c, drivers/Makefile.am, drivers/irman/Attic/Makefile.am, drivers/irman/Attic/lirmand.c, drivers/lirc_parallel/Makefile.am, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h, drivers/lirc_serial/Makefile.am, drivers/lirc_serial/lirc_serial.c, remotes/animax/lircd.conf.animax, remotes/animax/lircmd.conf.animax, remotes/hauppauge/lircd.conf.hauppauge, remotes/life-view/lircd.conf.FlyVideo_II, remotes/packard_bell/lircd.conf.packard_bell, tools/Attic/irrecord.c, tools/Makefile.am, tools/irexec.c, tools/irpty.c, tools/irw.c, tools/irxevent.c, tools/lirc_client.c, tools/lirc_client.h, tools/smode2.c, tools/xmode2.c:
 	changed revision to reflect current lirc version
 
 	* tools/Attic/irrecord.c: Imported sources.
@@ -501,10 +686,14 @@ Thu Apr 29 21:30:59 1999  Christoph Bartelmus  <columbus@k6>
 
 	* daemons/Makefile.am: Initial revision
 
-	* drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h:
+	* drivers/irman/Attic/lirmand.c: Imported sources.
+
+	* drivers/irman/Attic/lirmand.c: Initial revision
+
+	* drivers/irman/Attic/Makefile.am, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h:
 	Imported sources.
 
-	* drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h:
+	* drivers/irman/Attic/Makefile.am, drivers/lirc_parallel/lirc_parallel.c, drivers/lirc_parallel/lirc_parallel.h:
 	Initial revision
 
 	* drivers/lirc_parallel/Makefile.am: Imported sources.
