@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.10 2002/10/21 20:47:14 ranty Exp $
+## $Id: Makefile.am,v 5.11 2004/11/28 19:47:03 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -37,6 +37,8 @@ lircincludedir = $(includedir)/lirc
 
 lib_LTLIBRARIES = liblirc_client.la
 liblirc_client_la_SOURCES = lirc_client.c lirc_client.h
+liblirc_client_la_LDFLAGS = -version-info 0:0:0
+
 lircinclude_HEADERS = lirc_client.h
 
 CLEANFILES = *~
