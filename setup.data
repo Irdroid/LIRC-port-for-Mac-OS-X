@@ -42,7 +42,7 @@ hw_menu_entry: @hw-other-serial
 	uirt2_raw: "UIRT2 (receive and transmit)"
 	mp3anywhere: "X10 MP3 Anywhere RF Receiver"
 
-hw_menu_entry: @hw-tv-card 
+hw_menu_entry: @hw-tv-card
 	cph03x: "Askey Magic TView CPH03x (card=1)"
 	cph06x: "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)"
 	tvbox: "Asus TV-Box"
@@ -93,7 +93,7 @@ hw_menu_entry: @hw-pda
 	sa1100: "Sharp Zaurus"
 
 hw_menu_entry: @hw-usb
-	atiusb: "ATI RF Remote Wonder"
+	atiusb: "ATI/NVidia/X10 RF Remote"
 	tira: "Home Electronics Tira USB device"
 
 param_type: act200l animax irdeo irdeo_remote packard_bell serial \
