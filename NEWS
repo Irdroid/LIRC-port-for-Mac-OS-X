@@ -1,5 +1,9 @@
 0.6.4: future
+  * added support for Compaq iPAQ 
+  * added support for FlyVideo 98/FM TV card
   * added support for Winfast TV2000 (Juan Toledo)
+  * added support for BT878 version of BestBuy Easy TV card (Miguel Angel)
+  * added support for KNC ONE TV cards (Ulrich Mueller)
 
 0.6.3: 03/10/01
   * added support for Silitek SM-1000 receiver (Krister Wicksell Eriksson)
