@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.17 2000/08/23 19:47:25 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.18 2000/08/26 19:55:27 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -62,6 +62,23 @@
 
 #include "drivers/lirc.h"
 
+#ifdef LIRC_SERIAL_IRDEO
+
+#define LIRC_SIGNAL_PIN UART_MSR_DSR
+#define LIRC_SIGNAL_PIN_CHANGE UART_MSR_DDSR
+#ifndef LIRC_SERIAL_TRANSMITTER
+#define LIRC_SERIAL_TRANSMITTER
+#endif
+#ifndef LIRC_SERIAL_SOFTCARRIER
+#define LIRC_SERIAL_SOFTCARRIER
+#endif
+
+#else
+
+#define LIRC_SIGNAL_PIN UART_MSR_DCD
+#define LIRC_SIGNAL_PIN_CHANGE UART_MSR_DDCD
+#endif
+
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 #define RS_ISR_PASS_LIMIT 256
@@ -108,8 +125,11 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 
 #ifdef LIRC_SERIAL_ANIMAX
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
+
 #elif defined(LIRC_SERIAL_IRDEO)
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
+#define LIRC_ON  UART_MCR_OUT2
+
 #else
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_OUT2)
 #define LIRC_ON  (LIRC_OFF|UART_MCR_DTR)
@@ -138,6 +158,36 @@ void off(void)
 
 void send_pulse(unsigned long length)
 {
+#ifdef LIRC_SERIAL_IRDEO
+	long rawbits;
+	int i;
+	unsigned char output;
+	unsigned char chunk,shifted;
+	
+	/* how many bits have to be sent ? */
+	rawbits=length*1152/10000;
+	if(duty_cycle>50) chunk=3;
+	else chunk=1;
+	for(i=0,output=0x7f;rawbits>0;rawbits-=3)
+	{
+		shifted=chunk<<(i*3);
+		shifted>>=1;
+		output&=(~shifted);
+		i++;
+		if(i==3)
+		{
+			soutp(UART_TX,output);
+			while(!(sinp(UART_LSR) & UART_LSR_TEMT));
+			output=0x7f;
+			i=0;
+		}
+	}
+	if(i!=2)
+	{
+		soutp(UART_TX,output);
+		while(!(sinp(UART_LSR) & UART_LSR_TEMT));
+	}
+#else
 #ifdef LIRC_SERIAL_SOFTCARRIER
 	unsigned long k,delay;
 	int flag;
@@ -166,12 +216,15 @@ void send_pulse(unsigned long length)
 	on();
 	udelay(length);
 #endif
+#endif
 }
 
 void send_space(unsigned long length)
 {
 	if(length==0) return;
+#       ifndef LIRC_SERIAL_IRDEO
 	off();
+#       endif
 	udelay(length);
 }
 #endif
@@ -256,7 +309,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			       "We're caught!\n");
 			break;
 		}
-		if((status&UART_MSR_DDCD) && sense!=-1)
+		if((status&LIRC_SIGNAL_PIN_CHANGE) && sense!=-1)
 		{
 			/* get current time */
 			do_gettimeofday(&tv);
@@ -284,7 +337,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 
 			/* calculate time since last interrupt in
 			   microseconds */
-			dcd=(status & UART_MSR_DCD) ? 1:0;
+			dcd=(status & LIRC_SIGNAL_PIN) ? 1:0;
 			
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
@@ -382,10 +435,24 @@ static int init_port(void)
 	sinp(UART_RX);
 	sinp(UART_IIR);
 	sinp(UART_MSR);
+
+#ifdef LIRC_SERIAL_IRDEO
+	/* setup port to 7N1 @ 115200 Baud */
+	/* 7N1+start = 9 bits at 115200 ~ 3 bits at 38kHz */
+
+	/* Set DLAB 1. */
+	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
+	/* Set divisor to 1 => 115200 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,1);
+	/* Set DLAB 0 +  7N1 */
+	soutp(UART_LCR,UART_LCR_WLEN7);
+	/* THR interrupt already disabled at this point */
+#endif
 	
 	restore_flags(flags);
 	
-	/* If DCD is high, then this must be an active low receiver. */
+	/* If pin is high, then this must be an active low receiver. */
 	if(sense==-1)
 	{
 		/* wait 1 sec for the power supply */
@@ -402,7 +469,7 @@ static int init_port(void)
 		del_timer(&power_supply_timer);
 #               endif
 		
-		sense=(sinp(UART_MSR) & UART_MSR_DCD) ? 1:0;
+		sense=(sinp(UART_MSR) & LIRC_SIGNAL_PIN) ? 1:0;
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
 		       "%s receiver\n",sense ? "low":"high");
 	}
@@ -605,6 +672,10 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 	memcpy_fromfs(wbuf,buf,n);
 #       endif
 	save_flags(flags);cli();
+#       ifdef LIRC_SERIAL_IRDEO
+	/* DTR, RTS down */
+	on();
+#       endif
 	for(i=0;i<count;i++)
 	{
 		if(i%2) send_space(wbuf[i]);
@@ -628,7 +699,9 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #       ifdef LIRC_SERIAL_TRANSMITTER
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	LIRC_CAN_SET_SEND_DUTY_CYCLE|
+#       ifndef LIRC_SERIAL_IRDEO
 	LIRC_CAN_SET_SEND_CARRIER|
+#       endif
 #       endif
 	LIRC_CAN_SEND_PULSE|
 #       endif
