@@ -3,10 +3,10 @@
  * key codes are obtained from GPIO port after interrupt 
  * notification from bttv module
  * 
- * (L) by Artur Lipowski <lipowski@comarch.pl>
+ * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_i.c,v 1.2 2000/04/06 17:23:58 columbus Exp $
+ * $Id: lirc_gpio_i.c,v 1.3 2000/07/28 11:10:44 columbus Exp $
  *
  */
 

@@ -2,12 +2,12 @@
  * Remote control driver for the TV-card
  * key codes are obtained from GPIO port
  * 
- * (L) by Artur Lipowski <lipowski@comarch.pl>
+ * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *     patch for the AverMedia by Santiago Garcia Mantinan <manty@i.am>
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.13 2000/07/27 19:53:44 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.14 2000/07/28 11:10:44 columbus Exp $
  *
  */
 
@@ -20,6 +20,7 @@
 #include <linux/kmod.h>
 #include <linux/sched.h>
 #include <linux/wrapper.h>
+#include <linux/errno.h>
 
 #include "../lirc_dev/lirc_dev.h"
 #include "../drivers/char/bttv.h"
@@ -81,23 +82,25 @@ static int card_type = 0;
 
 #define MAX_BYTES 8
 
+#define SUCCESS 0
+#define LOGHEAD "lirc_gpio_p (%d): "
+
 /* how many bits GPIO value can be shifted right before processing
  * it is computed from the value of gpio_mask_parameter
  */
 static unsigned char gpio_pre_shift = 0;
 
 
-static inline int reverse(int data,int bits)
+static inline int reverse(int data, int bits)
 {
 	int i;
 	int c;
 	
-	c=0;
-	for(i=0;i<bits;i++)
-	{
-		c|=(((data & (1<<i)) ? 1:0)) << (bits-1-i);
+	for (c=0,i=0; i<bits; i++) {
+		c |= (((data & (1<<i)) ? 1:0)) << (bits-1-i);
 	}
-	return(c);
+
+	return c;
 }
 
 static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
@@ -105,37 +108,28 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	unsigned long mask = gpio_mask;
 	unsigned char shift = 0;
 
-#if 0
-	/* FIXME FIXME FIXME FIXME FIXME FIXME */
-	printk("lirc_gpio_p: gpio_val is %lx\n",(unsigned long) gpio_val);
-	/* FIXME FIXME FIXME FIXME FIXME FIXME */
-#endif
+	dprintk(LOGHEAD "gpio_val is %lx\n",card,(unsigned long) gpio_val);
 	
 	gpio_val ^= gpio_xor_mask;
 	
 	if (gpio_lock_mask && (gpio_val & gpio_lock_mask)) {
-		return -1;
+		return -EBUSY;
 	}
 
-	switch(rcv_infos[card_type].bttv_id)
+	switch (rcv_infos[card_type].bttv_id)
 	{
 	case BTTV_AVERMEDIA98:
-		if(bttv_write_gpio(card, gpio_enable, gpio_enable))
-		{
-			dprintk("lirc_gpio_p %d: cannot write to GPIO\n",
-				card);
-			return(-1);
+		if (bttv_write_gpio(card, gpio_enable, gpio_enable)) {
+			dprintk(LOGHEAD "cannot write to GPIO\n", card);
+			return -EIO;
 		}
-		if(bttv_read_gpio(card, &gpio_val))
-		{
-			dprintk("lirc_gpio_p %d: cannot read GPIO\n", card);
-			return(-1);
+		if (bttv_read_gpio(card, &gpio_val)) {
+			dprintk(LOGHEAD "cannot read GPIO\n", card);
+			return -EIO;
 		}
-		if(bttv_write_gpio(card, gpio_enable, 0))
-		{
-			dprintk("lirc_gpio_p %d: cannot write to GPIO\n",
-				card);
-			return(-1);
+		if (bttv_write_gpio(card, gpio_enable, 0)) {
+			dprintk(LOGHEAD "cannot write to GPIO\n", card);
+			return -EIO;
 		}
 		break;
 	default:
@@ -153,23 +147,16 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		gpio_val >>= 1;
 	}
 	
-#if 0
-	/* FIXME FIXME FIXME FIXME FIXME FIXME */
-	printk("lirc_gpio_p: code is %lx\n",(unsigned long) codes[0]);
-	/* FIXME FIXME FIXME FIXME FIXME FIXME */
-#endif
-	switch(rcv_infos[card_type].bttv_id)
+	dprintk(LOGHEAD "code is %lx\n",card,(unsigned long) codes[0]);
+	switch (rcv_infos[card_type].bttv_id)
 	{
 	case BTTV_AVPHONE98:
-		codes[2]=((codes[0]&(~0x1))<<2)&0xff;
-		codes[3]=(~codes[2])&0xff;
-		if(codes[0]&0x1)
-		{
+		codes[2] = ((codes[0]&(~0x1))<<2)&0xff;
+		codes[3] = (~codes[2])&0xff;
+		if (codes[0]&0x1) {
 			codes[0] = 0xc0;
 			codes[1] = 0x3f;
-		}
-		else
-		{
+		} else {
 			codes[0] = 0x40;
 			codes[1] = 0xbf;
 		}
@@ -177,7 +164,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_AVERMEDIA98:
 		break;
         case BTTV_MAGICTVIEW061:
-		codes[0]=(codes[0]&0x01)
+		codes[0] = (codes[0]&0x01)
 			|(codes[0]&0x02<<1)
 			|(codes[0]&0x04<<2)
 			|(codes[0]&0x08>>2)
@@ -186,16 +173,16 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
         case BTTV_MAGICTVIEW063:
 	case BTTV_MIRO:
 	case BTTV_DYNALINK:
-		codes[2]=reverse(codes[0],8);
-		codes[3]=(~codes[2])&0xff;
-		codes[0]=0x61;
-		codes[1]=0xD6;
+		codes[2] = reverse(codes[0],8);
+		codes[3] = (~codes[2])&0xff;
+		codes[0] = 0x61;
+		codes[1] = 0xD6;
 		break;
 	default:
 		break;
 	}
 
-	return 0;
+	return SUCCESS;
 }
 
 static int get_key(void* data, unsigned char *key, int key_no)
@@ -205,29 +192,28 @@ static int get_key(void* data, unsigned char *key, int key_no)
 	unsigned long code = 0;
 	unsigned char cur_codes[MAX_BYTES];
 	
-	if (key_no > 0)
-	{
+	if (key_no > 0)	{
 		if (code_bytes < 2 || key_no >= code_bytes) {
-			dprintk("lirc_gpio_p %d: something wrong in get_key\n",
-				card);
-			return -1;
+			dprintk(LOGHEAD "something wrong in get_key\n", card);
+			return -EBADRQC;
 		}
-		*key=codes[key_no];
-		return 0;
+		*key = codes[key_no];
+		return SUCCESS;
 	}
 	
 	if (bttv_read_gpio(card, &code)) {
-		dprintk("lirc_gpio_p %d: cannot read GPIO\n", card);
-		return -1;
+		dprintk(LOGHEAD "cannot read GPIO\n", card);
+		return -EIO;
 	}
 
 	if (build_key(code, cur_codes)) {
-		return -1;
+		return -EFAULT;
 	}
 
 	if (soft_gap) {
-		if (!memcmp(codes, cur_codes, code_bytes) && jiffies < next_time) {
-			return -1;
+		if (!memcmp(codes, cur_codes, code_bytes) && 
+		    jiffies < next_time) {
+			return -EAGAIN;
 		}
 		next_time = jiffies + soft_gap;
 	}
@@ -236,7 +222,7 @@ static int get_key(void* data, unsigned char *key, int key_no)
 
 	*key = codes[0];
 
-	return 0;
+	return SUCCESS;
 }
 
 static void set_use_inc(void* data)
@@ -280,10 +266,10 @@ int gpio_remote_init(void)
 	if (code_length) {
 		plugin.code_length = code_length;
 	} else {
-		/* calculte scan code length in bits if needed*/
+		/* calculate scan code length in bits if needed */
 		plugin.code_length = 1;
 		mask = gpio_mask >> 1;
-		while(mask) {
+		while (mask) {
 			if (mask & 1u) {
 				plugin.code_length++;
 			}
@@ -293,18 +279,15 @@ int gpio_remote_init(void)
 
 	code_bytes = (plugin.code_length/8) + (plugin.code_length%8 ? 1 : 0);
 	if (MAX_BYTES < code_bytes) {
-		printk ("lirc_gpio_p %d: scan code too long (%d bytes)\n",
+		printk (LOGHEAD "scan code too long (%d bytes)\n",
 			minor, code_bytes);
-		return -1;
+		return -EBADRQC;
 	}
 
-	if(gpio_enable)
-	{
-		if(bttv_gpio_enable(card, gpio_enable, gpio_enable))
-		{
-			printk("lirc_gpio_p %d: gpio_enable failure\n",
-			       minor);
-			return(-1);
+	if (gpio_enable) {
+		if(bttv_gpio_enable(card, gpio_enable, gpio_enable)) {
+			printk(LOGHEAD "gpio_enable failure\n", minor);
+			return -EIO;
 		}
 	}
 
@@ -318,15 +301,15 @@ int gpio_remote_init(void)
 	ret = lirc_register_plugin(&plugin);
 	
 	if (0 > ret) {
-		printk ("lirc_gpio_p %d: device registration failed with %d\n",
+		printk (LOGHEAD "device registration failed with %d\n",
 			minor, ret);
 		return ret;
 	}
 	
 	minor = ret;
-	printk("lirc_gpio_p %d: driver registered\n", minor);
+	printk(LOGHEAD "driver registered\n", minor);
 
-	return 0;
+	return SUCCESS;
 }
 
 EXPORT_NO_SYMBOLS; 
@@ -347,7 +330,7 @@ int init_module(void)
 	if (MAX_IRCTL_DEVICES < minor) {
 		printk("lirc_gpio_p: parameter minor (%d) must be lesst han %d!\n",
 		       minor, MAX_IRCTL_DEVICES-1);
-		return -1;
+		return -EBADRQC;
 	}
 	
 	request_module("bttv");
@@ -357,36 +340,34 @@ int init_module(void)
 	 */
 	if (gpio_mask) {
 		if (2 > sample_rate || 50 < sample_rate) {
-			printk("lirc_gpio_p %d: parameter sample_rate "
+			printk(LOGHEAD "parameter sample_rate "
 			       "must be beetween 2 and 50!\n", minor);
-			return -1;
+			return -EBADRQC;
 		}
 
-		if (soft_gap && ((2000/sample_rate) > soft_gap || 1000 < soft_gap)) {
-			printk("lirc_gpio_p %d: parameter soft_gap "
+		if (soft_gap && 
+		    ((2000/sample_rate) > soft_gap || 1000 < soft_gap)) {
+			printk(LOGHEAD "parameter soft_gap "
 			       "must be beetween %d and 1000!\n",
 			       minor, 2000/sample_rate);
-			return -1;
+			return -EBADRQC;
 		}
 	} else {
-		if(bttv_get_cardinfo(card,&type,&cardid)==-1)
-		{
-			printk("lirc_gpio_p %d: could not get card type\n",
-			       minor);
+		if(bttv_get_cardinfo(card,&type,&cardid)==-1) {
+			printk(LOGHEAD "could not get card type\n", minor);
 		}
-		printk("lirc_gpio_p %d: card type 0x%x, id 0x%x\n",minor,
+		printk(LOGHEAD "card type 0x%x, id 0x%x\n",minor,
 		       type,cardid);
-		if(type==BTTV_AVPHONE98 && cardid!=0x00031461)
-		{
+		if (type==BTTV_AVPHONE98 && cardid!=0x00031461)	{
 			type = BTTV_AVERMEDIA98;
 		}
 
 		if (type == BTTV_UNKNOWN) {
-			printk("lirc_gpio_p %d: cannot detect TV card nr %d!\n",
+			printk(LOGHEAD "cannot detect TV card nr %d!\n",
 			       minor, card);
-			return -1;
+			return -EBADRQC;
 		}
-		for (card_type=1;
+		for (card_type = 1;
 		     card_type < sizeof(rcv_infos)/sizeof(struct rcv_info); 
 		     card_type++) {
 			if (rcv_infos[card_type].bttv_id == type) {
@@ -401,9 +382,9 @@ int init_module(void)
 			}
 		}
 		if (card_type == sizeof(rcv_infos)/sizeof(struct rcv_info)) {
-			printk("lirc_gpio_p %d: TV card type %x not supported!\n",
+			printk(LOGHEAD "TV card type %x not supported!\n",
 			       minor, type);
-			return -1;
+			return -EBADRQC;
 		}
 	}
 
@@ -422,7 +403,7 @@ void cleanup_module(void)
 	ret = lirc_unregister_plugin(minor);
  
 	if (0 > ret) {
-		printk("lirc_gpio_p %d: error in lirc_unregister_minor: %d\n"
+		printk(LOGHEAD "error in lirc_unregister_minor: %d\n"
 		       "Trying again...\n",
 		       minor, ret);
 
@@ -432,13 +413,13 @@ void cleanup_module(void)
 		ret = lirc_unregister_plugin(minor);
  
 		if (0 > ret) {
-			printk("lirc_gpio_p %d: error in lirc_unregister_minor: %d!!!\n",
+			printk(LOGHEAD "error in lirc_unregister_minor: %d!!!\n",
 			       minor, ret);
 			return;
 		}
 	}
 
-	dprintk("lirc_gpio_p %d: module successfully unloaded\n", minor);
+	dprintk(LOGHEAD "module successfully unloaded\n", minor);
 }
 #endif
 

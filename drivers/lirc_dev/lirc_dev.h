@@ -1,10 +1,10 @@
 /*
  * LIRC base driver
  * 
- * (L) by Artur Lipowski <lipowski@comarch.pl>
+ * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.1 2000/04/02 13:07:21 columbus Exp $
+ * $Id: lirc_dev.h,v 1.2 2000/07/28 11:10:44 columbus Exp $
  *
  */
 
@@ -47,15 +47,17 @@ struct lirc_plugin
  * in such situation get_key should return key code values starting
  * from most significant byte (device read will preseve this order)
  * in addition if code_length > 8 then get_key will be called 
- * several (ceil(code_length/8)) times in one pool pass (or after task queue awake)
- * key_no parameter denotes number of the requested byte (0 means first byte)
+ * several (ceil(code_length/8)) times in one pool pass (or after task queue 
+ * awake) key_no parameter denotes number of the requested byte (0 means first 
+ * byte)
  *
  * sample_rate:
  * sample_rate equal to 0 means that no pooling will be performed and get_key
- * will be triggered by external events (through task queue returned by get_queue)
+ * will be triggered by external events (through task queue returned by 
+ * get_queue)
  *
  * data:
- * this may point to any plugin data and this pointer will be passed to all 
+ * it may point to any plugin data and this pointer will be passed to all 
  * callback functions
  *
  * get_key:

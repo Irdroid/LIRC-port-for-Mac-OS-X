@@ -1,10 +1,10 @@
 /*
  * LIRC base driver
  * 
- * (L) by Artur Lipowski <lipowski@comarch.pl>
+ * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.10 2000/07/26 19:49:16 columbus Exp $
+ * $Id: lirc_dev.c,v 1.11 2000/07/28 11:10:44 columbus Exp $
  *
  */
 
@@ -31,6 +31,7 @@
 #include <linux/smp_lock.h>
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
+#include <asm/errno.h>
 #include <linux/wrapper.h>
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
@@ -53,7 +54,6 @@ MODULE_PARM(debug,"i");
 #define IRLOCK            down_interruptible(&ir->lock)
 #define IRUNLOCK          up(&ir->lock)
 #define SUCCESS           0
-#define FAIL              -1
 #define NOPLUG            -1
 #define dprintk           if (debug) printk
 
@@ -90,8 +90,9 @@ DECLARE_MUTEX(plugin_lock);
 static struct irctl irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
 
+
 /*  helper function
- *  return 0 on success
+ *  initializes the irctl structure
  */
 static inline void init_irctl(struct irctl *ir)
 {
@@ -113,8 +114,11 @@ static inline void init_irctl(struct irctl *ir)
 	ir->open = 0;
 }
 
+
 /*  helper function
- *  return 0 on success
+ *  reads key codes from plugin and puts them into buffer
+ *  buffer free space is checked and locking performed
+ *  returns 0 on success
  */
 
 inline static int add_to_buf(struct irctl *ir)
@@ -125,12 +129,12 @@ inline static int add_to_buf(struct irctl *ir)
 	if (ir->in_buf == ir->buf_len) {
 		dprintk(LOGHEAD "buffer overflow\n",
 			ir->p.name, ir->p.minor);
-		return FAIL;
+		return -EOVERFLOW;
 	}
 
 	for (i=0; i < ir->bytes_in_key; i++) {
 		if (ir->p.get_key(ir->p.data, &buf[i], i)) {
-			return FAIL;
+			return -ENODATA;
 		}
 		dprintk(LOGHEAD "remote code (0x%x) now in buffer\n",
 			ir->p.name, ir->p.minor, buf[i]);
@@ -147,7 +151,7 @@ inline static int add_to_buf(struct irctl *ir)
 	return SUCCESS;
 }
 
-/* polling thread
+/* main function of the polling thread
  */
 static int lirc_thread(void *irctl)
 {
@@ -171,12 +175,11 @@ static int lirc_thread(void *irctl)
 	
 	unlock_kernel();
 	
-	if(ir->t_notify != NULL) {
+	if (ir->t_notify != NULL) {
 		up(ir->t_notify);
 	}
 	
-	dprintk(LOGHEAD "poll thread started\n",
-		ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll thread started\n", ir->p.name, ir->p.minor);
 	
 	do {
 		if (ir->open) {
@@ -200,12 +203,11 @@ static int lirc_thread(void *irctl)
 	} while (!ir->shutdown && !signal_pending(current));
 	
 	ir->tpid = -1;
-	if(ir->t_notify != NULL) {
+	if (ir->t_notify != NULL) {
 		up(ir->t_notify);
 	}
 	
-	dprintk(LOGHEAD "poll thread ended\n",
-		ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll thread ended\n", ir->p.name, ir->p.minor);
 	
 	return 0;
 }
@@ -225,14 +227,14 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	if (!p) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "plugin pointer must be not NULL!\n");
-		return -FAIL;
+		return -EBADRQC;
 	}
 
 	if (MAX_IRCTL_DEVICES <= p->minor) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "\" minor\" must be beetween 0 and %d (%d)!\n",
 		       MAX_IRCTL_DEVICES-1, p->minor);
-		return FAIL;
+		return -EBADRQC;
 	}
 
 	if (1 > p->code_length || (BUFLEN*8) < p->code_length) {
@@ -240,20 +242,20 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		       "code length in bits for minor (%d) "
 		       "must be less than %d!\n",
 		       p->minor, BUFLEN*8);
-		return FAIL;
+		return -EBADRQC;
 	}
 
 	if (p->sample_rate) {
 		if (2 > p->sample_rate || 50 < p->sample_rate) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "sample_rate must be beetween 2 and 50!\n");
-			return FAIL;
+			return -EBADRQC;
 		}
 	} else {
 		if (!p->get_queue) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "get_queue cannot be NULL!\n");
-			return FAIL;
+			return -EBADRQC;
 		}
 	}
 
@@ -270,13 +272,13 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			printk("lirc_dev: lirc_register_plugin: "
 			       "no free slots for plugins!\n");
 			up(&plugin_lock);
-			return FAIL;
+			return -ENOMEM;
 		}
 	} else if (irctls[minor].p.minor != NOPLUG) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "minor (%d) just registerd!\n", minor);
 		up(&plugin_lock);
-		return FAIL;
+		return -EBUSY;
 	}
 
 	ir = &irctls[minor];
@@ -288,7 +290,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->jiffies_to_wait = 0;
 	} 
 
-	/* some safety check 8-)  */
+	/* some safety check 8-) */
 	p->name[sizeof(p->name)-1] = '\0';
 
 	ir->bytes_in_key = p->code_length/8 + (p->code_length%8 ? 1 : 0);
@@ -296,8 +298,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	/* this simplifies boundary checking during buffer access */
 	ir->buf_len = BUFLEN - (BUFLEN%ir->bytes_in_key);
 
-	ir->features = (p->code_length > 8) ? LIRC_CAN_REC_LIRCCODE : 
-					      LIRC_CAN_REC_CODE;
+	ir->features = (p->code_length > 8) ?
+		       LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_CODE;
 
 	ir->p = *p;
 	ir->p.minor = minor;
@@ -318,7 +320,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		up(&plugin_lock);
 		printk("lirc_dev: lirc_register_plugin:"
 		       "cannot run poll thread for minor = %d\n", p->minor);
-		return FAIL;
+		return -ECHILD;
 	}
 	down(&tn);
 	ir->t_notify = NULL;
@@ -344,7 +346,7 @@ int lirc_unregister_plugin(int minor)
 		printk("lirc_dev: lirc_unregister_plugin:"
 		       "\" minor\" must be beetween 0 and %d!\n",
 		       MAX_IRCTL_DEVICES-1);
-		return FAIL;
+		return -EBADRQC;
 	}
 
 	ir = &irctls[minor];
@@ -355,19 +357,18 @@ int lirc_unregister_plugin(int minor)
 		printk("lirc_dev: lirc_unregister_plugin:"
 		       "minor (%d) device not registered!", minor);
 		up(&plugin_lock);
-		return FAIL;
+		return -ENOENT;
 	}
 
 	if (ir->open) {
 		printk("lirc_dev: lirc_unregister_plugin:"
 		       "plugin %s[%d] in use!", ir->p.name, ir->p.minor);
 		up(&plugin_lock);
-		return FAIL;
+		return -EBUSY;
 	}
 
 	/* end up polling thread */
-	if (ir->tpid >= 0) 
-	{
+	if (ir->tpid >= 0) {
 		ir->t_notify = &tn;
 		ir->shutdown = 1;
 		down(&tn);
@@ -434,8 +435,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 
 	up(&plugin_lock);
 
-	dprintk(LOGHEAD "open result = %d\n",
-		ir->p.name, ir->p.minor, SUCCESS);
+	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, SUCCESS);
 
 	return SUCCESS;
 }
@@ -447,8 +447,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 {
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
 
-	dprintk(LOGHEAD "close called\n",
-		ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "close called\n", ir->p.name, ir->p.minor);
  
 	down_interruptible(&plugin_lock);
 
@@ -467,8 +466,7 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 
-	dprintk(LOGHEAD "poll called\n",
-		ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll called\n", ir->p.name, ir->p.minor);
 
 	if (!ir->in_buf) {
 		poll_wait(file, &ir->wait_poll, wait);
@@ -545,7 +543,8 @@ static ssize_t irctl_read(struct file *file,
 	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
 
 	if (ir->bytes_in_key != length) {
-		dprintk(LOGHEAD "read result = -EIO\n", ir->p.name, ir->p.minor);
+		dprintk(LOGHEAD "read result = -EIO\n",
+			ir->p.name, ir->p.minor);
 		return -EIO;
 	}
 
@@ -581,7 +580,9 @@ static ssize_t irctl_read(struct file *file,
 	remove_wait_queue(&ir->wait_poll, &wait);
 	current->state = TASK_RUNNING;
 
-	/* here is the only point at which we remove key codes from the buffer */
+	/* here is the only point at which we remove key codes from 
+	 * the buffer
+	 */
 	IRLOCK;
 	memcpy(buf, &ir->buffer[ir->head], length);
 	ir->head += length;
@@ -608,7 +609,6 @@ static struct file_operations fops = {
 
 
 
-
 EXPORT_SYMBOL(lirc_register_plugin);
 EXPORT_SYMBOL(lirc_unregister_plugin);
 
@@ -624,12 +624,15 @@ int lirc_dev_init(void)
 		init_MUTEX(&irctls[i].lock);
 		init_waitqueue_head(&irctls[i].wait_poll);
 	}
-	
+
 #ifndef LIRC_HAVE_DEVFS
- 	i = module_register_chrdev(IRCTL_DEV_MAJOR,IRCTL_DEV_NAME,&fops);
+ 	i = module_register_chrdev(IRCTL_DEV_MAJOR,
 #else
-	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,IRCTL_DEV_NAME,&fops);
+	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
 #endif
+				   IRCTL_DEV_NAME,
+				   &fops);
+	
 	if (i < 0) {
 		printk ("lirc_dev: device registration failed with %d\n", i);
 		return i;
@@ -672,7 +675,8 @@ void cleanup_module(void)
 #endif
  
 	if (0 > ret){
-		printk("lirc_dev: error in module_unregister_chrdev: %d\n", ret);
+		printk("lirc_dev: error in module_unregister_chrdev: %d\n",
+		       ret);
 	} else {
 		dprintk("lirc_dev: module successfully unloaded\n");
 	}
