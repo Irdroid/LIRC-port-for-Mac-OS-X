@@ -23,10 +23,17 @@
 # include <config.h>
 #endif
  
+#include <linux/config.h>
+
+#ifndef CONFIG_SERIAL_MODULE
+#error "--- Please compile your Linux serial port driver ---"
+#error "--- as a module. Read the LIRC documentation for ---"
+#error "--- further details. ---"
+#endif
+
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
-#include <linux/config.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
