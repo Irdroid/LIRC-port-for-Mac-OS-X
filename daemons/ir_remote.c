@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.6 1999/07/08 18:18:28 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.7 1999/07/21 18:23:37 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -185,12 +185,9 @@ inline void send_space(unsigned long data)
 inline int bad_send_buffer(void)
 {
 	if(send_buffer.too_long!=0) return(1);
-	if(send_buffer.is_shift==1)
+	if(send_buffer.wptr==WBUF_SIZE && send_buffer.pendingp>0)
 	{
-		if(send_buffer.wptr==WBUF_SIZE && send_buffer.pendingp>0)
-		{
-			return(1);
-		}
+		return(1);
 	}
 	return(0);
 }
@@ -494,8 +491,16 @@ int send_command(struct ir_remote *remote,struct ir_ncode *code)
 		gettimeofday(&remote->last_send,NULL);
 		if(is_const(remote))
 		{
-			remote->remaining_gap=remote->gap
-			-send_buffer.sum;
+			if(remote->gap>send_buffer.sum)
+			{
+				remote->remaining_gap=remote->gap
+				-send_buffer.sum;
+			}
+			else
+			{
+				logprintf("too short gap: %lu\n",remote->gap);
+				remote->remaining_gap=remote->gap;
+			}
 		}
 		else
 		{
@@ -1067,7 +1072,7 @@ int decode(struct ir_remote *remote)
 		struct ir_ncode *codes;
 		int i;
 
-		if(rec_mode==LIRC_MODE_CODE &&
+		if(rec_mode==LIRC_MODE_CODE ||
 		   rec_mode==LIRC_MODE_LIRCCODE)
 			return(0);
 

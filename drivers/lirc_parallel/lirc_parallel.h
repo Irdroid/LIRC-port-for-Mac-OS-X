@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirc_parallel.h,v 5.1 1999/07/21 18:23:37 columbus Exp $      */
 
 #ifndef _LIRC_PARALLEL_H
 #define _LIRC_PARALLEL_H
@@ -19,6 +19,6 @@
 #define LIRC_PORT_SIGNAL_BIT          LP_PACK    /* ack signal */
 #define LIRC_PORT_IRQ         LIRC_LP_CONTROL    /* control port */
 
-#define LIRC_SFH506_DELAY 90             /* delay t_phl in usecs */
+#define LIRC_SFH506_DELAY 0             /* delay t_phl in usecs */
 
 #endif

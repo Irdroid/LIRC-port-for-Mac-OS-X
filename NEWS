@@ -61,7 +61,7 @@
   * fixed a nasty bug in serial port device driver
   * fixed sense autodetection problem in serial device driver (thanks
     to Eric Lammerts for the patch)
-  * changed the name of record program to irrecord to avaid name conflicts
+  * changed the name of record program to irrecord to avoid name conflicts
   * fixed another bug in serial port device driver, we must autodetect
     sense before requesting the IRQ
   * documentation-update

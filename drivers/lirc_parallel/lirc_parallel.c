@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.3 1999/05/10 17:11:56 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.4 1999/07/21 18:23:37 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -430,8 +430,8 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 {
 	int result,count;
 	unsigned int i;
-	unsigned int level,newlevel,counttimer;
-	unsigned long flags;
+	unsigned int level,newlevel;
+	unsigned long flags,counttimer;
 	
 #ifdef KERNEL_2_2
 	if(!is_claimed)
@@ -445,7 +445,7 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	
 	count=n/sizeof(unsigned long);
 	
-	if(count>WBUF_SIZE || count%2==0) return(-EINVAL);
+	if(n>WBUF_SIZE || count%2==0) return(-EINVAL);
 	
 #ifdef KERNEL_2_2
 	copy_from_user(wbuf,buf,n);
@@ -465,7 +465,10 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	}
 
 	/* ajust values from usecs */
-	for(i=0;i<count;i++) wbuf[i]=(unsigned long) ((unsigned long long) (wbuf[i]*timer)/1000000);
+	for(i=0;i<count;i++)
+	{
+		wbuf[i]=(unsigned long) (((double) wbuf[i])*timer/1000000);
+	}
 	
 	save_flags(flags);cli();
 	i=0;
@@ -490,7 +493,6 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 		
 		lirc_off();
 		if(i==count) break;
-		
 		counttimer=0;
 		do
 		{
