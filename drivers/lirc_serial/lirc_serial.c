@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.34 2001/10/14 11:59:56 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.35 2001/10/21 13:02:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -93,10 +93,9 @@
 
 #if defined(LIRC_SERIAL_SOFTCARRIER) && !defined(LIRC_SERIAL_TRANSMITTER)
 #warning "Software carrier only affects transmitting"
-#undef LIRC_SERIAL_SOFTCARRIER
 #endif
 
-#if defined(rdtsc) && defined(KERNEL_2_1) && defined(LIRC_SERIAL_SOFTCARRIER)
+#if defined(rdtsc) && defined(KERNEL_2_1)
 
 #define USE_RDTSC
 #warning "Note: using rdtsc instruction"
@@ -109,26 +108,108 @@
 #warning " This receiver does not have a            "
 #warning " transmitter diode                        "
 #warning "******************************************"
-#undef LIRC_SERIAL_TRANSMITTER
 #endif
 #endif
 
-#if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
+struct lirc_serial
+{
+	int type;
+	int signal_pin;
+	int signal_pin_change;
+	int on;
+	int off;
+	long (*send_pulse)(unsigned long length);
+	void (*send_space)(long length);
+	int features;
+};
 
-#define LIRC_SIGNAL_PIN UART_MSR_DSR
-#define LIRC_SIGNAL_PIN_CHANGE UART_MSR_DDSR
-#ifndef LIRC_SERIAL_TRANSMITTER
-#define LIRC_SERIAL_TRANSMITTER
-#endif
-#ifndef LIRC_SERIAL_SOFTCARRIER
-#define LIRC_SERIAL_SOFTCARRIER
-#endif
+#define LIRC_HOMEBREW        0
+#define LIRC_IRDEO           1
+#define LIRC_IRDEO_REMOTE    2
+#define LIRC_ANIMAX          3
 
+#ifdef LIRC_SERIAL_IRDEO
+int type=LIRC_IRDEO;
+#elif defined(LIRC_SERIAL_IRDEO_REMOTE)
+int type=LIRC_IRDEO_REMOTE;
+#elif defined(LIRC_SERIAL_ANIMAX)
+int type=LIRC_ANIMAX;
 #else
-
-#define LIRC_SIGNAL_PIN UART_MSR_DCD
-#define LIRC_SIGNAL_PIN_CHANGE UART_MSR_DDCD
+int type=LIRC_HOMEBREW;
 #endif
+
+#ifdef LIRC_SERIAL_SOFTCARRIER
+int softcarrier=1;
+#else
+int softcarrier=0;
+#endif
+
+/* forward declarations */
+long send_pulse_irdeo(unsigned long length);
+long send_pulse_homebrew(unsigned long length);
+void send_space_irdeo(long length);
+void send_space_homebrew(long length);
+
+struct lirc_serial hardware[]=
+{
+	/* home-brew receiver/transmitter */
+	{
+		LIRC_HOMEBREW,
+		UART_MSR_DCD,
+		UART_MSR_DDCD,
+		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
+		UART_MCR_RTS|UART_MCR_OUT2,
+		send_pulse_homebrew,
+		send_space_homebrew,
+		(
+#ifdef LIRC_SERIAL_TRANSMITTER
+		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
+		 LIRC_CAN_SET_SEND_CARRIER|
+		 LIRC_CAN_SEND_PULSE|
+#endif
+		 LIRC_CAN_REC_MODE2)
+	},
+	
+	/* IrDeo classic */
+	{
+		LIRC_IRDEO,
+		UART_MSR_DSR,
+		UART_MSR_DDSR,
+		UART_MCR_OUT2,
+		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
+		send_pulse_irdeo,
+		send_space_irdeo,
+		(LIRC_CAN_SET_SEND_DUTY_CYCLE|
+		 LIRC_CAN_SEND_PULSE|
+		 LIRC_CAN_REC_MODE2)
+	},
+	
+	/* IrDeo remote */
+	{
+		LIRC_IRDEO_REMOTE,
+		UART_MSR_DSR,
+		UART_MSR_DDSR,
+		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
+		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
+		send_pulse_irdeo,
+		send_space_irdeo,
+		(LIRC_CAN_SET_SEND_DUTY_CYCLE|
+		 LIRC_CAN_SEND_PULSE|
+		 LIRC_CAN_REC_MODE2)
+	},
+	
+	/* AnimaX */
+	{
+		LIRC_ANIMAX,
+		UART_MSR_DCD,
+		UART_MSR_DDCD,
+		0,
+		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
+		NULL,
+		NULL,
+		LIRC_CAN_REC_MODE2
+	}
+};
 
 #define LIRC_DRIVER_NAME "lirc_serial"
 
@@ -166,8 +247,6 @@ static struct timeval lasttv = {0, 0};
 
 static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
-
-#ifdef LIRC_SERIAL_TRANSMITTER
 
 static lirc_t wbuf[WBUF_LEN];
 
@@ -241,25 +320,6 @@ unsigned long space_width = 3368; /* (period - pulse_width) */
 
 #endif /* USE_RDTSC */
 
-#endif /* LIRC_SERIAL_TRANSMITTER */
-
-#ifdef LIRC_SERIAL_ANIMAX
-#define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
-
-#elif defined(LIRC_SERIAL_IRDEO)
-#define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
-#define LIRC_ON  UART_MCR_OUT2
-
-#elif defined(LIRC_SERIAL_IRDEO_REMOTE)
-
-#define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
-#define LIRC_ON  LIRC_OFF
-
-#else
-#define LIRC_OFF (UART_MCR_RTS|UART_MCR_OUT2)
-#define LIRC_ON  (LIRC_OFF|UART_MCR_DTR)
-#endif
-
 static inline unsigned int sinp(int offset)
 {
 	return inb(port + offset);
@@ -270,15 +330,14 @@ static inline void soutp(int offset, int value)
 	outb(value, port + offset);
 }
 
-#ifdef LIRC_SERIAL_TRANSMITTER
 void on(void)
 {
-	soutp(UART_MCR,LIRC_ON);
+	soutp(UART_MCR,hardware[type].on);
 }
   
 void off(void)
 {
-	soutp(UART_MCR,LIRC_OFF);
+	soutp(UART_MCR,hardware[type].off);
 }
 
 #ifndef MAX_UDELAY_MS
@@ -349,9 +408,8 @@ void calc_pulse_lengths_in_clocks(void)
 
 /* return value: space length delta */
 
-long send_pulse(unsigned long length)
+long send_pulse_irdeo(unsigned long length)
 {
-#if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
 	long rawbits;
 	int i;
 	unsigned char output;
@@ -389,99 +447,111 @@ long send_pulse(unsigned long length)
 	{
 		return((3-i)*3*10000/1152+(-rawbits)*10000/1152);
 	}
-#else
-#ifdef LIRC_SERIAL_SOFTCARRIER
-#ifdef USE_RDTSC
-	unsigned long target, start, now;
-#else
-	unsigned long actual, target, d;
-#endif
-	int flag;
-#endif
-
-	if(length<=0) return 0;
-#ifdef LIRC_SERIAL_SOFTCARRIER
-#ifdef USE_RDTSC
-	/* Version that uses Pentium rdtsc instruction to measure clocks */
-
-	/* Get going quick as we can */
-	rdtscl(start);on();
-	/* Convert length from microseconds to clocks */
-	length*=conv_us_to_clocks;
-	/* And loop till time is up - flipping at right intervals */
-	now=start;
-	target=pulse_width;
-	flag=1;
-	while((now-start)<length)
-	{
-		/* Delay till flip time */
-		do
-		{
-			rdtscl(now);
-		}
-		while ((now-start)<target);
-		/* flip */
-		if(flag)
-		{
-			rdtscl(now);off();
-			target+=space_width;
-		}
-		else
-		{
-			rdtscl(now);on();
-			target+=pulse_width;
-		}
-		flag=!flag;
-	}
-	rdtscl(now);
-	return(((now-start)-length)/conv_us_to_clocks);
-#else
-	/* here we use fixed point arithmetic, with 8 fractional bits.
-	   that gets us within 0.1% or so of the right average frequency,
-	   albeit with some jitter in pulse length - Steve */
-
-	/* To match 8 fractional bits used for pulse/space length */
-	length<<=8;
-	
-	actual=target=0; flag=0;
-	while(actual<length)
-	{
-		if(flag)
-		{
-			off();
-			target+=space_width;
-		}
-		else
-		{
-			on();
-			target+=pulse_width;
-		}
-		d=(target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
-		/* Note - we've checked in ioctl that the pulse/space
-                   widths are big enough so that d is > 0 */
-		udelay(d);
-		actual+=(d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
-		flag=!flag;
-	}
-        return((actual-length)>>8);
-#endif
-#else /* SOFT_CARRIER */
-	on();
-	safe_udelay(length);
-	return(0);
-#endif
-#endif
 }
 
-void send_space(long length)
+long send_pulse_homebrew(unsigned long length)
 {
-#       if !defined(LIRC_SERIAL_IRDEO) && !defined(LIRC_SERIAL_IRDEO_REMOTE)
-        off();
+#       ifdef USE_RDTSC
+	unsigned long target, start, now;
+#       else
+	unsigned long actual, target, d;
 #       endif
+	int flag;
+
+	if(length<=0) return 0;
+	if(softcarrier)
+	{
+#               ifdef USE_RDTSC
+		
+		/* Version that uses Pentium rdtsc instruction to
+                   measure clocks */
+
+		/* Get going quick as we can */
+		rdtscl(start);on();
+		/* Convert length from microseconds to clocks */
+		length*=conv_us_to_clocks;
+		/* And loop till time is up - flipping at right intervals */
+		now=start;
+		target=pulse_width;
+		flag=1;
+		while((now-start)<length)
+		{
+			/* Delay till flip time */
+			do
+			{
+				rdtscl(now);
+			}
+			while ((now-start)<target);
+			/* flip */
+			if(flag)
+			{
+				rdtscl(now);off();
+				target+=space_width;
+			}
+			else
+			{
+				rdtscl(now);on();
+				target+=pulse_width;
+			}
+			flag=!flag;
+		}
+		rdtscl(now);
+		return(((now-start)-length)/conv_us_to_clocks);
+		
+#               else /* ! USE_RDTSC */
+		
+		/* here we use fixed point arithmetic, with 8
+		   fractional bits.  that gets us within 0.1% or so of
+		   the right average frequency, albeit with some
+		   jitter in pulse length - Steve */
+
+		/* To match 8 fractional bits used for pulse/space
+                   length */
+		length<<=8;
+	
+		actual=target=0; flag=0;
+		while(actual<length)
+		{
+			if(flag)
+			{
+				off();
+				target+=space_width;
+			}
+			else
+			{
+				on();
+				target+=pulse_width;
+			}
+			d=(target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
+			/* Note - we've checked in ioctl that the pulse/space
+			   widths are big enough so that d is > 0 */
+			udelay(d);
+			actual+=(d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
+			flag=!flag;
+		}
+		return((actual-length)>>8);
+#               endif /* USE_RDTSC */
+	}
+	else
+	{
+		on();
+		safe_udelay(length);
+		return(0);
+	}
+}
+
+void send_space_irdeo(long length)
+{
 	if(length<=0) return;
 	safe_udelay(length);
 }
-#endif
+
+void send_space_homebrew(long length)
+{
+        off();
+	if(length<=0) return;
+	safe_udelay(length);
+}
 
 static void inline rbwrite(lirc_t l)
 {
@@ -565,7 +635,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			       "We're caught!\n");
 			break;
 		}
-		if((status&LIRC_SIGNAL_PIN_CHANGE) && sense!=-1)
+		if((status&hardware[type].signal_pin_change) && sense!=-1)
 		{
 			/* get current time */
 			do_gettimeofday(&tv);
@@ -593,7 +663,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 
 			/* calculate time since last interrupt in
 			   microseconds */
-			dcd=(status & LIRC_SIGNAL_PIN) ? 1:0;
+			dcd=(status & hardware[type].signal_pin) ? 1:0;
 			
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
@@ -670,7 +740,7 @@ static int init_port(void)
 		return(-EBUSY);
 #else
 		printk(KERN_ERR LIRC_DRIVER_NAME  
-		       ": port %04x already in use, proceding anyway\n", port);
+		       ": port %04x already in use, proceeding anyway\n", port);
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
 		       ": compile the serial port driver as module and\n");
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
@@ -698,7 +768,7 @@ static int init_port(void)
 	sinp(UART_MSR);
 	
 	/* Set line for power source */
-	soutp(UART_MCR, LIRC_OFF);
+	soutp(UART_MCR, hardware[type].off);
 	
 	/* Clear registers again to be sure. */
 	sinp(UART_LSR);
@@ -706,26 +776,32 @@ static int init_port(void)
 	sinp(UART_IIR);
 	sinp(UART_MSR);
 
-#       if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
-	/* setup port to 7N1 @ 115200 Baud */
-	/* 7N1+start = 9 bits at 115200 ~ 3 bits at 38kHz */
-
-	/* Set DLAB 1. */
-	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
-	/* Set divisor to 1 => 115200 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,1);
-	/* Set DLAB 0 +  7N1 */
-	soutp(UART_LCR,UART_LCR_WLEN7);
-	/* THR interrupt already disabled at this point */
-#       endif
+	switch(hardware[type].type)
+	{
+	case LIRC_IRDEO:
+	case LIRC_IRDEO_REMOTE:
+		/* setup port to 7N1 @ 115200 Baud */
+		/* 7N1+start = 9 bits at 115200 ~ 3 bits at 38kHz */
+		
+		/* Set DLAB 1. */
+		soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
+		/* Set divisor to 1 => 115200 Baud */
+		soutp(UART_DLM,0);
+		soutp(UART_DLL,1);
+		/* Set DLAB 0 +  7N1 */
+		soutp(UART_LCR,UART_LCR_WLEN7);
+		/* THR interrupt already disabled at this point */
+		break;
+	default:
+		break;
+	}
 	
 	restore_flags(flags);
 	
-#ifdef USE_RDTSC
+#       ifdef USE_RDTSC
 	/* Initialize pulse/space widths */
 	calc_pulse_lengths_in_clocks();
-#endif
+#       endif
 
 	/* If pin is high, then this must be an active low receiver. */
 	if(sense==-1)
@@ -744,7 +820,7 @@ static int init_port(void)
 		del_timer(&power_supply_timer);
 #               endif
 		
-		sense=(sinp(UART_MSR) & LIRC_SIGNAL_PIN) ? 1:0;
+		sense=(sinp(UART_MSR) & hardware[type].signal_pin) ? 1:0;
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
 		       "%s receiver\n",sense ? "low":"high");
 	}
@@ -841,10 +917,12 @@ static void lirc_close(struct inode *node, struct file *file)
 #       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 #       endif
+	
 	MOD_DEC_USE_COUNT;
-#ifdef KERNEL_2_1
+	
+#       ifdef KERNEL_2_1
 	return 0;
-#endif
+#       endif
 }
 
 #ifdef KERNEL_2_1
@@ -932,10 +1010,14 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
                      int n)
 #endif
 {
-#ifdef LIRC_SERIAL_TRANSMITTER
 	int retval,i,count;
 	unsigned long flags;
 	long delta=0;
+	
+	if(!(hardware[type].features&LIRC_CAN_SEND_PULSE))
+	{
+		return(-EBADF);
+	}
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	retval=verify_area(VERIFY_READ,buf,n);
@@ -948,21 +1030,19 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 	memcpy_fromfs(wbuf,buf,n);
 #       endif
 	save_flags(flags);cli();
-#       ifdef LIRC_SERIAL_IRDEO
-	/* DTR, RTS down */
-	on();
-#       endif
+	if(hardware[type].type==LIRC_IRDEO)
+	{
+		/* DTR, RTS down */
+		on();
+	}
 	for(i=0;i<count;i++)
 	{
-		if(i%2) send_space(wbuf[i]-delta);
-		else delta=send_pulse(wbuf[i]);
+		if(i%2) hardware[type].send_space(wbuf[i]-delta);
+		else delta=hardware[type].send_pulse(wbuf[i]);
 	}
 	off();
 	restore_flags(flags);
 	return(n);
-#else
-	return(-EBADF);
-#endif
 }
 
 static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
@@ -970,62 +1050,71 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
         int result;
 	unsigned long value;
-#       ifdef LIRC_SERIAL_SOFTCARRIER
 	unsigned int ivalue;
-#       endif
-	unsigned long features=
-#       ifdef LIRC_SERIAL_SOFTCARRIER
-	LIRC_CAN_SET_SEND_DUTY_CYCLE|
-#       ifndef LIRC_SERIAL_IRDEO
-	LIRC_CAN_SET_SEND_CARRIER|
-#       endif
-	LIRC_CAN_SEND_PULSE|
-#       endif
-#       if defined(LIRC_SERIAL_IRDEO_DONGLE)
-	0;
-#       else
-	LIRC_CAN_REC_MODE2;
-#       endif
 	
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
 #               ifdef KERNEL_2_1
-		result=put_user(features,(unsigned long *) arg);
+		result=put_user(hardware[type].features,
+				(unsigned long *) arg);
 		if(result) return(result); 
 #               else
 		result=verify_area(VERIFY_WRITE,(unsigned long*) arg,
 				   sizeof(unsigned long));
 		if(result) return(result);
-		put_user(features,(unsigned long *) arg);
+		put_user(hardware[type].features,(unsigned long *) arg);
 #               endif
 		break;
-#       ifdef LIRC_SERIAL_TRANSMITTER
+		
 	case LIRC_GET_SEND_MODE:
+		if(!(hardware[type].features&LIRC_CAN_SEND_MASK))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
-		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+		result=put_user(LIRC_SEND2MODE
+				(hardware[type].features&LIRC_CAN_SEND_MASK),
+				(unsigned long *) arg);
 		if(result) return(result); 
 #               else
 		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
 				   sizeof(unsigned long));
 		if(result) return(result);
-		put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+		put_user(LIRC_SEND2MODE
+			 (hardware[type].features&LIRC_CAN_SEND_MASK),
+			 (unsigned long *) arg);
 #               endif
 		break;
-#       endif
+		
 	case LIRC_GET_REC_MODE:
+		if(!(hardware[type].features&LIRC_CAN_REC_MASK))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
-		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+		result=put_user(LIRC_REC2MODE
+				(hardware[type].features&LIRC_CAN_REC_MASK),
+				(unsigned long *) arg);
 		if(result) return(result); 
 #               else
 		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
 				   sizeof(unsigned long));
 		if(result) return(result);
-		put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+		put_user(LIRC_REC2MODE
+			 (hardware[type].features&LIRC_CAN_REC_MASK),
+			 (unsigned long *) arg);
 #               endif
 		break;
-#       ifdef LIRC_SERIAL_TRANSMITTER
+		
 	case LIRC_SET_SEND_MODE:
+		if(!(hardware[type].features&LIRC_CAN_SEND_MASK))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
@@ -1035,10 +1124,16 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		value=get_user((unsigned long *) arg);
 #               endif
+		/* only LIRC_MODE_PULSE supported */
 		if(value!=LIRC_MODE_PULSE) return(-ENOSYS);
 		break;
-#       endif
+		
 	case LIRC_SET_REC_MODE:
+		if(!(hardware[type].features&LIRC_CAN_REC_MASK))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
@@ -1048,10 +1143,16 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		value=get_user((unsigned long *) arg);
 #               endif
+		/* only LIRC_MODE_MODE2 supported */
 		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
-#       ifdef LIRC_SERIAL_SOFTCARRIER
+		
 	case LIRC_SET_SEND_DUTY_CYCLE:
+		if(!(hardware[type].features&LIRC_CAN_SET_SEND_DUTY_CYCLE))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
 		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
@@ -1065,7 +1166,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #               ifdef USE_RDTSC
 		duty_cycle=ivalue;
 		calc_pulse_lengths_in_clocks();
-#               else /* USE_RDTSC */
+#               else /* ! USE_RDTSC */
 		if(256*1000000L/freq*ivalue/100<=
 		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		if(256*1000000L/freq*(100-ivalue)/100<=
@@ -1082,7 +1183,13 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		       freq, pulse_width, space_width, conv_us_to_clocks);
 #               endif
 		break;
+		
 	case LIRC_SET_SEND_CARRIER:
+		if(!(hardware[type].features&LIRC_CAN_SET_SEND_CARRIER))
+		{
+			return(-ENOIOCTLCMD);
+		}
+		
 #               ifdef KERNEL_2_1
 		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
@@ -1113,7 +1220,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		       freq, pulse_width, space_width, conv_us_to_clocks);
 #               endif
 		break;
-#       endif
+		
 	default:
 		return(-ENOIOCTLCMD);
 	}
@@ -1138,7 +1245,11 @@ static struct file_operations lirc_fops =
 
 #if LINUX_VERSION_CODE >= 0x020100
 MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
-MODULE_DESCRIPTION("Infrared receiver driver for serial ports.");
+MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
+
+MODULE_PARM(type, "i");
+MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IrDeo,"
+		 " 2 = IrDeo Remote, 3 = AnimaX");
 
 MODULE_PARM(port, "i");
 MODULE_PARM_DESC(port, "I/O address (0x3f8 or 0x2f8)");
@@ -1150,13 +1261,32 @@ MODULE_PARM(sense, "i");
 MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
 		 " (0 = active high, 1 = active low )");
 
+MODULE_PARM(softcarrier, "i");
+MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
+
+
 EXPORT_NO_SYMBOLS;
 #endif
 
 int init_module(void)
 {
 	int result;
-
+	
+	switch(type)
+	{
+	case LIRC_HOMEBREW:
+	case LIRC_IRDEO:
+	case LIRC_IRDEO_REMOTE:
+	case LIRC_ANIMAX:
+		break;
+	default:
+		return(-EINVAL);
+	}
+	if(!softcarrier && hardware[type].type==LIRC_HOMEBREW)
+	{
+		hardware[type].features&=~(LIRC_CAN_SET_SEND_DUTY_CYCLE|
+					   LIRC_CAN_SET_SEND_CARRIER);
+	}
 	if ((result = init_port()) < 0)
 		return result;
 	if (register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops) < 0) {
