@@ -25,6 +25,7 @@ SELECTED_DRIVER=""
 DRIVER_PARAMETER="com1"
 SOFT_CARRIER="on"
 TRANSMITTER="off"
+IGOR="off"
 TIMER=65536
 X11_WINDOWS="on"
 DEBUG="off"
@@ -199,19 +200,22 @@ DriverOptions ()
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Driver specific Options" \
-               --checklist "" 10 74 2 \
+               --checklist "" 10 74 3 \
                  1 "With transmitter diode" $TRANSMITTER \
                  2 "Software generated carrier" $SOFT_CARRIER \
+                 3 "Igor Ceska's variation" $IGOR \
                2> $TEMP
         if test "$?" = "0"; then
             {
 	    set -- `cat $TEMP`
             SOFT_CARRIER="off"
 	    TRANSMITTER="off"
+	    IGOR="off"
             for ITEM in $@; do
                 {
                 if   test $ITEM = "\"1\""; then TRANSMITTER="on";
                 elif test $ITEM = "\"2\""; then SOFT_CARRIER="on";
+                elif test $ITEM = "\"3\""; then IGOR="on";
                 fi
                 }
             done
@@ -516,6 +520,7 @@ SaveConfig ()
     echo "DRIVER_PARAMETER=$DRIVER_PARAMETER" >>$CONFIG
     echo "SOFT_CARRIER=$SOFT_CARRIER" >>$CONFIG
     echo "TRANSMITTER=$TRANSMITTER" >>$CONFIG
+    echo "IGOR=$IGOR" >>$CONFIG
     echo "TIMER=$TIMER" >>$CONFIG
     echo "X11_WINDOWS=$X11_WINDOWS" >>$CONFIG
     echo "DEBUG=$DEBUG" >>$CONFIG
@@ -532,6 +537,7 @@ SaveConfig ()
         {
         if test "$SOFT_CARRIER" = "off"; then echo "--without-soft-carrier \\" >>$START; fi
         if test "$TRANSMITTER" = "on"; then echo "--with-transmitter \\" >>$START; fi
+        if test "$IGOR" = "on"; then echo "--with-igor \\" >>$START; fi
         }
     elif test "$LIRC_DRIVER" = "parallel"; then
         {

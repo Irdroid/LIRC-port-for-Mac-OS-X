@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.45 2002/12/15 08:49:21 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.46 2003/04/19 11:28:28 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -134,6 +134,7 @@ struct lirc_serial
 #define LIRC_IRDEO           1
 #define LIRC_IRDEO_REMOTE    2
 #define LIRC_ANIMAX          3
+#define LIRC_IGOR            4
 
 #ifdef LIRC_SERIAL_IRDEO
 int type=LIRC_IRDEO;
@@ -141,6 +142,8 @@ int type=LIRC_IRDEO;
 int type=LIRC_IRDEO_REMOTE;
 #elif defined(LIRC_SERIAL_ANIMAX)
 int type=LIRC_ANIMAX;
+#elif defined(LIRC_SERIAL_IGOR)
+int type=LIRC_IGOR;
 #else
 int type=LIRC_HOMEBREW;
 #endif
@@ -215,7 +218,26 @@ struct lirc_serial hardware[]=
 		NULL,
 		NULL,
 		LIRC_CAN_REC_MODE2
+	},
+	
+	/* home-brew receiver/transmitter (Igor Ceska's variation) */
+	{
+		LIRC_HOMEBREW,
+		UART_MSR_DSR,
+		UART_MSR_DDSR,
+		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
+		UART_MCR_RTS|UART_MCR_OUT2,
+		send_pulse_homebrew,
+		send_space_homebrew,
+		(
+#ifdef LIRC_SERIAL_TRANSMITTER
+		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
+		 LIRC_CAN_SET_SEND_CARRIER|
+		 LIRC_CAN_SEND_PULSE|
+#endif
+		 LIRC_CAN_REC_MODE2)
 	}
+	
 };
 
 #define LIRC_DRIVER_NAME "lirc_serial"

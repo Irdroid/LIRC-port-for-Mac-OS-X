@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.22 2002/07/27 09:17:08 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.23 2003/04/19 11:28:27 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -107,6 +107,9 @@
 
 /* Define if you have an IRdeo remote transmitter */
 #undef LIRC_SERIAL_IRDEO_REMOTE
+
+/* Define if you have an Igor Ceska receiver */
+#undef LIRC_SERIAL_IGOR
 
 /* Define if you want to cross-compile for the SA1100 */
 #undef LIRC_ON_SA1100
