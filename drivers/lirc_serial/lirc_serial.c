@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.3 1999/07/24 18:19:20 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.4 1999/07/27 16:58:26 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -21,6 +21,9 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= 0x020100
 #define KERNEL_2_1
+#ifdef __SMP__ 
+#error "--- Sorry, this driver is not SMP safe. ---"
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
 #define KERNEL_2_3
 #endif
@@ -542,7 +545,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		value=get_user((unsigned long *) arg);
 #               endif
-		if(value!=LIRC_MODE_PULSE) return(-EINVAL);
+		if(value!=LIRC_MODE_PULSE) return(-ENOSYS);
 		break;
 #       endif
 	case LIRC_SET_REC_MODE:
@@ -555,7 +558,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		value=get_user((unsigned long *) arg);
 #               endif
-		if(value!=LIRC_MODE_MODE2) return(-EINVAL);
+		if(value!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
 #       ifndef LIRC_SERIAL_ANIMAX
 #       ifdef LIRC_SERIAL_SOFTCARRIER

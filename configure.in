@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.3 1999/06/08 10:41:08 denis Exp $
+dnl $Id: configure.in,v 5.4 1999/07/27 16:58:26 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -50,6 +50,10 @@ if test "$no_x" = "yes"; then
 fi
 
 
+dnl look for Linux kernel source
+
+AC_PATH_KERNEL_SOURCE()
+
 dnl here we see what drivers we could possibly even hope to run.
 dnl this could be _much_ more sophisticated!  especially the lirc ones.
 
@@ -57,9 +61,10 @@ AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
 possible_drivers="(none)"
-AC_CHECK_HEADER(linux/autoconf.h,
+
+if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) (lirc_aver) (lirc_haup) (lirc_fly98)"
-)
+fi
 
 AC_CHECK_LIB(irman, ir_get_code,
   AC_DEFINE(HAVE_LIBIRMAN)

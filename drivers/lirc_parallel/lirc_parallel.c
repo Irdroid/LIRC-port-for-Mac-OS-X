@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.4 1999/07/21 18:23:37 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.5 1999/07/27 16:58:26 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -24,6 +24,9 @@
 #error "--- Sorry, 2.1.x kernels are not supported. ---"
 #elif LINUX_VERSION_CODE >= 0x020200
 #define KERNEL_2_2
+#ifdef __SMP__ 
+#error "--- Sorry, this driver is not SMP safe. ---"
+#endif
 #endif
 
 #include <linux/module.h>
@@ -125,27 +128,27 @@ void __inline__ out(int offset, int value)
 #endif
 }
 
-unsigned int __inline__  lirc_get_timer()
+unsigned int __inline__ lirc_get_timer(void)
 {
 	return(in(LIRC_PORT_TIMER)&LIRC_PORT_TIMER_BIT);
 }
 
-unsigned int __inline__  lirc_get_signal()
+unsigned int __inline__  lirc_get_signal(void)
 {
 	return(in(LIRC_PORT_SIGNAL)&LIRC_PORT_SIGNAL_BIT);
 }
 
-void __inline__ lirc_on()
+void __inline__ lirc_on(void)
 {
 	out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
 }
 
-void __inline__ lirc_off()
+void __inline__ lirc_off(void)
 {
 	out(LIRC_PORT_DATA,0);
 }
 
-unsigned int init_lirc_timer()
+unsigned int init_lirc_timer(void)
 {
 	struct timeval tv,now;
 	unsigned int level,newlevel,timeelapsed,newtimer;
@@ -601,7 +604,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		mode=get_user((unsigned long *) arg);
 #               endif
-		if(mode!=LIRC_MODE_MODE2) return(-EINVAL);
+		if(mode!=LIRC_MODE_MODE2) return(-ENOSYS);
 		break;
 	default:
 		return(-ENOIOCTLCMD);
