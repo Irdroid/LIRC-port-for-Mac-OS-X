@@ -251,10 +251,10 @@
     <P>
       If your driver requires some special parameters to work you can
       specify them at the same place. For example you can set the IRQ
-      and port the serial port drivers shall use by adding the
+      and I/O base the serial port drivers shall use by adding the
       following line to <em>/etc/conf.modules</em>:</P>
     <PRE>
-	options lirc_serial irq=4 port=0x3e8</PRE>
+	options lirc_serial irq=4 io=0x3e8</PRE>
     <P>
       This will override the default values you have selected during setup.
       The configure script will tell you which kernel module you need.
@@ -310,11 +310,11 @@
 	pulse 93</PRE>
     <P>
       If you don't see anything, try to find out: (a) if you selected
-      the correct driver with the correct settings (port, IRQ), (b) if
-      you use a remote which works and (c) if your hardware works. The
-      voltage input of the infrared receiver should be 5V +/- 0.5V,
-      the output pin of the receiver should be about 0.5V less than
-      the input voltage.
+      the correct driver with the correct settings (I/O base address,
+      IRQ), (b) if you use a remote which works and (c) if your
+      hardware works. The voltage input of the infrared receiver
+      should be 5V +/- 0.5V, the output pin of the receiver should be
+      about 0.5V less than the input voltage.
     </P>
     
     <P>
@@ -545,4 +545,9 @@
       finally work with the provided config files. That means they
       will no longer work with the config files you have created
       yourself.
+    </P>
+    <P>
+      The I/O base address for some modules now is set with the
+      <em>io</em> parameter. (formerly: lirc_sir = iobase, lirc_serial
+      and lirc_parallel = port).
     </P>

@@ -17,8 +17,8 @@ Any help and/or additions etc. is welcome.
 
 lirc_it87 knows about the following module-parameters:
 MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
-MODULE_PARM(iobase, "i");
-MODULE_PARM_DESC(iobase, "I/O base address (default: 0x310)");
+MODULE_PARM(io, "i");
+MODULE_PARM_DESC(io, "I/O base address (default: 0x310)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
 MODULE_PARM(it87_enable_demodulator, "i");
@@ -28,11 +28,11 @@ MODULE_PARM_DESC(it87_enable_demodulator, "Receiver demodulator
 
 Usage:
 
-a) iobase and irq:
+a) io and irq:
 
-If the driver finds the IT8705/12-CIR port initialized, iobase and irq
-of the preinitialized hardware is used by the driver. If both values
-are read 0x0 from the hardware, the default or given value is used.
+If the driver finds the IT8705/12-CIR port initialized, io and irq of
+the preinitialized hardware is used by the driver. If both values are
+read 0x0 from the hardware, the default or given value is used.
 Note: I experienced using irq=3. The driver initialized without any
 problems, but no irqs are recognized by the system. I had to switch
 back to default, irq 7.

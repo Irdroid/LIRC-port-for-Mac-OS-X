@@ -162,7 +162,7 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 static int major = LIRC_MAJOR;
 
 #ifndef LIRC_ON_IPAQ
-static int iobase = LIRC_PORT;
+static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
 #endif
 
@@ -237,12 +237,12 @@ void inline off(void)
 #else
 static inline unsigned int sinp(int offset)
 {
-	return inb(iobase + offset);
+	return inb(io + offset);
 }
 
 static inline void soutp(int offset, int value)
 {
-	outb(value, iobase + offset);
+	outb(value, io + offset);
 }
 #endif
 
@@ -654,7 +654,7 @@ static void sir_timeout(unsigned long data)
 	{
 #ifndef LIRC_ON_IPAQ
 		/* clear unread bits in UART and restart */
-		outb(UART_FCR_CLEAR_RCVR, iobase + UART_FCR);
+		outb(UART_FCR_CLEAR_RCVR, io + UART_FCR);
 #endif
 		/* determine 'virtual' pulse end: */
 	 	pulse_end = delta(&last_tv, &last_intr_tv);
@@ -750,18 +750,18 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 	unsigned long flags;
 	int iir, lsr;
 
-	while ((iir = inb(iobase + UART_IIR) & UART_IIR_ID)) {
+	while ((iir = inb(io + UART_IIR) & UART_IIR_ID)) {
 		switch (iir&UART_IIR_ID) { /* FIXME toto treba preriedit */
 		case UART_IIR_MSI:
-			(void) inb(iobase + UART_MSR);
+			(void) inb(io + UART_MSR);
 			break;
 		case UART_IIR_RLSI:
-			(void) inb(iobase + UART_LSR);
+			(void) inb(io + UART_LSR);
 			break;
 		case UART_IIR_THRI:
 #if 0
 			if (lsr & UART_LSR_THRE) /* FIFO is empty */
-				outb(data, iobase + UART_TX)
+				outb(data, io + UART_TX)
 #endif
 			break;
 		case UART_IIR_RDI:
@@ -770,7 +770,7 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 			do
 			{
 				del_timer(&timerlist);
-				data = inb(iobase + UART_RX);
+				data = inb(io + UART_RX);
 				do_gettimeofday(&curr_tv);
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
@@ -822,7 +822,7 @@ static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 					add_timer(&timerlist);
 				}
 			}
-			while ((lsr = inb(iobase + UART_LSR))
+			while ((lsr = inb(io + UART_LSR))
 				& UART_LSR_DR); /* data ready */
 			spin_unlock_irqrestore(&timer_lock, flags);
 			break;
@@ -882,9 +882,9 @@ static void send_pulse(unsigned long len)
 		bytes_out++;
 	time_left = (long)len - (long)bytes_out * (long)TIME_CONST;
 	while (--bytes_out) {
-		outb(PULSE, iobase + UART_TX);
+		outb(PULSE, io + UART_TX);
 		/* FIXME treba seriozne cakanie z drivers/char/serial.c */
-		while (!(inb(iobase + UART_LSR) & UART_LSR_THRE));
+		while (!(inb(io + UART_LSR) & UART_LSR_THRE));
 	}
 #if 0
 	if (time_left > 0)
@@ -1014,21 +1014,21 @@ static int init_hardware(void)
 	/* enable interrupts */
 	soutp(UART_IER, sinp(UART_IER)|UART_IER_RDI);
 #else
-	outb(0, iobase + UART_MCR);
-	outb(0, iobase + UART_IER);
+	outb(0, io + UART_MCR);
+	outb(0, io + UART_IER);
 	/* init UART */
 		/* set DLAB, speed = 115200 */
-	outb(UART_LCR_DLAB | UART_LCR_WLEN7, iobase + UART_LCR);
-	outb(1, iobase + UART_DLL); outb(0, iobase + UART_DLM);
+	outb(UART_LCR_DLAB | UART_LCR_WLEN7, io + UART_LCR);
+	outb(1, io + UART_DLL); outb(0, io + UART_DLM);
 		/* 7N1+start = 9 bits at 115200 ~ 3 bits at 44000 */
-	outb(UART_LCR_WLEN7, iobase + UART_LCR);
+	outb(UART_LCR_WLEN7, io + UART_LCR);
 		/* FIFO operation */
-	outb(UART_FCR_ENABLE_FIFO, iobase + UART_FCR);
+	outb(UART_FCR_ENABLE_FIFO, io + UART_FCR);
 		/* interrupts */
-	// outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, iobase + UART_IER);
-	outb(UART_IER_RDI, iobase + UART_IER);	
+	// outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, io + UART_IER);
+	outb(UART_IER_RDI, io + UART_IER);	
 	/* turn on UART */
-	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, iobase + UART_MCR);
+	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, io + UART_MCR);
 #endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	return 0;
@@ -1057,7 +1057,7 @@ static void drop_hardware(void)
 #endif
 #else
 	/* turn off interrupts */
-	outb(0, iobase + UART_IER);	
+	outb(0, io + UART_IER);	
 #endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
@@ -1070,11 +1070,11 @@ static int init_port(void)
 	
 #ifndef LIRC_ON_IPAQ
 	/* get I/O port access and IRQ line */
-	retval = check_region(iobase, 8);
+	retval = check_region(io, 8);
 	if (retval < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME
 			": i/o port 0x%.4x already in use.\n",
-			iobase);
+			io);
 		return retval;
 	}
 #endif
@@ -1087,10 +1087,10 @@ static int init_port(void)
 		return retval;
 	}
 #ifndef LIRC_ON_IPAQ
-	request_region(iobase, 8, LIRC_DRIVER_NAME);
+	request_region(io, 8, LIRC_DRIVER_NAME);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": I/O port 0x%.4x, IRQ %d.\n",
-		iobase, irq);
+		io, irq);
 #endif
 
 	init_timer(&timerlist);
@@ -1112,7 +1112,7 @@ static void drop_port(void)
 	end_bh_atomic();
 #endif
 #ifndef LIRC_ON_IPAQ
-	release_region(iobase, 8);
+	release_region(io, 8);
 #endif
 }
 
@@ -1161,8 +1161,8 @@ MODULE_LICENSE("GPL");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (16)");
 #else
-MODULE_PARM(iobase, "i");
-MODULE_PARM_DESC(iobase, "I/O address base (0x3f8 or 0x2f8)");
+MODULE_PARM(io, "i");
+MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
 #endif

@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.37 2001/12/12 20:26:01 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.38 2002/01/06 13:33:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -254,7 +254,7 @@ static struct wait_queue *lirc_wait_in = NULL;
 static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 #endif
 
-static int port = LIRC_PORT;
+static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
 
 static struct timeval lasttv = {0, 0};
@@ -336,12 +336,12 @@ unsigned long space_width = 3368; /* (period - pulse_width) */
 
 static inline unsigned int sinp(int offset)
 {
-	return inb(port + offset);
+	return inb(io + offset);
 }
 
 static inline void soutp(int offset, int value)
 {
-	outb(value, port + offset);
+	outb(value, io + offset);
 }
 
 void on(void)
@@ -744,27 +744,27 @@ static int init_port(void)
 
         /* Check io region*/
 	
-        if((check_region(port,8))==-EBUSY)
+        if((check_region(io,8))==-EBUSY)
 	{
 #if 0
 		/* this is the correct behaviour but many people have
                    the serial driver compiled into the kernel... */
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
-		       ": port %04x already in use\n", port);
+		       ": port %04x already in use\n", io);
 		return(-EBUSY);
 #else
 		printk(KERN_ERR LIRC_DRIVER_NAME  
-		       ": port %04x already in use, proceeding anyway\n", port);
+		       ": port %04x already in use, proceeding anyway\n", io);
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
 		       ": compile the serial port driver as module and\n");
 		printk(KERN_WARNING LIRC_DRIVER_NAME  
 		       ": make sure this module is loaded first\n");
-		release_region(port,8);
+		release_region(io,8);
 #endif
 	}
 	
 	/* Reserve io region. */
-	request_region(port, 8, LIRC_DRIVER_NAME);
+	request_region(io, 8, LIRC_DRIVER_NAME);
 	
 	save_flags(flags);cli();
 	
@@ -885,7 +885,7 @@ static int lirc_open(struct inode *ino, struct file *filep)
 	default:
 #               ifdef DEBUG
 		printk(KERN_INFO LIRC_DRIVER_NAME
-		       ": Interrupt %d, port %04x obtained\n", irq, port);
+		       ": Interrupt %d, port %04x obtained\n", irq, io);
 #               endif
 		break;
 	};
@@ -1268,8 +1268,8 @@ MODULE_PARM(type, "i");
 MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
 		 " 2 = IRdeo Remote, 3 = AnimaX");
 
-MODULE_PARM(port, "i");
-MODULE_PARM_DESC(port, "I/O address (0x3f8 or 0x2f8)");
+MODULE_PARM(io, "i");
+MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
@@ -1309,7 +1309,7 @@ int init_module(void)
 	if (register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": register_chrdev failed!\n");
-		release_region(port, 8);
+		release_region(io, 8);
 		return -EIO;
 	}
 	return 0;
@@ -1317,7 +1317,7 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	release_region(port, 8);
+	release_region(io, 8);
 	unregister_chrdev(major, LIRC_DRIVER_NAME);
 #       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": cleaned up module\n");

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.13 2001/12/12 20:26:01 ranty Exp $      */
+/*      $Id: lirc_parallel.c,v 5.14 2002/01/06 13:33:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -81,7 +81,7 @@
  ***********************************************************************/
 
 unsigned int irq = LIRC_IRQ;
-unsigned int port = LIRC_PORT;
+unsigned int io = LIRC_PORT;
 #ifdef LIRC_TIMER
 unsigned int timer = 0;
 unsigned int default_timer = LIRC_TIMER;
@@ -127,7 +127,7 @@ unsigned int __inline__ in(int offset)
 	}
 	return(0); /* make compiler happy */
 #else
-	return(inb(port+offset));
+	return(inb(io+offset));
 #endif
 }
 
@@ -148,7 +148,7 @@ void __inline__ out(int offset, int value)
 		break;
 	}
 #else
-	outb(value,port+offset);
+	outb(value,io+offset);
 #endif
 }
 
@@ -496,7 +496,7 @@ static int lirc_write(struct inode *node,struct file *filep,const char *buf,
 	memcpy_fromfs(wbuf,buf,n);
 
 	/*
-	  if(check_region(port,LIRC_PORT_LEN)!=0) return(-EBUSY);
+	  if(check_region(io,LIRC_PORT_LEN)!=0) return(-EBUSY);
 	*/
 #endif
 	
@@ -750,8 +750,8 @@ MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
 MODULE_LICENSE("GPL");
 #endif
 
-MODULE_PARM(port, "i");
-MODULE_PARM_DESC(port, "I/O address (0x3bc, 0x378 or 0x278)");
+MODULE_PARM(io, "i");
+MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
 
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
@@ -818,7 +818,7 @@ int init_module(void)
 	pport=parport_enumerate();
 	while(pport!=NULL)
 	{
-		if(pport->base==port)
+		if(pport->base==io)
 		{
 			break;
 		}
@@ -827,7 +827,7 @@ int init_module(void)
 	if(pport==NULL)
 	{
 		printk(KERN_NOTICE "%s: no port at %x found\n",
-		       LIRC_DRIVER_NAME,port);
+		       LIRC_DRIVER_NAME,io);
 		return(-ENXIO);
 	}
 	ppdevice=parport_register_device(pport,LIRC_DRIVER_NAME,
@@ -843,12 +843,12 @@ int init_module(void)
 	is_claimed=1;
 	out(LIRC_LP_CONTROL,LP_PSELECP|LP_PINITP);
 #else
-	if(check_region(port,LIRC_PORT_LEN)!=0)
+	if(check_region(io,LIRC_PORT_LEN)!=0)
 	{
 		printk(KERN_NOTICE "%s: port already in use\n",LIRC_DRIVER_NAME);
 		return(-EBUSY);
 	}
-	request_region(port,LIRC_PORT_LEN,LIRC_DRIVER_NAME);
+	request_region(io,LIRC_PORT_LEN,LIRC_DRIVER_NAME);
 #endif
 
 #ifdef LIRC_TIMER
@@ -866,7 +866,7 @@ int init_module(void)
 		parport_release(pport);
 		parport_unregister_device(ppdevice);
 #       else
-		release_region(port,LIRC_PORT_LEN);
+		release_region(io,LIRC_PORT_LEN);
 #       endif
 		return(-EIO);
 	}
@@ -888,11 +888,11 @@ int init_module(void)
 #ifdef KERNEL_2_2
 		parport_unregister_device(ppdevice);
 #else
-		release_region(port,LIRC_PORT_LEN);
+		release_region(io,LIRC_PORT_LEN);
 #endif
 		return(-EIO);
 	}
-	printk(KERN_INFO "%s: installed using port 0x%04x irq %d\n",LIRC_DRIVER_NAME,port,irq);
+	printk(KERN_INFO "%s: installed using port 0x%04x irq %d\n",LIRC_DRIVER_NAME,io,irq);
 	return(0);
 }
   
@@ -902,7 +902,7 @@ void cleanup_module(void)
 #ifdef KERNEL_2_2
 	parport_unregister_device(ppdevice);
 #else
-	release_region(port,LIRC_PORT_LEN);
+	release_region(io,LIRC_PORT_LEN);
 #endif
 	unregister_chrdev(LIRC_MAJOR,LIRC_DRIVER_NAME);
 }

@@ -81,7 +81,7 @@ static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 
 static int major = LIRC_MAJOR;
 
-static int iobase = IT87_CIR_DEFAULT_IOBASE;
+static int io = IT87_CIR_DEFAULT_IOBASE;
 static int irq = IT87_CIR_DEFAULT_IRQ;
 static unsigned char it87_freq = 38; /* kHz */
 /* receiver demodulator default: off */
@@ -299,9 +299,9 @@ static int lirc_ioctl(struct inode *node,
 			unsigned long hw_flags;
 
 			spin_lock_irqsave(&hardware_lock, hw_flags);
-			outb(((inb(iobase + IT87_CIR_TCR2) & IT87_CIR_TCR2_TXMPW) |
+			outb(((inb(io + IT87_CIR_TCR2) & IT87_CIR_TCR2_TXMPW) |
 			      (it87_freq - IT87_CIR_FREQ_MIN) << 3),
-			     iobase + IT87_CIR_TCR2);
+			     io + IT87_CIR_TCR2);
 			spin_unlock_irqrestore(&hardware_lock, hw_flags);
 #ifdef DEBUG
 			printk(KERN_DEBUG LIRC_DRIVER_NAME 
@@ -461,12 +461,12 @@ static void it87_interrupt(int irq,
 	int iir, lsr;
 	int fifo = 0;
 
-	iir = inb(iobase + IT87_CIR_IIR);
+	iir = inb(io + IT87_CIR_IIR);
 
 	switch (iir & IT87_CIR_IIR_IID) {
 	case 0x4:
 	case 0x6:
-		lsr = inb(iobase + IT87_CIR_RSR) & (IT87_CIR_RSR_RXFTO |
+		lsr = inb(io + IT87_CIR_RSR) & (IT87_CIR_RSR_RXFTO |
 						    IT87_CIR_RSR_RXFBC);
 		fifo = lsr & IT87_CIR_RSR_RXFBC;
 #ifdef DEBUG_SIGNAL
@@ -479,7 +479,7 @@ static void it87_interrupt(int irq,
 		spin_lock_irqsave(&hardware_lock, hw_flags);
 		do {
 			del_timer(&timerlist);
-			data = inb(iobase + IT87_CIR_DR);
+			data = inb(io + IT87_CIR_DR);
 #ifdef DEBUG_SIGNAL
 			printk(KERN_DEBUG LIRC_DRIVER_NAME
 			       ": data=%.2x\n",
@@ -535,12 +535,12 @@ static void it87_interrupt(int irq,
 				timerlist.expires = jiffies + IT87_TIMEOUT;
 				add_timer(&timerlist);
 			}
-			outb((inb(iobase + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
+			outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
 			     IT87_CIR_RCR_RXACT,
-			     iobase + IT87_CIR_RCR);
+			     io + IT87_CIR_RCR);
 			if (it87_RXEN_mask) {
-				outb(inb(iobase + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN, 
-				     iobase + IT87_CIR_RCR);
+				outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN, 
+				     io + IT87_CIR_RCR);
 			}
 			fifo--;
 		}
@@ -588,16 +588,16 @@ static void send_it87(unsigned long len,
 			printk(KERN_DEBUG LIRC_DRIVER_NAME
 			       "out=0x%x, tsr_txfbc: 0x%x\n",
 			       byte_out,
-			       inb(iobase + IT87_CIR_TSR) &
+			       inb(io + IT87_CIR_TSR) &
 			       IT87_CIR_TSR_TXFBC);
 #endif
-			while ((inb(iobase + IT87_CIR_TSR) &
+			while ((inb(io + IT87_CIR_TSR) &
 				IT87_CIR_TSR_TXFBC) >= IT87_CIR_FIFO_SIZE);
 			{
 				unsigned long hw_flags;
 
 				spin_lock_irqsave(&hardware_lock, hw_flags);
-				outb(byte_out, iobase + IT87_CIR_DR);
+				outb(byte_out, io + IT87_CIR_DR);
 				spin_unlock_irqrestore(&hardware_lock, hw_flags);
 			}
 			it87_bits_in_byte_out = 0;
@@ -639,8 +639,8 @@ static void init_send()
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* RXEN=0: receiver disable */
 	it87_RXEN_mask = 0;
-	outb(inb(iobase + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN,
-	     iobase + IT87_CIR_RCR);
+	outb(inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN,
+	     io + IT87_CIR_RCR);
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	it87_bits_in_byte_out = 0;
 	it87_send_counter = 0;
@@ -657,12 +657,12 @@ static void terminate_send(unsigned long len)
 	while (last == it87_send_counter)
 		send_space(len);
 	/* wait until all data sent */
-	while ((inb(iobase + IT87_CIR_TSR) & IT87_CIR_TSR_TXFBC) != 0);
+	while ((inb(io + IT87_CIR_TSR) & IT87_CIR_TSR_TXFBC) != 0);
 	/* then reenable receiver */
 	spin_lock_irqsave(&hardware_lock, flags);
 	it87_RXEN_mask = IT87_CIR_RCR_RXEN;
-	outb(inb(iobase + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN,
-	     iobase + IT87_CIR_RCR);
+	outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN,
+	     io + IT87_CIR_RCR);
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
 
@@ -675,19 +675,19 @@ static int init_hardware(void)
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* init cir-port */
 	/* enable r/w-access to Baudrate-Register */
-	outb(IT87_CIR_IER_BR, iobase + IT87_CIR_IER);
-	outb(IT87_CIR_BAUDRATE_DIVISOR % 0x100, iobase+IT87_CIR_BDLR);
-	outb(IT87_CIR_BAUDRATE_DIVISOR / 0x100, iobase+IT87_CIR_BDHR);
+	outb(IT87_CIR_IER_BR, io + IT87_CIR_IER);
+	outb(IT87_CIR_BAUDRATE_DIVISOR % 0x100, io+IT87_CIR_BDLR);
+	outb(IT87_CIR_BAUDRATE_DIVISOR / 0x100, io+IT87_CIR_BDHR);
 	/* Baudrate Register off, define IRQs: Input only */
-	outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RDAIE, iobase + IT87_CIR_IER);
+	outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RDAIE, io + IT87_CIR_IER);
 	/* RX: HCFS=0, RXDCR = 001b (35,6..40,3 kHz), RXEN=1 */
 	it87_rcr = (IT87_CIR_RCR_RXEN & it87_RXEN_mask) | 0x1;
 	if (it87_enable_demodulator)
 		it87_rcr |= IT87_CIR_RCR_RXEND;
-	outb(it87_rcr, iobase + IT87_CIR_RCR);
+	outb(it87_rcr, io + IT87_CIR_RCR);
 	/* TX: 38kHz, 13,3us (pulse-width */
 	outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x06,
-	     iobase + IT87_CIR_TCR2);
+	     io + IT87_CIR_TCR2);
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	return 0;
 }
@@ -701,13 +701,13 @@ static void drop_hardware(void)
 	disable_irq(irq);
 	/* receiver disable */
 	it87_RXEN_mask = 0;
-	outb(0x1, iobase + IT87_CIR_RCR);
+	outb(0x1, io + IT87_CIR_RCR);
 	/* turn off irqs */
-	outb(0, iobase + IT87_CIR_IER);
+	outb(0, io + IT87_CIR_IER);
 	/* fifo clear */
-        outb(IT87_CIR_TCR1_FIFOCLR, iobase+IT87_CIR_TCR1);
+        outb(IT87_CIR_TCR1_FIFOCLR, io+IT87_CIR_TCR1);
         /* reset */
-        outb(IT87_CIR_IER_RESET, iobase+IT87_CIR_IER);
+        outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
 	enable_irq(irq);
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
@@ -737,7 +737,7 @@ static int init_port(void)
 	unsigned char init_bytes[4] = {IT87_INIT};
 	unsigned char it87_chipid = 0;
 	unsigned char ldn = 0;
-	unsigned int  it87_iobase = 0;
+	unsigned int  it87_io = 0;
 	unsigned int  it87_irq = 0;
 	
 	/* Enter MB PnP Mode */
@@ -770,19 +770,19 @@ static int init_port(void)
 		ldn = IT8705_CIR_LDN;
 	it87_write(IT87_LDN, ldn);
 	
-	it87_iobase = it87_read(IT87_CIR_BASE_MSB) * 256 +
+	it87_io = it87_read(IT87_CIR_BASE_MSB) * 256 +
 		it87_read(IT87_CIR_BASE_LSB);
-	if (it87_iobase == 0) {
-		if (iobase == 0)
-			iobase = IT87_CIR_DEFAULT_IOBASE;
+	if (it87_io == 0) {
+		if (io == 0)
+			io = IT87_CIR_DEFAULT_IOBASE;
 		printk(KERN_INFO LIRC_DRIVER_NAME
-		       ": set default iobase 0x%x\n",
-		       iobase);
-		it87_write(IT87_CIR_BASE_MSB, iobase / 0x100);
-		it87_write(IT87_CIR_BASE_LSB, iobase % 0x100);
+		       ": set default io 0x%x\n",
+		       io);
+		it87_write(IT87_CIR_BASE_MSB, io / 0x100);
+		it87_write(IT87_CIR_BASE_LSB, io % 0x100);
 	}
 	else
-		iobase = it87_iobase;
+		io = it87_io;
 	
 	it87_irq = it87_read(IT87_CIR_IRQ);
 	if (it87_irq == 0) {
@@ -801,21 +801,21 @@ static int init_port(void)
 
 		spin_lock_irqsave(&hardware_lock, hw_flags);
 		/* reset */
-		outb(IT87_CIR_IER_RESET, iobase+IT87_CIR_IER);
+		outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
 		/* fifo clear */
 		outb(IT87_CIR_TCR1_FIFOCLR |
 		     /*	     IT87_CIR_TCR1_ILE | */
 		     IT87_CIR_TCR1_TXRLE |
-		     IT87_CIR_TCR1_TXENDF, iobase+IT87_CIR_TCR1);
+		     IT87_CIR_TCR1_TXENDF, io+IT87_CIR_TCR1);
 		spin_unlock_irqrestore(&hardware_lock, hw_flags);
 	}
 	
 	/* get I/O port access and IRQ line */
-	retval = check_region(iobase, 8);
+	retval = check_region(io, 8);
 	if (retval < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": i/o port 0x%.4x already in use.\n",
-		       iobase);
+		       io);
 		/* Leaving MB PnP Mode */
 		it87_write(IT87_CFGCTRL, 0x2);
 		return retval;
@@ -836,10 +836,10 @@ static int init_port(void)
 		return retval;
 	}
 
-	request_region(iobase, 8, LIRC_DRIVER_NAME);
+	request_region(io, 8, LIRC_DRIVER_NAME);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 	       ": I/O port 0x%.4x, IRQ %d.\n",
-	       iobase,
+	       io,
 	       irq);
 
 	init_timer(&timerlist);
@@ -870,7 +870,7 @@ static void drop_port(void)
 
 	del_timer_sync(&timerlist);
 	free_irq(irq, NULL);
-	release_region(iobase, 8);
+	release_region(io, 8);
 }
 
 
@@ -893,8 +893,8 @@ int init_lirc_it87(void)
 
 MODULE_AUTHOR("Hans-Günter Lütke Uphues");
 MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
-MODULE_PARM(iobase, "i");
-MODULE_PARM_DESC(iobase,
+MODULE_PARM(io, "i");
+MODULE_PARM_DESC(io,
 		 "I/O base address (default: 0x310)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq,

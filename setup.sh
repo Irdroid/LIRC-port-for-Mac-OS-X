@@ -45,10 +45,10 @@ MAIN_MENU_TEXT="$MAIN_MENU_TEXT can configure the driver and some compile-time"
 MAIN_MENU_TEXT="$MAIN_MENU_TEXT settings for LIRC applications."
 CONFIG_DRIVER_TEXT="Please select a driver, that supports your hardware."
 CONFIG_SOFTWARE_TEXT="Here you can change some compile-time settings for LIRC applications"
-SET_PORT_TEXT="Either choose a predefined IO Port/IRQ combination, or enter costum values"
+SET_PORT_TEXT="Either choose a predefined I/O base address/IRQ combination, or enter costum values"
 SET_PORT_TEXT="$SET_PORT_TEXT Hint: use <Space> to choose and <Enter> to proceed"
 SET_TTY_TEXT="Choose the tty where your hardware is available."
-GET_PORT_TEXT="Enter the IO port followed with a space and the IRQ (none for no IRQ)"
+GET_PORT_TEXT="Enter the I/O base address followed with a space and the IRQ (none for no IRQ)"
 
 #############################################################################
 ## Functions
@@ -83,7 +83,7 @@ GetSelectedDriver ()
 GetPortAndIrq ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
-           --title "Enter IO Port and IRQ" \
+           --title "Enter I/O base address and IRQ" \
            --inputbox "$GET_PORT_TEXT" 9 74 "$LIRC_PORT $LIRC_IRQ" \
            2> $TEMP
     if test "$?" = "0"; then
@@ -107,7 +107,7 @@ SetPortAndIrq ()
 	    "$LIRC_DRIVER" = "irdeo_remote"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Specify port and IRQ of your hardware" \
+               --title "Specify I/O base address and IRQ of your hardware" \
                --radiolist "$SET_PORT_TEXT" 14 74 5 \
                  1 "COM1 ($COM1_PORT, $COM1_IRQ)" $COM1 \
                  2 "COM2 ($COM2_PORT, $COM2_IRQ)" $COM2 \
@@ -131,7 +131,7 @@ SetPortAndIrq ()
     elif test "$LIRC_DRIVER" = "parallel"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Specify port and IRQ of your hardware" \
+               --title "Specify I/O base address and IRQ of your hardware" \
                --radiolist "$SET_PORT_TEXT" 13 74 4 \
                  1 "LPT1 ($LPT1_PORT, $LPT1_IRQ)" $LPT1 \
                  2 "LPT2 ($LPT2_PORT, $LPT2_IRQ)" $LPT2 \
