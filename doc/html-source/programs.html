@@ -2,73 +2,119 @@
 <H1 ALIGN="CENTER">lircd</H1>
 <HR WIDTH="70%">
 
-<P>Read also the <A HREF="#daemons"><U>daemon note</U></A>.</P>
+<P> LIRC daemon - decodes infrared signals and provides them on a Unix
+domain socket</P>
 
+<PRE>
+  <B>lircd</B> [config file]
+  <B>lircd</B> -h | --help
+  <B>lircd</B> -v | --version
+</PRE>
 
+<P>
+The main task of lircd is to decode the infrared signals and provide
+an uniform interface for client applications. Clients can connect to
+lircd through a Unix domain socket which is located in
+<em>/dev/lircd</em>. Using this socket they will get the infrared
+codes received by lircd and they can send commands to lircd.
+</P>
+
+<P>
+The config file for lircd is located in
+<em>/usr/local/etc/lircd.conf</EM>. lircd has its own logfile in
+<em>/var/log/lircd</em>. You can make lircd reread its config file and
+reopen its logfile by sending the HUP signal to the program. That way
+you can rotate old logfiles.
+</P>
+
+<P>Read also the <A HREF="#daemons">daemon note</A>.</P>
 
 <A NAME="lircmd"><HR></A>
 <H1 ALIGN="CENTER">lircmd</H1>
 <HR WIDTH="70%">
 
-<P>This daemon behaves like a MouseSystems Mouse. It gets the received
-buttons from lircd and convert it into mouse moves. To make this
-possible, lircmd needs a config file. In this file you have to say
-which button from which remote causes a mouse move or a mouse
-button click. Read also the <A HREF="#daemons"><U>daemon note</U></A>.</P>
+<P>
+LIRC mouse daemon - translate infrared signals to mouse events
+</P>
 
+<PRE>
+  <B>lircmd</B> [config file]
+  <B>lircmd</B> -h | --help
+  <B>lircmd</B> -v | --version
+</PRE>
 
+<P>This daemon can simulate a MouseSystems or IMPS/2 type mouse. It
+gets the received buttons from lircd and converts it into mouse
+events. To make this possible, lircmd needs a config file located in
+<em>/usr/local/etc/lircmd.conf</em>. In this file you have to
+determine which button from which remote causes a mouse move or a
+mouse button click.
+</P>
 
+<P>
+lircmd will use syslogd to output error messages. It depends on your
+system configuration where they will show up.
+</P>
+
+<P>Read also the <A HREF="#daemons">daemon note</A>.</P>
 
 <A NAME="daemons"><P><B>Usage of the Daemons</B></P></A>
 
 <P>
 lircd and lircmd are daemons.  You should start them in some init
 script depending on your system.  There are some example sripts for
-different distributions in the <em>contrib</em> directory.
+different distributions in the <em>contrib</em> directory. lircmd has
+to be started after lircd as it connects to the socket lircd provides.
 </P>
 
 <P>
-lircd has its own logfile in <em>/var/log/lircd</em>. lircmd will use syslogd
-to output error messages. It depends on your system configuration
-where they will show up.
+If you start lircd or lircmd from your shell prompt you will usually
+get back immediately to the prompt. Often people think that the
+program has died. But this is not an error. lircd and lircmd are
+daemons. Daemons always run in background.
 </P>
-
-<P>
-lircd and lircmd will reread their config files if they receive the
-HUP signal. Additionally lircd will reopen its logfile so that you can
-remove old logfiles.
-</P>
-
-
-
 
 <A NAME="irexec"><HR></A>
 <H1 ALIGN="CENTER">irexec</H1>
 <HR WIDTH="70%">
 
-<P>Run program from keystrokes. The config
-string consists of the command to be run.</P>
+<P>irexec - run program from keystrokes</P>
 
-<P><B>NOTE:</B> If you start irexec, it reads your 
-<A HREF="configure.html#lircrc_format"><U>~/.lircrc</U></A> and reacts
-only on <TT>prog=</TT> entries which points to irexec. If you have included
-more than one program in your .lircrc, then start all these
-programs, they react itself only to their according entries in
-.lircrc.</P>
+<PRE>
+  <B>irexec</B> [config file]
+</PRE>
 
+<P>This program lets you execute arbitrary commands on an IR signal
+decoded by lircd, the LIRC daemon. You can give irexec a command line
+parameter which has to be a name of a valid config file. If no command
+line parameters are given irexec reads the default config file which
+is usually ~/.lircrc.  If irexec executes a program it will wait until
+this program terminates. So append a '&' to the command string if you
+don't want that.
 
+<P>The config string consists of the command to be run.</P>
+
+<P><B>Note:</B> If you start irexec, it reads your <A
+HREF="configure.html#lircrc_format">~/.lircrc</A> and reacts only on
+<TT>prog=</TT> entries that point to irexec. If you have included more
+than one program in your .lircrc, then start all these programs, they
+react itself only to their according entries in .lircrc.</P>
 
 
 <A NAME="irpty"><HR></A>
 <H1 ALIGN="CENTER">irpty</H1>
 <HR WIDTH="70%">
 
-<P>lets you create keystrokes out of the IR codes.
-E.g., type "irpty ~/.lircrc workbone" to control the
-CD-player program workbone. Of couse you will have to
-create an appropriate config file for this purpose first.
-The config string will be passed to the desired
-application.</P>
+<P>irpty - pseudo tty driver</P>
+
+<PRE>
+  <B>irpty</B> [-s socket name] [-e] [-i] [-n] [-v]
+</PRE>
+<P>irpty connects to lircd to receive infra-red codes and converts
+them to key strokes. E.g., type <em>irpty ~/.lircrc workbone</em> to
+control the CD-player program workbone. Of couse you will have to
+create an appropriate config file for this purpose first.  The config
+string will be passed to the desired application.</P>
 
 
 <A NAME="irxevent"><HR></A>

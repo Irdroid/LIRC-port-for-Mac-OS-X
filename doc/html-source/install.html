@@ -40,8 +40,10 @@ Project</A>.</P>
 or a Packard Bell receiver you will have to compile the Linux serial
 port driver as a module and you must make sure that the
 <em>lirc_serial</em> module is loaded before the Linux serial port
-module. If you don't do this it will work anyway but this approach is
-begging for hard to trace problems.</P>
+module.  If you don't do this it will work anyway but this approach is
+begging for hard to trace problems. The same holds if you want to use
+the SIR IrDA driver except that it will refuse to work if the port is
+already used by the serial driver.</P>
 
     <!-- Supported Hardware ------------------------------------------------>
 
@@ -215,7 +217,7 @@ high or<BR>
 <em>insmod lirc_serial sense=1</em> if your receiver circuit is active
 low.</P>
 
-<P>Well, the driver seems to work, now lets test if lircd also does
+<P>Well, the driver seems to work, now let's test if lircd also does
 its job. This only works, if lircd uses a <A
 HREF="configure.html#lircd.conf">config file</A> which fits to your
 remote control. Use <A
