@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.16 2000/03/03 20:10:30 columbus Exp $
+dnl $Id: configure.in,v 5.17 2000/03/09 20:59:40 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -155,32 +155,34 @@ if test "$driver" = "com4"; then
 fi
 
 if test "$driver" = "parallel"; then
-  lirc_driver=lirc_parallel;
+  lirc_driver=lirc_parallel
 fi
 if test "$driver" = "avermedia"; then
-  lirc_driver=lirc_aver;
+  AC_MSG_ERROR([sorry, the selected driver is not available any more])
+  lirc_driver=lirc_aver
   lircd_conf="avermedia/lircd.conf.avermedia"
   lircmd_conf="avermedia/lircmd.conf.avermedia"
 fi
 if test "$driver" = "hauppauge"; then
-  lirc_driver=lirc_haup;
+  lirc_driver=lirc_haup
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
   test -f "${kerneldir}/include/linux/i2c-old.h" && AC_DEFINE(LIRC_OLD_I2C_LAYER)
 fi
 if test "$driver" = "hauppauge_new"; then
-  lirc_driver=lirc_haup;
+  lirc_driver=lirc_haup
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
   AC_DEFINE(LIRC_NEW_I2C_LAYER)
 fi
 if test "$driver" = "fly98"; then
-  lirc_driver=lirc_fly98;
+  lirc_driver=lirc_fly98
   lircd_conf="life-view/lircd.conf.fly98"
   lircmd_conf="life-view/lircmd.conf.fly98"
 fi
 if test "$driver" = "pixelview"; then
-  lirc_driver=lirc_pixview;
+  AC_MSG_ERROR([sorry, the selected driver is not available any more])
+  lirc_driver=lirc_pixview
   lircd_conf="pixelview/lircd.conf.playtv"
 fi
 if test "$driver" = "lpt1"; then
@@ -204,6 +206,10 @@ if test "$driver" = "logitech"; then
   hw_module="hw_logitech.o serial.o"
   lircd_conf="logitech/lircd.conf.logitech"
   lircmd_conf="logitech/lircmd.conf.logitech"
+fi
+if test "$driver" = "irreal"; then
+  lirc_driver="none"
+  hw_module="hw_irreal.o serial.o receive.o transmit.o"
 fi
 
 dnl now check to see if the user is behaving himself
@@ -365,10 +371,8 @@ AC_OUTPUT([
   drivers/lirc_serial/Makefile
   drivers/lirc_sir/Makefile
   drivers/lirc_parallel/Makefile
-  drivers/lirc_aver/Makefile
   drivers/lirc_haup/Makefile
   drivers/lirc_fly98/Makefile
-  drivers/lirc_pixview/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

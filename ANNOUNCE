@@ -12,14 +12,13 @@ http://fsinfo.cs.uni-sb.de/~columbus/lirc/
 Former versions focussed on home-brew hardware connected to the serial
 or parallel port. Descriptions how to build this hardware can be found
 on the LIRC homepage. Current versions of LIRC also support a variety
-of other hardware.  The state of the drivers for this hardware however
+of other hardware. The state of the drivers for this hardware however
 differs very much. Support for the following devices is very stable:
 Home-brew serial and parallel port hardware, Irman, Anir Multimedia
 Magic, Packard Bell receivers.  The drivers for the following TV cards
 might still have problems and are not tested very well: many Hauppauge
-models, Avermedia TV98, Avermedia TV-Phone, Fly Video 98.
-Experimental drivers for the PixelView RemoteMaster, PixelView TV
-cards and Logitech/AST are also included.
+models, Fly Video 98. Experimental drivers for the PixelView
+RemoteMaster and Logitech/AST are also included.
 
 The most important part of LIRC is the lircd daemon that will decode
 IR signals received by the device drivers and provide the information
