@@ -113,6 +113,8 @@ struct irctl {
 static char init1[] = {0x01, 0x00, 0x20, 0x14};
 static char init2[] = {0x01, 0x00, 0x20, 0x14, 0x20, 0x20, 0x20};
 
+static void usb_remote_disconnect(struct usb_device *dev, void *ptr);
+
 
 
 static void send_packet(struct irctl *ir, u16 cmd, unsigned char* data)
@@ -215,8 +217,11 @@ static int set_use_inc(void *data)
 static void set_use_dec(void *data)
 {
 	struct irctl *ir = data;
+
+	usb_remote_disconnect(NULL,ir);
+
+	/* the device was unplugged while we where open */
 	if(!ir->usbdev)
-		/* the device was unplugged while we where open */
 		unregister_from_lirc(ir);
 
 	MOD_DEC_USE_COUNT;
@@ -411,8 +416,22 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 }
 
 static struct usb_device_id usb_remote_id_table [] = {
-    { USB_DEVICE(0x0bc7, 0x0004) },		/* ATI Remote Wonder USB */
-    { }						/* Terminating entry */
+	{ USB_DEVICE(0x0bc7, 0x0002) },		/* X10 USB Firecracker Interface */
+	{ USB_DEVICE(0x0bc7, 0x0003) },		/* X10 VGA Video Sender */
+	{ USB_DEVICE(0x0bc7, 0x0004) },		/* ATI Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0005) },		/* NVIDIA Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0006) },		/* ATI Wireless Remote Receiver */
+	{ USB_DEVICE(0x0bc7, 0x0007) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x0008) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x0009) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000A) },		/* X10 USB Wireless Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000B) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000C) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000D) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000E) },		/* X10 USB Transceiver */
+	{ USB_DEVICE(0x0bc7, 0x000F) },		/* X10 USB Transceiver */
+
+	{ }						/* Terminating entry */
 };
 
 static struct usb_driver usb_remote_driver = {
