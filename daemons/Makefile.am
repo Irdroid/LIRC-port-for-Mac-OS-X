@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.21 2001/07/05 18:01:06 lirc Exp $
+## $Id: Makefile.am,v 5.22 2001/11/04 00:11:03 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -69,8 +69,10 @@ hw_default_simrec.o: hw_default.c hw_default.h hardware.h ir_remote.h lircd.h  $
 slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
 		dump_config.c dump_config.h
 
+if MANAGE_DEVICES
 install-exec-local: mkdev
 uninstall-local: rmdev
+endif
 
 install-data-local:
 	test "$(lircd_conf)" = ""  || test -e $(DESTDIR)$(sysconfdir)/lircd.conf  || ($(mkinstalldirs) $(DESTDIR)$(sysconfdir) && $(INSTALL_DATA) $(top_srcdir)/remotes/$(lircd_conf) $(DESTDIR)$(sysconfdir)/lircd.conf)
