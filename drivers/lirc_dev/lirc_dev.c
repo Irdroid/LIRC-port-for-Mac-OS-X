@@ -4,18 +4,13 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.1 2000/04/02 13:07:21 columbus Exp $
+ * $Id: lirc_dev.c,v 1.2 2000/04/06 17:22:42 columbus Exp $
  *
  */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
 #error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
-#endif
-
-/* FIXME: usually the kernel does this with some Makefile magic */
-#ifndef EXPORT_SYMTAB
-#define EXPORT_SYMTAB
 #endif
 
 #include <linux/config.h>
@@ -29,7 +24,6 @@
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
 #include <linux/wrapper.h>
-/* kernel_thread */
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
 
@@ -231,7 +225,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 
 	if (1 > p->code_length || (BUFLEN*8) < p->code_length) {
 		printk("lirc_dev: lirc_register_plugin:"
-		       "code length in bits for minor (%d) must be less than %d!\n",
+		       "code length in bits for minor (%d) "
+		       "must be less than %d!\n",
 		       p->minor, BUFLEN*8);
 		return FAIL;
 	}
@@ -260,7 +255,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			if (irctls[minor].p.minor == NOPLUG)
 				break;
 		if (MAX_IRCTL_DEVICES == minor) {
-			printk("lirc_dev: lirc_register_plugin: no free slots for plugins!\n");
+			printk("lirc_dev: lirc_register_plugin: "
+			       "no free slots for plugins!\n");
 			up(&plugin_lock);
 			return FAIL;
 		}
@@ -288,9 +284,11 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	/* this simplifies boundary checking during buffer access */
 	ir->buf_len = BUFLEN - (BUFLEN%ir->bytes_in_key);
 
-	ir->features = (p->code_length > 8) ? LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_CODE;
+	ir->features = (p->code_length > 8) ? LIRC_CAN_REC_LIRCCODE : 
+					      LIRC_CAN_REC_CODE;
 
 	ir->p = *p;
+	ir->p.minor = minor;
 
 	/* try to fire up polling thread */
 	ir->t_notify = &tn;
@@ -454,7 +452,8 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 	}
 
 	dprintk(LOGHEAD "poll result = %s\n",
-		ir->p.name, ir->p.minor, ir->in_buf ? "POLLIN|POLLRDNORM" : "SUCCESS");
+		ir->p.name, ir->p.minor, 
+		ir->in_buf ? "POLLIN|POLLRDNORM" : "SUCCESS");
 
 	return ir->in_buf ? (POLLIN|POLLRDNORM) : SUCCESS;
 }
@@ -484,7 +483,8 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		result = put_user(ir->features, (unsigned long*)arg);
 		break;
 	case LIRC_GET_REC_MODE:
-		result = put_user(LIRC_REC2MODE(ir->features), (unsigned long*)arg);
+		result = put_user(LIRC_REC2MODE(ir->features),
+				  (unsigned long*)arg);
 		break;
 	case LIRC_SET_REC_MODE:
 		result = get_user(mode, (unsigned long*)arg);
@@ -493,7 +493,8 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		}
 		break;
 	case LIRC_GET_LENGTH:
-		result = put_user((unsigned long)ir->p.code_length, (unsigned long *)arg);
+		result = put_user((unsigned long)ir->p.code_length, 
+				  (unsigned long *)arg);
 		break;
 	default:
 		result = -ENOIOCTLCMD;
@@ -516,32 +517,46 @@ static ssize_t irctl_read(struct file *file,
 	unsigned char buf[BUFLEN];
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 	int ret;
+	struct wait_queue wait = { current, NULL };
 
-	dprintk(LOGHEAD "read called\n",
-		ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
 
 	if (ir->bytes_in_key != length) {
-		dprintk(LOGHEAD "read result = -EIO\n",
-			ir->p.name, ir->p.minor);
+		dprintk(LOGHEAD "read result = -EIO\n", ir->p.name, ir->p.minor);
 		return -EIO;
 	}
 
-	/* while input buffer is empty and device opened in blocking mode, wait for input */
+	/* we add ourselves to the task queue before buffer check 
+         * to avoid losing scan code (in case when queue is awaken somewhere 
+	 * beetwen while condition checking and scheduling)
+	 */
+	add_wait_queue(&ir->wait_poll, &wait);
+	current->state = TASK_INTERRUPTIBLE;
+
+	/* while input buffer is empty and device opened in blocking mode, 
+	 * wait for input 
+	 */
 	while (!ir->in_buf) {
 		if (file->f_flags & O_NONBLOCK) {
-			dprintk(LOGHEAD "read result = -EAGAIN\n",
+			dprintk(LOGHEAD "read result = -EWOULDBLOCK\n", 
 				ir->p.name, ir->p.minor);
-			return -EAGAIN;
+			remove_wait_queue(&ir->wait_poll, &wait);
+			current->state = TASK_RUNNING;
+			return -EWOULDBLOCK;
 		}
-
-		interruptible_sleep_on(&ir->wait_poll);
-
 		if (signal_pending(current)) {
-			dprintk(LOGHEAD "read result = -EINTR\n",
+			dprintk(LOGHEAD "read result = -ERESTARTSYS\n", 
 				ir->p.name, ir->p.minor);
-			return -EINTR;
+			remove_wait_queue(&ir->wait_poll, &wait);
+			current->state = TASK_RUNNING;
+			return -ERESTARTSYS;
 		}
+		schedule();
+		current->state = TASK_INTERRUPTIBLE;
 	}
+
+	remove_wait_queue(&ir->wait_poll, &wait);
+	current->state = TASK_RUNNING;
 
 	/* here is the only point at which we remove key codes from the buffer */
 	IRLOCK;
@@ -554,7 +569,7 @@ static ssize_t irctl_read(struct file *file,
 	ret = copy_to_user(buffer, buf, length);
 
 	dprintk(LOGHEAD "read result = %s (%d)\n",
-		ir->p.name, ir->p.minor, ret ? "-EFAULT" : "length", ret);
+		ir->p.name, ir->p.minor, ret ? "-EFAULT" : "OK", ret);
 
 	return ret ? -EFAULT : length;
 }
