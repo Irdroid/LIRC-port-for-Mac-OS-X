@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.28 2001/08/04 18:24:27 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.29 2001/08/08 13:26:42 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -296,11 +296,19 @@ void calc_pulse_lengths_in_clocks(void)
 	pulse_width = period*duty_cycle/100;
 	space_width = period - pulse_width;
 #ifdef DEBUG
+#ifdef KERNEL_2_3
 	printk(KERN_INFO LIRC_DRIVER_NAME
 	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
 	       "clk/jiffy=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
 	       freq, duty_cycle, current_cpu_data.loops_per_jiffy,
 	       pulse_width, space_width, conv_us_to_clocks);
+#else
+	printk(KERN_INFO LIRC_DRIVER_NAME
+	       ": in calc_pulse_lengths_in_clocks, freq=%d, duty_cycle=%d, "
+	       "clk/sec=%ld, pulse=%ld, space=%ld, conv_us_to_clocks=%ld\n",
+	       freq, duty_cycle, current_cpu_data.loops_per_sec,
+	       pulse_width, space_width, conv_us_to_clocks);
+#endif
 #endif
 }
 
