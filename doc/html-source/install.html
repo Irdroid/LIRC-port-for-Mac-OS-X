@@ -7,20 +7,20 @@
 <P>To compile the LIRC source code you need the
 properly installed kernel sources. This means that <B>autoconf.h</B>
 must exist. This file is created after a <B>make config</B> or
-something simular. Read the <B>README</B> file in the kernel sources
+something similar. Read the <B>README</B> file in the kernel sources
 directory to get more information on how to compile
 and set up an own kernel or get some more documentation at the
 <A HREF="http://sunsite.unc.edu/LDP/"><U>Linux Documentation Project</U></A>.
 
 <P>If you want to use all tools, you also need an
-installed svgalib (used by smode2) and the X Windows headerfiles
+installed svgalib (used by smode2) and the X Windows header files
 (needed by irxevent). You can get svgalib from
 <A HREF="ftp://sunsite.unc.edu/pub/Linux/libs/graphics/"
 ><U>ftp://sunsite.unc.edu/pub/Linux/libs/graphics/</U></A></P>
 
 <P><B>NOTE:</B> Perhaps you need to modify your settings
 for your generic serial port or parallel port driver, because the LIRC
-driver uses the same ressources.</P>
+driver uses the same resources.</P>
 
 
 
@@ -64,7 +64,7 @@ build a receiver on your own.</P>
 <P>Since the pre0.5.5 Versions of LIRC it is configured via automake.
 There are two ways now to setup and compile LIRC,
 The first: write all necessary parameters on
-the commandline together with configure manually, or the second: start
+the command line together with configure manually, or the second: start
 <B>./setup.sh</B> which will use the <B>dialog</B> program to do all
 necessary things.</P>
 
@@ -72,7 +72,7 @@ necessary things.</P>
 you have to generate this, by executing <B>./autogen.sh</B>. You need
 automake 1.4 and above to do this properly.</P>
 
-<P>After a sucessful execution of configure either manually, or called by
+<P>After a successful execution of configure either manually, or called by
 setup.sh you only have to type <B>make</B> which will compile the source
 files into executables.</P>
 
@@ -123,8 +123,8 @@ IRQ) and (c) if you use a remote which works.</P>
 
 <P>From time to time there should be long spaces (>30000).
 If you can see very long pulses this usually means that sense
-autodetection of your serial port IR receiver circuit has failed.
-You can override sense autodetection by loading the device driver
+auto detection of your serial port IR receiver circuit has failed.
+You can override sense auto detection by loading the device driver
 with the following command:<BR>
 <B>insmod lirc sense=0</B><BR>
 if your receiver circuit is active high or<BR>
@@ -133,7 +133,7 @@ if your receiver circuit is active low.</P>
 
 <P>Well, the driver seems to work, now lets test if lircd also does
 its job. This only works, if lircd uses a
-<A HREF="configure.html#lircd.conf"><U>configfile</U></A> which fits to your
+<A HREF="configure.html#lircd.conf"><U>config file</U></A> which fits to your
 remote control. Use <A HREF="programs.html#irrecord"><U>irrecord</U></A>
 in the case the lirc distribution doesn't provide a config file suitable
 to your remote.</P>
@@ -169,7 +169,7 @@ or adding the following line to /etc/conf.modules:<BR>
 <P>Then start the decoder daemon with (make sure it is in your
 search path): <B>lircd</B></P>
 
-<P>The following program dumps the decoded keycodes from lircd to screen:
+<P>The following program dumps the decoded key codes from lircd to screen:
 <B>irw</B></P>
 
 <P>This looks like this (depending on your remote):
@@ -222,13 +222,39 @@ then check lircd and /etc/lircd.conf.</P>
 
 
 
-    <!-- Update from lirc-0.5.4 --------------------------------------------->
+    <!-- Updating from lirc-0.5.4 --------------------------------------------->
 
 <A NAME="updating"><HR></A>
 <H1 ALIGN="CENTER">Updating from lirc-0.5.4</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
+<P>
+This section only describes changes that break compatibility with older
+versions. Please read the <EM>NEWS</EM> file to learn about all new
+features of this release.
+</P>
+<P>
+The config files of <em>lircd</em> and <em>lircmd</em> are now located 
+in <em>/usr/local/etc/</em> instead of <em>/etc/</em> per default. Most 
+people prefer to make <em>/usr/local/etc/</em> a link to <em>/etc/</em>.
+</P>
+<P>
+The modules no longer are uniformly installed as <em>lirc.o</em> but
+are called <em>lirc_<em>driver</em>.o</em> depending on the driver you
+are using. Therefore you might have to edit your
+<em>/etc/conf.modules</em> and change the line
+<pre>
+alias char-major-61 lirc
+</pre>
+to whatever you need.
+</P>
+<P>
+LIRC now supports the Irman directly. <em>lirmand</em> is no longer
+necessary. Before installing this version you should call <NOBR><EM>rm
+/dev/lirc</EM></NOBR> to remove the FIFO that was used in
+lirc-0.5.4. <em>/dev/lirc</em> now should be a link to the device
+the Irman is connected to (e.g. <em>/dev/ttyS1</em>).
+</P>
 
 &#160;<BR>&#160;<BR>&#160;<BR>
 
