@@ -46,7 +46,7 @@ the SIR IrDA driver except that it will refuse to work if the port is
 already used by the serial driver.</P>
 
 <P><B>TV cards:</B> To use any TV card remote controls you will need
-kernel version 2.4.0 and higher. You can also use Gerd Knorr's <A
+kernel version 2.2.4 and higher. You can also use Gerd Knorr's <A
 HREF="http://www.in-berlin.de/User/kraxel/bttv.html">bttv</A>
 package. No kernel patches are necessary this way.
 </P>
@@ -282,6 +282,68 @@ detail level of debug information.</P>
 <BR>
 </LI>
 </UL>
+
+    <!-- Module specific information ------------------------------------------->
+
+<A NAME="specific"><HR></A>
+<H1 ALIGN="CENTER">Module specific information</H1>
+<HR WIDTH="70%">
+
+<H3>lirc_gpio_p</H3>
+
+This module receives scan codes from the GPIO register of bt8[47]8
+chips using polling. It is a "plugin" for the <em>lirc_dev</em>
+module. It loads <em>bttv</em> and <em>lirc_dev</em> modules if they
+are not loaded yet.<BR>
+
+<P>
+ Parameters are:
+<UL>
+<LI><B>debug</B> (0) - value other than 0 (zero) enables printing more log
+messages</LI>
+<LI><B>card</B> (0) - number of TV card from which receive scan codes</LI>
+<LI><B>minor</B> (0) - minor device number for /dev/lirc device</LI>
+<LI><B>code_length</B> (5) - scan code length (in bits)</LI>
+<LI><B>gpio_shift</B> (8) - right shift GPIO value gpio_shift bits</LI>
+<LI><B>gpio_mask</B> (0x1f) - bit mask used for masking (bitwise
+&amp;) GPIO value (after shifting)</LI>
+<LI><B>gpio_lock_mask</B> (0x8000) - if this value "anded" with GPIO
+value is non zero than it indicates that scan code is not ready (value
+of 0 of this parameter disables checking)</LI>
+<LI><B>soft_gap</B> (300) - minimal gap (in milliseconds) between two
+scan codes (value of 0 disables checking)</LI>
+<LI><B>sample_rate</B> (10) - how often GPIO will be polled</LI>
+</UL>
+
+Default values for parameters are suitable for <em>PixelView PlayTV
+pro</em> card.</P>
+
+<H3>lirc_gpio_i</H3>
+<P>
+This module receives scan codes from the GPIO register of bt8[47]8
+chips using hardware interrupts. It is a "plugin" for the
+<em>lirc_dev</em> module. It loads <em>bttv</em> and <em>lirc_dev</em>
+modules if they are not loaded yet.
+</P>
+
+<P>
+Parameters are:
+<ul>
+<li><b>debug</b> (0) - value other than 0 (zero) enables printing more
+log messages</li>
+<li><b>card</b> (0) - number of TV card from which receive scan codes</li>
+<li><b>minor</b> (0) - minor device number for /dev/lirc device</li>
+<li><b>code_length</b> (5) - scan code length (in bits)</li>
+<li><b>gpio_shift</b> (8) - right shift GPIO value gpio_shift bits</li>
+<li><b>gpio_mask</b> (0x1f) - bit mask used for masking (bitwise
+&amp;) GPIO value (after shifting)</li>
+<li><b>gpio_lock_mask</b> (0x8000) - if this value "anded" with GPIO
+value is non zero than it indicates that scan code is not ready (value
+of 0 of this parameter disables checking)</li>
+<li><b>soft_gap</b> (300) - minimal gap (in milliseconds) between two
+scan codes (value of 0 disables checking)</li>
+</ul>
+</P>
 
     <!-- Updating from lirc-0.5.4 --------------------------------------------->
 
