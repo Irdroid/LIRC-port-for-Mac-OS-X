@@ -1,5 +1,9 @@
 
-* make the package protable (you will be able to use lirc with an
+* make the package portable (you will be able to use LIRC with an
   Irman on Solaris)
 
 * IrDA support (SIR support is available, real CIR support is still missing)
+
+* lirc_serial: Check io region
+
+* irrecord: fancy Kenwood repeat code 78 11243 78

@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.5 2000/02/12 12:32:03 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.6 2000/03/21 12:03:04 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -198,29 +198,14 @@ void sighup(int sig)
 #ifdef DAEMONIZE
 void daemonize(void)
 {
-	pid_t pid;
-	
-	if((pid=fork())<0)
+	if(daemon(0,0)==-1)
 	{
-		fprintf(stderr,"%s: fork() failed\n",progname);
+		fprintf(stderr,"%s: daemon() failed\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
-	else if(pid) /* parent */
-	{
-		exit(EXIT_SUCCESS);
-	}
-	else
-	{
-		setsid();
-		chdir("/");
-		umask(0);
-		fclose(stdin);
-		fclose(stdout);
-		fclose(stderr);
-	}
+	umask(0);
 }
-
 #endif DAEMONIZE
 
 void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)

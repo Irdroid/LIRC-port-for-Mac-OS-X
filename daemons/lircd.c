@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.11 2000/01/23 18:37:06 columbus Exp $      */
+/*      $Id: lircd.c,v 5.12 2000/03/21 12:03:04 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -360,7 +360,7 @@ void start_server(void)
 	struct sockaddr_un serv_addr;
 	struct stat s;
 	int ret;
-
+	
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(sockfd==-1)
 	{
@@ -368,7 +368,7 @@ void start_server(void)
 		perror(progname);
 		exit(EXIT_FAILURE);
 	};
-
+	
 	/* 
 	   get owner, permissions, etc.
 	   so new socket can be the same since we
@@ -389,7 +389,7 @@ void start_server(void)
 		perror(NULL);
 		exit(EXIT_FAILURE);
 	}
-
+	
 	serv_addr.sun_family=AF_UNIX;
 	strcpy(serv_addr.sun_path,LIRCD);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
@@ -399,17 +399,17 @@ void start_server(void)
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
-
+	
 	if(chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
 	{
 		fprintf(stderr,"%s: could not set file permissions\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
-
+	
 	listen(sockfd,3);
 	nolinger(sockfd);
-  
+	
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
@@ -460,28 +460,14 @@ void logperror(int level,const char *s)
 
 void daemonize(void)
 {
-	pid_t pid;
-	
-	if((pid=fork())<0)
+	if(daemon(0,0)==-1)
 	{
-		logprintf(0,"fork() failed\n");
+		logprintf(0,"daemon() failed\n");
 		logperror(0,NULL);
 		raise(SIGTERM);
 	}
-	else if(pid) /* parent */
-	{
-		exit(EXIT_SUCCESS);
-	}
-	else
-	{
-		setsid();
-		chdir("/");
-		umask(0);
-		fclose(stdin);
-		fclose(stdout);
-		fclose(stderr);
-		daemonized=1;
-	}
+	umask(0);
+	daemonized=1;
 }
 
 #endif DAEMONIZE
