@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.29 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: lircd.c,v 5.30 2001/07/04 16:52:24 uid26674 Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -801,7 +801,7 @@ void start_server(mode_t permission,int nodaemon)
 			perror(progname);
 			exit(EXIT_FAILURE);
 		};
-		(void) setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,
+		(void) setsockopt(sockinet,SOL_SOCKET,SO_REUSEADDR,
 				  &enable,sizeof(enable));
 		serv_addr_in.sin_family=AF_INET;
 		serv_addr_in.sin_addr.s_addr=htonl(INADDR_ANY);
