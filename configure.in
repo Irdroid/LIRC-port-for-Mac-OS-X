@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.91 2002/10/10 18:14:49 ranty Exp $
+dnl $Id: configure.in,v 5.92 2002/10/21 09:08:35 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -225,11 +225,20 @@ if test "$driver" = "any"; then
   esac
   done
   #remove duplicates
-  #hw_module=`echo ${hw_module}| tr ' ' '\n' | sort -u | tr '\n' ' '`
-  hw_module=`echo ${hw_module}| sed \
-  			-e':again' \
-			-e's/\(.*\)\(\<.*\) \(.*\) \2\(.*\)$/\1\2 \3\4/' \
-			-e'tagain'`
+
+  #sed segfaults when $hw_module is too long :(
+  #hw_module=`echo ${hw_module}| sed \
+  #			-e':again' \
+  #			-e's/\(.*\)\(\<.*\) \(.*\) \2\(.*\)$/\1\2 \3\4/' \
+  #			-e'tagain'`
+
+  space_to_newline()
+  { for token in $*; do echo $token; done; }
+  newline_to_space()
+  { echo $*; }
+  
+  hw_module=$(newline_to_space $(space_to_newline ${hw_module}| sort -u))
+
 fi
 
 if test "$driver" = "irman"; then
