@@ -62,13 +62,15 @@ depends on the distribution you use.</P>
 
 <P><B>TV cards:</B> To use any TV card remote controls you will need
 either at least kernel version 2.4.0 or you use Gerd Knorr's current
-<A HREF="http://www.in-berlin.de/User/kraxel/bttv.html">bttv</A>
+<A HREF="http://www.strusel007.de/linux/bttv/index.html">bttv</A>
 package together with a kernel version of 2.2.4 or higher. In some
 cases (eg. PixelView PlayTV) the latter solution will require Gerd
 Knorr's bttv package version 0.7.37 or higher. As LIRC during
 compilation uses the bttv header files you will have to copy the
-current bttv files into your kernel sources. No further kernel patches
-are necessary that way.
+current bttv files into your kernel sources. The I2C driver also
+requires the new I2C stack that was introduced in 2.3.x. <A
+HREF="http://www2.lm-sensors.nu/~lm78/">Patches</A> for 2.2.x kernels
+are also available.
 </P>
 <P>
 For TV cards that use the lirc_gpio_p module we rely on bttv
@@ -198,6 +200,13 @@ port the serial port drivers shall use by adding the following line to
 </PRE>
 This will override the default values you have selected during setup.
 The configure script will tell you which kernel module you need.</P>
+
+<P>
+Finally you might want to add <em>/usr/local/lib</em> to
+<em>/etc/ld.so.conf</em> so the lirc_client library is found by the
+run-time linker. Don't forget to call <em>ldconfig</em> so that the
+change takes effect.
+</P>
 
 
     <!-- Testing ------------------------------------------------------------>
