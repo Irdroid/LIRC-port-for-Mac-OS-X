@@ -86,6 +86,10 @@
 #include <asm/fcntl.h>
 #ifdef LIRC_ON_IPAQ
 #include <asm/hardware.h>
+#ifdef CONFIG_SA1100_COLLIE
+#include <asm/arch/tc35143.h>
+#include <asm/ucb1200.h>
+#endif
 #endif
 
 #include <linux/timer.h>
@@ -374,6 +378,7 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 }
 static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos)
 {
+	unsigned long flags;
 #ifdef LIRC_SIR_TEKRAM
 	return(-EBADF);
 #else
@@ -392,6 +397,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 	/* disable receiver */
 	Ser2UTCR3=0;
 #endif
+	save_flags(flags);cli();
 	while (1) {
 		if (i >= n)
 			break;
@@ -404,6 +410,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 			send_space(tx_buf[i]);
 		i++;
 	}
+	restore_flags(flags);
 #ifdef LIRC_ON_IPAQ
 	off();
 	udelay(1000); /* wait 1ms for IR diode to recover */
@@ -893,6 +900,31 @@ static void send_pulse(unsigned long len)
 }
 #endif
 
+#ifdef CONFIG_SA1100_COLLIE
+static inline int sa1100_irda_set_power_collie(int state)
+{
+	if (state) {
+		/*
+		 *  0 - off
+		 *  1 - short range, lowest power
+		 *  2 - medium range, medium power
+		 *  3 - maximum range, high power
+		 */
+		ucb1200_set_io_direction(TC35143_GPIO_IR_ON,
+					 TC35143_IODIR_OUTPUT);
+		ucb1200_set_io(TC35143_GPIO_IR_ON, TC35143_IODAT_LOW);
+		udelay(100);
+	}
+	else {
+		/* OFF */
+		ucb1200_set_io_direction(TC35143_GPIO_IR_ON,
+					 TC35143_IODIR_OUTPUT);
+		ucb1200_set_io(TC35143_GPIO_IR_ON, TC35143_IODAT_HIGH);
+	}
+	return 0;
+}
+#endif
+
 static int init_hardware(void)
 {
 	int flags;
@@ -905,6 +937,9 @@ static int init_hardware(void)
 		printk("Power on IR module\n");
 		set_bitsy_egpio(EGPIO_BITSY_IR_ON);
 	}
+#endif
+#ifdef CONFIG_SA1100_COLLIE
+	sa1100_irda_set_power_collie(3);	/* power on */
 #endif
 	sr.hscr0=Ser2HSCR0;
 
@@ -1054,6 +1089,9 @@ static void drop_hardware(void)
 	if (machine_is_bitsy()) {
 		clr_bitsy_egpio(EGPIO_BITSY_IR_ON);
 	}
+#endif
+#ifdef CONFIG_SA1100_COLLIE
+	sa1100_irda_set_power_collie(0);	/* power off */
 #endif
 #else
 	/* turn off interrupts */
