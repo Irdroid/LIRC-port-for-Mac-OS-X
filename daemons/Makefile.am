@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.32 2003/05/07 17:30:40 lirc Exp $
+## $Id: Makefile.am,v 5.33 2003/08/15 20:52:21 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -14,20 +14,23 @@ lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		hw-types.c hw-types.h hardware.h
 lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
-EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
+EXTRA_lircd_SOURCES = hw_audio.c\
+			hw_bte.c hw_bte.h \
+			hw_caraca.c hw_caraca.h \
+			hw_creative.c hw_creative.h \
+			hw_creative_infracd.c hw_creative_infracd.h \
+			hw_default.c hw_default.h \
+			hw_devinput.c \
+		        hw_dsp.c \
+			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
-			hw_creative_infracd.c hw_creative_infracd.h \
-			hw_pixelview.c hw_pixelview.h \
-			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
-			hw_slinke.c hw_slinke.h \
-			hw_irman.c hw_irman.h \
-			hw_creative.c hw_creative.h \
+			hw_pixelview.c hw_pixelview.h \
+			hw_pinsys.c hw_pinsys.h \
 			hw_silitek.c hw_silitek.h \
-		        hw_dsp.c hw_audio.c\
-			hw_caraca.c hw_caraca.h \
+			hw_slinke.c hw_slinke.h \
 			hw_udp.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
@@ -43,20 +46,23 @@ irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 		hw-types.c hw-types.h ir_remote.c ir_remote.h
 irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@
 irrecord_DEPENDENCIES = @hw_module@
-EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
+EXTRA_irrecord_SOURCES = hw_audio.c \
+			hw_bte.c hw_bte.h \
+			hw_caraca.c hw_caraca.h \
+			hw_creative.c hw_creative.h \
+			hw_creative_infracd.c hw_creative_infracd.h \
+			hw_default.c hw_default.h \
+			hw_devinput.c \
+			hw_dsp.c \
+			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
-			hw_creative_infracd.c hw_creative_infracd.h \
-			hw_pixelview.c hw_pixelview.h \
-			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
-			hw_slinke.c hw_slinke.h \
-			hw_irman.c hw_irman.h \
-			hw_creative.c hw_creative.h \
+			hw_pixelview.c hw_pixelview.h \
+			hw_pinsys.c hw_pinsys.h \
 			hw_silitek.c hw_silitek.h \
-			hw_dsp.c hw_audio.c \
-			hw_caraca.c hw_caraca.h \
+			hw_slinke.c hw_slinke.h \
 			hw_udp.c \
 			receive.c receive.h \
 			transmit.c transmit.h \

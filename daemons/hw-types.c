@@ -6,22 +6,23 @@
 #include "hardware.h"
 #include "hw-types.h"
 /* Hardware types */
-extern struct hardware hw_default;
+extern struct hardware hw_audio;
+extern struct hardware hw_bte;
 extern struct hardware hw_creative;
 extern struct hardware hw_creative_infracd;
+extern struct hardware hw_default;
+extern struct hardware hw_devinput;
+extern struct hardware hw_dsp;
 extern struct hardware hw_irman;
+extern struct hardware hw_livedrive_midi;
+extern struct hardware hw_livedrive_seq;
 extern struct hardware hw_logitech;
 extern struct hardware hw_mp3anywhere;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
-extern struct hardware hw_dsp;
-extern struct hardware hw_livedrive_midi;
-extern struct hardware hw_livedrive_seq;
-extern struct hardware hw_audio;
 extern struct hardware hw_udp;
-extern struct hardware hw_bte;
 
 #ifndef HW_DEFAULT
 # define HW_DEFAULT hw_default
@@ -49,13 +50,14 @@ struct hardware hw_null=
 struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
-	&hw_default,
 #ifdef HAVE_LIBPORTAUDIO
 	&hw_audio,
 #endif
 	&hw_bte,
 	&hw_creative,
 	&hw_creative_infracd,
+	&hw_default,
+	&hw_devinput,
 	&hw_dsp,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,

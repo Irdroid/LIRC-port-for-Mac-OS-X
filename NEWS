@@ -1,4 +1,5 @@
 0.7.0: future
+  * added support for Linux input layer (Oliver Endriss, Jack Thomasson)
   * enabled lircd to optinally (compile time setting) decode buttons
     that are not included in the config file
   * added delay directive to .lircrc config file (Tobias Blomberg)

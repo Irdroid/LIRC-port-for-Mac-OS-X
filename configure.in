@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.111 2003/08/15 12:56:29 lirc Exp $
+dnl $Id: configure.in,v 5.112 2003/08/15 20:52:21 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -135,9 +135,10 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (bte) (creative_infracd) (dsp) (irreal) \
-	(livedrive_midi) (livedrive_seq) (logitech) (mediafocusI) \
-	(mp3anywhere) (pctv) (remotemaster) (silitek) (slinke) (udp)"
+possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
+	(irreal) (livedrive_midi) (livedrive_seq) (logitech) \
+	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
+	(slinke) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -173,9 +174,10 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, act200l, animax, atiusb, audio,
 			  avermedia, avermedia_vdomate, avermedia98,
-			  bestbuy, bestbuy2, breakoutbox, bte, caraca, chronos,
-			  comX, creative_infracd, dsp, cph03x, cph06x,
-			  creative, flyvideo, gvbctv5pci, hauppauge,
+			  bestbuy, bestbuy2, breakoutbox, bte, caraca,
+			  chronos, comX, creative_infracd, dsp,
+			  cph03x, cph06x, creative, devinput,
+			  flyvideo, gvbctv5pci, hauppauge,
 			  hauppauge_dvb, irdeo, irdeo_remote, irman,
 			  irreal, it87, knc_one, kworld, leadtek_0007,
 			  leadtek_0010, livedrive_midi, livedrive_seq,
@@ -231,6 +233,9 @@ if test "$driver" = "any"; then
 		;;
 	creative_infracd)
 		hw_module="${hw_module} hw_creative_infracd.o"
+		;;
+	devinput)
+		hw_module="${hw_module} hw_devinput.o"
 		;;
 	dsp)
 		hw_module="${hw_module} hw_dsp.o receive.o"
@@ -431,6 +436,12 @@ if test "$driver" = "creative_infracd"; then
   hw_module="hw_creative_infracd.o"
   HW_DEFAULT="hw_creative_infracd"
   lircd_conf="creative/lircd.conf.infracd"
+fi
+
+if test "$driver" = "devinput"; then
+  lirc_driver="none"
+  hw_module="hw_devinput.o"
+  HW_DEFAULT="hw_devinput"
 fi
 
 if test "$driver" = "dsp"; then
