@@ -1,4 +1,4 @@
-0.6.4: future
+0.6.4: 08/15/01
   * fixed bug in home-brew transmitter code (Steve Davies)
   * fixed bug in Irdeo transmit code
   * added support for FlyVideo II TV card (Alexios Chouchoulas)
