@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.11 2001/01/06 16:19:13 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.12 2001/04/24 19:33:05 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -148,7 +148,7 @@ char *pixelview_rec(struct ir_remote *remotes)
 	{
 		if(i>0)
 		{
-			if(!waitfordata(10000))
+			if(!waitfordata(50000))
 			{
 				logprintf(LOG_ERR,"timeout reading "
 					  "byte %d",i);
