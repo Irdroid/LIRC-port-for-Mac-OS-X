@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.50 2004/02/05 19:44:50 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.51 2005/02/07 15:44:08 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1061,8 +1061,16 @@ void get_pre_data(struct ir_remote *remote)
 	if(codes->name==NULL) return; /* at least 2 codes needed */
 	while(codes->name!=NULL)
 	{
+		struct ir_code_node *loop;
+		
 		mask&=~(last^codes->code);
 		last=codes->code;
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			mask&=~(last^loop->code);
+			last=loop->code;
+		}
+		
 		codes++;
 	}
 	count=0;
@@ -1098,7 +1106,13 @@ void get_pre_data(struct ir_remote *remote)
 		codes=remote->codes;
 		while(codes->name!=NULL)
 		{
+			struct ir_code_node *loop;
+			
 			codes->code&=~mask;
+			for(loop=codes->next; loop!=NULL; loop=loop->next)
+			{
+				loop->code&=~mask;
+			}
 			codes++;
 		}
 	}
@@ -1120,8 +1134,15 @@ void get_post_data(struct ir_remote *remote)
 	if(codes->name==NULL) return; /* at least 2 codes needed */
 	while(codes->name!=NULL)
 	{
+		struct ir_code_node *loop;
+		
 		mask&=~(last^codes->code);
 		last=codes->code;
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			mask&=~(last^loop->code);
+			last=loop->code;
+		}
 		codes++;
 	}
 	count=0;
@@ -1150,7 +1171,13 @@ void get_post_data(struct ir_remote *remote)
 		codes=remote->codes;
 		while(codes->name!=NULL)
 		{
+			struct ir_code_node *loop;
+			
 			codes->code=codes->code>>count;
+			for(loop=codes->next; loop!=NULL; loop=loop->next)
+			{
+				loop->code=loop->code>>count;
+			}
 			codes++;
 		}
 	}
@@ -1183,7 +1210,13 @@ void remove_pre_data(struct ir_remote *remote)
 	codes=remote->codes;
 	while(codes->name!=NULL)
 	{
+		struct ir_code_node *loop;
+		
 		codes->code|=remote->pre_data<<remote->bits;
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			loop->code|=remote->pre_data<<remote->bits;
+		}
 		codes++;
 	}
 	remote->bits+=remote->pre_data_bits;
@@ -1204,8 +1237,15 @@ void remove_post_data(struct ir_remote *remote)
 	codes=remote->codes;
 	while(codes->name!=NULL)
 	{
+		struct ir_code_node *loop;
+		
 		codes->code<<=remote->post_data_bits;
 		codes->code|=remote->post_data;
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			loop->code<<=remote->post_data_bits;
+			loop->code|=remote->post_data;
+		}
 		codes++;
 	}
 	remote->bits+=remote->post_data_bits;
@@ -1251,7 +1291,13 @@ void invert_data(struct ir_remote *remote)
 	codes=remote->codes;
 	while(codes->name!=NULL)
 	{
+		struct ir_code_node *loop;
+		
 		codes->code^=mask;
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			loop->code^=mask;
+		}
 		codes++;
 	}
 }

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.15 2004/11/20 10:12:10 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.16 2005/02/07 15:44:08 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -251,15 +251,23 @@ void fprint_remote_signal(FILE *f,struct ir_remote *rem, struct ir_ncode *codes)
 	if(!is_raw(rem))
 	{
 		char format[30];
+		struct ir_code_node *loop;
 		
 #               ifdef LONG_IR_CODE
-		sprintf(format,	"          %%-24s 0x%%0%dllX\n",
+		sprintf(format,	"          %%-24s 0x%%0%dllX",
 			(rem->bits+3)/4);
 #               else
-		sprintf(format, "          %%-24s 0x%%0%dlX\n",
+		sprintf(format, "          %%-24s 0x%%0%dlX",
 			(rem->bits+3)/4);
 #               endif
 		fprintf(f, format, codes->name, codes->code);
+		sprintf(format, " 0x%%0%dlX", (rem->bits+3)/4);
+		for(loop=codes->next; loop!=NULL; loop=loop->next)
+		{
+			fprintf(f, format, loop->code);
+		}
+		
+		fprintf(f, "\n");
 	}
 	else
 	{
