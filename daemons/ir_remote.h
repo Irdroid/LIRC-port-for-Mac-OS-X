@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.29 2005/02/27 15:05:38 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.30 2005/03/06 13:33:08 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -61,6 +61,12 @@ static inline int has_repeat(struct ir_remote *remote)
 static inline int is_raw(struct ir_remote *remote)
 {
 	if(remote->flags&RAW_CODES) return(1);
+	else return(0);
+}
+
+static inline int is_space_enc(struct ir_remote *remote)
+{
+	if(remote->flags&SPACE_ENC) return(1);
 	else return(0);
 }
 

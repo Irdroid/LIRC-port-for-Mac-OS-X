@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.51 2005/02/07 15:44:08 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.52 2005/03/06 13:33:08 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -67,6 +67,7 @@ void for_each_remote(struct ir_remote *remotes, remote_func func);
 void remove_pre_data(struct ir_remote *remote);
 void remove_post_data(struct ir_remote *remote);
 void invert_data(struct ir_remote *remote);
+void remove_trail(struct ir_remote *remote);
 #endif
 int get_lengths(struct ir_remote *remote,int force);
 struct lengths *new_length(lirc_t length);
@@ -191,7 +192,7 @@ int main(int argc,char **argv)
 	struct ir_remote *remotes=NULL;
 	char *device=NULL;
 #ifdef DEBUG
-	int get_pre=0,get_post=0,test=0,invert=0;
+	int get_pre=0,get_post=0,test=0,invert=0,trail=0;
 #endif
 
 	progname=argv[0];
@@ -212,11 +213,12 @@ int main(int argc,char **argv)
 			{"post",no_argument,NULL,'P'},
 			{"test",no_argument,NULL,'t'},
 			{"invert",no_argument,NULL,'i'},
+			{"trail",no_argument,NULL,'T'},
 #endif
 			{0, 0, 0, 0}
 		};
 #ifdef DEBUG
-		c = getopt_long(argc,argv,"hvd:H:fpPti",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:H:fpPtiT",long_options,NULL);
 #else
 		c = getopt_long(argc,argv,"hvd:H:f",long_options,NULL);
 #endif
@@ -260,6 +262,9 @@ int main(int argc,char **argv)
 			break;
 		case 'i':
 			invert=1;
+			break;
+		case 'T':
+			trail=1;
 			break;
 #endif
 		default:
@@ -305,6 +310,7 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 		if(test)
 		{
+			if(trail) for_each_remote(remotes, remove_trail);
 			for_each_remote(remotes, remove_pre_data);
 			for_each_remote(remotes, remove_post_data);
 			if(get_pre) for_each_remote(remotes, get_pre_data);
@@ -1300,6 +1306,39 @@ void invert_data(struct ir_remote *remote)
 		}
 		codes++;
 	}
+}
+
+void remove_trail(struct ir_remote *remote)
+{
+	int extra_bit;
+	
+	if(!is_space_enc(remote)) return;
+	
+	if(remote->ptrail == 0) return;
+	
+	if(expect(remote, remote->pone, remote->pzero) ||
+	   expect(remote, remote->pzero, remote->pone)) return;
+	
+	if(!(expect(remote, remote->sone, remote->szero) &&
+	     expect(remote, remote->szero, remote->sone))) return;
+	
+	if(expect(remote, remote->ptrail, remote->pone))
+	{
+		extra_bit = 1;
+	}
+	else if(expect(remote, remote->ptrail, remote->pzero))
+	{
+		extra_bit = 0;
+	}
+	else
+	{
+		return;
+	}
+	
+	remote->post_data_bits++;
+	remote->post_data<<=1;
+	remote->post_data|=extra_bit;
+	remote->ptrail=0;
 }
 #endif
 
