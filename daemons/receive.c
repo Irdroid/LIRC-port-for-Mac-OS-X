@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.20 2004/04/27 18:51:17 lirc Exp $      */
+/*      $Id: receive.c,v 5.21 2004/08/28 10:07:27 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -771,11 +771,17 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 					set_pending_pulse(base);
 					stop_bit=0;
 					space=0;
+					LOGPRINTF(3,"stop bit found");
 				}
 				else
 				{
+					LOGPRINTF(3,"pending bit found");
 					set_pending_pulse(0);
 					set_pending_space(0);
+					if(delta==0)
+					{
+						space=(space ? 0:1);
+					}
 				}
 				continue;
 			}
