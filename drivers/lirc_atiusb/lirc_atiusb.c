@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.26 2004/04/28 04:42:58 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.27 2004/05/06 04:11:04 pmiller9 Exp $
  */
 
 /*
@@ -76,6 +76,8 @@
 #define dprintk			if (debug) printk
 static int mask = 0xFFFF;	// channel acceptance bit mask
 static int unique = 0;		// enable channel-specific codes
+static int repeat = 10;		// repeat time in 1/100 sec
+static unsigned long repeat_jiffies; // repeat timeout
 
 /* get hi and low bytes of a 16-bits int */
 #define HI(a)			((unsigned char)((a) >> 8))
@@ -108,6 +110,10 @@ struct irctl {
 	dma_addr_t dma_in;
 	dma_addr_t dma_out;
 #endif
+
+	/* handle repeats */
+	unsigned char old[CODE_LENGTH];
+	unsigned long old_jiffies;
 
 	/* lirc */
 	struct lirc_plugin *p;
@@ -284,7 +290,6 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 {
 	struct irctl *ir;
-	char buf[CODE_LENGTH];
 	int i, len;
 	int chan;
 
@@ -305,26 +310,37 @@ static void usb_remote_recv(struct urb *urb)
 	/* success */
 	case SUCCESS:
 		/* some remotes emit both 4 and 5 byte length codes. */
-		if (len < CODE_MIN_LENGTH || len > CODE_LENGTH) return;
-		memcpy(buf,urb->transfer_buffer,len);
-		for (i = len; i < CODE_LENGTH; i++) buf[i] = 0;
+		if (len < CODE_MIN_LENGTH || len > CODE_LENGTH)
+			break;
 
 		// *** channel not tested with 4/5-byte Dutch remotes ***
-		chan = ((buf[len-1]>>4) & 0x0F);
-		if ((1<<chan) & mask) {
-			dprintk(DRIVER_NAME "[%d]: accept channel %d\n",
-				ir->devnum, chan+1);
-
-			if (!unique)
-				buf[len-1] &= 0x0F;
-
-			lirc_buffer_write_1(ir->p->rbuf, buf);
-			wake_up(&ir->p->rbuf->wait_poll);
-
-		} else {
+		chan = ((ir->buf_in[len-1]>>4) & 0x0F);
+		if ( !((1<<chan) & mask) ) {
 			dprintk(DRIVER_NAME "[%d]: ignore channel %d\n",
 				ir->devnum, chan+1);
+			break;
 		}
+
+		dprintk(DRIVER_NAME "[%d]: accept channel %d\n",
+			ir->devnum, chan+1);
+
+		/* strip channel code */
+		if (!unique)
+			ir->buf_in[len-1] &= 0x0F;
+
+		/* check for repeats */
+		if (memcmp(ir->old, ir->buf_in, len) == 0) {
+			if (ir->old_jiffies + repeat_jiffies > jiffies) {
+				break;
+			}
+		} else {
+			memcpy(ir->old, ir->buf_in, len);
+			for (i = len; i < CODE_LENGTH; i++) ir->old[i] = 0;
+		}
+		ir->old_jiffies = jiffies;
+
+		lirc_buffer_write_1(ir->p->rbuf, ir->old);
+		wake_up(&ir->p->rbuf->wait_poll);
 		break;
 
 	/* unlink */
@@ -628,6 +644,8 @@ static int __init usb_remote_init(void)
 
 	request_module("lirc_dev");
 
+	repeat_jiffies = repeat*HZ/100;
+
 	if ((i = usb_register(&usb_remote_driver)) < 0) {
 		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
 		return -ENODEV;
@@ -655,6 +673,8 @@ MODULE_PARM(mask, "i");
 MODULE_PARM_DESC(mask, "set channel acceptance bit mask");
 MODULE_PARM(unique, "i");
 MODULE_PARM_DESC(unique, "enable channel-specific codes");
+MODULE_PARM(repeat, "i");
+MODULE_PARM_DESC(repeat, "repeat timeout (1/100 sec)");
 
 #ifndef KERNEL_2_5
 EXPORT_NO_SYMBOLS;
