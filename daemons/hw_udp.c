@@ -27,7 +27,6 @@
 #include <sys/fcntl.h>
 #include <netinet/in.h>
 #include <errno.h>
-#include <stdint.h>      /* for uint16_t */
 
 #include "hardware.h"
 #include "ir_remote.h"
@@ -111,12 +110,12 @@ int udp_decode(struct ir_remote *remote,
 
 lirc_t udp_readdata(lirc_t timeout)
 {
-	static uint8_t buffer[8192];
+	static u_int8_t buffer[8192];
 	static int buflen=0;
 	static int bufptr=0;
 	lirc_t data;
-	uint8_t packed[2];
-	uint32_t tmp;
+	u_int8_t packed[2];
+	u_int32_t tmp;
 	fd_set rfd;
 	struct timeval tv;
 
@@ -153,7 +152,7 @@ lirc_t udp_readdata(lirc_t timeout)
 	data = (packed[1] & 0x80) ? 0 : PULSE_BIT;
 
 	/* Convert 1/16384-seconds to microseconds */
-	tmp = (((uint32_t)packed[1])<<8) | packed[0];
+	tmp = (((u_int32_t)packed[1])<<8) | packed[0];
 	tmp = ((tmp & 0x7FFF) * 1000000) / 16384;
 
 	data |= tmp & PULSE_MASK;
