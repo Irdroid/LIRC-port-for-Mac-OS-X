@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.35 2004/09/26 18:08:48 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.36 2004/09/26 22:42:53 pmiller9 Exp $
  */
 
 /*
@@ -426,7 +426,8 @@ static void usb_remote_recv(struct urb *urb)
 #ifdef KERNEL_2_5
 	usb_submit_urb(urb, SLAB_ATOMIC);
 #else
-	usb_submit_urb(urb);
+//	kernel 2.4 resubmits automagically???
+//	usb_submit_urb(urb);
 #endif
 }
 
