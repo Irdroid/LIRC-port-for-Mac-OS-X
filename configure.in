@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.56 2001/04/24 21:20:41 lirc Exp $
+dnl $Id: configure.in,v 5.57 2001/04/25 10:40:37 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -113,7 +113,7 @@ AC_ARG_WITH(driver,
 			  cph03x, cph06x, logitech, caraca, slinke, silitek,
                           irdeo, irreal, chronos, pixelview_pak, pixelview_bt878,
 			  realmagic, mediafocusI, tekram, creative, provideo,
-			  bestbuy, knc_one],
+			  bestbuy, knc_one, ipaq],
 
 driver=${withval},
 driver="unset"
@@ -149,6 +149,10 @@ if test "$driver" = "serial"; then
 fi
 if test "$driver" = "sir"; then
   lirc_driver=lirc_sir
+fi
+if test "$driver" = "ipaq"; then
+  lirc_driver=lirc_sir
+  AC_DEFINE(LIRC_ON_IPAQ)
 fi
 if test "$driver" = "tekram"; then
   lirc_driver=lirc_sir
@@ -499,6 +503,7 @@ dnl configure.  That's bad here where we want to expand it!
 cur_prefix=$prefix
 test "x${prefix}" = "xNONE" && prefix=$ac_default_prefix 
 sysconfdir_exp=`eval "echo ${sysconfdir}"`
+localstatedir_exp=`eval "echo ${localstatedir}"`
 prefix=$cur_prefix
 
 dnl tell the Makefiles what we decided
@@ -523,6 +528,7 @@ AC_SUBST(maintmode_daemons_extra)
 dnl tell the C code what we decided
 AC_DEFINE_UNQUOTED(DEVDIR, "$devdir")
 AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir_exp")
+AC_DEFINE_UNQUOTED(LOCALSTATEDIR, "$localstatedir_exp")
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 
