@@ -16,7 +16,7 @@
  * i.e. HZ jiffies are one second, or HZ/POLLING is the rate in seconds
  */
 #define POLLING    (HZ / 20)
-#define I2C_DRIVERID_REMOTE 4
+#define I2C_DRIVERID_REMOTE 42
 
 #define BUFLEN 256  /* read buffer length */
 

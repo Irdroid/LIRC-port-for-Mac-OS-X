@@ -134,15 +134,10 @@ static __u16 read_raw_keypress(struct lirc_haup_status *remote)
 	/* Read 2. byte: Key pressed by user */
 	b2 = i2c_readbyte(t->bus, 0);
 	/* Read 3. byte: Firmware version */
-        b3 = i2c_readbyte(t->bus, 0);
+        b3 = i2c_readbyte(t->bus, 1);
 	/* Stopping bus */
 	i2c_stop(t->bus);
        
-	/* Turn off the red light: Read 5 bytes from the bus */
-        i2c_read(t->bus, ir_read);
-        i2c_read(t->bus, ir_read);
-        i2c_read(t->bus, ir_read);
-        i2c_read(t->bus, ir_read);
         UNLOCK_I2C_BUS(t->bus);
 
 	if (b1 == REPEAT_TOGGLE_0 || b1 == REPEAT_TOGGLE_1) {
@@ -228,14 +223,14 @@ static int lirc_haup_detach(struct i2c_device *device)
 	struct lirc_haup_i2c_info *t =
 		(struct lirc_haup_i2c_info *)device->data;
 
-	kfree(t);
-
 	spin_lock(&remote_lock);
 	
 	remote.i2c_remote = NULL;
 	remote.attached   = 0;
 
 	spin_unlock(&remote_lock);
+
+	kfree(t);
 
 /*	MOD_DEC_USE_COUNT; */
 
