@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.7 1999/08/03 11:53:37 jochym Exp $
+ * $Id: lirc_fly98.c,v 1.8 2000/02/05 12:57:28 columbus Exp $
  *
  */
 
@@ -24,6 +24,9 @@
  *	  some clean-up.
  * From now on RCS log:
  * $Log: lirc_fly98.c,v $
+ * Revision 1.8  2000/02/05 12:57:28  columbus
+ * corrected EINTR semantics
+ *
  * Revision 1.7  1999/08/03 11:53:37  jochym
  * Changed Makefile.am to conform to the rest of the tree. Small modyfication
  * of kernel patch (tristate changed to bool in Config.in). Clean-ups.
@@ -238,10 +241,9 @@ static ssize_t irctl_read(struct file *file,
 		spin_unlock(&ir->lock);
 		if (file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
+		interruptible_sleep_on(&ir->wait);
 		if (signal_pending(current))
 		    return -ERESTARTSYS;
-		interruptible_sleep_on(&ir->wait);
-		current->state = TASK_RUNNING;
 		spin_lock(&ir->lock);
 	} 
 	r=put_user(ir->buffer[ir->head++],(unsigned char *)buffer);

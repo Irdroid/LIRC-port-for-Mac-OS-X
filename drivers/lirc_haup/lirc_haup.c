@@ -371,10 +371,9 @@ static ssize_t lirc_haup_read(struct file * file, char * buffer,
 		spin_unlock(&remote_lock);
 		if (file->f_flags & O_NONBLOCK)
 			return -EAGAIN;
+		interruptible_sleep_on(&remote.wait_poll);
 		if (signal_pending(current))
 			return -ERESTARTSYS;
-		interruptible_sleep_on(&remote.wait_poll);
-		current->state = TASK_RUNNING;
 		spin_lock(&remote_lock);
 	}
 	

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.6 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.7 2000/02/05 12:57:28 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -409,6 +409,7 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 				result=-EAGAIN;
 				break;
 			}
+			interruptible_sleep_on(&lirc_wait);
 #ifdef KERNEL_2_2
 			if (signal_pending(current))
 			{
@@ -422,8 +423,6 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 				break;
 			}
 #endif
-			interruptible_sleep_on(&lirc_wait);
-			current->state = TASK_RUNNING;
 		}
 	}
 	return(count ? count:result);

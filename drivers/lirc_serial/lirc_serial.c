@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.8 1999/11/22 20:24:23 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.9 2000/02/05 12:57:28 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -484,6 +484,7 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 				retval = -EAGAIN;
 				break;
 			}
+			interruptible_sleep_on(&lirc_wait_in);
 #                       ifdef KERNEL_2_1
 			if (signal_pending(current)) {
 				retval = -ERESTARTSYS;
@@ -495,8 +496,6 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 				break;
 			}
 #                       endif
-			interruptible_sleep_on(&lirc_wait_in);
-			current->state = TASK_RUNNING;
 		}
 	}
 	return (n ? n : retval);
