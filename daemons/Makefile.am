@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.28 2003/02/16 19:06:56 lirc Exp $
+## $Id: Makefile.am,v 5.29 2003/03/07 20:50:20 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -79,6 +79,11 @@ slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
 
 if SANDBOXED
 else
+if USE_FIFOS
+install-exec-local: mkfifo
+uninstall-local: rmfifo
+endif
+else
 install-exec-local: mkdev
 uninstall-local: rmdev
 endif
@@ -91,7 +96,12 @@ mkdev:
 	test -e $(DESTDIR)$(devdir)/lircd || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lircd p)
 	test -e $(DESTDIR)$(devdir)/lircm || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lircm p)
 
+mkfifo:
+	test -e $(DESTDIR)$(devdir)/lircd || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mkfifo@ $(DESTDIR)$(devdir)/lircd)
+	test -e $(DESTDIR)$(devdir)/lircm || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mkfifo@ $(DESTDIR)$(devdir)/lircm)
+
 rmdev:
+rmfifo:
 	-$(RM) $(DESTDIR)$(devdir)/lircd
 	-$(RM) $(DESTDIR)$(devdir)/lircm
 
