@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.5 1999/08/02 18:58:31 columbus Exp $
+## $Id: Makefile.am,v 5.6 1999/08/03 19:46:57 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -19,7 +19,7 @@ CC           = @kernelcc@
 MI_OBJS      = $(module_DATA)
 EXTRA_CFLAGS = $(DEFS)
 
-$(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h
+$(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
   ifndef MAKING_MODULES
 	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR modules)
   endif

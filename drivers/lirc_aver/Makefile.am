@@ -1,20 +1,30 @@
-## $Id: Makefile.am,v 1.3 1999/06/08 10:47:47 denis Exp $
+## $Id: Makefile.am,v 1.4 1999/08/03 19:46:57 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
-M_CFLAGS = -fomit-frame-pointer -funroll-loops
-M_CPPFLAGS = -DLINUX -D__KERNEL__ -DMODULE
-# M_CPPFLAGS = -DLINUX -D__KERNEL__ -DMODULE -DMODVERSIONS
-
-## this is so that Automake includes the C compiling definitions
-EXTRA_PROGRAMS = dummy
-dummy_SOURCES = lirc_aver.c
+## this is so that Automake includes the C compiling definitions, and
+## includes the source files in the distribution.
+EXTRA_PROGRAMS = automake_dummy
+automake_dummy_SOURCES = lirc_aver.c
 
 ## there is no *just* object file support in automake.  This is close enough
 module_DATA = lirc_aver.o
 
-lirc_aver.o: lirc_aver.c
-	$(COMPILE) $(M_CPPFLAGS) $(M_CFLAGS) -c lirc_aver.c
+# where the kernel sources are located
+KERNEL_LOCATION=@kerneldir@
+
+# some magic for using linux kernel settings
+# when compiling module(s)
+CC           = @kernelcc@
+MI_OBJS      = $(module_DATA)
+EXTRA_CFLAGS = $(DEFS) -Wno-comment
+
+$(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
+  ifndef MAKING_MODULES
+	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR modules)
+  endif
+# the spaces above are necessary because automake otherwise will complain
+# and even worse, it will delete the line
 
 install-exec-local: mkdev
 uninstall-local: rmdev
@@ -28,4 +38,6 @@ rmdev:
 install-data-local:
 	-@depmod@ -a
 
-CLEANFILES = lirc_aver.o *~ \#*\#
+CLEANFILES = $(module_DATA) .$(module_DATA).flags *~
+
+include $(KERNEL_LOCATION)/Rules.make
