@@ -11,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.32 2004/08/09 13:07:07 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.33 2004/09/02 20:08:50 pmiller9 Exp $
  */
 
 /*
@@ -300,6 +300,9 @@ static void usb_remote_recv(struct urb *urb)
 		return;
 
 	if (!(ir = urb->context)) {
+#ifdef KERNEL_2_5
+		urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -352,6 +355,9 @@ static void usb_remote_recv(struct urb *urb)
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
+#ifdef KERNEL_2_5
+		urb->transfer_flags |= URB_ASYNC_UNLINK;
+#endif
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -682,6 +688,6 @@ module_param(unique, int, 0444);
 MODULE_PARM_DESC(unique, "Enable channel-specific codes");
 
 module_param(repeat, int, 0444);
-MODULE_PARM_DESC(repeat, "repeat timeout (1/100 sec)");
+MODULE_PARM_DESC(repeat, "Repeat timeout (1/100 sec)");
 
 EXPORT_NO_SYMBOLS;
