@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.16 2000/08/12 06:56:11 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.17 2000/08/23 19:47:25 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -107,6 +107,8 @@ unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #endif
 
 #ifdef LIRC_SERIAL_ANIMAX
+#define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
+#elif defined(LIRC_SERIAL_IRDEO)
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
 #else
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_OUT2)
@@ -287,6 +289,13 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
 			{
+#ifdef DEBUG
+				printk(KERN_WARNING LIRC_DRIVER_NAME
+				       ": AIEEEE: %d %d %lx %lx %lx %lx\n",
+				       dcd,sense,
+				       tv.tv_sec,lasttv.tv_sec,
+				       tv.tv_usec,lasttv.tv_usec);
+#endif
 				data=PULSE_MASK; /* really long time */
 				if(!(dcd^sense)) /* sanity check */
 				{

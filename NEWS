@@ -1,4 +1,7 @@
 0.6.2: future
+  * Added support for IRdeo (www.pofahl.de/irdeo.htm). Currently only
+    receiving works. Many thanks to Hans-Hermann Redenius for
+    contributing a device.
   * Konrad Riedel has added support for CARACA (caraca.sourceforge.net)
   * added min_repeat option to lircd.conf
     Some remotes (e.g. Sony) send the IR codes several times if you

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.10 2000/08/23 19:08:04 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.11 2000/08/23 19:47:25 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -100,6 +100,9 @@
 
 /* Define if the software needs to generate the carrier frequency */
 #undef LIRC_SERIAL_SOFTCARRIER
+
+/* Define if you have an IRdeo serial port receiver */
+#undef LIRC_SERIAL_IRDEO
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS

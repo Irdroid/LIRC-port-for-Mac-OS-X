@@ -101,7 +101,8 @@ function SetPortAndIrq
     if test "$LIRC_DRIVER" = "serial" -o \
 	    "$LIRC_DRIVER" = "sir" -o \
 	    "$LIRC_DRIVER" = "packard_bell" -o \
-	    "$LIRC_DRIVER" = "animax"; then
+	    "$LIRC_DRIVER" = "animax" -o \
+	    "$LIRC_DRIVER" = "irdeo"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify port and IRQ of your hardware" \
@@ -238,7 +239,7 @@ function ConfigDriver
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 14 74 8 \
+		--menu "$CONFIG_DRIVER_TEXT" 16 74 9 \
 			1 "Irman / UIR" \
 			2 "Packard Bell receiver" \
 			3 "Anir Multimedia Magic" \
@@ -246,7 +247,8 @@ function ConfigDriver
 			5 "Logitech/AST" \
 			6 "CARACA" \
 			7 "Pinnacle Systems PCTV (pro) receiver" \
-			8 "Slink-e" 2> $TEMP;
+			8 "Slink-e" \
+			9 "IRdeo" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -258,6 +260,7 @@ function ConfigDriver
 		elif test "$1" = "6"; then LIRC_DRIVER=caraca;       DRIVER_PARAMETER=tty1;
 		elif test "$1" = "7"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
 		elif test "$1" = "8"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
+		elif test "$1" = "9"; then LIRC_DRIVER=irdeo;        DRIVER_PARAMETER=com1;
 		fi
 		}
 	    else
