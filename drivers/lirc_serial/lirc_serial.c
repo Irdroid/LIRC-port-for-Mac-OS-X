@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.35 2001/10/21 13:02:27 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.36 2001/11/03 20:44:15 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -170,7 +170,7 @@ struct lirc_serial hardware[]=
 		 LIRC_CAN_REC_MODE2)
 	},
 	
-	/* IrDeo classic */
+	/* IRdeo classic */
 	{
 		LIRC_IRDEO,
 		UART_MSR_DSR,
@@ -184,7 +184,7 @@ struct lirc_serial hardware[]=
 		 LIRC_CAN_REC_MODE2)
 	},
 	
-	/* IrDeo remote */
+	/* IRdeo remote */
 	{
 		LIRC_IRDEO_REMOTE,
 		UART_MSR_DSR,
@@ -1248,8 +1248,8 @@ MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
 MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
 
 MODULE_PARM(type, "i");
-MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IrDeo,"
-		 " 2 = IrDeo Remote, 3 = AnimaX");
+MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
+		 " 2 = IRdeo Remote, 3 = AnimaX");
 
 MODULE_PARM(port, "i");
 MODULE_PARM_DESC(port, "I/O address (0x3f8 or 0x2f8)");

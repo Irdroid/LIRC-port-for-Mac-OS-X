@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.7 2000/07/13 19:01:41 columbus Exp $      */
+/*      $Id: config_file.c,v 5.8 2001/11/03 20:44:15 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -455,9 +455,17 @@ struct ir_remote * read_config(FILE *f)
 			break;
 		}
 
+		if(len>0)
+		{
+			len--;
+			if(buf[len]=='\n') buf[len]=0;
+		}
+		if(len>0)
+		{
+			len--;
+			if(buf[len]=='\r') buf[len]=0;
+		}
                 /* ignore comments */
-		len--;
-		if(buf[len]=='\n') buf[len]=0;
                 if(buf[0]=='#'){
 			continue;
                 }
