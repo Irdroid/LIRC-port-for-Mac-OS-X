@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.12 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: receive.c,v 5.13 2002/05/05 10:23:52 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -28,7 +28,7 @@ inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
 	return(a>b ? a:b);
 }
 
-lirc_t get_next_rec_buffer(unsigned long maxusec)
+lirc_t get_next_rec_buffer(lirc_t maxusec)
 {
 	if(rec_buffer.rptr<rec_buffer.wptr)
 	{
@@ -43,7 +43,7 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 		{
 			lirc_t data;
 			
-			data=hw.readdata(maxusec);
+			data=hw.readdata(2*maxusec<50000 ? 50000:2*maxusec);
 			if(!data)
 			{
 				return 0;
@@ -164,11 +164,11 @@ inline void unget_rec_buffer(int count)
 	}
 }
 
-inline lirc_t get_next_pulse()
+inline lirc_t get_next_pulse(lirc_t maxusec)
 {
 	lirc_t data;
 
-	data=get_next_rec_buffer(0);
+	data=get_next_rec_buffer(maxusec);
 	if(data==0) return(0);
 	if(!is_pulse(data))
 	{
@@ -178,11 +178,11 @@ inline lirc_t get_next_pulse()
 	return(data&(PULSE_MASK));
 }
 
-inline lirc_t get_next_space()
+inline lirc_t get_next_space(lirc_t maxusec)
 {
 	lirc_t data;
 
-	data=get_next_rec_buffer(0);
+	data=get_next_rec_buffer(maxusec);
 	if(data==0) return(0);
 	if(!is_space(data))
 	{
@@ -199,14 +199,14 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 	
 	if(rec_buffer.pendings>0)
 	{
-		deltas=get_next_space();
+		deltas=get_next_space(rec_buffer.pendings);
 		if(deltas==0) return(0);
 		retval=expect(remote,deltas,rec_buffer.pendings);
 		if(!retval) return(0);
 		rec_buffer.pendings=0;
 	}
 	
-	deltap=get_next_pulse();
+	deltap=get_next_pulse(rec_buffer.pendingp+exdelta);
 	if(deltap==0) return(0);
 	if(rec_buffer.pendingp>0)
 	{
@@ -229,14 +229,14 @@ int expectspace(struct ir_remote *remote,int exdelta)
 
 	if(rec_buffer.pendingp>0)
 	{
-		deltap=get_next_pulse();
+		deltap=get_next_pulse(rec_buffer.pendingp);
 		if(deltap==0) return(0);
 		retval=expect(remote,deltap,rec_buffer.pendingp);
 		if(!retval) return(0);
 		rec_buffer.pendingp=0;
 	}
 	
-	deltas=get_next_space();
+	deltas=get_next_space(rec_buffer.pendings+exdelta);
 	if(deltas==0) return(0);
 	if(rec_buffer.pendings>0)
 	{
@@ -357,7 +357,7 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 	lirc_t deltas,deltap;
 	
 	count=0;
-	deltas=get_next_space();
+	deltas=get_next_space(1000000);
 	if(deltas==0) return(0);
 	
 	if(last_remote!=NULL && !is_rcmm(remote))
@@ -366,9 +366,9 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 		      (100-last_remote->eps)/100 &&
 		      deltas<last_remote->remaining_gap-last_remote->aeps)
 		{
-			deltap=get_next_pulse();
+			deltap=get_next_pulse(1000000);
 			if(deltap==0) return(0);
-			deltas=get_next_space();
+			deltas=get_next_space(1000000);
 			if(deltas==0) return(0);
 			count++;
 			if(count>REC_SYNC) /* no sync found, 
@@ -387,13 +387,14 @@ inline int get_header(struct ir_remote *remote)
 	if(is_rcmm(remote))
 	{
 		lirc_t deltap,deltas,sum;
-		deltap=get_next_pulse();
+		
+		deltap=get_next_pulse(remote->phead);
 		if(deltap==0)
 		{
 			unget_rec_buffer(1);
 			return(0);
 		}
-		deltas=get_next_space();
+		deltas=get_next_space(remote->shead);
 		if(deltas==0)
 		{
 			unget_rec_buffer(2);
@@ -510,8 +511,10 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 		for(i=0;i<bits;i+=2)
 		{
 			code<<=2;
-			deltap=get_next_pulse();
-			deltas=get_next_space();
+			deltap=get_next_pulse(remote->pzero+remote->pone+
+					      remote->ptwo+remote->pthree);
+			deltas=get_next_space(remote->szero+remote->sone+
+					      remote->stwo+remote->sthree);
 			if(deltap==0 || deltas==0) 
 			{
 				logprintf(LOG_ERR,"failed on bit %d",
