@@ -6,13 +6,14 @@ This driver should support lirc interface in LIRC_MODE_CODE mode.
 This is working on my home system. No reports of problems so far.
 
 The lirc_fly98.c file should be compiled as a kernel module and 
-you should apply included patch to the bttv-0.6.3 driver tree 
-(not the kernel bttv driver). You can get alternative patch
-at http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
+you should apply included patch to the kernel tree. The patch for
+version 2.2.11 kernel should apply cleanly up to version 2.2.13.
+For 2.2.14 and up it needs small modifications. I'll produce 2.2.14 and
+2.2.15 patches soon.
 
-There is also a patch for a kernel bttv driver. This one is better tested
-now since I switched my machine to this driver (works better). 
-bttv patch will be better tested and corrected later.
+There is also a patch for an external bttv driver in old version (0.6.3). 
+This one is not tested now since I switched my machine to kernel bttv driver 
+(works better). External bttv patch will be better tested and corrected later.
 
 For examples of config files see remotes/life-view directory.
 
@@ -30,5 +31,6 @@ To install:
    and lircrc to ~/.lircrc 
  - you should be ready now
 
-You can contact me at jochym@ifj.edu.pl
+You can contact me at: jochym@ifj.edu.pl (work) 
+                       jochym@thor.dhis.org (home)
 
