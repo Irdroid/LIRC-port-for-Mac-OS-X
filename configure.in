@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.65 2001/09/14 20:39:14 lirc Exp $
+dnl $Id: configure.in,v 5.66 2001/09/30 16:18:02 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -86,7 +86,8 @@ possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) \
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
-	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio)"
+	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio) \
+	(lirc_dev)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -109,13 +110,13 @@ AC_ARG_WITH(driver,
                           none, any, animax, avermedia, avermedia98,
                           bestbuy, bestbuy2, caraca, chronos, comX,
                           cph03x, cph06x, creative, fly98, flyvideo,
-			  hauppauge,ipaq, irdeo, irdeo_remote, irman,
-			  irreal, knc_one, logitech, lptX,
-			  mediafocusI, packard_bell, parallel, pctv,
-		          pixelview_bt878, pixelview_pak,
-                          pixelview_pro, provideo, realmagic,
-                          remotemaster, serial, silitek, sir, slinke,
-                          tekram, winfast_tv2000],
+			  hauppauge,hauppauge_dvb, ipaq, irdeo,
+			  irdeo_remote, irman, irreal, knc_one,
+			  logitech, lptX, mediafocusI, packard_bell,
+			  parallel, pctv, pixelview_bt878,
+			  pixelview_pak, pixelview_pro, provideo,
+			  realmagic, remotemaster, serial, silitek,
+			  sir, slinke, tekram, winfast_tv2000],
 
 driver=${withval},
 driver="unset"
@@ -283,6 +284,11 @@ if test "$driver" = "avermedia98"; then
 fi
 if test "$driver" = "hauppauge"; then
   lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+fi
+if test "$driver" = "hauppauge_dvb"; then
+  lirc_driver="lirc_dev"
   lircd_conf="hauppauge/lircd.conf.hauppauge"
   lircmd_conf="hauppauge/lircmd.conf.hauppauge"
 fi
@@ -666,6 +672,9 @@ echo
 if test "$driver" = "mediafocusI"; then
   echo "You will have to use the MediaFocus driver from:"
   echo "http://www.uni-giessen.de/~gej2/"
+elif test "$driver" = "hauppauge_dvb"; then
+  echo "You will have to use the DVB driver from:"
+  echo "http://www.linuxtv.org"
 elif test "$kernel_module" = ""; then
   echo "Your hardware does not require a kernel module."
 else
