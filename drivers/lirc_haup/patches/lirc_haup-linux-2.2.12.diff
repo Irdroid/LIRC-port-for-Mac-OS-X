@@ -1,0 +1,12 @@
+diff -uNr linux-2.2.12/include/linux/i2c.h lirc-linux-2.2.12/include/linux/i2c.h
+--- linux-2.2.12/include/linux/i2c.h	Mon Aug 30 23:05:04 1999
++++ lirc-linux-2.2.12/include/linux/i2c.h	Sun Sep 26 23:17:33 1999
+@@ -94,7 +94,7 @@
+ #include <linux/version.h>
+ 
+ #if LINUX_VERSION_CODE >= 0x020100
+-# if 0
++# if 1
+ #  define LOCK_FLAGS unsigned long flags;
+ #  define LOCK_I2C_BUS(bus)    spin_lock_irqsave(&(bus->bus_lock),flags);
+ #  define UNLOCK_I2C_BUS(bus)  spin_unlock_irqrestore(&(bus->bus_lock),flags);

@@ -1,6 +1,8 @@
-## $Id: Makefile.am,v 1.5 1999/08/03 19:46:57 columbus Exp $
+## $Id: Makefile.am,v 1.6 1999/10/03 20:23:17 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
+
+EXTRA_DIST = patches/lirc_haup-linux-2.2.12.diff
 
 ## this is so that Automake includes the C compiling definitions, and
 ## includes the source files in the distribution.
