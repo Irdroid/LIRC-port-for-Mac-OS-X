@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.55 2004/08/07 10:06:09 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.56 2004/09/05 16:48:49 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -157,10 +157,12 @@ static int softcarrier=1;
 static int softcarrier=0;
 #endif
 static int debug = 0;
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
-				 LIRC_DRIVER_NAME, ## args);  \
+
+#define dprintk(fmt, args...)                                   \
+	do{                                                     \
+		if(debug)                                       \
+	                printk(KERN_DEBUG LIRC_DRIVER_NAME ": " \
+                               fmt, ## args);                   \
 	}while(0)
 
 /* forward declarations */

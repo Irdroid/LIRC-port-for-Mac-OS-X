@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.25 2004/08/07 09:52:45 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.26 2004/09/05 16:48:48 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -88,10 +88,10 @@ struct IR {
 static int debug   = 0;    /* debug output */
 static int minor   = -1;   /* minor number */
 
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
-				 DEVICE_NAME, ## args);       \
+#define dprintk(fmt, args...)                                           \
+	do{                                                             \
+		if(debug) printk(KERN_DEBUG DEVICE_NAME ": " fmt,       \
+				 ## args);                              \
 	}while(0)
 
 /* ----------------------------------------------------------------------- */

@@ -1,6 +1,19 @@
-/*      $Id: kcompat.h,v 5.8 2004/08/07 08:44:21 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.9 2004/09/05 16:48:48 lirc Exp $      */
+
+#ifndef _KCOMPAT_H
+#define _KCOMPAT_H
 
 #include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define LIRC_HAVE_DEVFS
+#define LIRC_HAVE_DEVFS_26
+#define LIRC_HAVE_SYSFS
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#define LIRC_HAVE_DEVFS
+#define LIRC_HAVE_DEVFS_24
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
 #include <linux/timer.h>
 #include <linux/interrupt.h>
@@ -13,7 +26,9 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#ifdef daemonize
 #undef daemonize
+#endif
 #define daemonize(name) do {                                           \
                                                                        \
 	lock_kernel();                                                 \
@@ -32,22 +47,64 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 	unlock_kernel();                                               \
                                                                        \
 } while (0)
+
+/* Not sure when this was introduced, sometime during 2.5.X */
 #define MODULE_PARM_int(x) MODULE_PARM(x, "i")
 #define MODULE_PARM_bool(x) MODULE_PARM(x, "i")
 #define MODULE_PARM_long(x) MODULE_PARM(x, "l")
 #define module_param(x,y,z) MODULE_PARM_##y(x)
-#endif /* Linux 2.6.0 */
+#else
+#include <linux/moduleparam.h>
+#endif /* Linux < 2.6.0 */
+
+#ifdef LIRC_HAVE_DEVFS_24
+#ifdef register_chrdev
+#undef register_chrdev
+#endif
+#define register_chrdev devfs_register_chrdev
+#ifdef unregister_chrdev
+#undef unregister_chrdev
+#endif
+#define unregister_chrdev devfs_unregister_chrdev
+#endif /* DEVFS 2.4 */
+
+#ifndef LIRC_HAVE_SYSFS
+#define class_simple_destroy(x) do { } while(0)
+#define class_simple_create(x,y) NULL
+#define class_simple_device_remove(x) do { } while(0)
+#define class_simple_device_add(x, y, z, xx, yy) 0
+#define IS_ERR(x) 0
+struct class_simple 
+{
+	int notused;
+};	
+#endif /* No SYSFS */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
 #define KERNEL_2_5
 
+/*
+ * Recent kernels should handle some of this autmatically by 
+ * increasing/decreasing use count when a dependant module is 
+ * loaded/unloaded but we need to keep track when a chardev is 
+ * opened/closed.
+ */
+#ifdef MOD_INC_USE_COUNT
 #undef MOD_INC_USE_COUNT
-#define MOD_INC_USE_COUNT try_module_get(THIS_MODULE)
-#undef MOD_DEC_USE_COUNT
-#define MOD_DEC_USE_COUNT module_put(THIS_MODULE)
-#undef EXPORT_NO_SYMBOLS
-#define EXPORT_NO_SYMBOLS
 #endif
+#define MOD_INC_USE_COUNT try_module_get(THIS_MODULE)
+
+#ifdef MOD_DEC_USE_COUNT
+#undef MOD_DEC_USE_COUNT
+#endif
+#define MOD_DEC_USE_COUNT module_put(THIS_MODULE)
+
+#ifdef EXPORT_NO_SYMBOLS
+#undef EXPORT_NO_SYMBOLS
+#endif
+#define EXPORT_NO_SYMBOLS
+
+#endif /* Kernel >= 2.5.0 */
 
 #ifndef MODULE_LICENSE
 #define MODULE_LICENSE(x)
@@ -93,4 +150,4 @@ typedef void irqreturn_t;
 #define pci_pretty_name(dev) ((dev)->name)
 #endif
 
-
+#endif /* _KCOMPAT_H */

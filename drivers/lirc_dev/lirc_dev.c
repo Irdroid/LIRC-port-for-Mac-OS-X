@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.35 2004/08/07 10:06:08 lirc Exp $
+ * $Id: lirc_dev.c,v 1.36 2004/09/05 16:48:48 lirc Exp $
  *
  */
 
@@ -26,15 +26,6 @@
 #endif
  
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#define LIRC_HAVE_DEVFS
-#define LIRC_HAVE_DEVFS_26
-#define LIRC_HAVE_SYSFS
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
-#define LIRC_HAVE_DEVFS
-#define LIRC_HAVE_DEVFS_24
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
 #error "**********************************************************"
 #error " Sorry, this driver needs kernel version 2.2.18 or higher "
@@ -49,12 +40,6 @@
 #include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <linux/poll.h>
-#ifdef LIRC_HAVE_DEVFS
-#include <linux/devfs_fs_kernel.h>
-#endif
-#ifdef LIRC_HAVE_SYSFS
-#include <linux/device.h>
-#endif
 #include <linux/smp_lock.h>
 #include <asm/uaccess.h>
 #include <asm/semaphore.h>
@@ -64,10 +49,17 @@
 #endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
+/* DevFS header */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#include <linux/devfs_fs_kernel.h>
+#endif
+/* SysFS header */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#include <linux/device.h>
+#endif
 
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
-
 #include "lirc_dev.h"
 
 static int debug = 0;
@@ -104,9 +96,8 @@ DECLARE_MUTEX(plugin_lock);
 static struct irctl irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
 
-#ifdef LIRC_HAVE_SYSFS
+/* Only used for sysfs but defined to void otherwise */
 static struct class_simple *lirc_class;
-#endif
 
 /*  helper function
  *  initializes the irctl structure
@@ -225,6 +216,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	struct irctl *ir;
 	int minor;
 	int bytes_in_key;
+	int err;
 #ifdef LIRC_HAVE_DEVFS_24
 	char name[16];
 #endif
@@ -233,14 +225,16 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	if (!p) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "plugin pointer must be not NULL!\n");
-		return -EBADRQC;
+		err = -EBADRQC;
+		goto out;
 	}
 
 	if (MAX_IRCTL_DEVICES <= p->minor) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "\" minor\" must be between 0 and %d (%d)!\n",
 		       MAX_IRCTL_DEVICES-1, p->minor);
-		return -EBADRQC;
+		err = -EBADRQC;
+		goto out;
 	}
 
 	if (1 > p->code_length || (BUFLEN*8) < p->code_length) {
@@ -248,7 +242,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		       "code length in bits for minor (%d) "
 		       "must be less than %d!\n",
 		       p->minor, BUFLEN*8);
-		return -EBADRQC;
+		err = -EBADRQC;
+		goto out;
 	}
 
 	printk("lirc_dev: lirc_register_plugin:"
@@ -257,26 +252,30 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		if (2 > p->sample_rate || HZ < p->sample_rate) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "sample_rate must be between 2 and %d!\n", HZ);
-			return -EBADRQC;
+			err = -EBADRQC;
+			goto out;
 		}
 		if (!p->add_to_buf) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "add_to_buf cannot be NULL when "
 			       "sample_rate is set\n");
-			return -EBADRQC;
+			err = -EBADRQC;
+			goto out;
 		}
 	} else if (!(p->fops && p->fops->read)
 		   && !p->get_queue && !p->rbuf) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "fops->read, get_queue and rbuf "
 		       "cannot all be NULL!\n");
-		return -EBADRQC;
+		err = -EBADRQC;
+		goto out;
 	} else if (!p->get_queue && !p->rbuf) {
 		if (!(p->fops && p->fops->read && p->fops->poll) 
 		    || (!p->fops->ioctl && !p->ioctl)) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "neither read, poll nor ioctl can be NULL!\n");
-			return -EBADRQC;
+			err = -EBADRQC;
+			goto out;
 		}
 	}
 
@@ -292,14 +291,14 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		if (MAX_IRCTL_DEVICES == minor) {
 			printk("lirc_dev: lirc_register_plugin: "
 			       "no free slots for plugins!\n");
-			up(&plugin_lock);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto out_lock;
 		}
 	} else if (irctls[minor].p.minor != NOPLUG) {
 		printk("lirc_dev: lirc_register_plugin:"
 		       "minor (%d) just registered!\n", minor);
-		up(&plugin_lock);
-		return -EBUSY;
+		err = -EBUSY;
+		goto out_lock;
 	}
 
 	ir = &irctls[minor];
@@ -320,11 +319,15 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->buf = p->rbuf;
 	} else {
 		ir->buf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
+		if(!ir->buf) {
+			err = -ENOMEM;
+			goto out_lock;
+		}
 		if(lirc_buffer_init
-		   (ir->buf, bytes_in_key, BUFLEN/bytes_in_key) != 0)
-		{
+		   (ir->buf, bytes_in_key, BUFLEN/bytes_in_key) != 0) {
 			kfree(ir->buf);
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto out_lock;
 		}
 	}
 
@@ -346,32 +349,48 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			S_IFCHR|S_IRUSR|S_IWUSR,
 			DEV_LIRC "/%u", ir->p.minor);
 #endif
-#ifdef LIRC_HAVE_SYSFS
 	class_simple_device_add(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
-			NULL, "lirc%u", ir->p.minor);
-#endif
+				NULL, "lirc%u", ir->p.minor);
+
 	if(p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
 		ir->t_notify = &tn;
 		ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
 		if (ir->tpid < 0) {
-			up(&plugin_lock);
 			printk("lirc_dev: lirc_register_plugin:"
 			       "cannot run poll thread for minor = %d\n",
 			       p->minor);
-			return -ECHILD;
+			err = -ECHILD;
+			goto out_sysfs;
 		}
 		down(&tn);
 		ir->t_notify = NULL;
 	}
 	up(&plugin_lock);
 
+/*
+ * Recent kernels should handle this autmatically by increasing/decreasing
+ * use count when a dependant module is loaded/unloaded.
+ */
+#ifndef KERNEL_2_5
 	MOD_INC_USE_COUNT;
-
+#endif
 	dprintk("lirc_dev: plugin %s registered at minor number = %d\n",
 		ir->p.name, ir->p.minor);
-
 	return minor;
+	
+out_sysfs:
+	class_simple_device_remove(MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+#ifdef LIRC_HAVE_DEVFS_24
+	devfs_unregister(ir->devfs_handle);
+#endif
+#ifdef LIRC_HAVE_DEVFS_26
+	devfs_remove(DEV_LIRC "/%i", ir->p.minor);
+#endif
+out_lock:
+	up(&plugin_lock);
+out:
+	return err;
 }
 
 /*
@@ -433,14 +452,14 @@ int lirc_unregister_plugin(int minor)
 	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
 		ir->p.name, ir->p.minor);
 
-#if defined(LIRC_HAVE_DEVFS_24)
+#ifdef LIRC_HAVE_DEVFS_24
 	devfs_unregister(ir->devfs_handle);
-#elif defined(LIRC_HAVE_DEVFS_26)
+#endif
+#ifdef LIRC_HAVE_DEVFS_26
 	devfs_remove(DEV_LIRC "/%u", ir->p.minor);
 #endif
-#ifdef LIRC_HAVE_SYSFS
 	class_simple_device_remove(MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
-#endif
+
 	if (ir->buf != ir->p.rbuf){
 		lirc_buffer_free(ir->buf);
 		kfree(ir->buf);
@@ -449,7 +468,13 @@ int lirc_unregister_plugin(int minor)
 	init_irctl(ir);
 	up(&plugin_lock);
 
+/*
+ * Recent kernels should handle this autmatically by increasing/decreasing
+ * use count when a dependant module is loaded/unloaded.
+ */
+#ifndef KERNEL_2_5
 	MOD_DEC_USE_COUNT;
+#endif
 
 	return SUCCESS;
 }
@@ -746,25 +771,27 @@ static int lirc_dev_init(void)
 		init_irctl(&irctls[i]);	
 	}
 
-#ifdef LIRC_HAVE_DEVFS_24
-	i = devfs_register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops);
-#else
- 	i = register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops);
-#endif
-#ifdef LIRC_HAVE_SYSFS
-	if (i == 0)
-		lirc_class = class_simple_create(THIS_MODULE, "lirc");
-#endif
-
-	if (i < 0) {
-		printk ("lirc_dev: device registration failed with %d\n", i);
-		return i;
+	if(register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops)) {
+		printk(KERN_ERR "lirc_dev: register_chrdev failed\n");
+		goto out;
 	}
-	
+
+	lirc_class = class_simple_create(THIS_MODULE, "lirc");
+	if(IS_ERR(lirc_class)) {
+		printk(KERN_ERR "lirc_dev: class_simple_create failed\n");
+		goto out_unregister;
+	}
+
 	printk("lirc_dev: IR Remote Control driver registered, at major %d \n", 
 	       IRCTL_DEV_MAJOR);
 
 	return SUCCESS;
+
+out_unregister:
+	if(unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME))
+		printk(KERN_ERR "lirc_dev: unregister_chrdev failed!\n");
+out:
+	return -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -787,22 +814,14 @@ int init_module(void)
 void cleanup_module(void)
 {
 	int ret;
-	
-#ifdef LIRC_HAVE_DEVFS_24
-	ret = devfs_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
-#else
- 	ret = unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
-#endif
-#ifdef LIRC_HAVE_SYSFS
+
+	ret = unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 	class_simple_destroy(lirc_class);
-#endif
-	
-	if (0 > ret){
-		printk("lirc_dev: error in module_unregister_chrdev: %d\n",
-		       ret);
-	} else {
+
+	if(ret)
+		printk("lirc_dev: error in module_unregister_chrdev: %d\n", ret);
+	else
 		dprintk("lirc_dev: module successfully unloaded\n");
-	}
 }
 
 MODULE_DESCRIPTION("LIRC base driver module");

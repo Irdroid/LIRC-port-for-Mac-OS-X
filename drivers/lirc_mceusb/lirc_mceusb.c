@@ -116,15 +116,13 @@
 
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
-#include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-
 /* Use our own dbg macro */
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG "%s: " fmt "\n",  \
-				 __FILE__, ## args);          \
+#define dprintk(fmt, args...)                             \
+	do{                                               \
+		if(debug) printk(KERN_DEBUG __FILE__ ": " \
+				 fmt "\n", ## args);      \
 	}while(0)
 
 /* Version Information */
@@ -1017,7 +1015,7 @@ static void __exit usb_mceusb_exit(void)
 	usb_deregister(&mceusb_driver);
 }
 
-module_init (usb_mceusb_init);
+ module_init (usb_mceusb_init);
 module_exit (usb_mceusb_exit);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
@@ -1028,4 +1026,4 @@ MODULE_DEVICE_TABLE (usb, mceusb_table);
 module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
 
-EXPORT_NO_SYMBOLS
+EXPORT_NO_SYMBOLS;

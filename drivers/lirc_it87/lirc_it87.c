@@ -83,10 +83,10 @@ static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 
 /* insmod parameters */
 static int debug = 0;
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
-				 LIRC_DRIVER_NAME, ## args);  \
+#define dprintk(fmt, args...)                                     \
+	do{                                                       \
+		if(debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": " \
+                                 fmt, ## args);                   \
 	}while(0)
 
 static int io = IT87_CIR_DEFAULT_IOBASE;

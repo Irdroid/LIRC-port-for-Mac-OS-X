@@ -189,10 +189,10 @@ static lirc_t tx_buf[WBUF_LEN];
 #endif
 
 static int debug = 0;
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG "%s: " fmt,       \
-				 LIRC_DRIVER_NAME, ## args);  \
+#define dprintk(fmt, args...)                                     \
+	do{                                                       \
+		if(debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": " \
+                                 fmt, ## args);                   \
 	}while(0)
 
 /* SECTION: Prototypes */
