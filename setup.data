@@ -97,8 +97,9 @@ hw_menu_entry: @hw-pda
 hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 RF Remote"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
-	sasem: "Sasem OnAir Remocon-V"
 	tira: "Home Electronics Tira USB device"
+	sasem: "Sasem OnAir Remocon-V"
+	exaudio: "Sound Blaster Extigy USB sound card"
 	mceusb: "Windows Media Center Remotes"
 
 param_type: act200l animax irdeo irdeo_remote packard_bell serial \
@@ -118,7 +119,7 @@ param_type: tira
 param_type: atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
 		chronos cph03x cph06x creative_infracd devinput dsp \
-		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
+		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
 		hercules_smarttv_stereo it87 knc_one kworld leadtek_0007 \
 		leadtek_0010 livedrive_midi livedrive_seq mceusb \
 		mediafocusI none pixelview_bt878 pixelview_pak \
@@ -127,8 +128,8 @@ param_type: atiusb audio audio_alsa avermedia avermedia98 \
 
 default_param: atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
-		cph03x cph06x creative_infracd devinput dsp flyvideo \
-		gvbctv5pci hauppauge hauppauge_dvb \
+		cph03x cph06x creative_infracd devinput dsp exaudio \
+		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
 		hercules_smarttv_stereo it87 knc_one kworld \
 		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
 		livedrive_seq mceusb mediafocusI none pixelview_bt878 \

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.124 2004/07/11 07:44:27 lirc Exp $
+dnl $Id: configure.in,v 5.125 2004/07/18 12:58:54 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -136,7 +136,7 @@ AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
 possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
-	(irreal) (livedrive_midi) (livedrive_seq) (logitech) \
+	(exaudio) (irreal) (livedrive_midi) (livedrive_seq) (logitech) \
 	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
 	(slinke) (tira) (uirt2) (uirt2_raw) (udp)"
 
@@ -185,7 +185,7 @@ AC_ARG_WITH(driver,
 			  avermedia, avermedia_vdomate, avermedia98,
 			  bestbuy, bestbuy2, breakoutbox, bte, caraca,
 			  chronos, comX, creative_infracd, dsp,
-			  cph03x, cph06x, creative, devinput,
+			  cph03x, cph06x, creative, devinput, exaudio,
 			  flyvideo, gvbctv5pci, hauppauge,
 			  hauppauge_dvb, hercules_smarttv_stereo,
 			  irdeo, irdeo_remote, irman, irreal, it87,
@@ -255,6 +255,8 @@ if test "$driver" = "any"; then
 		;;
 	dsp)
 		hw_module="${hw_module} hw_dsp.o receive.o"
+		;;
+	exaudio)
 		;;
 	irman)
 		hw_module="${hw_module} hw_irman.o serial.o"
@@ -484,6 +486,12 @@ if test "$driver" = "dsp"; then
   lirc_driver="none"
   hw_module="hw_dsp.o receive.o"
   HW_DEFAULT="hw_dsp"
+fi
+
+if test "$driver" = "exaudio"; then
+  lirc_driver="none"
+#  lircd_conf="creative/lircd.conf.exaudio"
+#  lircmd_conf="creative/lircmd.conf.exaudio"
 fi
 
 if test "$driver" = "flyvideo"; then
@@ -1041,6 +1049,9 @@ echo
 if test "$driver" = "mediafocusI"; then
   echo "You will have to use the MediaFocus driver from:"
   echo "http://people.freenet.de/mediafocus/"
+elif test "$driver" = "exaudio"; then
+  echo "You will have to use the Exaudio driver from:"
+  echo "http://exaudio.sourceforge.net/"
 elif test "$driver" = "hauppauge_dvb"; then
   echo "You will have to use the DVB driver from:"
   echo "http://www.linuxtv.org"
