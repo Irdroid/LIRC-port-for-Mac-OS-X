@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.14 2000/04/29 09:00:50 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.15 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -43,7 +43,8 @@ void flushhw(void);
 int resethw(void);
 int waitfordata(unsigned long maxusec);
 int availabledata(void);
-void get_repeat_bit(struct ir_remote *remote,ir_code xor);
+int get_repeat_bit(struct ir_remote *remote);
+void set_repeat_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
 #ifdef DEBUG
@@ -163,8 +164,7 @@ int main(int argc,char **argv)
 	ir_code pre,code,post;
 	int repeat_flag;
 	lirc_t remaining_gap;
-	ir_code first;
-	int flag,force;
+	int force;
 	int retries;
 	struct ir_remote *remotes;
 
@@ -332,7 +332,7 @@ int main(int argc,char **argv)
 				exit(EXIT_FAILURE);
 			}
 			printf("Creating config file in raw mode.\n");
-			remote.flags&=~(SPACE_ENC|SHIFT_ENC);
+			remote.flags&=~(RC5|RC6|RCMM|SPACE_ENC);
 			remote.flags|=RAW_CODES;
 			remote.eps=EPS;
 			remote.aeps=AEPS;
@@ -367,6 +367,21 @@ int main(int argc,char **argv)
 		break;
 	}
 	
+	if(is_rc6(&remote))
+	{
+		sleep(1);
+		while(availabledata())
+		{
+			hw.rec_func(NULL);
+		}
+		if(!get_repeat_bit(&remote))
+		{
+			fclose(fout);
+			unlink(filename);
+			if(hw.deinit_func) hw.deinit_func();
+			exit(EXIT_FAILURE);
+		}
+	}
 	printf("Now enter the names for the buttons.\n");
 
 	fprint_copyright(fout);
@@ -622,56 +637,14 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	printf("Checking for repeat bit.\n");
-	printf("Please press an arbitrary button repeatedly (don't hold it down).\n");
-	retries=30;flag=0;first=0;
-	while(retval==EXIT_SUCCESS && retries>0)
+	if(remotes->repeat_bit==0)
 	{
-		while(availabledata())
-		{
-			hw.rec_func(NULL);
-		}
-		if(!waitfordata(10000000))
-		{
-			printf("%s: no data for 10 secs, aborting\n",
-			       progname);
-			retval=EXIT_FAILURE;
-			break;
-		}
-		hw.rec_func(NULL);
-		if(hw.decode_func(remotes,&pre,&code,&post,
-				  &repeat_flag,&remaining_gap))
-		{
-			if(flag==0)
-			{
-				flag=1;
-				first=code;
-			}
-			else if(!repeat_flag)
-			{
-				if(first^code)
-				{
-					get_repeat_bit(remotes,first^code);
-					if(remotes->repeat_bit>0)
-						printf("\nRepeat bit is %d.\n",
-						       remotes->repeat_bit);
-					else
-						printf("\nInvalid repeat bit.\n");
-					break;
-				}
-				printf(".");fflush(stdout);
-				retries--;
-			}
-		}
-		else
-		{
-			printf(".");fflush(stdout);
-			retries--;
-		}
-		if(retries==0)
-		{
-			printf("\nNo repeat bit found.\n");
-		}
+		get_repeat_bit(remotes);
+	}
+	else
+	{
+		set_repeat_bit(remotes,
+			       1<<(remotes->bits-remotes->repeat_bit));
 	}
 	if(hw.deinit_func) hw.deinit_func();
 	get_pre_data(remotes);
@@ -806,7 +779,96 @@ int availabledata(void)
 	return(0);
 }
 
-void get_repeat_bit(struct ir_remote *remote,ir_code xor)
+int get_repeat_bit(struct ir_remote *remote)
+{
+	ir_code pre,code,post;
+	int repeat_flag;
+	lirc_t remaining_gap;
+	int retval=EXIT_SUCCESS;
+	int retries,flag,success;
+	ir_code first;
+	
+	printf("Checking for repeat bit.\n");
+	printf("Please press an arbitrary button repeatedly "
+	       "(don't hold it down).\n");
+	retries=30;flag=success=0;first=0;
+	while(retval==EXIT_SUCCESS && retries>0)
+	{
+		while(availabledata())
+		{
+			hw.rec_func(NULL);
+		}
+		if(!waitfordata(10000000))
+		{
+			printf("%s: no data for 10 secs, aborting\n",
+			       progname);
+			retval=EXIT_FAILURE;
+			break;
+		}
+		hw.rec_func(NULL);
+		if(is_rc6(remote))
+		{
+			for(remote->repeat_bit=1,success=0;
+			    remote->repeat_bit<=remote->bits;
+			    remote->repeat_bit++)
+			{
+				if(hw.decode_func(remote,&pre,&code,&post,
+						  &repeat_flag,&remaining_gap))
+				{
+					success=1;
+					break;
+				}
+			}
+			if(success==0) remote->repeat_bit=0;
+		}
+		else
+		{
+			success=hw.decode_func(remote,&pre,&code,&post,
+					       &repeat_flag,&remaining_gap);
+		}
+		if(success)
+		{
+			if(flag==0)
+			{
+				flag=1;
+				first=code;
+			}
+			else if(!repeat_flag)
+			{
+				if(is_rc6(remote) || first^code)
+				{
+					if(!is_rc6(remote))
+					{
+						set_repeat_bit(remote,first^code);
+					}
+					if(remote->repeat_bit>0)
+					{
+						printf("\nRepeat bit is %d.\n",
+						       remote->repeat_bit);
+						return(1);
+					}
+					else
+						printf("\nInvalid repeat bit.\n");
+					break;
+				}
+				printf(".");fflush(stdout);
+				retries--;
+			}
+		}
+		else
+		{
+			printf(".");fflush(stdout);
+			retries--;
+		}
+		if(retries==0)
+		{
+			printf("\nNo repeat bit found.\n");
+		}
+	}
+	return(0);
+}
+
+void set_repeat_bit(struct ir_remote *remote,ir_code xor)
 {
 	ir_code mask;
 	int repeat_bit;
@@ -998,6 +1060,11 @@ unsigned long lengths[MAX_SIGNALS];
 unsigned long first_length,first_lengths,second_lengths;
 unsigned int count,count_spaces,count_3repeats,count_5repeats,count_signals;
 
+inline lirc_t calc_signal(struct lengths *len)
+{
+	return((lirc_t) (len->sum/len->count));
+}
+
 int get_lengths(struct ir_remote *remote,int force)
 {
 	int ret,retval;
@@ -1072,7 +1139,7 @@ int get_lengths(struct ir_remote *remote,int force)
 							     scan->count);
 						if(scan->count>SAMPLES)
 						{
-							remote->gap=scan->sum/scan->count;
+							remote->gap=calc_signal(scan);
 							remote->flags|=CONST_LENGTH;
 							printf("\nFound const length: %lu\n",(unsigned long) remote->gap);
 							break;
@@ -1088,7 +1155,7 @@ int get_lengths(struct ir_remote *remote,int force)
 								     scan->count);
 							if(scan->count>SAMPLES)
 							{
-								remote->gap=scan->sum/scan->count;
+								remote->gap=calc_signal(scan);
 								printf("\nFound gap: %lu\n",(unsigned long) remote->gap);
 								break;
 							}
@@ -1244,6 +1311,10 @@ int get_lengths(struct ir_remote *remote,int force)
 					count=0;
 					sum=0;
 				}
+#if 0
+				/* such long pulses may appear with
+				   crappy hardware (receiver? / remote?)
+				*/ 
 				else
 				{
 					fprintf(stderr,"%s: wrong gap\n",progname);
@@ -1251,6 +1322,7 @@ int get_lengths(struct ir_remote *remote,int force)
 					retval=0;
 					break;
 				}
+#endif
 				if(count_signals>=SAMPLES)
 				{
 					printf("\n");
@@ -1400,7 +1472,7 @@ void merge_lengths(struct lengths *first)
 	while(l!=NULL)
 	{
 		printf("%d x %lu [%lu,%lu]\n",l->count,
-		       (unsigned long) l->sum/l->count,
+		       (unsigned long) calc_signal(l),
 		       (unsigned long) l->min,
 		       (unsigned long) l->max);
 		l=l->next;
@@ -1440,8 +1512,49 @@ void get_scheme(struct ir_remote *remote)
 	}
 	else
 	{
-		printf("Shift encoded remote control found.\n");
-		remote->flags|=SHIFT_ENC;
+		struct lengths *maxp,*max2p,*maxs,*max2s;
+
+		maxp=get_max_length(first_pulse,NULL);
+		unlink_length(&first_pulse,maxp);
+		if(first_pulse==NULL)
+		{
+			first_pulse=maxp;
+		}
+		else
+		{
+			max2p=get_max_length(first_pulse,NULL);
+			maxp->next=first_pulse;
+			first_pulse=maxp;
+
+			maxs=get_max_length(first_space,NULL);
+			unlink_length(&first_space,maxs);
+			if(first_space==NULL)
+			{
+				first_space=maxs;
+			}
+			else
+			{
+				max2s=get_max_length(first_space,NULL);
+				maxs->next=first_space;
+				first_space=maxs;
+				
+				maxs=get_max_length(first_space,NULL);
+				
+				if((calc_signal(maxp)<500 ||
+				    calc_signal(max2p)<500) &&
+				   (calc_signal(maxs)<500 ||
+				    calc_signal(max2s)<500))
+				{
+					printf("RC-6 remote control found.\n");
+					remote->flags|=RC6;
+				}
+				else
+				{
+					printf("RC-5 remote control found.\n");
+					remote->flags|=RC5;
+				}
+			}
+		}
 	}
 }
 
@@ -1464,7 +1577,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 		sum+=scan->count;
 #               ifdef DEBUG
 		if(scan->count>0) printf("%u x %lu\n",scan->count,
-					 (unsigned long) scan->sum/scan->count);
+					 (unsigned long) calc_signal(scan));
 #               endif
 		scan=scan->next;
 	}
@@ -1477,7 +1590,7 @@ int get_trail_length(struct ir_remote *remote)
 	unsigned int sum,max_count;
 	struct lengths *max_length;
 
-	if(is_shift(remote)) return(1);
+	if(is_biphase(remote)) return(1);
 	
 	max_length=get_max_length(first_trail,&sum);
 	max_count=max_length->count;
@@ -1487,8 +1600,8 @@ int get_trail_length(struct ir_remote *remote)
 	if(max_count>=sum*TH_TRAIL/100)
 	{
 		printf("Found trail pulse: %lu\n",
-		       (unsigned long) (max_length->sum/max_length->count));
-		remote->ptrail=max_length->sum/max_length->count;
+		       (unsigned long) calc_signal(max_length));
+		remote->ptrail=calc_signal(max_length);
 		return(1);
 	}
 	printf("No trail pulse found.\n");
@@ -1500,7 +1613,8 @@ int get_lead_length(struct ir_remote *remote)
 	unsigned int sum,max_count;
 	struct lengths *max_length;
 
-	if(!is_shift(remote)) return(1);
+	if(!is_biphase(remote)) return(1);
+	if(is_rc6(remote)) return(1);
 	
 	max_length=get_max_length(has_header(remote) ?
 				  first_3lead:first_1lead,&sum);
@@ -1511,8 +1625,8 @@ int get_lead_length(struct ir_remote *remote)
 	if(max_count>=sum*TH_LEAD/100)
 	{
 		printf("Found lead pulse: %lu\n",
-		       (unsigned long) (max_length->sum/max_length->count));
-		remote->plead=max_length->sum/max_length->count;
+		       (unsigned long) calc_signal(max_length));
+		remote->plead=calc_signal(max_length);
 		return(1);
 	}
 	printf("No lead pulse found.\n");
@@ -1541,8 +1655,8 @@ int get_header_length(struct ir_remote *remote)
 #               endif
 		if(max_count>=sum*TH_HEADER/100)
 		{
-			headerp=max_plength->sum/max_plength->count;
-			headers=max_slength->sum/max_slength->count;
+			headerp=calc_signal(max_plength);
+			headers=calc_signal(max_slength);
 
 			printf("Found possible header: %lu %lu\n",
 			       (unsigned long) headerp,
@@ -1607,8 +1721,8 @@ int get_repeat_length(struct ir_remote *remote)
 			{
 				remote->flags|=REPEAT_HEADER;
 			}
-			repeatp=max_plength->sum/max_plength->count;
-			repeats=max_slength->sum/max_slength->count;
+			repeatp=calc_signal(max_plength);
+			repeats=calc_signal(max_slength);
 			
 			printf("Found repeat code: %lu %lu\n",
 			       (unsigned long) repeatp,
@@ -1619,7 +1733,7 @@ int get_repeat_length(struct ir_remote *remote)
 			{
 				max_slength=get_max_length(first_repeat_gap,
 							   NULL);
-				repeat_gap=max_slength->sum/max_slength->count;
+				repeat_gap=calc_signal(max_slength);
 				printf("Found repeat gap: %lu\n",
 				       (unsigned long) repeat_gap);
 				remote->repeat_gap=repeat_gap;
@@ -1689,9 +1803,10 @@ int get_data_length(struct ir_remote *remote)
 #               ifdef DEBUG
 		printf("Pulse canditates: ");
 		printf("%u x %lu",max_plength->count,
-		       (unsigned long) max_plength->sum/max_plength->count);
+		       (unsigned long) calc_signal(max_plength));
 		if(max2_plength) printf(", %u x %lu",max2_plength->count,
-					(unsigned long) max2_plength->sum/max2_plength->count);
+					(unsigned long)
+					calc_signal(max2_plength));
 		printf("\n");
 #               endif
 
@@ -1715,28 +1830,28 @@ int get_data_length(struct ir_remote *remote)
 #                       ifdef DEBUG
 			printf("Space canditates: ");
 			printf("%u x %lu",max_slength->count,
-			       (unsigned long) max_slength->sum/max_slength->count);
+			       (unsigned long) calc_signal(max_slength));
 			if(max2_slength) printf(", %u x %lu",
 						max2_slength->count,
-						(unsigned long) max2_slength->sum/max2_slength->count);
+						(unsigned long) calc_signal(max2_slength));
 			printf("\n");
 #                       endif
 
 
 			remote->eps=EPS;
 			remote->aeps=AEPS;
-			if(is_shift(remote))
+			if(is_biphase(remote))
 			{
 				if(max2_plength==NULL || max2_slength==NULL)
 				{
 					printf("Unknown encoding found.\n");
 					return(0);
 				}
-				printf("Signals are shift encoded.\n");
-				p1=max_plength->sum/max_plength->count;
-				p2=max2_plength->sum/max2_plength->count;
-				s1=max_slength->sum/max_slength->count;
-				s2=max2_slength->sum/max2_slength->count;
+				printf("Signals are biphase encoded.\n");
+				p1=calc_signal(max_plength);
+				p2=calc_signal(max2_plength);
+				s1=calc_signal(max_slength);
+				s2=calc_signal(max2_slength);
 				
 				remote->pone=(min(p1,p2)+max(p1,p2)/2)/2;
 				remote->sone=(min(s1,s2)+max(s1,s2)/2)/2;
@@ -1756,12 +1871,11 @@ int get_data_length(struct ir_remote *remote)
 					printf("Unknown encoding found.\n");
 					return(0);
 				}
-				p1=max_plength->sum/max_plength->count;
-				s1=max_slength->sum/max_slength->count;
+				p1=calc_signal(max_plength);
+				s1=calc_signal(max_slength);
 				if(max2_plength)
 				{
-					p2=max2_plength->sum/
-						max2_plength->count;
+					p2=calc_signal(max2_plength);
 					printf("Signals are pulse encoded.\n");
 					remote->pone=max(p1,p2);
 					remote->sone=s1;
@@ -1770,8 +1884,7 @@ int get_data_length(struct ir_remote *remote)
 				}
 				else
 				{
-					s2=max2_slength->sum/
-						max2_slength->count;
+					s2=calc_signal(max2_slength);
 					printf("Signals are space encoded.\n");
 					remote->pone=p1;
 					remote->sone=max(s1,s2);
@@ -1783,7 +1896,7 @@ int get_data_length(struct ir_remote *remote)
 			   (!has_repeat(remote) || remote->flags&NO_HEAD_REP)
 			   )
 			{
-				if(!is_shift(remote) &&
+				if(!is_biphase(remote) &&
 				   ((expect(remote,remote->phead,remote->pone) &&
 				     expect(remote,remote->shead,remote->sone)) ||
 				    (expect(remote,remote->phead,remote->pzero) &&
@@ -1793,7 +1906,7 @@ int get_data_length(struct ir_remote *remote)
 					remote->flags&=~NO_HEAD_REP;
 					printf("Removed header.\n");
 				}
-				if(is_shift(remote) &&
+				if(is_biphase(remote) &&
 				   expect(remote,remote->shead,remote->sone))
 				{
 					remote->plead=remote->phead;
@@ -1802,15 +1915,14 @@ int get_data_length(struct ir_remote *remote)
 					printf("Removed header.\n");
 				}
 			}
-			if(is_shift(remote))
+			if(is_biphase(remote))
 			{
 				struct lengths *signal_length;
 				lirc_t data_length;
 
 				signal_length=get_max_length(first_signal_length,
 							     NULL);
-				data_length=signal_length->sum/
-					signal_length->count-
+				data_length=calc_signal(signal_length)-
 					remote->plead-
 					remote->phead-
 					remote->shead+
@@ -1818,6 +1930,7 @@ int get_data_length(struct ir_remote *remote)
 					(remote->pone+remote->sone)/2;
 				remote->bits=data_length/
 					(remote->pone+remote->sone);
+				if(is_rc6(remote)) remote->bits--;
 
 			}
 			else
@@ -1881,7 +1994,7 @@ int get_gap_length(struct ir_remote *remote)
 					     scan->count);
 				if(scan->count>SAMPLES)
 				{
-					remote->gap=scan->sum/scan->count;
+					remote->gap=calc_signal(scan);
 					/* this does not work very reliably */
 					remote->gap+=100000;
 					printf("\nFound gap length: %lu\n",

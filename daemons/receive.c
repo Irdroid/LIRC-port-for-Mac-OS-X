@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.2 2000/06/24 17:41:18 columbus Exp $      */
+/*      $Id: receive.c,v 5.3 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -136,7 +136,7 @@ int clear_rec_buffer()
 	rec_buffer.rptr=0;
 	
 	rec_buffer.too_long=0;
-	rec_buffer.is_shift=0;
+	rec_buffer.is_biphase=0;
 	rec_buffer.pendingp=0;
 	rec_buffer.pendings=0;
 	rec_buffer.sum=0;
@@ -259,16 +259,31 @@ int expectspace(struct ir_remote *remote,int exdelta)
 	return(retval);
 }
 
-inline int expectone(struct ir_remote *remote)
+inline int expectone(struct ir_remote *remote,int bit)
 {
-	if(is_shift(remote))
+	if(is_biphase(remote))
 	{
-		if(remote->sone>0 && !expectspace(remote,remote->sone))
+		if(is_rc6(remote) &&
+		   remote->repeat_bit>0 &&
+		   bit==remote->repeat_bit-1)
 		{
-			unget_rec_buffer(1);
-			return(0);
+			if(remote->sone>0 &&
+			   !expectspace(remote,2*remote->sone))
+			{
+				unget_rec_buffer(1);
+				return(0);
+			}
+			rec_buffer.pendingp=2*remote->pone;
 		}
-		rec_buffer.pendingp=remote->pone;
+		else
+		{
+			if(remote->sone>0 && !expectspace(remote,remote->sone))
+			{
+				unget_rec_buffer(1);
+				return(0);
+			}
+			rec_buffer.pendingp=remote->pone;
+		}
 	}
 	else
 	{
@@ -294,16 +309,31 @@ inline int expectone(struct ir_remote *remote)
 	return(1);
 }
 
-inline int expectzero(struct ir_remote *remote)
+inline int expectzero(struct ir_remote *remote,int bit)
 {
-	if(is_shift(remote))
+	if(is_biphase(remote))
 	{
-		if(!expectpulse(remote,remote->pzero))
+		if(is_rc6(remote) &&
+		   remote->repeat_bit>0 &&
+		   bit==remote->repeat_bit-1)
 		{
-			unget_rec_buffer(1);
-			return(0);
+			if(!expectpulse(remote,2*remote->pzero))
+			{
+				unget_rec_buffer(1);
+				return(0);
+			}
+			rec_buffer.pendings=2*remote->szero;
+			
 		}
-		rec_buffer.pendings=remote->szero;
+		else
+		{
+			if(!expectpulse(remote,remote->pzero))
+			{
+				unget_rec_buffer(1);
+				return(0);
+			}
+			rec_buffer.pendings=remote->szero;
+		}
 	}
 	else
 	{
@@ -405,6 +435,9 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 {
 	lirc_t data;
 
+#       ifdef DEBUG
+	logprintf(2,"sum: %ld\n",rec_buffer.sum);
+#       endif
 	data=get_next_rec_buffer(gap*(100-remote->eps)/100);
 	if(data==0) return(1);
 	if(!is_space(data))
@@ -414,9 +447,6 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 #               endif
 		return(0);
 	}
-#       ifdef DEBUG
-	logprintf(2,"sum: %ld\n",rec_buffer.sum);
-#       endif
 	if(data<gap*(100-remote->eps)/100 &&
 	   data<gap-remote->aeps)
 	{
@@ -435,7 +465,7 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 inline int get_repeat(struct ir_remote *remote)
 {
 	if(!get_lead(remote)) return(0);
-	if(is_shift(remote))
+	if(is_biphase(remote))
 	{
 		if(!expectspace(remote,remote->srepeat)) return(0);
 		if(!expectpulse(remote,remote->prepeat)) return(0);
@@ -454,7 +484,7 @@ inline int get_repeat(struct ir_remote *remote)
 	return(1);
 }
 
-ir_code get_data(struct ir_remote *remote,int bits)
+ir_code get_data(struct ir_remote *remote,int bits,int done)
 {
 	ir_code code;
 	int i;
@@ -464,14 +494,14 @@ ir_code get_data(struct ir_remote *remote,int bits)
 	for(i=0;i<bits;i++)
 	{
 		code=code<<1;
-		if(expectone(remote))
+		if(expectone(remote,done+i))
 		{
 #                       ifdef DEBUG
 			logprintf(2,"1\n");
 #                       endif
 			code|=1;
 		}
-		else if(expectzero(remote))
+		else if(expectzero(remote,done+i))
 		{
 #                       ifdef DEBUG
 			logprintf(2,"0\n");
@@ -481,7 +511,7 @@ ir_code get_data(struct ir_remote *remote,int bits)
 		else
 		{
 #                       ifdef DEBUG
-			logprintf(1,"failed on bit %d\n",i+1);
+			logprintf(1,"failed on bit %d\n",done+i+1);
 #                       endif
 			return((ir_code) -1);
 		}
@@ -493,7 +523,7 @@ ir_code get_pre(struct ir_remote *remote)
 {
 	ir_code pre;
 
-	pre=get_data(remote,remote->pre_data_bits);
+	pre=get_data(remote,remote->pre_data_bits,0);
 
 	if(pre==(ir_code) -1)
 	{
@@ -522,7 +552,8 @@ ir_code get_post(struct ir_remote *remote)
 		rec_buffer.pendings=remote->post_s;
 	}
 
-	post=get_data(remote,remote->post_data_bits);
+	post=get_data(remote,remote->post_data_bits,remote->pre_data_bits+
+		      remote->bits);
 
 	if(post==(ir_code) -1)
 	{
@@ -551,7 +582,7 @@ int receive_decode(struct ir_remote *remote,
 	   hw.rec_mode==LIRC_MODE_RAW)
 	{
 		rewind_rec_buffer();
-		rec_buffer.is_shift=is_shift(remote) ? 1:0;
+		rec_buffer.is_biphase=is_biphase(remote) ? 1:0;
 		
 		/* we should get a long space first */
 		if(!(sync=sync_rec_buffer(remote)))
@@ -770,7 +801,8 @@ int receive_decode(struct ir_remote *remote,
 #                               endif
 			}
 			
-			code=get_data(remote,remote->bits);
+			code=get_data(remote,remote->bits,
+				      remote->pre_data_bits);
 			if(code==(ir_code) -1)
 			{
 #                               ifdef DEBUG

@@ -230,7 +230,7 @@ function ConfigDriver
 	     6 "Anir Multimedia Magic" \
              7 "PixelView RemoteMaster RC2000/RC3000" \
              8 "Logitech/AST" \
-             9 "Slinke-e" \
+             9 "Slink-e" \
              10 "SIR IrDA (built-in IR ports)" 2> $TEMP
 
     if test "$?" = "0"; then

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.13 2000/06/12 10:05:07 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.14 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -255,7 +255,7 @@ int default_init()
 					logprintf(0,"could not set "
 						  "receive mode\n");
 					logperror(0,"default_init()");
-					exit(EXIT_FAILURE);
+					return(0);
 				}
 				hw.rec_mode=LIRC_REC2MODE
 				(supported_rec_modes[i]);

@@ -1,4 +1,6 @@
 0.6.1: future
+  * added RC-6 support
+  * added support for Slink-e by Nirvis Systems (Max Spring)
   * added duty_cycle option to lircd.conf
   * hardware is only initialized if clients have connected to lircd
     That way modules don't have to be loaded until they are really

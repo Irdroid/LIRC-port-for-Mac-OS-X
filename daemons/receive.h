@@ -1,4 +1,4 @@
-/*      $Id: receive.h,v 5.1 2000/06/12 10:05:07 columbus Exp $      */
+/*      $Id: receive.h,v 5.2 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** receive.h ***************************************************************
@@ -27,7 +27,7 @@ struct rbuf
 	int rptr;
 	int wptr;
 	int too_long;
-	int is_shift;
+	int is_biphase;
 	lirc_t pendingp;
 	lirc_t pendings;
 	lirc_t sum;

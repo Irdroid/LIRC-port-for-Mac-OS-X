@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.1 2000/06/12 10:05:07 columbus Exp $      */
+/*      $Id: transmit.c,v 5.2 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -34,7 +34,7 @@ inline void clear_send_buffer(void)
 {
 	send_buffer.wptr=0;
 	send_buffer.too_long=0;
-	send_buffer.is_shift=0;
+	send_buffer.is_biphase=0;
 	send_buffer.pendingp=0;
 	send_buffer.pendings=0;
 	send_buffer.sum=0;
@@ -158,10 +158,18 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits)
 	{
 		if(data&1)
 		{
-			if(is_shift(remote))
+			if(is_biphase(remote))
 			{
-				send_space(remote->sone);
-				send_pulse(remote->pone);
+				if(is_rc6(remote) && i+1==remote->repeat_bit)
+				{
+					send_space(2*remote->sone);
+					send_pulse(2*remote->pone);
+				}
+				else
+				{
+					send_space(remote->sone);
+					send_pulse(remote->pone);
+				}
 			}
 			else
 			{
@@ -171,8 +179,16 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits)
 		}
 		else
 		{
-			send_pulse(remote->pzero);
-			send_space(remote->szero);
+			if(is_rc6(remote) && i+1==remote->repeat_bit)
+			{
+				send_pulse(2*remote->pzero);
+				send_space(2*remote->szero);
+			}
+			else
+			{
+				send_pulse(remote->pzero);
+				send_space(remote->szero);
+			}
 		}
 		data=data>>1;
 	}
@@ -289,9 +305,9 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
 	clear_send_buffer();
-	if(is_shift(remote))
+	if(is_biphase(remote))
 	{
-		send_buffer.is_shift=1;
+		send_buffer.is_biphase=1;
 	}
 	
 	if(repeat_remote!=NULL && has_repeat(remote))

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.3 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.4 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -43,10 +43,11 @@ void fprint_flags(FILE *f, int flags)
 	int i;
 	int begin=0;
 
-	for(i=0;i<NR_FLAGS;i++)
+	for(i=0;all_flags[i].flag;i++)
 	{
 		if(flags&all_flags[i].flag)
 		{
+			flags&=(~all_flags[i].flag);
 			if(begin==0) fprintf(f, "  flags ");
 			else if(begin==1) fprintf(f,"|");
 			fprintf(f,"%s",all_flags[i].name);

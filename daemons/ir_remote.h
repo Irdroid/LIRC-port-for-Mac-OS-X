@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.10 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.11 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -50,16 +50,23 @@ struct ir_ncode {
 
 /* Don't forget to take a look at config_file.h when adding new flags */
 
-#define NR_FLAGS 8
+#define RC5             0x0001    /* IR data follows RC5 protocol */
 
-#define SHIFT_ENC	0x0001    /* IR data is shift encoded */
-#define SPACE_ENC	0x0002	  /* IR data is space encoded */
-#define REVERSE		0x0004
-#define NO_HEAD_REP	0x0008	  /* no header for key repeats */
-#define NO_FOOT_REP	0x0010	  /* no foot for key repeats */
-#define CONST_LENGTH    0x0020    /* signal length+gap is always constant */
-#define RAW_CODES       0x0040    /* for internal use only */
-#define REPEAT_HEADER   0x0080    /* header is also sent before repeat code */
+/* Hm, RC6 protocols seem to have changed the biphase semantics so
+   that lircd will calculate the bit-wise complement of the codes. But
+   this is only a guess as I did not have a datasheet... */
+
+#define RC6             0x0002    /* IR data follows RC6 protocol */
+#define RCMM            0x0004    /* IR data follows RC-MM protocol */
+#define SPACE_ENC	0x0008	  /* IR data is space encoded */
+#define REVERSE		0x0010
+#define NO_HEAD_REP	0x0020	  /* no header for key repeats */
+#define NO_FOOT_REP	0x0040	  /* no foot for key repeats */
+#define CONST_LENGTH    0x0080    /* signal length+gap is always constant */
+#define RAW_CODES       0x0100    /* for internal use only */
+#define REPEAT_HEADER   0x0200    /* header is also sent before repeat code */
+
+#define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 
 struct ir_remote 
 {
@@ -147,9 +154,15 @@ static inline int is_raw(struct ir_remote *remote)
 	else return(0);
 }
 
-static inline int is_shift(struct ir_remote *remote)
+static inline int is_biphase(struct ir_remote *remote)
 {
-	if(remote->flags&SHIFT_ENC) return(1);
+	if(remote->flags&RC5 || remote->flags&RC6) return(1);
+	else return(0);
+}
+
+static inline int is_rc6(struct ir_remote *remote)
+{
+	if(remote->flags&RC6) return(1);
 	else return(0);
 }
 

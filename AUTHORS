@@ -44,7 +44,7 @@ smode2:
 GPIO support:
   Artur Lipowski <lipowski@comarch.pl>
 
-Slinke support:
+Slink-e support:
   Max Spring <mspring@employees.org>
 
 I have only pieced this together by grepping the source for @ signs

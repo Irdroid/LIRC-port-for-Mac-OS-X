@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.2 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: config_file.h,v 5.3 2000/07/05 12:25:03 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -25,7 +25,10 @@ struct flaglist {
 
 static struct flaglist all_flags[]=
 {
-	{"SHIFT_ENC",       SHIFT_ENC},
+	{"RC5",             RC5},
+	{"RC6",             RC6},
+	{"RCMM",            RCMM},
+	{"SHIFT_ENC",       SHIFT_ENC}, /* obsolete */
 	{"SPACE_ENC",       SPACE_ENC},
 	{"REVERSE",         REVERSE},
 	{"NO_HEAD_REP",     NO_HEAD_REP},
