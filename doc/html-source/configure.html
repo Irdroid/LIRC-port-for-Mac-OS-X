@@ -152,12 +152,20 @@ command.
 </P>
 </DD>
 <DT>ACTIVATE&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT>
+<DT>TOGGLE_ACTIVATE&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT>
 <DD>
 <P>
 I recommend that you use a special button to activate the mouse daemon
 with this command. You will see whenever the daemon is
 activated/deactivated directly on the screen. If you omit this command
 the daemon will always be active.
+</P>
+<P>
+The difference between ACTIVATE and TOGGLE_ACTIVATE is how you leave
+the mouse mode. With TOGGLE_ACTIVATE you have to press the button that
+you use to enter the mode to leave it. With ACTIVATE you will leave
+mouse mode as soon as you press a button that is not used for any
+function in the config file.
 </P>
 </DD>
 <DT>MOVE_ [ N [ E | W ] | E | S [ E | W ] | W ]&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT>
