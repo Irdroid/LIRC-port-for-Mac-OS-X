@@ -289,20 +289,21 @@ function ConfigDriver
 			2 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
 			3 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
 			4 "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)" \
-			5 "BestBuy Easy TV (card=55)" \
-			6 "Chronos Video Shuttle II (card=35)" \
-                        7 "Dynalink Magic TView (card=48)" \
-			8 "Fly98 TV card" \
-			9 "Hauppauge TV card (new I2C layer required)" \
-			0 "KNC ONE TV Station (-/SE/PRO/RDS)" \
-			a "Phoebe Tv Master + FM (card=22)" \
-                        b "Pixelview PlayTV pro (card=37)" \
-                        c "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
-			d "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
-			e "ProVideo PV951 (card=42)" \
-			f "Technisat MediaFocus I" \
-			g "TView99 CPH063 (card=38)" \
-			h "Typhoon TView RDS / FM Stereo (card=53)" 2> $TEMP;
+			5 "BestBuy Easy TV (BT848) (card=55)" \
+			6 "BestBuy Easy TV (BT878) (card=62)" \
+			7 "Chronos Video Shuttle II (card=35)" \
+                        8 "Dynalink Magic TView (card=48)" \
+			9 "Fly98 TV card" \
+			0 "Hauppauge TV card (new I2C layer required)" \
+			a "KNC ONE TV Station (-/SE/PRO/RDS)" \
+			b "Phoebe Tv Master + FM (card=22)" \
+                        c "Pixelview PlayTV pro (card=37)" \
+                        d "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
+			e "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
+			f "ProVideo PV951 (card=42)" \
+			g "Technisat MediaFocus I" \
+			h "TView99 CPH063 (card=38)" \
+			i "Typhoon TView RDS / FM Stereo (card=53)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -312,19 +313,20 @@ function ConfigDriver
 		elif test "$1" = "3"; then LIRC_DRIVER=avermedia;       DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=avermedia98;     DRIVER_PARAMETER=none;
 		elif test "$1" = "5"; then LIRC_DRIVER=bestbuy;		DRIVER_PARAMETER=none;
-		elif test "$1" = "6"; then LIRC_DRIVER=chronos;         DRIVER_PARAMETER=none;
-		elif test "$1" = "7"; then LIRC_DRIVER=cph03x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "8"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
-		elif test "$1" = "9"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
-		elif test "$1" = "0"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "a"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "b"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
-		elif test "$1" = "c"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
-		elif test "$1" = "d"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
-		elif test "$1" = "e"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
-		elif test "$1" = "f"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "g"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "h"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "6"; then LIRC_DRIVER=bestbuy2;	DRIVER_PARAMETER=none;
+		elif test "$1" = "7"; then LIRC_DRIVER=chronos;         DRIVER_PARAMETER=none;
+		elif test "$1" = "8"; then LIRC_DRIVER=cph03x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "9"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
+		elif test "$1" = "0"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
+		elif test "$1" = "a"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "b"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "c"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
+		elif test "$1" = "d"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
+		elif test "$1" = "e"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "f"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
+		elif test "$1" = "g"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
+		elif test "$1" = "h"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "i"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

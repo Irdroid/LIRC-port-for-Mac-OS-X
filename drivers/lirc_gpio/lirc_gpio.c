@@ -8,7 +8,7 @@
  *     patch for the BestBuy by Miguel Angel Alvarez <maacruz@navegalia.com>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.7 2001/01/21 11:10:39 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.8 2001/04/25 20:07:50 lirc Exp $
  *
  */
 
@@ -100,8 +100,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_MAGICTVIEW061,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063,          0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_PHOEBE_TVMAS,           0, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
-#ifdef BTTV_BESTBUY
-        {BTTV_BESTBUY,                0, 0x00007F00,          0, 0x0004000,          0,   0, 10,  8},
+#ifdef BTTV_BESTBUY_EASYTV2
+        {BTTV_BESTBUY_EASYTV,         0, 0x00007F00,          0, 0x0004000,          0,   0, 10,  8},
+        {BTTV_BESTBUY_EASYTV2,        0, 0x00007F00,          0, 0x0008000,          0,   0, 10,  8},
 #endif
  	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0}
 };

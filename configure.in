@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.57 2001/04/25 10:40:37 lirc Exp $
+dnl $Id: configure.in,v 5.58 2001/04/25 20:07:50 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -107,13 +107,15 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, serial, sir, animax, packard_bell, parallel,
-                          irman, remotemaster, pctv, comX, lptX, avermedia,
-			  avermedia98, hauppauge, fly98, pixelview_pro,
-			  cph03x, cph06x, logitech, caraca, slinke, silitek,
-                          irdeo, irreal, chronos, pixelview_pak, pixelview_bt878,
-			  realmagic, mediafocusI, tekram, creative, provideo,
-			  bestbuy, knc_one, ipaq],
+                          none, animax, avermedia, avermedia98,
+                          bestbuy, bestbuy2, caraca, chronos, comX,
+                          cph03x, cph06x, creative, fly98, hauppauge,
+                          ipaq, irdeo, irman, irreal, knc_one,
+                          logitech, lptX, mediafocusI, packard_bell,
+                          parallel, pctv, pixelview_bt878,
+                          pixelview_pak, pixelview_pro, provideo,
+                          realmagic, remotemaster, serial, silitek,
+                          sir, slinke, tekram],
 
 driver=${withval},
 driver="unset"
@@ -257,6 +259,11 @@ if test "$driver" = "bestbuy"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="bestbuy/lircd.conf.bestbuy"
   lircmd_conf="bestbuy/lircmd.conf.bestbuy"
+fi
+if test "$driver" = "bestbuy2"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="bestbuy/lircd.conf.bestbuy2"
+  lircmd_conf="bestbuy/lircmd.conf.bestbuy2"
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel

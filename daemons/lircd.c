@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.27 2001/04/25 10:39:59 lirc Exp $      */
+/*      $Id: lircd.c,v 5.28 2001/04/25 20:07:50 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -32,8 +32,8 @@
 # undef DAEMONIZE
 #endif
 
-#define __USE_BSD
-#define __USE_GNU
+#define _GNU_SOURCE
+#define _BSD_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,6 +55,18 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <sys/file.h>
+
+#ifndef timersub
+#define timersub(a, b, result)                                                \
+  do {                                                                        \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                             \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                          \
+    if ((result)->tv_usec < 0) {                                              \
+      --(result)->tv_sec;                                                     \
+      (result)->tv_usec += 1000000;                                           \
+    }                                                                         \
+  } while (0)
+#endif
 
 #include "lircd.h"
 #include "ir_remote.h"
@@ -572,7 +584,8 @@ void connect_to_peers()
 	{
 		if(peers[i]->socket!=-1)
 			continue;
-		if(timercmp(&peers[i]->reconnect,&now,<=))
+		/* some timercmp() definitions don't work with <= */
+		if(timercmp(&peers[i]->reconnect,&now,<))
 		{
 			peers[i]->socket=socket(AF_INET, SOCK_STREAM,0);
 			host=gethostbyname(peers[i]->host);
@@ -1568,27 +1581,23 @@ int waitfordata(unsigned long maxusec)
 					FD_SET(peers[i]->socket,&fds);
 					maxfd=max(maxfd,peers[i]->socket);
 				}
-				else
+				else if(timerisset(&tv))
 				{
-					if(timerisset(&tv))
-					{
-						if(timercmp(&tv,
-							    &peers[i]->reconnect,
-							    >))
-						{
-							tv=peers[i]->reconnect;
-						}
-					}
-					else
+					if(timercmp
+					   (&tv,&peers[i]->reconnect,>))
 					{
 						tv=peers[i]->reconnect;
 					}
+				}
+				else
+				{
+					tv=peers[i]->reconnect;
 				}
 			}
 			if(timerisset(&tv))
 			{
 				gettimeofday(&now,NULL);
-				if(timercmp(&now,&tv,>=))
+				if(timercmp(&now,&tv,>))
 				{
 					timerclear(&tv);
 				}
