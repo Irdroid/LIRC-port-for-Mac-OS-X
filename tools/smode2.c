@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.7 2001/11/20 15:12:33 ranty Exp $      */
+/*      $Id: smode2.c,v 5.8 2001/11/22 14:27:15 ranty Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 	int result;
 	int c=10;
 	char textbuffer[80];
-	int d,div=5;
+	int div=5;
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
 

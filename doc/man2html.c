@@ -84,6 +84,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -853,7 +854,7 @@ struct TABLEITEM {
     TABLEITEM *next;
 };
 
-static TABLEITEM emptyfield = {NULL,0,0,0,1,1,0,0,0,0,NULL};
+static TABLEITEM emptyfield = {NULL,0,0,0,1,1,0,0,0,0,0,NULL};
 typedef struct TABLEROW TABLEROW;
 
 struct TABLEROW {
@@ -1014,12 +1015,12 @@ char itemreset[20]="\\fR\\s0";
 
 char *scan_table(char *c)
 {
-    char *t, *h, *g;
+    char *h, *g;
     int center=0, expand=0, box=0, border=0, linesize=1;
     int i,j,maxcol=0, finished=0;
     int oldfont, oldsize,oldfillout;
     char itemsep='\t';
-    TABLEROW *layout=NULL, *currow, *ftable;
+    TABLEROW *layout=NULL, *currow;
     TABLEITEM *curfield;
     while (*c++!='\n');
     h=c;
@@ -1287,7 +1288,7 @@ char *scan_table(char *c)
 
 char *scan_expression(char *c, int *result)
 {
-    int value=0,value2,j=0,sign=1,opex=0;
+    int value=0,value2,sign=1,opex=0;
     char oper='c';
 
     if (*c=='!') {
@@ -1681,7 +1682,7 @@ char *skip_till_newline(char *c)
 {
     int lvl=0;
 
-    while (*c && *c!='\n' || lvl>0) {
+    while ((*c && *c!='\n') || (lvl>0)) {
 	if (*c=='\\') {
 	    c++;
 	    if (*c=='}') lvl--; else if (*c=='{') lvl++;
@@ -1733,7 +1734,6 @@ char *scan_request(char *c)
 	case V('d','i'):
 	    {
 		STRDEF *de;
-		int oldcurpos=curpos;
 		c=c+j;
 		i=V(c[0],c[1]);
 		if (*c=='\n') { c++;break; }
@@ -1982,7 +1982,7 @@ char *scan_request(char *c)
 	    {
 		FILE *f;
 		struct stat stbuf;
-		int l;char *buf;
+		int l=0;char *buf;
 		char *name=NULL;
 		curpos=0;
 		c=c+j;
@@ -2435,7 +2435,7 @@ char *scan_request(char *c)
 		for (i=words;i<20; i++) wordlist[i]=NULL;
 		deflen = strlen(owndef->st);
 		owndef->st[deflen+1]='a';
-		for (i=0; owndef->st[deflen+2+i]=owndef->st[i]; i++);
+		for (i=0; (owndef->st[deflen+2+i]=owndef->st[i]); i++);
 		oldargument=argument;
 		argument=wordlist;
 		onff=newline_for_fun;
@@ -2465,7 +2465,6 @@ char *scan_troff(char *c, int san, char **result)
     char *h;
     char intbuff[500];
     int ibp=0;
-    int i;
 #define FLUSHIBP  if (ibp) { intbuff[ibp]=0; out_html(intbuff); ibp=0; }
     char *exbuffer;
     int exbuffpos, exbuffmax, exscaninbuff, exnewline_for_fun;
@@ -2507,7 +2506,6 @@ char *scan_troff(char *c, int san, char **result)
 	    h = scan_request(h);
 	    if (san && h[-1]=='\n') h--;
 	} else {
-	    int mx;
 	    if (h[-1]=='\n' && still_dd && isalnum(*h)) {
 		/* sometimes a .HP request is not followed by a .br request */
 		FLUSHIBP;
@@ -2731,7 +2729,7 @@ static char smfbuf[1000];
 
 char *search_manpath(char *name)
 {
-    int i,j,n,l,nr=0;
+    int i;
     struct stat stbuf;
 
     for (i=0; manpath[i]; i++) {
@@ -2747,7 +2745,7 @@ int main(int argc, char **argv)
     FILE *f;
     struct stat stbuf;
     char *t=NULL;
-    int l,i;char *buf;
+    int l=0,i;char *buf;
     int mopt=0;
     int notinsection=0;
     char *h, *fullname;

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.34 2001/11/09 21:40:47 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.35 2001/11/22 14:27:15 ranty Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -17,7 +17,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <sys/time.h>
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
