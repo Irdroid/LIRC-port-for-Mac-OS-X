@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.3 1999/08/04 19:18:27 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.4 1999/11/07 20:20:34 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -212,12 +212,12 @@ void daemonize(void)
 	}
 	else
 	{
-		fclose(stdin);
-		fclose(stdout);
-		fclose(stderr);
 		setsid();
 		chdir("/");
 		umask(0);
+		fclose(stdin);
+		fclose(stdout);
+		fclose(stderr);
 	}
 }
 
