@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.14 2003/08/15 12:56:29 lirc Exp $      */
+/*      $Id: config_file.c,v 5.15 2003/09/21 10:15:02 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -96,7 +96,7 @@ inline char *s_strdup(char * string)
         return (ptr);
 }
 
-inline ir_code s_strtocode(char *val)
+inline ir_code s_strtocode(const char *val)
 {
 	ir_code code=0;
 	char *endptr;
@@ -246,6 +246,35 @@ struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
         LOGPRINTF(3,"      %-20s 0x%016lX",code->name, code->code);
 #       endif
         return(code);
+}
+
+struct ir_code_node *defineNode(struct ir_ncode *code, const char *val)
+{
+	struct ir_code_node *node;
+	
+	node=s_malloc(sizeof(*node));
+	if(node==NULL) return NULL;
+	
+	node->code=s_strtocode(val);
+	node->next=NULL;
+	
+#       ifdef LONG_IR_CODE
+        LOGPRINTF(3,"                           0x%016llX", node->code);
+#       else
+        LOGPRINTF(3,"                           0x%016lX", node->code);
+#       endif
+
+	if(code->current==NULL)
+	{
+		code->next=node;
+		code->current=node;
+	}
+	else
+	{
+		code->current->next=node;
+		code->current=node;
+	}
+	return node;
 }
 
 int parseFlags(char *val)
@@ -452,6 +481,7 @@ struct ir_remote * read_config(FILE *f)
         struct void_array codes_list,raw_codes,signals;
 	struct ir_ncode raw_code={NULL,0,0,NULL};
 	struct ir_ncode name_code={NULL,0,0,NULL};
+	struct ir_ncode *code;
 	int mode=ID_none;
 
 	line=0;
@@ -537,13 +567,17 @@ struct ir_remote * read_config(FILE *f)
                                                 rem=rem->next;
                                         }
 				}else if(mode==ID_codes){
-					add_void_array(&codes_list, defineCode(key, val, &name_code));
-					if(!parse_error && val2!=NULL)
+					code=defineCode(key, val, &name_code);
+					while(!parse_error && val2!=NULL)
 					{
-						logprintf(LOG_WARNING,"garbage after '%s'"
-							  " code in line %d ignored",
-							  key,line);
+						struct ir_code_node *node;
+						
+						if(val2[0]=='#') break; /* comment */
+						node=defineNode(code, val2);
+						val2=strtok(NULL, " \t");
 					}
+					code->current=NULL;
+					add_void_array(&codes_list, code);
                                 }else{
                                         logprintf(LOG_ERR,"error in configfile line %d:",line);
 					logprintf(LOG_ERR,"unknown section \"%s\"",val);
@@ -617,13 +651,17 @@ struct ir_remote * read_config(FILE *f)
 						logprintf(LOG_WARNING,"repeat_gap will be ignored if CONST_LENGTH flag is set");
 					}
 				}else if(mode==ID_codes){
-					add_void_array(&codes_list, defineCode(key, val, &name_code));
-					if(!parse_error && val2!=NULL)
+					code=defineCode(key, val, &name_code);
+					while(!parse_error && val2!=NULL)
 					{
-						logprintf(LOG_WARNING,"garbage after '%s'"
-							  " code in line %d ignored",
-							  key,line);
+						struct ir_code_node *node;
+						
+						if(val2[0]=='#') break; /* comment */
+						node=defineNode(code, val2);
+						val2=strtok(NULL, " \t");
 					}
+					code->current=NULL;
+					add_void_array(&codes_list, code);
                                 }else{
                                         logprintf(LOG_ERR,"error in configfile line %d:",line);
 					logprintf(LOG_ERR,"unknown section %s",val);
@@ -648,13 +686,17 @@ struct ir_remote * read_config(FILE *f)
 					}
 					break;
 				case ID_codes:
-					add_void_array(&codes_list, defineCode(key, val, &name_code));
-					if(!parse_error && val2!=NULL)
+					code=defineCode(key, val, &name_code);
+					while(!parse_error && val2!=NULL)
 					{
-						logprintf(LOG_WARNING,"garbage after '%s'"
-							  " code in line %d ignored",
-							  key,line);
+						struct ir_code_node *node;
+						
+						if(val2[0]=='#') break; /* comment */
+						node=defineNode(code, val2);
+						val2=strtok(NULL, " \t");
 					}
+					code->current=NULL;
+					add_void_array(&codes_list, code);
 					break;
 				case ID_raw_codes:
 				case ID_raw_name:
@@ -804,9 +846,18 @@ void free_config(struct ir_remote *remotes)
 			codes=remotes->codes;
 			while(codes->name!=NULL)
 			{
+				struct ir_code_node *node,*next_node;
+				
 				free(codes->name);
 				if(codes->signals!=NULL)
 					free(codes->signals);
+				node=codes->next;
+				while(node)
+				{
+					next_node=node->next;
+					free(node);
+					node=next_node;
+				}
 				codes++;
 			}
 			free(remotes->codes);

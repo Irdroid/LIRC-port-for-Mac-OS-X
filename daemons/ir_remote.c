@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.22 2003/08/15 12:56:29 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.23 2003/09/21 10:15:02 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -109,7 +109,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			  int *repeat_statep)
 {
 	ir_code pre_mask,code_mask,post_mask;
-	int repeat_state;
+	int repeat_state, found_code;
 	struct ir_ncode *codes,*found;
 	
 	pre_mask=code_mask=post_mask=0;
@@ -210,21 +210,52 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		LOGPRINTF(1,"post");
 	}
 	found=NULL;
+	found_code=0;
 	codes=remote->codes;
 	if(codes!=NULL)
 	{
 		while(codes->name!=NULL)
 		{
-			if((codes->code|code_mask)==(code|code_mask))
+			ir_code next_code;
+			
+			if(codes->next!=NULL && codes->current!=NULL)
 			{
+				next_code=codes->current->code;
+			}
+			else
+			{
+				next_code=codes->code;
+			}
+			if((next_code|code_mask)==(code|code_mask))
+			{
+				found_code=1;
+				if(codes->next!=NULL)
+				{
+					if(codes->current==NULL)
+					{
+						codes->current=codes->next;
+					}
+					else
+					{
+						codes->current=
+							codes->next->next;
+					}
+				}
 				found=codes;
-				break;
+				if(codes->current==NULL)
+				{
+					break;
+				}
+			}
+			else
+			{
+				codes->current=NULL;
 			}
 			codes++;
 		}
 	}
 #       ifdef DYNCODES
-	if(found==NULL)
+	if(!found_code)
 	{
 		if((remote->dyncodes[remote->dyncode].code|code_mask)!=
 		   (code|code_mask))
@@ -234,9 +265,10 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		}
 		remote->dyncodes[remote->dyncode].code=code&(~code_mask);
 		found=&(remote->dyncodes[remote->dyncode]);
+		found_code=1;
 	}
 #       endif
-	if(found!=NULL && has_toggle_mask(remote))
+	if(found_code && found!=NULL && has_toggle_mask(remote))
 	{
 		if(!(remote->toggle_mask_state%2))
 		{
@@ -267,7 +299,10 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	LOGPRINTF(1,"found: %s",found->name);
 
 	gettimeofday(&current,NULL);
-	if(remote==last_remote && found==remote->last_code && repeat_flag &&
+	if(remote==last_remote &&
+	   ((found->next==NULL && found==remote->last_code) || 
+	    (found->next!=NULL)) &&
+	   repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
 	   (!(remote->toggle_bit>0) || repeat_state==remote->repeat_state))
 	{
@@ -280,15 +315,21 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 				remote->toggle_mask_state=2;
 			}
 		}
-		else
+		else if(found->current==NULL)
 		{
 			remote->reps++;
 		}
 	}
 	else
 	{
-		remote->reps=0;		
-		remote->last_code=found;
+		if(found->next!=NULL && found->current==NULL)
+		{
+			remote->reps=1;
+		}
+		else
+		{
+			remote->reps=0;
+		}
 		if(has_toggle_mask(remote))
 		{
 			remote->toggle_mask_state=1;
@@ -300,6 +341,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		}
 	}
 	last_remote=remote;
+	remote->last_code=found;
 	remote->last_send=current;
 	remote->remaining_gap=remaining_gap;
 	
@@ -350,8 +392,9 @@ char *decode_all(struct ir_remote *remotes)
 
 			code=set_code(remote,ncode,repeat_state,repeat_flag,
 				      remaining_gap);
-			if(has_toggle_mask(remote) &&
-			   remote->toggle_mask_state%2)
+			if((has_toggle_mask(remote) &&
+			    remote->toggle_mask_state%2) ||
+			   ncode->current!=NULL)
 			{
 				decoding=NULL;
 				return(NULL);
@@ -365,13 +408,13 @@ char *decode_all(struct ir_remote *remotes)
 				     (code>>32),
 				     (unsigned long)
 				     (code&0xFFFFFFFF),
-				     remote->reps,
+				     remote->reps-(ncode->next ? 1:0),
 				     remote->last_code->name,
 				     remote->name);
 #else
 			len=snprintf(message,PACKET_SIZE,"%016llx %02x %s %s\n",
 				     code,
-				     remote->reps,
+				     remote->reps-(ncode->next ? 1:0),
 				     remote->last_code->name,
 				     remote->name);
 #endif

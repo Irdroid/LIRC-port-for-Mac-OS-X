@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.5 2002/11/12 18:04:43 lirc Exp $      */
+/*      $Id: config_file.h,v 5.6 2003/09/21 10:15:02 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -71,7 +71,7 @@ inline void * get_void_array(struct void_array *ar);
 /* some safer functions */
 void * s_malloc(size_t size);
 char * s_strdup(char * string);
-ir_code s_strtocode(char *val);
+ir_code s_strtocode(const char *val);
 unsigned long  s_strtoul(char *val);
 int s_strtoi(char *val);
 unsigned int s_strtoui(char *val);
@@ -81,6 +81,7 @@ int checkMode(int is_mode, int c_mode, char *error);
 int parseFlags(char *val);
 int addSignal(struct void_array *signals, char *val);
 struct ir_ncode * defineCode(char *key, char *val, struct ir_ncode *code);
+struct ir_code_node *defineNode(struct ir_ncode *code, const char *val);
 int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem);
 struct ir_remote *read_config(FILE *f);
 void free_config(struct ir_remote *remotes);

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.25 2003/08/15 12:56:29 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.26 2003/09/21 10:15:02 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -31,6 +31,12 @@ typedef unsigned long long ir_code;
 typedef unsigned long ir_code;
 #endif
 
+struct ir_code_node
+{
+	ir_code code;
+	struct ir_code_node *next;
+};
+
 /*
   Code with name string
 */
@@ -40,6 +46,8 @@ struct ir_ncode {
 	ir_code code;
         int length;
         lirc_t *signals;
+	struct ir_code_node *next;
+	struct ir_code_node *current;
 };
 
 /*

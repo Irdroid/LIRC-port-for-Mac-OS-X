@@ -15,7 +15,12 @@
 
 * button_down & button_up codes.
 
-* stupid Pioneer & Grundig/Motorola (context?) protocol (maybe?)
+* Pioneer protocol:
+  add irrecord support,
+  reset button state,
+  implement transmitting & config file dump
+
+* Grundig/Motorola (context?) protocol (maybe?)
 
 * echostar protocol reported by John.colburn@shaw.ca:
   there's no gap and no ptrail although it is space encoded
