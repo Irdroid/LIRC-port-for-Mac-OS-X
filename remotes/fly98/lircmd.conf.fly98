@@ -1,0 +1,30 @@
+# 
+# lirc-imps2 config file
+# 
+
+# ACCELERATOR start max multiplier
+
+ACCELERATOR 2 30 5
+
+# ACTIVATE * MENUE
+
+MOVE_N   * 2
+MOVE_NE  * 3
+MOVE_E   * 6
+MOVE_SE  * 9
+MOVE_S   * 8
+MOVE_SW  * 7
+MOVE_W   * 4
+MOVE_NW  * 1
+
+# These are imps2 extensions
+MOVE_IN  * VOLUP
+MOVE_OUT * VOLDOWN
+
+BUTTON1_DOWN * 0
+BUTTON2_DOWN * LEFT_ARROW
+BUTTON3_DOWN * RIGHT_ARROW
+
+BUTTON1_TOGGLE * AUDIO
+BUTTON2_TOGGLE * FULLSCREEN
+BUTTON3_TOGGLE * LOOP

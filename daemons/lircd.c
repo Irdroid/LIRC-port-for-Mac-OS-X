@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lircd.c,v 5.1 1999/05/04 04:41:20 rggammon Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -43,13 +43,14 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#ifdef __GLIBC__
+#if defined( __GLIBC__) && defined(__i386__) 
 #include <sys/perm.h>
 #endif
 #include <errno.h>
 
 #include "lircd.h"
 #include "config_file.h"
+#include "../drivers/lirc.h"
 
 char *progname="lircd-"VERSION;
 char *logfile=LOGFILE;
@@ -1133,6 +1134,7 @@ int main(int argc,char **argv)
 #endif
 
 #ifdef LIRC_DECODED
+	/* TBD - Make this /dev/lirc */
 	if((lirc=open("/dev/remote",O_RDWR))<0)
 #else
 	if((lirc=open("/dev/lirc",O_RDWR))<0)
@@ -1140,6 +1142,16 @@ int main(int argc,char **argv)
 	{
 		fprintf(stderr,"%s: could not open lirc\n",progname);
 		perror(progname);
+		exit(EXIT_FAILURE);
+	}
+
+#ifdef LIRC_DECODED
+	if(ioctl(lirc ,LIRC_MODE_DECODED, 0)<0)
+#else
+	if(0) /* (ioctl(lirc,LIRC_MODE_PULSE_SPACE, 0)<0) */
+#endif
+	{
+		fprintf(stderr,"%s: could not set correct lirc mode\n",progname);
 		exit(EXIT_FAILURE);
 	}
 

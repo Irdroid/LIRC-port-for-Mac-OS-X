@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.1 1999/05/04 04:41:20 rggammon Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#ifdef __GLIBC__
+#if defined(__GLIBC__) && defined(__i386__) 
 #include <sys/perm.h>
 #endif
 

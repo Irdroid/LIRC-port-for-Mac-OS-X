@@ -1,0 +1,58 @@
+#############################################################################
+## This file is part of the lirc-0.5.5pre8 package ##########################
+## LIRC - Linux Infrared Remote Control #####################################
+#############################################################################
+
+
+#
+# This is for the remote that Avermedia bundles with its Tv98.
+# Commands from the remote are hardware-decoded by a PIC16c54-xt, which makes
+# lirc's job easy. Make sure you compile the daemons with the experimental
+# -DDECODED option. You need at least lirc-0.5.5pre8 to use this config file
+#
+# contributed by Ryan Gammon <rggammon@engmail.uwaterloo.ca>
+#
+# brand:             Avermedia TV98
+# supported devices: This remote control comes with some TV Tuner cards from
+#                    Avermedia.
+#
+# notes:             The 0x?0D codes appear to unused (the remote has 31 
+#                    buttons, so it makes sense)
+
+begin remote
+  name  AVERMEDIA
+  bits  6
+      begin codes
+          LEFT_ARROW         0x0000000000000000
+          8                  0x0000000000000001
+	  4                  0x0000000000000002
+	  DISPLAY            0x0000000000000003
+	  2                  0x0000000000000004
+	  0                  0x0000000000000005
+	  6                  0x0000000000000006
+	  PREVIEW            0x0000000000000007
+	  1                  0x0000000000000008
+	  9                  0x0000000000000009
+	  5                  0x000000000000000A
+	  COLOR              0x000000000000000B
+	  3                  0x000000000000000C
+	  7                  0x000000000000000E
+	  FULLSCREEN         0x000000000000000F
+	  MUTE               0x0000000000000010
+	  AUDIO              0x0000000000000011
+	  FREEZE             0x0000000000000012
+	  VIDEO              0x0000000000000013
+	  EXIT               0x0000000000000014
+	  VOLUP              0x0000000000000015
+	  TV                 0x0000000000000016
+	  VOLDOWN            0x0000000000000017
+	  CAPTURE            0x0000000000000018
+	  ENTER              0x0000000000000019
+	  FM                 0x000000000000001A
+	  AUTOSCAN           0x000000000000001B
+	  LOOP               0x000000000000001C
+	  CHANNELUP          0x000000000000001D
+	  RIGHT_ARROW        0x000000000000001E
+	  CHANNELDOWN        0x000000000000001F
+      end codes
+end remote

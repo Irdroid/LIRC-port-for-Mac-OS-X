@@ -1,0 +1,43 @@
+#############################################################################
+## This file is part of the lirc-0.5.5pre8 package ##########################
+## LIRC - Linux Infrared Remote Control #####################################
+#############################################################################
+
+
+#
+# This is for the remote that Avermedia bundles with its Tv98.
+# Commands from the remote are hardware-decoded by a PIC16c54-xt, which makes
+# lirc's job easy. Make sure you compile the daemons with the experimental
+# -DDECODED option. You need at least lirc-0.5.5pre8 to use this config file
+#
+# contributed by Ryan Gammon <rggammon@engmail.uwaterloo.ca>
+#
+# brand:             Avermedia TV98
+# supported devices: This remote control comes with some TV Tuner cards from
+#                    Avermedia.
+#
+# notes:             The 0x?0D codes appear to unused (the remote has 31 
+#                    buttons, so it makes sense)
+
+begin remote
+  name  FLY98
+  bits  8
+      begin codes
+	FV98_0  	   0x00000000000000F0
+	FV98_1  	   0x00000000000000C0
+	FV98_2  	   0x0000000000000020
+	FV98_3  	   0x00000000000000A0
+	FV98_4  	   0x00000000000000E0
+	FV98_5  	   0x0000000000000010
+	FV98_6  	   0x0000000000000090
+	FV98_7  	   0x00000000000000D0
+	FV98_8  	   0x0000000000000030
+	FV98_9  	   0x00000000000000B0
+	FV98_MUTE	   0x00000000000000D8
+	FV98_VOL_PLUS	   0x0000000000000028
+	FV98_VOL_MINUS     0x00000000000000E8
+	FV98_CHAN_PLUS     0x0000000000000048
+	FV98_CHAN_MINUS    0x00000000000000C8
+	FV98_FULL_SCREEN   0x0000000000000040
+      end codes
+end remote

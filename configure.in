@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.0 1999/04/29 21:30:59 columbus Exp $
+dnl $Id: configure.in,v 5.1 1999/05/04 04:41:20 rggammon Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -57,7 +57,7 @@ AC_MSG_RESULT()
 
 possible_drivers="(none)"
 AC_CHECK_HEADER(linux/autoconf.h,
-  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel)"
+  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) (lirc_aver) (lirc_haup) (lirc_fly98)"
 )
 
 AC_CHECK_LIB(irman, ir_get_code,
@@ -73,7 +73,8 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, serial, parallel, irman, comX, lptX],
+                          none, serial, parallel, irman, comX, lptX, 
+			  avermedia, hauppauge, fly98],
 driver=${withval},
 driver="unset"
 )
@@ -119,6 +120,15 @@ fi
 
 if test "$driver" = "parallel"; then
   lirc_driver=lirc_parallel;
+fi
+if test "$driver" = "avermedia"; then
+  lirc_driver=lirc_aver;
+fi
+if test "$driver" = "hauppauge"; then
+  lirc_driver=lirc_haup;
+fi
+if test "$driver" = "fly98"; then
+  lirc_driver=lirc_fly98;
 fi
 if test "$driver" = "lpt1"; then
   lirc_driver=lirc_parallel
@@ -272,6 +282,9 @@ AC_OUTPUT([
   drivers/Makefile
   drivers/lirc_serial/Makefile
   drivers/lirc_parallel/Makefile
+  drivers/lirc_aver/Makefile
+  drivers/lirc_haup/Makefile
+  drivers/lirc_fly98/Makefile
   drivers/irman/Makefile
   daemons/Makefile
   tools/Makefile
