@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.23 2001/06/23 17:36:19 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.24 2001/07/11 19:27:51 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -197,7 +197,9 @@ void off(void)
 	soutp(UART_MCR,LIRC_OFF);
 }
 
-void send_pulse(unsigned long length)
+/* return value: space length delta */
+
+unsigned long send_pulse(unsigned long length)
 {
 #ifdef LIRC_SERIAL_IRDEO
 	long rawbits;
@@ -223,10 +225,19 @@ void send_pulse(unsigned long length)
 			i=0;
 		}
 	}
-	if(i!=2)
+	if(i!=0)
 	{
 		soutp(UART_TX,output);
 		while(!(sinp(UART_LSR) & UART_LSR_TEMT));
+	}
+
+	if(i==0)
+	{
+		return((-rawbits)*10000/1152);
+	}
+	else
+	{
+		return((3-i)*3*10000/1152+(-rawbits)*10000/1152);
 	}
 #else
 #ifdef LIRC_SERIAL_SOFTCARRIER
@@ -253,9 +264,11 @@ void send_pulse(unsigned long length)
 		}
 		udelay(delay);
 	}
+	return(k-length);
 #else
 	on();
 	udelay(length);
+	return(0);
 #endif
 #endif
 }
@@ -717,6 +730,7 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 #ifdef LIRC_SERIAL_TRANSMITTER
 	int retval,i,count;
 	unsigned long flags;
+	unsigned long delta=0;
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	retval=verify_area(VERIFY_READ,buf,n);
@@ -735,8 +749,8 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 #       endif
 	for(i=0;i<count;i++)
 	{
-		if(i%2) send_space(wbuf[i]);
-		else send_pulse(wbuf[i]);
+		if(i%2) send_space(wbuf[i]>delta ? wbuf[i]-delta:0);
+		else delta=send_pulse(wbuf[i]);
 	}
 	off();
 	restore_flags(flags);

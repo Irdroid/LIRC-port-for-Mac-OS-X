@@ -1,4 +1,5 @@
 0.6.4: future
+  * fixed bug in Irdeo transmit code
   * added support for FlyVideo II TV card (Alexios Chouchoulas)
   * added support for Compaq iPAQ 
   * added support for FlyVideo 98/FM TV card
