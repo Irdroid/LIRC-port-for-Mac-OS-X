@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
 
 /***************************************************************************
  ** This file is part of the lirc-0.5.4 package ****************************
@@ -53,6 +53,8 @@
 #include <errno.h>
 #include <limits.h>
 
+#include "drivers/lirc.h"
+
 #include "daemons/dump_config.h"
 #include "daemons/ir_remote.h"
 #include "daemons/config_file.h"
@@ -103,6 +105,7 @@ int main(int argc,char **argv)
 
 	progname=argv[0];
 	return_code=1;
+	send_mode=0,rec_mode=LIRC_MODE_PULSE;
 
 	while(1)
 	{

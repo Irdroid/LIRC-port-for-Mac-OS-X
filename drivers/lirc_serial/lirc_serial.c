@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -50,6 +50,8 @@
 #include <asm/irq.h>
 #include <asm/fcntl.h>
 
+#include "drivers/lirc.h"
+
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 #define RS_ISR_PASS_LIMIT 256
@@ -78,9 +80,9 @@ static unsigned char rbuf[RBUF_LEN];
 static int rbh, rbt;
 #ifndef LIRC_SERIAL_ANIMAX
 static unsigned char wbuf[WBUF_LEN];
-unsigned long freq = 38000; /* modulation frequency is hardcoded now;
-			       there will be an ioctl() call
-			       in the future to set this value */
+unsigned long pulse_width = 13; /* pulse/space ratio of 50/50 */
+unsigned space_width = 13;      /* 1000000/freq-pulse_width */
+unsigned long freq = 38000;     /* modulation frequency */
 #endif
 
 #ifdef LIRC_SERIAL_ANIMAX
@@ -120,10 +122,21 @@ void send_pulse(unsigned long length)
 
 	if(length==0) return;
 #ifdef LIRC_SERIAL_SOFTCARRIER
-	delay=1000000/2/freq;
+	/* this won't give us the carrier frequency we really want
+	   due to integer arithmetic, but we can accept this inaccuracy */
+
 	for(k=flag=0;k<length;k+=delay,flag=!flag)
 	{
-		if(flag) off(); else on();
+		if(flag)
+		{
+			off();
+			delay=space_width;
+		}
+		else
+		{
+			on();
+			delay=pulse_width;
+		}
 		udelay(delay);
 	}
 #else
@@ -416,7 +429,7 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 }
 
 #ifdef KERNEL_2_1
-static ssize_t lirc_write(struct file *file, char *buf,
+static ssize_t lirc_write(struct file *file, const char *buf,
 			 size_t n, loff_t * ppos)
 #else
 static int lirc_write(struct inode *node, struct file *file, const char *buf,
@@ -448,6 +461,74 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 #endif
 }
 
+static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
+		      unsigned long arg)
+{
+        int result;
+	unsigned long value;
+	unsigned long features=
+#       ifdef LIRC_SERIAL_SOFTCARRIER
+	LIRC_CAN_SET_SEND_PULSE_WIDTH|
+	LIRC_CAN_SET_SEND_CARRIER|
+#       endif
+#       ifndef LIRC_SERIAL_ANIMAX
+	LIRC_CAN_SEND_PULSE|
+#       endif
+	LIRC_CAN_REC_MODE2;
+	
+	switch(cmd)
+	{
+	case LIRC_GET_FEATURES:
+		result=put_user(features,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+#       ifndef LIRC_SERIAL_ANIMAX
+	case LIRC_GET_SEND_MODE:
+		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+#       endif
+	case LIRC_GET_REC_MODE:
+		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+#       ifndef LIRC_SERIAL_ANIMAX
+	case LIRC_SET_SEND_MODE:
+		result=get_user(value,(unsigned long *) arg);
+		if(result) return(result);
+		if(value!=LIRC_MODE_PULSE) return(-EINVAL);
+		break;
+#       endif
+	case LIRC_SET_REC_MODE:
+		result=get_user(value,(unsigned long *) arg);
+		if(result) return(result);
+		if(value!=LIRC_MODE_MODE2) return(-EINVAL);
+		break;
+#       ifndef LIRC_SERIAL_ANIMAX
+#       ifdef LIRC_SERIAL_SOFTCARRIER
+	case LIRC_SET_SEND_PULSE_WIDTH:
+		result=get_user(value,(unsigned long *) arg);
+		if(result) return(result);
+		if(value>=1000000/freq) return(-EINVAL);
+		pulse_width=value;
+		space_width=1000000/freq-pulse_width;
+		break;
+	case LIRC_SET_SEND_CARRIER:
+		result=get_user(value,(unsigned long *) arg);
+		if(result) return(result);
+		if(value>500000 || value <30000) return(-EINVAL);
+		freq=value;
+		pulse_width=1000000/2/value;
+		space_width=1000000/freq-pulse_width;
+		break;
+#       endif
+#       endif
+	default:
+		return(-ENOIOCTLCMD);
+	}
+	return(0);
+}
+
 static struct file_operations lirc_fops =
 {
 	NULL,			/* lseek */
@@ -459,7 +540,7 @@ static struct file_operations lirc_fops =
 #else
 	lirc_select,		/* select */
 #endif
-	NULL,			/* ioctl */
+	lirc_ioctl,		/* ioctl */
 	NULL,			/* mmap  */
 	lirc_open,		/* open */
 #ifdef KERNEL_2_1

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.1 1999/05/03 19:54:25 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.2 1999/05/05 14:57:55 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -47,6 +47,8 @@
 #include <linux/poll.h>
 #include <linux/parport.h>
 #endif
+
+#include "drivers/lirc.h"
 
 #include "lirc_parallel.h"
 
@@ -534,13 +536,40 @@ static int lirc_select(struct inode *node,struct file *file,int sel_type,
 }
 #endif
 
-static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,unsigned long arg)
+static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
+		      unsigned long arg)
 {
+        int result;
+	unsigned long features=LIRC_CAN_SEND_PULSE|LIRC_CAN_REC_MODE2,mode;
+	
 	switch(cmd)
 	{
+	case LIRC_GET_FEATURES:
+		result=put_user(features,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+	case LIRC_GET_SEND_MODE:
+		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+	case LIRC_GET_REC_MODE:
+		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+		if(result) return(result); 
+		break;
+	case LIRC_SET_SEND_MODE:
+		result=get_user(mode,(unsigned long *) arg);
+		if(result) return(result);
+		if(mode!=LIRC_MODE_PULSE) return(-EINVAL);
+		break;
+	case LIRC_SET_REC_MODE:
+		result=get_user(mode,(unsigned long *) arg);
+		if(result) return(result);
+		if(mode!=LIRC_MODE_MODE2) return(-EINVAL);
+		break;
 	default:
 		return(-ENOIOCTLCMD);
 	}
+	return(0);
 }
 
 static int lirc_open(struct inode* node,struct file* filep)

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.1 1999/05/04 04:41:20 rggammon Exp $      */
+/*      $Id: lircd.c,v 5.2 1999/05/05 14:57:55 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -43,14 +43,36 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#if defined( __GLIBC__) && defined(__i386__) 
-#include <sys/perm.h>
-#endif
+#include <sys/ioctl.h>
 #include <errno.h>
+#include <limits.h>
+
+#include "drivers/lirc.h"
 
 #include "lircd.h"
 #include "config_file.h"
-#include "../drivers/lirc.h"
+
+unsigned long supported_send_modes[]=
+{
+	/* LIRC_CAN_SEND_STRING, I don´t think there ever will be a driver 
+	   that supports that */
+	/* LIRC_CAN_SEND_LIRCCODE, */
+        /* LIRC_CAN_SEND_CODE, */
+	/* LIRC_CAN_SEND_MODE2, this one would be very easy */
+	LIRC_CAN_SEND_PULSE,
+	/* LIRC_CAN_SEND_RAW, */
+	0
+};
+unsigned long supported_rec_modes[]=
+{
+	LIRC_CAN_REC_STRING,
+	LIRC_CAN_REC_LIRCCODE,
+        LIRC_CAN_REC_CODE,
+	LIRC_CAN_REC_MODE2,
+	/* LIRC_CAN_REC_PULSE, shouldn't be too hard */
+	/* LIRC_CAN_REC_RAW, */
+	0
+};
 
 char *progname="lircd-"VERSION;
 char *logfile=LOGFILE;
@@ -93,6 +115,7 @@ char hostname[HOSTNAME_LEN+1];
 
 FILE *lf=NULL;
 int lirc,sockfd;
+unsigned long features;
 int clis[FD_SETSIZE-2]; /* substract one for each lirc and sockfd */
 int clin=0;
 
@@ -358,6 +381,153 @@ void start_server(void)
 	}
 	gethostname(hostname,HOSTNAME_LEN);
 	logprintf("started server socket\n");
+}
+
+void init_driver()
+{
+	struct stat s;
+	int i;
+
+	if((lirc=open("/dev/lirc",O_RDWR))<0)
+	{
+		fprintf(stderr,"%s: could not open lirc\n",progname);
+		perror(progname);
+		exit(EXIT_FAILURE);
+	}
+	if(fstat(lirc,&s)==-1)
+	{
+		fprintf(stderr,"%s: could not get file information\n",
+			progname);
+		perror(progname);
+		exit(EXIT_FAILURE);
+	}
+	if(S_ISFIFO(s.st_mode))
+	{
+#               ifdef DEBUG
+		printf("%s: using defauls for the Irman\n",progname);
+#               endif
+		features=LIRC_CAN_REC_MODE2;
+		rec_mode=LIRC_MODE_MODE2; /* this might change in future */
+		return;
+	}
+	else if(ioctl(lirc,LIRC_GET_FEATURES,&features)==-1)
+	{
+		fprintf(stderr,"%s: could not get hardware features\n",
+			progname);
+		fprintf(stderr,"%s: this device driver does not "
+			"support the new LIRC interface\n",
+			progname);
+		fprintf(stderr,"%s: make sure you use a current "
+			"version of the driver\n",
+			progname);
+		exit(EXIT_FAILURE);
+	}
+#       ifdef DEBUG
+	else
+	{
+		if(!(LIRC_CAN_SEND(features) || LIRC_CAN_REC(features)))
+		{
+			fprintf(stderr,"%s: driver supports neither "
+				"sending nor receiving of IR signals\n",
+				progname);
+			exit(EXIT_FAILURE);
+		}
+		if(LIRC_CAN_SEND(features) && LIRC_CAN_REC(features))
+		{
+			printf("%s: driver supports both sending and "
+			       "receiving\n",progname);
+		}
+		else if(LIRC_CAN_SEND(features))
+		{
+			printf("%s: driver supports sending\n",progname);
+		}
+		else if(LIRC_CAN_REC(features))
+		{
+			printf("%s: driver supports receiving\n",progname);
+		}
+	}
+#       endif
+	
+	/* set send/receive method */
+	send_mode=0;
+	if(LIRC_CAN_SEND(features))
+	{
+		for(i=0;supported_send_modes[i]!=0;i++)
+		{
+			if(features&supported_send_modes[i])
+			{
+				unsigned long mode;
+
+				mode=LIRC_SEND2MODE(supported_send_modes[i]);
+				if(ioctl(lirc,LIRC_SET_SEND_MODE,&mode)==-1)
+				{
+					fprintf(stderr,"%s: could not set "
+						"send mode\n",progname);
+					perror(progname);
+					exit(EXIT_FAILURE);
+				}
+				send_mode=LIRC_SEND2MODE(supported_send_modes[i]);
+				break;
+			}
+		}
+		if(supported_send_modes[i]==0)
+		{
+			fprintf(stderr,"%s: the send method of the driver is "
+				"not yet supported by lircd\n",progname);
+		}
+	}
+	rec_mode=0;
+	if(LIRC_CAN_REC(features))
+	{
+		for(i=0;supported_rec_modes[i]!=0;i++)
+		{
+			if(features&supported_rec_modes[i])
+			{
+				unsigned long mode;
+
+				mode=LIRC_REC2MODE(supported_rec_modes[i]);
+				if(ioctl(lirc,LIRC_SET_REC_MODE,&mode)==-1)
+				{
+					fprintf(stderr,"%s: could not set "
+						"receive mode\n",progname);
+					perror(progname);
+					exit(EXIT_FAILURE);
+				}
+				rec_mode=LIRC_REC2MODE(supported_rec_modes[i]);
+				break;
+			}
+		}
+		if(supported_rec_modes[i]==0)
+		{
+			fprintf(stderr,"%s: the receive method of the driver "
+				"is not yet supported by lircd\n",progname);
+		}
+	}
+	if(rec_mode==LIRC_MODE_CODE)
+	{
+		code_length=8;
+	}
+	else if(rec_mode==LIRC_MODE_LIRCCODE)
+	{
+		if(ioctl(lirc,LIRC_GET_LENGTH,&code_length)==-1)
+		{
+			fprintf(stderr,"%s: could not get code length\n",
+				progname);
+			perror(progname);
+			exit(EXIT_FAILURE);
+		}
+		if(code_length>sizeof(ir_code)*CHAR_BIT)
+		{
+			fprintf(stderr,"%s: lircd can not handle %lu bit "
+				"codes\n",progname,code_length);
+			perror(progname);
+			exit(EXIT_FAILURE);
+		}
+	}
+	if(!(send_mode || rec_mode))
+	{
+		exit(EXIT_FAILURE);
+	}
 }
 
 void logprintf(char *format_str, ...)
@@ -664,6 +834,9 @@ int send_once(int fd,char *message,char *arguments)
 	struct ir_remote *remote;
 	struct ir_ncode *code;
 	
+	if(send_mode==0) return(send_error(fd,message,"hardware does not "
+					   "support sending\n"));
+
 	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
@@ -685,6 +858,9 @@ int send_start(int fd,char *message,char *arguments)
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
 	
+	if(send_mode==0) return(send_error(fd,message,"hardware does not "
+					   "support sending\n"));
+
 	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
@@ -782,7 +958,7 @@ int get_command(int fd)
 		}
 		end[0]=0;
 #               ifdef DEBUG
-		logprintf("sending: \"%s\"\n",buffer);
+		logprintf("received command: \"%s\"\n",buffer);
 #               endif		
 		packet_length=strlen(buffer)+1;
 
@@ -951,9 +1127,16 @@ unsigned long readdata(unsigned long maxusec)
 	while(1)
 	{
 		FD_ZERO(&fds);
-		FD_SET(lirc,&fds);
 		FD_SET(sockfd,&fds);
-		maxfd=max(lirc,sockfd);
+		if(rec_mode!=0)
+		{
+			FD_SET(lirc,&fds);
+			maxfd=max(lirc,sockfd);
+		}
+		else
+		{
+			maxfd=sockfd;
+		}
 #if defined(SIM_REC) && !defined(DAEMONIZE)
 		FD_SET(STDIN_FILENO,&fds);
 		maxfd=max(maxfd,STDIN_FILENO);
@@ -1022,6 +1205,11 @@ unsigned long readdata(unsigned long maxusec)
 			unsigned long data;
 			int ret;
 			
+			if(rec_mode!=LIRC_MODE_MODE2)
+			{
+				/* we will read later */
+				return(0);
+			}
 			do
 			{
 				ret=read(lirc,&data,sizeof(unsigned long));
@@ -1132,29 +1320,9 @@ int main(int argc,char **argv)
 		return(EXIT_FAILURE);
 	}
 #endif
-
-#ifdef LIRC_DECODED
-	/* TBD - Make this /dev/lirc */
-	if((lirc=open("/dev/remote",O_RDWR))<0)
-#else
-	if((lirc=open("/dev/lirc",O_RDWR))<0)
-#endif
-	{
-		fprintf(stderr,"%s: could not open lirc\n",progname);
-		perror(progname);
-		exit(EXIT_FAILURE);
-	}
-
-#ifdef LIRC_DECODED
-	if(ioctl(lirc ,LIRC_MODE_DECODED, 0)<0)
-#else
-	if(0) /* (ioctl(lirc,LIRC_MODE_PULSE_SPACE, 0)<0) */
-#endif
-	{
-		fprintf(stderr,"%s: could not set correct lirc mode\n",progname);
-		exit(EXIT_FAILURE);
-	}
-
+	
+	init_driver();
+	
 	signal(SIGPIPE,SIG_IGN);
 
 	act.sa_handler=sigterm;

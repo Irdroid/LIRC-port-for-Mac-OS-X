@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -29,11 +29,7 @@ typedef unsigned long ir_code;
 #define WBUF_SIZE (256)
 #define RBUF_SIZE (256)
 
-#ifdef LIRC_DECODE
-#define PULSE_BIT ((unsigned long) 0)
-#else
 #define PULSE_BIT 0x1000000
-#endif
 
 #define REC_SYNC 8
 
@@ -233,4 +229,6 @@ extern struct ir_remote *last_remote;
 extern struct ir_remote *remotes,*free_remotes,*decoding;
 
 extern int return_code;
+extern unsigned long send_mode,rec_mode;
+extern unsigned long code_length;
 #endif
