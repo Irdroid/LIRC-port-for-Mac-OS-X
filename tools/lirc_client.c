@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.1 1999/06/11 15:29:28 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.2 1999/06/19 11:18:47 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -720,7 +720,7 @@ int lirc_readconfig(char *file,
 		}
 		(*config)->first=first;
 		(*config)->next=first;
-		(*config)->current_mode=NULL;
+		(*config)->current_mode=lirc_startupmode((*config)->first);
 	}
 	else
 	{
@@ -728,6 +728,36 @@ int lirc_readconfig(char *file,
 		lirc_freeconfigentries(first);
 	}
 	return(ret);
+}
+
+char *lirc_startupmode(struct lirc_config_entry *first)
+{
+	struct lirc_config_entry *scan;
+	char *startupmode;
+
+	startupmode=NULL;
+	scan=first;
+	while(scan!=NULL)
+	{
+		if(scan->mode!=NULL &&strcasecmp(lirc_prog,scan->mode)==0)
+		{
+			startupmode=lirc_prog;
+			break;
+		}
+		scan=scan->next;
+	}
+	if(startupmode==NULL) return(NULL);
+	scan=first;
+	while(scan!=NULL)
+	{
+		if(scan->change_mode!=NULL && scan->flags&once &&
+		   strcasecmp(startupmode,scan->change_mode)==0)
+		{
+			scan->flags|=ecno;
+		}
+		scan=scan->next;
+	}
+	return(startupmode);
 }
 
 void lirc_freeconfig(struct lirc_config *config)

@@ -1,5 +1,8 @@
 
 0.5.5: future
+  * added new feature to .lircrc config file:
+    a program with name 'progname' will startup in mode 'progname' if
+    such a mode is defined 
   * renamed examples to contrib, added Debian 2.1 Slink init script
   * cleaned up lircmd.c
   * fixed bug in lirc_nextir()

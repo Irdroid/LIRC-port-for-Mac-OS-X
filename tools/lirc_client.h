@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirc_client.h,v 5.1 1999/06/19 11:18:47 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -65,6 +65,7 @@ int lirc_deinit();
 int lirc_readconfig(char *file,
 		    struct lirc_config **config,
 		    int (check)(char *s));
+char *lirc_startupmode(struct lirc_config_entry *first);
 void lirc_freeconfig(struct lirc_config *config);
 void lirc_freeconfigentries(struct lirc_config_entry *first);
 
