@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.21 2002/10/15 08:37:39 ranty Exp $
+ * $Id: lirc_dev.c,v 1.22 2002/11/09 22:13:15 lirc Exp $
  *
  */
 
@@ -87,6 +87,7 @@ struct irctl
 
 	int tpid;
 	struct semaphore *t_notify;
+	struct semaphore *t_notify2;
 	int shutdown;
 	long jiffies_to_wait;
 
@@ -118,6 +119,7 @@ static inline void init_irctl(struct irctl *ir)
 
 	ir->tpid = -1;
 	ir->t_notify = NULL;
+	ir->t_notify2 = NULL;
 	ir->shutdown = 0;
 	ir->jiffies_to_wait = 0;
 
@@ -202,7 +204,7 @@ static int lirc_thread(void *irctl)
 			} else {
 				interruptible_sleep_on(ir->p.get_queue(ir->p.data));
 			}
-			if (signal_pending(current)) {
+			if (ir->shutdown) {
 				break;
 			}
 			if (!add_to_buf(ir)) {
@@ -213,8 +215,12 @@ static int lirc_thread(void *irctl)
 			current->state = TASK_INTERRUPTIBLE;
 			schedule_timeout(HZ/2);
 		}
-	} while (!ir->shutdown && !signal_pending(current));
+	} while (!ir->shutdown);
 	
+	if (ir->t_notify2 != NULL) {
+		down(ir->t_notify2);
+	}
+
 	ir->tpid = -1;
 	if (ir->t_notify != NULL) {
 		up(ir->t_notify);
@@ -258,6 +264,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		return -EBADRQC;
 	}
 
+	printk("lirc_dev: lirc_register_plugin:"
+	       "sample_rate: %d\n",p->sample_rate);
 	if (p->sample_rate) {
 		if (2 > p->sample_rate || 50 < p->sample_rate) {
 			printk("lirc_dev: lirc_register_plugin:"
@@ -363,6 +371,7 @@ int lirc_unregister_plugin(int minor)
 {
 	struct irctl *ir;
 	DECLARE_MUTEX_LOCKED(tn);
+	DECLARE_MUTEX_LOCKED(tn2);
 
 	if (minor < 0 || minor >= MAX_IRCTL_DEVICES) {
 		printk("lirc_dev: lirc_unregister_plugin:"
@@ -392,9 +401,23 @@ int lirc_unregister_plugin(int minor)
 	/* end up polling thread */
 	if (ir->tpid >= 0) {
 		ir->t_notify = &tn;
+		ir->t_notify2 = &tn2;
 		ir->shutdown = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+		{
+			struct task_struct *p;
+			
+			p = find_task_by_pid(ir->tpid);
+			wake_up_process(p);
+		}
+#else
+		/* 2.2.x does not export wake_up_process() */
+		wake_up_interruptible(ir->p.get_queue(ir->p.data));
+#endif
+		up(&tn2);
 		down(&tn);
 		ir->t_notify = NULL;
+		ir->t_notify2 = NULL;
 	}
 
 	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
