@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.1 1999/05/03 19:54:25 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -110,10 +110,13 @@ void __inline__ out(int offset, int value)
 	{
 	case LIRC_LP_BASE:
 		parport_write_data(pport,value);
+		break;
 	case LIRC_LP_STATUS:
 		parport_write_status(pport,value);
+		break;
 	case LIRC_LP_CONTROL:
 		parport_write_control(pport,value);
+		break;
 	}
 #else
 	outb(value,port+offset);
@@ -691,7 +694,10 @@ void kf(void *handle)
 	if(!lirc_claim())
 		return;
 	pport->ops->enable_irq(pport);
+	/* this is a bit annoying when you actually print...*/
+	/*
 	printk(KERN_INFO "%s: reclaimed port\n",LIRC_DRIVER_NAME);
+	*/
 }
 #endif
 
