@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.37 2003/12/30 15:26:34 lirc Exp $
+## $Id: Makefile.am,v 5.38 2004/01/13 12:25:51 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -102,10 +102,10 @@ else
 if USE_FIFOS
 install-exec-local: mkfifo
 uninstall-local: rmfifo
-endif
 else
 install-exec-local: mkdev
 uninstall-local: rmdev
+endif
 endif
 
 install-data-local:

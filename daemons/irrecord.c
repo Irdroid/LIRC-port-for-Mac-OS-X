@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.46 2003/11/02 15:13:57 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.47 2004/01/13 12:25:51 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -792,7 +792,7 @@ void flushhw(void)
 		if(hw.code_length%CHAR_BIT) size++;
 		break;
 	}
-	while(read(hw.fd,buffer,size)==size);
+    while(read(hw.fd,buffer,size)==size);
 }
 
 int resethw(void)
@@ -920,10 +920,12 @@ int get_toggle_bit(struct ir_remote *remote)
 		hw.rec_func(remote);
 		if(is_rc6(remote))
 		{
-			for(remote->toggle_bit=1;
-			    remote->toggle_bit<=remote->bits;
-			    remote->toggle_bit++)
+			int i;
+			ir_code mask;
+
+			for(i=0,mask=1;i<remote->bits;i++,mask<<=1)
 			{
+				remote->rc6_mask=mask;
 				success=hw.decode_func(remote,&pre,&code,&post,
 						       &repeat_flag,
 						       &remaining_gap);
@@ -933,7 +935,6 @@ int get_toggle_bit(struct ir_remote *remote)
 					break;
 				}
 			}
-			if(success==0) remote->toggle_bit=0;
 		}
 		else
 		{

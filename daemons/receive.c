@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.17 2002/11/12 18:04:43 lirc Exp $      */
+/*      $Id: receive.c,v 5.18 2004/01/13 12:25:51 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -282,9 +282,13 @@ inline int expectone(struct ir_remote *remote,int bit)
 {
 	if(is_biphase(remote))
 	{
-		if(is_rc6(remote) &&
-		   remote->toggle_bit>0 &&
-		   bit==remote->toggle_bit-1)
+		int all_bits = remote->pre_data_bits+
+			remote->bits+
+			remote->post_data_bits;
+		ir_code mask;
+		
+		mask=((ir_code) 1)<<(all_bits-1-bit);
+		if(mask&remote->rc6_mask)
 		{
 			if(remote->sone>0 &&
 			   !expectspace(remote,2*remote->sone))
@@ -332,9 +336,13 @@ inline int expectzero(struct ir_remote *remote,int bit)
 {
 	if(is_biphase(remote))
 	{
-		if(is_rc6(remote) &&
-		   remote->toggle_bit>0 &&
-		   bit==remote->toggle_bit-1)
+		int all_bits = remote->pre_data_bits+
+			remote->bits+
+			remote->post_data_bits;
+		ir_code mask;
+		
+		mask=((ir_code) 1)<<(all_bits-1-bit);
+		if(mask&remote->rc6_mask)
 		{
 			if(!expectpulse(remote,2*remote->pzero))
 			{
@@ -342,7 +350,6 @@ inline int expectzero(struct ir_remote *remote,int bit)
 				return(0);
 			}
 			set_pending_space(2*remote->szero);
-			
 		}
 		else
 		{

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.26 2003/09/21 10:15:02 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.27 2004/01/13 12:25:51 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -135,6 +135,8 @@ struct ir_remote
 	unsigned int freq;          /* modulation frequency */
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	ir_code toggle_mask;        /* Sharp (?) error detection scheme */
+	ir_code rc6_mask;           /* RC-6 doubles signal length of
+				       some bits */
 	
 	/* end of user editable values */
 	
@@ -185,12 +187,6 @@ static inline int is_raw(struct ir_remote *remote)
 	else return(0);
 }
 
-static inline int is_biphase(struct ir_remote *remote)
-{
-	if(remote->flags&RC5 || remote->flags&RC6) return(1);
-	else return(0);
-}
-
 static inline int is_rc5(struct ir_remote *remote)
 {
 	if(remote->flags&RC5) return(1);
@@ -199,7 +195,13 @@ static inline int is_rc5(struct ir_remote *remote)
 
 static inline int is_rc6(struct ir_remote *remote)
 {
-	if(remote->flags&RC6) return(1);
+	if(remote->flags&RC6 || remote->rc6_mask) return(1);
+	else return(0);
+}
+
+static inline int is_biphase(struct ir_remote *remote)
+{
+	if(is_rc5(remote) || is_rc6(remote)) return(1);
 	else return(0);
 }
 

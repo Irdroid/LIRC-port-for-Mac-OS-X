@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.15 2003/09/21 10:15:02 lirc Exp $      */
+/*      $Id: config_file.c,v 5.16 2004/01/13 12:25:51 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -393,6 +393,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("toggle_mask",key)==0){
 		rem->toggle_mask=s_strtocode(val);
+		return(1);
+	}
+	else if (strcasecmp("rc6_mask",key)==0){
+		rem->rc6_mask=s_strtocode(val);
 		return(1);
 	}
 	/* obsolete name */
@@ -790,6 +794,8 @@ struct ir_remote * read_config(FILE *f)
                 return((void *) -1);
         }
 	/* kick reverse flag */
+	/* handle RC6 flag to be backwards compatible: previous RC-6
+	   config files did not set rc6_mask */
 	rem=top_rem;
 	while(rem!=NULL)
 	{
@@ -818,6 +824,14 @@ struct ir_remote * read_config(FILE *f)
 			/* don't delete the flag because we still need
 			   it to remain compatible with older versions
 			*/
+		}
+		if(rem->flags&RC6 && rem->rc6_mask==0 && rem->toggle_bit>0)
+		{
+			int all_bits=rem->pre_data_bits+
+				rem->bits+
+				rem->post_data_bits;
+			
+			rem->rc6_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
 		}
 		rem=rem->next;
 	}

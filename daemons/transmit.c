@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.11 2003/02/15 09:00:59 lirc Exp $      */
+/*      $Id: transmit.c,v 5.12 2004/01/13 12:25:51 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -155,7 +155,11 @@ inline void send_trail(struct ir_remote *remote)
 inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 {
 	int i;
-
+	int all_bits = remote->pre_data_bits+
+		remote->bits+
+		remote->post_data_bits;
+	ir_code mask;
+	
 	if(remote->toggle_bit>0)
 	{
 		if(remote->toggle_bit>done &&
@@ -167,14 +171,15 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 	}
 
 	data=reverse(data,bits);
-	for(i=0;i<bits;i++)
+	mask=1<<(all_bits-1-done);
+	for(i=0;i<bits;i++,mask>>=1)
 	{
 		if(data&1)
 		{
 			if(is_biphase(remote))
 			{
-				if(is_rc6(remote) &&
-				   done+i+1==remote->toggle_bit)
+				
+				if(mask&remote->rc6_mask)
 				{
 					send_space(2*remote->sone);
 					send_pulse(2*remote->pone);
@@ -193,8 +198,7 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 		}
 		else
 		{
-			if(is_rc6(remote) &&
-			   done+i+1==remote->toggle_bit)
+			if(mask&remote->rc6_mask)
 			{
 				send_pulse(2*remote->pzero);
 				send_space(2*remote->szero);
