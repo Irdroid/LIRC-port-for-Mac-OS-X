@@ -14,5 +14,20 @@ Remember to set KERNEL_SRC in Makefile.am before runing autogen !
 
 For examples of config files see remotes/fly98 directory.
 
+To install:
+
+ - set the kernel location in drivers/lirc_fly98/Makefile.am 
+ - apply the proper patch from drivers/lirc_fly98 
+ - compile the kernel (turn OFF versioned kernel symbols and 
+   ON FlyVideo98 remote support)
+ - run autogen.sh
+ - run setup.sh from main directory and configure the fly98 driver 
+ - run configure, run make 
+ - copy lirc_fly98.o to /lib/modules/2.2.10/misc (or similar), 
+ - run depmod
+ - copy lircd.conf and lircmd.conf from remotes/fly98 to /usr/local/etc 
+   and lircrc to ~/.lircrc 
+ - you should be ready now
+
 You can contact me at jochym@ifj.edu.pl
 
