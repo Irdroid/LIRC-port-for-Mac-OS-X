@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.31 2004/08/05 15:45:01 lirc Exp $
+ * $Id: lirc_dev.c,v 1.32 2004/08/07 07:57:30 lirc Exp $
  *
  */
 
@@ -26,14 +26,13 @@
 #endif
  
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
-#define LIRC_HAVE_DEVFS
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#warning "**********************************************************"
-#warning "************ disabling devfs for 2.6 kernels *************"
-#warning "**********************************************************"
-#undef LIRC_HAVE_DEVFS
+#define LIRC_HAVE_DEVFS
+#define LIRC_HAVE_DEVFS_26
+#define LIRC_HAVE_SYSFS
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#define LIRC_HAVE_DEVFS
+#define LIRC_HAVE_DEVFS_24
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
@@ -52,6 +51,9 @@
 #include <linux/poll.h>
 #ifdef LIRC_HAVE_DEVFS
 #include <linux/devfs_fs_kernel.h>
+#endif
+#ifdef LIRC_HAVE_SYSFS
+#include <linux/device.h>
 #endif
 #include <linux/smp_lock.h>
 #include <asm/uaccess.h>
@@ -92,7 +94,7 @@ struct irctl
 	int shutdown;
 	long jiffies_to_wait;
 
-#ifdef LIRC_HAVE_DEVFS
+#ifdef LIRC_HAVE_DEVFS_24
 	devfs_handle_t devfs_handle;
 #endif
 };
@@ -102,6 +104,9 @@ DECLARE_MUTEX(plugin_lock);
 static struct irctl irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
 
+#ifdef LIRC_HAVE_SYSFS
+static struct class_simple *lirc_class;
+#endif
 
 /*  helper function
  *  initializes the irctl structure
@@ -221,7 +226,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	struct irctl *ir;
 	int minor;
 	int bytes_in_key;
-#ifdef LIRC_HAVE_DEVFS
+#ifdef LIRC_HAVE_DEVFS_24
 	char name[16];
 #endif
 	DECLARE_MUTEX_LOCKED(tn);
@@ -331,14 +336,21 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	ir->p = *p;
 	ir->p.minor = minor;
 
-#ifdef LIRC_HAVE_DEVFS
+#if defined(LIRC_HAVE_DEVFS_24)
 	sprintf (name, DEV_LIRC "/%d", ir->p.minor);
 	ir->devfs_handle = devfs_register(NULL, name, DEVFS_FL_DEFAULT,
 					  IRCTL_DEV_MAJOR, ir->p.minor,
 					  S_IFCHR | S_IRUSR | S_IWUSR,
 					  &fops, NULL);
+#elif defined(LIRC_HAVE_DEVFS_26)
+	devfs_mk_cdev(MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+			S_IFCHR|S_IRUSR|S_IWUSR,
+			DEV_LIRC "/%u", ir->p.minor);
 #endif
-
+#ifdef LIRC_HAVE_SYSFS
+	class_simple_device_add(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+			NULL, "lirc%u", ir->p.minor);
+#endif
 	if(p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
 		ir->t_notify = &tn;
@@ -422,8 +434,13 @@ int lirc_unregister_plugin(int minor)
 	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
 		ir->p.name, ir->p.minor);
 
-#ifdef LIRC_HAVE_DEVFS
+#if defined(LIRC_HAVE_DEVFS_24)
 	devfs_unregister(ir->devfs_handle);
+#elif defined(LIRC_HAVE_DEVFS_26)
+	devfs_remove(DEV_LIRC "/%u", ir->p.minor);
+#endif
+#ifdef LIRC_HAVE_SYSFS
+	class_simple_device_remove(MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
 #endif
 	if (ir->buf != ir->p.rbuf){
 		lirc_buffer_free(ir->buf);
@@ -730,14 +747,16 @@ int lirc_dev_init(void)
 		init_irctl(&irctls[i]);	
 	}
 
-#ifndef LIRC_HAVE_DEVFS
- 	i = register_chrdev(IRCTL_DEV_MAJOR,
+#ifdef LIRC_HAVE_DEVFS_24
+	i = devfs_register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops);
 #else
-	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
+ 	i = register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops);
 #endif
-				   IRCTL_DEV_NAME,
-				   &fops);
-	
+#ifdef LIRC_HAVE_SYSFS
+	if (i == 0)
+		lirc_class = class_simple_create(THIS_MODULE, "lirc");
+#endif
+
 	if (i < 0) {
 		printk ("lirc_dev: device registration failed with %d\n", i);
 		return i;
@@ -776,12 +795,15 @@ void cleanup_module(void)
 {
 	int ret;
 	
-#ifndef LIRC_HAVE_DEVFS
- 	ret = unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
-#else
+#ifdef LIRC_HAVE_DEVFS_24
 	ret = devfs_unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
+#else
+ 	ret = unregister_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME);
 #endif
- 
+#ifdef LIRC_HAVE_SYSFS
+	class_simple_destroy(lirc_class);
+#endif
+	
 	if (0 > ret){
 		printk("lirc_dev: error in module_unregister_chrdev: %d\n",
 		       ret);
