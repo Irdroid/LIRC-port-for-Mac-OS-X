@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.1 2000/04/02 13:07:21 columbus Exp $
+## $Id: Makefile.am,v 1.2 2000/04/06 17:23:01 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -17,7 +17,7 @@ KERNEL_LOCATION=@kerneldir@
 # when compiling module(s)
 CC           = @kernelcc@
 MI_OBJS      = $(module_DATA)
-EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) $(DEFS)
+EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS)
 
 $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
   ifndef MAKING_MODULES
