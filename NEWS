@@ -1,3 +1,6 @@
+0.6.6: future
+  * added support for Tekram M230 Mach64 (Froenchenko Leonid)
+
 0.6.5: 01/26/02
   * added support for IntelliMouse to lircmd
   * added support for ITE IT8712/IT8705 CIR port (Hans-Günter Lütke Uphues)

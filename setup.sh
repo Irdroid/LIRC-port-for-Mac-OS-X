@@ -312,9 +312,10 @@ ConfigDriver ()
 			l "Prolink PV-BT878P+9B (PlayTV Pro rev.9B FM+NICAM) (card=72)" \
 			m "ProVideo PV951 (card=42)" \
 			n "Technisat MediaFocus I" \
-			o "TView99 CPH063 (card=38)" \
-			p "Typhoon TView RDS / FM Stereo (card=53)" \
-			q "Winfast TV2000 (card=34)" 2> $TEMP;
+			o "Tekram M230 Mach64 (and others bt829 based)" \
+			p "TView99 CPH063 (card=38)" \
+			q "Typhoon TView RDS / FM Stereo (card=53)" \
+			r "Winfast TV2000 (card=34)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -343,9 +344,10 @@ ConfigDriver ()
 		elif test "$1" = "l"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
 		elif test "$1" = "m"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
 		elif test "$1" = "n"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "o"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "p"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "q"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
+		elif test "$1" = "o"; then LIRC_DRIVER=tekram_bt829;    DRIVER_PARAMETER=none;
+		elif test "$1" = "p"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "q"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "r"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

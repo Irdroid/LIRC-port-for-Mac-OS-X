@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.77 2002/02/01 23:02:16 lirc Exp $
+dnl $Id: configure.in,v 5.78 2002/03/28 21:26:54 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
 fi
 
 
-AM_INIT_AUTOMAKE(lirc, 0.6.5-CVS)
+AM_INIT_AUTOMAKE(lirc, 0.6.6-CVS)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
@@ -99,7 +99,7 @@ possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) \
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
 	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio) \
-	(lirc_dev) (lirc_it87)"
+	(lirc_dev) (lirc_it87) (lirc_dev lirc_bt829)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -128,7 +128,7 @@ AC_ARG_WITH(driver,
 			  parallel, pctv, pixelview_bt878,
 			  pixelview_pak, pixelview_pro, provideo,
 			  realmagic, remotemaster, serial, silitek,
-			  sir, slinke, tekram, winfast_tv2000],
+			  sir, slinke, tekram,tekram_bt829, winfast_tv2000],
 
 driver=${withval},
 driver="unset"
@@ -257,6 +257,11 @@ fi
 if test "$driver" = "tekram"; then
   lirc_driver=lirc_sir
   AC_DEFINE(LIRC_SIR_TEKRAM)
+fi
+if test "$driver" = "tekram_bt829"; then
+  lirc_driver="lirc_dev lirc_bt829"
+  lircd_conf="tekram/lircd.conf.m230"
+  lircmd_conf="tekram/lircmd.conf.m230"
 fi
 if test "$driver" = "animax"; then
   lirc_driver=lirc_serial
@@ -700,6 +705,7 @@ AC_OUTPUT([
   drivers/lirc_gpio/Makefile
   drivers/lirc_dev/Makefile
   drivers/lirc_it87/Makefile
+  drivers/lirc_bt829/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile
