@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.22 2000/08/17 17:44:57 columbus Exp $      */
+/*      $Id: lircd.c,v 5.23 2000/11/25 10:31:11 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -64,6 +64,9 @@ extern struct ir_remote *decoding;
 extern struct ir_remote *last_remote;
 extern struct ir_remote *repeat_remote;
 extern struct ir_ncode *repeat_code;
+
+static int repeat_fd=-1;
+static char *repeat_message=NULL;
 
 extern struct hardware hw;
 
@@ -640,9 +643,20 @@ void dosigalrm(int sig)
 	if(repeat_remote->last_code!=repeat_code)
 	{
 		/* we received a different code from the original
-		   remote control
-		   we could repeat the wrong code
-		   so better stop repeating */
+		   remote control we could repeat the wrong code so
+		   better stop repeating */
+		repeat_remote=NULL;
+		repeat_code=NULL;
+		repeat_fd=-1;
+		if(repeat_message!=NULL)
+		{
+			free(repeat_message);
+			repeat_message=NULL;
+		}
+		if(clin==0 && repeat_remote==NULL && hw.deinit_func)
+		{
+			hw.deinit_func();
+		}
 		return;
 	}
 	repeat_remote->repeat_countdown--;
@@ -659,6 +673,13 @@ void dosigalrm(int sig)
 	}
 	repeat_remote=NULL;
 	repeat_code=NULL;
+	if(repeat_fd!=-1)
+	{
+		send_success(repeat_fd,repeat_message);
+		free(repeat_message);
+		repeat_message=NULL;
+		repeat_fd=-1;
+	}
 	if(clin==0 && repeat_remote==NULL && hw.deinit_func)
 	{
 		hw.deinit_func();
@@ -719,13 +740,20 @@ int send_error(int fd,char *message,char *format_str, ...)
 	char lines[4],buffer[PACKET_SIZE+1];
 	int i,n,len;
 	va_list ap;  
+	char *s1,*s2;
 	
 	va_start(ap,format_str);
 	vsprintf(buffer,format_str,ap);
 	va_end(ap);
 	
+	s1=strrchr(message,'\n');
+	s2=strrchr(buffer,'\n');
+	if(s1!=NULL) s1[0]=0;
+	if(s2!=NULL) s2[0]=0;
 	logprintf(LOG_ERR,"error processing command: %s",message);
 	logprintf(LOG_ERR,"%s",buffer);
+	if(s1!=NULL) s1[0]='\n';
+	if(s2!=NULL) s2[0]='\n';
 
 	n=0;
 	len=strlen(buffer);
@@ -944,16 +972,22 @@ int send_core(int fd,char *message,char *arguments,int once)
 			remote->remaining_gap;
 		repeat_timer.it_interval.tv_sec=0;
 		repeat_timer.it_interval.tv_usec=0;
-		if(!send_success(fd,message))
+		if(once)
+		{
+			repeat_message=strdup(message);
+			if(repeat_message==NULL)
+			{
+				repeat_remote=NULL;
+				repeat_code=NULL;
+				return(send_error(fd,message,
+						  "out of memory\n"));
+			}
+			repeat_fd=fd;
+		}
+		else if(!send_success(fd,message))
 		{
 			repeat_remote=NULL;
 			repeat_code=NULL;
-			if(clin==0 &&
-			   repeat_remote==NULL &&
-			   hw.deinit_func)
-			{
-				hw.deinit_func();
-			}
 			return(0);
 		}
 		setitimer(ITIMER_REAL,&repeat_timer,NULL);
@@ -1174,7 +1208,7 @@ void free_old_remotes()
 					found->remaining_gap=repeat_remote->remaining_gap;
 
 					setitimer(ITIMER_REAL,&repeat_timer,&repeat_timer);
-					/* "atomic" */
+					/* "atomic" (shouldn't be necessary any more) */
 					repeat_remote=found;
 					repeat_code=code;
 					/* end "atomic" */
@@ -1208,67 +1242,71 @@ int waitfordata(unsigned long maxusec)
 
 	while(1)
 	{
-		FD_ZERO(&fds);
-		FD_SET(sockfd,&fds);
-		if(clin>0 && hw.rec_mode!=0)
-		{
-			FD_SET(hw.fd,&fds);
-			maxfd=max(hw.fd,sockfd);
-		}
-		else
-		{
-			maxfd=sockfd;
-		}
-
-		for(i=0;i<clin;i++)
-		{
-			FD_SET(clis[i],&fds);
-			maxfd=max(maxfd,clis[i]);
-		}
-		
 		do{
-			do{
 				/* handle signals */
-				if(term)
+			if(term)
+			{
+				dosigterm(termsig);
+				/* never reached */
+			}
+			if(hup)
+			{
+				dosighup(SIGHUP);
+				hup=0;
+			}
+			if(alrm)
+			{
+				dosigalrm(SIGALRM);
+				alrm=0;
+			}
+			FD_ZERO(&fds);
+			FD_SET(sockfd,&fds);
+			if(clin>0 && hw.rec_mode!=0)
+			{
+				FD_SET(hw.fd,&fds);
+				maxfd=max(hw.fd,sockfd);
+			}
+			else
+			{
+				maxfd=sockfd;
+			}
+			
+			for(i=0;i<clin;i++)
+			{
+				/* Ignore this client until codes have been
+				   sent and it will get an answer. Otherwise
+				   we could mix up answer packets and send
+				   them back in the wrong order.*/
+				if(clis[i]!=repeat_fd)
 				{
-					dosigterm(termsig);
-					/* never reached */
-				}
-				if(hup)
-				{
-					dosighup(SIGHUP);
-					hup=0;
-				}
-				if(alrm)
-				{
-					dosigalrm(SIGALRM);
-					alrm=0;
-				}
-				if(maxusec>0)
-				{
-					tv.tv_sec=0;
-					tv.tv_usec=maxusec;
-					ret=select(maxfd+1,&fds,NULL,NULL,&tv);
-					if(ret==0) return(0);
-				}
-				else
-				{
-					ret=select(maxfd+1,&fds,NULL,NULL,NULL);
-				}
-				if(free_remotes!=NULL)
-				{
-					free_old_remotes();
+					FD_SET(clis[i],&fds);
+					maxfd=max(maxfd,clis[i]);
 				}
 			}
-			while(ret==-1 && errno==EINTR);
-			if(ret==-1)
+			
+			if(maxusec>0)
 			{
-				logprintf(LOG_ERR,"select() failed");
-				logperror(LOG_ERR,NULL);
-				continue;
+				tv.tv_sec=0;
+				tv.tv_usec=maxusec;
+				ret=select(maxfd+1,&fds,NULL,NULL,&tv);
+				if(ret==0) return(0);
+			}
+			else
+			{
+				ret=select(maxfd+1,&fds,NULL,NULL,NULL);
+			}
+			if(free_remotes!=NULL)
+			{
+				free_old_remotes();
 			}
 		}
-		while(ret==-1);
+		while(ret==-1 && errno==EINTR);
+		if(ret==-1)
+		{
+			logprintf(LOG_ERR,"select() failed");
+			logperror(LOG_ERR,NULL);
+			continue;
+		}
 		
 		for(i=0;i<clin;i++)
 		{

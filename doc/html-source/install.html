@@ -25,16 +25,21 @@ current libirman version was 0.4.2. Former versions won't work. Please
 also read <A HREF="#updating">Updating from lirc-0.5.4</A>.</P>
 
 <A NAME="kernel"></A>
+
 <P><B>Kernel modules:</B> All devices that require a kernel module
 will need the properly configured kernel sources being available
 somewhere in /usr/src/. During the build process of this package the
 kernel Makefile and the current kernel configuration will be used to
 work around some other problems that would arise if we used our own
 Makefile. That means that you will have to build your own kernel which
-is a good idea anyway. Please refer to the documentation of your
-distribution or read the <em>README</em> file in the kernel source
-directory to get more information on how to compile and set up an own
-kernel. More documentation is available at the <A
+is a good idea anyway. Make sure you use the standard kernel which you
+can download at <A HREF="http://www.kernel.org">www.kernel.org</A>.
+Don't use any kernel sources that have been modified for your
+distribution. For example you won't be able to compile some modules
+for kernels that come with S.u.S.E. 7.0. Please refer to the
+documentation of your distribution or read the <em>README</em> file in
+the kernel source directory to get more information on how to compile
+and set up an own kernel. More documentation is available at the <A
 HREF="http://sunsite.unc.edu/LDP/">Linux Documentation
 Project</A>.</P>
 

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.17 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.18 2000/11/25 10:31:11 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -390,7 +390,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		unsigned long usecs;
 		
 		gettimeofday(&current,NULL);
-		usecs=time_left(&current,&remote->last_send,remaining_gap);
+		usecs=time_left(&current,&remote->last_send,remaining_gap*2);
 		if(usecs>0) usleep(usecs);
 	}
 #endif
