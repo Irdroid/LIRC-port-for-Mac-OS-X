@@ -66,9 +66,9 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow | RootWindow
+config = Key [shift-][ctrl-][alt-]<key> <windowname> | WindowID id | CurrentWindow | RootWindow
 config = Button <button> <x> <y> <windowname> | CurrentWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> | CurrentWindow | RootWindow
+config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> | WindowID id | CurrentWindow | RootWindow
 .RE
 .fi
 
@@ -95,7 +95,7 @@ KEY     = "Key" <MOD>Keyname
 MOD     = ["shift-"]["numlock-"]["ctrl-"]["alt-"]["meta-"]
           ["numlock-"]["mod3-"]["mod4-"]["scrlock-"]
 BUTTON  = "Button" <1..5> <x_position> <y_position>
-TARGET  = Windowname | "CurrentWindow" | "RootWindow"
+TARGET  = Windowname | "WindowID" id | "CurrentWindow" | "RootWindow"
 .fi
 
 .I Keyname:
@@ -123,6 +123,12 @@ is the window with your mouse pointer in it.
 .RS 2
 refers to the \fIroot\fR window as returned by RootWindow(3x). You may need
 this to send events to the window manager.
+.RE
+.I WindowID id:
+.RS 2
+refers to the window with window identifier \fIid\fR. \fIid\fR should be a
+decimal number. It is usefull when irxevent can't find the desired window by
+other means.
 .RE
 .RE
 

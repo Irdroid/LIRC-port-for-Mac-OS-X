@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.7 2002/06/16 13:29:57 ranty Exp $      */
+/*      $Id: irxevent.c,v 5.8 2002/06/16 14:19:04 ranty Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -477,6 +477,7 @@ int main(int argc, char *argv[])
   struct lirc_config *config;
   char *config_file=NULL;
   int c;
+  int WindowID;
 
   progname=argv[0];
 
@@ -526,7 +527,12 @@ int main(int argc, char *argv[])
 	  while((ret=lirc_code2char(config,ir,&c))==0 && c!=NULL)
 	    {
 	      debugprintf("Recieved code: %sSending event: ",ir);
-	      if(2==sscanf(c,"Key %s %s\n",keyname,windowname))
+	      if(2==sscanf(c,"Key %s WindowID %d\n",keyname,&WindowID))
+		{
+		  debugprintf("keyname: %s \t WindowID: %d\n",keyname,WindowID);
+		  sendkey(keyname,1,1,(Window)WindowID,0);
+		}
+	      else if(2==sscanf(c,"Key %s %s\n",keyname,windowname))
 		{
 		  if((w=find_window(root,windowname)))
 		    {
