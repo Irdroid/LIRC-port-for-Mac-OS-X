@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.6 2000/02/05 12:54:50 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.7 2000/07/02 08:21:48 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -107,7 +107,7 @@ int pixelview_init(void)
 		logprintf(0,"could not create lock files\n");
 		return(0);
 	}
-	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
+	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 	{
 		logprintf(0,"could not open lirc\n");
 		logperror(0,"pixelview_init()");
@@ -156,6 +156,7 @@ char *pixelview_rec(struct ir_remote *remotes)
 		if(read(hw.fd,&b[i],1)!=1)
 		{
 			logprintf(0,"reading of byte %d failed\n",i);
+			logperror(0,NULL);
 			return(NULL);
 		}
 #               ifdef DEBUG

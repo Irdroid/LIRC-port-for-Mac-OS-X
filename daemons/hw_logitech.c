@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.4 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.5 2000/07/02 08:21:48 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -106,7 +106,7 @@ int logitech_init(void)
 		logprintf(0,"could not create lock files\n");
 		return(0);
 	}
-	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
+	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 	{
 		logprintf(0,"could not open lirc\n");
 		logperror(0,"logitech_init()");
@@ -164,6 +164,7 @@ char *logitech_rec(struct ir_remote *remotes)
 		if(read(hw.fd,&b[i],1)!=1)
 		{
 			logprintf(0,"reading of byte %d failed\n",i);
+			logperror(0,NULL);
 			return(NULL);
 		}
 #              	ifdef DEBUG
