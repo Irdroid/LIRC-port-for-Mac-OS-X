@@ -1,4 +1,9 @@
 0.6.3: future
+  * major changes to the SIR driver, if you used this driver before
+    you may have to generate new config files for your remotes
+  * Tekram Irmate 210 support (receiving only, EXPERIMENTAL)
+    range is really lousy (<10 cm) for some remotes, works best with
+    RECS80 remotes due to the short pulses this protocol uses
   * Fly98 TV is now supported by the lirc_gpio module
   * renamed lirc_gpio_p module to lirc_gpio
   * added support for Technisat MediaFocus I

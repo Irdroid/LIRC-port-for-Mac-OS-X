@@ -100,6 +100,7 @@ function SetPortAndIrq
     {
     if test "$LIRC_DRIVER" = "serial" -o \
 	    "$LIRC_DRIVER" = "sir" -o \
+	    "$LIRC_DRIVER" = "tekram" -o \
 	    "$LIRC_DRIVER" = "packard_bell" -o \
 	    "$LIRC_DRIVER" = "animax" -o \
 	    "$LIRC_DRIVER" = "irdeo"; then
@@ -239,7 +240,7 @@ function ConfigDriver
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
+		--menu "$CONFIG_DRIVER_TEXT" 18 74 12 \
 			1 "Anir Multimedia Magic" \
 			2 "CARACA" \
 			3 "IRdeo" \
@@ -250,7 +251,8 @@ function ConfigDriver
 			8 "Pinnacle Systems PCTV (pro) receiver" \
 			9 "PixelView RemoteMaster RC2000/RC3000" \
 			0 "REALmagic (bundled with Hollywood Plus DVD card)" \
-			a "Slink-e" 2> $TEMP;
+			a "Slink-e" \
+			b "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -265,6 +267,7 @@ function ConfigDriver
 		elif test "$1" = "9"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
 		elif test "$1" = "0"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
 		elif test "$1" = "a"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
+		elif test "$1" = "b"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
 		fi
 		}
 	    else
@@ -274,7 +277,7 @@ function ConfigDriver
         elif test "$1" = "4"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 18 74 11\
+		--menu "$CONFIG_DRIVER_TEXT" 18 74 12\
                         1 "Askey Magic TView CPH03x (card=1)" \
 			2 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
 			3 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.46 2000/12/08 23:36:29 columbus Exp $
+dnl $Id: configure.in,v 5.47 2000/12/15 22:15:50 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -114,7 +114,7 @@ AC_ARG_WITH(driver,
 			  avermedia98, hauppauge, fly98, pixelview_pro,
 			  cph03x, cph06x, logitech, caraca, slinke, irdeo,
                           irreal, chronos, pixelview_pak, pixelview_bt878,
-			  realmagic, mediafocusI],
+			  realmagic, mediafocusI, tekram],
 
 driver=${withval},
 driver="unset"
@@ -148,6 +148,10 @@ if test "$driver" = "serial"; then
 fi
 if test "$driver" = "sir"; then
   lirc_driver=lirc_sir
+fi
+if test "$driver" = "tekram"; then
+  lirc_driver=lirc_sir
+  AC_DEFINE(LIRC_SIR_TEKRAM)
 fi
 if test "$driver" = "animax"; then
   lirc_driver=lirc_serial

@@ -4,6 +4,14 @@
  * lirc_sir - Device driver for use with SIR (serial infra red)
  * mode of IrDA on many notebooks.
  *
+ * 2000/09/16 Frank Przybylski <mail@frankprzybylski.de> :
+ *  added timeout and relaxed pulse detection, removed gap bug
+ *
+ * 2000/12/15 Christoph Bartelmus <lirc@bartelmus.de> : 
+ *   added support for Tekram Irmate 210 (sending does not work yet,
+ *   kind of disappointing that nobody was able to implement that
+ *   before),
+ *   major clean-up
  */
 
 
@@ -32,11 +40,6 @@
 #warning " port you want to use for LIRC with:      "
 #warning "    setserial /dev/ttySx uart none        "
 #warning "******************************************"
-#if 0
-#error "--- Please compile your Linux kernel serial port    ---"
-#error "--- driver as a module. Read the LIRC documentation ---"
-#error "--- for further details.                            ---"
-#endif
 #endif
 
 #include <linux/sched.h>
@@ -63,20 +66,52 @@
 #include <asm/irq.h>
 #include <asm/fcntl.h>
 
+#include <linux/timer.h>
+
 #include "drivers/lirc.h"
 
 /* SECTION: Definitions */
+
+#ifdef LIRC_SIR_TEKRAM
+/* stolen from kernel source */
+/* definitions for Tekram dongle */
+#define TEKRAM_115200 0x00
+#define TEKRAM_57600  0x01
+#define TEKRAM_38400  0x02
+#define TEKRAM_19200  0x03
+#define TEKRAM_9600   0x04
+#define TEKRAM_2400   0x08
+
+#define TEKRAM_PW 0x10 /* Pulse select bit */
+#endif
 
 #define RBUF_LEN 1024
 #define WBUF_LEN 1024
 
 #define LIRC_DRIVER_NAME "lirc_sir"
+#ifdef LIRC_SIR_TEKRAM
+/* 10bit * 1s/115200bit in milli seconds = 87ms*/
+#define TIME_CONST (10000000ul/115200ul)
+#else
 #define PULSE '['
+/* 9bit * 1s/115200bit in milli seconds = 78.125ms*/
 #define TIME_CONST (9000000ul/115200ul)
+#endif
+/* timeout for sequences in jiffies (=5/100s) */
+/* must be longer than TIME_CONST */
+#define SIR_TIMEOUT	(HZ*5/100)
 
 static int major = LIRC_MAJOR;
 static int iobase = LIRC_PORT;
 static int irq = LIRC_IRQ;
+
+static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
+static struct timer_list timerlist;
+/* time of last signal change detected */
+static struct timeval last_tv = {0, 0};
+/* time of last UART data ready interrupt */
+static struct timeval last_intr_tv = {0, 0};
+static int last_value = 0;
 
 #ifdef KERNEL_2_3
 static DECLARE_WAIT_QUEUE_HEAD(lirc_read_queue);
@@ -88,11 +123,13 @@ static spinlock_t hardware_lock = SPIN_LOCK_UNLOCKED;
 static spinlock_t dev_lock = SPIN_LOCK_UNLOCKED;
 
 static lirc_t rx_buf[RBUF_LEN]; unsigned int rx_tail = 0, rx_head = 0;
+#ifndef LIRC_SIR_TEKRAM
 static lirc_t tx_buf[WBUF_LEN];
+#endif
 
 /* SECTION: Prototypes */
 
-	/* Communication with user-space */
+/* Communication with user-space */
 static int lirc_open(struct inode * inode, struct file * file);
 #ifdef KERNEL_2_1
 static int lirc_close(struct inode * inode, struct file *file);
@@ -114,8 +151,10 @@ static void drop_chrdev(void);
 #endif
 	/* Hardware */
 static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs);
+#ifndef LIRC_SIR_TEKRAM
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
+#endif
 static int init_hardware(void);
 static void drop_hardware(void);
 	/* Initialisation */
@@ -124,6 +163,16 @@ static void drop_port(void);
 int init_module(void);
 void cleanup_module(void);
 
+
+static inline unsigned int sinp(int offset)
+{
+	return inb(iobase + offset);
+}
+
+static inline void soutp(int offset, int value)
+{
+	outb(value, iobase + offset);
+}
 
 /* SECTION: Communication with user-space */
 
@@ -220,6 +269,9 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 }
 static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos)
 {
+#ifdef LIRC_SIR_TEKRAM
+	return(-EBADF);
+#else
 	int i;
 	int retval;
 
@@ -244,6 +296,7 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 		i++;
 	}
 	return n;
+#endif
 }
 
 static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
@@ -252,12 +305,21 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	int retval = 0;
 	unsigned long value = 0;
 
+#ifdef LIRC_SIR_TEKRAM
+	if (cmd == LIRC_GET_FEATURES)
+		value = LIRC_CAN_REC_MODE2;
+	else if (cmd == LIRC_GET_SEND_MODE)
+		value = 0;
+	else if (cmd == LIRC_GET_REC_MODE)
+		value = LIRC_MODE_MODE2;
+#else
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2;
 	else if (cmd == LIRC_GET_SEND_MODE)
 		value = LIRC_MODE_PULSE;
 	else if (cmd == LIRC_GET_REC_MODE)
 		value = LIRC_MODE_MODE2;
+#endif
 
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
@@ -294,6 +356,14 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	if (retval)
 		return retval;
 	
+#ifdef LIRC_SIR_TEKRAM
+	if (cmd == LIRC_SET_REC_MODE) {
+		if (value != LIRC_MODE_MODE2)
+			retval = -ENOSYS;
+	} else if (cmd == LIRC_SET_SEND_MODE) {
+		retval = -ENOSYS;
+	}
+#else
 	if (cmd == LIRC_SET_REC_MODE) {
 		if (value != LIRC_MODE_MODE2)
 			retval = -ENOSYS;
@@ -301,6 +371,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if (value != LIRC_MODE_PULSE)
 			retval = -ENOSYS;
 	}
+#endif
 	return retval;
 }
 
@@ -309,9 +380,32 @@ static void add_read_queue(int flag, unsigned long val)
 	unsigned int new_rx_tail;
 	lirc_t newval;
 
+#ifdef DEBUG_SIGNAL
+	printk(KERN_DEBUG LIRC_DRIVER_NAME
+		": add flag %d with val %lu\n",
+		flag,val);
+#endif
+
 	newval = val & PULSE_MASK;
-	if (flag)
-		newval |= PULSE_BIT;
+
+	/* statistically pulses are ~TIME_CONST/2 too long: we could
+	   maybe make this more exactly but this is good enough */
+	if(flag) /* pulse */
+	{
+		if(newval>TIME_CONST/2)
+		{
+			newval-=TIME_CONST/2;
+		}
+		else /* should not ever happen */
+		{
+			newval=1;
+		}
+		newval|=PULSE_BIT;
+	}
+	else
+	{
+		newval+=TIME_CONST/2;
+	}
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
 		printk(KERN_WARNING LIRC_DRIVER_NAME ": Buffer overrun.\n");
@@ -370,57 +464,121 @@ static long delta(struct timeval * tv1, struct timeval * tv2)
 	return deltv;
 }
 
+static void sir_timeout(unsigned long data) 
+{
+	/* if last received signal was a pulse, but receiving stopped
+	   within the 9 bit frame, we need to finish this pulse and
+	   simulate a signal change to from pulse to space. Otherwise
+	   upper layers will receive two sequences next time. */
+	
+	unsigned long flags;
+	unsigned long pulse_end;
+	
+	/* avoid interference with interrupt */
+ 	spin_lock_irqsave(&timer_lock, flags);
+	if (last_value)
+	{
+		/* clear unread bits in UART and restart */
+		outb(UART_FCR_CLEAR_RCVR, iobase + UART_FCR);
+		/* determine 'virtual' pulse end: */
+	 	pulse_end = delta(&last_tv, &last_intr_tv);
+#ifdef DEBUG_SIGNAL
+		printk(KERN_DEBUG LIRC_DRIVER_NAME
+			": timeout add %d for %lu usec\n",last_value,pulse_end);
+#endif
+		add_read_queue(last_value,pulse_end);
+		last_value = 0;
+		last_tv=last_intr_tv;
+	}
+	spin_unlock_irqrestore(&timer_lock, flags);		
+}
+
 static void sir_interrupt(int irq, void * dev_id, struct pt_regs * regs)
 {
 	int iir, lsr;
 	unsigned char data;
 	struct timeval curr_tv;
-	static struct timeval last_tv = {0, 0};
-	unsigned long deltv;
-	static struct timeval last_intr_tv = {0, 0};
+	static unsigned long deltv;
 	unsigned long deltintrtv;
-	static int last_value = 0;
+	unsigned long flags;
 
 	while ((iir = inb(iobase + UART_IIR) & UART_IIR_ID)) {
 		switch (iir) { /* FIXME toto treba preriedit */
 		case UART_IIR_RLSI:
 			break;
 		case UART_IIR_RDI:
+			/* avoid interference with timer */
+		 	spin_lock_irqsave(&timer_lock, flags);
 			while ((lsr = inb(iobase + UART_LSR))
 				& UART_LSR_DR) { /* data ready */
+				del_timer(&timerlist);
 				data = inb(iobase + UART_RX);
 				do_gettimeofday(&curr_tv);
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
+#ifdef DEBUG_SIGNAL
+				printk(KERN_DEBUG LIRC_DRIVER_NAME": t %lu , d %d\n",deltintrtv,(int)data);
+#endif
 				/* if nothing came in last 2 cycles,
 				   it was gap */
 				if (deltintrtv > TIME_CONST * 2) {
 					if (last_value) {
+#ifdef DEBUG_SIGNAL
+						printk(KERN_DEBUG LIRC_DRIVER_NAME ": GAP\n");
+#endif
+						/* simulate signal change */
 						add_read_queue(last_value,
-							TIME_CONST);
+							       deltv-
+							       deltintrtv);
 						last_value = 0;
-						deltv -= TIME_CONST;
-						last_tv.tv_usec += TIME_CONST;
+						last_tv.tv_sec = last_intr_tv.tv_sec;
+						last_tv.tv_usec = last_intr_tv.tv_usec;
+						deltv = deltintrtv;
 					}
 				}
-				data = (data == PULSE);
+				data = 1;
 				if (data ^ last_value) {
-					add_read_queue(last_value, deltv);
+					/* deltintrtv > 2*TIME_CONST,
+                                           remember ? */
+					/* the other case is timeout */
+					add_read_queue(last_value,
+						       deltv-TIME_CONST);
 					last_value = data;
 					last_tv = curr_tv;
+					if(last_tv.tv_usec>=TIME_CONST)
+					{
+						last_tv.tv_usec-=TIME_CONST;
+					}
+					else
+					{
+						last_tv.tv_sec--;
+						last_tv.tv_usec+=1000000-
+							TIME_CONST;
+					}
 				}
 				last_intr_tv = curr_tv;
+				if (data)
+				{
+					/* start timer for end of sequence detection */
+					timerlist.expires = jiffies + SIR_TIMEOUT;
+					add_timer(&timerlist);
+				}
 			}
+			spin_unlock_irqrestore(&timer_lock, flags);
 			break;
 		case UART_IIR_THRI:
-			// if (lsr & UART_LSR_THRE) /* FIFO is empty */
-			//	outb(data, iobase + UART_TX)
+#if 0
+			if (lsr & UART_LSR_THRE) /* FIFO is empty */
+				outb(data, iobase + UART_TX)
+#endif
 			break;
 		default:
+			break;
 		}
 	}
 }
 
+#ifndef LIRC_SIR_TEKRAM
 static void send_space(unsigned long len)
 {
 	udelay(len);
@@ -444,6 +602,7 @@ static void send_pulse(unsigned long len)
 		udelay(time_left);
 #endif
 }
+#endif
 
 static int init_hardware(void)
 {
@@ -451,6 +610,72 @@ static int init_hardware(void)
 
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
+#ifdef LIRC_SIR_TEKRAM
+	/* disable FIFO */ 
+	soutp(UART_FCR,
+	      UART_FCR_CLEAR_RCVR|
+	      UART_FCR_CLEAR_XMIT|
+	      UART_FCR_TRIGGER_1);
+	
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+	
+	/* First of all, disable all interrupts */
+	soutp(UART_IER, sinp(UART_IER)&
+	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
+	
+	/* Set DLAB 1. */
+	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
+	
+	/* Set divisor to 12 => 9600 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,12);
+	
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+	
+	/* power supply */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(50*1000);
+	
+	/* -DTR low -> reset PIC */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
+	udelay(1*1000);
+	
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(100);
+
+
+        /* -RTS low -> send control byte */
+	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(7);
+	soutp(UART_TX, TEKRAM_115200|TEKRAM_PW);
+	
+	/* one byte takes ~1042 usec to transmit at 9600,8N1 */
+	udelay(1500);
+	
+	/* back to normal operation */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(50);
+
+	udelay(1500);
+	
+	/* read previous control byte */
+	printk(KERN_INFO LIRC_DRIVER_NAME
+	       ": 0x%02x\n",sinp(UART_RX));
+	
+	/* Set DLAB 1. */
+	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
+	
+	/* Set divisor to 1 => 115200 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,1);
+
+	/* Set DLAB 0, 8 Bit */
+	soutp(UART_LCR, UART_LCR_WLEN8);
+	/* enable interrupts */
+	soutp(UART_IER, sinp(UART_IER)|UART_IER_RDI);
+#else
 	outb(0, iobase + UART_MCR);
 	outb(0, iobase + UART_IER);
 	/* init UART */
@@ -466,6 +691,7 @@ static int init_hardware(void)
 	outb(UART_IER_RDI, iobase + UART_IER);	
 	/* turn on UART */
 	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, iobase + UART_MCR);
+#endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	return 0;
 }
@@ -507,6 +733,10 @@ static int init_port(void)
 		": I/O port 0x%.4x, IRQ %d.\n",
 		iobase, irq);
 
+	init_timer(&timerlist);
+	timerlist.function = sir_timeout;
+	timerlist.data = 0xabadcafe;
+
 	return 0;
 }
 
@@ -535,8 +765,13 @@ int init_lirc_sir(void)
 #ifdef MODULE
 
 #ifdef KERNEL_2_1
+#ifdef LIRC_SIR_TEKRAM
+MODULE_AUTHOR("Christoph Bartelmus");
+MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
+#else
 MODULE_AUTHOR("Milan Pikula");
 MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
+#endif
 MODULE_PARM(iobase, "i");
 MODULE_PARM_DESC(iobase, "I/O address base (0x3f8 or 0x2f8)");
 MODULE_PARM(irq, "i");
@@ -568,4 +803,5 @@ void cleanup_module(void)
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
 #endif
+
 
