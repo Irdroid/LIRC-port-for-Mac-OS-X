@@ -531,6 +531,14 @@ fi</PRE>
       of the current LIRC distribution if you plan to add LIRC support
       to your application without using the lirc_client library.
     </P>
+    <P>
+      While developing LIRC applications you might find a <A
+	HREF="http://www.fi.muni.cz/~xkutale1/en/lircemu/">emulator</A>
+      for lircd useful. With this emulator you don't need a remote
+      control to generate LIRC events. That way you can develop LIRC
+      applications even if you don't have a LIRC compatible device
+      yourself.
+    </P>
     
     <A NAME="bugs"></A><HR>
     <H1 ALIGN="CENTER">Known bugs</H1>
@@ -557,13 +565,13 @@ fi</PRE>
 	  measure the time between interrupts on the serial resp.
 	  parallel port to get a pulse and space representation of the
 	  incoming infra-red signal. If interrupts are disabled by the
-	  CPU for a rather long time (&gt;100 &micro;s, which happens often
-	  e.g. during heavy IDE disk activity) some interrupts might
-	  get lost and the the incoming data stream becomes
+	  CPU for a rather long time (&gt;100 &micro;s, which happens
+	  often e.g. during heavy IDE disk activity) some interrupts
+	  might get lost and the incoming data stream becomes
 	  disturbed. In this case decoding of the infra-red signal
 	  will fail. This is the downside of the really simple
 	  receiver circuits and can't be addressed in software except
-	  keeping the time interrupts are disabled to a minimum.
+	  keeping the time where interrupts are disabled to a minimum.
 	</P>
       </LI>
     </UL>

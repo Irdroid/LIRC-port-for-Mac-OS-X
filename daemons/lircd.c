@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.45 2002/08/31 09:10:52 ranty Exp $      */
+/*      $Id: lircd.c,v 5.46 2002/09/21 15:25:28 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1639,6 +1639,9 @@ int waitfordata(long maxusec)
 				tv.tv_sec=0;
 				tv.tv_usec=maxusec;
 			}
+#ifdef SIM_REC
+			ret=select(maxfd+1,&fds,NULL,NULL,NULL);
+#else
 			if(timerisset(&tv) || reconnect)
 			{
 				ret=select(maxfd+1,&fds,NULL,NULL,&tv);
@@ -1647,6 +1650,7 @@ int waitfordata(long maxusec)
 			{
 				ret=select(maxfd+1,&fds,NULL,NULL,NULL);
 			}
+#endif
 			if(ret==-1 && errno!=EINTR)
 			{
 				logprintf(LOG_ERR,"select() failed");

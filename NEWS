@@ -1,4 +1,4 @@
-0.6.6: future
+0.6.6pre2: 09/21/02
   * added rc tool for sending IR commands (previously included in xrc package)
   * bugfix for Winfast TV2000 card
   * added SIR support for Actisys Act200L dongle (Karl Bongers)

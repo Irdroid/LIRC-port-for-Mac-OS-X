@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.14 2002/06/28 07:47:53 lirc Exp $      */
+/*      $Id: receive.c,v 5.15 2002/09/21 15:25:28 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -415,11 +415,25 @@ inline int get_header(struct ir_remote *remote)
 		unget_rec_buffer(1);
 		return(0);
 	}
-	if(!expectspace(remote,remote->shead))
+	/* if this flag is set I need a decision now if this is really
+           a header */
+	if(remote->flags&NO_HEAD_REP)
 	{
-		unget_rec_buffer(2);
-		return(0);
+		lirc_t deltas;
+		
+		deltas=get_next_space(remote->shead);
+		if(deltas!=0)
+		{
+			if(expect(remote,remote->shead,deltas))
+			{
+				return(1);
+			}
+			unget_rec_buffer(2);
+			return(0);
+		}
 	}
+	
+	rec_buffer.pendings=remote->shead;
 	return(1);
 }
 
