@@ -153,7 +153,9 @@ lirc_t udp_readdata(lirc_t timeout)
 
 	/* Convert 1/16384-seconds to microseconds */
 	tmp = (((u_int32_t)packed[1])<<8) | packed[0];
-	tmp = ((tmp & 0x7FFF) * 1000000) / 16384;
+	/* tmp = ((tmp & 0x7FFF) * 1000000) / 16384; */
+	/* prevent integer overflow: */
+	tmp = ((tmp & 0x7FFF) * 15625) / 256;
 
 	data |= tmp & PULSE_MASK;
 
