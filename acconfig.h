@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.14 2001/01/21 13:18:29 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.15 2001/04/24 19:16:29 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -37,6 +37,9 @@
 /* pid file */
 #define PIDDIR          "/var/run"
 #define PID_LIRCD       "lircd.pid"
+
+/* default port number */
+#define	LIRC_INET_PORT	8765
 
 /*
  * below here are defines managed by autoheader / autoconf
@@ -107,8 +110,8 @@
 /* Define if you want to use a Tekram Irmate 210 */
 #undef LIRC_SIR_TEKRAM
 
-/* Define if you have a Pixelview PlayTV card */
-#undef LIRC_I2C_PVFIX
+/* Define if there's no device connected to the local lircd */
+#undef LIRC_NETWORK_ONLY
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS
