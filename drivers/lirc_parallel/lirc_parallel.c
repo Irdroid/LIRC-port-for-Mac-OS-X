@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.21 2004/04/27 18:52:34 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.22 2004/05/16 09:14:39 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -683,6 +683,9 @@ void kf(void *handle)
 
 int init_module(void)
 {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 3)
+	pport=parport_find_base(io);
+#else
 	pport=parport_enumerate();
 	while(pport!=NULL)
 	{
@@ -692,6 +695,7 @@ int init_module(void)
 		}
 		pport=pport->next;
 	}
+#endif
 	if(pport==NULL)
 	{
 		printk(KERN_NOTICE "%s: no port at %x found\n",
@@ -700,6 +704,9 @@ int init_module(void)
 	}
 	ppdevice=parport_register_device(pport,LIRC_DRIVER_NAME,
 					 pf,kf,irq_handler,0,NULL);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 3)
+	parport_put_port(pport);
+#endif
 	if(ppdevice==NULL)
 	{
 		printk(KERN_NOTICE "%s: parport_register_device() failed\n",
