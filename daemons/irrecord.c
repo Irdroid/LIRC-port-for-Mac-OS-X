@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.45 2003/05/04 20:15:09 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.46 2003/11/02 15:13:57 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -319,11 +319,15 @@ int main(int argc,char **argv)
 		remote.last_code=NULL;
 		remote.next=NULL;
 		remote.toggle_bit=0;
-		remote.bits=remote.pre_data_bits+
-			remote.bits+
-			remote.post_data_bits;
-		remote.pre_data_bits=0;
-		remote.post_data_bits=0;
+		if(remote.pre_p==0 && remote.pre_s==0 &&
+		   remote.post_p==0 && remote.post_s==0)
+		{
+			remote.bits=remote.pre_data_bits+
+				remote.bits+
+				remote.post_data_bits;
+			remote.pre_data_bits=0;
+			remote.post_data_bits=0;
+		}
 		if(remotes->next!=NULL)
 		{
 			fprintf(stderr,
@@ -1152,7 +1156,8 @@ void remove_pre_data(struct ir_remote *remotes)
 	remote=remotes;
 	while(remote!=NULL)
 	{
-		if(remote->pre_data_bits==0)
+		if(remote->pre_data_bits==0 ||
+		   remote->pre_p!=0 || remote->pre_s!=0)
 		{
 			remote=remote->next;
 			continue;
