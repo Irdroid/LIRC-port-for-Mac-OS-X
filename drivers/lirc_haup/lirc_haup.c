@@ -1,4 +1,4 @@
-/*      $Id: lirc_haup.c,v 1.15 2000/04/29 09:04:15 columbus Exp $      */
+/*      $Id: lirc_haup.c,v 1.16 2000/09/21 19:11:28 columbus Exp $      */
 
 /*
  * hauppauge IR lirc plugin - new 2.3.x i2c stack
@@ -30,6 +30,7 @@
 #include <asm/semaphore.h>
 
 #include "../lirc_dev/lirc_dev.h"
+#include "../drivers/char/bttv.h"
 
 /* Addresses to scan */
 static unsigned short normal_i2c[] = {I2C_CLIENT_END};
@@ -173,15 +174,17 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
 {
         struct IR *ir;
-
+	struct bttv *btv;
+	int type,cardid;
+	
         client_template.adapter = adap;
         client_template.addr = addr;
-
+	
         if (NULL == (ir = kmalloc(sizeof(struct IR),GFP_KERNEL)))
                 return -ENOMEM;
         memcpy(&ir->l,&lirc_template,sizeof(struct lirc_plugin));
         memcpy(&ir->c,&client_template,sizeof(struct i2c_client));
-
+	
 	ir->c.adapter = adap;
 	ir->c.addr    = addr;
 	ir->c.data    = ir;
@@ -190,10 +193,21 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	ir->l.sample_rate = 10;
 	ir->l.code_length = CODE_LENGTH;
 	ir->nextkey = -1;
-
+	
 	/* register device */
 	i2c_attach_client(&ir->c);
 	ir->l.minor = lirc_register_plugin(&ir->l);
+	
+	btv=(struct bttv *) (adap->data);
+	
+	if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1) {
+		dprintk(KERN_DEBUG DEVICE_NAME ": could not get card type\n");
+	}
+	else
+	{
+		dprintk(KERN_DEBUG DEVICE_NAME ": card type 0x%x, id 0x%x\n",
+			type,cardid);
+	}
 	
 	return 0;
 }
@@ -232,6 +246,8 @@ int init_module(void)
 int lirc_haup_init(void)
 #endif
 {
+	request_module("bttv");
+	
 	i2c_add_driver(&driver);
 	return 0;
 }

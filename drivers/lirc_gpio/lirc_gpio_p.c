@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.20 2000/09/18 19:51:27 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.21 2000/09/21 19:11:27 columbus Exp $
  *
  */
 
@@ -331,7 +331,7 @@ int init_module(void)
 	int type,cardid;
 
 	if (MAX_IRCTL_DEVICES < minor) {
-		printk("lirc_gpio_p: parameter minor (%d) must be lesst han %d!\n",
+		printk("lirc_gpio_p: parameter minor (%d) must be less than %d!\n",
 		       minor, MAX_IRCTL_DEVICES-1);
 		return -EBADRQC;
 	}
