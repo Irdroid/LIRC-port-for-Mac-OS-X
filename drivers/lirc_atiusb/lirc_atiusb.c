@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.46 2005/02/19 15:12:58 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.47 2005/02/22 15:45:09 pmiller9 Exp $
  */
 
 /*
@@ -402,7 +402,7 @@ static void print_data(struct in_endpt *iep, char *buf, int len)
 		iep->ir->devnum, codes, iep->ep->bEndpointAddress, len);
 }
 
-static int code_check(struct in_endpt *iep, int len)
+static int code_check_ati1(struct in_endpt *iep, int len)
 {
 	struct irctl *ir = iep->ir;
 	int i, chan;
@@ -412,22 +412,13 @@ static int code_check(struct in_endpt *iep, int len)
 	if (len < CODE_MIN_LENGTH || len > CODE_LENGTH)
 		return -1;
 
-	switch (ir->remote_type) {
+	// *** channel not tested with 4/5-byte Dutch remotes ***
+	chan = ((iep->buf[len-1]>>4) & 0x0F);
 
-	case ATI1_COMPATIBLE:
-
-		// *** channel not tested with 4/5-byte Dutch remotes ***
-		chan = ((iep->buf[len-1]>>4) & 0x0F);
-
-		/* strip channel code */
-		if (!unique) {
-			iep->buf[len-1] &= 0x0F;
-			iep->buf[len-3] -= (chan<<4);
-		}
-		break;
-
-	default:
-		chan = 0;
+	/* strip channel code */
+	if (!unique) {
+		iep->buf[len-1] &= 0x0F;
+		iep->buf[len-3] -= (chan<<4);
 	}
 
 	if ( !((1U<<chan) & mask) ) {
@@ -530,9 +521,9 @@ static int code_check(struct in_endpt *iep, int len)
  *    This means that the normal gap mechanism for lircd won't work as
  *    expected; is emit_updown>0 if you can get away with it.
  */
-static int process_ati2_input(struct in_endpt *iep, int len) {
+static int code_check_ati2(struct in_endpt *iep, int len) {
 	struct irctl *ir = iep->ir;
-	int mode;
+	int mode, i;
 	char *buf = iep->buf;
 
 	if (len != CODE_LENGTH_ATI2) {
@@ -541,6 +532,7 @@ static int process_ati2_input(struct in_endpt *iep, int len) {
 			ir->devnum, len);
 		return -1;
 	}
+	for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
 
 	mode = buf[0];
 
@@ -634,7 +626,7 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 {
 	struct in_endpt *iep;
-	int len;
+	int len, result;
 
 	if (!urb)
 		return;
@@ -657,12 +649,15 @@ static void usb_remote_recv(struct urb *urb)
 	/* success */
 	case SUCCESS:
 
-		if(iep->ir->remote_type == ATI2_COMPATIBLE) {
-			if (process_ati2_input(iep, len) < 0) break;
-		} else {
-			if (code_check(iep, len) < 0) break;
+		switch (iep->ir->remote_type) {
+		case ATI2_COMPATIBLE:
+			result = code_check_ati2(iep, len);
+			break;
+		case ATI1_COMPATIBLE:
+		default:
+			result = code_check_ati1(iep, len);
 		}
-
+		if (result < 0) break;
 		lirc_buffer_write_1(iep->ir->p->rbuf, iep->buf);
 		wake_up(&iep->ir->p->rbuf->wait_poll);
 		break;
@@ -786,6 +781,7 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 
 	len = (maxp > USB_BUFLEN) ? USB_BUFLEN : maxp;
 	len -= (len % CODE_LENGTH);
+	if (len < CODE_LENGTH) len = CODE_LENGTH;
 
 	dprintk(DRIVER_NAME "[%d]: acceptable inbound endpoint (0x%x) found (maxp=%d len=%d)\n", ir->devnum, addr, maxp, len);
 
@@ -1219,7 +1215,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.46 2005/02/19 15:12:58 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.47 2005/02/22 15:45:09 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
@@ -1264,7 +1260,7 @@ MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
 /*
  * Enabling this will cause the built-in Remote Wonder II repeate coding to
  * not be squashed.  The second byte of the keys output will then be:
- * 
+ *
  * 	1 initial press (button down)
  * 	2 holding (button remains pressed)
  * 	0 release (button up)
@@ -1276,7 +1272,7 @@ MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
  * However, if you have no troubles with the driver outputting up-down pairs
  * at random points while you're still holding a button, then you can enable
  * this parameter to get finer grain repeat control out of your remote:
- * 
+ *
  * 	1 Emit a single (per-channel) virtual code for all up/down events
  * 	2 Emit the actual rw2 output
  *
