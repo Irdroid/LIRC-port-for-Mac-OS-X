@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.15 2002/04/01 20:12:48 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.16 2002/08/30 11:57:28 lirc Exp $
  *
  */
 
@@ -129,7 +129,7 @@ static struct rcv_info rcv_infos[] = {
 	/* probably                      0x000000f8 */
  	{BTTV_FLYVIDEO_98FM,          0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
 #endif
-        {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
+        {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0,  0}
 };
 
 static unsigned char code_length = 0;
