@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.20 2000/04/02 13:07:20 columbus Exp $
+dnl $Id: configure.in,v 5.21 2000/04/06 17:21:29 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -192,6 +192,7 @@ if test "$driver" = "fly98"; then
 fi
 if test "$driver" = "pixelview_pro"; then
   lirc_driver="lirc_dev lirc_gpio"
+  gpio_module="lirc_gpio_p.o"
   lircd_conf="pixelview/lircd.conf.playtv_pro"
 fi
 if test "$driver" = "lpt1"; then
@@ -347,6 +348,7 @@ AC_SUBST(sysconfdir)
 AC_SUBST(moduledir)
 AC_SUBST(lirc_major)
 AC_SUBST(lirc_driver)
+AC_SUBST(gpio_module)
 AC_SUBST(irman_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
