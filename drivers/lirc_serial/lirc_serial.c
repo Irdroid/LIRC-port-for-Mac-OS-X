@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.56 2004/09/05 16:48:49 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.57 2004/11/20 10:14:03 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -727,8 +727,6 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
-static DECLARE_WAIT_QUEUE_HEAD(power_supply_queue);
-
 static int init_port(void)
 {
 	unsigned long flags;
@@ -805,7 +803,8 @@ static int init_port(void)
 	{
 		/* wait 1 sec for the power supply */
 		
-		sleep_on_timeout(&power_supply_queue,HZ);
+		set_current_state(TASK_INTERRUPTIBLE);
+		schedule_timeout(HZ);
 		
 		sense=(sinp(UART_MSR) & hardware[type].signal_pin) ? 1:0;
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
