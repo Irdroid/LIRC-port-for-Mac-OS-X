@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.7 2000/04/29 09:12:38 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.8 2000/05/11 11:48:20 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -33,6 +33,10 @@
 #define LOGDIR		"/var/log"
 #define LOG_LIRCD	"lircd"
 #define LOG_LIRMAND	"lirmand"
+
+/* pid file */
+#define PIDDIR          "/var/run"
+#define PID_LIRCD       "lircd.pid"
 
 /*
  * below here are defines managed by autoheader / autoconf
@@ -120,5 +124,7 @@
 
 #define LOGFILE			LOGDIR "/" LOG_LIRCD
 #define LIRMAND_LOGFILE		LOGDIR "/" LOG_LIRMAND
+
+#define PIDFILE                 PIDDIR "/" PID_LIRCD
 
 /* end of acconfig.h */

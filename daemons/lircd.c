@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.17 2000/05/03 19:41:21 columbus Exp $      */
+/*      $Id: lircd.c,v 5.18 2000/05/11 11:48:20 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -49,6 +49,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
+#include <fcntl.h>
+#include <sys/file.h>
 
 #include "lircd.h"
 #include "ir_remote.h"
@@ -68,6 +70,7 @@ extern struct hardware hw;
 char *progname="lircd-"VERSION;
 char *configfile=LIRCDCFGFILE;
 char *logfile=LOGFILE;
+FILE *pidfile;
 
 struct protocol_directive directives[] =
 {
@@ -107,7 +110,7 @@ char hostname[HOSTNAME_LEN+1];
 
 FILE *lf=NULL;
 int sockfd;
-int clis[FD_SETSIZE-2]; /* substract one for each lirc and sockfd */
+int clis[FD_SETSIZE-4]; /* substract one for lirc, sockfd, logfile, pidfile */
 int clin=0;
 
 int debug=0;
@@ -243,6 +246,8 @@ void dosigterm(int sig)
 	};
 	shutdown(sockfd,2);
 	close(sockfd);
+	fclose(pidfile);
+	(void) unlink(PIDFILE);
 	if(clin>0 && hw.deinit_func) hw.deinit_func();
 	if(lf) fclose(lf);
 	signal(sig,SIG_DFL);
@@ -414,10 +419,48 @@ void start_server(mode_t permission)
 	struct stat s;
 	int ret;
 	int new=1;
+	int fd;
 	
+	/* create pid lockfile in /var/run */
+	if((fd=open(PIDFILE,O_RDWR|O_CREAT,0644))==-1 ||
+	   (pidfile=fdopen(fd,"r+"))==NULL)
+	{
+		fprintf(stderr,"%s: can't open or create %s\n",
+			progname,PIDFILE);
+		perror(progname);
+		exit(EXIT_FAILURE);
+	}
+	if(flock(fd,LOCK_EX|LOCK_NB)==-1)
+	{
+		int otherpid;
+		
+		if(fscanf(pidfile,"%d\n",&otherpid)>0)
+		{
+			fprintf(stderr,"%s: there seems to already be "
+				"a lircd process with pid %d\n",
+				progname,otherpid);
+			fprintf(stderr,"%s: otherwise delete stale "
+				"lockfile %s\n",progname,PIDFILE);
+		}
+		else
+		{
+			fprintf(stderr,"%s: invalid %s encountered\n",
+				progname,PIDFILE);
+		}
+		exit(EXIT_FAILURE);
+	}
+	(void) fcntl(fd,F_SETFD,FD_CLOEXEC);
+	rewind(pidfile);
+	(void) fprintf(pidfile,"%d\n",getpid());
+	(void) fflush(pidfile);
+	(void) ftruncate(fileno(pidfile),ftell(pidfile));
+
+	/* create socket*/
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(sockfd==-1)
 	{
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not create socket\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
@@ -431,6 +474,8 @@ void start_server(mode_t permission)
 	ret=stat(LIRCD,&s);
 	if(ret==-1 && errno!=ENOENT)
 	{
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not get file information for %s\n",
 			progname,LIRCD);
 		perror(progname);
@@ -442,6 +487,8 @@ void start_server(mode_t permission)
 		ret=unlink(LIRCD);
 		if(ret==-1)
 		{
+			fclose(pidfile);
+			(void) unlink(PIDFILE);
 			fprintf(stderr,"%s: could not delete %s\n",
 				progname,LIRCD);
 			perror(NULL);
@@ -453,6 +500,8 @@ void start_server(mode_t permission)
 	strcpy(serv_addr.sun_path,LIRCD);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
 	{
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not assign address to socket\n",
 			progname);
 		perror(progname);
@@ -464,7 +513,10 @@ void start_server(mode_t permission)
 	   (chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
 	   )
 	{
-		fprintf(stderr,"%s: could not set file permissions\n",progname);
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
+		fprintf(stderr,"%s: could not set file permissions\n",
+			progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
@@ -475,6 +527,8 @@ void start_server(mode_t permission)
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
+		fclose(pidfile);
+		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not open logfile\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
@@ -529,6 +583,10 @@ void daemonize(void)
 		dosigterm(SIGTERM);
 	}
 	umask(0);
+	rewind(pidfile);
+	(void) fprintf(pidfile,"%d\n",getpid());
+	(void) fflush(pidfile);
+	(void) ftruncate(fileno(pidfile),ftell(pidfile));
 	daemonized=1;
 }
 
