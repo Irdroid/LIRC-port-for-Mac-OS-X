@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.15 2001/12/12 22:40:43 lirc Exp $
+## $Id: Makefile.am,v 5.16 2002/02/01 11:43:27 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -13,8 +13,10 @@ SUBDIRS = @lirc_driver@
 
 CLEANFILES = *~
 
+if MANAGE_DEVICES
 install-exec-local: mklink mkdev
 uninstall-local: rmlink mkdev
+endif
 
 mklink:
 	test "@irtty@" = "" || test -L $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && cd `dirname $(DESTDIR)@irtty@` && $(LN_S) `basename @irtty@` lirc)
