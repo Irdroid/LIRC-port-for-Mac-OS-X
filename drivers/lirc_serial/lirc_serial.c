@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.2 1999/05/10 17:11:56 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -479,43 +479,92 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
+#               ifdef KERNEL_2_1
 		result=put_user(features,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long*) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(features,(unsigned long *) arg);
+#               endif
 		break;
 #       ifndef LIRC_SERIAL_ANIMAX
 	case LIRC_GET_SEND_MODE:
+#               ifdef KERNEL_2_1
 		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+#               endif
 		break;
 #       endif
 	case LIRC_GET_REC_MODE:
+#               ifdef KERNEL_2_1
 		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+#               endif
 		break;
 #       ifndef LIRC_SERIAL_ANIMAX
 	case LIRC_SET_SEND_MODE:
+#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		value=get_user((unsigned long *) arg);
+#               endif
 		if(value!=LIRC_MODE_PULSE) return(-EINVAL);
 		break;
 #       endif
 	case LIRC_SET_REC_MODE:
+#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		value=get_user((unsigned long *) arg);
+#               endif
 		if(value!=LIRC_MODE_MODE2) return(-EINVAL);
 		break;
 #       ifndef LIRC_SERIAL_ANIMAX
 #       ifdef LIRC_SERIAL_SOFTCARRIER
 	case LIRC_SET_SEND_PULSE_WIDTH:
+#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		value=get_user((unsigned long *) arg);
+#               endif
 		if(value>=1000000/freq) return(-EINVAL);
 		pulse_width=value;
 		space_width=1000000/freq-pulse_width;
 		break;
 	case LIRC_SET_SEND_CARRIER:
+#               ifdef KERNEL_2_1
 		result=get_user(value,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		value=get_user((unsigned long *) arg);
+#               endif
 		if(value>500000 || value <30000) return(-EINVAL);
 		freq=value;
 		pulse_width=1000000/2/value;

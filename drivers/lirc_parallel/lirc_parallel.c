@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.2 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.3 1999/05/10 17:11:56 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -545,25 +545,60 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 	switch(cmd)
 	{
 	case LIRC_GET_FEATURES:
+#               ifdef KERNEL_2_2
 		result=put_user(features,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long*) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(features,(unsigned long *) arg);
+#               endif
 		break;
 	case LIRC_GET_SEND_MODE:
+#               ifdef KERNEL_2_2
 		result=put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(LIRC_MODE_PULSE,(unsigned long *) arg);
+#               endif
 		break;
 	case LIRC_GET_REC_MODE:
+#               ifdef KERNEL_2_2
 		result=put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
 		if(result) return(result); 
+#               else
+		result=verify_area(VERIFY_WRITE,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		put_user(LIRC_MODE_MODE2,(unsigned long *) arg);
+#               endif
 		break;
 	case LIRC_SET_SEND_MODE:
+#               ifdef KERNEL_2_2
 		result=get_user(mode,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		mode=get_user((unsigned long *) arg);
+#               endif
 		if(mode!=LIRC_MODE_PULSE) return(-EINVAL);
 		break;
 	case LIRC_SET_REC_MODE:
+#               ifdef KERNEL_2_2
 		result=get_user(mode,(unsigned long *) arg);
 		if(result) return(result);
+#               else
+		result=verify_area(VERIFY_READ,(unsigned long *) arg,
+				   sizeof(unsigned long));
+		if(result) return(result);
+		mode=get_user((unsigned long *) arg);
+#               endif
 		if(mode!=LIRC_MODE_MODE2) return(-EINVAL);
 		break;
 	default:
