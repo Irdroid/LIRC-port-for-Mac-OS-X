@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.52 2003/12/27 16:36:51 lirc Exp $      */
+/*      $Id: lircd.c,v 5.53 2004/03/02 19:22:54 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1784,7 +1784,7 @@ int main(int argc,char **argv)
 #                       endif
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l:c:"
+		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:"
 #                               ifndef USE_SYSLOG
 				"L:"
 #                               endif
