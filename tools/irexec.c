@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.5 2002/09/12 19:53:56 lirc Exp $      */
+/*      $Id: irexec.c,v 5.6 2003/06/07 22:12:52 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
 {
 	struct lirc_config *config;
 	int daemonize=0;
+	char* program="irexec";
 
 	progname="irexec " VERSION;
 	while(1)
@@ -40,9 +41,10 @@ int main(int argc, char *argv[])
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"daemon",no_argument,NULL,'d'},
+			{"name",required_argument,NULL,'n'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvd",long_options,NULL);
+		c = getopt_long(argc,argv,"hvdn:",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
@@ -52,12 +54,16 @@ int main(int argc, char *argv[])
 			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -d --daemon\t\trun in background\n");
+			printf("\t -n --name\t\tuse this program name\n");
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s\n",progname);
 			return(EXIT_SUCCESS);
 		case 'd':
 			daemonize=1;
+			break;
+		case 'n':
+			program=optarg;
 			break;
 		default:
 			printf("Usage: %s [options] [config_file]\n",argv[0]);
@@ -70,7 +76,7 @@ int main(int argc, char *argv[])
 		return(EXIT_FAILURE);
 	}
 	
-	if(lirc_init("irexec",daemonize ? 0:1)==-1) exit(EXIT_FAILURE);
+	if(lirc_init(program, daemonize ? 0:1)==-1) exit(EXIT_FAILURE);
 
 	if(lirc_readconfig(optind!=argc ? argv[optind]:NULL,&config,NULL)==0)
 	{
