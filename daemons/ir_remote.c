@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.7 1999/07/21 18:23:37 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.8 1999/07/27 17:02:48 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -1416,7 +1416,7 @@ char *decode_command(unsigned long data)
 	}
 	else if(rec_mode==LIRC_MODE_LIRCCODE)
 	{
-		char buffer[sizeof(ir_code)];
+		unsigned char buffer[sizeof(ir_code)];
 		size_t count;
 		
 		count=code_length/CHAR_BIT;
@@ -1430,18 +1430,20 @@ char *decode_command(unsigned long data)
 		}
 		for(i=0,decoded=0;i<count;i++)
 		{
-			decoded=(decoded<<CHAR_BIT)+((unsigned long) buffer[i]);
+			decoded=(decoded<<CHAR_BIT)+(unsigned long) buffer[i];
 		}
 	}
 	else if(rec_mode==LIRC_MODE_CODE)
 	{
-		if(read(lirc,&c,1)!=1)
+		unsigned char buffer;
+
+		if(read(lirc,&buffer,1)!=1)
 		{
 			logprintf("reading in mode LIRC_MODE_CODE "
 				  "failed\n");
 			return(NULL);
 		}
-		decoded=(unsigned long) c;
+		decoded=(unsigned long) buffer;
 	}
 	else
 	{
