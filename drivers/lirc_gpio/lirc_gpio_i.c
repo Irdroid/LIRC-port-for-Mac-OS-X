@@ -6,7 +6,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_i.c,v 1.1 2000/04/02 13:07:21 columbus Exp $
+ * $Id: lirc_gpio_i.c,v 1.2 2000/04/06 17:23:58 columbus Exp $
  *
  */
 
@@ -16,12 +16,12 @@
 #endif
 
 #include <linux/module.h>
-#include <linux/wrapper.h>
 #include <linux/kmod.h>
+/* i2c.h does not include spinlock.h */
+#include <asm/spinlock.h>
+#include <linux/wrapper.h>
 
 #include "../lirc_dev/lirc_dev.h"
-/* i2c.h (2.2.14) does not include spinlock.h */
-#include <asm/spinlock.h>
 #include "../drivers/char/bttv.h"
 #include "../drivers/char/bt848.h"
 
@@ -29,7 +29,7 @@
 
 static int debug = 0;
 static int card = 0;
-static int minor = 0;
+static int minor = -1;
 static int code_length = 5;
 static unsigned int gpio_mask = 0x1f;
 static int gpio_shift = 8;
@@ -120,6 +120,7 @@ int gpio_remote_init(void)
 		return ret;
 	}
 	
+	minor = ret;
 	printk("lirc_gpio_i %d: driver registered\n", minor);
 
 	return 0;
@@ -138,8 +139,8 @@ int init_module(void)
 {
 	unsigned int max_mask;
 
-	if (0 > minor || MAX_IRCTL_DEVICES < minor) {
-		printk("lirc_gpio_i: parameter minor (%d) must be beetween 0 and %d!\n",
+	if (MAX_IRCTL_DEVICES < minor) {
+		printk("lirc_gpio_i: parameter minor (%d) must be less tahn %d!\n",
 		       minor, MAX_IRCTL_DEVICES);
 		return -1;
 	}
