@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.5 2000/11/30 19:41:03 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.6 2000/12/08 19:24:22 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -32,8 +32,10 @@
 #include <linux/i2c.h>
 
 #ifndef I2C_CLIENT_END
-#error "--- Sorry, this driver needs the new I2C stack. ---"
-#error "--- You can get it at http://www2.lm-sensors.nu/~lm78/. ---"
+#error "********************************************************"
+#error " Sorry, this driver needs the new I2C stack.            "
+#error " You can get it at http://www2.lm-sensors.nu/~lm78/.    "
+#error "********************************************************"
 #endif
 
 #include <asm/semaphore.h>
@@ -41,8 +43,10 @@
 #include "../lirc_dev/lirc_dev.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
+#include "../drivers/char/bttvp.h"
 #else
 #include "../drivers/media/video/bttv.h"
+#include "../drivers/media/video/bttvp.h"
 #endif
 
 /* Addresses to scan */

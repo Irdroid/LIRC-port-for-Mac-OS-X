@@ -63,23 +63,25 @@ depends on the distribution you use.</P>
 <P><B>TV cards:</B> To use any TV card remote controls you will need
 either at least kernel version 2.4.0 or you use Gerd Knorr's current
 <A HREF="http://www.strusel007.de/linux/bttv/index.html">bttv</A>
-package together with a kernel version of 2.2.4 or higher. In some
-cases (eg. PixelView PlayTV) the latter solution will require Gerd
-Knorr's bttv package version 0.7.37 or higher. As LIRC during
-compilation uses the bttv header files you will have to copy the
-current bttv files into your kernel sources. The I2C driver also
-requires the new I2C stack that was introduced in 2.3.x. <A
+package together with a kernel version of 2.2.4 or higher. In any case
+bttv version 0.7.45 or higher is required. As LIRC during compilation
+uses the bttv header files you will have to copy the current bttv
+files into your kernel sources. The I2C driver also requires the new
+I2C stack that was introduced in 2.3.x. <A
 HREF="http://www2.lm-sensors.nu/~lm78/">Patches</A> for 2.2.x kernels
 are also available.
 </P>
 <P>
-For TV cards that use the lirc_gpio_p module we rely on bttv
-autodetection of TV cards. That way you don't have to give any
-parameters to the module as they are selected internally depending on
-the information the bttv module gives us. This means that you should
-pay attention that your TV card is detected correctly by bttv.
+For most TV cards we rely on bttv autodetection. That way
+you don't have to give any parameters to the module as they are
+selected internally depending on the information the bttv module gives
+us. This means that you should pay attention that your TV card is
+detected correctly by bttv.
 </P>
-
+<P>
+<B>Technisat MediaFocus I:</B> You will have to install the <A
+HREF="http://www.uni-giessen.de/~gej2/">driver</A> for this card.
+</P>
     <!-- Supported Hardware ------------------------------------------------>
 
 <A NAME="hardware"><HR></A>
@@ -203,9 +205,9 @@ The configure script will tell you which kernel module you need.</P>
 
 <P>
 Finally you might want to add <em>/usr/local/lib</em> to
-<em>/etc/ld.so.conf</em> so the lirc_client library is found by the
-run-time linker. Don't forget to call <em>ldconfig</em> so that the
-change takes effect.
+<em>/etc/ld.so.conf</em> so the <em>lirc_client</em> library is found
+by the run-time linker. Don't forget to call <em>ldconfig</em>
+afterwards for the change take effect.
 </P>
 
 
@@ -328,12 +330,12 @@ detail level of debug information.</P>
 <H1 ALIGN="CENTER">Module specific information</H1>
 <HR WIDTH="70%">
 
-<H3>lirc_gpio_p</H3>
+<H3>lirc_gpio</H3>
 
 This module receives scan codes from the GPIO register of bt8[47]8
-chips using polling. It is a "plugin" for the <em>lirc_dev</em>
-module. It loads <em>bttv</em> and <em>lirc_dev</em> modules if they
-are not loaded yet.<BR>
+chips using polling or interrupts if the card supports this. It is a
+"plugin" for the <em>lirc_dev</em> module. It loads <em>bttv</em> and
+<em>lirc_dev</em> modules if they are not loaded yet.<BR>
 
 <P>
  Parameters are:
@@ -355,7 +357,9 @@ of 0 of this parameter disables checking)</LI>
 GPIO value before lock_mask is checked</LI>
 <LI><B>soft_gap</B> (0) - minimal gap (in milliseconds) between two
 scan codes (value of 0 disables checking)</LI>
-<LI><B>sample_rate</B> (10) - how often (times per second) GPIO will be polled</LI>
+
+<LI><B>sample_rate</B> (10) - how often (times per second) GPIO will
+be polled, set to 0 for interrupt driven input</LI>
 </UL>
 </P>
 <P>
@@ -366,38 +370,12 @@ gpio_lock_mask=0x8000, gpio_xor_mask=0, soft_gap=400, sample_rate=12</LI>
 <LI><B>AVerMedia - TVCapture98 and TVPhone98 (pre 98 also)</B> - parameters: 
 gpio_mask=0xf88000, gpio_lock_mask=0x10000, gpio_xor_mask=0x10000, 
 soft_gap=0, sample_rate=10</LI>
+<LI>many more...</LI>
 </UL>
 
 Autodetection is performed using the API from the <em>bttv</em> module
 - this means that if <em>bttv</em> doesn't properly recognize the card
-type the remote control wouldn't work.
-</P>
-
-<H3>lirc_gpio_i</H3>
-<P>
-This module receives scan codes from the GPIO register of bt8[47]8
-chips using hardware interrupts. It is a "plugin" for the
-<em>lirc_dev</em> module. It loads <em>bttv</em> and <em>lirc_dev</em>
-modules if they are not loaded yet.
-</P>
-
-<P>
-Parameters are:
-<ul>
-<li><b>debug</b> (0) - value other than 0 (zero) enables printing more
-log messages</li>
-<li><b>card</b> (0) - number of TV card from which receive scan codes</li>
-<li><b>minor</b> (0) - minor device number for /dev/lirc device</li>
-<li><b>code_length</b> (5) - scan code length (in bits)</li>
-<li><b>gpio_shift</b> (8) - right shift GPIO value gpio_shift bits</li>
-<li><b>gpio_mask</b> (0x1f) - bit mask used for masking (bitwise
-&amp;) GPIO value (after shifting)</li>
-<li><b>gpio_lock_mask</b> (0x8000) - if this value "anded" with GPIO
-value is non zero than it indicates that scan code is not ready (value
-of 0 of this parameter disables checking)</li>
-<li><b>soft_gap</b> (300) - minimal gap (in milliseconds) between two
-scan codes (value of 0 disables checking)</li>
-</ul>
+type the remote control won't work.
 </P>
 
     <!-- Updating from lirc-0.5.4 --------------------------------------------->
@@ -437,6 +415,14 @@ the Irman is connected to (e.g. <em>/dev/ttyS1</em>).
 <A NAME="updating062"><HR></A>
 <H1 ALIGN="CENTER">Updating from lirc-0.6.2</H1>
 <HR WIDTH="70%">
+
+<P>
+The lirc_gpio_p has been renamed to lirc_gpio. I now also contains
+support for TV cards that are able to generate interrupts if infra-red
+commands are received. The lirc_gpio_i driver that implemented this
+has been removed. The lirc_fly98 also has been removed as it is now
+supported by the lirc_gpio driver.
+</P>
 
 <P>
 The <em>lirc_haup</em> module has been renamed to <em>lirc_i2c</em>.

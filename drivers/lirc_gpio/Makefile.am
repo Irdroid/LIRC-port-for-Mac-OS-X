@@ -1,14 +1,14 @@
-## $Id: Makefile.am,v 1.3 2000/07/21 20:30:28 columbus Exp $
+## $Id: Makefile.am,v 1.4 2000/12/08 19:24:22 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
 ## this is so that Automake includes the C compiling definitions, and
 ## includes the source files in the distribution.
 EXTRA_PROGRAMS = automake_dummy
-automake_dummy_SOURCES = lirc_gpio_p.c lirc_gpio_i.c
+automake_dummy_SOURCES = lirc_gpio.c
 
 ## there is no *just* object file support in automake.  This is close enough
-module_DATA = @gpio_module@.o
+module_DATA = lirc_gpio.o
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@

@@ -1,4 +1,7 @@
 0.6.3: future
+  * Fly98 TV is now supported by the lirc_gpio module
+  * renamed lirc_gpio_p module to lirc_gpio
+  * added support for Technisat MediaFocus I
   * changes to transmit code in lirc_serial (read update hints for details)
   * added support for Pixelview PlayTV (bt878) card
   * moved lirc_haup to lirc_i2c

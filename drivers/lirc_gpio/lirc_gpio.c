@@ -7,13 +7,15 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.24 2000/12/03 18:02:55 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.1 2000/12/08 19:24:22 columbus Exp $
  *
  */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
-#error "!!! Sorry, this driver needs kernel version 2.2.4 or higher !!!"
+#error "*******************************************************"
+#error "Sorry, this driver needs kernel version 2.2.4 or higher"
+#error "*******************************************************"
 #endif
 
 #include <linux/module.h>
@@ -23,16 +25,25 @@
 #include <linux/errno.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
+/* comes with bttv */
+#include "../drivers/char/kcompat24.h"
+
 #include "../drivers/char/bttv.h"
+#include "../drivers/char/bttvp.h"
 #else
 #include "../drivers/media/video/bttv.h"
+#include "../drivers/media/video/bttvp.h"
 #endif
-#include "../lirc_dev/lirc_dev.h"
 
-#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,37)
-#error "!!! Sorry, this driver needs bttv version 0.7.37 or higher   !!!"
-#error "!!! If you are using the bttv package, copy it to the kernel !!!"
+#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,45)
+#error "*******************************************************"
+#error " Sorry, this driver needs bttv version 0.7.45 or       "
+#error " higher. If you are using the bttv package, copy it to "
+#error " the kernel                                            "
+#error "*******************************************************"
 #endif
+
+#include "../lirc_dev/lirc_dev.h"
 
 static int debug = 0;
 static int card = 0;
@@ -83,7 +94,8 @@ static struct rcv_info rcv_infos[] = {
 	/* just a guess */
 	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
- 	{BTTV_PHOEBE_TVMAS,  0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
+ 	{BTTV_PHOEBE_TVMAS,  0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
+ 	{BTTV_FLYVIDEO_98,   0x000001f8,          0, 0x0000100,          0,   0, 0,  0}
 };
 
 static unsigned char code_length = 0;
@@ -93,7 +105,7 @@ static int card_type = 0;
 #define MAX_BYTES 8
 
 #define SUCCESS 0
-#define LOGHEAD "lirc_gpio_p (%d): "
+#define LOGHEAD "lirc_gpio (%d): "
 
 /* how many bits GPIO value can be shifted right before processing
  * it is computed from the value of gpio_mask_parameter
@@ -246,14 +258,19 @@ static void set_use_dec(void* data)
 	MOD_DEC_USE_COUNT;
 }
 
+static wait_queue_head_t* get_queue(void* data)
+{
+	return bttv_get_gpio_queue(card);
+}
+
 static struct lirc_plugin plugin = {
-	"lirc_gpio_p",
+	"lirc_gpio  ",
 	0,
 	0,
 	0,
 	NULL,
 	get_key,
-	NULL,
+	get_queue,
 	set_use_inc,
 	set_use_dec
 };
@@ -339,7 +356,7 @@ int init_module(void)
 	int type,cardid;
 
 	if (MAX_IRCTL_DEVICES < minor) {
-		printk("lirc_gpio_p: parameter minor (%d) must be less than %d!\n",
+		printk("lirc_gpio: parameter minor (%d) must be less than %d!\n",
 		       minor, MAX_IRCTL_DEVICES-1);
 		return -EBADRQC;
 	}
