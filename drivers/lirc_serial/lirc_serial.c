@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.57 2004/11/20 10:14:03 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.58 2004/12/01 18:27:36 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -156,6 +156,8 @@ static int softcarrier=1;
 #else
 static int softcarrier=0;
 #endif
+
+static int share_irq = 0;
 static int debug = 0;
 
 #define dprintk(fmt, args...)                                   \
@@ -837,8 +839,11 @@ static int set_use_inc(void* data)
 	
 	/* initialize timestamp */
 	do_gettimeofday(&lasttv);
+
+	result=request_irq(irq,irq_handler,
+			   SA_INTERRUPT | (share_irq ? SA_SHIRQ:0),
+			   LIRC_DRIVER_NAME,(void *)&hardware);
 	
-	result=request_irq(irq,irq_handler,SA_INTERRUPT,LIRC_DRIVER_NAME,NULL);
 	switch(result)
 	{
 	case -EBUSY:
@@ -883,8 +888,9 @@ static void set_use_dec(void* data)
 	soutp(UART_IER, sinp(UART_IER)&
 	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
 	local_irq_restore(flags);
+
+	free_irq(irq, (void *)&hardware);
 	
-	free_irq(irq, NULL);
 	dprintk("freed IRQ %d\n", irq);
 	lirc_buffer_free(&rbuf);
 	
@@ -1068,6 +1074,9 @@ MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 
 module_param(irq, int, 0444);
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+
+module_param(share_irq, bool, 0444);
+MODULE_PARM_DESC(share_irq, "Share interrupts (0 = off, 1 = on)");
 
 module_param(sense, bool, 0444);
 MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
