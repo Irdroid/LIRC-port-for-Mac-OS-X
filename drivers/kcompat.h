@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.3 2004/03/28 15:25:44 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.4 2004/03/30 05:44:07 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -13,6 +13,7 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#undef daemonize
 #define daemonize(name) do {                                           \
                                                                        \
 	lock_kernel();                                                 \
