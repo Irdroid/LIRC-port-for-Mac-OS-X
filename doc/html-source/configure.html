@@ -43,6 +43,139 @@
       important part of the package.
     </P>
     
+    <!-- multiple devices ++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+    <A NAME="multiple"></A><HR>
+    <H1 ALIGN="CENTER">Using multiple different devices simultaneously</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      There are some situations when you might want to use multiple
+      devices with LIRC simultaneously. E.g. you might have a TV card
+      receiver and want to control your set-top box with a home-brew
+      serial port transmitter at the same time. Or you might have a
+      serial port receiver connected to your PC and a different
+      network connected receiver (UDP, different LIRC/WinLIRC
+      instance) in a different room.
+    </P>
+    <P>
+      The configuration depends much on the type of devices you want
+      to use. If you are using devices that require a kernel module,
+      then you should first compile and install LIRC individually for
+      each device, basically just to get all required kernel modules
+      installed. The further steps depend on which user-space driver
+      is used in lircd for your devices. Most devices (actually all
+      devices that use a kernel module) use the <em>default</em>
+      driver. You can check which user-space is used for your device
+      by running <em>lircd --driver=?</em>. Remember that this might
+      change each time you compile lircd for a different device. If
+      you want to use devices that use different user-space drivers
+      then you have to compile LIRC once again using <em>./configure
+      --with-driver=any</em>. This will compile almost any user-space
+      driver into lircd that is available (but does not compile any
+      kernel modules, that's why you had to build them individually
+      before). After that you should check if the drivers you want are
+      listed now with <em>lircd --driver=?</em>. You should get
+      something like this:
+    </P>
+<pre>
+> lircd --driver=?
+Driver `?' not supported.
+Supported drivers:
+        audio
+        bte
+        creative
+        creative_infracd
+        default
+        dev/input
+        dsp
+        ea65
+        irman
+        livedrive_midi
+        livedrive_seq
+        logitech
+        mp3anywhere
+        null
+        pcmak
+        pinsys
+        pixelview
+        silitek
+        tira
+        udp
+        uirt2
+        uirt2_raw
+</pre>
+    <P>
+      If you want to use more than one device that uses a kernel
+      module you should now have a look at the character device setup
+      in /dev/. Each LIRC kernel module provides a device with major
+      number 61 and a minor number beginning at 0 which is counted up
+      every time a new driver is loaded (note: both the major number
+      and the minor number concept are subject to change in future
+      LIRC releases). If you want to use two devices then the LIRC
+      related files in /dev/ should look something like this (this
+      might be done automatically if you are using devfs or sysfs):
+    </P>
+<pre>
+> ls -l /dev/lirc*
+crw-r--r--    1 root     root      61,   0 Apr 25  2001 /dev/lirc
+crw-r--r--    1 root     root      61,   1 Nov  6 19:24 /dev/lirc1
+srw-rw-rw-    1 root     root            0 Dez 19 09:44 /dev/lircd
+prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
+</pre>
+    <P>
+      You can create new entries by running:
+<pre>
+> mknod /dev/lirc2 c 61 2
+</pre>
+    </P>
+    <P>
+      For each device you want to use you have to start an individual
+      lircd instance. If you want to receive events from all receivers
+      at one socket interface you have to connect the different lircd
+      interfaces with an additional TCP/IP socket. This could look
+      e.g. like this:
+    </P>
+<pre>
+> lircd --driver=default --device=/dev/lirc1 --output=/dev/lircd1 \
+    --pidfile=/var/run/lircd1.pid --listen
+> lircd --driver=default --device=/dev/lirc --output=/dev/lircd \
+    --pidfile=/var/run/lircd.pid --connect=localhost:8765
+</pre>
+    <P>
+      All events will now be visible at /dev/lircd. The second lircd
+      instance connects to the first instance using a TCP/IP
+      socket. The default port is 8765. It can be changed by providing
+      an optional parameter to the <em>--listen</em> switch. If you
+      have more lircd instances you want to connect to, you can
+      provide multiple <em>--connect</em> parameters to the last lircd
+      instance. Please note that lircd will not relay events received
+      from one lircd to another. So you can't daisy-chain
+      lircds. Instead you need a star topology setup.
+    </P>
+      In order to check each lircd instance individually if events are
+      being received, just use irw providing the according socket
+      interface on the command line:
+<pre>
+> irw /dev/lircd1
+</pre>
+    <P>
+      Also using a special lircd instance to send infra-red commands
+      is quite easy: use the --device command line option of irsend to
+      provide the desired socket interface.
+    </P>
+    <P>
+      The only situation where the described procedure will not work
+      is when you have two devices that both use a kernel driver that
+      can only handle one device at once like e.g. lirc_serial,
+      lirc_sir or lirc_parallel. You can still make it work with a
+      trick by compiling the affected driver multiple times using
+      different names and different major numbers. You will find
+      detailed instructions how to achieve this by searching the
+      mailing list. Lifting this limitation is one of the todo items
+      for future releases.
+    </P>
+
     <!-- lircmd.conf +++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     
     <A NAME="lircmd.conf"></A><HR>
