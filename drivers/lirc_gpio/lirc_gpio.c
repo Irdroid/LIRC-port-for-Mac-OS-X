@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.36 2004/03/28 15:20:56 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.37 2004/04/27 06:08:24 lirc Exp $
  *
  */
 
@@ -482,6 +482,7 @@ int init_module(void)
 	} else {
 		if(bttv_get_cardinfo(card,&type,&cardid)==-1) {
 			printk(LOGHEAD "could not get card type\n", minor);
+			return -EBADRQC;
 		}
 		printk(LOGHEAD "card type 0x%x, id 0x%x\n",minor,
 		       type,cardid);
