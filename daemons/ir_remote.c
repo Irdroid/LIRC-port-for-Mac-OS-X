@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.13 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.14 2000/05/03 18:18:23 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -125,8 +125,6 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		{
 #                       ifdef DEBUG
 			logprintf(1,"bad pre data\n");
-#                       endif
-#                       ifdef DEBUG
 #                       ifdef LONG_IR_CODE
 			logprintf(2,"%llx %llx\n",pre,remote->pre_data);
 #                       else
@@ -146,6 +144,11 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		{
 #                       ifdef DEBUG
 			logprintf(1,"bad post data\n");
+#                       ifdef LONG_IR_CODE
+			logprintf(2,"%llx %llx\n",post,remote->post_data);
+#                       else
+			logprintf(2,"%lx %lx\n",post,remote->post_data);
+#                       endif
 #                       endif
 			return(0);
 		}

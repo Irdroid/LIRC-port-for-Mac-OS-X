@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.15 2000/04/18 19:46:21 columbus Exp $      */
+/*      $Id: lircd.c,v 5.16 2000/05/03 18:18:23 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1169,6 +1169,7 @@ void loop()
 int main(int argc,char **argv)
 {
 	struct sigaction act;
+	int nodaemon=0;
 
 	while(1)
 	{
@@ -1177,15 +1178,16 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+			{"nodaemon",no_argument,NULL,'n'},
 #                       ifdef DEBUG
-			{"debug",optional_argument,NULL,'d'},
+			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{0, 0, 0, 0}
 		};
 #               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvd:",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnD::",long_options,NULL);
 #               else
-		c = getopt_long(argc,argv,"hv",long_options,NULL);
+		c = getopt_long(argc,argv,"hvn",long_options,NULL);
 #               endif
 		if(c==-1)
 			break;
@@ -1195,15 +1197,19 @@ int main(int argc,char **argv)
 			printf("Usage: %s [options] [config-file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -n --nodaemon\t\tdon't fork to background\n");
 #                       ifdef DEBUG
-			printf("\t -d[debug_level] --debug[=debug_level]\n");
+			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s\n",progname);
 			return(EXIT_SUCCESS);
+		case 'n':
+			nodaemon=1;
+			break;
 #               ifdef DEBUG
-		case 'd':
+		case 'D':
 			if(optarg==NULL) debug=1;
 			else
 			{
@@ -1213,6 +1219,7 @@ int main(int argc,char **argv)
 			break;
 #               endif
 		default:
+			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);
 		}
 	}
@@ -1251,7 +1258,7 @@ int main(int argc,char **argv)
 	
 #ifdef DAEMONIZE
 	/* ready to accept connections */
-	daemonize();
+	if(!nodaemon) daemonize();
 #endif
 	
 #if defined(SIM_SEND) && !defined(DAEMONIZE)

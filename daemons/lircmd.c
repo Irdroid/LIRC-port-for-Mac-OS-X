@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.8 2000/04/15 20:28:51 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.9 2000/05/03 18:18:23 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -689,6 +689,7 @@ int main(int argc,char **argv)
 	struct sigaction act;
 	struct sockaddr_un addr;
 	sigset_t block;
+	int nodaemon=0;
 
 	while(1)
 	{
@@ -697,9 +698,10 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+			{"nodaemon",no_argument,NULL,'n'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hv",long_options,NULL);
+		c = getopt_long(argc,argv,"hvn",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
@@ -708,11 +710,16 @@ int main(int argc,char **argv)
 			printf("Usage: %s [options] [config-file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -n --nodaemon\t\tdon't fork to background\n");
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s\n",progname);
 			return(EXIT_SUCCESS);
+		case 'n':
+			nodaemon=1;
+			break;
 		default:
+			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);
 		}
 	}
@@ -785,7 +792,7 @@ int main(int argc,char **argv)
 		ms=new_ms;
 	}
 #ifdef DAEMONIZE
-	daemonize();
+	if(!nodaemon) daemonize();
 #endif
 	openlog(progname,LOG_CONS,LOG_DAEMON);
 	
