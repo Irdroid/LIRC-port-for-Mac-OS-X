@@ -290,8 +290,7 @@ char *pinsys_rec(struct ir_remote *remotes)
 		{
 			if(!waitfordata(20000))
 			{
-				logprintf(LOG_WARNING,
-					  "timeout reading byte %d",i);
+				LOGPRINTF(0,"timeout reading byte %d",i);
 				/* likely to be !=3 bytes, so flush. */
 				tcflush(hw.fd, TCIFLUSH);
 				return(NULL);
