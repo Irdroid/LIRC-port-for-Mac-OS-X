@@ -614,3 +614,89 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.0(atiusb) on Sun Jan 23 11:18:36 2005
+#
+# contributed by Dirk Aust
+#
+# brand:	Medion, Made by X10, China
+# Remote P/N:	20016398
+# Receiver P/N:	20016397
+
+begin remote
+
+  name  Medion
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139873
+  toggle_bit      0
+
+
+      begin codes
+          TV                       0x012C
+          VCR                      0x022D
+          DVD                      0xD904
+          MUSIC                    0xDB06
+          RADIO                    0x032E
+          PHOTO                    0xDA05
+          TV_PREVIEW               0x042F
+          CHANNEL_LIST             0x0530
+          SETUP                    0xF01B
+          VIDEO_DESKTOP            0x0631
+          CHAN+                    0xE00B
+          VOL-                     0xDD08
+          MUTE                     0xD500
+          VOL+                     0xDE09
+          CHAN-                    0xE10C
+          RED                      0x0732
+          GREEN                    0x0833
+          YELLOW                   0x0934
+          BLUE                     0x0A35
+          TXT                      0xFE29
+          1                        0xE20D
+          2                        0xE30E
+          3                        0xE40F
+          4                        0xE510
+          5                        0xE611
+          6                        0xE712
+          7                        0xE813
+          8                        0xE914
+          9                        0xEA15
+          TV/RADIO                 0xF11C
+          0                        0xEC17
+          DELETE                   0xF520
+          RENAME                   0x0B36
+          SNAPSHOT                 0xED18
+          UP                       0xEF1A
+          LEFT                     0xF21D
+          OK                       0xF31E
+          RIGHT                    0xF41F
+          DOWN                     0xF722
+          ACQ_IMAGE                0x0C37
+          EDIT_IMAGE               0x0D38
+          REW                      0xF924
+          PLAY                     0xFA25
+          FFW                      0xFB26
+          RECORD                   0xFC27
+          STOP                     0xFD28
+          PAUSE                    0xFE29
+          PREV                     0xF621
+          FULL                     0x0E39
+          NEXT                     0xF823
+          DVD_MENU                 0xEE19
+          DVD_AUDIO                0x0F3A
+          POWER                    0xD702
+      end codes
+
+end remote
+
+
