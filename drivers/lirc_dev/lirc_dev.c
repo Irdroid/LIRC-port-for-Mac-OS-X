@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.24 2002/12/15 08:49:21 ranty Exp $
+ * $Id: lirc_dev.c,v 1.25 2003/05/04 09:31:28 ranty Exp $
  *
  */
 
@@ -327,12 +327,6 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->t_notify = &tn;
 		ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
 		if (ir->tpid < 0) {
-			/* I don't understand why unlocking is needed here.
-			 * If it is to wake up posible waiting processes,
-			 * maybe we should check if there are other listeners
-			 * first with down_trylock.
-			 */
-			lirc_buffer_unlock(ir->buf);
 			up(&plugin_lock);
 			printk("lirc_dev: lirc_register_plugin:"
 			       "cannot run poll thread for minor = %d\n",
@@ -641,6 +635,11 @@ static ssize_t irctl_read(struct file *file,
 	 */
 	while (written < length && ret == 0) { 
 		if (lirc_buffer_empty(ir->buf)) {
+			/* According to the read(2) man page, 'written' can be
+			 * returned as less than 'length', instead of blocking
+			 * again, returning -EWOULDBLOCK, or returning
+			 * -ERESTARTSYS */
+			if (written) break;
 			if (file->f_flags & O_NONBLOCK) {
 				dprintk(LOGHEAD "read result = -EWOULDBLOCK\n", 
 						ir->p.name, ir->p.minor);
