@@ -39,10 +39,10 @@
       somewhere in /usr/src/. During the build process of this package
       the kernel Makefile and the current kernel configuration will be
       used to work around some other problems that would arise if we
-      used our own Makefile. That means that you will have to build
+      used our own Makefile. That means that you might have to build
       your own kernel which is a good idea anyway. Make sure you use
       the standard kernel which you can download at <A
-	HREF="http://www.kernel.org">www.kernel.org</A>.  Don't use any
+        HREF="http://www.kernel.org">www.kernel.org</A>.  Don't use any
       kernel sources that have been modified for your
       distribution. For example you won't be able to compile some
       modules for kernels that come with S.u.S.E. 7.0. Please refer to
@@ -50,10 +50,43 @@
       <em>README</em> file in the kernel source directory to get more
       information on how to compile and set up an own kernel. More
       documentation is available at the <A
-	HREF="http://sunsite.unc.edu/LDP/">Linux Documentation
-	Project</A>.
+        HREF="http://sunsite.unc.edu/LDP/">Linux Documentation
+      Project</A>.
     </P>
-
+    <P>
+      If you are still running a stock kernel that came with your
+      distribution and don't want to compile a new kernel you can try
+      the following. Install the kernel sources package of the
+      currently running kernel. Most distributions provide rpm/deb
+      packages of their stock kernels. Double-check that you selected
+      the correct kernel sources. Now make sure that there is a file
+      called .config in the root directory of the kernel source
+      tree. This file holds the configuration used to compile this
+      kernel. If it is not available and you can't get it from a
+      different source (/boot/config-<em>version</em> (Debian),
+      /proc/config.gz (SuSE) or
+      /usr/src/linux-<em>version</em>/configs/ (Red Hat) are good
+      places to look into) you are out of luck and will have to
+      configure and compile your own kernel. Otherwise call <em>make
+      oldconfig &amp;&amp; make dep</em> inside the root directory of
+      the kernel source tree. After that you should be able to compile
+      the LIRC modules without problems. Just make sure that the
+      configure script for the LIRC package picked the correct kernel
+      source directory. But be aware that there might still be some
+      problems due to incompatible extensions of the distribution
+      kernels as mentioned in the last paragraph. There are even more
+      pitfalls. The modules should be compiled with the same compiler
+      version. Otherwise you might see strange lockups and kernel
+      oopses. Another problem might be that some distribution vendors
+      also modify the kernel version variables inside the Makefile of
+      the kernel and e.g. add something like <em>custom</em> to the
+      EXTRAVERSION variable. This will result in the modules being
+      installed in the wrong directory. In such cases it is common
+      practice to remove the <em>custom</em> string before proceeding
+      with kernel compilation. This has been only a list of known
+      problems. If you run into such problems I won't be able to help
+      you, so don't even ask.
+    </P>
     <P>
       If you want to use a home-brew receiver, an Anir Multimedia
       Magic, a Packard Bell receiver, the IRdeo or if you want to use
