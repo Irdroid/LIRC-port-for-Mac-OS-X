@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.6 2005/02/27 19:16:14 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.7 2005/02/28 21:01:44 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.6 $"
+#define DRIVER_VERSION	"$Revision: 1.7 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -204,16 +204,18 @@ static void delay_timeout(unsigned long arg)
 			lirc_buffer_write_1(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		}
-		sz->delay_timer.expires++;
-		add_timer(&sz->delay_timer);
+		spin_lock(&sz->timer_lock);
+		if(sz->timer_running)
+		{
+			sz->delay_timer.expires++;
+			add_timer(&sz->delay_timer);
+		}
+		spin_unlock(&sz->timer_lock);
 	}
 	else
 	{
-		unsigned long flags;
-		
-		spin_lock_irqsave(&sz->timer_lock, flags);
+		/* no lock required here */
 		sz->timer_running = 0;
-		spin_unlock_irqrestore(&sz->timer_lock, flags);
 	}
 	wake_up(&sz->lirc_buf.wait_poll);
 }
@@ -396,18 +398,17 @@ static void usb_streamzap_irq(struct urb *urb)
 		case FullSpace:
 			if(sz->buf_in[i] == 0xff)
 			{
+				unsigned long flags;
+				
 				sz->idle=1;
+				spin_lock_irqsave(&sz->timer_lock, flags);
 				if(sz->timer_running)
 				{
-					unsigned long flags;
-					
-					spin_lock_irqsave
-						(&sz->timer_lock, flags);
-					del_timer(&sz->delay_timer);
 					sz->timer_running = 0;
-					spin_unlock_irqrestore
-						(&sz->timer_lock, flags);
+					del_timer_sync(&sz->delay_timer);
 				}
+				spin_unlock_irqrestore
+					(&sz->timer_lock, flags);
 				flush_delay_buffer(sz);
 			}
 			else
