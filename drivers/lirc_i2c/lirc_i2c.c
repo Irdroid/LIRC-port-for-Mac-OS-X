@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.16 2002/11/19 20:22:07 ranty Exp $      */
+/*      $Id: lirc_i2c.c,v 1.17 2002/12/16 20:49:47 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -90,12 +90,6 @@ MODULE_PARM(minor,"i");
 
 #define DEVICE_NAME "lirc_i2c"
 
-/*
- * If this key changes, a new key was pressed.
- */
-#define REPEAT_TOGGLE_0      0xC0
-#define REPEAT_TOGGLE_1      0xE0
-
 /* ----------------------------------------------------------------------- */
 
 static inline int reverse(int data, int bits)
@@ -146,7 +140,7 @@ static int get_key_haup(void* data, unsigned char* key, int key_no)
 {
 	struct IR *ir = data;
         unsigned char buf[3];
-	__u16 toggle_bit, code;
+	__u16 code;
 
 	if (ir->nextkey != -1) {
 		/* pass second byte */
@@ -168,12 +162,11 @@ static int get_key_haup(void* data, unsigned char* key, int key_no)
 	}
 
 	/* key pressed ? */
-	if (ir->b[0] != REPEAT_TOGGLE_0 && ir->b[0] != REPEAT_TOGGLE_1)
+	if ((ir->b[0] & 0x80) == 0)
 		return -1;
-		
+	
 	/* look what we have */
-	toggle_bit=(ir->b[0]&0x20) ? 0x800:0;
-	code = (0x1000 | toggle_bit | (ir->b[1]>>2));
+	code = (((__u16)ir->b[0]&0x7f)<<6) | (ir->b[1]>>2);
 
 	/* return it */
 	*key        = (code >> 8) & 0xff;
