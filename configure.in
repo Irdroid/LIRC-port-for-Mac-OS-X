@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.105 2003/04/21 14:14:44 lirc Exp $
+dnl $Id: configure.in,v 5.106 2003/04/27 19:14:33 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -171,7 +171,7 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, any, act200l, animax, asus_tvbox, audio,
+                          none, any, act200l, animax, audio,
 			  avermedia, avermedia_vdomate, avermedia98,
 			  bestbuy, bestbuy2, bte, caraca, chronos,
 			  comX, dsp, cph03x, cph06x, creative,
@@ -184,7 +184,7 @@ AC_ARG_WITH(driver,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, udp],
+			  slinke, tekram, tekram_bt829, tvbox, udp],
 driver=${withval},
 driver="unset"
 )
@@ -321,11 +321,6 @@ if test "$driver" = "animax"; then
   lircd_conf="animax/lircd.conf.animax"
   lircmd_conf="animax/lircmd.conf.animax"
   AC_DEFINE(LIRC_SERIAL_ANIMAX)
-fi
-
-if test "$driver" = "asus_tvbox"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="asus/lircd.conf.asus"
 fi
 
 if test "$driver" = "audio"; then
@@ -661,6 +656,11 @@ if test "$driver" = "tekram_bt829"; then
   lirc_driver="lirc_dev lirc_bt829"
   lircd_conf="tekram/lircd.conf.m230"
   lircmd_conf="tekram/lircmd.conf.m230"
+fi
+
+if test "$driver" = "tvbox"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="asus/lircd.conf.asus"
 fi
 
 if test "$driver" = "udp"; then

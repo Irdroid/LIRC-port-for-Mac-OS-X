@@ -9,9 +9,13 @@
 begin remote
 
   name		Asus TV-Box IR
+
   bits		8
   eps		30
   aeps		100
+  one           0     0
+  zero          0     0
+  gap           1399999
   toggle_bit	0
 
 	begin codes

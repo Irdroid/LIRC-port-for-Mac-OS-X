@@ -362,17 +362,19 @@ ConfigDriver ()
 			q "ProVideo PV951 (card=42)" \
 			r "Technisat MediaFocus I" \
 			s "Tekram M230 Mach64 (and others bt829 based)" \
-			t "TView99 CPH063 (card=38)" \
-			u "Typhoon TView RDS / FM Stereo (card=53)" \
-			v "Winfast TV2000/XP (card=34)" \
-			w "WinView 601 (card=17)" 2> $TEMP;
+			t "VisionTek BreakOut-Box" \
+			u "TView99 CPH063 (card=38)" \
+			v "Typhoon TView RDS / FM Stereo (card=53)" \
+			w "Winfast TV2000/XP (card=34)" \
+			x "WinView 601 (card=17)" \
+			2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
 		if   test "$1" = "1"; then LIRC_DRIVER=cph03x;            DRIVER_PARAMETER=none;
 		elif test "$1" = "2"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "3"; then LIRC_DRIVER=asus_tvbox;        DRIVER_PARAMETER=none;
+		elif test "$1" = "3"; then LIRC_DRIVER=tvbox;             DRIVER_PARAMETER=none;
 		elif test "$1" = "4"; then LIRC_DRIVER=avermedia;         DRIVER_PARAMETER=none;
 		elif test "$1" = "5"; then LIRC_DRIVER=avermedia98;       DRIVER_PARAMETER=none;
 		elif test "$1" = "6"; then LIRC_DRIVER=avermedia_vdomate; DRIVER_PARAMETER=none;
@@ -399,10 +401,11 @@ ConfigDriver ()
 		elif test "$1" = "q"; then LIRC_DRIVER=provideo;          DRIVER_PARAMETER=none;
 		elif test "$1" = "r"; then LIRC_DRIVER=mediafocusI;       DRIVER_PARAMETER=none;
 		elif test "$1" = "s"; then LIRC_DRIVER=tekram_bt829;      DRIVER_PARAMETER=none;
-		elif test "$1" = "t"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "u"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
-		elif test "$1" = "v"; then LIRC_DRIVER=leadtek_0010;      DRIVER_PARAMETER=none;
-		elif test "$1" = "w"; then LIRC_DRIVER=leadtek_0007;      DRIVER_PARAMETER=none;
+		elif test "$1" = "t"; then LIRC_DRIVER=tvbox;             DRIVER_PARAMETER=none;
+		elif test "$1" = "u"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
+		elif test "$1" = "v"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
+		elif test "$1" = "w"; then LIRC_DRIVER=leadtek_0010;      DRIVER_PARAMETER=none;
+		elif test "$1" = "x"; then LIRC_DRIVER=leadtek_0007;      DRIVER_PARAMETER=none;
 		fi
 		}
 	    else

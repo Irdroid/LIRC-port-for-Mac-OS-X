@@ -1,4 +1,5 @@
 0.7.0: future
+  * added support for VisionTek BreakOut-Box (Stefan Jahn)
   * added support for Igor Ceska's receiver variation
   * added support for Ericsson mobile phone via Bluetooth (Vadim Shliakhov)
   * added support for X10 MP3 Anywhere RF receiver (Shawn Nycz)
