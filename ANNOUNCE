@@ -18,7 +18,7 @@ Home-brew serial and parallel port hardware, Irman, Anir Multimedia
 Magic, Packard Bell receivers, PixelView RemoteMaster.  The drivers
 for the following TV cards might still have problems and are not
 tested very well: many Hauppauge models, Fly Video 98. Experimental
-drivers for the and Logitech/AST and built-in IrDA ports (SIR mode) is
+drivers for the Logitech/AST and built-in IrDA ports (SIR mode) is
 also included.
 
 The most important part of LIRC is the lircd daemon that will decode
