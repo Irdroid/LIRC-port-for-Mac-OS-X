@@ -427,14 +427,19 @@ int init_module(void)
 
 	/* BTTV module is needed to access the on-board I2C bus */
 
-	ret = request_module("bttv");
+	/* ret = */ request_module("bttv");
 
+	/* can anybody tell me why request_module() has a return value
+	   while you can't use it!?!
+	*/
+	/* 
 	if (ret <0) {
 		printk ("lirc_haup: "
 			"request for module bttv failed, "
 			"code %d\n", ret);
 		return ret;
 	}
+	*/
 	     
 	ret = register_chrdev(LIRC_MAJOR, DEVICE_NAME, &lirc_haup_fops);
 
