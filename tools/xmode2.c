@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.12 2002/09/12 19:53:56 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.13 2003/03/30 12:26:44 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -199,6 +199,9 @@ int main(int argc, char **argv)
 		       "supporting the pulse/space layer.\n");
 		printf("Note that this is no error, but this program simply "
 		       "makes no sense for your\nreceiver.\n");
+		printf("In order to test your setup run lircd with the "
+		       "--nodaemon option and \n"
+		       "then check if the remote works with the irw tool.\n");
 		close(fd);
 		exit(EXIT_FAILURE);
 	}

@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.9 2002/09/12 19:53:56 lirc Exp $      */
+/*      $Id: mode2.c,v 5.10 2003/03/30 12:26:44 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -98,6 +98,9 @@ int main(int argc,char **argv)
 		printf("Note that this is no error, but this program simply "
 		       "makes no sense for your\n"
 		       "receiver.\n");
+		printf("In order to test your setup run lircd with the "
+		       "--nodaemon option and \n"
+		       "then check if the remote works with the irw tool.\n");
 		close(fd);
 		exit(EXIT_FAILURE);
 	}
