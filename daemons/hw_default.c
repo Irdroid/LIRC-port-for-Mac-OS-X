@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.29 2005/02/27 15:05:38 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.30 2005/03/27 10:51:12 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -493,16 +493,6 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		gettimeofday(&remote->last_send,NULL);
 		remote->last_code=code;
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
-		if(is_raw(remote) && is_const(remote))
-		{
-			int i;
-			
-			for(i=0;remote->remaining_gap>code->signals[i] &&
-				    i<code->length;i++)
-			{
-				remote->remaining_gap-=code->signals[i];
-			}
-		}
 		printf("space %lu\n",(unsigned long) remote->remaining_gap);
 #endif
 	}
