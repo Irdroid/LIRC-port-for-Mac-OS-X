@@ -10,51 +10,55 @@ understand a part of this manual or if you think there is something
 important missing you should complain.
 </P>
 <P>
+So this is the current status of this manual: All sections except
+no. 3 have been rewritten. TV card support is uncovered and still has
+to be added.
+</P>
+<P>
 This manual will guide you through the installation and configuration
 of LIRC. Setting up LIRC currently is not an easy task. So please take
 some time to read this documentation carefully.
 </P>
 
 <OL>
-<LI><B><A HREF="html/install.html">Installation
-	    Instructions</A></B></LI>
+<LI><B><A HREF="html/install.html">Installation instructions</A></B></LI>
 <P>
 <UL TYPE="disc">
-<LI><A HREF="html/install.html#dependencies"><U>Dependencies</U></A> - What other programs you need to use LIRC</LI>
-<LI><A HREF="html/install.html#hardware"><U>Overview of supported
-	    hardware</U></A></LI>
-<LI><A HREF="html/install.html#compiling"><U>Compiling</U></A></LI>
-<LI><A HREF="html/install.html#installing"><U>Installing</U></A></LI>
-<LI><A HREF="html/install.html#testing"><U>Testing your hardware &amp; 
-	configuration</U></A></LI>
-<LI><A HREF="html/install.html#uninstall"><U>Uninstalling</U></A></LI>
-<LI><A HREF="html/install.html#updating"><U>Updating from lirc-0.5.4</U></A></LI>
+<LI><A HREF="html/install.html#dependencies">Dependencies</A> - What other programs you need to use LIRC</LI>
+<LI><A HREF="html/install.html#hardware">Overview of supported
+	    hardware</A></LI>
+<LI><A HREF="html/install.html#compiling">Compiling</A></LI>
+<LI><A HREF="html/install.html#installing">Installing</A></LI>
+<LI><A HREF="html/install.html#testing">Testing your hardware &amp; 
+	configuration</A></LI>
+<LI><A HREF="html/install.html#uninstall">Uninstalling</A></LI>
+<LI><A HREF="html/install.html#updating">Updating from lirc-0.5.4</A></LI>
 </UL>
 </P>
 
 <LI><B><A HREF="html/configure.html">Configuring LIRC</A></B></LI>
 <P>
 <UL TYPE="disc">
-<LI><A HREF="html/configure.html#lircd.conf"><U>Configuring lircd</U></A> (lircd - the LIRC daemon)</LI>
-<LI><A HREF="html/configure.html#lircd.conf_format"><U>lircd.conf file format</U></A></LI>
-<LI><A HREF="html/configure.html#lircmd.conf"><U>Configuring lircmd</U></A> (lircmd - the LIRC mouse daemon)</LI>
-<LI><A HREF="html/configure.html#lircmd.conf_format"><U>lircmd.conf file format</U></A></LI>
-<LI><A HREF="html/configure.html#lircmd.conf_format"><U>Configuring LIRC tools</U></A></LI>
-<LI><A HREF="html/configure.html#lircrc_format"><U>.lircrc file format</U></A></LI>
+<LI><A HREF="html/configure.html#lircd.conf">Configuring lircd</A> (lircd - the LIRC daemon)</LI>
+<LI><A HREF="html/configure.html#lircd.conf_format">lircd.conf file format</A></LI>
+<LI><A HREF="html/configure.html#lircmd.conf">Configuring lircmd</A> (lircmd - the LIRC mouse daemon)</LI>
+<LI><A HREF="html/configure.html#lircmd.conf_format">lircmd.conf file format</A></LI>
+<LI><A HREF="html/configure.html#lircmd.conf_format">Configuring LIRC tools</A></LI>
+<LI><A HREF="html/configure.html#lircrc_format">.lircrc file format</A></LI>
 </UL>
 </P>
 
 <LI><B><A HREF="html/programs.html">Description of programs (purpose, command line arguments, etc.)</A></B></LI>
 <P>
 <UL TYPE="disc">
-<LI><A HREF="html/programs.html#lircd"><U>lircd</U></A></LI>
-<LI><A HREF="html/programs.html#lircmd"><U>lircmd</U></A></LI>
-<LI><A HREF="html/programs.html#irexec"><U>irexec</U></A></LI>
-<LI><A HREF="html/programs.html#irpty"><U>irpty</U></A></LI>
-<LI><A HREF="html/programs.html#irxevent"><U>irxevent</U></A></LI>
-<LI><A HREF="html/programs.html#irrecord"><U>irrecord</U></A></LI>
-<LI><A HREF="html/programs.html#irw"><U>irw</U></A></LI>
-<LI><A HREF="html/programs.html#mode2"><U>mode2, smode2, xmode2</U></A></LI>
+<LI><A HREF="html/programs.html#lircd">lircd</A></LI>
+<LI><A HREF="html/programs.html#lircmd">lircmd</A></LI>
+<LI><A HREF="html/programs.html#irexec">irexec</A></LI>
+<LI><A HREF="html/programs.html#irpty">irpty</A></LI>
+<LI><A HREF="html/programs.html#irxevent">irxevent</A></LI>
+<LI><A HREF="html/programs.html#irrecord">irrecord</A></LI>
+<LI><A HREF="html/programs.html#irw">irw</A></LI>
+<LI><A HREF="html/programs.html#mode2">mode2, smode2, xmode2</A></LI>
 </UL>
 </P>
 
@@ -62,10 +66,10 @@ some time to read this documentation carefully.
 <LI><B><A HREF="html/technical.html">Technical</A></B></LI>
 <P>
 <UL TYPE="disc">
-<LI><A HREF="html/technical.html#overview"><U>How everything works</U></A></LI>
-<LI><A HREF="html/technical.html#applications"><U>Writing applications for LIRC</U></A></LI>
+<LI><A HREF="html/technical.html#overview">How everything works</A></LI>
+<LI><A HREF="html/technical.html#applications">Writing applications for LIRC</A></LI>
     <UL>
-      <LI><A HREF="html/technical.html#library"><U>The lirc_client library</U></A></LI>
+      <LI><A HREF="html/technical.html#library">The lirc_client library</A></LI>
     </UL>
 </UL>
 </P>
@@ -73,17 +77,18 @@ some time to read this documentation carefully.
 <LI><B><A HREF="html/help.html">Getting additional information</A></B></LI>
 <P>
 <UL TYPE="disc">
-<LI><A HREF="html/help.html#faq"><U>FAQ</U>, <U>mailing list</U> and
-	  <U>mailing list archive</U></A></LI>
-<LI><A HREF="html/help.html#bugs"><U>Reporting bugs</U></A></LI>
-<LI><A HREF="html/help.html#new_remote"><U>Adding new remote controls</U></A></LI>
+<LI><A HREF="html/help.html#faq">FAQ, mailing list and mailing list
+archive</A></LI>
+<LI><A HREF="html/help.html#bugs">Reporting bugs</A></LI>
+<LI><A HREF="html/help.html#new_remote">Adding new remote controls</A></LI>
+<LI><A HREF="html/help.html#sending">Support for sending infrared signals</A></LI>
 </UL>
 </P>
 </OL>
 
 <P>
-Copyright (C) 1999 Christoph Bartelmus (<A 
-HREF="mailto:lirc@bartelmus.de"><U>lirc@bartelmus.de</U></A>)<BR>
+Copyright (C) 1999,2000 Christoph Bartelmus (<A 
+HREF="mailto:lirc@bartelmus.de">lirc@bartelmus.de</A>)<BR>
 Copyright (C) 1999 Karsten Scheibler (<A 
-HREF="mailto:karsten.scheibler@bigfoot.de"><U>karsten.scheibler@bigfoot.de</U></A>)
+HREF="mailto:karsten.scheibler@bigfoot.de">karsten.scheibler@bigfoot.de</A>)
 </P>

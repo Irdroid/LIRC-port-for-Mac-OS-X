@@ -139,7 +139,16 @@ is MouseSystems protocol.
 <DT>ACCELERATOR&nbsp;&nbsp;&lt;<em>start</em>&gt; &lt;<em>max</em>&gt; &lt;<em>multiplier</em>&gt;</DT>
 <DD>
 <P>
-Change the values here if your mouse pointer is moving too fast/slow.
+Change the values here if your mouse pointer is moving too
+fast/slow. Usually the mouse pointer moves 1 pixel everytime it
+receives a signal. The values here specify how much mouse movement
+accelerates if you hold down the according button on your remote
+control for a longer timer. The <em>start</em> value is the threshold
+that starts acceleration. Then the amount of pixels is calculated with
+the following formula: <em>x</em>=<em>repeat</em>*<em>multiplier</em>,
+where repeat is the number of repeated signals. <em>max</em> specifies
+the maximum number of pixels the pointer can move due to a single
+command.
 </P>
 </DD>
 <DT>ACTIVATE&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT>
@@ -186,8 +195,11 @@ starts at the top of the file.</P>
 <HR WIDTH="70%">
 
 <P>At this point all you need are the tools, which react on the
-keycodes decoded by lircd. To do this you need a file called
-<em>.lircrc</em>. It should be placed in your home directory.</P>
+signals decoded by lircd. To do this you need a file called
+<em>.lircrc</em>. It should be placed in your home directory. The idea
+is to have configuration information of all clients in one place. That
+lets you keep a better overview of clients and simplifies the use of
+modes explained later.</P>
 
 <P>First I will explain the syntax of the .lircrc file itself.  The
 config file for LIRC tools consists of one or more of the following
@@ -205,6 +217,11 @@ constuctions:</P>
     end
 </PRE>
 
+<P>Bringing it to the point the above sais which program
+(<em>prog</em>) should do what (<em>config</em>, <em>mode</em>,
+<em>flags</em>) if you press a certain button (<em>remote</em>,
+<em>button</em>) a specified time (<em>repeat</em>).</P>
+
 <DL>
 <DT>prog</DT>
 <DD>gives the name of the program that should receive the config
@@ -217,7 +234,7 @@ constuctions:</P>
     wildcard for remote or button. The default for remote is '*'.
 </DD>
 <DT>repeat</DT>
-<DD>tells the program what shall happen if a key is repeated
+<DD>tells the program what shall happen if a key is repeated.
     A value of zero tells the program to ignore repeated keys.
     Any other positive value 'n' tells the program to pass the config
     string every 'n'-th time to the according application, when a key is
@@ -296,11 +313,13 @@ you can do a lot more than just start programs.
 
 <P>
 If you start a LIRC client program, it reads your ~/.lircrc and reacts
-only on prog= entries which points to it. All programs should give you
-the possibility to use an alternative config file. If you have
+only on prog= entries which point to itself. All programs should give
+you the possibility to use an alternative config file. If you have
 included more than one program in your .lircrc, then start all these
 programs, they react only to their according entries in .lircrc. This
 also leads to a disadvantage of the mode concept. If you don't start
 all client programs at a time the mode they have to maintain may
-differ between applications.
+differ between applications. Also key sequences might not be
+recognized equally because all programs then don't have the same
+starting point.
 </P>

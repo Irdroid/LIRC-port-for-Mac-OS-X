@@ -4,7 +4,7 @@
 <H1 ALIGN="CENTER">Dependencies</H1>
 <HR WIDTH="70%">
 
-<P>To use the <em>setup.sh</em> script you need the dialog package. It
+<P>To use LIRC's <em>setup.sh</em> script you need the dialog package. It
 already should be installed on most systems. The setup.sh script makes
 configuration of LIRC much easier but using it is not obligatory.</P>
 
@@ -44,18 +44,35 @@ Project</A>.</P>
 <H1 ALIGN="CENTER">Supported Hardware</H1>
 <HR WIDTH="70%">
 
-<P>LIRC supports different types of Infrared Receiver Modules. The
-traditional ones are connected to the serial or parallel port. Since
-the pre0.5.5 Versions of LIRC there is also support for different
-TV Cards available [Hauppauge, AVerMedia, Fly98]. If you want, you can
-build a receiver on your own.</P>
+<P>Generally speaking everything that can receive or send infrared
+signals can be supported by LIRC. The project began with support for
+home-brew receivers and transmitters for the serial port and later
+support for analogous hardware for the parallel port was added. At
+that time the focus of the project was to provide an infrared solution
+that is both very cheap and easy to assemble. The following links
+point to instructions how to build your own receiver/transmitter.
+</P>
 
 <UL>
-<LI><A HREF="serial_transmitter.html"><U>Building a serial port transmitter</U></A></LI>
-<LI><A HREF="serial_receiver.html"><U>Building a serial port receiver</U></A></LI>
-<LI><A HREF="parallel_transmitter.html"><U>Building a parallel port transmitter</U></A></LI>
+<LI><A
+HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/receivers.html">
+Building a serial port receiver</A></LI>
+
+<LI><A
+HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/transmitter.html">
+Building a serial port transmitter</A></LI>
+
+<LI><A HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/parallel.html">
+Building a parallel port transceiver</A></LI>
 </UL>
 
+
+<P>Current versions of LIRC now support many more commercially
+available solutions. Examples are the Irman, built-in IrDA ports or TV
+cards. Drivers for even more hardware are likely to apear in the
+future. If you are a programmer who wants to maintain such a driver
+you are welcome to join the project.
+</P>
 
     <!-- Compiling --------------------------------------------------------->
 
@@ -198,7 +215,7 @@ its job. This only works, if lircd uses a <A
 HREF="configure.html#lircd.conf">config file</A> which fits to your
 remote control. Use <A
 HREF="programs.html#irrecord"><em>irrecord</em></A> in the case the
-LIRC distribution doesn't provide a config file suitable to your
+LIRC distribution doesn't provide a config file suitable for your
 remote and it still is not available at the LIRC homepage. A more
 detailed discussion of creating new config files is available in the
 section about, you guess it: <A HREF="help.html#new_remote">Adding new
@@ -227,7 +244,9 @@ stdout: <em>irw</em></P>
 
 <P>If the driver test worked, but you now see nothing, then check
 <em>/var/log/lircd</em>. If you still see nothing suspicious compile
-lircd in DEBUG mode and look at the log file again.</P>
+lircd in DEBUG mode and look at the log file again. In debug mode
+lircd has an additional command line option that lets you choose the
+detail level of debug information.</P>
 
 
 
