@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.19 2002/10/21 18:26:13 ranty Exp $
+## $Id: Makefile.am,v 5.20 2003/06/17 18:26:40 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -8,7 +8,7 @@
 EXTRA_DIST = lirc.h kcompat.h
 
 DIST_SUBDIRS = lirc_serial lirc_parallel lirc_i2c lirc_sir lirc_dev lirc_gpio \
-	lirc_it87 lirc_bt829
+	lirc_it87 lirc_bt829 lirc_atiusb
 SUBDIRS = @lirc_driver@
 
 CLEANFILES = *~

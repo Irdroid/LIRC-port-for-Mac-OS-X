@@ -15,6 +15,7 @@ hw_menu_entry: @hw-soundcard
 	audio: "IR receiver IC connected to auido input (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other
+	atiusb: "ATI RF Remote Wonder (USB)"
 	livedrive_midi: "Creative LiveDrive midi"
 	livedrive_seq: "Creative LiveDrive sequencer"
 	creative_infracd: "Creative iNFRA CDROM"
@@ -98,7 +99,7 @@ param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
 		remotemaster silitek slinke
 	tty:
 
-param_type: audio avermedia avermedia98 avermedia_vdomate bestbuy \
+param_type: atiusb audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		bestbuy2 bte chronos cph03x cph06x creative_infracd \
 		dsp flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
 		knc_one kworld leadtek_0007 leadtek_0010 \
@@ -107,7 +108,7 @@ param_type: audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		sa1100 tekram_bt829 tvbox udp
 	none:
 
-default_param: audio avermedia avermedia98 avermedia_vdomate bestbuy \
+default_param: atiusb audio avermedia avermedia98 avermedia_vdomate bestbuy \
 		bestbuy2 chronos cph03x cph06x creative_infracd dsp \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb it87 \
 		knc_one kworld leadtek leadtek_0007 leadtek_0010 \
