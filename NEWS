@@ -1,4 +1,5 @@
 0.7.0-CVS: future
+  * added support for Igor Cesko's USB IR receiver (Jan Hochstein)
   * added support for ELMAK PCMAK (Pawel Nowak)
   * added support for Sasem OnAir Remocon-V (Oliver Stabel)
   * if no .lircrc file is found in the user's home directory,

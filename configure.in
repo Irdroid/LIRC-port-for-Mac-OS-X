@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.127 2004/07/26 15:41:25 lirc Exp $
+dnl $Id: configure.in,v 5.128 2004/08/05 15:47:13 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -142,11 +142,11 @@ possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
 	(udp)"
 
 if test x${no_kernel} != xyes; then
-  possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
-	(lirc_dev lirc_sir) (lirc_dev lirc_parallel) (lirc_dev lirc_i2c) \
-	(lirc_dev lirc_gpio) (lirc_dev) (lirc_dev lirc_it87) \
-	(lirc_dev lirc_bt829) (lirc_dev lirc_atiusb) \
-	(lirc_dev lirc_mceusb) (lirc_dev lirc_sasem)"
+  possible_drivers="${possible_drivers} (lirc_dev) (lirc_dev lirc_atiusb) \
+	(lirc_dev lirc_bt829) (lirc_dev lirc_gpio) (lirc_dev lirc_i2c) \
+	(lirc_dev lirc_igorplugusb) (lirc_dev lirc_it87) \
+	(lirc_dev lirc_mceusb) (lirc_dev lirc_parallel) \
+	(lirc_dev lirc_sasem) (lirc_dev lirc_serial) (lirc_dev lirc_sir)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -189,16 +189,17 @@ AC_ARG_WITH(driver,
 			  cph03x, cph06x, creative, devinput, exaudio,
 			  flyvideo, gvbctv5pci, hauppauge,
 			  hauppauge_dvb, hercules_smarttv_stereo,
-			  irdeo, irdeo_remote, irman, irreal, it87,
-			  knc_one, kworld, leadtek_0007, leadtek_0010,
-			  livedrive_midi, livedrive_seq, logitech,
-			  lptX, mceusb, mediafocusI, mp3anywhere,
-			  packard_bell, parallel, pcmak, pcmak_usb,
-			  pctv, pixelview_bt878, pixelview_pak,
-			  pixelview_pro, provideo, realmagic,
-			  remotemaster, sa1100, sasem, serial, silitek,
-			  sir, slinke, tekram, tekram_bt829, tira,
-			  tvbox, udp, uirt2, uirt2_raw],
+			  igorplugusb, irdeo, irdeo_remote, irman,
+			  irreal, it87, knc_one, kworld, leadtek_0007,
+			  leadtek_0010, livedrive_midi, livedrive_seq,
+			  logitech, lptX, mceusb, mediafocusI,
+			  mp3anywhere, packard_bell, parallel, pcmak,
+			  pcmak_usb, pctv, pixelview_bt878,
+			  pixelview_pak, pixelview_pro, provideo,
+			  realmagic, remotemaster, sa1100, sasem,
+			  serial, silitek, sir, slinke, tekram,
+			  tekram_bt829, tira, tvbox, udp, uirt2,
+			  uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -281,6 +282,8 @@ if test "$driver" = "any"; then
 		;;
 	lirc_dev-lirc_i2c)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
+		;;
+	lirc_dev-lirc_igorplugusb)
 		;;
 	lirc_dev-lirc_it87)
 		;;
@@ -368,6 +371,11 @@ if test "$driver" = "animax"; then
   AC_DEFINE(LIRC_SERIAL_ANIMAX)
 fi
 
+if test "$driver" = "atiusb"; then
+  lirc_driver="lirc_dev lirc_atiusb"
+  lircd_conf="atiusb/lircd.conf.atiusb"
+fi
+
 if test "$driver" = "audio"; then
   lirc_driver="audio"
   hw_module="hw_audio.o receive.o"
@@ -410,6 +418,11 @@ if test "$driver" = "bestbuy2"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="bestbuy/lircd.conf.bestbuy2"
   lircmd_conf="bestbuy/lircmd.conf.bestbuy2"
+fi
+
+if test "$driver" = "breakoutbox"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="creative/lircd.conf.breakoutbox"
 fi
 
 if test "$driver" = "bte"; then
@@ -527,6 +540,10 @@ if test "$driver" = "hercules_smarttv_stereo"; then
   lircd_conf="hercules/lircd.conf.smarttv_stereo"
 fi
 
+if test "$driver" = "igorplugusb"; then
+  lirc_driver="lirc_dev lirc_igorplugusb"
+fi
+
 if test "$driver" = "irdeo"; then
   lirc_driver="lirc_dev lirc_serial"
   AC_DEFINE(LIRC_SERIAL_IRDEO)
@@ -544,12 +561,6 @@ if test "$driver" = "irman"; then
   irman_lib=-lirman
 fi
 
-if test "$driver" = "tira"; then
-  lirc_driver="none"
-  hw_module="hw_tira.o serial.o"
-  HW_DEFAULT="hw_tira"
-fi
-
 if test "$driver" = "irman_sw"; then
   lirc_driver="irman_sw"
   hw_module="hw_irman.o serial.o"
@@ -565,16 +576,6 @@ fi
 
 if test "$driver" = "it87"; then
   lirc_driver="lirc_dev lirc_it87"
-fi
-
-if test "$driver" = "atiusb"; then
-  lirc_driver="lirc_dev lirc_atiusb"
-  lircd_conf="atiusb/lircd.conf.atiusb"
-fi
-
-if test "$driver" = "mceusb"; then
-  lirc_driver="lirc_dev lirc_mceusb"
-  lircd_conf="mceusb/lircd.conf.mceusb"
 fi
 
 if test "$driver" = "knc_one"; then
@@ -635,6 +636,11 @@ if test "$driver" = "lpt2"; then
   lirc_driver="lirc_dev lirc_parallel"
   port=0x278
   irq=5
+fi
+
+if test "$driver" = "mceusb"; then
+  lirc_driver="lirc_dev lirc_mceusb"
+  lircd_conf="mceusb/lircd.conf.mceusb"
 fi
 
 if test "$driver" = "mediafocusI"; then
@@ -769,14 +775,15 @@ if test "$driver" = "tekram_bt829"; then
   lircmd_conf="tekram/lircmd.conf.m230"
 fi
 
+if test "$driver" = "tira"; then
+  lirc_driver="none"
+  hw_module="hw_tira.o serial.o"
+  HW_DEFAULT="hw_tira"
+fi
+
 if test "$driver" = "tvbox"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="asus/lircd.conf.asus"
-fi
-
-if test "$driver" = "breakoutbox"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="creative/lircd.conf.breakoutbox"
 fi
 
 if test "$driver" = "udp"; then
@@ -1031,6 +1038,7 @@ AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
 AC_DEFINE_UNQUOTED(LIRC_IRQ, $irq)
 AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
 AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
+  drivers/lirc_igorplugusb/Makefile
 AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
 dnl bug in automake/autoconf?
@@ -1040,17 +1048,18 @@ dnl write these decisions out to the Makefiles
 AC_OUTPUT([
   Makefile
   drivers/Makefile
+  drivers/lirc_atiusb/Makefile
+  drivers/lirc_bt829/Makefile
+  drivers/lirc_dev/Makefile
+  drivers/lirc_gpio/Makefile
+  drivers/lirc_i2c/Makefile
+  drivers/lirc_igorplugusb/Makefile
+  drivers/lirc_it87/Makefile
+  drivers/lirc_mceusb/Makefile
+  drivers/lirc_parallel/Makefile
+  drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile
   drivers/lirc_sir/Makefile
-  drivers/lirc_parallel/Makefile
-  drivers/lirc_i2c/Makefile
-  drivers/lirc_gpio/Makefile
-  drivers/lirc_dev/Makefile
-  drivers/lirc_it87/Makefile
-  drivers/lirc_bt829/Makefile
-  drivers/lirc_atiusb/Makefile
-  drivers/lirc_mceusb/Makefile
-  drivers/lirc_sasem/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

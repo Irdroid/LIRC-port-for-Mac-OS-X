@@ -99,6 +99,7 @@ hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 RF Remote"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	tira: "Home Electronics Tira USB device"
+	igorplugusb: "Igor Cesko's USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card"
@@ -122,9 +123,9 @@ param_type: atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
 		chronos cph03x cph06x creative_infracd devinput dsp \
 		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo it87 knc_one kworld leadtek_0007 \
-		leadtek_0010 livedrive_midi livedrive_seq mceusb \
-		mediafocusI none pixelview_bt878 pixelview_pak \
+		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
+		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
+		mceusb mediafocusI none pixelview_bt878 pixelview_pak \
 		pixelview_pro provideo sa1100 sasem tekram_bt829 tvbox udp
 	none:
 
@@ -132,7 +133,7 @@ default_param: atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
 		cph03x cph06x creative_infracd devinput dsp exaudio \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo it87 knc_one kworld \
+		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
 		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
 		livedrive_seq mceusb mediafocusI none pixelview_bt878 \
 		pixelview_pak pixelview_pro provideo sa1100 sasem \
