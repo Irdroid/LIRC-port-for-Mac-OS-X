@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.3 1999/05/15 15:34:04 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.4 1999/06/21 12:21:05 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -419,14 +419,14 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 		send_foot(remote);
 }
 
-void send_command(struct ir_remote *remote,struct ir_ncode *code)
+int send_command(struct ir_remote *remote,struct ir_ncode *code)
 {
 	struct timeval current;
 	unsigned long usecs;
 
 	/* things are easy, because we only support one mode */
 	if(send_mode!=LIRC_MODE_PULSE)
-		return;
+		return(0);
 
 	clear_send_buffer();
 	if(is_shift(remote))
@@ -453,7 +453,7 @@ void send_command(struct ir_remote *remote,struct ir_ncode *code)
 	if(bad_send_buffer())
 	{
 		logprintf("buffer too small\n");
-		return;
+		return(0);
 	}
 
 	gettimeofday(&current,NULL);
@@ -471,6 +471,7 @@ void send_command(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		logprintf("write failed\n");
 		logperror(NULL);
+		return(0);
 	}
 	else
 	{
@@ -498,6 +499,7 @@ void send_command(struct ir_remote *remote,struct ir_ncode *code)
 		printf("space %ld\n",remote->remaining_gap);
 #endif
 	}
+	return(1);
 }
 
 /*

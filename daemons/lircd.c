@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.5 1999/05/28 19:51:37 columbus Exp $      */
+/*      $Id: lircd.c,v 5.6 1999/06/21 12:21:05 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -652,14 +652,15 @@ void sigalrm(int sig)
 		   so better stop repeating */
 		return;
 	}
-	send_command(repeat_remote,repeat_code);
-
-	repeat_timer.it_value.tv_sec=0;
-	repeat_timer.it_value.tv_usec=repeat_remote->remaining_gap;
-	repeat_timer.it_interval.tv_sec=0;
-	repeat_timer.it_interval.tv_usec=0;
-
-	setitimer(ITIMER_REAL,&repeat_timer,NULL);
+	if(send_command(repeat_remote,repeat_code))
+	{
+		repeat_timer.it_value.tv_sec=0;
+		repeat_timer.it_value.tv_usec=repeat_remote->remaining_gap;
+		repeat_timer.it_interval.tv_sec=0;
+		repeat_timer.it_interval.tv_usec=0;
+		
+		setitimer(ITIMER_REAL,&repeat_timer,NULL);
+	}
 }
 
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
@@ -898,7 +899,10 @@ int send_once(int fd,char *message,char *arguments)
 		remote->repeat_state=
 		!remote->repeat_state;
 	
-	send_command(remote,code);
+	if(!send_command(remote,code))
+	{
+		return(send_error(fd,message,"transmission failed\n"));
+	}
 	return(send_success(fd,message));
 }
 
@@ -922,7 +926,10 @@ int send_start(int fd,char *message,char *arguments)
 	if(remote->repeat_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
-	send_command(remote,code);
+	if(!send_command(remote,code))
+	{
+		return(send_error(fd,message,"transmission failed\n"));
+	}
 	repeat_remote=remote;
 	repeat_code=code;
 	
@@ -931,8 +938,9 @@ int send_start(int fd,char *message,char *arguments)
 	remote->remaining_gap;
 	repeat_timer.it_interval.tv_sec=0;
 	repeat_timer.it_interval.tv_usec=0;
+	if(!send_success(fd,message)) return(0);
 	setitimer(ITIMER_REAL,&repeat_timer,NULL);
-	return(send_success(fd,message));
+	return(1);
 }
 
 int send_stop(int fd,char *message,char *arguments)

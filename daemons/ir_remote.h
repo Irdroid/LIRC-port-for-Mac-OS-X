@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.1 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.2 1999/06/21 12:21:05 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -217,7 +217,7 @@ struct ir_remote *get_ir_remote(char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 inline unsigned long time_left(struct timeval *current,struct timeval *last,
 			       unsigned long gap);
-void send_command(struct ir_remote *remote,struct ir_ncode *code);
+int send_command(struct ir_remote *remote,struct ir_ncode *code);
 void clear_rec_buffer(unsigned long data);
 int decode(struct ir_remote *remote);
 char *decode_command(unsigned long data);
