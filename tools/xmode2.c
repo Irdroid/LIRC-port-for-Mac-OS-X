@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.7 2000/03/25 12:14:56 columbus Exp $      */
+/*      $Id: xmode2.c,v 5.8 2000/09/18 20:14:13 columbus Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -114,7 +114,6 @@ void closescreen(void)
   XCloseDisplay(d1);
 }
 
-
 int main(int argc, char **argv)
 {
   fd_set rfds;
@@ -128,8 +127,9 @@ int main(int argc, char **argv)
   int result;
   char textbuffer[80];
   int d,div=5;
-
-  while ((d = getopt (argc, argv, "t:T")) != EOF)
+  int dmode=0;
+  
+  while ((d = getopt (argc, argv, "t:Tm")) != EOF)
     {
       switch (d)
 	{
@@ -139,7 +139,11 @@ int main(int argc, char **argv)
 	case 'T':				// timediv
 	  div = strtol(optarg,NULL,10);
 	  break;
+	case 'm':
+	  dmode=1;
+          break;
 	}
+        
     }
 
   fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
@@ -208,22 +212,34 @@ int main(int argc, char **argv)
 	    x2=(data&PULSE_MASK)/(div*50);
 	    if (x2>400)
 	      {
-		y1+=15;
+                if(!dmode) { y1+=15; } else { y1++; }
 		x1=0;
 	      }
 	    else
 	      {
 		if (x1==0)
 		  {
-		    XDrawLine(d1,w1,gc2,x1, y1+10, x1+10, y1+10) ;
+		    if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1+10, y1+10);
 		    x1+=10;
-		    XDrawLine(d1,w1,gc2,x1, y1+10, x1, y1) ;
+		    if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1, y1);
 		  }
 		if (x1<w1_w) 
 		  {
-		    XDrawLine(d1,w1,gc2,x1, ((data&PULSE_BIT)?y1:y1+10), x1+x2, ((data&PULSE_BIT)?y1:y1+10)) ;
-		    x1+=x2;
-		    XDrawLine(d1,w1,gc2,x1, ((data&PULSE_BIT)?y1:y1+10), x1, ((data&PULSE_BIT)?y1+10:y1)) ;
+		    if(dmode)
+		      {
+			if(data&PULSE_BIT) XDrawLine(d1,w1,gc2,x1,y1,x1+x2,y1);
+			x1+=x2;
+		      }
+		    else
+		      {
+			XDrawLine(d1,w1,gc2,x1,
+				  ((data&PULSE_BIT) ? y1:y1+10),x1+x2,
+				  ((data&PULSE_BIT) ? y1:y1+10));
+			x1+=x2;
+			XDrawLine(d1,w1,gc2,x1,
+				  ((data&PULSE_BIT) ? y1:y1+10),x1,
+				  ((data&PULSE_BIT) ? y1+10:y1));
+		      }
 		  }
 	      }
 	    if (y1>w1_h) 
