@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.1 2000/06/12 10:05:07 columbus Exp $      */
+/*      $Id: receive.c,v 5.2 2000/06/24 17:41:18 columbus Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -366,7 +366,11 @@ inline int get_header(struct ir_remote *remote)
 		unget_rec_buffer(1);
 		return(0);
 	}
-	rec_buffer.pendings=remote->shead;
+	if(!expectspace(remote,remote->shead))
+	{
+		unget_rec_buffer(2);
+		return(0);
+	}
 	return(1);
 }
 
