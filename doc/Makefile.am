@@ -1,7 +1,7 @@
-## $Id: Makefile.am,v 1.1 1999/09/13 06:18:14 columbus Exp $
+## $Id: Makefile.am,v 1.2 2000/03/27 10:56:17 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 dist-hook:
 	./release-html.sh
-	cp -a doc.html html images $(distdir)
+	cp -a doc.html irxevent.keys html images $(distdir)

@@ -114,7 +114,7 @@ react itself only to their according entries in .lircrc.</P>
 <P>
 irpty connects to lircd to receive infrared codes and converts them to
 key strokes. E.g. type <em>irpty ~/.lircrc workbone</em> to control
-the CD-player program workbone. Of couse you will have to create an
+the CD-player program workbone. Of course you will have to create an
 appropriate config file for this purpose first.  The config string
 will be passed to the desired application. Note that you can use
 escape sequences to specify non printable characters. Have a look at
@@ -150,16 +150,199 @@ irpty accepts the following options:
 <A NAME="irxevent"><HR></A> <H1 ALIGN="CENTER">irxevent</H1>
 <HR WIDTH="70%">
 
-<P>infra-red xevent sender. Look at the irxevent.README file
-for more information. Please note that the part
-concerning the config file is no longer valid. You
-will have to use the KEY and BUTTON tokens as config
-strings in the new config file format.</P>
+<P>irxevent  - infrared X-event sender</P>
+
+<PRE>
+  <B>irxevent</B> [config_file]
+</PRE>
 
 
+<P>
+by Heinrich Langos &lt;heinrich@mad.scientist.com&gt;
+</P>
 
-<A NAME="irrecord"><HR></A>
-<H1 ALIGN="CENTER">irrecord</H1>
+<P>
+Irxevent is a program that I wrote to send button clicks and key
+presses to X applications triggered by a LIRC driven remote
+control. You can control your favorite CD/MP3 player or your TV tuner
+program or any other X application that responds to keyboard or mouse
+input. If you like to you can send emacs ^X^S from your armchair.
+</P>
+
+<P>
+Irxevent is a complement to irexec and irpty and works with the same
+config file. (~/.lircrc) For a complete sample-.lircrc look at
+<em>examples/lircrc</em>.
+</P>
+
+<P>Part of your .lircrc could look like this:</P>
+<HR>
+<PRE>
+begin
+        prog = irxevent
+        button = VIDEO_UP    
+        config = Key SHIFT-KP_Add CurrentWindow
+end
+begin
+        prog = irxevent
+        button = VIDEO_DOWN
+        config = Key SHIFT-KP_Subtract CurrentWindow
+end
+begin
+        prog = irxevent
+        button = STOP
+        config = Key ctrl-c CurrentWindow
+end
+begin
+        prog = irxevent
+        button = 0
+        config = Key f xawtv
+        config = Key f xawtv
+end
+begin
+        prog = irxevent
+        button = POWER
+        config = Key q xawtv
+end
+begin
+        prog = irxevent
+        button = CH_DOWN
+        config = Button 1 329 92 kscd
+end
+begin
+        prog = irxevent
+        button = UP
+        config = Button 1 110 80 GQmpeg
+end
+begin
+        prog = irxevent
+        button = DOWN
+        config = Button 1 130 80 GQmpeg
+end
+</PRE>
+<HR>
+
+<P>
+Simply said <em>config =</em> lines may look like this:
+</P>
+
+<PRE>
+config = Key [shift-][ctrl-][alt-]&lt;key&gt; &lt;windowname&gt; | CurrentWindow
+config = Button &lt;button&gt; &lt;x&gt; &lt;y&gt; &lt;windowname&gt; | CurrentWindow
+config = xy_Key &lt;x&gt; &lt;y&gt; [shift-][ctrl-][alt-] &lt;key&gt;&lt;windowname&gt; | CurrentWindow
+</PRE>
+
+<P>some more examples:</P>
+<HR>
+<PRE>
+config = Key Up xawtv
+config = Key Down xawtv
+config = Button 1 50 110 xclickme
+config = Key q xawtv
+config = Key ctrl-c mpg123
+config = Key shift-Page_Up rxvt
+</PRE>
+<HR>
+
+
+<P>In BNF this looks like:</P>
+
+<PRE>
+LINE    = &quot;config =&quot; &lt;KEY|BUTTON|XYKEY&gt; &lt;TARGET&gt;
+XYKEY   = &quot;xy_Key&quot; &lt;x_position&gt; &lt;y_position&gt; &lt;MOD&gt;Keyname
+KEY     = &quot;Key&quot; &lt;MOD&gt;Keyname
+MOD     = [&quot;shift-&quot;][&quot;numlock-&quot;][&quot;ctrl-&quot;][&quot;alt-&quot;][&quot;meta-&quot;]
+          [&quot;numlock-&quot;][&quot;mod3-&quot;][&quot;mod4-&quot;][&quot;scrlock-&quot;]
+BUTTON  = &quot;Button&quot; &lt;1..5&gt; &lt;x_position&gt; &lt;y_position&gt;
+TARGET  = Windowname | &quot;CurrentWindow&quot;
+</PRE>
+
+
+<DL>
+<DT>Keyname</DT>
+<DD>
+is the key symbol that is declared in X windows. E.g. &quot;Up&quot;
+refers to the cursor arrow pointing up.  &quot;KP_Add&quot; is the
+plus sign on the key pad. Just take a look at <A
+HREF="../irxevent.keys">irxevent.keys</A> if you are not sure about a
+symbol's name.
+</DD>
+<DT>Windowname</DT>
+<DD>
+can be the first characters of the window name displayed by the window
+manager or the name that is displayed below the icon.  Some programs
+use the name displayed by the window manager to show a lot of status
+information but don't change the icon name (like xawtv). Others append
+information to the window name (&quot;GQmpeg -
+kill_windooz.mp3&quot;). If neither window name nor icon name match
+the given Windowname information from XClassHint(3x) will be checked.
+</DD>
+<DT>CurrentWindow</DT>
+<DD>
+refers to the active window as returned by XGetInputFocus(3x).  Most
+times this is the window with your mouse pointer in it.
+</DD>
+</DL>
+
+<P>
+If you have problems finding the coordinates for a button click you
+can try <NOBR><em>xev -id &lt;window_id&gt;</em></NOBR>. The window_id
+can be found using <em>xwininfo</em>.  If xev and xwininfo are not
+part of your distribution you can find them at a FTP server using the
+search engine at: <A
+HREF="http://ftpsearch.ntnu.no/">http://ftpsearch.ntnu.no/</A>.  xev
+also reports the names of key symbols like &quot;Control_L&quot; (your
+left control key) or &quot;KP_Subtract&quot; (the 'minus' key on your
+keypad).
+</P>
+
+<P>
+There are programs that do not accept any synthetic X-events by
+default because they can cause security problems. Currently xterm and
+xemacs are known to ignore events simulated by irxevent.
+</P>
+
+<P>
+You can however make xterm accept external events by enabling
+<NOBR>&quot;Allow SendEvents&quot;</NOBR> in the <NOBR>&quot;Main
+Options&quot;</NOBR> (hold down the Ctrl button and press the left
+mouse button inside the xterm window). You can as well place this line
+into your .Xresources file to change this permanently:
+<PRE>
+  XTerm.vt100.allowSendEvents:    true
+</PRE>
+Yet another possibility is to start xterm like this:
+<PRE>
+  xterm -xrm "XTerm.vt100.allowSendEvents:    true"
+</PRE>
+xemacs will accept events if you set a built-in variable. The
+following was taken from the online help:
+
+<PRE>
+`x-allow-sendevents' is a built-in boolean variable.
+
+Value: t
+
+Documentation:
+*Non-nil means to allow synthetic events.  Nil means they are ignored.
+Beware: allowing emacs to process SendEvents opens a big security hole.
+</PRE>
+
+In order to allow events you have to evaluate this lisp code (press
+Meta-x and enter the following expression):
+<PRE>
+  (setq x-allow-sendevents t)
+</PRE>
+Placing this line into your <em>.xemacs-options</em> file should have
+the same result.
+</P>
+
+<P>
+If you have problems sending events please drop <A
+HREF="mailto:heinrich@mad.scientist.com">me</A> an email.
+</P>
+
+<A NAME="irrecord"><HR></A> <H1 ALIGN="CENTER">irrecord</H1>
 <HR WIDTH="70%">
 
 <P>irrecord - application for recording IR-codes for usage with
