@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.7 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.8 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -7,7 +7,7 @@
  * ir_remote.h - describes and decodes the signals from IR remotes
  *
  * Copyright (C) 1996,97 Ralph Metzler <rjkm@thp.uni-koeln.de>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */ 
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.1 1999/06/19 11:18:47 columbus Exp $      */
+/*      $Id: lirc_client.h,v 5.2 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -7,12 +7,16 @@
  * lirc_client - common routines for lircd clients
  *
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */ 
  
 #ifndef LIRC_CLIENT_H
 #define LIRC_CLIENT_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define LIRC_ALL ((char *) (-1))
 
@@ -59,22 +63,18 @@ struct lirc_config_entry
 	struct lirc_config_entry *next;
 };
 
-int lirc_init(char *prog);
+int lirc_init(char *prog,int verbose);
 int lirc_deinit();
 
-int lirc_readconfig(char *file,
-		    struct lirc_config **config,
+int lirc_readconfig(char *file,struct lirc_config **config,
 		    int (check)(char *s));
-char *lirc_startupmode(struct lirc_config_entry *first);
 void lirc_freeconfig(struct lirc_config *config);
-void lirc_freeconfigentries(struct lirc_config_entry *first);
 
-void lirc_clearmode(struct lirc_config *config);
-char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan);
-int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep);
 char *lirc_nextir();
 char *lirc_ir2char(struct lirc_config *config,char *string);
 
-extern char *progname;
+#ifdef __cplusplus
+}
+#endif
 
 #endif

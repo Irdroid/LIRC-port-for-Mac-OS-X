@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: irpty.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -9,7 +9,7 @@
  *          and converts them to key strokes
  *
  * Copyright (C) 1996,97 Ralph Metzler <rjkm@thp.uni-koeln.de>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 
 	config = argv[optind++];
 
-	if((lsock=lirc_init("irpty"))==-1) exit(EXIT_FAILURE);
+	if((lsock=lirc_init("irpty",1))==-1) exit(EXIT_FAILURE);
 	flags=fcntl(lsock,F_GETFL,0);
 	if(flags!=-1)
 	{

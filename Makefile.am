@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.2 1999/07/21 18:23:37 columbus Exp $
+## $Id: Makefile.am,v 5.3 1999/09/13 05:52:40 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -6,15 +6,9 @@
 ## we need version 1.4 of automake for DIST_SUBDIRS to work.
 AUTOMAKE_OPTIONS = 1.4 check-news
 
-EXTRA_DIST = setup.sh ANNOUNCE 
-#TECHNICAL TODO USAGE
+EXTRA_DIST = setup.sh ANNOUNCE TODO
 
-SUBDIRS = drivers daemons tools
-
-## we need a way to install the remotes in /usr/local/share/lirc/remotes/
-## without having a million Makefile.am's.  As I see it, for uninstall to
-## work we will have to specify every remote. (otherwise uninstall would
-## also remove files put in locally.  not good)
+SUBDIRS = drivers daemons tools doc
 
 ## From automake documentation:
 ## Note that EXTRA_DIST can only handle files in the current

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.8 1999/08/18 06:36:22 columbus Exp $      */
+/*      $Id: lircd.c,v 5.9 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -7,7 +7,7 @@
  * lircd - LIRC Decoder Daemon
  * 
  * Copyright (C) 1996,97 Ralph Metzler <rjkm@thp.uni-koeln.de>
- * Copyright (C) 1998,99 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998,99 Christoph Bartelmus <lirc@bartelmus.de>
  *
  *  =======
  *  HISTORY

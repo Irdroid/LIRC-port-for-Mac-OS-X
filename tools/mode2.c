@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: mode2.c,v 5.3 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -7,7 +7,7 @@
  * mode2 - shows the pulse/space length of a remote button
  *
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 

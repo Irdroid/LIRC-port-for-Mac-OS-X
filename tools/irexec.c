@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: irexec.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -7,7 +7,7 @@
  * irexec  - execute programs according to the pressed remote control buttons
  *
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr,"Usage: %s <config file>\n",progname);
 		exit(EXIT_FAILURE);
 	}
-	if(lirc_init("irexec")==-1) exit(EXIT_FAILURE);
+	if(lirc_init("irexec",1)==-1) exit(EXIT_FAILURE);
 
 	if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,NULL)==0)
 	{

@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.1 1999/09/07 18:44:00 columbus Exp $      */
+/*      $Id: irxevent.c,v 5.2 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -7,7 +7,7 @@
  * irxevent  - infra-red xevent sender
  *
  * Heinrich Langos  <heinrich@null.net>
- * small modifications by Christoph Bartelmus <columbus@hit.handshake.de>
+ * small modifications by Christoph Bartelmus <lirc@bartelmus.de>
  *
  * irxevent is based on irexec (Copyright (C) 1998 Trent Piepho)
  * and irx.c (no copyright notice found)
@@ -472,7 +472,7 @@ int main(int argc, char *argv[])
   }
   root=RootWindow(dpy,DefaultScreen(dpy));
 
-  if(lirc_init("irxevent")==-1) exit(EXIT_FAILURE);
+  if(lirc_init("irxevent",1)==-1) exit(EXIT_FAILURE);
 
   if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,check)==0)
     {

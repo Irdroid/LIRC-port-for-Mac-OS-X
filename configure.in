@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.11 1999/09/07 18:44:00 columbus Exp $
+dnl $Id: configure.in,v 5.12 1999/09/13 05:52:41 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -6,6 +6,7 @@ dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 AC_INIT(daemons/lircd.c)
 AM_INIT_AUTOMAKE(lirc, 0.6.0)
 AM_CONFIG_HEADER(config.h)
+AM_PROG_LIBTOOL
 
 CFLAGS="-O2 -g -Wall"
 
@@ -345,4 +346,5 @@ AC_OUTPUT([
   drivers/lirc_pixview/Makefile
   daemons/Makefile
   tools/Makefile
+  doc/Makefile
 ])

@@ -1,4 +1,4 @@
-/*      $Id: irw.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: irw.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** irw.c *******************************************************************
@@ -7,7 +7,7 @@
  * irw - watch the codes as lircd recognize them
  *
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
 

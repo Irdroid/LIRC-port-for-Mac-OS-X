@@ -1,5 +1,6 @@
 
 0.6.0: future
+  * lirc_client is now a library
   * irxevent: new keyword:
      xy_Key <x_position> <y_position> [modifiers-]<key> <windowname>
   * finally added support of shift-encoded remotes to irrecord

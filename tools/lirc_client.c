@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.2 1999/06/19 11:18:47 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.3 1999/09/13 05:52:41 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -7,7 +7,7 @@
  * lirc_client - common routines for lircd clients
  *
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */ 
 
@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <limits.h>
 #include <sys/socket.h>
@@ -28,11 +29,38 @@
 
 #include "lirc_client.h"
 
+/* internal functions */
+char *lirc_startupmode(struct lirc_config_entry *first);
+void lirc_freeconfigentries(struct lirc_config_entry *first);
+void lirc_clearmode(struct lirc_config *config);
+char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan);
+int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,
+		 int rep);
+
 static int lirc_lircd;
+static int lirc_verbose=0;
 static char *lirc_prog=NULL;
 static char *lirc_buffer=NULL;
 
-int lirc_init(char *prog)
+void lirc_printf(char *format_str, ...)
+{
+	va_list ap;  
+	
+	if(!lirc_verbose) return;
+	
+	va_start(ap,format_str);
+	vfprintf(stderr,format_str,ap);
+	va_end(ap);
+}
+
+void lirc_perror(const char *s)
+{
+	if(!lirc_verbose) return;
+
+	perror(s);
+}
+
+int lirc_init(char *prog,int verbose)
 {
 	struct sockaddr_un addr;
 
@@ -40,9 +68,10 @@ int lirc_init(char *prog)
 
 	if(prog==NULL || lirc_prog!=NULL) return(-1);
 	lirc_prog=strdup(prog);
+	lirc_verbose=verbose;
 	if(lirc_prog==NULL)
 	{
-		fprintf(stderr,"%s: out of memory\n",progname);
+		lirc_printf("%s: out of memory\n",lirc_prog);
 		return(-1);
 	}
 	
@@ -51,15 +80,15 @@ int lirc_init(char *prog)
 	lirc_lircd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(lirc_lircd==-1)
 	{
-		fprintf(stderr,"%s: could not open socket\n",progname);
-		perror(progname);
+		lirc_printf("%s: could not open socket\n",lirc_prog);
+		lirc_perror(lirc_prog);
 		return(-1);
 	}
 	if(connect(lirc_lircd,(struct sockaddr *)&addr,sizeof(addr))==-1)
 	{
 		close(lirc_lircd);
-		fprintf(stderr,"%s: could not connect to socket\n",progname);
-		perror(progname);
+		lirc_printf("%s: could not connect to socket\n",lirc_prog);
+		lirc_perror(lirc_prog);
 		return(-1);
 	}
 	return(lirc_lircd);
@@ -82,7 +111,7 @@ int lirc_readline(char **line,FILE *f)
 	newline=(char *) malloc(LIRC_READ+1);
 	if(newline==NULL)
 	{
-		fprintf(stderr,"%s: out of memory\n",progname);
+		lirc_printf("%s: out of memory\n",lirc_prog);
 		return(-1);
 	}
 	len=0;
@@ -107,7 +136,7 @@ int lirc_readline(char **line,FILE *f)
 		if(enlargeline==NULL)
 		{
 			free(newline);
-			fprintf(stderr,"%s: out of memory\n",progname);
+			lirc_printf("%s: out of memory\n",lirc_prog);
 			return(-1);
 		}
 		newline=enlargeline;
@@ -191,9 +220,9 @@ char lirc_parse_escape(char **s,int line)
 		if(i>(1<<CHAR_BIT)-1)
 		{
 			i&=(1<<CHAR_BIT)-1;
-			fprintf(stderr,"%s: octal escape sequence "
-				"out of range in line %d\n",progname,
-				line);
+			lirc_printf("%s: octal escape sequence "
+				    "out of range in line %d\n",lirc_prog,
+				    line);
 		}
 		return((char) i);
 	case 'x':
@@ -221,16 +250,16 @@ char lirc_parse_escape(char **s,int line)
 			}
 			if(!digits_found)
 			{
-				fprintf(stderr,"%s: \\x used with no "
-					"following hex digits in line %d\n",
-					progname,line);
+				lirc_printf("%s: \\x used with no "
+					    "following hex digits in line %d\n",
+					    lirc_prog,line);
 			}
 			if(overflow || i>(1<<CHAR_BIT)-1)
 			{
 				i&=(1<<CHAR_BIT)-1;
-				fprintf(stderr,"%s: hex escape sequence out "
-					"of range in line %d\n",
-					progname,line);
+				lirc_printf("%s: hex escape sequence out "
+					    "of range in line %d\n",
+					    lirc_prog,line);
 			}
 			return((char) i);
 		}
@@ -283,8 +312,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 				malloc(sizeof(struct lirc_config_entry));
 				if(new_entry==NULL)
 				{
-					fprintf(stderr,"%s: out of memory\n",
-						progname);
+					lirc_printf("%s: out of memory\n",
+						    lirc_prog);
 					return(-1);
 				}
 				else
@@ -305,8 +334,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 			}
 			else
 			{
-				fprintf(stderr,"%s: bad file format, "
-					"line %d\n",progname,line);
+				lirc_printf("%s: bad file format, "
+					    "line %d\n",lirc_prog,line);
 				return(-1);
 			}
 		}
@@ -322,8 +351,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 			}
 			else
 			{
-				fprintf(stderr,"%s: bad file format, "
-					"line %d\n",progname,line);
+				lirc_printf("%s: bad file format, "
+					    "line %d\n",lirc_prog,line);
 				return(-1);
 			}
 		}
@@ -337,9 +366,9 @@ int lirc_mode(char *token,char *token2,char **mode,
 #if 0
 				if(new_entry->prog==NULL)
 				{
-					fprintf(stderr,"%s: prog missing in "
-						"config before line %d\n",
-						progname,line);
+					lirc_printf("%s: prog missing in "
+						    "config before line %d\n",
+						    lirc_prog,line);
 					lirc_freeconfigentries(new_entry);
 					return(-1);
 				}
@@ -369,8 +398,9 @@ int lirc_mode(char *token,char *token2,char **mode,
 					new_entry->mode=strdup(*mode);
 					if(new_entry->mode==NULL)
 					{
-						fprintf(stderr,"%s: out of "
-							"memory\n",progname);
+						lirc_printf("%s: out of "
+							    "memory\n",
+							    lirc_prog);
 						return(-1);
 					}
 				}
@@ -395,8 +425,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 			}
 			else
 			{
-				fprintf(stderr,"%s: line %d: 'end' without "
-					"'begin'\n",progname,line);
+				lirc_printf("%s: line %d: 'end' without "
+					    "'begin'\n",lirc_prog,line);
 				return(-1);
 			}
 		}
@@ -411,9 +441,9 @@ int lirc_mode(char *token,char *token2,char **mode,
 				}
 				else
 				{
-					fprintf(stderr,"%s: \"%s\" doesn't "
-						"match mode \"%s\"\n",
-						progname,token2,*mode);
+					lirc_printf("%s: \"%s\" doesn't "
+						    "match mode \"%s\"\n",
+						    lirc_prog,token2,*mode);
 					return(-1);
 				}
 			}
@@ -421,10 +451,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 	}
 	else
 	{
-		fprintf(stderr,"%s: unknown "
-			"token \"%s\" in line "
-			"%d ignored\n",
-			progname,token,line);
+		lirc_printf("%s: unknown token \"%s\" in line %d ignored\n",
+			    lirc_prog,token,line);
 	}
 	return(0);
 }
@@ -452,7 +480,7 @@ unsigned int lirc_flags(char *string)
 		}
 		else
 		{
-			fprintf(stderr,"%s: unknown flag \"%s\"\n",progname,s);
+			lirc_printf("%s: unknown flag \"%s\"\n",lirc_prog,s);
 		}
 		s=strtok(NULL," \t");
 	}
@@ -491,8 +519,8 @@ int lirc_readconfig(char *file,
 	if(file==NULL) free(filename);
 	if(fin==NULL)
 	{
-		fprintf(stderr,"%s: could not open config file\n",progname);
-		perror(progname);
+		lirc_printf("%s: could not open config file\n",lirc_prog);
+		lirc_perror(lirc_prog);
 		return(-1);
 	}
 	line=1;
@@ -519,10 +547,9 @@ int lirc_readconfig(char *file,
 				if(token2!=NULL && 
 				   (token3=strtok(NULL," \t"))!=NULL)
 				{
-					fprintf(stderr,
-						"%s: unexpected "
-						"token in line %d\n",
-						progname,line);
+					lirc_printf("%s: unexpected "
+						    "token in line %d\n",
+						    lirc_prog,line);
 				}
 				else
 				{
@@ -550,8 +577,8 @@ int lirc_readconfig(char *file,
 			}
 			else if(new_entry==NULL)
 			{
-				fprintf(stderr,"%s: bad file format, "
-					"line %d\n",progname,line);
+				lirc_printf("%s: bad file format, "
+					    "line %d\n",lirc_prog,line);
 				ret=-1;
 			}
 			else
@@ -559,8 +586,8 @@ int lirc_readconfig(char *file,
 				token2=strdup(token2);
 				if(token2==NULL)
 				{
-					fprintf(stderr,"%s: out of memory\n",
-						progname);
+					lirc_printf("%s: out of memory\n",
+						    lirc_prog);
 					ret=-1;
 				}
 				else if(strcasecmp(token,"prog")==0)
@@ -592,9 +619,9 @@ int lirc_readconfig(char *file,
 					if(code==NULL)
 					{
 						free(token2);
-						fprintf(stderr,"%s: out of "
-							"memory\n",
-							progname);
+						lirc_printf("%s: out of "
+							    "memory\n",
+							    lirc_prog);
 						ret=-1;
 					}
 					else
@@ -626,7 +653,7 @@ int lirc_readconfig(char *file,
 							remote=strdup(remote);
 							if(remote==NULL)
 							{
-								fprintf(stderr,"%s: out of memory\n",progname);
+								lirc_printf("%s: out of memory\n",lirc_prog);
 								ret=-1;
 							}
 						}
@@ -643,10 +670,10 @@ int lirc_readconfig(char *file,
 					   || end[0]!=0
 					   || strlen(token2)==0)
 					{
-						fprintf(stderr,"%s: \"%s\" not"
-							" a  valid number for "
-							"repeat\n",progname,
-							token2);
+						lirc_printf("%s: \"%s\" not"
+							    " a  valid number for "
+							    "repeat\n",lirc_prog,
+							    token2);
 					}
 					free(token2);
 				}
@@ -659,9 +686,9 @@ int lirc_readconfig(char *file,
 					if(new_list==NULL)
 					{
 						free(token2);
-						fprintf(stderr,"%s: out of "
-							"memory\n",
-							progname);
+						lirc_printf("%s: out of "
+							    "memory\n",
+							    lirc_prog);
 						ret=-1;
 					}
 					else
@@ -694,9 +721,9 @@ int lirc_readconfig(char *file,
 				else
 				{
 					free(token2);
-					fprintf(stderr,"%s: unknown token "
-						"\"%s\" in line %d ignored\n",
-						progname,token,line);
+					lirc_printf("%s: unknown token "
+						    "\"%s\" in line %d ignored\n",
+						    lirc_prog,token,line);
 				}
 			}
 		}
