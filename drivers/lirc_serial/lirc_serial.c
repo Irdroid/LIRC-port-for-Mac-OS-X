@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.47 2003/07/21 20:59:52 ranty Exp $      */
+/*      $Id: lirc_serial.c,v 5.48 2003/12/27 16:49:58 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1062,6 +1062,7 @@ int init_module(void)
 	case LIRC_IRDEO:
 	case LIRC_IRDEO_REMOTE:
 	case LIRC_ANIMAX:
+	case LIRC_IGOR:
 		break;
 	default:
 		return(-EINVAL);
