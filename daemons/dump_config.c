@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.12 2002/02/22 14:47:47 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.13 2004/02/06 19:14:59 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -179,6 +179,16 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 #                       else
 			fprintf(f, "  toggle_mask    0x%lX\n",
 				rem->toggle_mask);
+#                       endif
+		}
+		if(rem->rc6_mask!=0)
+		{
+#                       ifdef LONG_IR_CODE
+			fprintf(f, "  rc6_mask    0x%llX\n",
+				rem->rc6_mask);
+#                       else
+			fprintf(f, "  rc6_mask    0x%lX\n",
+				rem->rc6_mask);
 #                       endif
 		}
 	}
