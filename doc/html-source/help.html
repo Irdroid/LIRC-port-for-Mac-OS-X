@@ -1,0 +1,107 @@
+<!-- FAQ ------------------------------------------------------------------->
+
+<A NAME="faq"><HR></A>
+<H1 ALIGN="CENTER">FAQ</H1>
+<HR WIDTH="70%">
+
+<P></P>
+
+<A NAME="new_remote"><HR></A>
+<H1 ALIGN="CENTER">Adding new remote controls</H1>
+<HR WIDTH="70%">
+
+<P>
+The following description was written having receivers in mind that
+deliver IR signals as pulses and spaces. So some of this will not be
+relevant for receivers that work at a higher abstraction layer as
+<NOBR>e.g.</NOBR> the Irman or TV card receivers. 
+</P>
+
+<P>
+There already is a growing database of config files for remote
+controls available at the LIRC homepage. But if your remote control is
+not available yet you can use <em>irrecord</em> to create a config
+file for your remote control.  If you want to use more than one remote
+control you have to create a separate file for each remote. If your
+remote control is able to control different devices it is often wise
+to create separate config files for each functional unit of the remote
+control.  You can later use a single config file for <em>lircd</em> by
+simply merging the config files with <NOBR><em>cat config1 config2
+&gt;lircd.conf</em> </NOBR>.<BR>
+</P>
+
+<P>
+Before using <em>irrecord</em> you should start <em>mode2</em> and
+have a look at the signals that your receiver supplies. If you can see 
+random pulses without pushing any buttons of your remote control your
+receiver is picking up ambient light. So if your receiver has no
+ambient light filter try to add one. A good strategy might also be to
+create a config file in a dark room and to turn off all fluorescent
+lamps or any other devices that may cause IR noise.
+</P>
+
+<P>
+If decoding of IR commands does not work reliably you can try to
+modify the <em>eps</em> and <em>aeps</em> values in the lircd config
+file to adjust the tolerance of signal lengths. <em>aeps</em> is an
+absolute value while <em>eps</em> is a relative value expressed in
+percent. Also if repeats do not work you should complain. I.e. if you
+hold down a button the output of <em>irw</em> should look like this.
+<PRE>
+	0000000000f40bf0 00 1_DOWN ANIMAX
+	0000000000f40bf0 01 1_DOWN ANIMAX
+	0000000000f40bf0 02 1_DOWN ANIMAX
+	0000000000f40bf0 03 1_DOWN ANIMAX
+	0000000000f40bf0 04 1_DOWN ANIMAX
+	0000000000f40bf0 05 1_DOWN ANIMAX
+</PRE>
+Note how the second field gets incremented. Many people don't event
+notice if this does not work correctly.
+</P>
+
+<P>
+As creating new config files is difficult sometimes and irrecord often
+cannot detect all features of the remote control please send new
+config files to <A
+HREF="mailto:lirc@bartelmus.de">lirc@bartelmus.de</A>. Other people
+will appreciate this very much. Sometimes they cannot create such a
+config file themselves because their original remote control is broken
+or has been lost. Some devices that are capable of IR come without a
+remote control. Some people also only want to build a transmitter and
+if you make a config file available for them they won't need to build
+a receiver, too. Please add all information you can get concerning the
+remote control as a comment to the config file.
+</P>
+
+<P>
+If you still have difficulties to create a working config file send
+the following information to <A
+HREF="mailto:lirc@bartelmus.de">lirc@bartelmus.de</A>:
+
+<UL>
+<LI>version of LIRC that you are using<BR>
+
+  Check if you are using the current version and if there already is a
+  config file for your remote control.</LI>
+
+<LI>description of your problem</LI>
+
+<LI>config file created by irrecord, if available</LI>
+
+<LI>output of irrecord in <em>DEBUG mode</em> (you can compile LIRC in
+
+  DEBUG mode by selecting this feature in the <em>Software
+  configuration</em> section of the setup program or by adding
+  <em>--enable-debug</em> to the configure script command line)</LI>
+
+<LI>output of mode2<BR>
+
+  Make sure you hold down some buttons for a while so that repeat
+  codes will be visible. Do NOT edit this output. Just send it to
+  me!</LI>
+
+</UL>
+
+I won't be able to answer any emails that do not contain the necessary
+information!
+</P>
