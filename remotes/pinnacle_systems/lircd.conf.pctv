@@ -73,6 +73,21 @@ begin remote
           FForward                 0x0000000000000007
           EPG                      0x0000000000000018
 
+# here are some more buttons that seem to be mapped differently from
+# the ones above
+
+# contributed by InterCeptor ceptor_7@freemail.hu
+#
+# brand:   Pinnacle Systems PCTV Pro Remote
+# model no. of remote control: (I can't find any numbers on it)
+# supported devices: serial
+#
+
+          9                        0x0000000000000082
+          Zoom                     0x00000000000000B2
+          middle                   0x0000000000000014
+
+
   end codes
 end remote
 
