@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.47 2004/01/13 12:25:51 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.48 2004/01/31 15:46:18 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -61,6 +61,9 @@ void set_toggle_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
 #ifdef DEBUG
+typedef void (*remote_func)(struct ir_remote *remotes);
+
+void for_each_remote(struct ir_remote *remotes, remote_func func);
 void remove_pre_data(struct ir_remote *remote);
 void remove_post_data(struct ir_remote *remote);
 void invert_data(struct ir_remote *remote);
@@ -302,11 +305,11 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 		if(test)
 		{
-			remove_pre_data(remotes);
-			remove_post_data(remotes);
-			if(get_pre) get_pre_data(remotes);
-			if(get_post) get_post_data(remotes);
-			if(invert) invert_data(remotes);
+			for_each_remote(remotes, remove_pre_data);
+			for_each_remote(remotes, remove_post_data);
+			if(get_pre) for_each_remote(remotes, get_pre_data);
+			if(get_post) for_each_remote(remotes, get_post_data);
+			if(invert) for_each_remote(remotes, invert_data);
 			
 			fprint_remotes(stdout,remotes);
 			free_config(remotes);
@@ -1149,109 +1152,102 @@ void get_post_data(struct ir_remote *remote)
 }
 
 #ifdef DEBUG
-void remove_pre_data(struct ir_remote *remotes)
+void for_each_remote(struct ir_remote *remotes, remote_func func)
 {
 	struct ir_remote *remote;
-	struct ir_ncode *codes;
 	
 	remote=remotes;
 	while(remote!=NULL)
 	{
-		if(remote->pre_data_bits==0 ||
-		   remote->pre_p!=0 || remote->pre_s!=0)
-		{
-			remote=remote->next;
-			continue;
-		}
-
-		codes=remote->codes;
-		while(codes->name!=NULL)
-		{
-			codes->code|=remote->pre_data<<remote->bits;
-			codes++;
-		}
-		remote->bits+=remote->pre_data_bits;
-		remote->pre_data=0;
-		remote->pre_data_bits=0;
+		func(remote);
 		remote=remote->next;
 	}
 }
 
-void remove_post_data(struct ir_remote *remotes)
+void remove_pre_data(struct ir_remote *remote)
 {
-	struct ir_remote *remote;
 	struct ir_ncode *codes;
 	
-	remote=remotes;
-	while(remote!=NULL)
+	if(remote->pre_data_bits==0 ||
+	   remote->pre_p!=0 || remote->pre_s!=0)
 	{
-		if(remote->post_data_bits==0)
-		{
-			remote=remote->next;
-			continue;
-		}
-		
-		codes=remote->codes;
-		while(codes->name!=NULL)
-		{
-			codes->code<<=remote->post_data_bits;
-			codes->code|=remote->post_data;
-			codes++;
-		}
-		remote->bits+=remote->post_data_bits;
-		remote->post_data=0;
-		remote->post_data_bits=0;
 		remote=remote->next;
+		return;
 	}
+	
+	codes=remote->codes;
+	while(codes->name!=NULL)
+	{
+		codes->code|=remote->pre_data<<remote->bits;
+		codes++;
+	}
+	remote->bits+=remote->pre_data_bits;
+	remote->pre_data=0;
+	remote->pre_data_bits=0;
 }
 
-void invert_data(struct ir_remote *remotes)
+void remove_post_data(struct ir_remote *remote)
 {
-	struct ir_remote *remote;
+	struct ir_ncode *codes;
+	
+	if(remote->post_data_bits==0)
+	{
+		remote=remote->next;
+		return;
+	}
+	
+	codes=remote->codes;
+	while(codes->name!=NULL)
+	{
+		codes->code<<=remote->post_data_bits;
+		codes->code|=remote->post_data;
+		codes++;
+	}
+	remote->bits+=remote->post_data_bits;
+	remote->post_data=0;
+	remote->post_data_bits=0;
+}
+
+void invert_data(struct ir_remote *remote)
+{
 	struct ir_ncode *codes;
 	ir_code mask;
+	lirc_t p,s;
+		
+	/* swap one, zero */
+	p=remote->pone;
+	s=remote->sone;
+	remote->pone=remote->pzero;
+	remote->sone=remote->szero;
+	remote->pzero=p;
+	remote->szero=s;
 	
-	remote=remotes;
-	while(remote!=NULL)
+	/* invert pre_data */
+	if(has_pre(remote))
 	{
-		lirc_t p,s;
-		
-		/* swap one, zero */
-		p=remote->pone;
-		s=remote->sone;
-		remote->pone=remote->pzero;
-		remote->sone=remote->szero;
-		remote->pzero=p;
-		remote->szero=s;
-		
-		/* invert pre_data */
-		if(has_pre(remote))
-		{
-			mask=gen_mask(remote->pre_data_bits);
-			remote->pre_data^=mask;
-		}
-		/* invert post_data */
-		if(has_post(remote))
-		{
-			mask=gen_mask(remote->post_data_bits);
-			remote->post_data^=mask;
-		}
-		
-		if(remote->bits==0)
-		{
-			remote=remote->next;
-			continue;
-		}
-		
-		/* invert codes */
-		mask=gen_mask(remote->bits);
-		codes=remote->codes;
-		while(codes->name!=NULL)
-		{
-			codes->code^=mask;
-			codes++;
-		}
+		mask=gen_mask(remote->pre_data_bits);
+		remote->pre_data^=mask;
+	}
+	/* invert post_data */
+	if(has_post(remote))
+	{
+		mask=gen_mask(remote->post_data_bits);
+		remote->post_data^=mask;
+	}
+	
+	if(remote->bits==0)
+	{
 		remote=remote->next;
+		return;
+	}
+	
+	/* invert codes */
+	mask=gen_mask(remote->bits);
+	codes=remote->codes;
+	while(codes->name!=NULL)
+	{
+		codes->code^=mask;
+		codes++;
 	}
 }
 #endif
