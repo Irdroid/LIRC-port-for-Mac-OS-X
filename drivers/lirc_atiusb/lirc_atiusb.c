@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.20 2004/01/31 02:51:20 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.21 2004/01/31 03:38:58 pmiller9 Exp $
  */
 
 /*
@@ -237,7 +237,7 @@ static int set_use_inc(void *data)
 #else
 		if (usb_submit_urb(ir->urb_in)) {
 #endif
-			printk(DRIVER_NAME "[%d]: open result = -EIO error"
+			printk(DRIVER_NAME "[%d]: open result = -EIO error "
 				"submitting urb\n", ir->devnum);
 			return -EIO;
 		}
@@ -252,7 +252,7 @@ static void set_use_dec(void *data)
 	struct irctl *ir = data;
 
 	if (!ir) {
-		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
 		return;
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
