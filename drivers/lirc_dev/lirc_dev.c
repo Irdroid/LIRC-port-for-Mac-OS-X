@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.37 2005/02/19 15:12:59 lirc Exp $
+ * $Id: lirc_dev.c,v 1.38 2005/03/05 09:59:03 lirc Exp $
  *
  */
 
@@ -223,22 +223,22 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	DECLARE_MUTEX_LOCKED(tn);
 
 	if (!p) {
-		printk("lirc_dev: lirc_register_plugin:"
+		printk("lirc_dev: lirc_register_plugin: "
 		       "plugin pointer must be not NULL!\n");
 		err = -EBADRQC;
 		goto out;
 	}
 
 	if (MAX_IRCTL_DEVICES <= p->minor) {
-		printk("lirc_dev: lirc_register_plugin:"
-		       "\" minor\" must be between 0 and %d (%d)!\n",
+		printk("lirc_dev: lirc_register_plugin: "
+		       "\"minor\" must be between 0 and %d (%d)!\n",
 		       MAX_IRCTL_DEVICES-1, p->minor);
 		err = -EBADRQC;
 		goto out;
 	}
 
 	if (1 > p->code_length || (BUFLEN*8) < p->code_length) {
-		printk("lirc_dev: lirc_register_plugin:"
+		printk("lirc_dev: lirc_register_plugin: "
 		       "code length in bits for minor (%d) "
 		       "must be less than %d!\n",
 		       p->minor, BUFLEN*8);
@@ -246,17 +246,17 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		goto out;
 	}
 
-	printk("lirc_dev: lirc_register_plugin:"
+	printk("lirc_dev: lirc_register_plugin: "
 	       "sample_rate: %d\n",p->sample_rate);
 	if (p->sample_rate) {
 		if (2 > p->sample_rate || HZ < p->sample_rate) {
-			printk("lirc_dev: lirc_register_plugin:"
+			printk("lirc_dev: lirc_register_plugin: "
 			       "sample_rate must be between 2 and %d!\n", HZ);
 			err = -EBADRQC;
 			goto out;
 		}
 		if (!p->add_to_buf) {
-			printk("lirc_dev: lirc_register_plugin:"
+			printk("lirc_dev: lirc_register_plugin: "
 			       "add_to_buf cannot be NULL when "
 			       "sample_rate is set\n");
 			err = -EBADRQC;
@@ -264,7 +264,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		}
 	} else if (!(p->fops && p->fops->read)
 		   && !p->get_queue && !p->rbuf) {
-		printk("lirc_dev: lirc_register_plugin:"
+		printk("lirc_dev: lirc_register_plugin: "
 		       "fops->read, get_queue and rbuf "
 		       "cannot all be NULL!\n");
 		err = -EBADRQC;
@@ -272,14 +272,14 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	} else if (!p->get_queue && !p->rbuf) {
 		if (!(p->fops && p->fops->read && p->fops->poll) 
 		    || (!p->fops->ioctl && !p->ioctl)) {
-			printk("lirc_dev: lirc_register_plugin:"
+			printk("lirc_dev: lirc_register_plugin: "
 			       "neither read, poll nor ioctl can be NULL!\n");
 			err = -EBADRQC;
 			goto out;
 		}
 	}
 
-	down_interruptible(&plugin_lock);
+	down(&plugin_lock);
 
 	minor = p->minor;
 
@@ -295,7 +295,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			goto out_lock;
 		}
 	} else if (irctls[minor].p.minor != NOPLUG) {
-		printk("lirc_dev: lirc_register_plugin:"
+		printk("lirc_dev: lirc_register_plugin: "
 		       "minor (%d) just registered!\n", minor);
 		err = -EBUSY;
 		goto out_lock;
@@ -357,7 +357,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->t_notify = &tn;
 		ir->tpid = kernel_thread(lirc_thread, (void*)ir, 0);
 		if (ir->tpid < 0) {
-			printk("lirc_dev: lirc_register_plugin:"
+			printk("lirc_dev: lirc_register_plugin: "
 			       "cannot run poll thread for minor = %d\n",
 			       p->minor);
 			err = -ECHILD;
@@ -377,6 +377,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 #endif
 	dprintk("lirc_dev: plugin %s registered at minor number = %d\n",
 		ir->p.name, ir->p.minor);
+	p->minor = minor;
 	return minor;
 	
 out_sysfs:
@@ -403,7 +404,7 @@ int lirc_unregister_plugin(int minor)
 	DECLARE_MUTEX_LOCKED(tn2);
 
 	if (minor < 0 || minor >= MAX_IRCTL_DEVICES) {
-		printk("lirc_dev: lirc_unregister_plugin:"
+		printk("lirc_dev: lirc_unregister_plugin: "
 		       "\" minor\" must be between 0 and %d!\n",
 		       MAX_IRCTL_DEVICES-1);
 		return -EBADRQC;
@@ -411,17 +412,17 @@ int lirc_unregister_plugin(int minor)
 
 	ir = &irctls[minor];
 
-	down_interruptible(&plugin_lock);
+	down(&plugin_lock);
 
 	if (ir->p.minor != minor) {
-		printk("lirc_dev: lirc_unregister_plugin:"
+		printk("lirc_dev: lirc_unregister_plugin: "
 		       "minor (%d) device not registered!", minor);
 		up(&plugin_lock);
 		return -ENOENT;
 	}
 
 	if (ir->open) {
-		printk("lirc_dev: lirc_unregister_plugin:"
+		printk("lirc_dev: lirc_unregister_plugin: "
 		       "plugin %s[%d] in use!", ir->p.name, ir->p.minor);
 		up(&plugin_lock);
 		return -EBUSY;
