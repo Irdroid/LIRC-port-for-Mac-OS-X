@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.3 1999/09/13 05:52:40 columbus Exp $
+## $Id: Makefile.am,v 5.4 2000/01/20 19:17:04 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -18,6 +18,7 @@ SUBDIRS = drivers daemons tools doc
 dist-hook:
 	for f in contrib remotes; do \
 		cp -pr $(srcdir)/$$f $(distdir)/$$f; done
+	rm -r `find $(distdir) -name "CVS"`
 	-rcs2log >$(distdir)/ChangeLog
 
 DISTCLEANFILES = configure.sh .setup.config
