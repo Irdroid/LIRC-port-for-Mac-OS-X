@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.1 1999/05/04 04:41:20 rggammon Exp $
+## $Id: Makefile.am,v 1.2 1999/05/05 14:51:02 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -20,7 +20,7 @@ install-exec-local: mkdev
 uninstall-local: rmdev
 
 mkdev:
-	test -c @devdir@/lirc || @mknod@ @devdir@/lirc @lirc_major@ c 0
+	test -c @devdir@/lirc || @mknod@ @devdir@/lirc c @lirc_major@ 0
 
 rmdev:
 	test -c @devdir@/lirc && $(RM) @devdir@/lirc
