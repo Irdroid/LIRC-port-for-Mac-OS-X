@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.49 2004/01/12 10:21:12 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.50 2004/02/29 11:53:39 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1015,7 +1015,7 @@ static struct lirc_plugin plugin = {
 	code_length:	1,
 	sample_rate:	0,
 	data:		NULL,
-	get_key:	NULL,
+	add_to_buf:	NULL,
 	get_queue:	NULL,
 	rbuf:		&rbuf,
 	set_use_inc:	set_use_inc,

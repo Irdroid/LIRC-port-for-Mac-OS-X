@@ -550,7 +550,7 @@ static struct lirc_plugin plugin = {
        code_length:    1,
        sample_rate:    0,
        data:           NULL,
-       get_key:        NULL,
+       add_to_buf:     NULL,
        get_queue:      NULL,
        set_use_inc:    set_use_inc,
        set_use_dec:    set_use_dec,

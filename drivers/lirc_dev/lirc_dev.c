@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.27 2004/01/13 13:59:48 lirc Exp $
+ * $Id: lirc_dev.c,v 1.28 2004/02/29 11:53:25 lirc Exp $
  *
  */
 
@@ -120,26 +120,35 @@ static inline void init_irctl(struct irctl *ir)
 
 inline static int add_to_buf(struct irctl *ir)
 {
-	unsigned char buf[BUFLEN];
-	unsigned int i;
-
 	if (lirc_buffer_full(ir->buf)) {
 		dprintk(LOGHEAD "buffer overflow\n",
 			ir->p.name, ir->p.minor);
 		return -EOVERFLOW;
 	}
 
-	for (i=0; i < ir->buf->chunk_size; i++) {
-		if (ir->p.get_key(ir->p.data, &buf[i], i)) {
-			return -ENODATA;
+	if(ir->p.add_to_buf) {
+		int res = -ENODATA;
+		int got_data = 0;
+		
+		/* service the device as long as it is returning
+		 * data and we have space
+		 */
+		while( !lirc_buffer_full(ir->buf) )
+		{
+			res = ir->p.add_to_buf( ir->p.data, ir->buf );
+			if( res == SUCCESS )
+				got_data++;
+			else
+				break;
 		}
-		dprintk(LOGHEAD "remote code (0x%x) now in buffer\n",
-			ir->p.name, ir->p.minor, buf[i]);
+		
+		if( res == -ENODEV )
+		{
+			ir->shutdown = 1;
+		}
+		return (got_data ? SUCCESS : res);
 	}
-
-	/* here is the only point at which we add key codes to the buffer */
-	lirc_buffer_write_1(ir->buf, buf);
-
+	
 	return SUCCESS;
 }
 
@@ -181,7 +190,7 @@ static int lirc_thread(void *irctl)
 			} else {
 				interruptible_sleep_on(ir->p.get_queue(ir->p.data));
 			}
-			if (ir->shutdown) {
+			if (ir->shutdown || !ir->open) {
 				break;
 			}
 			if (!add_to_buf(ir)) {
@@ -229,7 +238,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 
 	if (MAX_IRCTL_DEVICES <= p->minor) {
 		printk("lirc_dev: lirc_register_plugin:"
-		       "\" minor\" must be beetween 0 and %d (%d)!\n",
+		       "\" minor\" must be between 0 and %d (%d)!\n",
 		       MAX_IRCTL_DEVICES-1, p->minor);
 		return -EBADRQC;
 	}
@@ -245,19 +254,26 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	printk("lirc_dev: lirc_register_plugin:"
 	       "sample_rate: %d\n",p->sample_rate);
 	if (p->sample_rate) {
-		if (2 > p->sample_rate || 50 < p->sample_rate) {
+		if (2 > p->sample_rate || HZ < p->sample_rate) {
 			printk("lirc_dev: lirc_register_plugin:"
-			       "sample_rate must be beetween 2 and 50!\n");
+			       "sample_rate must be between 2 and %d!\n", HZ);
+			return -EBADRQC;
+		}
+		if (!p->add_to_buf) {
+			printk("lirc_dev: lirc_register_plugin:"
+			       "add_to_buf cannot be NULL when "
+			       "sample_rate is set\n");
 			return -EBADRQC;
 		}
 	} else if (!(p->fops && p->fops->read)
-			&& !p->get_queue && !p->rbuf) {
+		   && !p->get_queue && !p->rbuf) {
 		printk("lirc_dev: lirc_register_plugin:"
-		       "fops->read, get_queue and rbuf cannot all be NULL!\n");
+		       "fops->read, get_queue and rbuf "
+		       "cannot all be NULL!\n");
 		return -EBADRQC;
 	} else if (!p->get_queue && !p->rbuf) {
 		if (!(p->fops && p->fops->read && p->fops->poll) 
-				|| (!p->fops->ioctl && !p->ioctl)) {
+		    || (!p->fops->ioctl && !p->ioctl)) {
 			printk("lirc_dev: lirc_register_plugin:"
 			       "neither read, poll nor ioctl can be NULL!\n");
 			return -EBADRQC;
@@ -281,7 +297,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		}
 	} else if (irctls[minor].p.minor != NOPLUG) {
 		printk("lirc_dev: lirc_register_plugin:"
-		       "minor (%d) just registerd!\n", minor);
+		       "minor (%d) just registered!\n", minor);
 		up(&plugin_lock);
 		return -EBUSY;
 	}
@@ -357,7 +373,7 @@ int lirc_unregister_plugin(int minor)
 
 	if (minor < 0 || minor >= MAX_IRCTL_DEVICES) {
 		printk("lirc_dev: lirc_unregister_plugin:"
-		       "\" minor\" must be beetween 0 and %d!\n",
+		       "\" minor\" must be between 0 and %d!\n",
 		       MAX_IRCTL_DEVICES-1);
 		return -EBADRQC;
 	}

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.18 2002/11/19 20:22:07 ranty Exp $      */
+/*      $Id: lirc_parallel.c,v 5.19 2004/02/29 11:53:39 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -603,7 +603,7 @@ static struct lirc_plugin plugin = {
        code_length:    1,
        sample_rate:    0,
        data:           NULL,
-       get_key:        NULL,
+       add_to_buf:     NULL,
        get_queue:      NULL,
        set_use_inc:    set_use_inc,
        set_use_dec:    set_use_dec,

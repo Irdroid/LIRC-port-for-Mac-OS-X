@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.34 2003/11/02 15:38:34 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.35 2004/02/29 11:53:38 lirc Exp $
  *
  */
 
@@ -310,43 +310,34 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	return SUCCESS;
 }
 
-static int get_key(void* data, unsigned char *key, int key_no)
+/* add_to_buf - copy a code to the buffer */
+static int add_to_buf(void* data, struct lirc_buffer* buf)
 {
 	static unsigned long next_time = 0;
-	static unsigned char codes[MAX_BYTES];
+	static unsigned char prev_codes[MAX_BYTES];
 	unsigned long code = 0;
 	unsigned char cur_codes[MAX_BYTES];
-	
-	if (key_no > 0)	{
-		if (code_bytes < 2 || key_no >= code_bytes) {
-			dprintk(LOGHEAD "something wrong in get_key\n", card);
-			return -EBADRQC;
-		}
-		*key = codes[key_no];
-		return SUCCESS;
-	}
-	
+    
 	if (bttv_read_gpio(card, &code)) {
 		dprintk(LOGHEAD "cannot read GPIO\n", card);
 		return -EIO;
 	}
-
+	
 	if (build_key(code, cur_codes)) {
 		return -EFAULT;
 	}
-
+	
 	if (soft_gap) {
-		if (!memcmp(codes, cur_codes, code_bytes) && 
-		    jiffies < next_time) {
+		if (!memcmp(prev_codes, cur_codes, code_bytes) &&
+			jiffies < next_time) {
 			return -EAGAIN;
 		}
 		next_time = jiffies + soft_gap;
 	}
-
-	memcpy(codes, cur_codes, code_bytes);
-
-	*key = codes[0];
-
+	memcpy( prev_codes, cur_codes, code_bytes );
+		
+	lirc_buffer_write_1( buf, cur_codes );
+		
 	return SUCCESS;
 }
 
@@ -368,7 +359,7 @@ static wait_queue_head_t* get_queue(void* data)
 
 static struct lirc_plugin plugin = {
 	.name		= "lirc_gpio  ",
-	.get_key	= get_key,
+	.add_to_buf	= add_to_buf,
 	.get_queue	= get_queue,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
@@ -469,16 +460,17 @@ int init_module(void)
 	 * instead of autodetecting TV card
 	 */
 	if (gpio_mask) {
-		if (sample_rate!=0 && (2 > sample_rate || 50 < sample_rate)) {
+		if (sample_rate!=0 &&
+		    (2 > sample_rate || HZ < sample_rate)) {
 			printk(LOGHEAD "parameter sample_rate "
-			       "must be beetween 2 and 50!\n", minor);
+			       "must be between 2 and %d!\n", minor, HZ);
 			return -EBADRQC;
 		}
 
 		if (sample_rate!=0 && soft_gap && 
 		    ((2000/sample_rate) > soft_gap || 1000 < soft_gap)) {
 			printk(LOGHEAD "parameter soft_gap "
-			       "must be beetween %d and 1000!\n",
+			       "must be between %d and 1000!\n",
 			       minor, 2000/sample_rate);
 			return -EBADRQC;
 		}

@@ -1,5 +1,5 @@
 /*
- * USB Microsoft IR Transceiver driver - 0.1
+ * USB Microsoft IR Transceiver driver - 0.2
  *
  * Copyright (c) 2003-2004 Dan Conti (dconti@acm.wwu.edu)
  *
@@ -12,28 +12,15 @@
  * the philips model. The first revision of this driver only supports
  * the receive function - the transmit function will be much more
  * tricky due to the nature of the hardware. Microsoft chose to build
- * this device inexpensively, therefore making it extra dumb.  There
- * is no interrupt endpoint on this device; all usb traffic happens
- * over two bulk endpoints. As a result of this, poll() for this
- * device is an actual hardware poll (instead of a receive queue
+ * this device inexpensively, therefore making it extra dumb.
+ * There is no interrupt endpoint on this device; all usb traffic
+ * happens over two bulk endpoints. As a result of this, poll() for
+ * this device is an actual hardware poll (instead of a receive queue
  * check) and is rather expensive.
  *
- * This driver is structured in three basic layers
- *  - lower  - interface with the usb device and manage usb data
- *  - middle - api to convert usb data into mode2 and provide this in
- *    _read calls
- *  - mceusb_* - linux driver interface
- *
- * The key routines are as follows:
- *  msir_fetch_more_data - this reads incoming data, strips off the
- *                         start codes the ir receiver places on them,
- *                         and dumps it in an * internal buffer
- *  msir_generate_mode2  - this takes the above data, depacketizes it,
- *                         and generates mode2 data to feed out
- *                         through read calls
- *
- *
- * All trademarks property of their respective owners.
+ * All trademarks property of their respective owners. This driver was
+ * originally based on the USB skeleton driver, although significant
+ * portions of that code have been removed as the driver has evolved.
  *
  * 2003_11_11 - Restructured to minimalize code interpretation in the
  *              driver. The normal use case will be with lirc.
@@ -43,12 +30,20 @@
  *
  * 2004_01_04 - Removed devfs handle. Put in a temporary workaround
  *              for a known issue where repeats generate two
- *              sequential spaces * (last_was_repeat_gap)
+ *              sequential spaces (last_was_repeat_gap)
  *
+ * 2004_02_17 - Changed top level api to no longer use fops, and
+ *              instead use new interface for polling via
+ *              lirc_thread. Restructure data read/mode2 generation to
+ *              a single pass, reducing number of buffers. Rev to .2
+ *
+ * 2004_02_27 - Last of fixups to plugin->add_to_buf API. Properly
+ *              handle broken fragments from the receiver. Up the
+ *              sample rate and remove any pacing from
+ *              fetch_more_data. Fixes all known issues.
+ * 
  * TODO
  *   - Fix up minor number, registration of major/minor with usb subsystem
- *   - Fix up random EINTR being sent
- *   - Fix problem where third key in a repeat sequence is randomly truncated
  *
  */
 /*
@@ -61,28 +56,6 @@
  *	published by the Free Software Foundation; either version 2 of
  *	the License, or (at your option) any later version.
  *
- *
- * This driver is to be used as a skeleton driver to be able to create a
- * USB driver quickly.  The design of it is based on the usb-serial and
- * dc2xx drivers.
- *
- * Thanks to Oliver Neukum and David Brownell for their help in debugging
- * this driver.
- *
- * TODO:
- *	- fix urb->status race condition in write sequence
- *	- move minor_table to a dynamic list.
- *
- * History:
- *
- * 2001_11_05 - 0.6 - fix minor locking problem in skel_disconnect.
- *			Thanks to Pete Zaitcev for the fix.
- * 2001_09_04 - 0.5 - fix devfs bug in skel_disconnect. Thanks to wim delvaux
- * 2001_08_21 - 0.4 - more small bug fixes.
- * 2001_05_29 - 0.3 - more bug fixes based on review from linux-usb-devel
- * 2001_05_24 - 0.2 - bug fixes based on review from linux-usb-devel people
- * 2001_05_01 - 0.1 - first version
- * 
  */
 
 #include <linux/config.h>
@@ -110,7 +83,7 @@
 #include "drivers/lirc_dev/lirc_dev.h"
 
 /* Version Information */
-#define DRIVER_VERSION "v0.1"
+#define DRIVER_VERSION "v0.2"
 #define DRIVER_AUTHOR "Dan Conti, dconti@acm.wwu.edu"
 #define DRIVER_DESC "USB Microsoft IR Transceiver Driver"
 
@@ -139,73 +112,50 @@ MODULE_DEVICE_TABLE (usb, mceusb_table);
 #define MAX_DEVICES		16
 
 /* Structure to hold all of our device specific stuff */
-struct usb_skel	     {
-	/* save off the usb device pointer */
-	struct usb_device *	    udev;
-	/* the interface for this device */
-	struct usb_interface *	interface;
-	/* the starting minor number for this device */
-	unsigned char   minor;
-	/* the number of ports this device has */
-	unsigned char   num_ports;
-	/* number of interrupt in endpoints we have */
-	char            num_interrupt_in;
-	/* number of bulk in endpoints we have */
-	char            num_bulk_in;
-	/* number of bulk out endpoints we have */
-	char            num_bulk_out;
+struct usb_skel {
+	struct usb_device *	    udev;		/* save off the usb device pointer */
+	struct usb_interface *	interface;		/* the interface for this device */
+	unsigned char   minor;				/* the starting minor number for this device */
+	unsigned char   num_ports;			/* the number of ports this device has */
+	char            num_interrupt_in;		/* number of interrupt in endpoints we have */
+	char            num_bulk_in;			/* number of bulk in endpoints we have */
+	char            num_bulk_out;			/* number of bulk out endpoints we have */
 
-	/* the buffer to receive data */
-	unsigned char *    bulk_in_buffer;
-	/* the size of the receive buffer */
-	int                bulk_in_size;
-	/* the address of the bulk in endpoint */
-	__u8               bulk_in_endpointAddr;
+	unsigned char *    bulk_in_buffer;		/* the buffer to receive data */
+	int                bulk_in_size;		/* the size of the receive buffer */
+	__u8               bulk_in_endpointAddr;	/* the address of the bulk in endpoint */
 
-	/* the buffer to send data */
-	unsigned char *    bulk_out_buffer;
-	/* the size of the send buffer */
-	int	           bulk_out_size;
-	/* the urb used to send data */
-	struct urb *       write_urb;
-	/* the address of the bulk out endpoint */
-	__u8               bulk_out_endpointAddr;
-	
-	wait_queue_head_t  wait_q;      /* for timeouts */
-	int                open_count;	/* number of times this port
-					 * has been opened */
-	struct semaphore   sem;		/* locks this structure */
+	unsigned char *    bulk_out_buffer;		/* the buffer to send data */
+	int	               bulk_out_size;		/* the size of the send buffer */
+	struct urb *       write_urb;			/* the urb used to send data */
+	__u8               bulk_out_endpointAddr;	/* the address of the bulk out endpoint */
+
+	wait_queue_head_t  wait_q;			/* for timeouts */
+	int                open_count;			/* number of times this port has been opened */
+	struct semaphore   sem;				/* locks this structure */
 
 	struct lirc_plugin* plugin;
 	
-	/* Used in converting to mode2 and storing */
-        /* buffer for the mode2 data, since lirc reads 4bytes */
-	int    mode2_data[256];
-	int    mode2_idx;               /* read index */
-	int    mode2_count;             /* words available (i.e. write
-					 * index) */
-	int    mode2_partial_pkt_size;
-	int    mode2_once;
+	lirc_t lircdata[256];          			/* place to store values until lirc processes them */
+	int    lircidx;                			/* current index */
+	int    lirccnt;                			/* remaining values */
 	
-	/* Used for storing preprocessed usb data before converting to mode2*/
-	char   usb_dbuffer[1024];
-	int    usb_dstart;
-	int    usb_dcount;
-	int    usb_valid_bytes_in_bulk_buffer;
+	int    usb_valid_bytes_in_bulk_buffer;		/* leftover data from a previous read */
+	int    mce_bytes_left_in_packet;		/* for packets split across multiple reads */
 	
-	/* Set to 1 if the last value we adjusted was a repeat gap; we
-	 * need to hold this value around until we process a lead
-	 * space on the repeat code, otherwise we pass off two
-	 * sequential spaces */
-	int    last_was_repeat_gap;
+	/* Value to hold the last received space; 0 if last value
+	 * received was a pulse
+	 */
+	int    last_space;
+	
 };
 
+#define MCE_TIME_UNIT 50
+
+
 /* driver api */
-static ssize_t mceusb_read	(struct file *file, char *buffer,
-				 size_t count, loff_t *ppos);
 static ssize_t mceusb_write	(struct file *file, const char *buffer,
 				 size_t count, loff_t *ppos);
-static unsigned int mceusb_poll (struct file* file, poll_table* wait);
 
 static int mceusb_open		(struct inode *inode, struct file *file);
 static int mceusb_release	(struct inode *inode, struct file *file);
@@ -216,17 +166,8 @@ static void mceusb_disconnect	(struct usb_device *dev, void *ptr);
 
 static void mceusb_write_bulk_callback	(struct urb *urb);
 
-/* lower level api */
+/* read data from the usb bus; convert to mode2 */
 static int msir_fetch_more_data( struct usb_skel* dev, int dont_block );
-static int msir_read_from_buffer( struct usb_skel* dev, char* buffer, int len );
-static int msir_mark_as_read( struct usb_skel* dev, int count );
-static int msir_available_data( struct usb_skel* dev );
-
-/* middle */
-static int msir_generate_mode2( struct usb_skel* dev, signed char* usb_data, 
-				int bytecount );
-static int msir_copy_mode2( struct usb_skel* dev, int* mode2_data, int count );
-static int msir_available_mode2( struct usb_skel* dev );
 
 /* helper functions */
 static void msir_cleanup( struct usb_skel* dev );
@@ -269,25 +210,27 @@ static struct file_operations mceusb_fops = {
 	 * yourself.
 	 */
 	owner:		THIS_MODULE,
-
-	read:		mceusb_read,
+	
 	write:		mceusb_write,
-	poll:           mceusb_poll,
-	ioctl:          NULL,
+	ioctl:		NULL,
 	open:		mceusb_open,
 	release:	mceusb_release,
 };      
 
 
-/* usb specific object needed to register this driver with the usb subsystem */
+/* usb specific object needed to register this driver with the usb
+   subsystem */
 static struct usb_driver mceusb_driver = {
 	name:		"ir_transceiver",
 	probe:		mceusb_probe,
 	disconnect:	mceusb_disconnect,
-	fops:		&mceusb_fops,
+	fops:		NULL, //&mceusb_fops,
 	minor:		USB_MCEUSB_MINOR_BASE,
 	id_table:	mceusb_table,
 };
+
+
+
 
 
 /**
@@ -329,39 +272,40 @@ static void mceusb_setup( struct usb_device *udev )
 {
 	char data[8];
 	int res;
-	memset( data, 0, 8 );
 	
+	memset( data, 0, 8 );
+
 	/* Get Status */
 	res = usb_control_msg(udev, usb_rcvctrlpipe(udev, 0),
 			      USB_REQ_GET_STATUS, USB_DIR_IN,
 			      0, 0, data, 2, HZ * 3);
-	
+    
 	/*    res = usb_get_status( udev, 0, 0, data ); */
 	dbg(__FUNCTION__ " res = %d status = 0x%x 0x%x",
 	    res, data[0], data[1] );
-	
-	/* This is a strange one. They issue a set address to the
-	 * device on the receive control pipe and expect a certain
-	 * value pair back
+    
+	/* This is a strange one. They issue a set address to the device
+	 * on the receive control pipe and expect a certain value pair back
 	 */
 	memset( data, 0, 8 );
-	
+
 	res = usb_control_msg( udev, usb_rcvctrlpipe(udev, 0),
 			       5, USB_TYPE_VENDOR, 0, 0,
 			       data, 2, HZ * 3 );
 	dbg(__FUNCTION__ " res = %d, devnum = %d", res, udev->devnum);
 	dbg(__FUNCTION__ " data[0] = %d, data[1] = %d", data[0], data[1] );
-	
+
+    
 	/* set feature */
 	res = usb_control_msg( udev, usb_sndctrlpipe(udev, 0),
 			       USB_REQ_SET_FEATURE, USB_TYPE_VENDOR,
 			       0xc04e, 0x0000, NULL, 0, HZ * 3 );
-	
+    
 	dbg(__FUNCTION__ " res = %d", res);
-	
+
 	/* These two are sent by the windows driver, but stall for
 	 * me. I dont have an analyzer on the linux side so i can't
-	 * see what is actually different and why * the device takes
+	 * see what is actually different and why the device takes
 	 * issue with them
 	 */
 #if 0
@@ -369,14 +313,14 @@ static void mceusb_setup( struct usb_device *udev )
 	res = usb_control_msg( udev, usb_sndctrlpipe(udev, 0),
 			       0x04, USB_TYPE_VENDOR,
 			       0x0808, 0x0000, NULL, 0, HZ * 3 );
-	
+    
 	dbg(__FUNCTION__ " res = %d", res);
-	
+    
 	/* this is another custom control message they send */
 	res = usb_control_msg( udev, usb_sndctrlpipe(udev, 0),
 			       0x02, USB_TYPE_VENDOR,
 			       0x0000, 0x0100, NULL, 0, HZ * 3 );
-	
+    
 	dbg(__FUNCTION__ " res = %d", res);
 #endif
 }
@@ -393,11 +337,10 @@ static int mceusb_open (struct inode *inode, struct file *file)
 	
 	dbg(__FUNCTION__);
 
-	/* This is a very sucky point. On lirc, we get passed the
-	 * minor number of the lirc device, which is totally
-	 * retarded. We want to support people opening /dev/usb/msir0
-	 * directly though, so try and determine who the hell is
-	 * calling us here
+	/* This is a very sucky point. On lirc, we get passed the minor
+	 * number of the lirc device, which is totally retarded. We want
+	 * to support people opening /dev/usb/msir0 directly though, so
+	 * try and determine who the hell is calling us here
 	 */
 	if( MAJOR( inode->i_rdev ) != USB_MAJOR )
 	{
@@ -408,20 +351,22 @@ static int mceusb_open (struct inode *inode, struct file *file)
 		 * machine
 		 */
 		subminor = 0;
-	} else {
+	}
+	else {
 		subminor = MINOR (inode->i_rdev) - USB_MCEUSB_MINOR_BASE;
 	}
 	if ((subminor < 0) ||
 	    (subminor >= MAX_DEVICES)) {
-		dbg("subminor %d", subminor);
+		dbg("subminor %d asldkjfasdkfj", subminor);
 		return -ENODEV;
 	}
-	
+
 	/* Increment our usage count for the module.
 	 * This is redundant here, because "struct file_operations"
 	 * has an "owner" field. This line is included here soley as
 	 * a reference for drivers using lesser structures... ;-)
 	 */
+
 	MOD_INC_USE_COUNT;
 
 	/* lock our minor table and get our local data for this minor */
@@ -434,22 +379,22 @@ static int mceusb_open (struct inode *inode, struct file *file)
 		return -ENODEV;
 	}
 	udev = dev->udev;
-	
+
 	/* lock this device */
 	down (&dev->sem);
-	
+
 	/* unlock the minor table */
 	up (&minor_table_mutex);
-	
+
 	/* increment our usage count for the driver */
 	++dev->open_count;
-	
+
 	/* save our object in the file's private structure */
 	file->private_data = dev;
-	
+
 	/* init the waitq */
 	init_waitqueue_head( &dev->wait_q );
-	
+    
 	/* clear off the first few messages. these look like
 	 * calibration or test data, i can't really tell
 	 * this also flushes in case we have random ir data queued up
@@ -459,20 +404,19 @@ static int mceusb_open (struct inode *inode, struct file *file)
 		int partial = 0, retval, i;
 		for( i = 0; i < 40; i++ )
 		{
-			retval = usb_bulk_msg (udev,
-					       usb_rcvbulkpipe 
-					       (udev, 
-						dev->bulk_in_endpointAddr),
-					       junk, 64,
-					       &partial, HZ*10);
+			retval = usb_bulk_msg 
+				(udev, usb_rcvbulkpipe 
+				 (udev, dev->bulk_in_endpointAddr),
+				 junk, 64,
+				 &partial, HZ*10);
 		}
 	}
-	
+
 	msir_cleanup( dev );
-	
+    
 	/* unlock this device */
 	up (&dev->sem);
-	
+
 	return retval;
 }
 
@@ -487,11 +431,9 @@ static int mceusb_release (struct inode *inode, struct file *file)
 
 	dev = (struct usb_skel *)file->private_data;
 	if (dev == NULL) {
-		dbg (__FUNCTION__ " - object is NULL");
+		printk (__FUNCTION__ " - object is NULL\n");
 		return -ENODEV;
 	}
-
-	dbg(__FUNCTION__ " - minor %d", dev->minor);
 
 	/* lock our minor table */
 	down (&minor_table_mutex);
@@ -499,12 +441,15 @@ static int mceusb_release (struct inode *inode, struct file *file)
 	/* lock our device */
 	down (&dev->sem);
 
+	/* XXX TODO disabled while debugging; there is an issue where
+	   the open_count becomes invalid */
+#if 0
 	if (dev->open_count <= 0) {
-		dbg (__FUNCTION__ " - device not opened");
+		printk (__FUNCTION__ " - device not opened\n");
 		retval = -ENODEV;
 		goto exit_not_opened;
 	}
-
+#endif
 	if (dev->udev == NULL) {
 		/* the device was unplugged before the file was released */
 		up (&dev->sem);
@@ -525,7 +470,7 @@ static int mceusb_release (struct inode *inode, struct file *file)
 	/* decrement our usage count for the module */
 	MOD_DEC_USE_COUNT;
 
-  exit_not_opened:
+	//exit_not_opened:
 	up (&dev->sem);
 	up (&minor_table_mutex);
 
@@ -535,24 +480,20 @@ static int mceusb_release (struct inode *inode, struct file *file)
 static void msir_cleanup( struct usb_skel* dev )
 {
 	memset( dev->bulk_in_buffer, 0, dev->bulk_in_size );
-	
-	memset( dev->usb_dbuffer, 0, sizeof(dev->usb_dbuffer) );
-	dev->usb_dstart = 0;
-	dev->usb_dcount = 0;
+
 	dev->usb_valid_bytes_in_bulk_buffer = 0;
-	
-	memset( dev->mode2_data, 0, sizeof(dev->mode2_data) );
-	dev->mode2_partial_pkt_size = 0;
-	dev->mode2_count = 0;
-	dev->mode2_idx = 0;
-	dev->mode2_once = 0;
-	dev->last_was_repeat_gap = 0;
+
+	dev->last_space = PULSE_MASK;
+    
+	dev->mce_bytes_left_in_packet = 0;
+	dev->lircidx = 0;
+	dev->lirccnt = 0;
+	memset( dev->lircdata, 0, sizeof(dev->lircdata) );
 }
 
 static int set_use_inc(void* data)
 {
 	/*    struct usb_skel* skel = (struct usb_skel*)data; */
-	
 	MOD_INC_USE_COUNT;
 	return 0;
 }
@@ -568,109 +509,9 @@ static void set_use_dec(void* data)
 		kfree( dev->plugin->rbuf );
 		kfree( dev->plugin );
 	}
-	
+    
 	MOD_DEC_USE_COUNT;
 }
-
-static int msir_available_mode2( struct usb_skel* dev )
-{
-	return dev->mode2_count - dev->last_was_repeat_gap;
-}
-
-static int msir_available_data( struct usb_skel* dev )
-{
-	return dev->usb_dcount;
-}
-
-static int msir_copy_mode2( struct usb_skel* dev, int* mode2_data, int count )
-{
-	int words_to_read = count;
-	//    int words_avail   = dev->mode2_count;
-	int words_avail = msir_available_mode2( dev );
-	
-	if( !dev->mode2_once && words_avail )
-	{
-		int space = PULSE_MASK;
-		count--;
-		copy_to_user( mode2_data, &space, 4 );
-		dev->mode2_once = 1;
-		
-		if( count )
-		{
-			mode2_data++;
-		}
-		else
-		{
-			return 1;
-		}
-	}
-	
-	if( !words_avail )
-	{
-		return 0;
-	}
-	
-	if( words_to_read > words_avail )
-	{
-		words_to_read = words_avail;
-	}
-	
-	dbg(__FUNCTION__ " dev->mode2_count %d, dev->mode2_idx %d",
-	    dev->mode2_count, dev->mode2_idx);
-	dbg(__FUNCTION__ " words_avail %d words_to_read %d",
-	    words_avail, words_to_read);
-	copy_to_user( mode2_data, &( dev->mode2_data[dev->mode2_idx] ),
-		      words_to_read<<2 );
-	dbg(__FUNCTION__ " would copy_to_user() %d w", words_to_read);
-	
-	dev->mode2_idx += words_to_read;
-	dev->mode2_count -= words_to_read;
-	
-	if( dev->mode2_count == 0 )
-	{
-		dev->mode2_idx = 0;
-	}
-	else if( dev->mode2_count == 1 && dev->last_was_repeat_gap )
-	{
-		// shift down the repeat gap and map it up to a
-		// lirc-acceptable value
-		dev->mode2_data[0] = dev->mode2_data[dev->mode2_idx];
-		if( dev->mode2_data[0] >= 60000 &&
-		    dev->mode2_data[0] <= 70000 )
-			dev->mode2_data[0] = 95000;
-		//printk(__FUNCTION__ " shifting value %d down from %d prev %d\n", dev->mode2_data[0], dev->mode2_idx,
-		//    dev->mode2_data[dev->mode2_idx-1]);
-		dev->mode2_idx = 0;
-	}
-	
-	return words_to_read;
-}
-
-static int msir_read_from_buffer( struct usb_skel* dev, char* buffer, int len )
-{
-	if( len > dev->usb_dcount )
-	{
-		len = dev->usb_dcount;
-	}
-	memcpy( buffer, dev->usb_dbuffer + dev->usb_dstart, len );
-	return len;
-}
-    
-static int msir_mark_as_read( struct usb_skel* dev, int count )
-{
-	//    if( count != dev->usb_dcount )
-	//        printk(KERN_INFO __FUNCTION__ " count %d dev->usb_dcount %d dev->usb_dstart %d", count, dev->usb_dcount, dev->usb_dstart );
-	if( count > dev->usb_dcount )
-		count = dev->usb_dcount;
-	dev->usb_dcount -= count;
-	dev->usb_dstart += count;
-	
-	if( !dev->usb_dcount )
-		dev->usb_dstart = 0;
-	
-	return 0;
-}
-
 
 /*
  * msir_fetch_more_data
@@ -685,530 +526,257 @@ static int msir_mark_as_read( struct usb_skel* dev, int count )
  * dev->sem should be locked when this function is called - fine grain
  * locking isn't really important here anyways
  *
- * TODO change this to do partials based on term codes, or not always fill
+ * This routine always returns the number of words available
+ *
  */
-
 static int msir_fetch_more_data( struct usb_skel* dev, int dont_block )
 {
 	int retries = 0;
-	int count, this_read, partial;
-	int retval;
-	int writeindex, terminators = 0;
-	int bytes_to_read = sizeof(dev->usb_dbuffer) - dev->usb_dcount;
-	signed char* ibuf;
 	int sequential_empty_reads = 0;
-	
-	/* special case where we are already full */
-	if( bytes_to_read == 0 )
-		return dev->usb_dcount;
-	
-	/* shift down */
-	if( dev->usb_dcount && dev->usb_dstart != 0 )
+	int words_to_read = 
+		(sizeof(dev->lircdata)/sizeof(lirc_t)) - dev->lirccnt;
+	int partial, this_read = 0;
+	int bulkidx = 0;
+	int bytes_left_in_packet = 0;
+	signed char* signedp = (signed char*)dev->bulk_in_buffer;
+
+	if( words_to_read == 0 )
+		return dev->lirccnt;
+
+	/* this forces all existing data to be read by lirc before we
+	 * issue another usb command. this is the only form of
+	 * throttling we have
+	 */
+	if( dev->lirccnt )
 	{
-		printk( __FUNCTION__ " shifting %d bytes from %d\n",
-			dev->usb_dcount, dev->usb_dstart );
-		memcpy( dev->usb_dbuffer, dev->usb_dbuffer + dev->usb_dstart,
-			dev->usb_dcount );
+		return dev->lirccnt;
 	}
-	
-	dev->usb_dstart = 0;
-	
-	writeindex = dev->usb_dcount;
-	
-	count = bytes_to_read;
-	
-	ibuf = (signed char*)dev->bulk_in_buffer;
-	if( !dev->usb_valid_bytes_in_bulk_buffer )
+
+	/* reserve room for our leading space */
+	if( dev->last_space )
+		words_to_read--;
+
+	while( words_to_read )
 	{
-		memset( ibuf, 0, dev->bulk_in_size );
-	}
-	
-#if 0
-	printk( __FUNCTION__ " going to read, dev->usb_dcount %d, bytes_to_read %d vbb %d\n", dev->usb_dcount, bytes_to_read,
-		dev->usb_valid_bytes_in_bulk_buffer );
-#endif
-	/* 8 is the minimum read size */
-	while( count > 8 )
-	{
-		int i, goodbytes = 0;
-		
-		/* break out if we were interrupted */
+		/* handle signals and USB disconnects */
 		if( signal_pending(current) )
 		{
-			printk( __FUNCTION__ " got signal %ld\n",
-				current->pending.signal.sig[0]);
-			return dev->usb_dcount ? dev->usb_dcount : -EINTR;
+			return dev->lirccnt ? dev->lirccnt : -EINTR;
 		}
-		
-		/* or if we were unplugged */
 		if( !dev->udev )
 		{
 			return -ENODEV;
 		}
-		
-		/* or on data issues */
-		if( writeindex == sizeof(dev->usb_dbuffer) )
+
+		bulkidx = 0;
+
+		/*
+		 * perform data read (phys or from previous buffer)
+		 */
+        
+		/* use leftovers if present, otherwise perform a read */
+		if( dev->usb_valid_bytes_in_bulk_buffer )
 		{
-			printk( __FUNCTION__ " buffer full, returning\n");
-			return dev->usb_dcount;
-		}
-		
-		// always read the maximum
-		this_read = dev->bulk_in_size;
-		
-		partial = 0;
-		
-		if( dev->usb_valid_bytes_in_bulk_buffer ) {
-			retval = 0;
-			this_read = partial = dev->usb_valid_bytes_in_bulk_buffer;
+			this_read = partial = 
+				dev->usb_valid_bytes_in_bulk_buffer;
 			dev->usb_valid_bytes_in_bulk_buffer = 0;
-		} else {
-			// This call always returns almost immediately
-			// with data, since this device will always
-			// provide a 2 byte response on a bulk
-			// read. Not exactly friendly to the usb bus
-			// or our load avg. We attempt to compensate
-			// for this on 2 byte reads below
-			
-			memset( ibuf, 0, dev->bulk_in_size );
-			retval = usb_bulk_msg (dev->udev,
-					       usb_rcvbulkpipe
-					       (dev->udev, 
-						dev->bulk_in_endpointAddr),
-					       (unsigned char*)ibuf, this_read,
-					       &partial, HZ*10);
 		}
-		
-		if( retval )
+		else
 		{
-			/* break out on errors */
-			printk(__FUNCTION__ " got retval %d %d %d",
-			       retval, this_read, partial );
-			if( retval == USB_ST_DATAOVERRUN && retries < 5 )
+			int retval;
+            
+			this_read = dev->bulk_in_size;
+			partial = 0;
+			retval = usb_bulk_msg
+				(dev->udev,
+				 usb_rcvbulkpipe
+				 (dev->udev, dev->bulk_in_endpointAddr),
+				 (unsigned char*)dev->bulk_in_buffer,
+				 this_read, &partial, HZ*10);
+			
+			/* retry a few times on overruns; map all
+			   other errors to -EIO */
+			if( retval )
 			{
-				retries++;
+				if( retval == USB_ST_DATAOVERRUN && 
+				    retries < 5 )
+				{
+					retries++;
+					interruptible_sleep_on_timeout
+						( &dev->wait_q, HZ );
+					continue;
+				}
+				else
+				{
+					return -EIO;
+				}
+			}
+            
+			retries = 0;
+			if( partial )
+				this_read = partial;
+
+			/* skip the header */
+			bulkidx += 2;
+            
+			/* check for empty reads (header only) */
+			if( this_read == 2 )
+			{
+				sequential_empty_reads++;
+
+				/* assume no data */
+				/* XXX cleanup */
+				if( dont_block &&
+				    sequential_empty_reads == 1 )
+				{
+					break;
+				}
+
+				/* sleep for a bit before performing
+				   another read */
 				interruptible_sleep_on_timeout
-					( &dev->wait_q, HZ );
+					( &dev->wait_q, 1 );
 				continue;
 			}
 			else
 			{
-				return -EIO;
+				sequential_empty_reads = 0;
 			}
-		} else {
-			retries = 0;
+            
 		}
-		
-		if( partial )
-		{
-			this_read = partial;
-		}
-		
-		/* All packets i've seen start with b1 60. If no data
-		 * was actually available, the transceiver still gives
-		 * this byte pair back. We only care about actual
-		 * codes, so we can safely ignore these 2 byte reads
+
+		/*
+		 * process data
 		 */
-		if( this_read > 2 )
+        
+		/* at this point this_read is > 0 */
+		while( bulkidx < this_read &&
+		       (words_to_read > (dev->last_space ? 1 : 0)) )
+			//while( bulkidx < this_read && words_to_read )
 		{
-#if 0
-			printk( __FUNCTION__ " read %d bytes partial %d goodbytes %d writeidx %d\n",
-				this_read, partial, goodbytes, writeindex );
-#endif
-			sequential_empty_reads = 0;
-			/* copy from the input buffer to the capture buffer */
-			for( i = 0; i < this_read; i++ )
-			{
-				if( (((unsigned char*)ibuf)[i] == 0xb1) ||
-				    (ibuf[i] == 0x60) )
-					;
-				else
-				{
-					if( writeindex == sizeof(dev->usb_dbuffer) )
-					{
-						/* this can happen in
-						 * repeats, where
-						 * basically the bulk
-						 * buffer is getting
-						 * spammed and we
-						 * aren't processing
-						 * data fast enough
-						 */
-#if 1
-						dev->usb_valid_bytes_in_bulk_buffer = this_read - i;
-						memcpy( ibuf, &( ibuf[i] ),
-							dev->usb_valid_bytes_in_bulk_buffer );
-#endif
-						break;
-					}
-					dev->usb_dbuffer[writeindex++] = ibuf[i];
-					goodbytes++;
-					
-					if( ibuf[i] == 0x7f )
-					{
-						terminators++;
-						
-						/* This is a bug - we should either get 10 or 15 */
-						if( terminators > 15 )
-						{
-							dbg("bugbug - terminators %d at %d gb %d", terminators, i, goodbytes );
-						} else
-							dbg("terminator %d at %d gb %d", terminators, i, goodbytes );
-						dbg("writeindex %d", writeindex);
-					}
-					else if( terminators )
-					{
-						if( ((unsigned char*)ibuf)[i] == 128 )
-						{
-							/* copy back any remainder and break out */
-							dev->usb_valid_bytes_in_bulk_buffer = this_read - (i + 1);
-							if( dev->usb_valid_bytes_in_bulk_buffer )
-							{
-								memcpy( ibuf, &( ibuf[i+1] ), dev->usb_valid_bytes_in_bulk_buffer );
-							}
-							
-							count = 0;
-							break;
-						}
-						if( terminators == 10 ||
-						    terminators == 15 )
-							dbg("post-termination data %d idx %d %d", ibuf[i], dev->usb_dcount, i);
-					}
-				}
-			}
-			dev->usb_dcount += goodbytes;
-			count -= goodbytes;
-		} else {
-			sequential_empty_reads++;
-			
-			// assume no data
-			if( dont_block && sequential_empty_reads == 5 )
-				break;
-			
-			// Try to be nice to the usb bus by sleeping
-			// for a bit here before going in to the next
-			// read
-			interruptible_sleep_on_timeout( &dev->wait_q, 1 );
-		}
-		
-	}
-	/* return the number of bytes available now */
-	return dev->usb_dcount;
-}
-
-// layout of data, per Christoph Bartelmus
-// The protocol is:
-// 1 byte: -length of following packet
-// the following bytes of the packet are:
-// negative value:
-//   -(number of time units) of pulse
-// positive value:
-//   (number of time units) of space
-// one time unit is 50us
-
-#define MCE_TIME_UNIT 50
-
-// returns the number of bytes processed from the 'usb_data' array
-static int msir_generate_mode2( struct usb_skel* dev, signed char* usb_data,
-				int bytecount )
-{
-	int bytes_left_in_packet = 0;
-	int pos = 0;
-	int mode2count = 0;
-	int last_was_pulse = 1;
-	int last_pkt = 0;
-	int split_pkt_size = 0;
-	// XXX no bounds checking here
-	int* mode2_data;
-	int mode2_limit = sizeof( dev->mode2_data ) - dev->mode2_count;
-	
-	// If data exists in the buffer, we have to point to the last
-	// item there so we can append consecutive pulse/space
-	// ops. Otherwise, set last_was_pulse 1 (since the first byte
-	// is a pulse, and we want to store in the first array
-	// location
-	if( dev->mode2_count == 0 )
-	{
-		mode2_data = &( dev->mode2_data[0] );
-		last_was_pulse = (dev->mode2_once ? 1 : 0);
-		mode2_data[0] = 0;
-	}
-	else
-	{
-		mode2_data = &( dev->mode2_data[dev->mode2_idx + 
-						dev->mode2_count - 1] );
-		last_was_pulse = (mode2_data[0] & PULSE_BIT) ? 1 : 0;
-	}
-	
-	while( pos < bytecount && !last_pkt &&
-	       (mode2_limit > (dev->mode2_count + mode2count)) )
-	{
-		if( dev->mode2_partial_pkt_size )
-		{
-			bytes_left_in_packet = dev->mode2_partial_pkt_size;
-			dev->mode2_partial_pkt_size = 0;
-		}
-		else {
-			bytes_left_in_packet = 128 + usb_data[pos];
-			
-			// XXX out of sync? find the next packet
-			// header, establish a distance, and fix the
-			// packet size
-			if( bytes_left_in_packet > 4 )
-			{
-				int i;
-				for( i = pos + 1; i < pos + 4; i++ )
-				{
-					if( (int)(128 + usb_data[i]) <= 4 )
-					{
-						bytes_left_in_packet = i - pos;
-						break;
-					}
-				}
-			}
-			else
-			{
-				// otherwise, increment past the header
-				pos++;
-			}
-		}
-		
-		// special case where we have a terminator at the
-		// start but not at the end of this packet, indicating
-		// potential repeat, or the packet is less than 4
-		// bytes, indicating end also special case a split
-		// starting packet
-		if( pos > 1 && bytes_left_in_packet < 4 )
-		{
-			// end
-			last_pkt = 1;
-		}
-		else if( usb_data[pos] == 127 &&
-			 usb_data[pos+bytes_left_in_packet-1] != 127 )
-		{
-			// the genius ir transciever is blending data
-			// from the repeat events into a single
-			// packet. how we handle this is by splitting
-			// the packet (and truncating the packet size
-			// value we read), then rewriting a new packet
-			// header onto the outbound data.  it's
-			// ultraghetto.
-			while( usb_data[pos+bytes_left_in_packet-1] != 127 )
-			{
-				bytes_left_in_packet--;
-				split_pkt_size++;
-			}
-			// repeat code
-			last_pkt = 2;
-		}
-		while( bytes_left_in_packet && pos < bytecount )
-		{
-			int keycode = usb_data[pos];
+			int keycode;
 			int pulse = 0;
-			
-			pos++;
+            
+			/* read packet length if needed */
+			if( !bytes_left_in_packet )
+			{
+				
+				/* we assume we are on a packet length
+				 * value. it is possible, in some
+				 * cases, to get a packet that does
+				 * not start with a length, apparently
+				 * due to some sort of fragmenting,
+				 * but occaisonally we do not receive
+				 * the second half of a fragment
+				 */
+				bytes_left_in_packet = 
+					128 + signedp[bulkidx++];
+
+				/* unfortunately rather than keep all
+				 * the data in the packetized format,
+				 * the transceiver sends a trailing 8
+				 * bytes that aren't part of the
+				 * transmittion from the remote,
+				 * aren't packetized, and dont really
+				 * have any value. we can basically
+				 * tell we have hit them if 1) we have
+				 * a loooong space currently stored
+				 * up, and 2) the bytes_left value for
+				 * this packet is obviously wrong
+				 */
+				if( bytes_left_in_packet > 4  )
+				{
+					if( dev->mce_bytes_left_in_packet )
+					{
+						bytes_left_in_packet = dev->mce_bytes_left_in_packet;
+						bulkidx--;
+					}
+					bytes_left_in_packet = 0;
+					bulkidx = this_read;
+				}
+
+				/* always clear this if we have a
+				   valid packet */
+				dev->mce_bytes_left_in_packet = 0;
+                    
+				/* continue here to verify we haven't
+				   hit the end of the bulk_in */
+				continue;
+				
+			}
+
+			/*
+			 * generate mode2
+			 */
+            
+			keycode = signedp[bulkidx++];
 			if( keycode < 0 )
 			{
 				pulse = 1;
 				keycode += 128;
 			}
 			keycode *= MCE_TIME_UNIT;
-			
-			// on a state change, increment the position
-			// for the output buffer and initialize the
-			// current spot to 0; otherwise we need to
-			// concatenate pulse/gap values for lirc to be
-			// happy
-			if( pulse != last_was_pulse &&
-			    (mode2count || mode2_data[mode2count]))
-			{
-				if( dev->last_was_repeat_gap )
-				{
-					//printk( __FUNCTION__ " transition with lwrg set lastval %d idx1 %d idx2 %d\n",
-					//  mode2_data[mode2count],mode2count, dev->mode2_count+dev->mode2_idx-1 );
-				}
-				mode2count++;
-				mode2_data[mode2count] = 0;
-			}
-			
-			mode2_data[mode2count] += keycode;
-			
-			// Or in the pulse bit, and map all gap
-			// lengths to a fixed value; this makes lirc
-			// happy, sort of.
-			if( pulse ) {
-				mode2_data[mode2count] |= PULSE_BIT;
-				dev->last_was_repeat_gap = 0;
-			}
-			
-			last_was_pulse = pulse;
+
 			bytes_left_in_packet--;
-		}
-	}
-	
-	// If the last value in the data array is a repeat gap, set
-	// the last_was_repeat_gap flag
-	if( mode2_data[mode2count] > 20000 && mode2_data[mode2count] < 70000 )
-	{
-		// printk(__FUNCTION__ " setting lwrg for val %d idx1 %d idx2 %d\n",
-		//    mode2_data[mode2count], mode2count, dev->mode2_count+dev->mode2_idx-1 );
-		dev->last_was_repeat_gap = 1;
-	} else {
-		dev->last_was_repeat_gap = 0;
-	}
-	
-	// this is a bit tricky; we need to change to a counter, but
-	// if we already had data in dev->mode2_data, then byte 0
-	// actually was pre-existing data and shouldn't be counted
-	if( mode2count && !dev->mode2_count )
-	{
-		mode2count++;
-		//        printk(__FUNCTION__ " mode2count++ to %d\n", mode2count);
-	}
-	
-	// never lie about how much output we have
-	dev->mode2_count += mode2count;
-	
-	if( last_pkt == 1 )
-	{
-		return bytecount;
-	}
-	else
-	{
-		//  note the partial pkt size, and make sure we only claim
-		//  the bytes we processed
-		if( last_pkt == 2 )
-		{
-			dev->mode2_partial_pkt_size = split_pkt_size;
-		}
-#if 1
-		// XXX this i am not sure about; it seems like this should be required, but it
-		// isn't, and seems to cause problems
-		else
-		{
-			dev->mode2_partial_pkt_size = bytes_left_in_packet;
-		}
-#endif
-		return pos;
-	}
-}
+            
+			if( pulse )
+			{
+				if( dev->last_space )
+				{
+					/* XXX short term hack */
+					if( dev->last_space > 40000 &&
+					    dev->last_space < 60000 )
+					{
+						dev->last_space = 68500;
+					}
+					
+					dev->lircdata[dev->lirccnt++] =
+						dev->last_space;
+					dev->last_space = 0;
+					words_to_read--;
 
-static ssize_t mceusb_read( struct file* file, char* buffer,
-			    size_t count, loff_t* ppos)
-{
-	char _data_buffer[128];
-	struct usb_skel* dev;
-	int read_count;
-	int bytes_copied = 0;
-	
-	dev = (struct usb_skel*) file->private_data;
-	
-	if( (count % 4) != 0 )
-	{
-		return -EINVAL;
-	}
-	
-	down( &dev->sem );
-	
-	/* verify that the device wasn't unplugged */
-	if (dev->udev == NULL) {
-		up( &dev->sem );
-		return -ENODEV;
-	}
-	
-	dbg(__FUNCTION__ " (1) calling msir_copy_mode2 with %d", count);
-	bytes_copied = 4 * msir_copy_mode2( dev, (int*)buffer, count >> 2 );
-	if( bytes_copied == count )
-	{
-		up( &dev->sem );
-		return count;
-	}
-	
-	/* we didn't get enough mode2 data. the process now is a bit complex
-	 * 1. see if we have data read from the usb device that hasn't
-	 *    been converted to mode2; if so, convert that, and try to
-	 *    copy that out
-	 * 2. otherwise, go ahead and read more, then convert that, then copy
-	 */
-    
-	if( dev->usb_dcount )
-	{
-		read_count = msir_read_from_buffer( dev, _data_buffer, 128 );
-		read_count = msir_generate_mode2
-			( dev, (signed char*)_data_buffer, read_count );
-		msir_mark_as_read( dev, read_count );
-		bytes_copied += (4 * msir_copy_mode2
-				 ( dev, (int*)(buffer + bytes_copied),
-				   (count-bytes_copied) >> 2 ));
-	}
-	
-	if( bytes_copied == count )
-	{
-		up( &dev->sem );
-		return count;
-	}
-	
-	/* read more data in a loop until we get enough */
-	while( bytes_copied < count )
-	{
-		read_count = msir_fetch_more_data
-			( dev, (file->f_flags & O_NONBLOCK ? 1 : 0) );
-		
-		if( read_count <= 0 )
-		{
-			up( &dev->sem );
-			return (read_count ? read_count : -EWOULDBLOCK);
+					/* clear the lirc_t for the pulse */
+					dev->lircdata[dev->lirccnt] = 0;
+				}
+				dev->lircdata[dev->lirccnt] += keycode;
+				dev->lircdata[dev->lirccnt] |= PULSE_BIT;
+			}
+			else
+			{
+				/* on pulse->space transition, add one
+				   for the existing pulse */
+				if( dev->lircdata[dev->lirccnt] &&
+				    !dev->last_space )
+				{
+					dev->lirccnt++;
+					words_to_read--;
+				}
+                
+				dev->last_space += keycode;
+			}
 		}
-		
-		read_count = msir_read_from_buffer( dev, _data_buffer, 128 );
-		read_count = msir_generate_mode2
-			( dev, (signed char*)_data_buffer, read_count );
-		msir_mark_as_read( dev, read_count );
-		
-		bytes_copied += (4 * msir_copy_mode2
-				 ( dev, (int*)(buffer + bytes_copied),
-				   (count-bytes_copied) >> 2 ));
 	}
 	
-	up( &dev->sem );
-	return bytes_copied;
-}
-
-/**
- * mceusb_poll
- */
-static unsigned int mceusb_poll(struct file* file, poll_table* wait)
-{
-	struct usb_skel* dev;
-	int data;
-	dev = (struct usb_skel*)file->private_data;
-	
-	// So this is a crummy poll. Unfortunately all the lirc tools
-	// assume your hardware is interrupt driven. Instead, we have
-	// to actually read here to see whether or not there is data
-	// (unless we have a key saved up - unlikely )
-
-	//    if( dev->usb_dcount || dev->mode2_count )
-	if( msir_available_data( dev ) || msir_available_mode2( dev ) )
+	/* save off some info if we are exiting mid-packet, or with
+	   leftovers */
+	if( bytes_left_in_packet )
 	{
-		return POLLIN | POLLRDNORM;
+		dev->mce_bytes_left_in_packet = bytes_left_in_packet;
 	}
-	else {
-		down( &dev->sem );
-		data = msir_fetch_more_data( dev, 1 );
-		up( &dev->sem );
-		
-		if( data )
-			return POLLIN | POLLRDNORM;
+	if( bulkidx < this_read )
+	{
+		dev->usb_valid_bytes_in_bulk_buffer = (this_read - bulkidx);
+		memcpy( dev->bulk_in_buffer, &(dev->bulk_in_buffer[bulkidx]),
+			dev->usb_valid_bytes_in_bulk_buffer );
 	}
-	
-	return 0;
+	return dev->lirccnt;
 }
 
 /**
  *	mceusb_write
  */
-static ssize_t mceusb_write (struct file *file, const char *buffer, size_t count, loff_t *ppos)
+static ssize_t mceusb_write (struct file *file, const char *buffer,
+			     size_t count, loff_t *ppos)
 {
 	struct usb_skel *dev;
 	ssize_t bytes_written = 0;
@@ -1241,7 +809,7 @@ static ssize_t mceusb_write (struct file *file, const char *buffer, size_t count
 
 	/* we can only write as much as 1 urb will hold */
 	bytes_written = (count > dev->bulk_out_size) ? 
-		dev->bulk_out_size : count;
+				dev->bulk_out_size : count;
 
 	/* copy the data from userspace into our urb */
 	if (copy_from_user(dev->write_urb->transfer_buffer, buffer, 
@@ -1251,7 +819,7 @@ static ssize_t mceusb_write (struct file *file, const char *buffer, size_t count
 	}
 
 	usb_mceusb_debug_data (__FUNCTION__, bytes_written, 
-			       dev->write_urb->transfer_buffer);
+			     dev->write_urb->transfer_buffer);
 
 	/* set up our urb */
 	FILL_BULK_URB(dev->write_urb, dev->udev, 
@@ -1267,15 +835,71 @@ static ssize_t mceusb_write (struct file *file, const char *buffer, size_t count
 	} else {
 		retval = bytes_written;
 	}
-	
-  exit:
+
+ exit:
 	/* unlock the device */
 	up (&dev->sem);
 
 	return retval;
 }
 
-/*
+/* mceusb_add_to_buf: called by lirc_dev to fetch all available keys
+ * this is used as a polling interface for us: since we set
+ * plugin->sample_rate we will periodically get the below call to
+ * check for new data returns 0 on success, or -ENODATA if nothing is
+ * available
+ */
+static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
+{
+	struct usb_skel* dev = (struct usb_skel*)data;
+
+	down( &dev->sem );
+
+	/* verify device still present */
+	if( dev->udev == NULL )
+	{
+		up( &dev->sem );
+		return -ENODEV;
+	}
+
+	if( !dev->lirccnt )
+	{
+		int res;
+		dev->lircidx = 0;
+        
+		res = msir_fetch_more_data( dev, 1 );
+
+		if( res == 0 )
+			res = -ENODATA;
+		if( res < 0 ) {
+			up( &dev->sem );
+			return res;
+		}
+	}
+	if( dev->lirccnt )
+	{
+		int keys_to_copy;
+
+		/* determine available buffer space and available data */
+		keys_to_copy = lirc_buffer_available( buf );
+		if( keys_to_copy > dev->lirccnt )
+		{
+			keys_to_copy = dev->lirccnt;
+		}
+        
+		lirc_buffer_write_n( buf, (unsigned char*) &(dev->lircdata[dev->lircidx]), keys_to_copy );
+		dev->lircidx += keys_to_copy;
+		dev->lirccnt -= keys_to_copy;
+        
+		up( &dev->sem );
+		return 0;
+	}
+    
+	up( &dev->sem );
+	return -ENODATA;
+}
+
+/**
  *	mceusb_write_bulk_callback
  */
 
@@ -1310,12 +934,10 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	struct usb_endpoint_descriptor *endpoint;
 	struct lirc_plugin* plugin;
 	struct lirc_buffer* rbuf;
-	
+
 	int minor;
 	int buffer_size;
 	int i;
-	char name[10];
-
 	
 	/* See if the device offered us matches what we can accept */
 	if ((udev->descriptor.idVendor != USB_MCEUSB_VENDOR_ID) ||
@@ -1330,7 +952,8 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			break;
 	}
 	if (minor >= MAX_DEVICES) {
-		info ("Too many devices plugged in, can not handle this device.");
+		info ("Too many devices plugged in, "
+		      "can not handle this device.");
 		goto exit;
 	}
 
@@ -1391,44 +1014,44 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 				      mceusb_write_bulk_callback, dev);
 		}
 	}
-	
-	memset( dev->mode2_data, 0, sizeof( dev->mode2_data ) );
-	dev->mode2_idx = 0;
-	dev->mode2_count = 0;
-	dev->mode2_partial_pkt_size = 0;
-	dev->mode2_once = 0;
-	dev->last_was_repeat_gap = 0;
-	
+
+	/* init the waitq */
+	init_waitqueue_head( &dev->wait_q );
+
+
 	/* Set up our lirc plugin */
 	if(!(plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL))) {
 		err("out of memory");
 		goto error;
 	}
 	memset( plugin, 0, sizeof(struct lirc_plugin) );
-	
+
 	if(!(rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL))) {
 		err("out of memory");
 		kfree( plugin );
 		goto error;
 	}
+    
 	/* the lirc_atiusb module doesn't memset rbuf here ... ? */
-	if( lirc_buffer_init( rbuf, sizeof(lirc_t),
-			      sizeof(struct lirc_buffer))) {
+	if( lirc_buffer_init( rbuf, sizeof(lirc_t), 128)) {
 		err("out of memory");
 		kfree( plugin );
 		kfree( rbuf );
 		goto error;
 	}
-	strcpy(plugin->name, "lirc_mce ");
+    
+	strcpy(plugin->name, "lirc_mceusb ");
 	plugin->minor       = minor;
-	plugin->code_length = sizeof(lirc_t);
+	plugin->code_length = sizeof(lirc_t) * 8;
 	plugin->features    = LIRC_CAN_REC_MODE2; // | LIRC_CAN_SEND_MODE2;
 	plugin->data        = dev;
 	plugin->rbuf        = rbuf;
 	plugin->ioctl       = NULL;
 	plugin->set_use_inc = &set_use_inc;
 	plugin->set_use_dec = &set_use_dec;
-	plugin->fops        = &mceusb_fops;
+	plugin->sample_rate = 80;   // sample at 100hz (10ms)
+	plugin->add_to_buf  = &mceusb_add_to_buf;
+	//    plugin->fops        = &mceusb_fops;
 	if( lirc_register_plugin( plugin ) < 0 )
 	{
 		kfree( plugin );
@@ -1437,19 +1060,36 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		goto error;
 	}
 	dev->plugin = plugin;
-	
+
+	/* clear off the first few messages. these look like
+	 * calibration or test data, i can't really tell
+	 * this also flushes in case we have random ir data queued up
+	 */
+	{
+		char junk[64];
+		int partial = 0, retval, i;
+		for( i = 0; i < 40; i++ )
+		{
+			retval = usb_bulk_msg
+				(udev, usb_rcvbulkpipe
+				 (udev, dev->bulk_in_endpointAddr),
+				 junk, 64,
+				 &partial, HZ*10);
+		}
+	}
+    
+	msir_cleanup( dev );
 	mceusb_setup( udev );
-	
+
 	/* let the user know what node this device is now attached to */
-	info ("USB Microsoft IR Transceiver device now attached to msir%d",
-	      dev->minor);
+	//info ("USB Microsoft IR Transceiver device now attached to msir%d", dev->minor);
 	goto exit;
 	
-  error:
+ error:
 	mceusb_delete (dev);
 	dev = NULL;
-	
-  exit:
+
+ exit:
 	up (&minor_table_mutex);
 	return dev;
 }
@@ -1502,7 +1142,8 @@ static int __init usb_mceusb_init(void)
 	/* register this driver with the USB subsystem */
 	result = usb_register(&mceusb_driver);
 	if (result < 0) {
-		err("usb_register failed for the "__FILE__" driver. Error number %d",
+		err("usb_register failed for the "__FILE__" driver. "
+		    "error number %d",
 		    result);
 		return -1;
 	}
@@ -1528,4 +1169,3 @@ module_exit (usb_mceusb_exit);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
-

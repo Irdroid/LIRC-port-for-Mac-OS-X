@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.20 2003/08/03 09:40:10 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.21 2004/02/29 11:53:38 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -106,11 +106,12 @@ static inline int reverse(int data, int bits)
 	return c;
 }
 
-static int get_key_pcf8574(void* data, unsigned char* key, int key_no)
+static int add_to_buf_pcf8574(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
 	int rc;
 	unsigned char all, mask;
+	unsigned char key;
 
 	/* compute all valid bits (key code + pressed/release flag) */
 	all = ir->bits | ir->flag;
@@ -126,12 +127,12 @@ static int get_key_pcf8574(void* data, unsigned char* key, int key_no)
 
 	if (rc == -1) {
 		dprintk(DEVICE_NAME ": %s read error\n", ir->c.name);
-		return -1;
+		return -EIO;
 	}
 
 	/* drop duplicate polls */
 	if (ir->b[0] == (rc & all)) {
-		return -1;
+		return -ENODATA;
 	}
 	ir->b[0] = rc & all;
 
@@ -141,32 +142,26 @@ static int get_key_pcf8574(void* data, unsigned char* key, int key_no)
 
 	if (rc & ir->flag) {
 		/* ignore released buttons */
-		return -1;
+		return -ENODATA;
 	}
 
-	/* return valid key code */
-	*key  = rc & ir->bits;
+	/* set valid key code */
+	key  = rc & ir->bits;
+	lirc_buffer_write_1( buf, &key );
 	return 0;
 }
 
-static int get_key_haup(void* data, unsigned char* key, int key_no)
+static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
-        unsigned char buf[3];
+	unsigned char keybuf[3];
 	__u16 code;
 
-	if (ir->nextkey != -1) {
-		/* pass second byte */
-		*key = ir->nextkey;
-		ir->nextkey = -1;
-		return 0;
-	}
-
 	/* poll IR chip */
-	if (3 == i2c_master_recv(&ir->c,buf,3)) {
-		ir->b[0] = buf[0];
-		ir->b[1] = buf[1];
-		ir->b[2] = buf[2];
+	if (3 == i2c_master_recv(&ir->c,keybuf,3)) {
+		ir->b[0] = keybuf[0];
+		ir->b[1] = keybuf[1];
+		ir->b[2] = keybuf[2];
 		dprintk(KERN_DEBUG DEVICE_NAME ": key (0x%02x/0x%02x)\n",
 			ir->b[0], ir->b[1]);
 	} else {
@@ -176,94 +171,85 @@ static int get_key_haup(void* data, unsigned char* key, int key_no)
 
 	/* key pressed ? */
 	if ((ir->b[0] & 0x80) == 0)
-		return -1;
+		return -ENODATA;
 	
 	/* look what we have */
 	code = (((__u16)ir->b[0]&0x7f)<<6) | (ir->b[1]>>2);
 
 	/* return it */
-	*key        = (code >> 8) & 0xff;
-	ir->nextkey =  code       & 0xff;
+	lirc_buffer_write_1( buf, (char*) &code );
 	return 0;
 }
 
-static int get_key_pixelview(void* data, unsigned char* key, int key_no)
+static int add_to_buf_pixelview(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
-        unsigned char b;
+	unsigned char key;
 	
 	/* poll IR chip */
-	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+	if (1 != i2c_master_recv(&ir->c,&key,1)) {
 		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
 		return -1;
 	}
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
-	*key = b;
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
+
+	/* return it */
+	lirc_buffer_write_1( buf, &key );
 	return 0;
 }
 
-static int get_key_pv951(void* data, unsigned char* key, int key_no)
+static int add_to_buf_pv951(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
-        unsigned char b;
-	static unsigned char codes[4];
-	
-	if(key_no>0)
-	{
-		if(key_no>=4) {
-			dprintk(KERN_DEBUG DEVICE_NAME
-				": something wrong in get_key_pv951\n");
-			return -EBADRQC;
-		}
-		*key = codes[key_no];
-		return 0;
-	}
+	unsigned char key;
+	unsigned char codes[4];
 	
 	/* poll IR chip */
-	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+	if (1 != i2c_master_recv(&ir->c,&key,1)) {
 		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
-		return -1;
+		return -ENODATA;
 	}
 	/* ignore 0xaa */
-	if (b==0xaa)
-		return -1;
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
-	
-	codes[2] = reverse(b,8);
-	codes[3] = (~codes[2])&0xff;
+	if (key==0xaa)
+		return -ENODATA;
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
+
 	codes[0] = 0x61;
 	codes[1] = 0xD6;
+	codes[2] = reverse(key,8);
+	codes[3] = (~codes[2])&0xff;
 	
-	*key=codes[0];
+	lirc_buffer_write_1( buf, codes );
 	return 0;
 }
 
-static int get_key_knc1(void *data, unsigned char *key, int key_no)
+static int add_to_buf_knc1(void *data, struct lirc_buffer* buf)
 {
+	static unsigned char last_key = 0xFF;
 	struct IR *ir = data;
-	unsigned char b;
-	static unsigned char last_button = 0xFF;
+	unsigned char key;
 	
 	/* poll IR chip */
-	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+	if (1 != i2c_master_recv(&ir->c,&key,1)) {
 		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
-		return -1;
+		return -ENODATA;
 	}
 	
 	/* it seems that 0xFE indicates that a button is still hold
 	   down, while 0xFF indicates that no button is hold
 	   down. 0xFE sequences are sometimes interrupted by 0xFF */
 	
-	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", key);
 	
-	if( b == 0xFF )
-		return -1;
+	if( key == 0xFF )
+		return -ENODATA;
 	
-	if ( b == 0xFE )
-		b = last_button;
-	
-	*key = b;
-	last_button = b;
+	if ( key == 0xFE )
+		key = last_key;
+
+	last_key = key;
+	lirc_buffer_write_1( buf, &key );
+
 	return 0;
 }
 
@@ -343,29 +329,29 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	case 0x64:
 		strcpy(ir->c.name,"Pixelview IR");
 		ir->l.code_length = 8;
-		ir->l.get_key=get_key_pixelview;
+		ir->l.add_to_buf=add_to_buf_pixelview;
 		break;
 	case 0x4b:
 		strcpy(ir->c.name,"PV951 IR");
 		ir->l.code_length = 32;
-		ir->l.get_key=get_key_pv951;
+		ir->l.add_to_buf=add_to_buf_pv951;
 		break;
 	case 0x18:
 	case 0x1a:
 		strcpy(ir->c.name,"Hauppauge IR");
 		ir->l.code_length = 13;
-		ir->l.get_key=get_key_haup;
+		ir->l.add_to_buf=add_to_buf_haup;
 		break;
 	case 0x30:
 		strcpy(ir->c.name,"KNC ONE IR");
 		ir->l.code_length = 8;
-		ir->l.get_key=get_key_knc1;
+		ir->l.add_to_buf=add_to_buf_knc1;
 		break;
 	case 0x21:
 	case 0x23:
 		strcpy(ir->c.name,"TV-Box IR");
 		ir->l.code_length = 8;
-		ir->l.get_key=get_key_pcf8574;
+		ir->l.add_to_buf=add_to_buf_pcf8574;
 		ir->bits = flags & 0xff;
 		ir->flag = (flags >> 8) & 0xff;
 		break;

@@ -1,4 +1,5 @@
 0.7.0: future
+  * replaced get_key interface with more flexible add_to_buf method
   * added support for Windows Media Center Remotes (Dan Conti)
   * fine-tuning of lirc_sir driver available with threshold parameter:
     the default has been changed from 2 to 3 which should generate 
