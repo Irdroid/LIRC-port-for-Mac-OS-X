@@ -41,24 +41,24 @@ MODULE_DESCRIPTION("IR remote driver for bt829 based TV cards");
 
 
 int poll_main(void);
-int atir_init_start();
+int atir_init_start(void);
 
 void write_index(unsigned char index,unsigned int value);
 unsigned int read_index(unsigned char index);
 
-void do_i2c_start();
-void do_i2c_stop();
+void do_i2c_start(void);
+void do_i2c_stop(void);
 
 void seems_wr_byte(unsigned char al);
-unsigned char seems_rd_byte();
+unsigned char seems_rd_byte(void);
 
 unsigned int read_index(unsigned char al);
 void write_index(unsigned char ah,unsigned int edx);
 
-void cycle_delay();
+void cycle_delay(int cycle);
 
 void do_set_bits(unsigned char bl);
-unsigned char do_get_bits();
+unsigned char do_get_bits(void);
 
 #define DATA_PCI_OFF 0x7FFC00
 #define WAIT_CYCLE   20
@@ -69,7 +69,7 @@ unsigned long pci_addr_phys, pci_addr_lin;
 
 struct lirc_plugin atir_plugin;
 
-int do_pci_probe()
+int do_pci_probe(void)
 {
 	struct pci_dev *my_dev;
 	if ( !pci_present() ) {
@@ -148,7 +148,7 @@ void cleanup_module(void)
 }
 
 
-int atir_init_start()
+int atir_init_start(void)
 {
 	pci_addr_lin = (unsigned long)ioremap(pci_addr_phys + DATA_PCI_OFF,0x400);
 	if ( pci_addr_lin == 0 ) {
@@ -185,7 +185,7 @@ int poll_main()
 	return (status_high << 8) | status_low;
 }
 
-void do_i2c_start()
+void do_i2c_start(void)
 {
 	do_set_bits(3);
 	cycle_delay(4);
@@ -197,7 +197,7 @@ void do_i2c_start()
 	cycle_delay(2);
 }
 
-void do_i2c_stop()
+void do_i2c_stop(void)
 {
 	unsigned char bits;
 	bits =  do_get_bits() & 0xFD;
@@ -256,7 +256,7 @@ void seems_wr_byte(unsigned char value)
 	cycle_delay(3);
 }
 
-unsigned char seems_rd_byte()
+unsigned char seems_rd_byte(void)
 {
 	int i;
 	int rd_byte;
@@ -325,7 +325,7 @@ void do_set_bits(unsigned char new_bits)
 	write_index(0x31,reg_val);
 }
 
-unsigned char do_get_bits()
+unsigned char do_get_bits(void)
 {
 	unsigned char bits;
 	int reg_val;
