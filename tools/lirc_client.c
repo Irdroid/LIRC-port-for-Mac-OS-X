@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.1 1999/06/11 15:29:28 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -958,8 +958,12 @@ char *lirc_ir2char(struct lirc_config *config,char *string)
 		button=strtok(NULL," ");
 		remote=strtok(NULL,"\n");
 
-		if(button==NULL || remote==NULL) return(NULL);
-
+		if(button==NULL || remote==NULL)
+		{
+			free(backup);
+			return(NULL);
+		}
+		
 		scan=config->next;
 		while(scan!=NULL)
 		{
@@ -1029,7 +1033,7 @@ char *lirc_nextir()
 
 			packet_size+=PACKET_SIZE;
 			new_buffer=(char *) realloc(lirc_buffer,packet_size);
-			if(new_buffer==NULL);
+			if(new_buffer==NULL)
 			{
 				return(NULL);
 			}
