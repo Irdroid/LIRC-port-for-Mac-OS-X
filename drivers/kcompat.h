@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.4 2004/03/30 05:44:07 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.5 2004/04/04 10:18:18 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -47,7 +47,13 @@ typedef void irqreturn_t;
 #endif
 
 #ifndef MOD_IN_USE
+#ifdef CONFIG_MODULE_UNLOAD
 #define MOD_IN_USE module_refcount(THIS_MODULE)
+#else
+#error "LIRC modules currently require"
+#error "  'Loadable module support  --->  Module unloading'"
+#error "to be enabled in the kernel"
+#endif
 #endif
 
 #if !defined(local_irq_save)
