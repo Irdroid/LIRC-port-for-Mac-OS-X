@@ -1,15 +1,7 @@
-#############################################################################
-## This file is part of the lirc-0.5.5pre8 package ##########################
-## LIRC - Linux Infrared Remote Control #####################################
-#############################################################################
-
-
 #
 # This is for the remote that LiveView bundles with its FlyVideo98.
 # Commands from the remote are hardware-decoded and send to GPIO port 
 # which makes lirc's job easy. 
-# Make sure you compile the daemons with the experimental -DDECODED option. 
-# You need at least lirc-0.5.5pre8 to use this config file
 #
 # contributed by Pawel T. Jochym <jochym@ifj.edu.pl>
 #

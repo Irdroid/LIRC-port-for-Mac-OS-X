@@ -1,9 +1,3 @@
-#############################################################################
-## This file is part of the lirc-0.5.5pre8 package ##########################
-## LIRC - Linux Infrared Remote Control #####################################
-#############################################################################
-
-
 #
 # This is for the remote that Avermedia bundles with its Tv98 and TV-Phone.
 # Commands from the remote are hardware-decoded by a PIC16c54-xt, which makes
