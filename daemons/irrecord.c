@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.13 2000/04/19 11:22:33 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.14 2000/04/29 09:00:50 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -46,6 +46,10 @@ int availabledata(void);
 void get_repeat_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
+#ifdef DEBUG
+void remove_pre_data(struct ir_remote *remote);
+void remove_post_data(struct ir_remote *remote);
+#endif
 int get_lengths(struct ir_remote *remote,int force);
 struct lengths *new_length(lirc_t length);
 int add_length(struct lengths **first,lirc_t length);
@@ -211,6 +215,22 @@ int main(int argc,char **argv)
 	fin=fopen(filename,"r");
 	if(fin!=NULL)
 	{
+#ifdef DEBUG
+		remotes=read_config(fin);
+		fclose(fin);
+		if(remotes==NULL)
+		{
+			exit(EXIT_FAILURE);
+		}
+		remove_pre_data(remotes);
+		remove_post_data(remotes);
+		get_pre_data(remotes);
+		//get_post_data(remotes);
+		
+		fprint_remotes(stdout,remotes);
+		free_config(remotes);
+		return(EXIT_SUCCESS);
+#endif
 		fclose(fin);
 		fprintf(stderr,"%s: file \"%s\" already exists\n",progname,
 			filename);
@@ -919,6 +939,43 @@ void get_post_data(struct ir_remote *remote)
 		}
 	}
 }
+
+#ifdef DEBUG
+void remove_pre_data(struct ir_remote *remote)
+{
+	struct ir_ncode *codes;
+	
+	if(remote->pre_data_bits==0) return;
+
+	codes=remote->codes;
+	while(codes->name!=NULL)
+	{
+		codes->code|=remote->pre_data<<remote->bits;
+		codes++;
+	}
+	remote->bits+=remote->pre_data_bits;
+	remote->pre_data=0;
+	remote->pre_data_bits=0;
+}
+
+void remove_post_data(struct ir_remote *remote)
+{
+	struct ir_ncode *codes;
+	
+	if(remote->post_data_bits==0) return;
+
+	codes=remote->codes;
+	while(codes->name!=NULL)
+	{
+		codes->code<<=remote->post_data_bits;
+		codes->code|=remote->post_data;
+		codes++;
+	}
+	remote->bits+=remote->post_data_bits;
+	remote->post_data=0;
+	remote->post_data_bits=0;
+}
+#endif
 
 /* analyse stuff */
 
