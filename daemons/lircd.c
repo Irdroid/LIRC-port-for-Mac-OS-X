@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.44 2002/08/30 07:28:54 lirc Exp $      */
+/*      $Id: lircd.c,v 5.45 2002/08/31 09:10:52 ranty Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -569,7 +569,7 @@ void connect_to_peers()
 	struct	hostent *host;
 	struct	sockaddr_in	addr;
 	struct timeval now;
-	int enable;
+	int enable=1;
 	
 	gettimeofday(&now,NULL);
 	for(i=0;i<peern;i++)
