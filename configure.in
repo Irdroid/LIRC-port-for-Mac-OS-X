@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.102 2003/03/31 18:44:45 lirc Exp $
+dnl $Id: configure.in,v 5.103 2003/04/19 11:05:49 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -135,8 +135,9 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (udp) (dsp) (livedrive) (remotemaster) (pctv) \
-	(logitech) (mp3anywhere) (slinke) (silitek) (mediafocusI) (irreal)"
+possible_drivers="(none) (bte) (dsp) (irreal) (livedrive) (logitech) \
+	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
+	(slinke) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -171,9 +172,9 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, act200l, animax, asus_tvbox, audio,
 			  avermedia, avermedia_vdomate, avermedia98,
-			  bestbuy, bestbuy2, caraca, chronos, comX,
-			  dsp, cph03x, cph06x, creative, flyvideo,
-			  hauppauge, hauppauge_dvb, irdeo,
+			  bestbuy, bestbuy2, bte, caraca, chronos,
+			  comX, dsp, cph03x, cph06x, creative,
+			  flyvideo, hauppauge, hauppauge_dvb, irdeo,
 			  irdeo_remote, irman, irreal, it87, knc_one,
 			  kworld, leadtek_0007, leadtek_0010,
 			  livedrive, logitech, lptX, mediafocusI,
@@ -215,74 +216,77 @@ if test "$driver" = "any"; then
 			  -e's/-$//g'`
   for any_driver in ${any_possible_drivers}; do
   case ${any_driver} in
-	  remotemaster)
-	  hw_module="${hw_module} hw_pixelview.o serial.o"
-	  ;;
-	  pctv)
-	  hw_module="${hw_module} hw_pinsys.o serial.o"
-	  ;;
-	  logitech)
-	  hw_module="${hw_module} hw_logitech.o serial.o"
-	  ;;
-	  mp3anywhere)
-	  hw_module="${hw_module} hw_mp3anywhere.o serial.o"
-	  ;;
-	  slinke)
-	  hw_module="${hw_module} hw_slinke.o serial.o receive.o"
-	  ;;
-	  silitek)
-	  hw_module="${hw_module} hw_silitek.o serial.o"
-	  ;;
-	  mediafocusI)
-	  ;;
-	  irreal)
-	  #hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
-	  ;;
-	  lirc_dev-lirc_serial)
-	  ;;
-	  lirc_dev-lirc_sir)
-	  ;;
-	  lirc_dev-lirc_it87)
-	  ;;
-	  lirc_dev-lirc_parallel)
-	  ;;
-	  lirc_dev-lirc_i2c)
-	  #lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
-	  ;;
-	  lirc_flyvideo)
-	  ;;
-	  lirc_dev-lirc_gpio)
-	  #lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
-	  ;;
-	  caraca)
-	  hw_module="${hw_module} hw_caraca.o"
-	  caraca_lib=-lcaraca_client
-	  ;;
-	  irman)
-	  hw_module="${hw_module} hw_irman.o serial.o"
-	  irman_lib=-lirman
-	  ;;
-	  #There is not much sence in using 'irman_sw' with driver 'any' and
-	  #that would conflict with 'irman' which will probably also be
-	  #available.
-	  #
-	  #irman_sw)
-	  #hw_module="${hw_module} hw_irman.o serial.o"
-	  #irman_lib=-lirman_sw
-	  #;;
-	  dsp)
-	  hw_module="${hw_module} hw_dsp.o receive.o"
-	  ;;
-	  livedrive)
-	  hw_module="${hw_module} hw_livedrive.o"
-	  ;;
-	  audio)
-	  hw_module="${hw_module} hw_audio.o receive.o"
-	  portaudio_lib="-lportaudio ${portaudio_lib_other}"
-	  ;;
-	  udp)
-	  hw_module="${hw_module} hw_udp.o receive.o"
-	  ;;
+	audio)
+		hw_module="${hw_module} hw_audio.o receive.o"
+		portaudio_lib="-lportaudio ${portaudio_lib_other}"
+		;;
+	bte)
+		hw_module="${hw_module} hw_bte.o serial.o"
+		;;
+	caraca)
+		hw_module="${hw_module} hw_caraca.o"
+		caraca_lib=-lcaraca_client
+		;;
+	dsp)
+		hw_module="${hw_module} hw_dsp.o receive.o"
+		;;
+	irman)
+		hw_module="${hw_module} hw_irman.o serial.o"
+		irman_lib=-lirman
+		;;
+	# There is not much sense in using 'irman_sw' with driver
+	# 'any' and that would conflict with 'irman' which will
+	# probably also be available.
+	#
+	#irman_sw)
+		#hw_module="${hw_module} hw_irman.o serial.o"
+		#irman_lib=-lirman_sw
+		#;;
+	irreal)
+		#hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
+		;;
+	logitech)
+		hw_module="${hw_module} hw_logitech.o serial.o"
+		;;
+	mediafocusI)
+		;;
+	mp3anywhere)
+		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
+		;;
+	pctv)
+		hw_module="${hw_module} hw_pinsys.o serial.o"
+		;;
+	remotemaster)
+		hw_module="${hw_module} hw_pixelview.o serial.o"
+		;;
+	silitek)
+		hw_module="${hw_module} hw_silitek.o serial.o"
+		;;
+	slinke)
+		hw_module="${hw_module} hw_slinke.o serial.o receive.o"
+		;;
+	lirc_dev-lirc_gpio)
+		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
+		;;
+	lirc_dev-lirc_i2c)
+		#lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
+		;;
+	lirc_dev-lirc_it87)
+		;;
+	lirc_dev-lirc_parallel)
+		;;
+	lirc_dev-lirc_serial)
+		;;
+	lirc_dev-lirc_sir)
+		;;
+	lirc_flyvideo)
+		;;
+	livedrive)
+		hw_module="${hw_module} hw_livedrive.o"
+		;;
+	udp)
+		hw_module="${hw_module} hw_udp.o receive.o"
+		;;
   esac
   done
   #remove duplicates
@@ -302,218 +306,68 @@ if test "$driver" = "any"; then
 
 fi
 
-if test "$driver" = "irman"; then
-  lirc_driver="irman"
-  hw_module="hw_irman.o serial.o"
-  HW_DEFAULT="hw_irman"
-  irman_lib=-lirman
-fi
-if test "$driver" = "irman_sw"; then
-  lirc_driver="irman_sw"
-  hw_module="hw_irman.o serial.o"
-  HW_DEFAULT="hw_irman"
-  irman_lib=-lirman_sw
-fi
-
-if test "$driver" = "serial"; then
-  lirc_driver="lirc_dev lirc_serial"
-fi
-if test "$driver" = "it87"; then
-  lirc_driver="lirc_dev lirc_it87"
-fi
-if test "$driver" = "sir"; then
-  lirc_driver="lirc_dev lirc_sir"
-fi
-if test "$driver" = "sa1100"; then
-  lirc_driver="lirc_dev lirc_sir"
-  AC_DEFINE(LIRC_ON_SA1100)
-fi
-if test "$driver" = "tekram"; then
-  lirc_driver="lirc_dev lirc_sir"
-  AC_DEFINE(LIRC_SIR_TEKRAM)
-fi
 if test "$driver" = "act200l"; then
   lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_SIR_ACTISYS_ACT200L)
 fi
-if test "$driver" = "tekram_bt829"; then
-  lirc_driver="lirc_dev lirc_bt829"
-  lircd_conf="tekram/lircd.conf.m230"
-  lircmd_conf="tekram/lircmd.conf.m230"
-fi
+
 if test "$driver" = "animax"; then
   lirc_driver="lirc_dev lirc_serial"
   lircd_conf="animax/lircd.conf.animax"
   lircmd_conf="animax/lircmd.conf.animax"
   AC_DEFINE(LIRC_SERIAL_ANIMAX)
 fi
-if test "$driver" = "packard_bell"; then
-  lirc_driver="lirc_dev lirc_serial"
-  lircd_conf="packard_bell/lircd.conf.packard_bell"
-fi
-if test "$driver" = "com1"; then
-  lirc_driver="lirc_dev lirc_serial"
-  port=0x3f8
-  irq=4
-fi
-if test "$driver" = "com2"; then
-  lirc_driver="lirc_dev lirc_serial"
-  port=0x2f8
-  irq=3
-fi
-if test "$driver" = "com3"; then
-  lirc_driver="lirc_dev lirc_serial"
-  port=0x3e8
-  irq=4
-fi
-if test "$driver" = "sir_com3"; then
-  lirc_driver="lirc_dev lirc_sir"
-  port=0x3e8
-  irq=4
-fi
-if test "$driver" = "com4"; then
-  lirc_driver="lirc_dev lirc_serial"
-  port=0x2e8
-  irq=3
-fi
 
-if test "$driver" = "parallel"; then
-  lirc_driver="lirc_dev lirc_parallel"
-fi
 if test "$driver" = "asus_tvbox"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="asus/lircd.conf.asus"
 fi
+
+if test "$driver" = "audio"; then
+  lirc_driver="audio"
+  hw_module="hw_audio.o receive.o"
+  HW_DEFAULT="hw_audio"
+  portaudio_lib="-lportaudio ${portaudio_lib_other}"
+fi
+
 if test "$driver" = "avermedia"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="avermedia/lircd.conf.avermedia"
   lircmd_conf="avermedia/lircmd.conf.avermedia"
 fi
-if test "$driver" = "avermedia_vdomate"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="avermedia/lircd.conf.vdomate"
-#  lircmd_conf="avermedia/lircmd.conf.vdomate"
-fi
+
 if test "$driver" = "avermedia98"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="avermedia/lircd.conf.avermedia98"
   lircmd_conf="avermedia/lircmd.conf.avermedia98"
 fi
-if test "$driver" = "hauppauge"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="hauppauge/lircd.conf.hauppauge"
-  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
-fi
-if test "$driver" = "hauppauge_dvb"; then
-  lirc_driver="lirc_dev"
-  lircd_conf="hauppauge/lircd.conf.hauppauge"
-  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
-fi
-if test "$driver" = "pixelview_bt878"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="pixelview/lircd.conf.pixelview_bt878"
-#  lircmd_conf="pixelview/lircmd.conf.pixelview_bt878"
-fi
-if test "$driver" = "flyvideo"; then
+
+if test "$driver" = "avermedia_vdomate"; then
   lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="life-view/lircd.conf.flyvideo"
-  lircmd_conf="life-view/lircmd.conf.flyvideo"
+  lircd_conf="avermedia/lircd.conf.vdomate"
+#  lircmd_conf="avermedia/lircmd.conf.vdomate"
 fi
-if test "$driver" = "cph03x"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="cph03x/lircd.conf.cph03x"
-#  lircmd_conf="cph03x/lircmd.conf.cph03x"
-fi
-if test "$driver" = "cph06x"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="cph03x/lircd.conf.cph03x"
-#  lircmd_conf="cph03x/lircmd.conf.cph03x"
-fi
-if test "$driver" = "pixelview_pro"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="pixelview/lircd.conf.playtv_pro"
-  lircmd_conf="pixelview/lircmd.conf.playtv_pro"
-fi
-if test "$driver" = "provideo"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="provideo/lircd.conf.pv951"
-#  lircmd_conf="provideo/lircmd.conf.pv951"
-fi
-if test "$driver" = "chronos"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="chronos/lircd.conf.chronos"
-#  lircmd_conf="chronos/lircmd.conf.chronos"
-fi
-if test "$driver" = "pixelview_pak"; then
-  lirc_driver="lirc_dev lirc_gpio"
-# the config files are the same as for the PlayTV pro
-  lircd_conf="pixelview/lircd.conf.playtv_pro"
-  lircmd_conf="pixelview/lircmd.conf.playtv_pro"
-fi
+
 if test "$driver" = "bestbuy"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="bestbuy/lircd.conf.bestbuy"
   lircmd_conf="bestbuy/lircmd.conf.bestbuy"
 fi
-if test "$driver" = "leadtek_0007"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="leadtek/lircd.conf.RM-0007"
-  lircmd_conf="leadtek/lircmd.conf.RM-0007"
-fi
-if test "$driver" = "leadtek_0010"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="leadtek/lircd.conf.RM-0010"
-  lircmd_conf="leadtek/lircmd.conf.RM-0010"
-fi
+
 if test "$driver" = "bestbuy2"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="bestbuy/lircd.conf.bestbuy2"
   lircmd_conf="bestbuy/lircmd.conf.bestbuy2"
 fi
-if test "$driver" = "lpt1"; then
-  lirc_driver="lirc_dev lirc_parallel"
-  port=0x378
-  irq=7
-fi
-if test "$driver" = "lpt2"; then
-  lirc_driver="lirc_dev lirc_parallel"
-  port=0x278
-  irq=5
-fi
-if test "$driver" = "remotemaster"; then
+
+if test "$driver" = "bte"; then
   lirc_driver="none"
-  hw_module="hw_pixelview.o serial.o"
-  HW_DEFAULT="hw_pixelview"
-  lircd_conf="pixelview/lircd.conf.remotemaster"
-  lircmd_conf="pixelview/lircmd.conf.remotemaster"
+  hw_module="hw_bte.o  serial.o"
+  HW_DEFAULT="hw_bte"
+  lircd_conf="ericsson/lircd.conf.bte"
+#  lircmd_conf="ericsson/lircmd.conf.bte"
 fi
-if test "$driver" = "realmagic"; then
-  lirc_driver="none"
-  hw_module="hw_pixelview.o serial.o"
-  HW_DEFAULT="hw_pixelview"
-  lircd_conf="sigma_designs/lircd.conf.realmagic"
-#  lircmd_conf="sigma_designs/lircmd.conf.realmagic"
-fi
-if test "$driver" = "pctv"; then
-  lirc_driver="none"
-  hw_module="hw_pinsys.o serial.o"
-  HW_DEFAULT="hw_pinsys"
-  lircd_conf="pinnacle_systems/lircd.conf.pctv"
-#  lircmd_conf="pinnacle_systems/lircmd.conf.pctv"
-fi
-if test "$driver" = "logitech"; then
-  lirc_driver="none"
-  hw_module="hw_logitech.o serial.o"
-  HW_DEFAULT="hw_logitech"
-  lircd_conf="logitech/lircd.conf.logitech"
-  lircmd_conf="logitech/lircmd.conf.logitech"
-fi
-if test "$driver" = "mp3anywhere"; then
-  lirc_driver="none"
-  hw_module="hw_mp3anywhere.o serial.o"
-  HW_DEFAULT="hw_mp3anywhere"
-  lircd_conf="x10/lircd.conf.mp3anywhere"
-fi
+
 if test "$driver" = "caraca"; then
   lirc_driver="caraca"
   hw_module="hw_caraca.o"
@@ -522,6 +376,259 @@ if test "$driver" = "caraca"; then
   lircd_conf= "caraca/lircd.conf.caraca"
 #  lircmd_conf="caraca/lircmd.conf.caraca"
 fi
+
+if test "$driver" = "chronos"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="chronos/lircd.conf.chronos"
+#  lircmd_conf="chronos/lircmd.conf.chronos"
+fi
+
+if test "$driver" = "com1"; then
+  lirc_driver="lirc_dev lirc_serial"
+  port=0x3f8
+  irq=4
+fi
+
+if test "$driver" = "com2"; then
+  lirc_driver="lirc_dev lirc_serial"
+  port=0x2f8
+  irq=3
+fi
+
+if test "$driver" = "com3"; then
+  lirc_driver="lirc_dev lirc_serial"
+  port=0x3e8
+  irq=4
+fi
+
+if test "$driver" = "com4"; then
+  lirc_driver="lirc_dev lirc_serial"
+  port=0x2e8
+  irq=3
+fi
+
+if test "$driver" = "cph03x" -o "$driver" = "cph06x"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="cph03x/lircd.conf.cph03x"
+#  lircmd_conf="cph03x/lircmd.conf.cph03x"
+fi
+
+if test "$driver" = "creative"; then
+  lirc_driver="none"
+  hw_module="hw_creative.o serial.o"
+  HW_DEFAULT="hw_creative"
+  lircd_conf="creative/lircd.conf.creative"
+#  lircmd_conf="creative/lircmd.conf.creative"
+fi
+
+if test "$driver" = "dsp"; then
+  lirc_driver="none"
+  hw_module="hw_dsp.o receive.o"
+  HW_DEFAULT="hw_dsp"
+fi
+
+if test "$driver" = "flyvideo"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="life-view/lircd.conf.flyvideo"
+  lircmd_conf="life-view/lircmd.conf.flyvideo"
+fi
+
+if test "$driver" = "hauppauge"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+fi
+
+if test "$driver" = "hauppauge_dvb"; then
+  lirc_driver="lirc_dev"
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+fi
+
+if test "$driver" = "irdeo"; then
+  lirc_driver="lirc_dev lirc_serial"
+  AC_DEFINE(LIRC_SERIAL_IRDEO)
+fi
+
+if test "$driver" = "irdeo_remote"; then
+  lirc_driver="lirc_dev lirc_serial"
+  AC_DEFINE(LIRC_SERIAL_IRDEO_REMOTE)
+fi
+
+if test "$driver" = "irman"; then
+  lirc_driver="irman"
+  hw_module="hw_irman.o serial.o"
+  HW_DEFAULT="hw_irman"
+  irman_lib=-lirman
+fi
+
+if test "$driver" = "irman_sw"; then
+  lirc_driver="irman_sw"
+  hw_module="hw_irman.o serial.o"
+  HW_DEFAULT="hw_irman"
+  irman_lib=-lirman_sw
+fi
+
+if test "$driver" = "irreal"; then
+  lirc_driver="none"
+  hw_module="hw_irreal.o serial.o receive.o transmit.o"
+  HW_DEFAULT="hw_irreal"
+fi
+
+if test "$driver" = "it87"; then
+  lirc_driver="lirc_dev lirc_it87"
+fi
+
+if test "$driver" = "knc_one"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="knc_one/lircd.conf.knc_one"
+#  lircmd_conf="knc_one/lircmd.conf.knc_one"
+fi
+
+if test "$driver" = "kworld"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="kworld/lircd.conf.kworld"
+#  lircmd_conf="kworld/lircmd.conf.kworld"
+fi
+
+if test "$driver" = "leadtek_0007"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="leadtek/lircd.conf.RM-0007"
+  lircmd_conf="leadtek/lircmd.conf.RM-0007"
+fi
+
+if test "$driver" = "leadtek_0010"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="leadtek/lircd.conf.RM-0010"
+  lircmd_conf="leadtek/lircmd.conf.RM-0010"
+fi
+
+if test "$driver" = "livedrive"; then
+  lirc_driver="none"
+  hw_module="hw_livedrive.o"
+  HW_DEFAULT="hw_livedrive"
+  lircd_conf="creative/lircd.conf.livedrive"
+#  lircmd_conf="creative/lircmd.conf.livedrive"
+fi
+
+if test "$driver" = "logitech"; then
+  lirc_driver="none"
+  hw_module="hw_logitech.o serial.o"
+  HW_DEFAULT="hw_logitech"
+  lircd_conf="logitech/lircd.conf.logitech"
+  lircmd_conf="logitech/lircmd.conf.logitech"
+fi
+
+if test "$driver" = "lpt1"; then
+  lirc_driver="lirc_dev lirc_parallel"
+  port=0x378
+  irq=7
+fi
+
+if test "$driver" = "lpt2"; then
+  lirc_driver="lirc_dev lirc_parallel"
+  port=0x278
+  irq=5
+fi
+
+if test "$driver" = "mediafocusI"; then
+  lirc_driver="none"
+  lircd_conf="technisat/lircd.conf.mediafocusI"
+#  lircmd_conf="technisat/lircmd.conf.mediafocusI"
+fi
+
+if test "$driver" = "mp3anywhere"; then
+  lirc_driver="none"
+  hw_module="hw_mp3anywhere.o serial.o"
+  HW_DEFAULT="hw_mp3anywhere"
+  lircd_conf="x10/lircd.conf.mp3anywhere"
+fi
+
+if test "$driver" = "packard_bell"; then
+  lirc_driver="lirc_dev lirc_serial"
+  lircd_conf="packard_bell/lircd.conf.packard_bell"
+fi
+
+if test "$driver" = "parallel"; then
+  lirc_driver="lirc_dev lirc_parallel"
+fi
+
+if test "$driver" = "pctv"; then
+  lirc_driver="none"
+  hw_module="hw_pinsys.o serial.o"
+  HW_DEFAULT="hw_pinsys"
+  lircd_conf="pinnacle_systems/lircd.conf.pctv"
+#  lircmd_conf="pinnacle_systems/lircmd.conf.pctv"
+fi
+
+if test "$driver" = "pixelview_bt878"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="pixelview/lircd.conf.pixelview_bt878"
+#  lircmd_conf="pixelview/lircmd.conf.pixelview_bt878"
+fi
+
+if test "$driver" = "pixelview_pak"; then
+  lirc_driver="lirc_dev lirc_gpio"
+# the config files are the same as for the PlayTV pro
+  lircd_conf="pixelview/lircd.conf.playtv_pro"
+  lircmd_conf="pixelview/lircmd.conf.playtv_pro"
+fi
+
+if test "$driver" = "pixelview_pro"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="pixelview/lircd.conf.playtv_pro"
+  lircmd_conf="pixelview/lircmd.conf.playtv_pro"
+fi
+
+if test "$driver" = "provideo"; then
+  lirc_driver="lirc_dev lirc_i2c"
+  lircd_conf="provideo/lircd.conf.pv951"
+#  lircmd_conf="provideo/lircmd.conf.pv951"
+fi
+
+if test "$driver" = "realmagic"; then
+  lirc_driver="none"
+  hw_module="hw_pixelview.o serial.o"
+  HW_DEFAULT="hw_pixelview"
+  lircd_conf="sigma_designs/lircd.conf.realmagic"
+#  lircmd_conf="sigma_designs/lircmd.conf.realmagic"
+fi
+
+if test "$driver" = "remotemaster"; then
+  lirc_driver="none"
+  hw_module="hw_pixelview.o serial.o"
+  HW_DEFAULT="hw_pixelview"
+  lircd_conf="pixelview/lircd.conf.remotemaster"
+  lircmd_conf="pixelview/lircmd.conf.remotemaster"
+fi
+
+if test "$driver" = "sa1100"; then
+  lirc_driver="lirc_dev lirc_sir"
+  AC_DEFINE(LIRC_ON_SA1100)
+fi
+
+if test "$driver" = "serial"; then
+  lirc_driver="lirc_dev lirc_serial"
+fi
+
+if test "$driver" = "silitek"; then
+  lirc_driver="none"
+  hw_module="hw_silitek.o serial.o"
+  HW_DEFAULT="hw_silitek"
+  lircd_conf="silitek/lircd.conf.silitek"
+  lircmd_conf="silitek/lircmd.conf.silitek"
+fi
+
+if test "$driver" = "sir"; then
+  lirc_driver="lirc_dev lirc_sir"
+fi
+
+if test "$driver" = "sir_com3"; then
+  lirc_driver="lirc_dev lirc_sir"
+  port=0x3e8
+  irq=4
+fi
+
 if test "$driver" = "slinke"; then
   echo
   echo "Please use lirc-0.6.5. The Slink-e is no longer supported."
@@ -531,66 +638,18 @@ if test "$driver" = "slinke"; then
   hw_module="hw_slinke.o serial.o receive.o"
   HW_DEFAULT="hw_slinke"
 fi
-if test "$driver" = "silitek"; then
-  lirc_driver="none"
-  hw_module="hw_silitek.o serial.o"
-  HW_DEFAULT="hw_silitek"
-  lircd_conf="silitek/lircd.conf.silitek"
-  lircmd_conf="silitek/lircmd.conf.silitek"
+
+if test "$driver" = "tekram"; then
+  lirc_driver="lirc_dev lirc_sir"
+  AC_DEFINE(LIRC_SIR_TEKRAM)
 fi
-if test "$driver" = "irreal"; then
-  lirc_driver="none"
-  hw_module="hw_irreal.o serial.o receive.o transmit.o"
-  HW_DEFAULT="hw_irreal"
+
+if test "$driver" = "tekram_bt829"; then
+  lirc_driver="lirc_dev lirc_bt829"
+  lircd_conf="tekram/lircd.conf.m230"
+  lircmd_conf="tekram/lircmd.conf.m230"
 fi
-if test "$driver" = "irdeo"; then
-  lirc_driver="lirc_dev lirc_serial"
-  AC_DEFINE(LIRC_SERIAL_IRDEO)
-fi
-if test "$driver" = "irdeo_remote"; then
-  lirc_driver="lirc_dev lirc_serial"
-  AC_DEFINE(LIRC_SERIAL_IRDEO_REMOTE)
-fi
-if test "$driver" = "mediafocusI"; then
-  lirc_driver="none"
-  lircd_conf="technisat/lircd.conf.mediafocusI"
-#  lircmd_conf="technisat/lircmd.conf.mediafocusI"
-fi
-if test "$driver" = "creative"; then
-  lirc_driver="none"
-  hw_module="hw_creative.o serial.o"
-  HW_DEFAULT="hw_creative"
-  lircd_conf="creative/lircd.conf.creative"
-#  lircmd_conf="creative/lircmd.conf.creative"
-fi
-if test "$driver" = "knc_one"; then
-  lirc_driver="lirc_dev lirc_i2c"
-  lircd_conf="knc_one/lircd.conf.knc_one"
-#  lircmd_conf="knc_one/lircmd.conf.knc_one"
-fi
-if test "$driver" = "kworld"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="kworld/lircd.conf.kworld"
-#  lircmd_conf="kworld/lircmd.conf.kworld"
-fi
-if test "$driver" = "dsp"; then
-  lirc_driver="none"
-  hw_module="hw_dsp.o receive.o"
-  HW_DEFAULT="hw_dsp"
-fi
-if test "$driver" = "livedrive"; then
-  lirc_driver="none"
-  hw_module="hw_livedrive.o"
-  HW_DEFAULT="hw_livedrive"
-  lircd_conf="creative/lircd.conf.livedrive"
-#  lircmd_conf="creative/lircmd.conf.livedrive"
-fi
-if test "$driver" = "audio"; then
-  lirc_driver="audio"
-  hw_module="hw_audio.o receive.o"
-  HW_DEFAULT="hw_audio"
-  portaudio_lib="-lportaudio ${portaudio_lib_other}"
-fi
+
 if test "$driver" = "udp"; then
   lirc_driver="none"
   hw_module="hw_udp.o receive.o"

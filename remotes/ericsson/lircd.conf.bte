@@ -1,0 +1,57 @@
+#
+#
+# contributed by Vadim Shliakhov <vadp@fromru.com>
+#
+# brand:  Ericsson
+# model:  Mobile Phone over Bluetooth (BTE)   
+#
+# supported devices: 
+#	
+#       first byte: Key down - 0, key up - 1
+#       2nd   byte: Key code 
+#
+
+begin remote
+
+  name  bte 
+  bits           16
+
+      begin codes
+          0		0x0030
+          1		0x0031
+          2		0x0032
+          3		0x0033
+          4		0x0034
+          5		0x0035
+          6		0x0036
+          7		0x0037
+          8		0x0038
+          9		0x0039
+# '*'
+          STAR		0x002a
+# '#'
+          HASH		0x0023
+# '^'
+          UP		0x005e
+# 'v'
+          DOWN		0x0076
+# '<'
+          LEFT		0x003c
+# '>'
+          RIGHT		0x003e
+# 'L'
+          OPTION	0x004c
+# 'c'
+          CANCEL	0x0063
+# 's'
+          YES		0x0073
+# 'e'
+          NO		0x0065
+# 'u'
+          VOL_UP	0x0075
+# 'd'
+          VOL_DOWN	0x0064
+# 'G' -- hides dialog widget!
+          MEMO		0x0047
+      end codes
+end remote

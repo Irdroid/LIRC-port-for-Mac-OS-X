@@ -57,7 +57,9 @@ GetSelectedDriver ()
     COM1="off"; COM2="off"; COM3="off"; COM4="off"
     LPT1="off"; LPT2="off"; LPT3="off"; USER="off"
     IRTTY="none"
-    if   test "$DRIVER_PARAMETER" = "com1"; then COM1="on"; LIRC_PORT=$COM1_PORT; LIRC_IRQ=$COM1_IRQ
+
+    if   test "$DRIVER_PARAMETER" = "btty"; then IRTTY="/dev/btty"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "com1"; then COM1="on"; LIRC_PORT=$COM1_PORT; LIRC_IRQ=$COM1_IRQ
     elif test "$DRIVER_PARAMETER" = "com2"; then COM2="on"; LIRC_PORT=$COM2_PORT; LIRC_IRQ=$COM2_IRQ
     elif test "$DRIVER_PARAMETER" = "com3"; then COM3="on"; LIRC_PORT=$COM3_PORT; LIRC_IRQ=$COM3_IRQ
     elif test "$DRIVER_PARAMETER" = "com4"; then COM4="on"; LIRC_PORT=$COM4_PORT; LIRC_IRQ=$COM4_IRQ
@@ -251,7 +253,7 @@ ConfigDriver ()
 	     6 "IrDA hardware" \
 	     7 "PDAs" \
 	     8 "Network (UDP)" \
-	     9 "Other (MIDI, etc.)" \
+	     9 "Other (MIDI, Bluetooth, etc.)" \
 	     A "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
@@ -296,7 +298,8 @@ ConfigDriver ()
 			c "Slink-e (receive only)" \
                         d "Silitek SM-1000" \
 			e "Tekram Irmate 210 (16x50 UART compatible serial port)" \
-			f "X10 MP3 Anywhere RF Receiver" 2> $TEMP;
+			f "X10 MP3 Anywhere RF Receiver" \
+			2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -442,12 +445,15 @@ ConfigDriver ()
         elif test "$1" = "9"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 8 74 1 \
-			1 "Creative LiveDrive" 2> $TEMP;
+		--menu "$CONFIG_DRIVER_TEXT" 9 74 2 \
+			1 "Creative LiveDrive" \
+			2 "Ericsson mobile phone via Bluetooth" \
+			2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=livedrive;    DRIVER_PARAMETER=none;
+		if   test "$1" = "1"; then LIRC_DRIVER=livedrive; DRIVER_PARAMETER=none;
+		elif test "$1" = "2"; then LIRC_DRIVER=bte;       DRIVER_PARAMETER=btty;
 		fi
 		}
 	    else
@@ -537,7 +543,7 @@ SaveConfig ()
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
 	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
         "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic" -o \
-	"$LIRC_DRIVER" = "mp3anywhere" ; then
+	"$LIRC_DRIVER" = "mp3anywhere" -o "$LIRC_DRIVER" = "bte"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

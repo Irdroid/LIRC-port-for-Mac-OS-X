@@ -19,6 +19,7 @@ extern struct hardware hw_dsp;
 extern struct hardware hw_livedrive;
 extern struct hardware hw_audio;
 extern struct hardware hw_udp;
+extern struct hardware hw_bte;
 
 #ifndef HW_DEFAULT
 # define HW_DEFAULT hw_default
@@ -61,6 +62,7 @@ struct hardware *hw_list[] =
 	&hw_livedrive,
 	&hw_audio,
 	&hw_udp,
+	&hw_bte,
 	&hw_null,
 #else
 	&HW_DEFAULT,
