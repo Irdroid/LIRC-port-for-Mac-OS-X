@@ -115,18 +115,18 @@ possible types of applications. Programs that send IR commands like
 <em>xrc</em> and <em>rc</em> or programs that receive commands like
 <em>irexec</em>, <em>irxevent</em> and <em>irpty</em>.  Both types of
 applications will have to connect to the lircd daemon using the socket
-usually located in /dev/lircd. Communication on the socket uses human
-readable format. The end of a line is indicated with a newline
-character.
+interface usually located in /dev/lircd. Communication on the socket
+uses human readable format. The end of a line is indicated by a
+newline character.
 </P>
 <P>
 Whenever lircd receives a IR signal it will broadcast the following
-string to its clients:
+string to each client:
 <PRE>
   &lt;code&gt; &lt;repeat count&gt; &lt;button name&gt; &lt;remote control name&gt;
 </PRE>
 
-<em>code</em> is a 64-bit long code (in hexadecimal representation) of
+<em>code</em> is a 64-bit encoding (in hexadecimal representation) of
 the IR signal. It's usage in applications is deprecated and should be
 ignored. The <em>repeat count</em> shows how long the user has been
 holding down a button. The counter will start at 0 and increment each
@@ -136,10 +136,11 @@ file. Their purpose should be quite self-explanatory. They must not
 contain any whitespace.<BR>
 
 The only other situation when lircd broadcasts to all clients is when
-it receives the SIGHUP signal. Then it will send a SIGHUP packet to
-its clients indicating that it's config file might have changed. This
-feature is <NOBR>e.g.</NOBR> used in <em>xrc</em> to rebuild the list
-of supported remote controls each time lircd's config changes. The
+it receives the SIGHUP signal and successfully re-reads its config
+file. Then it will send a SIGHUP packet to its clients indicating that
+it's configuration might have changed. This feature is
+<NOBR>e.g.</NOBR> used in <em>xrc</em> to rebuild the list of
+supported remote controls each time lircd's configuration changes. The
 format of the packet will be explained later.
 </P>
 <P>
@@ -155,9 +156,9 @@ commands:
 The SEND_ONCE directive tells lircd to send the IR signal associated
 with the given remote control and button name once. Consequently
 SEND_START tells lircd to start repeating the given button until it
-receives a SEND_STOP command. As repeating of IR signal is very CPU
+receives a SEND_STOP command. As repeating of IR signals is very CPU
 intensive on most systems there should be a limit on the time for
-repeating buttons in each applications. Currently there is no such
+repeating buttons in every application. Currently there is no such
 limit in lircd itself but it is likely to appear in future versions.
 lircd won't accept any new send commands while it is repeating.
 </P>
@@ -191,4 +192,100 @@ packets. Here is a formal description of the packets:
   END
 </PRE>
 
+The protocol guarantees that broadcasted messages won't interfere with
+reply packets. But broadcasts may appear at any point between
+packets. <em>command</em> is the command lircd is currently
+processing. Its an exact copy of the command the client application
+has sent. The only exception are SIGHUP packages where
+<em>command</em> is substituted with SIGHUP. Note that SIGHUP packages
+may appear just after you have sent a command to lircd, so you have to
+make sure you don't confuse them with replies. SIGHUP packages come
+without any further data while each reply to a command contains either
+SUCCESS or ERROR indicating the result of processing the command. In
+case of an error the following data is a message explaining the
+problem. This message can be used to create an error message for the
+user.<BR>
+
+If the command was successful, data is only sent for the commands that
+return some information. Note that a packet containing 0 lines of data
+can be a valid reply.
+</P>
+
+    <!-- Writing LIRC Applications ------------------------------------------>
+
+<A NAME="library"><HR></A>
+
+<H2 ALIGN="CENTER">The lirc_client library</H2>
+<HR WIDTH="70%">
+
+<P>
+If you only want to make your application receive IR commands and if
+you don't want to mess with all the protocol stuff you can use the
+<em>lirc_client</em> library that comes with LIRC since version
+0.6.0. With the help of this library your program can look as simple
+as this:
+
+<PRE>
+/*      $Id: technical.html,v 1.3 1999/11/22 20:40:45 columbus Exp $      */
+
+/****************************************************************************
+ ** irexec.c ****************************************************************
+ ****************************************************************************
+ *
+ * irexec  - execute programs according to the pressed remote control buttons
+ *
+ * Copyright (C) 1998 Trent Piepho &lt;xyzzy@u.washington.edu&gt;
+ * Copyright (C) 1998 Christoph Bartelmus &lt;lirc@bartelmus.de&gt;
+ *
+ */
+
+#ifdef HAVE_CONFIG_H
+# include &lt;config.h&gt;
+#endif
+
+#include &lt;errno.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include "lirc_client.h"
+
+char *progname;
+
+int main(int argc, char *argv[])
+{
+	struct lirc_config *config;
+
+	progname=argv[0];
+	if(argc&gt;2)
+	{
+		fprintf(stderr,"Usage: %s &lt;config file&gt;\n",progname);
+		exit(EXIT_FAILURE);
+	}
+	if(lirc_init("irexec",1)==-1) exit(EXIT_FAILURE);
+
+	if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,NULL)==0)
+	{
+		char *ir;
+		char *c;
+
+		while((ir=lirc_nextir())!=NULL)
+		{
+			while((c=lirc_ir2char(config,ir))!=NULL)
+			{
+#ifdef DEBUG
+				printf("Execing command \"%s\"\n",c);
+#endif
+				system(c);
+			}
+			free(ir);
+		}
+		lirc_freeconfig(config);
+	}
+
+	lirc_deinit();
+	exit(EXIT_SUCCESS);
+}
+</PRE>
 </P>
