@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.11 2004/03/25 20:02:24 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.12 2004/11/20 13:36:28 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -92,7 +92,6 @@
 
 #include "lirc_client.h"
 
-#define DEBUG
 #ifdef DEBUG
 void debugprintf(char *format_str, ...)
 {
