@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.4 2002/04/28 20:09:01 lirc Exp $      */
+/*      $Id: config_file.h,v 5.5 2002/11/12 18:04:43 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -38,6 +38,7 @@ static struct flaglist all_flags[]=
         {"RAW_CODES",       RAW_CODES},
         {"REPEAT_HEADER",   REPEAT_HEADER},
         {"GOLDSTAR",        GOLDSTAR},
+	{"GRUNDIG",         GRUNDIG},
 	
         {NULL,0},
 };

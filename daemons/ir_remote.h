@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.22 2002/07/28 08:53:27 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.23 2002/11/12 18:04:43 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -67,6 +67,7 @@ struct ir_ncode {
 #define RAW_CODES       0x0100    /* for internal use only */
 #define REPEAT_HEADER   0x0200    /* header is also sent before repeat code */
 #define GOLDSTAR        0x0400    /* encoding found on Goldstar remote */
+#define GRUNDIG         0x0800    /* encoding found on Grundig remote */
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 
@@ -197,6 +198,12 @@ static inline int is_rcmm(struct ir_remote *remote)
 static inline int is_goldstar(struct ir_remote *remote)
 {
 	if(remote->flags&GOLDSTAR) return(1);
+	else return(0);
+}
+
+static inline int is_grundig(struct ir_remote *remote)
+{
+	if(remote->flags&GRUNDIG) return(1);
 	else return(0);
 }
 

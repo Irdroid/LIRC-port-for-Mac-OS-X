@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.16 2002/11/07 07:40:06 lirc Exp $      */
+/*      $Id: receive.c,v 5.17 2002/11/12 18:04:43 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -28,6 +28,16 @@ struct rbuf rec_buffer;
 inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
 {
 	return(a>b ? a:b);
+}
+
+inline void set_pending_pulse(lirc_t deltap)
+{
+	rec_buffer.pendingp=deltap;
+}
+
+inline void set_pending_space(lirc_t deltas)
+{
+	rec_buffer.pendings=deltas;
 }
 
 lirc_t get_next_rec_buffer(lirc_t maxusec)
@@ -80,8 +90,8 @@ void rewind_rec_buffer(void)
 {
 	rec_buffer.rptr=0;
 	rec_buffer.too_long=0;
-	rec_buffer.pendingp=0;
-	rec_buffer.pendings=0;
+	set_pending_pulse(0);
+	set_pending_space(0);
 	rec_buffer.sum=0;
 }
 
@@ -194,19 +204,40 @@ inline lirc_t get_next_space(lirc_t maxusec)
 	return(data);
 }
 
-int expectpulse(struct ir_remote *remote,int exdelta)
+inline int sync_pending_pulse(struct ir_remote *remote)
 {
-	lirc_t deltas,deltap;
-	int retval;
-	
+	if(rec_buffer.pendingp>0)
+	{
+		lirc_t deltap;
+		
+		deltap=get_next_pulse(rec_buffer.pendingp);
+		if(deltap==0) return 0;
+		if(!expect(remote,deltap,rec_buffer.pendingp)) return 0;
+		set_pending_pulse(0);
+	}
+	return 1;
+}
+
+inline int sync_pending_space(struct ir_remote *remote)
+{
 	if(rec_buffer.pendings>0)
 	{
+		lirc_t deltas;
+		
 		deltas=get_next_space(rec_buffer.pendings);
-		if(deltas==0) return(0);
-		retval=expect(remote,deltas,rec_buffer.pendings);
-		if(!retval) return(0);
-		rec_buffer.pendings=0;
+		if(deltas==0) return 0;
+		if(!expect(remote,deltas,rec_buffer.pendings)) return 0;
+		set_pending_space(0);
 	}
+	return 1;
+}
+
+int expectpulse(struct ir_remote *remote,int exdelta)
+{
+	lirc_t deltap;
+	int retval;
+	
+	if(!sync_pending_space(remote)) return 0;
 	
 	deltap=get_next_pulse(rec_buffer.pendingp+exdelta);
 	if(deltap==0) return(0);
@@ -215,7 +246,7 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 		retval=expect(remote,deltap,
 			      rec_buffer.pendingp+exdelta);
 		if(!retval) return(0);
-		rec_buffer.pendingp=0;
+		set_pending_pulse(0);
 	}
 	else
 	{
@@ -226,17 +257,10 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 
 int expectspace(struct ir_remote *remote,int exdelta)
 {
-	lirc_t deltas,deltap;
+	lirc_t deltas;
 	int retval;
 
-	if(rec_buffer.pendingp>0)
-	{
-		deltap=get_next_pulse(rec_buffer.pendingp);
-		if(deltap==0) return(0);
-		retval=expect(remote,deltap,rec_buffer.pendingp);
-		if(!retval) return(0);
-		rec_buffer.pendingp=0;
-	}
+	if(!sync_pending_pulse(remote)) return 0;
 	
 	deltas=get_next_space(rec_buffer.pendings+exdelta);
 	if(deltas==0) return(0);
@@ -245,7 +269,7 @@ int expectspace(struct ir_remote *remote,int exdelta)
 		retval=expect(remote,deltas,
 			      rec_buffer.pendings+exdelta);
 		if(!retval) return(0);
-		rec_buffer.pendings=0;
+		set_pending_space(0);
 	}
 	else
 	{
@@ -268,7 +292,7 @@ inline int expectone(struct ir_remote *remote,int bit)
 				unget_rec_buffer(1);
 				return(0);
 			}
-			rec_buffer.pendingp=2*remote->pone;
+			set_pending_pulse(2*remote->pone);
 		}
 		else
 		{
@@ -277,7 +301,7 @@ inline int expectone(struct ir_remote *remote,int bit)
 				unget_rec_buffer(1);
 				return(0);
 			}
-			rec_buffer.pendingp=remote->pone;
+			set_pending_pulse(remote->pone);
 		}
 	}
 	else
@@ -298,7 +322,7 @@ inline int expectone(struct ir_remote *remote,int bit)
 		}
 		else
 		{
-			rec_buffer.pendings=remote->sone;
+			set_pending_space(remote->sone);
 		}
 	}
 	return(1);
@@ -317,7 +341,7 @@ inline int expectzero(struct ir_remote *remote,int bit)
 				unget_rec_buffer(1);
 				return(0);
 			}
-			rec_buffer.pendings=2*remote->szero;
+			set_pending_space(2*remote->szero);
 			
 		}
 		else
@@ -327,7 +351,7 @@ inline int expectzero(struct ir_remote *remote,int bit)
 				unget_rec_buffer(1);
 				return(0);
 			}
-			rec_buffer.pendings=remote->szero;
+			set_pending_space(remote->szero);
 		}
 	}
 	else
@@ -347,7 +371,7 @@ inline int expectzero(struct ir_remote *remote,int bit)
 		}
 		else
 		{
-			rec_buffer.pendings=remote->szero;
+			set_pending_space(remote->szero);
 		}
 	}
 	return(1);
@@ -433,7 +457,7 @@ inline int get_header(struct ir_remote *remote)
 		}
 	}
 	
-	rec_buffer.pendings=remote->shead;
+	set_pending_space(remote->shead);
 	return(1);
 }
 
@@ -446,9 +470,10 @@ inline int get_foot(struct ir_remote *remote)
 
 inline int get_lead(struct ir_remote *remote)
 {
-	if(remote->plead==0) return(1);
-	rec_buffer.pendingp=remote->plead;
-	return(1);	
+	if(remote->plead==0) return 1;
+	if(!sync_pending_space(remote)) return 0;
+	set_pending_pulse(remote->plead);
+	return 1;
 }
 
 inline int get_trail(struct ir_remote *remote)
@@ -497,7 +522,7 @@ inline int get_repeat(struct ir_remote *remote)
 	else
 	{
 		if(!expectpulse(remote,remote->prepeat)) return(0);
-		rec_buffer.pendings=remote->srepeat;
+		set_pending_space(remote->srepeat);
 	}
 	if(!get_trail(remote)) return(0);
 	if(!get_gap(remote,
@@ -535,6 +560,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			{
 				logprintf(LOG_ERR,"failed on bit %d",
 					  done+i+1);
+				return((ir_code) -1);
 			}
 			sum=deltap+deltas;
 			LOGPRINTF(3,"rcmm: sum %ld",(unsigned long) sum);
@@ -564,6 +590,91 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 					 deltap,deltas,sum);
 				return((ir_code) -1);
 			}
+		}
+		return(code);
+	}
+	else if(is_grundig(remote))
+	{
+		lirc_t deltap,deltas,sum;
+		int state,laststate;
+		
+		if(bits%2 || done%2)
+		{
+			logprintf(LOG_ERR,"invalid bit number.");
+			return((ir_code) -1);
+		}
+		if(!sync_pending_pulse(remote)) return ((ir_code) -1);
+		for(laststate=state=-1,i=0;i<bits;)
+		{
+			deltas=get_next_space(remote->szero+remote->sone+
+					      remote->stwo+remote->sthree);
+			deltap=get_next_pulse(remote->pzero+remote->pone+
+					      remote->ptwo+remote->pthree);
+			if(deltas==0 || deltap==0) 
+			{
+				logprintf(LOG_ERR,"failed on bit %d",
+					  done+i+1);
+				return((ir_code) -1);
+			}
+			sum=deltas+deltap;
+			LOGPRINTF(3,"grundig: sum %ld",(unsigned long) sum);
+			if(expect(remote,sum,remote->szero+remote->pzero))
+			{
+				state=0;
+				LOGPRINTF(2,"2T");
+			}
+			else if(expect(remote,sum,remote->sone+remote->pone))
+			{
+				state=1;
+				LOGPRINTF(2,"3T");
+			}
+			else if(expect(remote,sum,remote->stwo+remote->ptwo))
+			{
+				state=2;
+				LOGPRINTF(2,"4T");
+			}
+			else if(expect(remote,sum,remote->sthree+remote->pthree))
+			{
+				state=3;
+				LOGPRINTF(2,"6T");
+			}
+			else
+			{
+				LOGPRINTF(2,"no match for %ld+%ld=%ld",
+					 deltas,deltap,sum);
+				return((ir_code) -1);
+			}
+			if(state==3) /* 6T */
+			{
+				i+=2;code<<=2;state=-1;
+				code|=0;
+			}
+			else if(laststate==2 && state==0) /* 4T2T */
+			{
+				i+=2;code<<=2;state=-1;
+				code|=1;
+			}
+			else if(laststate==1 && state==1) /* 3T3T */
+			{
+				i+=2;code<<=2;state=-1;
+				code|=2;
+			}
+			else if(laststate==0 && state==2) /* 2T4T */
+			{
+				i+=2;code<<=2;state=-1;
+				code|=3;
+			}
+			else if(laststate==-1)
+			{
+				/* 1st bit */
+			}
+			else
+			{
+				logprintf(LOG_ERR,"invalid state %d:%d",
+					  laststate,state);
+				return((ir_code) -1);
+			}
+			laststate=state;
 		}
 		return(code);
 	}
@@ -621,7 +732,7 @@ ir_code get_pre(struct ir_remote *remote)
 	{
 		if(!expectpulse(remote,remote->pre_p))
 			return((ir_code) -1);
-		rec_buffer.pendings=remote->pre_s;
+		set_pending_space(remote->pre_s);
 	}
 	return(pre);
 }
@@ -634,7 +745,7 @@ ir_code get_post(struct ir_remote *remote)
 	{
 		if(!expectpulse(remote,remote->post_p))
 			return((ir_code) -1);
-		rec_buffer.pendings=remote->post_s;
+		set_pending_space(remote->post_s);
 	}
 
 	post=get_data(remote,remote->post_data_bits,remote->pre_data_bits+
