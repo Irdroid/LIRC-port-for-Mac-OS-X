@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.16 2004/03/07 19:01:08 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.17 2005/03/20 17:47:47 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -57,7 +57,12 @@ static int lirc_mode(char *token,char *token2,char **mode,
 		     struct lirc_config_entry **last_config,
 		     int (check)(char *s),
 		     const char *name,int line);
-static unsigned int lirc_flags(char *string);
+/*
+  lircrc_config relies on this function, hence don't make it static
+  but it's not part of the official interface, so there's no guarantee
+  that it will stay available in the future
+*/
+unsigned int lirc_flags(char *string);
 static FILE *lirc_open(const char *file, const char *current_file,
 		       char **full_name);
 static struct filestack_t *stack_push(struct filestack_t *parent);
@@ -558,7 +563,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 	return(0);
 }
 
-static unsigned int lirc_flags(char *string)
+unsigned int lirc_flags(char *string)
 {
 	char *s;
 	unsigned int flags;
