@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.13 2003/08/15 09:37:30 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.14 2003/11/10 20:21:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -29,20 +29,53 @@
 
 #include "lirc_client.h"
 
+
+/* internal defines */
+#define MAX_INCLUDES 10
+#define LIRC_READ 255
+
+/* internal data structures */
+struct filestack_t {
+	FILE *file;
+	char *name;
+	int line;
+	struct filestack_t *parent;
+};
+
 /* internal functions */
-char *lirc_startupmode(struct lirc_config_entry *first);
-void lirc_freeconfigentries(struct lirc_config_entry *first);
-void lirc_clearmode(struct lirc_config *config);
-char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan);
-int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,
-		 int rep);
+static void lirc_printf(char *format_str, ...);
+static void lirc_perror(const char *s);
+static int lirc_readline(char **line,FILE *f);
+static char *lirc_trim(char *s);
+static char lirc_parse_escape(char **s,const char *name,int line);
+static void lirc_parse_string(char *s,const char *name,int line);
+static void lirc_parse_include(char *s,const char *name,int line);
+static int lirc_mode(char *token,char *token2,char **mode,
+		     struct lirc_config_entry **new_config,
+		     struct lirc_config_entry **first_config,
+		     struct lirc_config_entry **last_config,
+		     int (check)(char *s),
+		     const char *name,int line);
+static unsigned int lirc_flags(char *string);
+static FILE *lirc_open(const char *file, const char *current_file,
+		       char **full_name);
+static struct filestack_t *stack_push(struct filestack_t *parent);
+static struct filestack_t *stack_pop(struct filestack_t *entry);
+static void stack_free(struct filestack_t *entry);
+static char *lirc_startupmode(struct lirc_config_entry *first);
+static void lirc_freeconfigentries(struct lirc_config_entry *first);
+static void lirc_clearmode(struct lirc_config *config);
+static char *lirc_execute(struct lirc_config *config,
+			  struct lirc_config_entry *scan);
+static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
+		       char *button,int rep);
 
 static int lirc_lircd;
 static int lirc_verbose=0;
 static char *lirc_prog=NULL;
 static char *lirc_buffer=NULL;
 
-void lirc_printf(char *format_str, ...)
+static void lirc_printf(char *format_str, ...)
 {
 	va_list ap;  
 	
@@ -53,7 +86,7 @@ void lirc_printf(char *format_str, ...)
 	va_end(ap);
 }
 
-void lirc_perror(const char *s)
+static void lirc_perror(const char *s)
 {
 	if(!lirc_verbose) return;
 
@@ -113,9 +146,7 @@ int lirc_deinit(void)
 	return(close(lirc_lircd));
 }
 
-#define LIRC_READ 255
-
-int lirc_readline(char **line,FILE *f)
+static int lirc_readline(char **line,FILE *f)
 {
 	char *newline,*ret,*enlargeline;
 	int len;
@@ -162,7 +193,7 @@ int lirc_readline(char **line,FILE *f)
 	}
 }
 
-char *lirc_trim(char *s)
+static char *lirc_trim(char *s)
 {
 	int len;
 	
@@ -179,7 +210,7 @@ char *lirc_trim(char *s)
 
 /* parse standard C escape sequences + \@,\A-\Z is ^@,^A-^Z */
 
-char lirc_parse_escape(char **s,int line)
+static char lirc_parse_escape(char **s,const char *name,int line)
 {
 
 	char c;
@@ -242,8 +273,8 @@ char lirc_parse_escape(char **s,int line)
 		{
 			i&=(1<<CHAR_BIT)-1;
 			lirc_printf("%s: octal escape sequence "
-				    "out of range in line %d\n",lirc_prog,
-				    line);
+				    "out of range in %s:%d\n",lirc_prog,
+				    name,line);
 		}
 		return((char) i);
 	case 'x':
@@ -272,15 +303,15 @@ char lirc_parse_escape(char **s,int line)
 			if(!digits_found)
 			{
 				lirc_printf("%s: \\x used with no "
-					    "following hex digits in line %d\n",
-					    lirc_prog,line);
+					    "following hex digits in %s:%d\n",
+					    lirc_prog,name,line);
 			}
 			if(overflow || i>(1<<CHAR_BIT)-1)
 			{
 				i&=(1<<CHAR_BIT)-1;
 				lirc_printf("%s: hex escape sequence out "
-					    "of range in line %d\n",
-					    lirc_prog,line);
+					    "of range in %s:%d\n",
+					    lirc_prog,name,line);
 			}
 			return((char) i);
 		}
@@ -290,7 +321,7 @@ char lirc_parse_escape(char **s,int line)
 	}
 }
 
-void lirc_parse_string(char *s,int line)
+static void lirc_parse_string(char *s,const char *name,int line)
 {
 	char *t;
 
@@ -300,7 +331,7 @@ void lirc_parse_string(char *s,int line)
 		if(*s=='\\')
 		{
 			s++;
-			*t=lirc_parse_escape(&s,line);
+			*t=lirc_parse_escape(&s,name,line);
 			t++;
 		}
 		else
@@ -313,12 +344,39 @@ void lirc_parse_string(char *s,int line)
 	*t=0;
 }
 
+static void lirc_parse_include(char *s,const char *name,int line)
+{
+	char last;
+	size_t len;
+	
+	len=strlen(s);
+	if(len<2)
+	{
+		return;
+	}
+	last=s[len-1];
+	if(*s!='"' && *s!='<')
+	{
+		return;
+	}
+	if(*s=='"' && last!='"')
+	{
+		return;
+	}
+	else if(*s=='<' && last!='>')
+	{
+		return;
+	}
+	s[len-1]=0;
+	memmove(s, s+1, len-2+1); /* terminating 0 is copied */
+}
+
 int lirc_mode(char *token,char *token2,char **mode,
 	      struct lirc_config_entry **new_config,
 	      struct lirc_config_entry **first_config,
 	      struct lirc_config_entry **last_config,
 	      int (check)(char *s),
-	      int line)
+	      const char *name,int line)
 {
 	struct lirc_config_entry *new_entry;
 	
@@ -357,7 +415,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 			else
 			{
 				lirc_printf("%s: bad file format, "
-					    "line %d\n",lirc_prog,line);
+					    "%s:%d\n",lirc_prog,name,line);
 				return(-1);
 			}
 		}
@@ -374,7 +432,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 			else
 			{
 				lirc_printf("%s: bad file format, "
-					    "line %d\n",lirc_prog,line);
+					    "%s:%d\n",lirc_prog,name,line);
 				return(-1);
 			}
 		}
@@ -453,8 +511,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 			}
 			else
 			{
-				lirc_printf("%s: line %d: 'end' without "
-					    "'begin'\n",lirc_prog,line);
+				lirc_printf("%s: %s:%d: 'end' without "
+					    "'begin'\n",lirc_prog,name,line);
 				return(-1);
 			}
 		}
@@ -464,9 +522,9 @@ int lirc_mode(char *token,char *token2,char **mode,
 			{
 				if(new_entry!=NULL)
 				{
-					lirc_printf("%s: line %d: missing "
+					lirc_printf("%s: %s:%d: missing "
 						    "'end' token\n",lirc_prog,
-						    line);
+						    name,line);
 					return(-1);
 				}
 				if(strcasecmp(*mode,token2)==0)
@@ -484,8 +542,8 @@ int lirc_mode(char *token,char *token2,char **mode,
 			}
 			else
 			{
-				lirc_printf("%s: line %d: 'end %s' without "
-					    "'begin'\n",lirc_prog,line,
+				lirc_printf("%s: %s:%d: 'end %s' without "
+					    "'begin'\n",lirc_prog,name,line,
 					    token2);
 				return(-1);
 			}
@@ -493,13 +551,13 @@ int lirc_mode(char *token,char *token2,char **mode,
 	}
 	else
 	{
-		lirc_printf("%s: unknown token \"%s\" in line %d ignored\n",
-			    lirc_prog,token,line);
+		lirc_printf("%s: unknown token \"%s\" in %s:%d ignored\n",
+			    lirc_prog,token,name,line);
 	}
 	return(0);
 }
 
-unsigned int lirc_flags(char *string)
+static unsigned int lirc_flags(char *string)
 {
 	char *s;
 	unsigned int flags;
@@ -533,16 +591,12 @@ unsigned int lirc_flags(char *string)
 	return(flags);
 }
 
-int lirc_readconfig(char *file,
-		    struct lirc_config **config,
-		    int (check)(char *s))
+static FILE *lirc_open(const char *file, const char *current_file,
+		       char **full_name)
 {
-	char *home,*filename,*string,*eq,*token,*token2,*token3;
+	char *home, *filename;
 	FILE *fin;
-	struct lirc_config_entry *new_entry,*first,*last;
-	char *mode,*remote;
-	int line,ret;
-	
+
 	if(file==NULL)
 	{
 		home=getenv("HOME");
@@ -550,9 +604,13 @@ int lirc_readconfig(char *file,
 		{
 			home="/";
 		}
-		filename=(char *) malloc(strlen(home)+1+strlen(LIRCCFGFILE)+1);
+		filename=(char *) malloc(strlen(home)+1+
+					 strlen(LIRCCFGFILE)+1);
 		if(filename==NULL)
-			return(-1);
+		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
+			return NULL;
+		}
 		strcpy(filename,home);
 		if(strlen(home)>0 && filename[strlen(filename)-1]!='/')
 		{
@@ -560,25 +618,143 @@ int lirc_readconfig(char *file,
 		}
 		strcat(filename,LIRCCFGFILE);
 	}
+	else if(strncmp(file, "~/", 2)==0)
+	{
+		home=getenv("HOME");
+		if(home==NULL)
+		{
+			home="/";
+		}
+		filename=(char *) malloc(strlen(home)+strlen(file)+1);
+		if(filename==NULL)
+		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
+			return NULL;
+		}
+		strcpy(filename,home);
+		strcat(filename,file+1);
+	}
+	else if(file[0]=='/' || current_file==NULL)
+	{
+		/* absulute path or root */
+		filename=strdup(file);
+		if(filename==NULL)
+		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
+			return NULL;
+		}
+	}
 	else
 	{
-		filename=file;
+		/* get path from parent filename */
+		int pathlen = strlen(current_file);
+		while (pathlen>0 && current_file[pathlen-1]!='/')
+			pathlen--;
+		filename=(char *) malloc(pathlen+strlen(file)+1);
+		if(filename==NULL)
+		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
+			return NULL;
+		}
+		memcpy(filename,current_file,pathlen);
+		filename[pathlen]=0;
+		strcat(filename,file);
 	}
 
 	fin=fopen(filename,"r");
-	if(file==NULL) free(filename);
 	if(fin==NULL)
 	{
-		lirc_printf("%s: could not open config file\n",lirc_prog);
+		lirc_printf("%s: could not open config file %s\n",
+			    lirc_prog,filename);
 		lirc_perror(lirc_prog);
-		return(-1);
 	}
-	line=1;
+	if(full_name && fin!=NULL)
+	{
+		*full_name = filename;
+	}
+	else
+	{
+		free(filename);
+	}
+	return fin;
+}
+
+static struct filestack_t *stack_push(struct filestack_t *parent)
+{
+	struct filestack_t *entry;
+	entry = malloc(sizeof(struct filestack_t));
+	if (entry == NULL)
+	{
+		lirc_printf("%s: out of memory\n",lirc_prog);
+		return NULL;
+	}
+	entry->file = NULL;
+	entry->name = NULL;
+	entry->line = 0;
+	entry->parent = parent;
+	return entry;
+}
+
+static struct filestack_t *stack_pop(struct filestack_t *entry)
+{
+	struct filestack_t *parent = NULL;
+	if (entry)
+	{
+		parent = entry->parent;
+		if (entry->name)
+			free(entry->name);
+		free(entry);
+	}
+	return parent;
+}
+
+static void stack_free(struct filestack_t *entry)
+{
+	while (entry)
+	{
+		entry = stack_pop(entry);
+	}
+}
+
+int lirc_readconfig(char *file,
+		    struct lirc_config **config,
+		    int (check)(char *s))
+{
+	char *string,*eq,*token,*token2,*token3;
+	struct filestack_t *filestack, *stack_tmp;
+	int open_files;
+	struct lirc_config_entry *new_entry,*first,*last;
+	char *mode,*remote;
+	int ret=0;
+	
+	filestack = stack_push(NULL);
+	if (filestack == NULL)
+	{
+		return -1;
+	}
+	filestack->file = lirc_open(file, NULL, &(filestack->name));
+	if (filestack->file == NULL)
+	{
+		stack_free(filestack);
+		return -1;
+	}
+	filestack->line = 0;
+	open_files = 1;
+
 	first=new_entry=last=NULL;
 	mode=NULL;
 	remote=LIRC_ALL;
-	while((ret=lirc_readline(&string,fin))!=-1 && string!=NULL)
+	while (filestack)
 	{
+		if((ret=lirc_readline(&string,filestack->file))==-1 ||
+		   string==NULL)
+		{
+			fclose(filestack->file);
+			filestack = stack_pop(filestack);
+			open_files--;
+			continue;
+		}
+		filestack->line++;
 		eq=strchr(string,'=');
 		if(eq==NULL)
 		{
@@ -591,22 +767,62 @@ int lirc_readconfig(char *file,
 			{
 				/* ignore comment */
 			}
+			else if(strcasecmp(token, "include") == 0)
+			{
+				if (open_files >= MAX_INCLUDES)
+				{
+					lirc_printf("%s: too many files "
+						    "included at %s:%d\n",
+						    lirc_prog,
+						    filestack->name,
+						    filestack->line);
+					ret=-1;
+				}
+				else
+				{
+					token2 = strtok(NULL, "");
+					token2 = lirc_trim(token2);
+					lirc_parse_include
+						(token2, filestack->name,
+						 filestack->line);
+					stack_tmp = stack_push(filestack);
+					if (stack_tmp == NULL)
+					{
+						ret=-1;
+					}
+					else
+					{
+						stack_tmp->file = lirc_open(token2, filestack->name, &(stack_tmp->name));
+						stack_tmp->line = 0;
+						if (stack_tmp->file)
+						{
+							open_files++;
+							filestack = stack_tmp;
+						}
+						else
+						{
+							stack_pop(stack_tmp);
+							ret=-1;
+						}
+					}
+				}
+			}
 			else
 			{
 				token2=strtok(NULL," \t");
 				if(token2!=NULL && 
 				   (token3=strtok(NULL," \t"))!=NULL)
 				{
-					lirc_printf("%s: unexpected "
-						    "token in line %d\n",
-						    lirc_prog,line);
+					lirc_printf("%s: unexpected token in line %s:%d\n",
+						    lirc_prog,filestack->name,filestack->line);
 				}
 				else
 				{
 					ret=lirc_mode(token,token2,&mode,
 						      &new_entry,&first,&last,
 						      check,
-						      line);
+						      filestack->name,
+						      filestack->line);
 					if(ret==0)
 					{
 						if(remote!=LIRC_ALL)
@@ -641,8 +857,8 @@ int lirc_readconfig(char *file,
 			}
 			else if(new_entry==NULL)
 			{
-				lirc_printf("%s: bad file format, "
-					    "line %d\n",lirc_prog,line);
+				lirc_printf("%s: bad file format, %s:%d\n",
+					lirc_prog,filestack->name,filestack->line);
 				ret=-1;
 			}
 			else
@@ -775,7 +991,7 @@ int lirc_readconfig(char *file,
 					}
 					else
 					{
-						lirc_parse_string(token2,line);
+						lirc_parse_string(token2,filestack->name,filestack->line);
 						new_list->string=token2;
 						new_list->next=NULL;
 						if(new_entry->config==NULL)
@@ -803,14 +1019,12 @@ int lirc_readconfig(char *file,
 				else
 				{
 					free(token2);
-					lirc_printf("%s: unknown token "
-						    "\"%s\" in line %d ignored\n",
-						    lirc_prog,token,line);
+					lirc_printf("%s: unknown token \"%s\" in %s:%d ignored\n",
+						    lirc_prog,token,filestack->name,filestack->line);
 				}
 			}
 		}
 		free(string);
-		line++;
 		if(ret==-1) break;
 	}
 	if(remote!=LIRC_ALL)
@@ -820,7 +1034,7 @@ int lirc_readconfig(char *file,
 		if(ret==0)
 		{
 			ret=lirc_mode("end",NULL,&mode,&new_entry,
-				      &first,&last,check,line);
+				      &first,&last,check,"",0);
 			lirc_printf("%s: warning: end token missing at end "
 				    "of file\n",lirc_prog);
 		}
@@ -839,13 +1053,13 @@ int lirc_readconfig(char *file,
 		}
 		free(mode);
 	}
-	fclose(fin);
 	if(ret==0)
 	{
 		*config=(struct lirc_config *)
 			malloc(sizeof(struct lirc_config));
 		if(*config==NULL)
 		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
 			lirc_freeconfigentries(first);
 			return(-1);
 		}
@@ -858,10 +1072,14 @@ int lirc_readconfig(char *file,
 		*config=NULL;
 		lirc_freeconfigentries(first);
 	}
+	if(filestack)
+	{
+		stack_free(filestack);
+	}
 	return(ret);
 }
 
-char *lirc_startupmode(struct lirc_config_entry *first)
+static char *lirc_startupmode(struct lirc_config_entry *first)
 {
 	struct lirc_config_entry *scan;
 	char *startupmode;
@@ -923,7 +1141,7 @@ void lirc_freeconfig(struct lirc_config *config)
 	}
 }
 
-void lirc_freeconfigentries(struct lirc_config_entry *first)
+static void lirc_freeconfigentries(struct lirc_config_entry *first)
 {
 	struct lirc_config_entry *c,*config_temp;
 	struct lirc_list *list,*list_temp;
@@ -962,7 +1180,7 @@ void lirc_freeconfigentries(struct lirc_config_entry *first)
 	}
 }
 
-void lirc_clearmode(struct lirc_config *config)
+static void lirc_clearmode(struct lirc_config *config)
 {
 	struct lirc_config_entry *scan;
 
@@ -985,7 +1203,8 @@ void lirc_clearmode(struct lirc_config *config)
 	config->current_mode=NULL;
 }
 
-char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan)
+static char *lirc_execute(struct lirc_config *config,
+			  struct lirc_config_entry *scan)
 {
 	char *s;
 	int do_once=1;
@@ -1023,7 +1242,8 @@ char *lirc_execute(struct lirc_config *config,struct lirc_config_entry *scan)
 	return(NULL);
 }
 
-int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep)
+static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
+		       char *button,int rep)
 {
 	struct lirc_code *codes;
 	
@@ -1218,6 +1438,7 @@ int lirc_nextcode(char **code)
 		lirc_buffer=(char *) malloc(packet_size+1);
 		if(lirc_buffer==NULL)
 		{
+			lirc_printf("%s: out of memory\n",lirc_prog);
 			return(-1);
 		}
 		lirc_buffer[0]=0;

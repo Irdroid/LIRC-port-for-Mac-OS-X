@@ -413,6 +413,20 @@ end</PRE>
     </DL>
     
     <P>
+      It is possible to split the lirc configuration into several
+      files by using the <em>include</em> command. It tells the parser
+      to read the specified file before resuming the current one:
+    </P>
+    <PRE>
+include ~/.lirc/xawtv</PRE>
+    <P>
+      If the specified filename begins with &quot;~/&quot;,
+      &quot;~&quot; will be substituted with the content of the
+      <em>HOME</em> environment variable. The filename also can be put
+      inside &lt;&gt; and &quot;&quot; characters which in contrast to
+      the C preprocessor do not have special meanings.
+    </P>
+    <P>
       Ok, now a simple example for a <em>.lircrc</em> file (supposed
       you use an AnimaX remote and use the sample files for this
       remote from the remotes/ directory. If you have another remote

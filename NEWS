@@ -1,4 +1,5 @@
 0.7.0: future
+  * added include command to .lircrc config file (Ingo van Lil)
   * added support for Prolink Pixelview PV-BT878P+ (Rev.4C,8E)
   * added support for UIRT2 (Mikael Magnusson)
   * added support for Home Electronics Tira USB device (Gregory McLean)
