@@ -1,6 +1,5 @@
 /* lirc_atiusb - USB remote support for LIRC
  * (currently only supports X10 USB remotes)
- * Version 0.4  [beta status]
  *
  * Copyright (C) 2003-2004 Paul Miller <pmiller9@users.sourceforge.net>
  *
@@ -12,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.27 2004/05/06 04:11:04 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.28 2004/05/23 14:41:19 pmiller9 Exp $
  */
 
 /*
@@ -58,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"0.3"
+#define DRIVER_VERSION		"0.4"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
