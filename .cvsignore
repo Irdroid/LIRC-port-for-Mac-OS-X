@@ -9,3 +9,8 @@ stamp-h
 configure.sh
 config.cache
 config.status
+config.guess
+config.sub
+ltconfig
+ltmain.sh
+libtool

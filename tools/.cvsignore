@@ -4,7 +4,10 @@ Makefile
 irw
 irpty
 irexec
-irrecord
 mode2
 irxevent
 xmode2
+.libs
+lirc_client.lo
+liblirc_client.la
+
