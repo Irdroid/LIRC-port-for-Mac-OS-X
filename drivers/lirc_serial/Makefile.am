@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.1 1999/05/05 13:12:01 columbus Exp $
+## $Id: Makefile.am,v 5.2 1999/06/14 12:55:52 denis Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -11,7 +11,7 @@ EXTRA_PROGRAMS = dummy
 dummy_SOURCES = lirc_serial.c
 
 ## there is no *just* object file support in automake.  This is close enough
-module_SCRIPTS = lirc_serial.o
+module_DATA = lirc_serial.o
 
 lirc_serial.o: lirc_serial.c
 	$(COMPILE) $(M_CPPFLAGS) $(M_CFLAGS) -c lirc_serial.c
@@ -25,5 +25,7 @@ mkdev:
 rmdev:
 	test -c @devdir@/lirc && $(RM) @devdir@/lirc
 
+install-data-local:
+	-@depmod@ -a
 
-CLEANFILES = lirc_serial.o *~
+CLEANFILES = lirc_serial.o *~ \#*\#
