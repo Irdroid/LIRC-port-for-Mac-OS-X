@@ -1,12 +1,90 @@
 #
 # this config file was automatically generated
+# using lirc-0.5.5 on Thu May 25 18:00:24 2000
+#
+# contributed by Michal Kochanowicz & Jesus Bravo Alvarez
+#
+# brand:             AVerMedia
+# model:             ?
+# supported devices: some TVCapture98 (?) and some TVPhone98 (ID
+#                    0x00011461) cards
+
+begin remote
+
+  name  TVCapture98
+  bits            6
+  flags SPACE_ENC|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  header       9078  4437
+  one           615  1631
+  zero          615   515
+  ptrail        620
+#  pre_data_bits   16
+#  pre_data       0x40BF
+  repeat       9080  2189
+  gap          108056
+  repeat_bit      0
+
+      begin codes
+          TV/FM                    0x0000000000000023
+          CD                       0x0000000000000022
+#          TELETEXT                 0x000000000000C03F
+          POWER                    0x0000000000000027
+
+          1                        0x0000000000000018
+          2                        0x0000000000000010
+          3                        0x0000000000000008
+          VIDEO                    0x0000000000000000
+
+          4                        0x0000000000000019
+          5                        0x0000000000000011
+          6                        0x0000000000000009
+          AUDIO                    0x0000000000000001
+
+          7                        0x000000000000001A
+          8                        0x0000000000000012
+          9                        0x000000000000000A
+          FULLSCREEN               0x0000000000000002
+
+          0                        0x000000000000001B
+          DISPLAY                  0x0000000000000013
+          COLOR                    0x000000000000000B
+          LOOP                     0x0000000000000003
+
+          UNLABELED                0x000000000000001C
+          LEFT                     0x0000000000000014
+          RIGHT                    0x000000000000000C
+          PREVIEW                  0x0000000000000004
+
+          AUTOSCAN                 0x000000000000001D
+          FREEZE                   0x0000000000000015
+          CAPTURE                  0x000000000000000D
+          MUTE                     0x0000000000000005
+
+          RED                      0x000000000000001E
+          VOL_DOWN                 0x0000000000000016
+          VOL_UP                   0x000000000000000E
+          YELLOW                   0x0000000000000006
+
+          GREEN                    0x000000000000001F
+          CH_DOWN                  0x0000000000000017
+          CH_UP                    0x000000000000000F
+          BLUE                     0x0000000000000007
+      end codes
+
+end remote
+
+#
+# this config file was automatically generated
 # using lirc-0.6.1 on Tue Apr 25 14:31:21 2000
 #
 # contributed by Christoph Bartelmus <lirc@bartelmus.de>
 #
 # brand:             AVerMedia
-# model:             ?
-# supported devices: TVCapture98 card, TVPhone98 card (latter untested)
+# model:             ? (36 buttons)
+# supported devices: TVPhone98 card (ID 0x00031461)
 #
 # This config file does work with both homebrew receivers and 
 # original AVerMedia TV cards !!!
@@ -14,7 +92,7 @@
 
 begin remote
 
-  name  AVerMedia
+  name  TVPhone98
   bits           16
   flags SPACE_ENC|CONST_LENGTH
   eps            30
@@ -70,7 +148,7 @@ end remote
 
 begin remote
 
-  name  AVerMedia_ext
+  name  TVPhone98_ext
   bits           16
   flags SPACE_ENC|CONST_LENGTH
   eps            30

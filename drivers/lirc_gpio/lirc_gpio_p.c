@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.7 2000/05/22 14:58:43 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.8 2000/06/02 14:17:17 columbus Exp $
  *
  */
 
@@ -23,18 +23,16 @@
 
 #include "../lirc_dev/lirc_dev.h"
 #include "../drivers/char/bttv.h"
-#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,28)
-#error "!!! Sorry, this driver needs bttv version 0.7.28 or higher   !!!"
+#if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,31)
+#error "!!! Sorry, this driver needs bttv version 0.7.31 or higher   !!!"
 #error "!!! If you are using the bttv package, copy it to the kernel !!!"
 #endif
-
-/* default parameters value are suitable for the PixelView Play TVPro card
- */
 
 static int debug = 0;
 static int card = 0;
 static int minor = -1;
 static unsigned long gpio_mask = 0;
+static unsigned long gpio_enable = 0;
 static unsigned long gpio_lock_mask = 0;
 static unsigned long gpio_xor_mask = 0;
 static unsigned int soft_gap = 0;
@@ -54,6 +52,7 @@ MODULE_PARM(sample_rate,"b");
 struct rcv_info {
 	int bttv_id;
 	unsigned long gpio_mask;
+	unsigned long gpio_enable;
 	unsigned long gpio_lock_mask;
 	unsigned long gpio_xor_mask;
 	unsigned int soft_gap;
@@ -62,10 +61,11 @@ struct rcv_info {
 };
 
 static struct rcv_info rcv_infos[] = {
-	{BTTV_UNKNOWN, 0, 0, 0, 0, 1, 0},
-	{BTTV_PXELVWPLTVPRO, 0x1f00, 0x8000, 0, 500, 12, 0},
-	{BTTV_AVERMEDIA, 0x0f88000, 0x010000, 0x010000, 0, 10, 0},
-	{BTTV_AVPHONE98, 0x0f88000, 0x010000, 0x010000, 0, 10, 32}
+	{BTTV_UNKNOWN,                0,          0,         0,          0,   0,  1,  0},
+	{BTTV_PXELVWPLTVPRO, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
+	{BTTV_AVERMEDIA,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10,  0},
+	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
+	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}
 };
 
 static unsigned char code_length = 0;
@@ -91,6 +91,31 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		return -1;
 	}
 
+	switch(rcv_infos[card_type].bttv_id)
+	{
+	case BTTV_AVERMEDIA98:
+		if(bttv_write_gpio(card, gpio_enable, gpio_enable))
+		{
+			dprintk("lirc_gpio_p %d: cannot write to GPIO\n",
+				card);
+			return(-1);
+		}
+		if(bttv_read_gpio(card, &gpio_val))
+		{
+			dprintk("lirc_gpio_p %d: cannot read GPIO\n", card);
+			return(-1);
+		}
+		if(bttv_write_gpio(card, gpio_enable, 0))
+		{
+			dprintk("lirc_gpio_p %d: cannot write to GPIO\n",
+				card);
+			return(-1);
+		}
+		break;
+	default:
+		break;
+	}
+	
 	/* extract bits from "raw" GPIO value using gpio_mask */
 	codes[0] = 0;
 	gpio_val >>= gpio_pre_shift;
@@ -102,6 +127,9 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		gpio_val >>= 1;
 	}
 	
+	/* FIXME FIXME FIXME FIXME FIXME FIXME */
+	printk("lirc_gpio_p: code is %lx\n",(unsigned long) codes[0]);
+	/* FIXME FIXME FIXME FIXME FIXME FIXME */
 	switch(rcv_infos[card_type].bttv_id)
 	{
 	case BTTV_AVPHONE98:
@@ -117,6 +145,8 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 			codes[0] = 0x40;
 			codes[1] = 0xbf;
 		}
+		break;
+	case BTTV_AVERMEDIA98:
 		break;
 	default:
 		break;
@@ -225,6 +255,17 @@ int gpio_remote_init(void)
 		return -1;
 	}
 
+	if(gpio_enable)
+	{
+		if(bttv_gpio_enable(card, gpio_enable, gpio_enable))
+		{
+			printk("lirc_gpio_p %d: gpio_enable failure\n",
+			       minor);
+			return(-1);
+		}
+	}
+
+
 	/* translate ms to jiffies */
 	soft_gap = (soft_gap*HZ) / 1000;
 
@@ -258,7 +299,7 @@ MODULE_AUTHOR("Artur Lipowski");
  */
 int init_module(void)
 {
-	int type;
+	int type,cardid;
 
 	if (MAX_IRCTL_DEVICES < minor) {
 		printk("lirc_gpio_p: parameter minor (%d) must be lesst han %d!\n",
@@ -285,18 +326,29 @@ int init_module(void)
 			return -1;
 		}
 	} else {
-		type = bttv_get_id(card);
+		if(bttv_get_cardinfo(card,&type,&cardid)==-1)
+		{
+			printk("lirc_gpio_p %d: could not get card type\n",
+			       minor);
+		}
+		printk("lirc_gpio_p %d: card type 0x%x, id 0x%x\n",minor,
+		       type,cardid);
+		if(type==BTTV_AVPHONE98 && cardid!=0x00031461)
+		{
+			type = BTTV_AVERMEDIA98;
+		}
 
 		if (type == BTTV_UNKNOWN) {
 			printk("lirc_gpio_p %d: cannot detect TV card nr %d!\n",
 			       minor, card);
 			return -1;
 		}
-		for (card_type=1; 
+		for (card_type=1;
 		     card_type < sizeof(rcv_infos)/sizeof(struct rcv_info); 
 		     card_type++) {
 			if (rcv_infos[card_type].bttv_id == type) {
 				gpio_mask = rcv_infos[card_type].gpio_mask;
+				gpio_enable = rcv_infos[card_type].gpio_enable;
 				gpio_lock_mask = rcv_infos[card_type].gpio_lock_mask;
 				gpio_xor_mask = rcv_infos[card_type].gpio_xor_mask;
 				soft_gap = rcv_infos[card_type].soft_gap;
