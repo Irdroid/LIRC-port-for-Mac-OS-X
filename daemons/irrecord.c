@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.24 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.25 2001/01/05 20:30:27 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -173,6 +173,9 @@ int main(int argc,char **argv)
 	int force;
 	int retries;
 	struct ir_remote *remotes=NULL;
+#ifdef DEBUG
+	int get_pre=0,get_post=0;
+#endif
 
 	progname=argv[0];
 	force=0;
@@ -185,9 +188,17 @@ int main(int argc,char **argv)
 			{"version",no_argument,NULL,'v'},
 			{"device",required_argument,NULL,'d'},
 			{"force",no_argument,NULL,'f'},
+#ifdef DEBUG
+			{"pre",no_argument,NULL,'p'},
+			{"post",no_argument,NULL,'P'},
+#endif
 			{0, 0, 0, 0}
 		};
+#ifdef DEBUG
+		c = getopt_long(argc,argv,"hvd:fpP",long_options,NULL);
+#else
 		c = getopt_long(argc,argv,"hvd:f",long_options,NULL);
+#endif
 		if(c==-1)
 			break;
 		switch (c)
@@ -208,6 +219,14 @@ int main(int argc,char **argv)
 		case 'f':
 			force=1;
 			break;
+#ifdef DEBUG
+		case 'p':
+			get_pre=1;
+			break;
+		case 'P':
+			get_post=1;
+			break;
+#endif
 		default:
 			printf("Try %s -h for help!\n",progname);
 			exit(EXIT_FAILURE);
@@ -240,8 +259,8 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 		remove_pre_data(remotes);
 		remove_post_data(remotes);
-		get_pre_data(remotes);
-		//get_post_data(remotes);
+		if(get_pre) get_pre_data(remotes);
+		if(get_post) get_post_data(remotes);
 			
 		fprint_remotes(stdout,remotes);
 		free_config(remotes);

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.15 2000/08/23 19:08:05 columbus Exp $
+## $Id: Makefile.am,v 5.16 2001/01/05 20:30:27 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -20,6 +20,7 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
+			hw_creative.c hw_creative.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -40,6 +41,7 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
+			hw_creative.c hw_creative.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
