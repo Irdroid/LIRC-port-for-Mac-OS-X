@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.0 1999/04/29 21:30:59 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.1 1999/05/06 08:08:32 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -135,6 +135,7 @@ struct state_mouse new_ms,ms=
 };
 
 char *progname="lircmd-"VERSION;
+char *configfile=LIRCMDCFGFILE;
 
 int lircd,lircm;
 
@@ -174,7 +175,7 @@ void sighup(int sig)
 	FILE *fd;
 	struct trans_mouse *tm_list;
 
-	fd=fopen(LIRCMDCFGFILE,"r");
+	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
 		syslog(LOG_WARNING,"could not open config file\n%m\n");
@@ -674,7 +675,7 @@ int main(int argc,char **argv)
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s [options]\n",progname);
+			printf("Usage: %s [options] [config-file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			return(EXIT_SUCCESS);
@@ -685,7 +686,11 @@ int main(int argc,char **argv)
 			return(EXIT_FAILURE);
 		}
 	}
-	if(optind!=argc)
+	if(optind==argc-1)
+	{
+	        configfile=argv[optind];
+	}
+	else if(optind!=argc)
 	{
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		return(EXIT_FAILURE);
@@ -731,7 +736,7 @@ int main(int argc,char **argv)
 
 	/* read config file */
 
-	fd=fopen(LIRCMDCFGFILE,"r");
+	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
 		fprintf(stderr,"%s: could not open config file\n",progname);

@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.2 1999/05/05 14:57:55 columbus Exp $      */
+/*      $Id: lircd.c,v 5.3 1999/05/06 08:08:32 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -75,6 +75,7 @@ unsigned long supported_rec_modes[]=
 };
 
 char *progname="lircd-"VERSION;
+char *configfile=LIRCDCFGFILE;
 char *logfile=LOGFILE;
 
 struct protocol_directive directives[] =
@@ -225,10 +226,10 @@ void config(void)
 		logprintf("old config is still in use\n");
 		return;
 	}
-	fd=fopen(LIRCDCFGFILE,"r");
+	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
-		logprintf("could not open config file\n");
+		logprintf("could not open config file '%s'\n",configfile);
 		logperror(NULL);
 		return;
 	}
@@ -1302,7 +1303,7 @@ int main(int argc,char **argv)
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s [options]\n",progname);
+			printf("Usage: %s [options] [config-file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			return(EXIT_SUCCESS);
@@ -1314,7 +1315,11 @@ int main(int argc,char **argv)
 		}
 	}
 #if !defined(SIM_REC) || defined(DAEMONIZE)
-	if(optind!=argc)
+	if(optind==argc-1)
+	{
+	        configfile=argv[optind];
+	}
+	else if(optind!=argc)
 	{
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		return(EXIT_FAILURE);
