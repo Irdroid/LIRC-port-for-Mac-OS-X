@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.33 2005/03/11 20:04:03 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.34 2005/03/28 09:25:36 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -100,35 +100,28 @@ static int add_to_buf_adap(void* data, struct lirc_buffer* buf)
 {
 	struct IR *ir = data;
 	unsigned char keybuf[4];
-	__u16 code;
-	unsigned char codes[2];
 	
 	keybuf[0] = 0x00;
 	i2c_master_send(&ir->c,keybuf,1);
 	/* poll IR chip */
-	if (4 == i2c_master_recv(&ir->c,keybuf,4)) {
-		ir->b[0] = keybuf[1];
-		ir->b[1] = keybuf[2];
-		ir->b[2] = keybuf[3];
-		dprintk("key (0x%02x/0x%02x)\n", ir->b[1], ir->b[2]);
-	} else {
+	if(i2c_master_recv(&ir->c,keybuf,sizeof(keybuf)) != sizeof(keybuf))
+	{
 		dprintk("read error\n");
-		/* keep last successfull read buffer */
 		return -EIO;
 	}
-
+	
+	dprintk("key (0x%02x%02x%02x%02x)\n",
+		keybuf[0], keybuf[1], keybuf[2], keybuf[3]);
+	
 	/* key pressed ? */
-	if ((ir->b[1]) == 0xff)
+	if (keybuf[2] == 0xff)
 		return -ENODATA;
-
-	/* look what we have */
-	code = (((__u16)ir->b[1])<<8) & 0xff00;
-	code = code    	| (ir->b[2]) ;
-	dprintk("Your magic code no is (0x%04x)\n",code);
-	codes[0] = (code >> 8) & 0xff;
-	codes[1] = code & 0xff;
-
-	lirc_buffer_write_1( buf, codes );
+	
+	/* remove repeat bit */
+	keybuf[2] &= 0x7f;
+	keybuf[3] |= 0x80;
+	
+	lirc_buffer_write_1(buf, keybuf);
 	return 0;
 }
 
@@ -425,7 +418,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		break;
 	case 0x6b:
 		strcpy(ir->c.name,"Adaptec IR");
-		ir->l.code_length = 13;
+		ir->l.code_length = 32;
 		ir->l.add_to_buf=add_to_buf_adap;
 		break;
 	case 0x18:
