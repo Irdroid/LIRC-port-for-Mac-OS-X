@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.13 2000/07/13 19:01:41 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.14 2000/07/26 19:49:16 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -68,6 +68,9 @@ struct ir_ncode {
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 
+/* stop repeating after 600 signals (approx. 1 minute) */
+#define REPEAT_MAX 600
+
 struct ir_remote 
 {
 	char *name;                 /* name of remote control */
@@ -113,8 +116,9 @@ struct ir_remote
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	
 	/* end of user editable values */
-
+	
         int repeat_state;
+	int repeat_countdown;
 	struct ir_ncode *last_code;
 	int reps;
 	struct timeval last_send;

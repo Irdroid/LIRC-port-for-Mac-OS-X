@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.6 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: lircd.h,v 5.7 2000/07/26 19:49:16 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -63,6 +63,7 @@ int list(int fd,char *message,char *arguments);
 int send_once(int fd,char *message,char *arguments);
 int send_start(int fd,char *message,char *arguments);
 int send_stop(int fd,char *message,char *arguments);
+int send_core(int fd,char *message,char *arguments,int once);
 int version(int fd,char *message,char *arguments);
 int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);

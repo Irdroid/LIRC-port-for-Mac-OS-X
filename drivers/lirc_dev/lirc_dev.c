@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <lipowski@comarch.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.9 2000/07/23 10:32:02 columbus Exp $
+ * $Id: lirc_dev.c,v 1.10 2000/07/26 19:49:16 columbus Exp $
  *
  */
 
@@ -624,15 +624,12 @@ int lirc_dev_init(void)
 		init_MUTEX(&irctls[i].lock);
 		init_waitqueue_head(&irctls[i].wait_poll);
 	}
-
-#ifndef LIRC_HAVE_DEVFS
- 	i = module_register_chrdev(IRCTL_DEV_MAJOR,
-#else
-	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,
-#endif
-				   IRCTL_DEV_NAME,
-				   &fops);
 	
+#ifndef LIRC_HAVE_DEVFS
+ 	i = module_register_chrdev(IRCTL_DEV_MAJOR,IRCTL_DEV_NAME,&fops);
+#else
+	i = devfs_register_chrdev(IRCTL_DEV_MAJOR,IRCTL_DEV_NAME,&fops);
+#endif
 	if (i < 0) {
 		printk ("lirc_dev: device registration failed with %d\n", i);
 		return i;

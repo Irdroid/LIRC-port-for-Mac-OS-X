@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.20 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: lircd.c,v 5.21 2000/07/26 19:49:16 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -631,7 +631,7 @@ void sigalrm(int sig)
 void dosigalrm(int sig)
 {
 	struct itimerval repeat_timer;
-
+	
 	if(repeat_remote->last_code!=repeat_code)
 	{
 		/* we received a different code from the original
@@ -640,7 +640,9 @@ void dosigalrm(int sig)
 		   so better stop repeating */
 		return;
 	}
-	if(hw.send_func(repeat_remote,repeat_code))
+	repeat_remote->repeat_countdown--;
+	if(hw.send_func(repeat_remote,repeat_code) &&
+	   repeat_remote->repeat_countdown>0)
 	{
 		repeat_timer.it_value.tv_sec=0;
 		repeat_timer.it_value.tv_usec=repeat_remote->remaining_gap;
@@ -648,7 +650,10 @@ void dosigalrm(int sig)
 		repeat_timer.it_interval.tv_usec=0;
 		
 		setitimer(ITIMER_REAL,&repeat_timer,NULL);
+		return;
 	}
+	repeat_remote=NULL;
+	repeat_code=NULL;
 }
 
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
@@ -871,31 +876,15 @@ int list(int fd,char *message,char *arguments)
 
 int send_once(int fd,char *message,char *arguments)
 {
-	struct ir_remote *remote;
-	struct ir_ncode *code;
-	
-	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
-					      "support sending\n"));
-	
-	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
-	
-	if(remote==NULL || code==NULL) return(1);
-	if(remote==repeat_remote)
-	{
-		return(send_error(fd,message,"remote is repeating\n"));
-	}
-	if(remote->toggle_bit>0)
-		remote->repeat_state=
-		!remote->repeat_state;
-	
-	if(!hw.send_func(remote,code))
-	{
-		return(send_error(fd,message,"transmission failed\n"));
-	}
-	return(send_success(fd,message));
+	return(send_core(fd,message,arguments,1));
 }
 
 int send_start(int fd,char *message,char *arguments)
+{
+	return(send_core(fd,message,arguments,0));
+}
+
+int send_core(int fd,char *message,char *arguments,int once)
 {
 	struct ir_remote *remote;
 	struct ir_ncode *code;
@@ -903,15 +892,24 @@ int send_start(int fd,char *message,char *arguments)
 	
 	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
 					      "support sending\n"));
-
+	
 	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
-	if(repeat_remote!=NULL)
+	if(once)
 	{
-		return(send_error(fd,message,"already repeating\n"));
+		if(remote==repeat_remote)
+		{
+			return(send_error(fd,message,"remote is repeating\n"));
+		}
 	}
-	
+	else
+	{
+		if(repeat_remote!=NULL)
+		{
+			return(send_error(fd,message,"already repeating\n"));
+		}
+	}
 	if(remote->toggle_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
@@ -919,17 +917,37 @@ int send_start(int fd,char *message,char *arguments)
 	{
 		return(send_error(fd,message,"transmission failed\n"));
 	}
-	repeat_remote=remote;
-	repeat_code=code;
-	
-	repeat_timer.it_value.tv_sec=0;
-	repeat_timer.it_value.tv_usec=
-	remote->remaining_gap;
-	repeat_timer.it_interval.tv_sec=0;
-	repeat_timer.it_interval.tv_usec=0;
-	if(!send_success(fd,message)) return(0);
-	setitimer(ITIMER_REAL,&repeat_timer,NULL);
-	return(1);
+	if(once)
+	{
+		remote->repeat_countdown=remote->min_repeat;
+	}
+	else
+	{
+		/* you've been warned, now we have a limit */
+		remote->repeat_countdown=REPEAT_MAX;
+	}
+	if(remote->repeat_countdown>0)
+	{
+		repeat_remote=remote;
+		repeat_code=code;
+		repeat_timer.it_value.tv_sec=0;
+		repeat_timer.it_value.tv_usec=
+			remote->remaining_gap;
+		repeat_timer.it_interval.tv_sec=0;
+		repeat_timer.it_interval.tv_usec=0;
+		if(!send_success(fd,message))
+		{
+			repeat_remote=NULL;
+			repeat_code=NULL;
+			return(0);
+		}
+		setitimer(ITIMER_REAL,&repeat_timer,NULL);
+		return(1);
+	}
+	else
+	{
+		return(send_success(fd,message));
+	}
 }
 
 int send_stop(int fd,char *message,char *arguments)
@@ -945,6 +963,15 @@ int send_stop(int fd,char *message,char *arguments)
 	   strcasecmp(remote->name,repeat_remote->name)==0 && 
 	   strcasecmp(code->name,repeat_code->name)==0)
 	{
+		int done;
+
+		done=REPEAT_MAX-remote->repeat_countdown;
+		if(done<remote->min_repeat)
+		{
+			/* we still have some repeats to do */
+			remote->repeat_countdown=remote->min_repeat-done;
+			return(send_success(fd,message));
+		}
 		repeat_timer.it_value.tv_sec=0;
 		repeat_timer.it_value.tv_usec=0;
 		repeat_timer.it_interval.tv_sec=0;
@@ -954,6 +981,7 @@ int send_stop(int fd,char *message,char *arguments)
 		
 		repeat_remote=NULL;
 		repeat_code=NULL;
+		alrm=0;
 		return(send_success(fd,message));
 	}
 	else

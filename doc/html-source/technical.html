@@ -229,9 +229,10 @@ with the given remote control and button name once. Consequently
 SEND_START tells lircd to start repeating the given button until it
 receives a SEND_STOP command. As repeating of IR signals is very CPU
 intensive on most systems there should be a limit on the time for
-repeating buttons in every application. Currently there is no such
-limit in lircd itself but it is likely to appear in future versions.
-lircd won't accept any new send commands while it is repeating.
+repeating buttons in every application. The number of repeats is
+internally limited to 600 which for most remotes is equal to one
+minute of repeating. lircd won't accept any new send commands while it
+is repeating.
 </P>
 
 <P>
