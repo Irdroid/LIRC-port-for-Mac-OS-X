@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.3 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.4 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -94,7 +94,7 @@ int lirc_init(char *prog,int verbose)
 	return(lirc_lircd);
 }
 
-int lirc_deinit()
+int lirc_deinit(void)
 {
 	if(lirc_prog!=NULL) free(lirc_prog);
 	if(lirc_buffer!=NULL) free(lirc_buffer);
@@ -734,7 +734,11 @@ int lirc_readconfig(char *file,
 	if(remote!=LIRC_ALL)
 		free(remote);
 	if(mode!=NULL)
+	{
+		lirc_printf("%s: warning: no end token found for mode "
+			    "\"%s\"\n",lirc_prog,mode);
 		free(mode);
+	}
 
 	fclose(fin);
 	if(ret==0)
@@ -997,18 +1001,34 @@ int lirc_iscode(struct lirc_config_entry *scan,char *remote,char *button,int rep
 	return(0);
 }
 
-char *lirc_ir2char(struct lirc_config *config,char *string)
+char *lirc_ir2char(struct lirc_config *config,char *code)
+{
+	static int warning=1;
+	char *string;
+	
+	if(warning)
+	{
+		fprintf(stderr,"%s: warning: lirc_ir2char() is obsolete\n",
+			lirc_prog);
+		warning=0;
+	}
+	if(lirc_code2char(config,code,&string)==-1) return(NULL);
+	return(string);
+}
+
+int lirc_code2char(struct lirc_config *config,char *code,char **string)
 {
 	int rep;
 	char *backup;
 	char *remote,*button;
 	struct lirc_config_entry *scan;
 
-	if(sscanf(string,"%*llx %x %*s %*s\n",&rep)==1)
+	*string=NULL;
+	if(sscanf(code,"%*llx %x %*s %*s\n",&rep)==1)
 	{
 		rep++;
-		backup=strdup(string);
-		if(backup==NULL) return(NULL);
+		backup=strdup(code);
+		if(backup==NULL) return(-1);
 
 		strtok(backup," ");
 		strtok(NULL," ");
@@ -1018,7 +1038,7 @@ char *lirc_ir2char(struct lirc_config *config,char *string)
 		if(button==NULL || remote==NULL)
 		{
 			free(backup);
-			return(NULL);
+			return(0);
 		}
 		
 		scan=config->next;
@@ -1036,7 +1056,8 @@ char *lirc_ir2char(struct lirc_config *config,char *string)
 				if(s!=NULL)
 				{
 					free(backup);
-					return(s);
+					*string=s;
+					return(0);
 				}
 			}
 			if(config->next!=NULL)
@@ -1048,31 +1069,49 @@ char *lirc_ir2char(struct lirc_config *config,char *string)
 				scan=NULL;
 			}
 		}
-		
 		free(backup);
 	}
 	config->next=config->first;
-	return(NULL);
+	return(0);
 }
 
 #define PACKET_SIZE 100
 
-char *lirc_nextir()
+char *lirc_nextir(void)
+{
+	static int warning=1;
+	char *code;
+	int ret;
+	
+	if(warning)
+	{
+		fprintf(stderr,"%s: warning: lirc_nextir() is obsolete\n",
+			lirc_prog);
+		warning=0;
+	}
+	ret=lirc_nextcode(&code);
+	if(ret==-1) return(NULL);
+	return(code);
+}
+
+
+int lirc_nextcode(char **code)
 {
 	static int packet_size=PACKET_SIZE;
 	static int end_len=0;
 	ssize_t len=0;
-	char *end,c,*string;
+	char *end,c;
 
-
+	*code=NULL;
 	if(lirc_buffer==NULL)
 	{
 		lirc_buffer=(char *) malloc(packet_size+1);
 		lirc_buffer[0]=0;
 	}
 	if(lirc_buffer==NULL)
-		return(NULL);
-	
+	{
+		return(-1);
+	}
 	while((end=strchr(lirc_buffer,'\n'))==NULL)
 	{
 		if(end_len<packet_size)
@@ -1081,7 +1120,8 @@ char *lirc_nextir()
 				 packet_size-end_len);
 			if(len<=0)
 			{
-				return(NULL);
+				if(len==-1 && errno==EAGAIN) return(0);
+				else return(-1);
 			}
 		}
 		else
@@ -1092,25 +1132,31 @@ char *lirc_nextir()
 			new_buffer=(char *) realloc(lirc_buffer,packet_size);
 			if(new_buffer==NULL)
 			{
-				return(NULL);
+				return(-1);
 			}
 			lirc_buffer=new_buffer;
 			len=read(lirc_lircd,lirc_buffer+end_len,
 				 packet_size-end_len);
 			if(len<=0)
 			{
-				return(NULL);
+				if(len==-1 && errno==EAGAIN) return(0);
+				else return(-1);
 			}
 		}
 		end_len+=len;
 		lirc_buffer[end_len]=0;
+		if((end=strchr(lirc_buffer,'\n'))==NULL)
+		{
+			return(0);
+		}
 	}
 	end++;
 	end_len=strlen(end);
 	c=end[0];
 	end[0]=0;
-	string=strdup(lirc_buffer);
+	*code=strdup(lirc_buffer);
 	end[0]=c;
 	memmove(lirc_buffer,end,end_len+1);
-	return(string);
+	if(*code==NULL) return(-1);
+	return(0);
 }

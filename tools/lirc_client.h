@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.2 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: lirc_client.h,v 5.3 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -64,14 +64,19 @@ struct lirc_config_entry
 };
 
 int lirc_init(char *prog,int verbose);
-int lirc_deinit();
+int lirc_deinit(void);
 
 int lirc_readconfig(char *file,struct lirc_config **config,
 		    int (check)(char *s));
 void lirc_freeconfig(struct lirc_config *config);
 
-char *lirc_nextir();
-char *lirc_ir2char(struct lirc_config *config,char *string);
+/* obsolete */
+char *lirc_nextir(void);
+/* obsolete */
+char *lirc_ir2char(struct lirc_config *config,char *code);
+
+int lirc_nextcode(char **code);
+int lirc_code2char(struct lirc_config *config,char *code,char **string);
 
 #ifdef __cplusplus
 }

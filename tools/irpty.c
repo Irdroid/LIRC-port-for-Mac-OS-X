@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: irpty.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -90,18 +90,21 @@ static void copy_loop(int ptym, int ignoreeof)
 			{
 				char *ir;
 				char *irchars;
+				int ret;
 				
-				while((ir=lirc_nextir())!=NULL)
+				while(lirc_nextcode(&ir)==0)
 				{
-					while((irchars=lirc_ir2char(lconfig,ir))!=NULL)
+					if(ir==NULL) continue;
+					while((ret=lirc_code2char
+					       (lconfig,ir,&irchars))==0 &&
+					      irchars!=NULL)
 					{
-						if (write(ptym, irchars, strlen(irchars)) != strlen(irchars))
+						if(write(ptym,irchars,strlen(irchars)) != strlen(irchars))
 							die("writen error to master pty");
 					}
 					free(ir);
+					if(ret==-1) break;
 				}
-
-
 			}
 		}
 		if (!ignoreeof)

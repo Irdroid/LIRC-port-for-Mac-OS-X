@@ -258,28 +258,31 @@ int main(int argc, char *argv[])
 	struct lirc_config *config;
 
 	progname=argv[0];
-	if(argc&gt;2)
+	if(argc>2)
 	{
-		fprintf(stderr,"Usage: %s &lt;config file&gt;\n",progname);
+		fprintf(stderr,"Usage: %s <config file>\n",progname);
 		exit(EXIT_FAILURE);
 	}
 	if(lirc_init("irexec",1)==-1) exit(EXIT_FAILURE);
 
 	if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,NULL)==0)
 	{
-		char *ir;
+		char *code;
 		char *c;
+		int ret;
 
-		while((ir=lirc_nextir())!=NULL)
+		while(lirc_nextcode(&code)==0)
 		{
-			while((c=lirc_ir2char(config,ir))!=NULL)
+			while((ret=lirc_code2char(config,code,&c))==0 &&
+			      c!=NULL)
 			{
 #ifdef DEBUG
 				printf("Execing command \"%s\"\n",c);
 #endif
 				system(c);
 			}
-			free(ir);
+			free(code);
+			if(ret==-1) break;
 		}
 		lirc_freeconfig(config);
 	}
@@ -330,10 +333,10 @@ function several times.<BR>
 
 The <em>config</em> argument is used to pass the pointer to the config
 file data structures back to your application. You will need it for
-calls to the <em>lirc_ir2char()</em> function. The last argument is a
-call-back function that can be used to do syntax checks with the config
-strings. The library code will call the call-back function for all
-config strings where the <em>prog</em> token in the config file
+calls to the <em>lirc_code2char()</em> function. The last argument is
+a call-back function that can be used to do syntax checks with the
+config strings. The library code will call the call-back function for
+all config strings where the <em>prog</em> token in the config file
 matches the prog string you provided with the <em>lirc_init()</em>
 function. If there is an error in the config string the call-back
 function should return -1, otherwise 0. If you don't need to do any
@@ -341,16 +344,18 @@ syntax checks you can pass NULL here. The function returns -1 if an
 error occurred, 0 otherwise.
 </P>
 <P>
-The <em>lirc_nextir()</em> function blocks until there is a string
+The <em>lirc_nextcode()</em> function blocks until there is something
 available on the lircd socket. This way it can be used in the main
 loop of your program like in our example.
 <PRE>
-char *lirc_nextir();
+int lirc_nextcode(char **code);
 </PRE>
 If an error occurs (usually this means that the socket has been closed
-by the daemon) this function returns NULL. Otherwise it returns the
-next string available in the data stream. This string has to be freed
-by your application using the <em>free(3)</em> function.<BR>
+by the daemon) this function returns -1. Otherwise it returns 0 and
+<em>code</em> points to the next string available in the data
+stream. This string has to be freed by your application using the
+<em>free(3)</em> function. If no complete string is available
+<em>code</em> will be NULL.<BR>
 
 If you use some GUI-toolkit for your program then you probably won't
 be able to use this function in your program's main loop because this
@@ -358,41 +363,38 @@ is already handled by the GUI-toolkit. In this situation you should
 use the call-back abilities of the toolkit that will notify you
 whenever there is some input available from a file descriptor (you get
 the file descriptor from the <em>lirc_init()</em> function). E.g. you
-can use <em>gtk_input_add()</em>/<em>gtk_input_remove</em>() functions
-with gtk or <em>QSocketNotifier</em> class with Qt. If you don't have
-such functionality in your toolkit or can't use it for some reason you
-can also still use SIGIO signals for this purpose. Check the
-documentation for your GUI-toolkit and signal(2) for further
+can use the <em>gdk_input_add()</em>/<em>gdk_input_remove</em>()
+functions with gtk or the <em>QSocketNotifier</em> class with Qt. If
+you don't have such functionality in your toolkit or can't use it for
+some reason you can still use SIGIO signals for this purpose. Check
+the documentation for your GUI-toolkit and signal(2) for further
 information.<BR>
 
 Please note that using call-backs you still have to use some kind of
 while loop to read strings from the socket because several strings may
 be available in the data stream and you will only get a notification
 for the first one. This poses a problem for us because
-<em>lirc_nextir()</em> blocks until there is something available from
-the socket which is not what we need here. You can solve this problem
-by setting the <b>O_NONBLOCK</b> flag for the socket using the
-<em>fcntl(2)</em> function. But this will also change the semantics of
-the return value of <em>lirc_nextir()</em>. A return value of NULL
-only indicates an error if it was the first call to
-<em>lirc_nextir()</em> after the input notification. Otherwise it
-indicates that no more strings are available.  Have a look at the
-current xirw code that is available from the LIRC homepage for an
-implementation example.
+<em>lirc_nextcode()</em> blocks until there is something available
+from the socket which is not what we need here. You can solve this
+problem by setting the <b>O_NONBLOCK</b> flag for the socket using the
+<em>fcntl(2)</em> function. Have a look at the current xirw code that
+is available from the LIRC homepage for an implementation example.
 </P>
 <P>
 To get the config string that the user has provided in the config file 
 in response to a button press you use the following function:
 <PRE>
-char *lirc_ir2char(struct lirc_config *config,char *string);
+int lirc_code2char(struct lirc_config *config,char *code,char **string);
 </PRE>
 <em>config</em> is a pointer to the config file data structure that
-you can get with <em>lirc_readconfig()</em> and <em>string</em> is the 
-string transmitted to your application on the lircd socket. The user
-might want to take several actions on a button press so you have to
-execute this function until it returns NULL, which means that no more
-actions shall be taken. Otherwise it returns the next config string to 
-be executed.
+you can get with <em>lirc_readconfig()</em> and <em>code</em> is the
+code transmitted to your application on the lircd socket. If an action
+should be taken <em>string</em> will point to the config string the
+user has provided in the config file. The user might want to take
+several actions on a button press so you have to execute this function
+until <em>string</em>is NULL, which means that no more actions shall
+be taken, or an error occurs. The function returns -1 if an error
+occurred, 0 otherwise.
 </P>
 <P>
 In our example there are only two clean-up functions to be explained.
@@ -415,6 +417,7 @@ dnl Check for LIRC client support
 dnl This really is not worth making a separate file for it.
 
 have_lirc=yes
+AC_REQUIRE_CPP
 AC_CHECK_LIB(lirc_client,lirc_init,
   AC_CHECK_HEADER(lirc/lirc_client.h,true,have_lirc=no),have_lirc=no)
 
@@ -429,3 +432,13 @@ There is also a more complex m4 macro in the contrib directory of the
 current LIRC distribution if you plan to add LIRC support to your
 application without using the lirc_client library.
 </P>
+<!--  LocalWords:  SIGHUP xrc IR lirc irw columbus Exp irexec Trent Piepho int
+ -->
+<!--  LocalWords:  ifdef endif errno unistd stdarg stdlib progname argc argv Qt
+ -->
+<!--  LocalWords:  struct fprintf stderr init readconfig ret nextcode deinit
+ -->
+<!--  LocalWords:  freeconfig prog lircrc GUI gdk gtk QSocketNotifier SIGIO dnl
+ -->
+<!--  LocalWords:  NONBLOCK fcntl xirw homepage autoconf automake
+ -->

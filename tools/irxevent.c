@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.2 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: irxevent.c,v 5.3 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -478,10 +478,12 @@ int main(int argc, char *argv[])
     {
       char *ir;
       char *c;
+      int ret;
       
-      while((ir=lirc_nextir())!=NULL)
+      while(lirc_nextcode(&ir)==0)
 	{
-	  while((c=lirc_ir2char(config,ir))!=NULL)
+	  if(ir==NULL) continue;
+	  while((ret=lirc_code2char(config,ir,&c))==0 && c!=NULL)
 	    {
 	      debugprintf("Recieved code: %sSending event: ",ir);
 	      if(2==sscanf(c,"Key %s %s\n",keyname,windowname))
@@ -530,6 +532,7 @@ int main(int argc, char *argv[])
 		}
 	    }
 	  free(ir);
+	  if(ret==-1) break;
 	}
       lirc_freeconfig(config);
     }

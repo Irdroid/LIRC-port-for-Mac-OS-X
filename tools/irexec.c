@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.1 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: irexec.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -39,19 +39,23 @@ int main(int argc, char *argv[])
 
 	if(lirc_readconfig(argc==2 ? argv[1]:NULL,&config,NULL)==0)
 	{
-		char *ir;
+		char *code;
 		char *c;
+		int ret;
 
-		while((ir=lirc_nextir())!=NULL)
+		while(lirc_nextcode(&code)==0)
 		{
-			while((c=lirc_ir2char(config,ir))!=NULL)
+			if(code==NULL) continue;
+			while((ret=lirc_code2char(config,code,&c))==0 &&
+			      c!=NULL)
 			{
 #ifdef DEBUG
 				printf("Execing command \"%s\"\n",c);
 #endif
 				system(c);
 			}
-			free(ir);
+			free(code);
+			if(ret==-1) break;
 		}
 		lirc_freeconfig(config);
 	}
