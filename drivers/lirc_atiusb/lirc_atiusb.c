@@ -106,6 +106,8 @@ struct irctl {
 	int devnum;
 	int send_flags;
 
+	int count;
+
 	struct semaphore lock;
 };
 
@@ -198,16 +200,24 @@ static int set_use_inc(void *data)
 {
 	struct irctl *ir = data;
 
-	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
-	if(!ir->usbdev)
-		return -ENOENT;
-	ir->irq.dev = ir->usbdev;
-	if (usb_submit_urb(&ir->irq)){
-		printk(DRIVER_NAME
-		       "[%d]: open result = -E10 error submitting urb\n",
-		       ir->devnum);
-		return -EIO;
+	if (!ir) {
+		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		return -E10;
 	}
+	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
+
+	if (!ir->count) {
+		if(!ir->usbdev)
+			return -ENOENT;
+		ir->irq.dev = ir->usbdev;
+		if (usb_submit_urb(&ir->irq)){
+			printk(DRIVER_NAME
+				   "[%d]: open result = -E10 error submitting urb\n",
+				   ir->devnum);
+			return -EIO;
+		}
+	}
+	ir->count++;
 
 	MOD_INC_USE_COUNT;
 	return 0;
@@ -217,11 +227,21 @@ static void set_use_dec(void *data)
 {
 	struct irctl *ir = data;
 
-	usb_remote_disconnect(NULL,ir);
+	if (!ir) {
+		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
+		return;
+	}
+	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
-	/* the device was unplugged while we were open */
-	if(!ir->usbdev)
-		unregister_from_lirc(ir);
+	if (ir->count) {
+		ir->count--;
+	} else {
+		usb_remote_disconnect(NULL,ir);
+
+		/* the device was unplugged while we where open */
+		if(!ir->usbdev)
+			unregister_from_lirc(ir);
+	}
 
 	MOD_DEC_USE_COUNT;
 }
@@ -338,6 +358,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->minor = -1;
 	plugin->code_length = bytes_in_key*8;
 	plugin->features = features;
+	plugin->count = 0;
 	plugin->data = ir;
 	plugin->rbuf = rbuf;
 	plugin->set_use_inc = &set_use_inc;
