@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.129 2004/09/11 19:56:51 lirc Exp $
+dnl $Id: configure.in,v 5.130 2004/09/25 09:14:11 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -242,8 +242,8 @@ if test "$driver" = "any"; then
   case ${any_driver} in
 	atilibusb)
 		hw_module="${hw_module} hw_atilibusb.o receive.o"
-		atilibusb_lib=`${LIBUSB_CONFIG} --libs`
-		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+		atilibusb_lib=`libusb-config --libs`
+		CFLAGS="$CFLAGS `libusb-config --cflags`"
 		;;
 	audio)
 		hw_module="${hw_module} hw_audio.o receive.o"

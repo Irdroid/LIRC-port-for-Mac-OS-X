@@ -246,6 +246,23 @@
       to use some hardware where configuration files are already
       available.
     </P>
+
+    <P>
+      When you are using <em>devfs</em> or <em>sysfs</em> with your
+      kernel, the /dev/lirc device node will disappear again once you
+      reboot your machine. In that case the LIRC kernel module will
+      generate the required entry every time it is loaded. But the
+      device node won't be visible as /dev/lirc, but might be located
+      in a different location like e.g. /dev/lirc/0. Please be aware
+      of this fact when starting programs that access the device node
+      like mode2 or lircd. You will have to use the --device command
+      line option of these programs to point them to the correct
+      location. When using sysfs together with the udev daemon you
+      should copy the <em>lirc.rules</em> file located in the contrib
+      directory of the source package to
+      <em>/etc/udev/rules.d/</em>. This will make sure that the device
+      node will be created.
+    </P>
     
     <P>
       The core program of LIRC is <em>lircd</em>, the LIRC system
