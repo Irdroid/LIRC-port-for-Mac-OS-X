@@ -1,4 +1,7 @@
 0.6.1: future
+  * hardware is only initialized if clients have connected to lircd
+    That way modules don't have to be loaded until they are really
+    needed. Thanks to Gilles Chanteperdrix for suggestion and patches.
   * added hardware abstraction layer for TV cards (Artur Lipowski
     <lipowski@comarch.pl>)
 

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.11 2000/04/17 20:45:39 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.12 2000/04/18 19:46:21 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -30,6 +30,7 @@
 #include <sys/un.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 
 #include "drivers/lirc.h"
 
@@ -143,6 +144,11 @@ void logperror(int level,const char *s)
 void logprintf(int level,char *format_str, ...) {}
 void logperror(int level,const char *s) {}
 #endif
+
+void dosigterm(int sig)
+{
+	raise(SIGTERM);
+}
 
 int main(int argc,char **argv)
 {

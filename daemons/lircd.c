@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.14 2000/04/17 20:44:56 columbus Exp $      */
+/*      $Id: lircd.c,v 5.15 2000/04/18 19:46:21 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -220,7 +220,7 @@ void dosigterm(int sig)
 	};
 	shutdown(sockfd,2);
 	close(sockfd);
-	if(hw.deinit_func) hw.deinit_func();
+	if(clin>0 && hw.deinit_func) hw.deinit_func();
 	if(lf) fclose(lf);
 	signal(sig,SIG_DFL);
 	raise(sig);
@@ -331,6 +331,7 @@ void remove_client(int fd)
 			logprintf(0,"removed client\n");
 			
 			clin--;
+			if(clin==0 && hw.deinit_func) hw.deinit_func();
 			for(;i<clin;i++)
 			{
 				clis[i]=clis[i+1];
@@ -367,6 +368,19 @@ void add_client(void)
 	}
 	nolinger(fd);
 	clis[clin++]=fd;
+	if(clin==1)
+	{
+		if(hw.init_func)
+		{
+			if(!hw.init_func())
+			{
+				shutdown(clis[0],2);
+				close(clis[0]);
+				clin=0;
+				dosigterm(SIGTERM);
+			}
+		}
+	}
 
 	logprintf(0,"accepted new client\n");
 }
@@ -480,7 +494,7 @@ void daemonize(void)
 	{
 		logprintf(0,"daemon() failed\n");
 		logperror(0,NULL);
-		raise(SIGTERM);
+		dosigterm(SIGTERM);
 	}
 	umask(0);
 	daemonized=1;
@@ -1035,7 +1049,7 @@ int waitfordata(unsigned long maxusec)
 	{
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
-		if(hw.rec_mode!=0)
+		if(clin>0 && hw.rec_mode!=0)
 		{
 			FD_SET(hw.fd,&fds);
 			maxfd=max(hw.fd,sockfd);
@@ -1114,11 +1128,11 @@ int waitfordata(unsigned long maxusec)
 #                       endif
 			add_client();
 		}
-                if(FD_ISSET(hw.fd,&fds))
+                if(clin>0 && hw.rec_mode!=0 && FD_ISSET(hw.fd,&fds))
                 {
                         /* we will read later */
 			return(1);
-                }	
+                }
 	}
 }
 
@@ -1126,17 +1140,17 @@ void loop()
 {
 	char *message;
 	int len,i;
-
+	
 	logprintf(0,"lircd ready\n");
 	while(1)
 	{
 		(void) waitfordata(0);
 		message=hw.rec_func(remotes);
-
+		
 		if(message!=NULL)
 		{
 			len=strlen(message);
-				
+			
 			for (i=0; i<clin; i++)
 			{
 #                               ifdef DEBUG
@@ -1146,11 +1160,11 @@ void loop()
 				{
 					remove_client(clis[i]);
 					i--;
-				}				
+				}			
 			}
 		}
 	}
-}  
+}
 
 int main(int argc,char **argv)
 {
@@ -1240,19 +1254,15 @@ int main(int argc,char **argv)
 	daemonize();
 #endif
 	
-	if(hw.init_func)
-	{
-		if(!hw.init_func()) raise(SIGTERM);
-	}
-	
-#if defined(SIM_REC) && !defined(DAEMONIZE)
-	sleep(5);
-#endif
-	
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
 	{
 		struct ir_remote *r;
 		struct ir_ncode *c;
+		
+		if(hw.init_func)
+		{
+			if(!hw.init_func()) dosigterm(SIGTERM);
+		}
 		
 		printf("space 1000000\n");
 		r=remotes;
@@ -1275,9 +1285,10 @@ int main(int argc,char **argv)
 			r=r->next;
 		}
 		fflush(stdout);
+		if(hw.deinit_func) hw.deinit_func();
 	}
 	fprintf(stderr,"Ready.\n");
-	return(EXIT_SUCCESS); 
+	dosigterm(SIGTERM);
 #endif
 	loop();
 

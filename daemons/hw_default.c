@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.9 2000/03/16 18:01:10 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.10 2000/04/18 19:46:21 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -444,7 +444,7 @@ lirc_t readdata(void)
 		ret=fscanf(stdin,"%*s\n");
 		if(ret==EOF)
 		{
-			raise(SIGTERM);
+			dosigterm(SIGTERM);
 		}
 	}
 #else
@@ -455,7 +455,7 @@ lirc_t readdata(void)
 		logprintf(1,"error reading from lirc\n");
 		logperror(1,NULL);
 #               endif
-		raise(SIGTERM);
+		dosigterm(SIGTERM);
 	}
 #endif
 	return(data);
