@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.10 2002/09/12 19:53:56 lirc Exp $      */
+/*      $Id: smode2.c,v 5.11 2002/12/28 13:11:55 lirc Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -74,17 +74,11 @@ void initscreen(void)
 	gl_clearscreen(0);
 
 //    gl_setcontextvga(vgamode);
-    printf("1\n");
     gl_enableclipping();
-    printf("1\n");    
     gl_setclippingwindow(0,0,639,479);
-    printf("1\n");
     gl_setwritemode(WRITEMODE_OVERWRITE | FONT_COMPRESSED);
-    printf("1\n");
     gl_setfont(8, 8, gl_font8x8);
-    printf("1\n");
     gl_setfontcolors(0, 1) ;
-    printf("1\n");    
 }
 
 void closescreen(void)
@@ -174,13 +168,9 @@ int main(int argc, char **argv)
 	
 	y1=20;
 	x1=x2=0;
-	printf("5\n");
 	for (y2=0;y2<640;y2+=20) gl_line(y2,0,y2,480,1);
-	printf("6\n");
 	sprintf(textbuffer,"%d ms/unit",div);
-	printf("7\n");
 	gl_write(500,10,textbuffer);
-	printf("7\n");
 	gl_copyscreen(physicalscreen);
 
 	while(1)
