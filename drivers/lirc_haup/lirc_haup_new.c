@@ -1,4 +1,4 @@
-/*      $Id: lirc_haup_new.c,v 1.2 2000/04/02 13:07:21 columbus Exp $      */
+/*      $Id: lirc_haup_new.c,v 1.3 2000/04/11 15:52:58 columbus Exp $      */
 
 /*
  * hauppauge IR lirc plugin - new 2.3.x i2c stack
@@ -47,7 +47,7 @@ struct IR {
 /* insmod parameters                                                       */
 
 static int debug   = 0;    /* debug output */
-static int minor   = 0;    /* minor number */
+static int minor   = -1;   /* minor number */
 
 MODULE_PARM(debug,"i");
 MODULE_PARM(minor,"i");
