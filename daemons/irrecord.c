@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.22 2000/11/13 20:31:23 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.23 2000/11/23 19:36:07 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -341,7 +341,7 @@ int main(int argc,char **argv)
 "\n"
 "IMPORTANT: The license of the config files created by this program requires\n"
 "that you send them to the author. If you don't like this license exit this\n"
-"program now! Otherwise press return.\n\n");
+"program now by pressing Ctrl-C! Otherwise press RETURN.\n\n");
 	
 	if(getchar()!='\n')
 	{
@@ -1134,6 +1134,8 @@ int get_lengths(struct ir_remote *remote,int force)
 "dot but in no case more than ten dots of output.\n"
 "Don't stop pressing buttons until two lines of dots (2x80) have been\n"
 "generated.\n\n");
+	printf("Press RETURN now to start recording.");fflush(stdout);
+	getchar();
 	flushhw();
 	retval=1;
 	average=0;sum=0;count=0;count_spaces=0;
