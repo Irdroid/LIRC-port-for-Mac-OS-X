@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.4 2000/02/02 20:28:42 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.5 2000/02/19 19:21:59 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -71,7 +71,7 @@ int lirc_init(char *prog,int verbose)
 	lirc_verbose=verbose;
 	if(lirc_prog==NULL)
 	{
-		lirc_printf("%s: out of memory\n",lirc_prog);
+		lirc_printf("%s: out of memory\n",prog);
 		return(-1);
 	}
 	
@@ -96,8 +96,16 @@ int lirc_init(char *prog,int verbose)
 
 int lirc_deinit(void)
 {
-	if(lirc_prog!=NULL) free(lirc_prog);
-	if(lirc_buffer!=NULL) free(lirc_buffer);
+	if(lirc_prog!=NULL)
+	{
+		free(lirc_prog);
+		lirc_prog=NULL;
+	}
+	if(lirc_buffer!=NULL)
+	{
+		free(lirc_buffer);
+		lirc_buffer=NULL;
+	}
 	return(close(lirc_lircd));
 }
 
