@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.20 2002/02/22 14:47:47 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.21 2002/04/28 20:09:01 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -66,6 +66,7 @@ struct ir_ncode {
 #define CONST_LENGTH    0x0080    /* signal length+gap is always constant */
 #define RAW_CODES       0x0100    /* for internal use only */
 #define REPEAT_HEADER   0x0200    /* header is also sent before repeat code */
+#define GOLDSTAR        0x0400    /* encoding found on Goldstar remote */
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 
@@ -189,6 +190,12 @@ static inline int is_rc6(struct ir_remote *remote)
 static inline int is_rcmm(struct ir_remote *remote)
 {
 	if(remote->flags&RCMM) return(1);
+	else return(0);
+}
+
+static inline int is_goldstar(struct ir_remote *remote)
+{
+	if(remote->flags&GOLDSTAR) return(1);
 	else return(0);
 }
 

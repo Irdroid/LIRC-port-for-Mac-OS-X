@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.10 2002/02/06 20:27:44 lirc Exp $      */
+/*      $Id: receive.c,v 5.11 2002/04/28 20:09:01 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -455,15 +455,12 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 		LOGPRINTF(2,"space expected");
 		return(0);
 	}
+	unget_rec_buffer(1);
 	if(data<gap*(100-remote->eps)/100 &&
 	   data<gap-remote->aeps)
 	{
 		LOGPRINTF(1,"end of signal not found");
 		return(0);
-	}
-	else
-	{
-		unget_rec_buffer(1);
 	}
 	return(1);	
 }
@@ -547,10 +544,26 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 		}
 		return(code);
 	}
-
+	
 	for(i=0;i<bits;i++)
 	{
 		code=code<<1;
+		if(is_goldstar(remote))
+		{
+			if((done+i)%2)
+			{
+				LOGPRINTF(2,"$1");
+				remote->pone=remote->ptwo;
+				remote->sone=remote->stwo;
+			}
+			else
+			{
+				LOGPRINTF(2,"$2");
+				remote->pone=remote->pthree;
+				remote->sone=remote->sthree;
+			}
+		}
+		
 		if(expectone(remote,done+i))
 		{
 			LOGPRINTF(2,"1");

@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.3 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: config_file.h,v 5.4 2002/04/28 20:09:01 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -37,6 +37,7 @@ static struct flaglist all_flags[]=
 					      message when changing this */
         {"RAW_CODES",       RAW_CODES},
         {"REPEAT_HEADER",   REPEAT_HEADER},
+        {"GOLDSTAR",        GOLDSTAR},
 	
         {NULL,0},
 };
