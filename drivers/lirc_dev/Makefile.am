@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.2 2000/04/06 17:23:01 columbus Exp $
+## $Id: Makefile.am,v 1.3 2001/01/05 20:25:53 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 
@@ -21,7 +21,7 @@ EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS)
 
 $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
   ifndef MAKING_MODULES
-	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR modules)
+	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR obj-m=$(module_DATA) modules)
   endif
 # the spaces above are necessary because automake otherwise will complain
 # and even worse, it will delete the line
