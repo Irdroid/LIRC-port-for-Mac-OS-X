@@ -456,7 +456,8 @@
       <LI><B>debug</B> (0) - value other than 0 (zero) enables
 	printing more log messages</LI>
       <LI><B>card</B> (0) - number of TV card from which receive scan
-	codes</LI> <LI><B>minor</B> (-1) - minor device number for
+	codes</LI>
+      <LI><B>minor</B> (-1) - minor device number for
 	/dev/lirc device</LI>
       <LI><B>gpio_mask</B> (0) - bit mask used for extracting usable
 	bits from GPIO value<BR> If this parameter is equal to 0 then
@@ -471,6 +472,8 @@
 	two scan codes (value of 0 disables checking)</LI>
       <LI><B>sample_rate</B> (10) - how often (times per second) GPIO
 	will be polled, set to 0 for interrupt driven input</LI>
+      <LI><B>bttv_id</B> (unknown) - force given bttv id, signals from
+	some cards are translated to match original codes</LI>
     </UL>
     <P>
       Supported hardware:

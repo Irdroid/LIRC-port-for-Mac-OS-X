@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.28 2003/05/04 09:37:46 ranty Exp $
+ * $Id: lirc_gpio.c,v 1.29 2003/05/04 17:44:13 lirc Exp $
  *
  */
 
@@ -60,6 +60,7 @@
 static int debug = 0;
 static int card = 0;
 static int minor = -1;
+static int bttv_id = BTTV_UNKNOWN;
 static unsigned long gpio_mask = 0;
 static unsigned long gpio_enable = 0;
 static unsigned long gpio_lock_mask = 0;
@@ -75,6 +76,7 @@ MODULE_PARM(gpio_lock_mask,"l");
 MODULE_PARM(gpio_xor_mask,"l");
 MODULE_PARM(soft_gap,"i");
 MODULE_PARM(sample_rate,"b");
+MODULE_PARM(bttv_id,"i");
 
 #undef dprintk
 #define dprintk  if (debug) printk
@@ -136,10 +138,10 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_FLYVIDEO_98FM,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
 #endif
 	/* The Leadtek WinFast TV 2000 XP card (id 0x6606107d) uses an
-	 * extra gpio bit compared to the original * TV 2000 card (id
-	 * 0x217d6606); as the bttv-0.7.100 * driver does not
-	 * distinguish between the two cards, we * enable the extra
-	 * bit based on the card id: */
+	 * extra gpio bit compared to the original TV 2000 card (id
+	 * 0x217d6606); as the bttv-0.7.100 driver does not
+	 * distinguish between the two cards, we enable the extra bit
+	 * based on the card id: */
 	{BTTV_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
 	/* default: */
 	{BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
@@ -147,7 +149,6 @@ static struct rcv_info rcv_infos[] = {
 
 static unsigned char code_length = 0;
 static unsigned char code_bytes = 1;
-static int card_type = 0;
 
 #define MAX_BYTES 8
 
@@ -184,8 +185,8 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	if (gpio_lock_mask && (gpio_val & gpio_lock_mask)) {
 		return -EBUSY;
 	}
-
-	switch (rcv_infos[card_type].bttv_id)
+	
+	switch (bttv_id)
 	{
 	case BTTV_AVERMEDIA98:
 		if (bttv_write_gpio(card, gpio_enable, gpio_enable)) {
@@ -217,7 +218,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	}
 	
 	dprintk(LOGHEAD "code is %lx\n",card,(unsigned long) codes[0]);
-	switch (rcv_infos[card_type].bttv_id)
+	switch (bttv_id)
 	{
 	case BTTV_AVERMEDIA:
 		codes[2] = (codes[0]<<2)&0xff;
@@ -449,7 +450,7 @@ MODULE_LICENSE("GPL");
  */
 int init_module(void)
 {
-	int type,cardid;
+	int type,cardid,card_type;
 
 	if (MAX_IRCTL_DEVICES < minor) {
 		printk("lirc_gpio: parameter minor (%d) must be less than %d!\n",
@@ -494,6 +495,7 @@ int init_module(void)
 			if (rcv_infos[card_type].bttv_id == type &&
 			    (rcv_infos[card_type].card_id == 0 ||
 			     rcv_infos[card_type].card_id == cardid)) {
+				bttv_id = rcv_infos[card_type].bttv_id;
 				gpio_mask = rcv_infos[card_type].gpio_mask;
 				gpio_enable = rcv_infos[card_type].gpio_enable;
 				gpio_lock_mask = rcv_infos[card_type].gpio_lock_mask;
@@ -505,16 +507,16 @@ int init_module(void)
 			}
 		}
 		if (type==BTTV_AVPHONE98 && cardid==0x00011461)	{
-			rcv_infos[card_type].bttv_id = BTTV_AVERMEDIA98;
+			bttv_id = BTTV_AVERMEDIA98;
 		}
 		if (type==BTTV_AVERMEDIA98 && cardid==0x00041461) {
-			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
+			bttv_id = BTTV_AVPHONE98;
 		}
 		if (type==BTTV_AVERMEDIA98 && cardid==0x03001461) {
-			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
+			bttv_id = BTTV_AVPHONE98;
 		}
 		if (type==BTTV_AVERMEDIA98 && cardid==0x00000000) {
-			rcv_infos[card_type].bttv_id = BTTV_AVPHONE98;
+			bttv_id = BTTV_AVPHONE98;
 		}
 		if (card_type == sizeof(rcv_infos)/sizeof(struct rcv_info)) {
 			printk(LOGHEAD "TV card type %x not supported!\n",
