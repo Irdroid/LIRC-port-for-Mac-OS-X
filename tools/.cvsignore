@@ -10,4 +10,5 @@ xmode2
 .libs
 lirc_client.lo
 liblirc_client.la
+smode2
 

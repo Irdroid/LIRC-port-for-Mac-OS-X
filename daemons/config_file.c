@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.10 2002/06/24 18:35:20 lirc Exp $      */
+/*      $Id: config_file.c,v 5.11 2002/07/01 18:54:01 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -526,6 +526,14 @@ struct ir_remote * read_config(FILE *f)
                                                 rem->next=s_malloc(sizeof(struct ir_remote));;
                                                 rem=rem->next;
                                         }
+				}else if(mode==ID_codes){
+					add_void_array(&codes_list, defineCode(key, val, &name_code));
+					if(!parse_error && val2!=NULL)
+					{
+						logprintf(LOG_WARNING,"garbage after '%s'"
+							  " code in line %d ignored",
+							  key,line);
+					}
                                 }else{
                                         logprintf(LOG_ERR,"error in configfile line %d:",line);
 					logprintf(LOG_ERR,"unknown section \"%s\"",val);
@@ -589,6 +597,14 @@ struct ir_remote * read_config(FILE *f)
 					   is_const(rem))
 					{
 						logprintf(LOG_WARNING,"repeat_gap will be ignored if CONST_LENGTH flag is set");
+					}
+				}else if(mode==ID_codes){
+					add_void_array(&codes_list, defineCode(key, val, &name_code));
+					if(!parse_error && val2!=NULL)
+					{
+						logprintf(LOG_WARNING,"garbage after '%s'"
+							  " code in line %d ignored",
+							  key,line);
 					}
                                 }else{
                                         logprintf(LOG_ERR,"error in configfile line %d:",line);
