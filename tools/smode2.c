@@ -1,4 +1,4 @@
-/*      $Id: smode2.c,v 5.2 1999/09/15 18:19:38 columbus Exp $      */
+/*      $Id: smode2.c,v 5.3 1999/09/25 21:24:43 columbus Exp $      */
 
 /****************************************************************************
  ** smode2.c ****************************************************************
@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 	fd=open(LIRC_DRIVER_DEVICE,O_RDONLY);
 	if(fd==-1)  {
 		perror("smode2");
-		printf("error opening " LIRC_DRIVER_DEVICE "\n",);
+		printf("error opening " LIRC_DRIVER_DEVICE "\n");
 		exit(1);
 	};
 	if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
