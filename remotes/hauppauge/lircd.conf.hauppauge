@@ -135,7 +135,7 @@ end remote
 
 begin remote
 
-  name  Hauppauge 350
+  name  Hauppauge_350
   bits           13
   flags RC5|CONST_LENGTH
   eps            30
