@@ -1,4 +1,9 @@
-0.6.3: future
+0.6.3: 03/10/01
+  * added support for Silitek SM-1000 receiver (Krister Wicksell Eriksson)
+  * added TCP/IP network support (Bryan Clingman)
+  * changed behaviour of the repeat setting in .lircrc.
+    Now the 1st,(n+1)th, (2n+1)th codes are forwarded to the
+    application. I wonder why it ever was anything else...
   * added support for BestBuy EasyTV (Miguel A. Alvarez
     <maacruz@navegalia.com>)
   * added support for ProVideo PV951 (Bogdan Gaspar)
