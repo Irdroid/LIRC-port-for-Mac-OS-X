@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.38 2004/10/08 15:17:12 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.39 2004/10/10 23:47:59 pmiller9 Exp $
  */
 
 /*
@@ -115,7 +115,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ATI1, 0x000E) },	/* X10 USB Transceiver */
 	{ USB_DEVICE(VENDOR_ATI1, 0x000F) },	/* X10 USB Transceiver */
 
-	{ USB_DEVICE(VENDOR_ATI2, 0x0602) },	/* ATI Remote Wonder 2 */
+	{ USB_DEVICE(VENDOR_ATI2, 0x0602) },	/* ATI Remote Wonder 2: Input Device */
+	{ USB_DEVICE(VENDOR_ATI2, 0x0603) },	/* ATI Remote Wonder 2: Controller (???) */
 
 	{ }					/* Terminating entry */
 };
@@ -492,13 +493,14 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		type = ATI2_COMPATIBLE;
 		break;
 	default:
-		dprintk(DRIVER_NAME ": unknown id\n");
+		dprintk(DRIVER_NAME ": unknown type\n");
 #ifdef KERNEL_2_5
 		return -ENODEV;
 #else
 		return NULL;
 #endif
 	}
+	dprintk(DRIVER_NAME ": remote type = %d\n", type);
 
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
@@ -525,7 +527,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			if ((type != ATI2_COMPATIBLE)
 				|| ((ep->bEndpointAddress & USB_ENDPOINT_NUMBER_MASK) == 0x02)) {
 
-				dprintk(DRIVER_NAME ": acceptable inbound endpoint found\n");
+				dprintk(DRIVER_NAME ": acceptable inbound endpoint(%d) found\n", ep->bEndpointAddress);
 				ep_in = ep;
 			}
 		}
@@ -534,7 +536,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			&& ((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT)
 			&& ((ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT)) {
 
-			dprintk(DRIVER_NAME ": acceptable outbound endpoint found\n");
+			dprintk(DRIVER_NAME ": acceptable outbound endpoint(%d) found\n", ep->bEndpointAddress);
 			ep_out = ep;
 		}
 	}
