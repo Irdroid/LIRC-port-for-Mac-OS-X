@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.1 2003/10/12 14:08:29 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -73,8 +73,8 @@ static lirc_t uirt2_raw_readdata(lirc_t timeout);
 static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 				lirc_t *buf, int length);
 static int uirt2_send_mode2_struct1(uirt2_t *dev,
-				    struct ir_remote *remote,
-				    struct ir_ncode *code);
+                                    struct ir_remote *remote,
+                                    lirc_t *buf, int length);
 
 struct hardware hw_uirt2_raw =
 {
@@ -202,7 +202,7 @@ static int uirt2_raw_init(void)
 		return(0);
 	}
 
-	// Wait for UIRT device to power up
+	/* Wait for UIRT device to power up */
 	usleep(100 * 1000);
 
 	if(!tty_setbaud(hw.fd,115200))
@@ -280,7 +280,7 @@ static int uirt2_send(struct ir_remote *remote,struct ir_ncode *code)
 {
 	int length = code->length;
 	lirc_t *signals = code->signals;
-	int res;
+	int res = 0;
 
 	if(!init_send(remote,code)) {
 		return 0;
@@ -296,16 +296,20 @@ static int uirt2_send(struct ir_remote *remote,struct ir_ncode *code)
 		return 0;
 	}
 
-	if (length > 48) {
-		LOGPRINTF(1, "Using REMSTRUC1 transmition");
-		res = uirt2_send_mode2_struct1(dev, remote, code);
-	} else {
-		LOGPRINTF(1, "Using RAW transition");
-		res = uirt2_send_mode2_raw(dev, remote, signals, length);
-	}
+        LOGPRINTF(1, "Trying REMSTRUC1 transmission");
+        res = uirt2_send_mode2_struct1(dev, remote, 
+                                       signals, length);
+        if (!res && (length < 48)) {
+                LOGPRINTF(1, "Using RAW transission");
+                res = uirt2_send_mode2_raw(dev, remote, 
+                                           signals, length);
+        }
 
-	if (res) {
-		LOGPRINTF(1, "uirt2_send: succeeded");
+        if (!res) {
+                logprintf(LOG_ERR,
+                          "uirt2_send: remote not supported");
+        } else {
+                LOGPRINTF(1, "uirt2_send: succeeded");
 	}
 
 	return res;
@@ -323,7 +327,7 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 
 	if (length > 48) {
 		logprintf(LOG_ERR, 
-			  "uirt2_raw: to long RAW transmition %d > 48");
+			  "uirt2_raw: to long RAW transmission %d > 48");
 		return 0;
 	}
 
@@ -370,162 +374,93 @@ static void set_data_bit(byte_t *dest, int offset, int bit)
 	dest[i] = dst;
 }
 
-
-static int set_data_bits(byte_t *dest,
-			  int offset,
-			  int bits, ir_code code)
+static int calc_data_bit(struct ir_remote *remote,
+                         int table[], int table_len, int signal)
 {
-	int i;
-	int bit;
+        int i;
 
-	LOGPRINTF(1, "set_data_bits %d %d %llx", offset, bits, code);
+        for (i = 0; i < table_len; i++)
+        {
+                if (table[i] == 0)
+                {
+                        table[i] = signal / UIRT2_UNIT;
+                        
+                        LOGPRINTF(2, "table[%d] = %d\n", i, table[i]);
 
-	for (i = 0; i < bits; i++) {
-		bit = (code >> i) & 1;
-		set_data_bit(dest, offset + 2 * i, bit);
-		set_data_bit(dest, offset + 2 * i + 1, bit);
-	}
+                        return i;
+                }
 
-	return bits * 2;
+                if (expect(remote, signal, table[i] * UIRT2_UNIT))
+                {
+                        LOGPRINTF(2, "expect %d, table[%d] = %d\n",
+                                  signal / UIRT2_UNIT, i, table[i]);
+                        return i;
+                }
+        }
+
+        LOGPRINTF(2, "Couldn't find %d\n", signal/UIRT2_UNIT);
+
+        return -1;
 }
-
-
-static int tolerance(struct ir_remote *remote, lirc_t len, lirc_t len2)
-{
-	return ((len < len2 * (100 + remote->eps) / 100 &&
-		 len < len2 + remote->aeps) &&
-		(len > len2 * (100 - remote->eps) / 100 &&
-		 len > len2 - remote->aeps));
-}
-
-/*
-  Returns:
-  0 - no pulse
-  1 - pulse
-  -1 - error
- */
-static int calc_data_bit(struct ir_remote *remote, lirc_t len, ir_code *data)
-{
-	int bits = 0;
-
-	if (len > 0) {
-		LOGPRINTF(2, "calc_data_bit: len %d", len);
-
-		if (tolerance(remote, len, remote->pzero)) {
-			*data = 0;
-			bits = 1;
-		}
-		else if (tolerance(remote, len, remote->pone)) {
-			*data = 1;
-			bits = 1;
-		}
-		else {
-			bits = 0;
-			logprintf(LOG_WARNING,
-				  "uirt2_raw: Can't encode pulse in struct1");
-		}
-	}
-
-	LOGPRINTF(2, "calc_data_bit: pulse %d, data %d", *data, bits);
-	
-	return bits;
-}
-
-
-static int set_data_pulse(byte_t *dest, int offset,
-			  struct ir_remote *remote,
-			  lirc_t len)
-{
-	ir_code data = 0;
-	int bits;
-
-	bits = calc_data_bit(remote, len, &data);
-
-	set_data_bits(dest, offset, bits, data);
-
-	return bits;
-}
-
-
-static int set_bits_reverse(byte_t *dest,
-			    int offset,
-			    int bits, ir_code data)
-{
-	return set_data_bits(dest, offset, bits,
-			     reverse(data, bits));
-}
-
-
-/* returns: number of bits */
-static int set_all_bits(remstruct1_t *buf, struct ir_remote *remote,
-			struct ir_ncode *code)
-{
-	int offset = 0;
-
-	// plead
-	offset += set_data_pulse(buf->bDatBits, offset,
-				 remote, remote->plead);
-
-	// pre_data
-	offset += set_bits_reverse(buf->bDatBits, offset,
-				   remote->pre_data_bits,
-				   remote->pre_data);
-
-	// code
-	offset += set_bits_reverse(buf->bDatBits, offset,
-				   remote->bits,
-				   code->code);
-
-	// post_data
-	offset += set_bits_reverse(buf->bDatBits, offset,
-				   remote->post_data_bits,
-				   remote->post_data);
-
-	// ptrail
-	offset += set_data_pulse(buf->bDatBits, offset,
-				 remote, remote->ptrail);
-
-	return offset;
-}
-
 
 static int uirt2_send_mode2_struct1(uirt2_t *dev,
-				    struct ir_remote *remote,
-				    struct ir_ncode *code)
+                                    struct ir_remote *remote,
+                                    lirc_t *buf, int length)
 {
-	remstruct1_t buf;
-	int repeat_count = 3;
+	const int REPEAT_COUNT = 3;
+        const int TABLE_LEN = 2;
+        remstruct1_t rem;
 	int res;
-	int bits;
+        int table[2][TABLE_LEN];
+	int bits = 0;
+        int i;
 
-	if (!(remote->flags & SPACE_ENC) ||
-	      remote->pfoot || remote->sfoot ||
-	      remote->pre_p || remote->pre_s ||
-	      remote->post_p || remote->post_s) {
-		logprintf(LOG_ERR, 
-			  "uirt2_raw: remote not supported");
-		return 0;
+        if (length - 2 > UIRT2_MAX_BITS)
+                return 0;
+
+	memset(&rem, 0, sizeof(rem));
+
+        memset(table[0], 0, sizeof(table[0]));
+        memset(table[1], 0, sizeof(table[1]));
+
+        for (i = 0; i < length; i++) {
+                int bit;
+                int len = buf[i] / UIRT2_UNIT;
+
+                if (i == 0)
+                {
+                        rem.bHdr1 = len;
+                        continue;
+                }
+                else if (i == 1)
+                {
+                        rem.bHdr0 = len;
+                        continue;
+                }
+
+                bit = calc_data_bit(remote, table[i % 2], TABLE_LEN, buf[i]);
+
+                if (bit < 0)
+                {
+                        return 0;
+                }
+
+                set_data_bit(rem.bDatBits, i - 2, bit);
+                bits++;
 	}
 
-	memset(&buf, 0, sizeof(buf));
-
-	bits = set_all_bits(&buf, remote, code);
-	
-	buf.bCmd = uirt2_calc_freq(remote->freq) + repeat_count;
-	buf.bISDlyHi = remote->gap / UIRT2_UNIT / 256;
-	buf.bISDlyLo = (remote->gap / UIRT2_UNIT) & 255;
-	buf.bBits = bits;
-	buf.bHdr1 = remote->phead / UIRT2_UNIT;
-	buf.bHdr0 = remote->shead / UIRT2_UNIT;
-	buf.bOff0 = remote->szero / UIRT2_UNIT;
-	buf.bOff1 = remote->sone / UIRT2_UNIT;
-	buf.bOn0 = remote->pzero / UIRT2_UNIT;
-	buf.bOn1 = remote->pone / UIRT2_UNIT;
+	rem.bCmd = uirt2_calc_freq(remote->freq) + REPEAT_COUNT;
+	rem.bISDlyHi = remote->gap / UIRT2_UNIT / 256;
+	rem.bISDlyLo = (remote->gap / UIRT2_UNIT) & 255;
+	rem.bBits = bits;
+	rem.bOff0 = table[1][0];
+	rem.bOff1 = table[1][1];
+	rem.bOn0 = table[0][0];
+	rem.bOn1 = table[0][1];
 
 	LOGPRINTF(2, "bits %d", bits);
 
-	res = uirt2_send_struct1(dev, &buf);
+	res = uirt2_send_struct1(dev, &rem);
 
 	return res;
 }
-

@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.h,v 5.1 2003/10/12 14:08:29 lirc Exp $   */
+/*      $Id: hw_uirt2_common.h,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.h *******************************************************
@@ -30,7 +30,7 @@
 #define UIRT2_UNIT 50 /* 50 us */
 
 
-// UIRT2 Commands
+/* UIRT2 Commands */
 #define UIRT2_SETMODEUIR   0x20
 #define UIRT2_SETMODERAW   0x21
 #define UIRT2_SETMODESTRUC 0x22
@@ -43,31 +43,31 @@
 #define UIRT2_REFRESHGPIO  0x35
 #define UIRT2_DOTXRAW      0x36
 
-// UIRT2 Responses
+/* UIRT2 Responses */
 #define UIRT2_TRANSMITTING 0x20
 #define UIRT2_CMDOK        0x21
 #define UIRT2_CSERROR      0x80
 #define UIRT2_TOERROR      0x81
 #define UIRT2_CMDERROR     0x82
 
-// UIRT2 Actions
+/* UIRT2 Actions */
 #define UIRT2_ACTION_PULSE  0x00
 #define UIRT2_ACTION_SET    0x40
 #define UIRT2_ACTION_CLEAR  0x80
 #define UIRT2_ACTION_TOGGLE 0xC0
 
-// UIRT2 Ports
+/* UIRT2 Ports */
 #define UIRT2_PORT_A 0x00
 #define UIRT2_PORT_B 0x08
 #define UIRT2_PORT_C 0x10
 #define UIRT2_PORT_D 0x18
 
-// UIRT2 Frequences
+/* UIRT2 Frequences */
 #define UIRT2_FREQ_40 0x00
 #define UIRT2_FREQ_38 0x40
 #define UIRT2_FREQ_36 0xC0
 
-// uirt2_setmode
+/* uirt2_setmode */
 #define UIRT2_MODE_UIR   0x00
 #define UIRT2_MODE_RAW   0x01
 #define UIRT2_MODE_STRUC 0x02
@@ -76,6 +76,9 @@
 
 #define UIRT2_CODE_SIZE 6
 
+/* Remstruct1 */
+#define UIRT2_MAX_BITS (16 * 8)
+
 typedef unsigned char byte_t;
 
 typedef struct {
@@ -83,14 +86,12 @@ typedef struct {
 	byte_t bISDlyHi,bISDlyLo;
 	byte_t bBits,bHdr1,bHdr0;
 	byte_t bOff0,bOff1,bOn0,bOn1;
-	byte_t bDatBits [16];
+	byte_t bDatBits [UIRT2_MAX_BITS / 8];
 	byte_t bCheck;
 } remstruct1_t; 
 
-//struct tag_uirt2_t;
+/* struct tag_uirt2_t; */
 typedef struct tag_uirt2_t uirt2_t;
-
-//typedef int lirc_t;
 
 typedef byte_t uirt2_code_t[UIRT2_CODE_SIZE];
 

@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.1 2003/10/12 14:08:29 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -276,6 +276,14 @@ uirt2_t *uirt2_init(int fd)
 {
 	uirt2_t *dev = (uirt2_t *)malloc(sizeof(uirt2_t));
 	int version = 0;
+
+	if(dev == NULL)
+	{
+		logprintf(LOG_ERR, "uirt2_raw: out of memory");
+		return NULL;
+	}
+	
+        memset(dev, 0, sizeof(uirt2_t));
 
 	dev->new_signal = 1;
 	dev->flags = UIRT2_MODE_UIR;
