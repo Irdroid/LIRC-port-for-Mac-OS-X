@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.72 2001/12/02 16:14:40 lirc Exp $
+dnl $Id: configure.in,v 5.73 2001/12/12 14:54:47 ranty Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -206,10 +206,16 @@ if test "$driver" = "any"; then
 	  ;;
 	  irman)
 	  hw_module="${hw_module} hw_irman.o serial.o"
+	  irman_lib=-lirman
 	  ;;
-	  irman_sw)
-	  hw_module="${hw_module} hw_irman.o serial.o"
-	  ;;
+	  #There is not much sence in using 'irman_sw' with driver 'any' and
+	  #that would conflict with 'irman' which will probably also be
+	  #available.
+	  #
+	  #irman_sw)
+	  #hw_module="${hw_module} hw_irman.o serial.o"
+	  #irman_lib=-lirman_sw
+	  #;;
   esac
   done
   #remove duplicates
