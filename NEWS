@@ -1,4 +1,7 @@
 0.7.1: future
+  * slight change to decode algorithm:
+    decoding was very unreliable since release 0.6.6 for Motorola
+    protocol which is mostly used by Grundig remotes
   * added support for Winfast PVR2000 TV card (Thomas Reitmayr)
   * added support for Streamzap PC remote
   * added support for Soundgraph iMON MultiMedian IR/VFD (Venky Raju)

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.23 2005/02/12 14:20:23 lirc Exp $      */
+/*      $Id: receive.c,v 5.24 2005/02/19 12:25:30 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -247,8 +247,8 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 	if(deltap==0) return(0);
 	if(rec_buffer.pendingp>0)
 	{
-		retval=expect(remote,deltap,
-			      rec_buffer.pendingp+exdelta);
+		if(rec_buffer.pendingp>deltap) return 0;
+		retval=expect(remote,deltap-rec_buffer.pendingp,exdelta);
 		if(!retval) return(0);
 		set_pending_pulse(0);
 	}
@@ -270,8 +270,8 @@ int expectspace(struct ir_remote *remote,int exdelta)
 	if(deltas==0) return(0);
 	if(rec_buffer.pendings>0)
 	{
-		retval=expect(remote,deltas,
-			      rec_buffer.pendings+exdelta);
+		if(rec_buffer.pendings>deltas) return 0;
+		retval=expect(remote,deltas-rec_buffer.pendings,exdelta);
 		if(!retval) return(0);
 		set_pending_space(0);
 	}
@@ -512,7 +512,7 @@ inline int get_trail(struct ir_remote *remote)
 	}
 	if(rec_buffer.pendingp>0)
 	{
-		if(!expectpulse(remote,0)) return(0);
+		if(!sync_pending_pulse(remote)) return(0);
 	}
 	return(1);
 }
