@@ -1,4 +1,4 @@
-.lirc_serial.o.flags
+.lirc_sir.o.flags
 Makefile.in
 Makefile
 .deps
