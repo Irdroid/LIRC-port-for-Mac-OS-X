@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.26 2004/09/05 16:48:48 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.27 2004/12/01 18:53:12 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -513,6 +513,7 @@ int init_module(void)
 {
 	request_module("bttv");
 	request_module("rivatv");
+	request_module("ivtv");
 	i2c_add_driver(&driver);
 	return 0;
 }
