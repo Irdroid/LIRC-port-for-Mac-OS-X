@@ -1,11 +1,11 @@
-## $Id: Makefile.am,v 5.21 2004/01/13 13:59:48 lirc Exp $
+## $Id: Makefile.am,v 5.22 2004/02/29 12:10:15 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 ## here the correct driver is substituted in by the configure script
 ## (or empty for none)
 
-EXTRA_DIST = lirc.h kcompat.h
+EXTRA_DIST = lirc.h kcompat.h Makefile.kernel
 
 DIST_SUBDIRS = lirc_serial lirc_parallel lirc_i2c lirc_sir lirc_dev lirc_gpio \
 	lirc_it87 lirc_bt829 lirc_atiusb lirc_mceusb
