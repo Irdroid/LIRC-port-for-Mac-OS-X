@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.37 2004/10/08 15:04:18 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.38 2004/10/08 15:17:12 pmiller9 Exp $
  */
 
 /*
@@ -457,8 +457,6 @@ static void usb_remote_send(struct urb *urb)
 		wake_up(&ir->wait_out);
 }
 
-#define id_in_table(id, table)                                  \
-	(((id) > (table)) && ((id)-(table) < sizeof(table)))
 
 #ifdef KERNEL_2_5
 static int usb_remote_probe(struct usb_interface *intf,
