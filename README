@@ -1,6 +1,7 @@
 This is the README file for LIRC, the Linux Infrared Remote Control
 package. The main documentation of this package is available in HTML
-format. Please refer to the file doc/doc.html for more information.
+format.  Please refer to the file doc/html/index.html for more
+information.
 
 If you want to know what LIRC is and where you can get current
 versions of LIRC read the ANNOUNCE file.
