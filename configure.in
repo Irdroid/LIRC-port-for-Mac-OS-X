@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.87 2002/10/06 09:21:08 lirc Exp $
+dnl $Id: configure.in,v 5.88 2002/10/06 16:03:30 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
   exit 0
 fi
 
-AM_INIT_AUTOMAKE(lirc, 0.6.6)
+AM_INIT_AUTOMAKE(lirc, 0.7.0pre1)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
@@ -122,14 +122,14 @@ AC_ARG_WITH(driver,
                           none, any, act200l, animax, avermedia,
 			  avermedia98, bestbuy, bestbuy2, caraca,
 			  chronos, comX, dsp, cph03x, cph06x,
-			  creative, fly98, flyvideo, hauppauge,
+			  creative, flyvideo, hauppauge,
 			  hauppauge_dvb, irdeo, irdeo_remote, irman,
 			  irreal, it87, knc_one, logitech, lptX,
 			  mediafocusI, packard_bell, parallel, pctv,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, udp, 
+			  slinke, tekram, tekram_bt829, udp,
 			  winfast_tv2000],
 driver=${withval},
 driver="unset"
@@ -197,8 +197,6 @@ if test "$driver" = "any"; then
 	  #lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
 	  ;;
 	  lirc_flyvideo)
-	  ;;
-	  lirc_fly98)
 	  ;;
 	  lirc_dev-lirc_gpio)
 	  #lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
@@ -338,15 +336,10 @@ if test "$driver" = "pixelview_bt878"; then
   lircd_conf="pixelview/lircd.conf.pixelview_bt878"
 #  lircmd_conf="pixelview/lircmd.conf.pixelview_bt878"
 fi
-if test "$driver" = "fly98"; then
-  lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="life-view/lircd.conf.fly98"
-  lircmd_conf="life-view/lircmd.conf.fly98"
-fi
 if test "$driver" = "flyvideo"; then
   lirc_driver="lirc_dev lirc_gpio"
-  lircd_conf="life-view/lircd.conf.FlyVideo_II"
-#  lircmd_conf="life-view/lircmd.conf.FlyVideo_II"
+  lircd_conf="life-view/lircd.conf.flyvideo"
+  lircmd_conf="life-view/lircmd.conf.flyvideo"
 fi
 if test "$driver" = "cph03x"; then
   lirc_driver="lirc_dev lirc_gpio"

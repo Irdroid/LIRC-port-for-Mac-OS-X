@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.16 2002/08/30 11:57:28 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.17 2002/10/06 16:03:31 lirc Exp $
  *
  */
 
@@ -121,13 +121,13 @@ static struct rcv_info rcv_infos[] = {
         {BTTV_BESTBUY_EASYTV,         0, 0x00007F00,          0, 0x0004000,          0,   0, 10,  8},
         {BTTV_BESTBUY_EASYTV2,        0, 0x00007F00,          0, 0x0008000,          0,   0, 10,  8},
 #endif
-	{BTTV_FLYVIDEO,               0, 0x000000ff,          0,         0,          0,   0,  0, 42},
-	/* probably                      0x000000f8 */
- 	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
+	/* lock_mask probably also 0x100, or maybe it is 0x0 for all others !?! */
+	{BTTV_FLYVIDEO,               0, 0x000000f8,          0,         0,          0,   0,  0, 42},
+ 	{BTTV_FLYVIDEO_98,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
+ 	{BTTV_TYPHOON_TVIEW,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
 #ifdef BTTV_FLYVIDEO_98FM
 	/* smorar@alfonzo.smuts.uct.ac.za */
-	/* probably                      0x000000f8 */
- 	{BTTV_FLYVIDEO_98FM,          0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
+ 	{BTTV_FLYVIDEO_98FM,          0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 42},
 #endif
         {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0,  0}
 };
@@ -226,12 +226,18 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_AVERMEDIA98:
 		break;
 	case BTTV_FLYVIDEO:
-		codes[5]=codes[0];
-		codes[0]=0x03;
-		codes[1]=0xE5;
-		codes[2]=0xE0;
-		codes[3]=0xD0;
-		codes[4]=((~codes[0])&0xff);
+	case BTTV_FLYVIDEO_98:
+	case BTTV_TYPHOON_TVIEW:
+#ifdef BTTV_FLYVIDEO_98FM
+	case BTTV_FLYVIDEO_98FM:
+#endif
+		codes[4]=codes[0]<<3;
+		codes[5]=((~codes[4])&0xff);
+		
+		codes[0]=0x00;
+		codes[1]=0x1A;
+		codes[2]=0x1F;
+		codes[3]=0x2F;
 		break;
         case BTTV_MAGICTVIEW061:
         case BTTV_MAGICTVIEW063:
