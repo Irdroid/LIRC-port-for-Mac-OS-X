@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.9 2000/06/11 07:47:51 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.10 2000/06/22 20:55:23 columbus Exp $
  *
  */
 
@@ -65,7 +65,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_PXELVWPLTVPRO, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
 	{BTTV_AVERMEDIA,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10,  0},
 	{BTTV_AVPHONE98,     0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
-	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}
+	{BTTV_AVERMEDIA98,   0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0},
+	/* CPH031 and CPH033 cards (?) */
+	{BTTV_MIRO,          0x00001f00,          0, 0x0004000,          0,   0, 10, 32}
 };
 
 static unsigned char code_length = 0;
@@ -79,6 +81,19 @@ static int card_type = 0;
  */
 static unsigned char gpio_pre_shift = 0;
 
+
+static inline int reverse(int data,int bits)
+{
+	int i;
+	int c;
+	
+	c=0;
+	for(i=0;i<bits;i++)
+	{
+		c|=(((data & (1<<i)) ? 1:0)) << (bits-1-i);
+	}
+	return(c);
+}
 
 static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 {
@@ -147,6 +162,12 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		}
 		break;
 	case BTTV_AVERMEDIA98:
+		break;
+	case BTTV_MIRO:
+		codes[2]=reverse(codes[0],8);
+		codes[3]=(~codes[2])&0xff;
+		codes[0]=0x61;
+		codes[1]=0xD6;
 		break;
 	default:
 		break;
