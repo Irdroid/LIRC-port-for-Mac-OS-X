@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.27 2004/11/07 13:31:18 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.28 2005/01/07 21:54:13 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -570,7 +570,7 @@ static int lirc_open(struct inode* node,struct file* filep)
 	{
 		return(-EBUSY);
 	}
-	pport->ops->enable_irq(pport);
+	parport_enable_irq(pport);
 
 	/* init read ptr */
 	rptr=wptr=0;
@@ -662,7 +662,7 @@ static void poll_state(unsigned long ignored)
 
 static int pf(void *handle)
 {
-	pport->ops->disable_irq(pport);
+	parport_disable_irq(pport);
 	is_claimed=0;
 	return(0);
 }
@@ -673,7 +673,7 @@ static void kf(void *handle)
 		return;
 	if(!lirc_claim())
 		return;
-	pport->ops->enable_irq(pport);
+	parport_enable_irq(pport);
 	/* this is a bit annoying when you actually print...*/
 	/*
 	printk(KERN_INFO "%s: reclaimed port\n",LIRC_DRIVER_NAME);
