@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.30 2003/04/21 14:14:45 lirc Exp $
+## $Id: Makefile.am,v 5.31 2003/05/03 13:17:00 ranty Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -43,6 +43,8 @@ irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
+			hw_livedrive_common.c hw_livedrive_common.h \
+			hw_livedrive_midi.c hw_livedrive_seq.c \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
@@ -53,7 +55,7 @@ EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_silitek.c hw_silitek.h \
 			hw_dsp.c hw_audio.c \
 			hw_caraca.c hw_caraca.h \
-			hw_udp.c hw_livedrive.c \
+			hw_udp.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
