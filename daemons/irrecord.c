@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.26 2001/01/11 08:16:55 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.27 2001/01/21 12:54:42 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -870,7 +870,7 @@ int get_toggle_bit(struct ir_remote *remote)
 			retval=EXIT_FAILURE;
 			break;
 		}
-		hw.rec_func(NULL);
+		hw.rec_func(remote);
 		if(is_rc6(remote))
 		{
 			for(remote->toggle_bit=1;

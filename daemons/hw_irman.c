@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.3 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: hw_irman.c,v 5.4 2001/01/21 12:54:42 columbus Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -163,6 +163,7 @@ char *irman_rec(struct ir_remote *remotes)
 	char *m;
 	int i;
 	
+	last=end;
 	gettimeofday(&start,NULL);
 	codestring=ir_get_code();
 	gettimeofday(&end,NULL);
@@ -202,6 +203,5 @@ char *irman_rec(struct ir_remote *remotes)
 	}
 
 	m=decode_all(remotes);
-	last=end;
 	return(m);
 }

@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.8 2001/01/06 16:19:13 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.9 2001/01/21 12:54:42 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -142,6 +142,7 @@ char *logitech_rec(struct ir_remote *remotes)
 	int repeat, mouse_event;
 	b[i]=0x00;
 
+	last=end;
 	gettimeofday(&start,NULL);
 	while(b[i] != 0xAA)
 	{
@@ -184,6 +185,5 @@ char *logitech_rec(struct ir_remote *remotes)
 	code=(ir_code) b[2];
 	
 	m=decode_all(remotes);
-	last=end;
 	return(m);
 }

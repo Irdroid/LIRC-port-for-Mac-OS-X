@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.2 2001/01/06 16:19:13 columbus Exp $      */
+/*      $Id: hw_creative.c,v 5.3 2001/01/21 12:54:42 columbus Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -171,6 +171,7 @@ char *creative_rec(struct ir_remote *remotes)
 	b[4]=0xac;
 	b[5]=0x21;
 
+	last=end;
 	gettimeofday(&start,NULL);
 	for(i=0;i<NUMBYTES;i++)
 	{
@@ -224,7 +225,6 @@ char *creative_rec(struct ir_remote *remotes)
 	}
 	
 	m=decode_all(remotes);
-	last=end;
 	return(m);
 }
 

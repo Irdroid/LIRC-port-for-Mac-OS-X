@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.2 2000/12/08 23:36:29 columbus Exp $   */
+/*      $Id: hw_caraca.c,v 1.3 2001/01/21 12:54:42 columbus Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -117,6 +117,7 @@ char *caraca_rec(struct ir_remote *remotes)
 	int i=0,node,ir,t;
 	int repeat, mouse_event;
 
+	last=end;
 	gettimeofday(&start,NULL);
 	i=read(hw.fd,msg,NUMBYTES);
 	gettimeofday(&end,NULL);
@@ -131,6 +132,5 @@ char *caraca_rec(struct ir_remote *remotes)
 	code=(ir_code) (node << 8) + ir;
 
 	m=decode_all(remotes);
-	last=end;
 	return(m);
 }
