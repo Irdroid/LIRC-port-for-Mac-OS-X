@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.7 2000/02/05 12:57:28 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.8 2000/03/23 20:04:41 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -382,12 +382,15 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 #endif
 	int result;
 	int count=0;
+	struct wait_queue wait={current,NULL};
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
 	result=verify_area(VERIFY_WRITE,buf,n);
 	if(result) return(result);
 	
+	add_wait_queue(&lirc_wait,&wait);
+	current->state=TASK_INTERRUPTIBLE;
 	while(count<n)
 	{
 		if(rptr!=wptr)
@@ -409,7 +412,6 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 				result=-EAGAIN;
 				break;
 			}
-			interruptible_sleep_on(&lirc_wait);
 #ifdef KERNEL_2_2
 			if (signal_pending(current))
 			{
@@ -423,8 +425,12 @@ static int lirc_read(struct inode *node,struct file *filep,char *buf,int n)
 				break;
 			}
 #endif
+			schedule();
+			current->state=TASK_INTERRUPTIBLE;
 		}
 	}
+	remove_wait_queue(&lirc_wait,&wait);
+	current->state=TASK_RUNNING;
 	return(count ? count:result);
 }
 
