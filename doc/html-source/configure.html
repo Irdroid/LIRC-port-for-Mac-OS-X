@@ -100,29 +100,28 @@ lircmd.conf so they use the same protocol.</P>
 
 <H4>4.x</H4>
 <P>
-I received this configuration from a user. I didn't test it myself yet.
+Put this section in your XF86Config-4 file to use the mouse in addition to
+your normal one.
 </P>
 <PRE>
 Section "InputDevice"
-        Identifier  "Mouse2"
+        Identifier  "LIRC-Mouse"
         Driver      "mouse"
-        Option      "Protocol" "IntelliMouse"
         Option      "Device" "/dev/lircm"
-        Option      "DeviceName" "Remote"
-        Option      "AlwaysCore"
+        Option      "Protocol" "IntelliMouse"
+        Option      "SendCoreEvents"
         Option      "Buttons" "5"
-	Option      "ZAxisMapping" "4 5"
+        Option      "ZAxisMapping" "4 5"
 EndSection
 </PRE>
 
 <P>
-Another mail I got pointed out that you will also have to add a line
-to the ServerLayout section like this:
+And add a line to the ServerLayout section like this:
 </P>
 <PRE>
 Section "ServerLayout"
         ...
-        InputDevice "Mouse2"           <-- add this line
+        InputDevice    "LIRC-Mouse"           <-- add this line
 EndSection
 </PRE>
 
@@ -172,8 +171,8 @@ their config file for lircmd with them so lircmd is ready to run.</P>
 <DT>PROTOCOL&nbsp;&nbsp;&lt;<em>protocol</em>&gt;</DT>
 <DD>
 <P>
-You can choose between MouseSystems and IMPS/2 protocol. The default
-is MouseSystems protocol.
+You can choose between MouseSystems, IntelliMouse and IMPS/2 protocol. The
+default is MouseSystems protocol.
 </P>
 </DD>
 <DT>ACCELERATOR&nbsp;&nbsp;&lt;<em>start</em>&gt; &lt;<em>max</em>&gt; &lt;<em>multiplier</em>&gt;</DT>
@@ -225,8 +224,8 @@ top.
 <DT>MOVE_[IN|OUT]&nbsp;&nbsp;&lt;<em>remote</em>&gt; &lt;<em>button</em>&gt;</DT> 
 <DD>
 <P>
-This will only work with the IMPS/2 protocol and indicates movement of
-the wheel.
+This will only work with IntelliMouse and IMPS/2 protocols and indicates
+movement of the wheel.
 </P>
 </DD>
 </DL>
