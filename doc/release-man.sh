@@ -67,7 +67,6 @@ TOPDIR=../
 ## Start
 
 install -d man-html
-install -d man
 
 HELP2MAN=help2man
 MAN2HTML=./man2html

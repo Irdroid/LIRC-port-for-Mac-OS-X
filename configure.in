@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.74 2001/12/12 22:40:43 lirc Exp $
+dnl $Id: configure.in,v 5.75 2002/01/06 13:39:40 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -703,6 +703,7 @@ AC_OUTPUT([
   daemons/Makefile
   tools/Makefile
   doc/Makefile
+  doc/man/Makefile
 ])
 
 echo
