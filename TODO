@@ -1,5 +1,3 @@
-* lirc_unregister_plugin() must be possible even when the device is open
-
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes
