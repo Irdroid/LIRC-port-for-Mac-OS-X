@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.48 2004/01/31 15:46:18 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.49 2004/02/04 10:50:48 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -921,7 +921,7 @@ int get_toggle_bit(struct ir_remote *remote)
 			break;
 		}
 		hw.rec_func(remote);
-		if(is_rc6(remote))
+		if(is_rc6(remote) && remote->rc6_mask==0)
 		{
 			int i;
 			ir_code mask;
@@ -938,6 +938,7 @@ int get_toggle_bit(struct ir_remote *remote)
 					break;
 				}
 			}
+			if(success==0) remote->rc6_mask=0;
 		}
 		else
 		{
@@ -973,6 +974,10 @@ int get_toggle_bit(struct ir_remote *remote)
 			{
 				repeats++;
 			}
+		}
+		else
+		{
+			retries--;
 		}
 	}
 	if(!found)
