@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.h,v 1.2 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hw_logitech.h,v 1.3 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.h **********************************************************
@@ -10,8 +10,8 @@
  *	modified for logitech receiver by Isaac Lauer <inl101@alumni.psu.edu>
  */
 
-#ifndef _HW_DEFAULT_H
-#define _HW_DEFAULT_H
+#ifndef _HW_LOGITECH_H
+#define _HW_LOGITECH_H
 
 #include "drivers/lirc.h"
 

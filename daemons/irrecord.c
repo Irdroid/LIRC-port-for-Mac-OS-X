@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.4 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.5 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -13,8 +13,6 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-
-#define DEBUG
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +45,7 @@ int availabledata(void);
 void get_repeat_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
-int get_lengths(struct ir_remote *remote);
+int get_lengths(struct ir_remote *remote,int force);
 struct lengths *new_length(lirc_t length);
 int add_length(struct lengths **first,lirc_t length);
 void free_lengths(struct lengths *first);
@@ -60,6 +58,8 @@ int get_lead_length(struct ir_remote *remote);
 int get_repeat_length(struct ir_remote *remote);
 int get_header_length(struct ir_remote *remote);
 int get_data_length(struct ir_remote *remote);
+int get_gap_length(struct ir_remote *remote);
+void fprint_copyright(FILE *fout);
 
 extern struct hardware hw;
 extern struct ir_remote *last_remote;
@@ -69,7 +69,7 @@ char *progname;
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "0.4"
+#define IRRECORD_VERSION "0.5"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -100,7 +100,7 @@ lirc_t signals[MAX_SIGNALS];
 
 #define SAMPLES 80
 
-#if 0
+#ifdef DEBUG
 int debug=10;
 FILE *lf=NULL;
 char *hostname="k6";
@@ -142,6 +142,7 @@ void logperror(int level,const char *s)
 void logprintf(int level,char *format_str, ...) {}
 void logperror(int level,const char *s) {}
 #endif
+
 int main(int argc,char **argv)
 {
 	char *filename;
@@ -152,11 +153,12 @@ int main(int argc,char **argv)
 	int repeat_flag;
 	lirc_t remaining_gap;
 	ir_code first;
-	int flag;
+	int flag,force;
 	int retries;
 	struct ir_remote *remotes;
 
 	progname=argv[0];
+	force=0;
 	while(1)
 	{
 		int c;
@@ -164,22 +166,26 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+			{"force",no_argument,NULL,'f'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hv",long_options,NULL);
+		c = getopt_long(argc,argv,"hvf",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s file\n",progname);
-			printf("   or: %s [options]\n",progname);
+			printf("Usage: %s [options] [file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
+			printf("\t -f --force\t\tforce raw mode\n");
 			exit(EXIT_SUCCESS);
 		case 'v':
 			printf("irrecord %s\n",IRRECORD_VERSION);
 			exit(EXIT_SUCCESS);
+		case 'f':
+			force=1;
+			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -206,19 +212,19 @@ int main(int argc,char **argv)
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
-	printf("irrecord -  application for recording IR-codes"
+	printf("\nirrecord -  application for recording IR-codes"
 	       " for usage with lirc\n"
 	       "\n"  
 	       "Copyright (C) 1998,1999 Christoph Bartelmus"
 	       "(lirc@bartelmus.de)\n");
-	printf("\n\n");
+	printf("\n");
 	
 	if(hw.init_func)
 	{
 		if(!hw.init_func())
 		{
 			fprintf(stderr,"%s: could not init hardware"
-				" (lircd running ?)\n",progname);
+				" (lircd running ? --> close it)\n",progname);
 			fclose(fout);
 			unlink(filename);
 			exit(EXIT_FAILURE);
@@ -255,17 +261,34 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	printf("This program will record the signals from your "
-	       "remote control\n"
-	       "and create a config file for lircd\n\n"
-	       "Please send new config files to: "
-	       "lirc@bartelmus.de\n\n");
+	printf(
+"This program will record the signals from your remote control\n"
+"and create a config file for lircd.\n\n"
+"A proper config file for lircd is maybe the most vital part of this\n"
+"package, so you should invest some time to create a working config file.\n"
+"Although I put a good deal of effort in this program it is often\n"
+"not possible to automatically recognize all features of a remote control.\n"
+"Often short-comings of the receiver hardware make it nearly impossible.\n"
+"If the config file this program generated does not work like expected\n"
+"read the documentation of this package how to get help.\n"
+"\n"
+"IMPORTANT: The license of the config files created by this program requires\n"
+"that you send them to the author. If you don't like this license exit this\n"
+"program now! Otherwise press return.\n\n");
 	
+	if(getchar()!='\n')
+	{
+		fclose(fout);
+		unlink(filename);
+		if(hw.deinit_func) hw.deinit_func();
+		exit(EXIT_FAILURE);
+	}
+
 	remote.name=filename;
 	switch(hw.rec_mode)
 	{
 	case LIRC_MODE_MODE2:
-		if(!get_lengths(&remote))
+		if(!get_lengths(&remote,force))
 		{
 			if(remote.gap==0)
 			{
@@ -279,9 +302,12 @@ int main(int argc,char **argv)
 			printf("Creating config file in raw mode.\n");
 			remote.flags&=~(SPACE_ENC|SHIFT_ENC);
 			remote.flags|=RAW_CODES;
+			remote.eps=EPS;
+			remote.aeps=AEPS;
 			break;
 		}
 		
+#               ifdef DEBUG
 		printf("%d %lu %lu %lu %lu %lu %d %d %d %lu\n",
 		       remote.bits,
 		       (unsigned long) remote.pone,
@@ -291,17 +317,27 @@ int main(int argc,char **argv)
 		       (unsigned long) remote.ptrail,
 		       remote.flags,remote.eps,remote.aeps,
 		       (unsigned long) remote.gap);
+#               endif
 		break;
 	case LIRC_MODE_CODE:
-		remote.bits=CHAR_BIT;
-		break;
 	case LIRC_MODE_LIRCCODE:
-		remote.bits=hw.code_length;
+		if(hw.rec_mode==LIRC_MODE_CODE) remote.bits=CHAR_BIT;
+		else remote.bits=hw.code_length;
+		if(!get_gap_length(&remote))
+		{
+			fprintf(stderr,"%s: gap not found,"
+				" can´t continue\n",progname);
+			fclose(fout);
+			unlink(filename);
+			if(hw.deinit_func) hw.deinit_func();
+			exit(EXIT_FAILURE);
+		}
 		break;
 	}
 	
 	printf("Now enter the names for the buttons.\n");
 
+	fprint_copyright(fout);
 	fprint_comment(fout,&remote);
 	fprint_remote_head(fout,&remote);
 	fprint_remote_signal_head(fout,&remote);
@@ -434,8 +470,8 @@ int main(int argc,char **argv)
 							break;
 						}
 					}
-					signals[count-1]=data&(PULSE_BIT-1);
-					sum+=data&(PULSE_BIT-1);
+					signals[count-1]=data&PULSE_MASK;
+					sum+=data&PULSE_MASK;
 				}
 				count++;
 			}
@@ -498,6 +534,7 @@ int main(int argc,char **argv)
 				else
 				{
 					printf("\n");
+					printf("Try using the -f option.\n");
 				}
 				retries--;
 				continue;
@@ -553,7 +590,7 @@ int main(int argc,char **argv)
 	}
 	
 	printf("Checking for repeat bit.\n");
-	printf("Please press an arbitrary button repeatedly.\n");
+	printf("Please press an arbitrary button repeatedly (don't hold it down).\n");
 	retries=30;flag=0;first=0;
 	while(retval==EXIT_SUCCESS && retries>0)
 	{
@@ -568,9 +605,8 @@ int main(int argc,char **argv)
 			retval=EXIT_FAILURE;
 			break;
 		}
-		printf(".");fflush(stdout);
 		hw.rec_func(NULL);
-		if(hw.decode_func(&remote,&pre,&code,&post,
+		if(hw.decode_func(remotes,&pre,&code,&post,
 				  &repeat_flag,&remaining_gap))
 		{
 			if(flag==0)
@@ -590,11 +626,13 @@ int main(int argc,char **argv)
 						printf("\nInvalid repeat bit.\n");
 					break;
 				}
+				printf(".");fflush(stdout);
 				retries--;
 			}
 		}
 		else
 		{
+			printf(".");fflush(stdout);
 			retries--;
 		}
 		if(retries==0)
@@ -616,6 +654,7 @@ int main(int argc,char **argv)
 		free_config(remotes);
 		return(EXIT_FAILURE);
 	}
+	fprint_copyright(fout);
 	fprint_remotes(fout,remotes);
 	free_config(remotes);
 	return(EXIT_SUCCESS);
@@ -742,7 +781,8 @@ void get_repeat_bit(struct ir_remote *remote,ir_code xor)
 
 	if(!remote->codes) return;
 
-	mask=1<<(remote->bits+remote->pre_data_bits+remote->post_data_bits-1);
+
+	mask=((ir_code) 1)<<(remote->bits+remote->pre_data_bits+remote->post_data_bits-1);
 	repeat_bit=1;
 	while(mask)
 	{
@@ -769,6 +809,8 @@ void get_pre_data(struct ir_remote *remote)
 	ir_code mask,last;
 	int count,i;
 	
+	if(remote->bits==0) return;
+
 	mask=(-1);
 	codes=remote->codes;
 	if(codes->name!=NULL)
@@ -822,6 +864,8 @@ void get_post_data(struct ir_remote *remote)
 	ir_code mask,last;
 	int count,i;
 	
+	if(remote->bits==0) return;
+
 	mask=(-1);
 	codes=remote->codes;
 	if(codes->name!=NULL)
@@ -876,13 +920,14 @@ enum analyse_mode {MODE_GAP,MODE_HAVE_GAP};
 
 struct lengths *first_space=NULL,*first_pulse=NULL;
 struct lengths *first_sum=NULL,*first_gap=NULL,*first_repeat_gap=NULL;
+struct lengths *first_signal_length=NULL;
 struct lengths *first_headerp=NULL,*first_headers=NULL;
-struct lengths *first_lead=NULL,*first_trail=NULL;
+struct lengths *first_1lead=NULL,*first_3lead=NULL,*first_trail=NULL;
 struct lengths *first_repeatp=NULL,*first_repeats=NULL;
 unsigned long lengths[MAX_SIGNALS];
 unsigned int count,count_spaces,count_3repeats,count_5repeats,count_signals;
 
-int get_lengths(struct ir_remote *remote)
+int get_lengths(struct ir_remote *remote,int force)
 {
 	int ret,retval;
 	lirc_t data,average,sum,remaining_gap;
@@ -918,7 +963,7 @@ int get_lengths(struct ir_remote *remote)
 		count++;
 		if(mode==MODE_GAP)
 		{
-			sum+=data&(PULSE_BIT-1);
+			sum+=data&PULSE_MASK;
 			if(average==0 && is_space(data))
 			{
 				if(data>100000)
@@ -986,6 +1031,11 @@ int get_lengths(struct ir_remote *remote)
 						is_const(remote) ? 
 						(remote->gap>data ? remote->gap-data:0):
 						(has_repeat_gap(remote) ? remote->repeat_gap:remote->gap);
+						if(force)
+						{
+							retval=0;
+							break;
+						}
 						continue;
 					}
 					
@@ -1014,7 +1064,7 @@ int get_lengths(struct ir_remote *remote)
 		{
 			if(count<=MAX_SIGNALS)
 			{
-				signals[count-1]=data&(PULSE_BIT-1);
+				signals[count-1]=data&PULSE_MASK;
 			}
 			else
 			{
@@ -1032,10 +1082,10 @@ int get_lengths(struct ir_remote *remote)
 			{
 				remaining_gap=remote->gap;
 			}
-			sum+=data&(PULSE_BIT-1);
+			sum+=data&PULSE_MASK;
 
-			if((data&(PULSE_BIT-1))>=remaining_gap*(100-EPS)/100
-			   || (data&(PULSE_BIT-1))>=remaining_gap-AEPS)
+			if((data&PULSE_MASK)>=remaining_gap*(100-EPS)/100
+			   || (data&PULSE_MASK)>=remaining_gap-AEPS)
 			{
 				if(is_space(data))
 				{
@@ -1074,8 +1124,10 @@ int get_lengths(struct ir_remote *remote)
 
 						printf(".");fflush(stdout);
 						count_signals++;
-						add_length(&first_lead,signals[0]);
-						merge_lengths(first_lead);
+						add_length(&first_1lead,signals[0]);
+						merge_lengths(first_1lead);
+						add_length(&first_3lead,signals[0]);
+						merge_lengths(first_3lead);
 						add_length(&first_headerp,signals[0]);
 						merge_lengths(first_headerp);
 						add_length(&first_headers,signals[1]);
@@ -1096,6 +1148,8 @@ int get_lengths(struct ir_remote *remote)
 						add_length(&first_trail,signals[count-2]);
 						merge_lengths(first_trail);
 						lengths[count-2]++;
+						add_length(&first_signal_length,sum-data);
+						merge_lengths(first_signal_length);
 					}
 					count=0;
 					sum=0;
@@ -1111,9 +1165,9 @@ int get_lengths(struct ir_remote *remote)
 				{
 					printf("\n");
 					get_scheme(remote);
-					if(!get_trail_length(remote) ||
+					if(!get_header_length(remote) ||
+					   !get_trail_length(remote) ||
 					   !get_lead_length(remote) ||
-					   !get_header_length(remote) ||
 					   !get_repeat_length(remote) ||
 					   !get_data_length(remote))
 					{
@@ -1129,9 +1183,11 @@ int get_lengths(struct ir_remote *remote)
 	free_lengths(first_sum);
 	free_lengths(first_gap);
 	free_lengths(first_repeat_gap);
+	free_lengths(first_signal_length);
 	free_lengths(first_headerp);
 	free_lengths(first_headers);
-	free_lengths(first_lead);
+	free_lengths(first_1lead);
+	free_lengths(first_3lead);
 	free_lengths(first_trail);
 	free_lengths(first_repeatp);
 	free_lengths(first_repeats);
@@ -1347,7 +1403,8 @@ int get_lead_length(struct ir_remote *remote)
 
 	if(!is_shift(remote)) return(1);
 	
-	max_length=get_max_length(first_lead,&sum);
+	max_length=get_max_length(has_header(remote) ?
+				  first_3lead:first_1lead,&sum);
 	max_count=max_length->count;
 #       ifdef DEBUG
 	printf("get_lead_length(): sum: %u, max_count %u\n",sum,max_count);
@@ -1566,8 +1623,21 @@ int get_data_length(struct ir_remote *remote)
 			remote->aeps=AEPS;
 			if(is_shift(remote))
 			{
-				printf("Not implemented.\n");
-				return(0);
+				if(max2_plength==NULL || max2_slength==NULL)
+				{
+					printf("Unknown encoding found.\n");
+					return(0);
+				}
+				printf("Signals are shift encoded.\n");
+				p1=max_plength->sum/max_plength->count;
+				p2=max2_plength->sum/max2_plength->count;
+				s1=max_slength->sum/max_slength->count;
+				s2=max2_slength->sum/max2_slength->count;
+				
+				remote->pone=(min(p1,p2)+max(p1,p2)/2)/2;
+				remote->sone=(min(s1,s2)+max(s1,s2)/2)/2;
+				remote->pzero=remote->pone;
+				remote->szero=remote->sone;
 			}
 			else
 			{
@@ -1605,17 +1675,46 @@ int get_data_length(struct ir_remote *remote)
 					remote->szero=min(s1,s2);
 				}
 			}
-			if(has_header(remote) && !has_repeat(remote) &&
-			   ((expect(remote,remote->phead,remote->pone) &&
-			     expect(remote,remote->shead,remote->sone)) ||
-			    (expect(remote,remote->phead,remote->pzero) &&
-			     expect(remote,remote->shead,remote->szero))))
+			if(has_header(remote) &&
+			   (!has_repeat(remote) || remote->flags&NO_HEAD_REP)
+			   )
 			{
-				remote->phead=remote->shead=0;
-				printf("Removed header.\n");
+				if(!is_shift(remote) &&
+				   ((expect(remote,remote->phead,remote->pone) &&
+				     expect(remote,remote->shead,remote->sone)) ||
+				    (expect(remote,remote->phead,remote->pzero) &&
+				     expect(remote,remote->shead,remote->szero))))
+				{
+					remote->phead=remote->shead=0;
+					remote->flags&=~NO_HEAD_REP;
+					printf("Removed header.\n");
+				}
+				if(is_shift(remote) &&
+				   expect(remote,remote->shead,remote->sone))
+				{
+					remote->plead=remote->phead;
+					remote->phead=remote->shead=0;
+					remote->flags&=~NO_HEAD_REP;
+					printf("Removed header.\n");
+				}
 			}
 			if(is_shift(remote))
 			{
+				struct lengths *signal_length;
+				lirc_t data_length;
+
+				signal_length=get_max_length(first_signal_length,
+							     NULL);
+				data_length=signal_length->sum/
+					signal_length->count-
+					remote->plead-
+					remote->phead-
+					remote->shead+
+					/* + 1/2 bit */
+					(remote->pone+remote->sone)/2;
+				remote->bits=data_length/
+					(remote->pone+remote->sone);
+
 			}
 			else
 			{
@@ -1632,4 +1731,93 @@ int get_data_length(struct ir_remote *remote)
 	}
 	printf("Could not find data lengths.\n");
 	return(0);
+}
+
+int get_gap_length(struct ir_remote *remote)
+{
+	struct lengths *gaps=NULL;
+	struct timeval start,end,last;
+	int count,flag;
+	struct lengths *scan;
+	int maxcount,lastmaxcount;
+	lirc_t gap;
+	
+	remote->eps=EPS;
+	remote->aeps=AEPS;
+
+	count=0;flag=0;lastmaxcount=0;
+	printf("Hold down an arbitrary button.\n");
+	while(1)
+	{
+		while(availabledata())
+		{
+			hw.rec_func(NULL);
+		}
+		if(!waitfordata(10000000))
+		{
+			free_lengths(gaps);
+			return(0);
+		}
+		gettimeofday(&start,NULL);
+		while(availabledata())
+		{
+			hw.rec_func(NULL);
+		}
+		gettimeofday(&end,NULL);
+		if(flag)
+		{
+			gap=time_elapsed(&last,&start);
+			add_length(&gaps,gap);
+			merge_lengths(gaps);
+			maxcount=0;
+			scan=gaps;
+			while(scan)
+			{
+				maxcount=max(maxcount,
+					     scan->count);
+				if(scan->count>SAMPLES)
+				{
+					remote->gap=scan->sum/scan->count;
+					/* this does not work very reliably */
+					remote->gap+=100000;
+					printf("\nFound gap length: %lu\n",
+					       (unsigned long) remote->gap);
+					free_lengths(gaps);
+					return(1);
+				}
+				scan=scan->next;
+			}
+			if(maxcount>lastmaxcount)
+			{
+				lastmaxcount=maxcount;
+				printf(".");fflush(stdout);
+			}
+		}
+		else
+		{
+			flag=1;
+		}
+		last=end;
+	}
+	return(1);
+}
+
+void fprint_copyright(FILE *fout)
+{
+	/* As this program is distributed under GPL you could just
+	   remove this copyright notice and the config files generated
+	   with the modified program would automatically be covered by
+	   the GPL. Although I am aware of this I will not prevent it.
+
+	   I hope that nobody will do so because the license I put on
+	   the config files is not really a restriction. Instead it
+	   emphasizes the spirit of the GPL to make things available
+	   to everybody. */
+
+	fprintf(fout,
+		"\n"
+		"# Copyright (C) 1999 Christoph Bartelmus\n"
+		"#\n"
+		"# You may only use this file if you make it available to others,\n"
+		"# i.e. if you send it to <lirc@bartelmus.de>\n");
 }

@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.1 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: serial.c,v 5.2 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -217,13 +217,12 @@ int tty_create_lock(char *name)
 				return(0);
 			}
 			
-			strcat(dirname,name);
+			strcpy(dirname,name);
 			dirname[strlen(name)-strlen(last)]=0;
 			if(chdir(dirname)==-1)
 			{
-				last[0]='/';
 				logprintf(0,"chdir() to \"%s\" "
-					  "failded \n",dirname);
+					  "failed \n",dirname);
 				logperror(0,NULL);
 				if(unlink(filename)==-1)
 				{
@@ -250,7 +249,6 @@ int tty_create_lock(char *name)
 		{
 			if(chdir(cwd)==-1)
 			{
-				last[0]='/';
 				logprintf(0,"chdir() to \"%s\" "
 					  "failded \n",cwd);
 				logperror(0,NULL);

@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.h,v 5.2 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hw_pixelview.h,v 5.3 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.h **********************************************************
@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef _HW_DEFAULT_H
-#define _HW_DEFAULT_H
+#ifndef _HW_PIXELVIEW_H
+#define _HW_PIXELVIEW_H
 
 #include "drivers/lirc.h"
 

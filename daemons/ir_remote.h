@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.6 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.7 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -199,6 +199,19 @@ static inline int expect(struct ir_remote *remote,lirc_t delta,lirc_t exdelta)
 	   abs(exdelta-delta)<remote->aeps)
 		return 1;
 	return 0;
+}
+
+static inline unsigned long time_elapsed(struct timeval *last,
+					 struct timeval *current)
+{
+	unsigned long secs,usecs,diff;
+	
+	secs=current->tv_sec-last->tv_sec;
+	usecs=current->tv_usec-last->tv_usec;
+	
+	diff=1000000*secs+usecs;
+	
+	return(diff);
 }
 
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);

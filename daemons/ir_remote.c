@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.11 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.12 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -169,19 +169,6 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	}
 	*repeat_statep=repeat_state;
 	return(found);
-}
-
-inline unsigned long time_elapsed(struct timeval *last,
-				  struct timeval *current)
-{
-	unsigned long secs,usecs,diff;
-	
-	secs=current->tv_sec-last->tv_sec;
-	usecs=current->tv_usec-last->tv_usec;
-	
-	diff=1000000*secs+usecs;
-	
-	return(diff);
 }
 
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,

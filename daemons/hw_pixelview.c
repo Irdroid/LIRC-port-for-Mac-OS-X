@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.4 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.5 1999/09/06 14:56:04 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -42,7 +42,7 @@ struct hardware hw=
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
-	LIRC_CAN_REC_LIRCCODE,    /* rec_mode */
+	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	30,                       /* code_length */
 	pixelview_init,           /* init_func */
 	pixelview_deinit,         /* deinit_func */

@@ -4,6 +4,4 @@
 * make the package protable (you will be able to use lirc with an
   Irman on Solaris)
 
-* Hauppauge remote control support
-
 * IrDA support

@@ -1,10 +1,10 @@
-dnl $Id: configure.in,v 5.9 1999/08/12 18:49:17 columbus Exp $
+dnl $Id: configure.in,v 5.10 1999/09/06 14:56:04 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
 AC_INIT(daemons/lircd.c)
-AM_INIT_AUTOMAKE(lirc, 0.5.5)
+AM_INIT_AUTOMAKE(lirc, 0.6.0)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
@@ -91,6 +91,7 @@ driver="unset"
 lirc_driver="$driver"
 lircd_conf=""
 lircmd_conf=""
+irman_lib=""
 hw_module="hw_default.o"
 
 if test "$driver" = "none"; then
@@ -98,11 +99,13 @@ if test "$driver" = "none"; then
 fi
 
 if test "$driver" = "irman"; then
-  lirc_driver=irman
+  lirc_driver="none"
+  hw_module="hw_irman.o serial.o"
   irman_lib=-lirman
 fi
 if test "$driver" = "irman_sw"; then
-  lirc_driver=irman_sw
+  lirc_driver="none"
+  hw_module="hw_irman.o serial.o"
   irman_lib=-lirman_sw
 fi
 
@@ -209,9 +212,6 @@ dnl now we've checked, we can rename things for the drivers/Makefile
 
 if test "$lirc_driver" = "none"; then
   lirc_driver=
-fi
-if test "$lirc_driver" = "irman_sw"; then
-  lirc_driver=irman
 fi
 
 dnl slightly more advanced options
