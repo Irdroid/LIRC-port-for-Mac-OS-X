@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.14 2001/12/12 20:26:01 ranty Exp $
+ * $Id: lirc_gpio.c,v 1.15 2002/04/01 20:12:48 lirc Exp $
  *
  */
 
@@ -98,9 +98,9 @@ static struct rcv_info rcv_infos[] = {
 #ifdef BTTV_PXELVWPLTVPAK
 	{BTTV_PXELVWPLTVPAK,          0, 0x00003e00,          0, 0x0010000,          0,   0, 15,  0},
 #endif
-	{BTTV_PXELVWPLTVPRO,          0, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
+	{BTTV_PXELVWPLTVPRO,          0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
 #ifdef BTTV_PV_BT878P_9B
-	{BTTV_PV_BT878P_9B,           0, 0x00001f00,          0, 0x0008000,          0, 500, 12,  0},
+	{BTTV_PV_BT878P_9B,           0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
 #endif
 	{BTTV_AVERMEDIA,              0, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_AVPHONE98,     0x00011461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
@@ -122,9 +122,11 @@ static struct rcv_info rcv_infos[] = {
         {BTTV_BESTBUY_EASYTV2,        0, 0x00007F00,          0, 0x0008000,          0,   0, 10,  8},
 #endif
 	{BTTV_FLYVIDEO,               0, 0x000000ff,          0,         0,          0,   0,  0, 42},
+	/* probably                      0x000000f8 */
  	{BTTV_FLYVIDEO_98,            0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
 #ifdef BTTV_FLYVIDEO_98FM
 	/* smorar@alfonzo.smuts.uct.ac.za */
+	/* probably                      0x000000f8 */
  	{BTTV_FLYVIDEO_98FM,          0, 0x000001f8,          0, 0x0000100,          0,   0,  0,  0},
 #endif
         {BTTV_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32}
@@ -242,11 +244,30 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		/* FALLTHROUGH */
 	case BTTV_MIRO:
 	case BTTV_DYNALINK:
+	case BTTV_PXELVWPLTVPRO:
+#ifdef BTTV_PV_BT878P_9B
+	case BTTV_PV_BT878P_9B:
+#endif
 		codes[2] = reverse(codes[0],8);
 		codes[3] = (~codes[2])&0xff;
 		codes[0] = 0x61;
 		codes[1] = 0xD6;
 		break;
+#if 0
+		/* derived from e-tech config file */
+		/* 26 + 16 bits */
+		/* won't apply it until it's confirmed with a fly98 */
+ 	case BTTV_FLYVIDEO_98:
+	case BTTV_FLYVIDEO_98FM:
+		codes[4]=codes[0]<<3;
+		codes[5]=(~codes[4])&0xff;
+		
+		codes[0]=0x00;
+		codes[1]=0x1A;
+		codes[2]=0x1F;
+		codes[3]=0x2F;
+		break;
+#endif
 	default:
 		break;
 	}
