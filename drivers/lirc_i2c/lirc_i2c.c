@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.9 2001/01/21 13:18:29 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.10 2001/04/24 19:21:29 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -38,32 +38,16 @@
 #error "********************************************************"
 #endif
 
+#include <linux/i2c-algo-bit.h>
+
 #include <asm/semaphore.h>
 
 #include "../lirc_dev/lirc_dev.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
-#include "../drivers/char/bttvp.h"
 #else
 #include "../drivers/media/video/bttv.h"
-#include "../drivers/media/video/bttvp.h"
 #endif
-
-/* Addresses to scan */
-static unsigned short normal_i2c[] = {I2C_CLIENT_END};
-static unsigned short normal_i2c_range[] = {0x18,0x1a,0x4b,I2C_CLIENT_END};
-static unsigned short probe[2]        = { I2C_CLIENT_END, I2C_CLIENT_END };
-static unsigned short probe_range[2]  = { I2C_CLIENT_END, I2C_CLIENT_END };
-static unsigned short ignore[2]       = { I2C_CLIENT_END, I2C_CLIENT_END };
-static unsigned short ignore_range[2] = { I2C_CLIENT_END, I2C_CLIENT_END };
-static unsigned short force[4]        = { I2C_CLIENT_END, I2C_CLIENT_END,
-					  I2C_CLIENT_END, I2C_CLIENT_END };
-static struct i2c_client_address_data addr_data = {
-	normal_i2c, normal_i2c_range, 
-	probe, probe_range, 
-	ignore, ignore_range, 
-	force
-};
 
 struct IR {
 	struct lirc_plugin l;
@@ -219,7 +203,6 @@ static void set_use_dec(void* data)
 
 static struct lirc_plugin lirc_template = {
 	name:        "lirc_i2c",
-	get_key:     get_key_haup,
 	set_use_inc: set_use_inc,
 	set_use_dec: set_use_dec
 };
@@ -281,7 +264,6 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.get_key=get_key_pv951;
 		break;
 	case 0x18:
-	case 0x19:
 	case 0x1a:
 		strcpy(ir->c.name,"Hauppauge IR");
 		ir->l.code_length = 13;
@@ -319,38 +301,32 @@ static int ir_detach(struct i2c_client *client)
 	return 0;
 }
 
-static int ir_probe(struct i2c_adapter *adap)
-{
-#ifdef LIRC_I2C_PVFIX
-        struct bttv *btv;
-        int type,cardid;
-#endif
+static int ir_probe(struct i2c_adapter *adap) {
 	
-	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
-	{
-#ifdef LIRC_I2C_PVFIX
-		btv=(struct bttv *) (adap->data);
-		
-		if(bttv_get_cardinfo(btv->nr,&type,&cardid)==-1)
-		{
-			dprintk(KERN_DEBUG DEVICE_NAME 
-				": could not get card type\n");
+	/* The external IR receiver is at i2c address 0x34 (0x35 for
+	   reads).  Future Hauppauge cards will have an internal
+	   receiver at 0x30 (0x31 for reads).  In theory, both can be
+	   fitted, and Hauppauge suggest an external overrides an
+	   internal. 
+	   
+	   That's why we probe 0x1a (~0x34) first. CB 
+	*/
+	
+	static const int probe[] = { 0x1a, 0x18, 0x4b, 0x64, -1};
+	struct i2c_client c; char buf; int i,rc;
+
+	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
+		memset(&c,0,sizeof(c));
+		c.adapter = adap;
+		for (i = 0; -1 != probe[i]; i++) {
+			c.addr = probe[i];
+			rc = i2c_master_recv(&c,&buf,1);
+			dprintk("lirc_i2c: probe 0x%02x @ %s: %s\n",
+				probe[i], adap->name, 
+				(1 == rc) ? "yes" : "no");
+			if (1 == rc)
+				ir_attach(adap,probe[i],0,0);
 		}
-		else
-		{
-			dprintk(KERN_DEBUG DEVICE_NAME 
-				": card type 0x%x, id 0x%x\n",
-				type,cardid);
-			
-			/* the Pixelview IC is not found otherwise */
-			if(type==BTTV_PIXVIEWPLAYTV)
-			{
-				addr_data.force[0]=0x0;
-				addr_data.force[1]=0x64;
-			}
-		}
-#endif
-		return i2c_probe(adap, &addr_data, ir_attach);
 	}
 	return 0;
 }
