@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.19 2004/02/08 20:42:35 lirc Exp $      */
+/*      $Id: receive.c,v 5.20 2004/04/27 18:51:17 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -409,6 +409,17 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 			{
 				return(0);
 			}
+		}
+		if(has_toggle_mask(remote))
+		{
+			if(deltas>last_remote->remaining_gap*
+			   (100+last_remote->eps)/100 &&
+			   deltas>last_remote->remaining_gap+last_remote->aeps)
+			{
+				remote->toggle_mask_state=0;
+				remote->toggle_code=NULL;
+			}
+			
 		}
 	}
 	rec_buffer.sum=0;
