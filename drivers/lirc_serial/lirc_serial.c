@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.60 2004/12/25 23:13:21 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.61 2004/12/30 21:48:22 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -753,9 +753,9 @@ static int init_port(void)
 {
 	unsigned long flags;
 
-        /* Check io region*/
 	
-        if((check_region(io,8))==-EBUSY)
+	/* Reserve io region. */
+	if(request_region(io, 8, LIRC_DRIVER_NAME)==NULL)
 	{
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": port %04x already in use\n", io);
@@ -767,9 +767,6 @@ static int init_port(void)
 		       ": make sure this module is loaded first\n");
 		return(-EBUSY);
 	}
-	
-	/* Reserve io region. */
-	request_region(io, 8, LIRC_DRIVER_NAME);
 	
 	local_irq_save(flags);
 	

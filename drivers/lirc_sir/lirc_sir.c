@@ -1048,14 +1048,13 @@ static int init_port(void)
 {
 	int retval;
 	
-#ifndef LIRC_ON_SA1100
 	/* get I/O port access and IRQ line */
-	retval = check_region(io, 8);
-	if (retval < 0) {
+#ifndef LIRC_ON_SA1100
+	if(request_region(io, 8, LIRC_DRIVER_NAME) == NULL)
+	{
 		printk(KERN_ERR LIRC_DRIVER_NAME
-			": i/o port 0x%.4x already in use.\n",
-			io);
-		return retval;
+		       ": i/o port 0x%.4x already in use.\n", io);
+		return -EBUSY;
 	}
 #endif
 	retval = request_irq(irq, sir_interrupt, SA_INTERRUPT,
@@ -1067,7 +1066,6 @@ static int init_port(void)
 		return retval;
 	}
 #ifndef LIRC_ON_SA1100
-	request_region(io, 8, LIRC_DRIVER_NAME);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": I/O port 0x%.4x, IRQ %d.\n",
 		io, irq);
