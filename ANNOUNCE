@@ -1,7 +1,7 @@
 LIRC - Linux Infrared Remote Control, Version: 0.6.0
 
 Copyright (C) 1996 Ralph Metzler <rjkm@thp.uni-koeln.de>
-Copyright (C) 1998,1999 Christoph Bartelmus <lirc@bartelmus.de>
+Copyright (C) 1998-2000 Christoph Bartelmus <lirc@bartelmus.de>
 (according to GNU General Public Licence 2.0 or later)
 
 LIRC is a package that allows you to decode and send infra-red signals
@@ -15,10 +15,11 @@ on the LIRC homepage. Current versions of LIRC also support a variety
 of other hardware. The state of the drivers for this hardware however
 differs very much. Support for the following devices is very stable:
 Home-brew serial and parallel port hardware, Irman, Anir Multimedia
-Magic, Packard Bell receivers.  The drivers for the following TV cards
-might still have problems and are not tested very well: many Hauppauge
-models, Fly Video 98. Experimental drivers for the PixelView
-RemoteMaster and Logitech/AST are also included.
+Magic, Packard Bell receivers, PixelView RemoteMaster.  The drivers
+for the following TV cards might still have problems and are not
+tested very well: many Hauppauge models, Fly Video 98. Experimental
+drivers for the and Logitech/AST and built-in IrDA ports (SIR mode) is
+also included.
 
 The most important part of LIRC is the lircd daemon that will decode
 IR signals received by the device drivers and provide the information
