@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.15 2001/01/06 16:19:13 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.16 2001/01/30 09:39:30 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -282,7 +282,7 @@ static inline int map_code(struct ir_remote *remote,
 	all>>=remote->post_data_bits;
 	*codep=(all&gen_mask(remote->bits));
 	all>>=remote->bits;
-	*postp=(all&gen_mask(remote->pre_data_bits));
+	*prep=(all&gen_mask(remote->pre_data_bits));
 	return(1);
 }
 
