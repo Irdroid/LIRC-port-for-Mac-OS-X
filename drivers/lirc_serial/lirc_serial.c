@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.62 2004/12/31 14:08:20 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.63 2004/12/31 21:21:39 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -661,8 +661,9 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 	long deltv;
 	lirc_t data;
 	
-	if(!(sinp(UART_IIR) & UART_IIR_NO_INT))
+	if((sinp(UART_IIR) & UART_IIR_NO_INT))
 	{
+		/* not our interrupt */
 		return IRQ_RETVAL(IRQ_NONE);
 	}
 	
