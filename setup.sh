@@ -112,7 +112,7 @@ function SetPortAndIrq
                  2 "COM2 ($COM2_PORT, $COM2_IRQ)" $COM2 \
                  3 "COM3 ($COM3_PORT, $COM3_IRQ)" $COM3 \
                  4 "COM4 ($COM4_PORT, $COM4_IRQ)" $COM4 \
-                 9 "Other (costum values)" $USER \
+                 9 "Other (custom values)" $USER \
                2> $TEMP
         if test "$?" = "0"; then
             {
@@ -135,7 +135,7 @@ function SetPortAndIrq
                  1 "LPT1 ($LPT1_PORT, $LPT1_IRQ)" $LPT1 \
                  2 "LPT2 ($LPT2_PORT, $LPT2_IRQ)" $LPT2 \
                  3 "LPT3 ($LPT3_PORT, $LPT3_IRQ)" $LPT3 \
-                 9 "Other (costum values)" $USER \
+                 9 "Other (custom values)" $USER \
                  2> $TEMP
         if test "$?" = "0"; then
             {
@@ -151,8 +151,8 @@ function SetPortAndIrq
         }
     elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "creative" -o \
-	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "realmagic"; then
+	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
+        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to use" \
@@ -225,12 +225,13 @@ function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 14 74 5 \
+           --menu "$CONFIG_DRIVER_TEXT" 14 74 6 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
 	     3 "Other serial port devices" \
 	     4 "TV card" \
-             5 "SIR IrDA (built-in IR ports)" 2> $TEMP
+             5 "SIR IrDA (built-in IR ports)" \
+	     6 "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -254,7 +255,8 @@ function ConfigDriver
 			0 "PixelView RemoteMaster RC2000/RC3000" \
 			a "REALmagic (bundled with Hollywood Plus DVD card)" \
 			b "Slink-e" \
-			c "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
+                        c "Silitek SM-1000" \
+			d "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -270,7 +272,8 @@ function ConfigDriver
 		elif test "$1" = "0"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
 		elif test "$1" = "a"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
 		elif test "$1" = "b"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
-		elif test "$1" = "c"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "c"; then LIRC_DRIVER=silitek;      DRIVER_PARAMETER=tty1;
+		elif test "$1" = "d"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
 		fi
 		}
 	    else
@@ -323,6 +326,7 @@ function ConfigDriver
 		return;
 	    fi;
         elif test "$1" = "5"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
+        elif test "$1" = "6"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
     fi
         GetSelectedDriver
         SetPortAndIrq
@@ -400,7 +404,8 @@ function SaveConfig
         }
     elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "realmagic"; then
+	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "silitek" -o \
+        "$LIRC_DRIVER" = "realmagic"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}
