@@ -18,7 +18,7 @@ For examples of config files see remotes/life-view directory.
 
 To install:
 
- - apply the proper patch from drivers/lirc_fly98 
+ - apply the proper patch from drivers/lirc_fly98/patches 
  - compile the kernel (turn ON BT848 and FlyVideo98 remote support)
  - run autogen.sh
  - run setup.sh from main directory and configure the fly98 driver 
