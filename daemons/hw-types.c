@@ -15,6 +15,7 @@ extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
 extern struct hardware hw_dsp;
+extern struct hardware hw_udp;
 
 #ifndef HW_DEFAULT
 # define HW_DEFAULT hw_default
@@ -35,6 +36,7 @@ struct hardware *hw_list[] =
 	&hw_silitek,
 	&hw_slinke,
 	&hw_dsp,
+	&hw_udp,
 #else
 #ifndef LIRC_NETWORK_ONLY
 	&HW_DEFAULT,

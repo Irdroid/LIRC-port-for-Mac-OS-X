@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.80 2002/05/18 14:53:09 lirc Exp $
+dnl $Id: configure.in,v 5.81 2002/06/24 18:43:37 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -93,7 +93,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (dsp) (remotemaster) (pctv) (logitech) \
+possible_drivers="(none) (udp) (dsp) (remotemaster) (pctv) (logitech) \
 	(slinke) (silitek) (mediafocusI) (irreal)"
 
 if test x${no_kernel} != xyes; then
@@ -129,7 +129,8 @@ AC_ARG_WITH(driver,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, winfast_tv2000],
+			  slinke, tekram, tekram_bt829, udp, 
+			  winfast_tv2000],
 driver=${withval},
 driver="unset"
 )
@@ -220,6 +221,9 @@ if test "$driver" = "any"; then
 	  #;;
 	  dsp)
 	  hw_module="${hw_module} hw_dsp.o receive.o"
+	  ;;
+	  udp)
+	  hw_module="${hw_module} hw_udp.o receive.o"
 	  ;;
   esac
   done
@@ -482,6 +486,11 @@ if test "$driver" = "dsp"; then
   lirc_driver="none"
   hw_module="hw_dsp.o receive.o"
   HW_DEFAULT="hw_dsp"
+fi
+if test "$driver" = "udp"; then
+  lirc_driver="none"
+  hw_module="hw_udp.o receive.o"
+  HW_DEFAULT="hw_udp"
 fi
 
 #END HARDWARE HEURISTIC
