@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.17 2004/01/24 18:34:54 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.18 2004/01/27 23:31:42 pmiller9 Exp $
  */
 
 /*
@@ -276,8 +276,8 @@ static void usb_remote_send(struct urb *urb)
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
-	struct usb_device *dev;
-	struct usb_host_interface *idesc;
+	struct usb_device *dev = NULL;
+	struct usb_host_interface *idesc = NULL;
 #else
 static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 				const struct usb_device_id *id)
@@ -294,8 +294,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	char buf[63], name[128]="";
 	int mem_failure = 0;
 
-	devnum = dev->devnum;
-	dprintk(DRIVER_NAME "[%d]: usb probe called\n",devnum);
+	dprintk(DRIVER_NAME "usb probe called\n");
 
 #if KERNEL26
 	dev = interface_to_usbdev(intf);
@@ -320,6 +319,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		!= USB_ENDPOINT_XFER_INT)
 		return NULL;
 #endif
+	devnum = dev->devnum;
 	pipe = usb_rcvintpipe(dev, ep_in->bEndpointAddress);
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
@@ -329,6 +329,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	dprintk(DRIVER_NAME "[%d]: bytes_in_key=%d len=%d maxp=%d buf_len=%d\n",
 		devnum, bytes_in_key, len, maxp, buf_len);
+
 
 	/* allocate kernel memory */
 	mem_failure = 0;
