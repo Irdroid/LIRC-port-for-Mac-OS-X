@@ -1,0 +1,11 @@
+## $Id: Makefile.am,v 1.1 1999/04/29 21:16:46 columbus Exp $
+
+## Process this file with automake to produce Makefile.in 
+
+## here the correct driver is substituted in by the configure script
+## (or empty for none)
+
+DIST_SUBDIRS = lirc_serial lirc_parallel irman
+SUBDIRS = @lirc_driver@
+
+CLEANFILES = *~

@@ -1,0 +1,278 @@
+dnl $Id: configure.in,v 1.1 1999/04/29 21:16:42 columbus Exp $
+
+dnl Process this file with autoconf to produce a configure script.
+dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
+
+AC_INIT(daemons/lircd.c)
+AM_INIT_AUTOMAKE(lirc, 0.5.5)
+AM_CONFIG_HEADER(config.h)
+
+CFLAGS="-O2 -g -Wall"
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_PATH_PROG(mknod, mknod, :)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_CHECK_HEADERS(fcntl.h limits.h sys/ioctl.h sys/time.h syslog.h unistd.h)
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_STRUCT_TM
+
+dnl Checks for library functions.
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(gethostname gettimeofday mkfifo select socket strdup strerror strtoul snprintf)
+
+
+vga_progs=
+AC_CHECK_LIB(vga, vga_init,
+  AC_CHECK_LIB(vgagl, gl_setcontextvga,
+    AC_DEFINE(HAVE_LIBVGA)
+    vga_progs=smode2
+  )
+)
+
+x_progs="irxevent xmode2"
+AC_PATH_XTRA
+if test "$no_x" = "yes"; then
+  x_progs=
+fi
+
+
+dnl here we see what drivers we could possibly even hope to run.
+dnl this could be _much_ more sophisticated!  especially the lirc ones.
+
+AC_MSG_CHECKING([for which drivers can be installed on this system])
+AC_MSG_RESULT()
+
+possible_drivers="(none)"
+AC_CHECK_HEADER(linux/autoconf.h,
+  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel)"
+)
+
+AC_CHECK_LIB(irman, ir_get_code,
+  AC_DEFINE(HAVE_LIBIRMAN)
+  possible_drivers="${possible_drivers} (irman)"
+)
+AC_CHECK_LIB(irman_sw, ir_get_code,
+  AC_DEFINE(HAVE_LIBIRMAN_SW)
+  possible_drivers="${possible_drivers} (irman_sw)"
+)
+
+dnl here we see what driver the user wants.
+
+AC_ARG_WITH(driver,
+[  --with-driver=X         specify the driver to use, where X is one of:
+                          none, serial, parallel, irman, comX, lptX],
+driver=${withval},
+driver="unset"
+)
+
+lirc_driver="$driver"
+
+if test "$driver" = "none"; then
+  lirc_driver=none
+fi
+
+if test "$driver" = "irman"; then
+  lirc_driver=irman
+  irman_lib=-lirman
+fi
+if test "$driver" = "irman_sw"; then
+  lirc_driver=irman_sw
+  irman_lib=-lirman_sw
+fi
+
+if test "$driver" = "serial"; then
+  lirc_driver=lirc_serial
+fi
+if test "$driver" = "com1"; then
+  lirc_driver=lirc_serial
+  port=0x3f8
+  irq=4
+fi
+if test "$driver" = "com2"; then
+  lirc_driver=lirc_serial
+  port=0x2f8
+  irq=3
+fi
+if test "$driver" = "com3"; then
+  lirc_driver=lirc_serial
+  port=0x3e8
+  irq=4
+fi
+if test "$driver" = "com4"; then
+  lirc_driver=lirc_serial
+  port=0x2e8
+  irq=3
+fi
+
+if test "$driver" = "parallel"; then
+  lirc_driver=lirc_parallel;
+fi
+if test "$driver" = "lpt1"; then
+  lirc_driver=lirc_parallel
+  port=0x378
+  irq=7
+fi
+if test "$driver" = "lpt2"; then
+  lirc_driver=lirc_parallel
+  port=0x278
+  irq=5
+fi
+
+dnl now check to see if the user is behaving himself
+
+if test "$lirc_driver" = "unset"; then
+  AC_MSG_ERROR([no driver specified, try ./configure --help])
+fi
+
+if echo ${possible_drivers} | grep "($lirc_driver)" >/dev/null 2>&1; then
+  dummy=
+else
+  case $lirc_driver in
+  irman*)
+    AC_MSG_ERROR([you need to first install the libirman package before you can use this driver])
+    ;;
+  lirc_*)
+    AC_MSG_ERROR([you need to have the Linux kernel source installed for this driver])
+    ;;
+  *)
+    AC_MSG_ERROR([it is not possible to install the specified driver on this system])
+    ;;
+  esac
+fi
+
+dnl now we've checked, we can rename things for the drivers/Makefile
+
+if test "$lirc_driver" = "none"; then
+  lirc_driver=
+fi
+if test "$lirc_driver" = "irman_sw"; then
+  lirc_driver=irman
+fi
+
+dnl slightly more advanced options
+
+AC_ARG_WITH(devdir,
+[  --with-devdir=DIR       Install device files in DIR (/dev)],
+devdir=${withval},
+devdir=/dev)
+
+default_moduledir=/lib/modules/`uname -r`/misc
+AC_ARG_WITH(moduledir,
+[  --with-moduledir=DIR    kernel modules in DIR ($default_moduledir)], 
+moduledir=${withval},
+moduledir=${default_moduledir})
+
+AC_ARG_ENABLE(long-codes,
+[  --disable-long-codes    use this if your compiler won't do long long],
+test x${withval} = xyes && AC_DEFINE(LONG_IR_CODE),
+AC_DEFINE(LONG_IR_CODE))
+
+AC_ARG_WITH(major,
+[  --with-major=value      specify the device major for the driver (def. 61)],
+lirc_major=${withval},
+lirc_major=61)
+
+AC_ARG_WITH(port,
+[  --with-port=port        specify the port number for the lirc device.],
+port=${withval},
+[case $lirc_driver in
+lirc_serial)   port=${port:-0x3f8} ;;
+lirc_parallel) port=${port:-0x378} ;;
+esac]
+)
+
+AC_ARG_WITH(irq,
+[  --with-irq=irq          specify the irq line for the lirc device.],
+irq=${withval},
+[case $lirc_driver in
+lirc_serial)   irq=${irq:-4} ;;
+lirc_parallel) irq=${irq:-7} ;;
+esac]
+)
+
+AC_ARG_WITH(timer,
+[  --with-timer=value      specify the timer value for the parallel driver],
+timer=${withval},
+timer=65536)
+
+dnl I dont think libirman / lirmand will accept this at the moment
+dnl AC_ARG_WITH(tty,
+dnl [  --with-tty=file         specify the tty for the irman device.],
+dnl irtty=${withval})
+
+AC_ARG_WITH(soft-carrier,
+[  --without-soft-carrier  use this if your serial hw generates carrier],
+test x${withval} = xyes && AC_DEFINE(LIRC_SERIAL_SOFTCARRIER),
+AC_DEFINE(LIRC_SERIAL_SOFTCARRIER))
+
+AC_ARG_WITH(animax,
+[  --with-animax           specify this if you have the animax hardware,
+                          as well as using the --with-driver=comX option],
+test x${withval} = xyes && AC_DEFINE(LIRC_SERIAL_ANIMAX)
+)
+
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable debugging features],
+test x${withval} = xyes && AC_DEFINE(DEBUG)
+)
+
+AC_ARG_ENABLE(daemonize,
+[  --disable-daemonize     disable daemons from daemonizing],
+test x${withval} = xyes && AC_DEFINE(DAEMONIZE),
+AC_DEFINE(DAEMONIZE))
+
+dnl if --prefix is not specified, then $prefix is still set to NONE by
+dnl configure.  That's bad here where we want to expand it!
+cur_prefix=$prefix
+test "x${prefix}" = "xNONE" && prefix=$ac_default_prefix 
+sysconfdir_exp=`eval "echo ${sysconfdir}"`
+prefix=$cur_prefix
+
+dnl tell the Makefiles what we decided
+AC_SUBST(devdir)
+AC_SUBST(moduledir)
+AC_SUBST(lirc_major)
+AC_SUBST(lirc_driver)
+AC_SUBST(irman_lib)
+AC_SUBST(vga_progs) 
+AC_SUBST(x_progs)
+
+dnl tell the C code what we decided
+AC_DEFINE_UNQUOTED(DEVDIR, "$devdir")
+AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir_exp")
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+
+AC_DEFINE_UNQUOTED(LIRC_DRIVER, "$lirc_driver")
+AC_DEFINE_UNQUOTED(LIRC_MAJOR, $lirc_major)
+AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
+AC_DEFINE_UNQUOTED(LIRC_IRQ, $irq)
+AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
+AC_DEFINE_UNQUOTED(LIRC_IRMAN_TTY, "$irtty")
+
+dnl bug in automake/autoconf?
+SHELL=/bin/sh AC_SUBST(SHELL)
+
+dnl write these decisions out to the Makefiles
+AC_OUTPUT([
+  Makefile
+  drivers/Makefile
+  drivers/lirc_serial/Makefile
+  drivers/lirc_parallel/Makefile
+  drivers/irman/Makefile
+  daemons/Makefile
+  tools/Makefile
+])

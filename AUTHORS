@@ -1,0 +1,29 @@
+
+Current maintainer:
+  Christoph Bartelmus <columbus@hit.handshake.de>
+
+Previous maintainers:
+  Trent Piepho <xyzzy@u.washington.edu>
+  Ralph J. K. Metzler <rjkm@thp.uni-koeln.de>
+
+Additional documentation:
+  Karsten Scheibler <karsten.scheibler@bigfoot.de>
+
+Serial driver:
+  Ben Pfaff <blp@gnu.org>
+
+Remote Control configuration code:
+  Pablo d'Angelo <pablo@ag-trek.allgaeu.org>
+
+Irman support and autoconf:
+  Tom Wheeley <tom.wheeley@src.bae.co.uk>
+
+X Window system tools:
+  Heinrich Langos  <heinrich@null.net>
+  Heinrich Langos <heinrich@mad.scientist.com>
+
+smode2:
+  Sinkovics Zoltan <sinko@szarvas.hu>
+
+I have only pieced this together by grepping the source for @ signs
+and then guessing the contribution.

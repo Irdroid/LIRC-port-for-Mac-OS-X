@@ -1,0 +1,42 @@
+LIRC - Linux Infrared Remote Control, Version: 0.5.4
+
+Copyright (C) 1996 Ralph Metzler <rjkm@thp.uni-koeln.de>
+Copyright (C) 1998,1999 Christoph Bartelmus <columbus@hit.handshake.de>
+(according to GNU General Public Licence 2.0 or later)
+
+lirc is a package that allows you to decode and send infra-red
+signals of many (but not all) commonly used remote controls.
+Pre-release versions are currently available at:
+http://fsinfo.cs.uni-sb.de/~columbus/lirc/
+
+It consists of a device driver, two daemon programs and some user
+space applications. The included device drivers support devices
+connected to serial and parallel ports. A desciption of receiver
+and transmitter circuits can be found at http://www.mindwell.com/lirc/.
+More and more support for commercially available IR solutions is being
+added.
+
+The most important part of lirc is the lircd daemon that will decode
+IR signals received by the device driver and provide the information
+on a socket.
+It will also accept commands for IR signals to be sent.
+The second daemon program called lircmd will connect to lircd and
+translate the decoded IR signals to mouse movements. You can
+e.g. configure X to use your remote control as an input device.
+
+The user space application will allow you to control your computer
+with your remote control. You can send X events to applications, start
+programs and much more on just one button press.
+
+Adding new remotes is still problematic but since version 0.5.2 there
+comes the first program that will try to add new remote controls
+automatically.
+
+Don't expect much documentation. This is only a pre-release version
+and there is still much to be done before lirc becomes easily
+configurable and usable.
+The possible applications are obvious: Infra-red mouse, remote control for 
+your TV tuner card or cd-rom, shutdown by remote, program your VCR
+and/or satellite tuner with your computer, ...
+For people with a little C/C++ knowlegde this should already be possible
+with this pre-release. Otherwise, wait for version 1.0.
