@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.43 2000/10/10 17:12:49 columbus Exp $
+dnl $Id: configure.in,v 5.44 2000/11/10 20:46:32 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -112,7 +112,8 @@ AC_ARG_WITH(driver,
                           irman, remotemaster, pctv, comX, lptX, avermedia,
 			  avermedia98, hauppauge, fly98, pixelview_pro,
 			  cph03x, cph06x, logitech, caraca, slinke, irdeo,
-                          irreal, chronos, pixelview_pak, pixelview_bt878],
+                          irreal, chronos, pixelview_pak, pixelview_bt878,
+			  realmagic],
 
 driver=${withval},
 driver="unset"
@@ -259,6 +260,12 @@ if test "$driver" = "remotemaster"; then
   hw_module="hw_pixelview.o serial.o"
   lircd_conf="pixelview/lircd.conf.remotemaster"
   lircmd_conf="pixelview/lircmd.conf.remotemaster"
+fi
+if test "$driver" = "realmagic"; then
+  lirc_driver="none"
+  hw_module="hw_pixelview.o serial.o"
+  lircd_conf="sigma_designs/lircd.conf.realmagic"
+#  lircmd_conf="sigma_designs/lircmd.conf.realmagic"
 fi
 if test "$driver" = "pctv"; then
   lirc_driver="none"

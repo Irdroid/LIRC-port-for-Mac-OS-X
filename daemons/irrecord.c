@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.20 2000/10/10 17:12:50 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.21 2000/11/10 20:46:32 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -225,13 +225,13 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 		remotes=read_config(fin);
 		fclose(fin);
-		if(remotes==(void *) -1)
+		if(remotes==(void *) -1 || remotes==NULL)
 		{
 			exit(EXIT_FAILURE);
 		}
 		remove_pre_data(remotes);
 		remove_post_data(remotes);
-		//get_pre_data(remotes);
+		get_pre_data(remotes);
 		//get_post_data(remotes);
 		
 		fprint_remotes(stdout,remotes);

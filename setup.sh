@@ -150,7 +150,7 @@ function SetPortAndIrq
         }
     elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "slinke"; then
+	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "realmagic"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to usefy Port And IRQ of your Hardware" \
@@ -239,28 +239,30 @@ function ConfigDriver
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 16 74 9 \
-			1 "Irman / UIR" \
-			2 "Packard Bell receiver" \
-			3 "Anir Multimedia Magic" \
-			4 "PixelView RemoteMaster RC2000/RC3000" \
+		--menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
+			1 "Anir Multimedia Magic" \
+			2 "CARACA" \
+			3 "IRdeo" \
+			4 "Irman / UIR" \
 			5 "Logitech/AST" \
-			6 "CARACA" \
+			6 "Packard Bell receiver" \
 			7 "Pinnacle Systems PCTV (pro) receiver" \
-			8 "Slink-e" \
-			9 "IRdeo" 2> $TEMP;
+			8 "PixelView RemoteMaster RC2000/RC3000" \
+			9 "REALmagic (bundled with Hollywood Plus DVD card)" \
+			0 "Slink-e" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
-		if test "$1" = "1"; then LIRC_DRIVER=irman;    DRIVER_PARAMETER=tty1;
-		elif test "$1" = "2"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
-		elif test "$1" = "3"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
-		elif test "$1" = "4"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
+		if   test "$1" = "1"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "2"; then LIRC_DRIVER=caraca;       DRIVER_PARAMETER=tty1;
+		elif test "$1" = "3"; then LIRC_DRIVER=irdeo;        DRIVER_PARAMETER=com1;
+		elif test "$1" = "4"; then LIRC_DRIVER=irman;        DRIVER_PARAMETER=tty1;
 		elif test "$1" = "5"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
-		elif test "$1" = "6"; then LIRC_DRIVER=caraca;       DRIVER_PARAMETER=tty1;
+		elif test "$1" = "6"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
 		elif test "$1" = "7"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
-		elif test "$1" = "8"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
-		elif test "$1" = "9"; then LIRC_DRIVER=irdeo;        DRIVER_PARAMETER=com1;
+		elif test "$1" = "8"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
+		elif test "$1" = "9"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
+		elif test "$1" = "0"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
 		fi
 		}
 	    else
@@ -383,7 +385,7 @@ function SaveConfig
         }
     elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "slinke"; then
+	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "realmagic"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}
