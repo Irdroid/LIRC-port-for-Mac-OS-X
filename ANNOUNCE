@@ -23,7 +23,7 @@ will connect to lircd and translate the decoded IR signals to mouse
 movements. You can e.g. configure X to use your remote control as an
 input device.
 
-The user space application will allow you to control your computer
+The user space applications will allow you to control your computer
 with your remote control. You can send X events to applications, start
 programs and much more on just one button press.  The possible
 applications are obvious: Infra-red mouse, remote control for your TV

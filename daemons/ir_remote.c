@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.19 2002/02/22 14:47:47 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.20 2003/01/04 16:10:48 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -268,7 +268,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		}
 		else
 		{
-			remote->reps++;		
+			remote->reps++;
 		}
 	}
 	else

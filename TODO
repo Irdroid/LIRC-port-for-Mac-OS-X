@@ -11,7 +11,7 @@
 
 * button_down & button_up codes.
 
-* stupid Pioneer protocol (maybe?)
+* stupid Pioneer & Grundig/Motorola (context?) protocol (maybe?)
 
 * echostar protocol reported by John.colburn@shaw.ca:
   there's no gap and no ptrail although it is space encoded

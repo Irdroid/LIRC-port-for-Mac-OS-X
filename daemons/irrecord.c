@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.43 2002/12/02 20:27:16 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.44 2003/01/04 16:10:48 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -63,6 +63,7 @@ void get_post_data(struct ir_remote *remote);
 #ifdef DEBUG
 void remove_pre_data(struct ir_remote *remote);
 void remove_post_data(struct ir_remote *remote);
+void invert_data(struct ir_remote *remote);
 #endif
 int get_lengths(struct ir_remote *remote,int force);
 struct lengths *new_length(lirc_t length);
@@ -186,7 +187,7 @@ int main(int argc,char **argv)
 	int retries;
 	struct ir_remote *remotes=NULL;
 #ifdef DEBUG
-	int get_pre=0,get_post=0,test=0;
+	int get_pre=0,get_post=0,test=0,invert=0;
 #endif
 
 	progname=argv[0];
@@ -206,11 +207,12 @@ int main(int argc,char **argv)
 			{"pre",no_argument,NULL,'p'},
 			{"post",no_argument,NULL,'P'},
 			{"test",no_argument,NULL,'t'},
+			{"invert",no_argument,NULL,'i'},
 #endif
 			{0, 0, 0, 0}
 		};
 #ifdef DEBUG
-		c = getopt_long(argc,argv,"hvd:H:fpPt",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:H:fpPti",long_options,NULL);
 #else
 		c = getopt_long(argc,argv,"hvd:H:f",long_options,NULL);
 #endif
@@ -251,6 +253,9 @@ int main(int argc,char **argv)
 			break;
 		case 't':
 			test=1;
+			break;
+		case 'i':
+			invert=1;
 			break;
 #endif
 		default:
@@ -296,6 +301,7 @@ int main(int argc,char **argv)
 			remove_post_data(remotes);
 			if(get_pre) get_pre_data(remotes);
 			if(get_post) get_post_data(remotes);
+			if(invert) invert_data(remotes);
 			
 			fprint_remotes(stdout,remotes);
 			free_config(remotes);
@@ -1135,8 +1141,8 @@ void get_post_data(struct ir_remote *remote)
 #ifdef DEBUG
 void remove_pre_data(struct ir_remote *remotes)
 {
-	struct ir_ncode *codes;
 	struct ir_remote *remote;
+	struct ir_ncode *codes;
 	
 	remote=remotes;
 	while(remote!=NULL)
@@ -1162,9 +1168,8 @@ void remove_pre_data(struct ir_remote *remotes)
 
 void remove_post_data(struct ir_remote *remotes)
 {
-	struct ir_ncode *codes;
-	
 	struct ir_remote *remote;
+	struct ir_ncode *codes;
 	
 	remote=remotes;
 	while(remote!=NULL)
@@ -1185,6 +1190,56 @@ void remove_post_data(struct ir_remote *remotes)
 		remote->bits+=remote->post_data_bits;
 		remote->post_data=0;
 		remote->post_data_bits=0;
+		remote=remote->next;
+	}
+}
+
+void invert_data(struct ir_remote *remotes)
+{
+	struct ir_remote *remote;
+	struct ir_ncode *codes;
+	ir_code mask;
+	
+	remote=remotes;
+	while(remote!=NULL)
+	{
+		lirc_t p,s;
+		
+		/* swap one, zero */
+		p=remote->pone;
+		s=remote->sone;
+		remote->pone=remote->pzero;
+		remote->sone=remote->szero;
+		remote->pzero=p;
+		remote->szero=s;
+		
+		/* invert pre_data */
+		if(has_pre(remote))
+		{
+			mask=gen_mask(remote->pre_data_bits);
+			remote->pre_data^=mask;
+		}
+		/* invert post_data */
+		if(has_post(remote))
+		{
+			mask=gen_mask(remote->post_data_bits);
+			remote->post_data^=mask;
+		}
+		
+		if(remote->bits==0)
+		{
+			remote=remote->next;
+			continue;
+		}
+		
+		/* invert codes */
+		mask=gen_mask(remote->bits);
+		codes=remote->codes;
+		while(codes->name!=NULL)
+		{
+			codes->code^=mask;
+			codes++;
+		}
 		remote=remote->next;
 	}
 }
