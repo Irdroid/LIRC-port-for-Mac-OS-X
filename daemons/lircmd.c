@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.1 1999/05/06 08:08:32 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.2 1999/08/03 18:11:09 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -68,7 +68,7 @@ enum directive {move_n,move_ne,move_e,move_se,
 		button1_down,button1_up,button1_toggle,button1_click,
 		button2_down,button2_up,button2_toggle,button2_click,
 		button3_down,button3_up,button3_toggle,button3_click,
-		mouse_activate
+		mouse_activate,mouse_toggle_activate
 };
 
 struct config_mouse
@@ -121,7 +121,7 @@ enum state_axis   { axis_none, axis_up, axis_down };
 struct state_mouse
 {
 	int protocol;
-	int always_active,active;
+	int always_active,toggle_active,active;
 	int acc_start,acc_max,acc_fak; /* defaults, acc_fak == acc_factor */
 	enum state_button buttons[BUTTONS];
 };
@@ -129,7 +129,7 @@ struct state_mouse
 struct state_mouse new_ms,ms=
 {
 	mouse_systems,
-	1,0,
+	1,0,0,
 	2,20,2,
 	{button_up,button_up,button_up}
 };
@@ -385,6 +385,16 @@ void mouse_conv(int rep,char *button,char *remote)
 				activate();
 			}
 		}
+		else if(tm->tm_directive==mouse_toggle_activate && rep==0)
+		{
+			if(ms.always_active==0)
+			{
+				if(ms.active==0)
+					activate();
+				else
+					deactivate();
+			}
+		}
 		
 		if(ms.active || ms.always_active)
 		{
@@ -444,7 +454,9 @@ void mouse_conv(int rep,char *button,char *remote)
 	}
 	if(found==0)
 	{
-		if(ms.active==1 && ms.always_active==0)
+		if(ms.active==1 &&
+		   ms.always_active==0 &&
+		   ms.toggle_active==0)
 		{
 			deactivate();
 		}
@@ -463,6 +475,7 @@ struct trans_mouse *read_config(FILE *fd)
 	tm_list=NULL;
 	new_ms=ms;
 	new_ms.always_active=1;
+	new_ms.toggle_active=0;
 	line=0;
 	while(fgets(buffer,PACKET_SIZE,fd)!=NULL)
 	{
@@ -557,6 +570,12 @@ struct trans_mouse *read_config(FILE *fd)
 		{
 			d=mouse_activate;
 			new_ms.always_active=0;
+		}
+		else if(strcasecmp("TOGGLE_ACTIVATE",directives)==0)
+		{
+			d=mouse_toggle_activate;
+			new_ms.always_active=0;
+			new_ms.toggle_active=1;
 		}
 		else
 		{
