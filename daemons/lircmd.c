@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.10 2000/05/03 19:41:21 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.11 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -185,14 +185,14 @@ void dohup(void)
 	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
-		syslog(LOG_WARNING,"could not open config file:\n%m\n");
+		syslog(LOG_WARNING,"could not open config file: %m");
 		return;
 	}
 	tm_list=read_config(fd);
 	fclose(fd);
 	if(tm_list==(void *) -1)
 	{
-		syslog(LOG_WARNING,"reading of config file failed\n");
+		syslog(LOG_WARNING,"reading of config file failed");
 	}
 	else
 	{
@@ -482,7 +482,7 @@ struct trans_mouse *read_config(FILE *fd)
 		len=strlen(buffer);
 		if(len==PACKET_SIZE-1 && buffer[len-1]!='\n')
 		{
-			syslog(LOG_ERR,"line %d too long in config file\n",
+			syslog(LOG_ERR,"line %d too long in config file",
 				line);
 			freetm(tm_list);
 			return((void *) -1);
@@ -515,14 +515,14 @@ struct trans_mouse *read_config(FILE *fd)
 				else
 				{
 					syslog(LOG_WARNING,
-					       "unknown protocol %s\n",name);
+					       "unknown protocol %s",name);
 				}
 			}
 			if(name==NULL || strtok(NULL,WHITE_SPACE)!=NULL)
 			{
 				syslog(LOG_WARNING,
 				       "invalid line %d in config file "
-				       "ignored\n",line);
+				       "ignored",line);
 				continue;
 			}
 			continue;
@@ -545,7 +545,7 @@ struct trans_mouse *read_config(FILE *fd)
 			{
 				syslog(LOG_WARNING,
 				       "invalid line %d in config file "
-				       "ignored\n",line);
+				       "ignored",line);
 				new_ms.acc_start=ms.acc_start;
 				new_ms.acc_max=ms.acc_max;
 				new_ms.acc_fak=ms.acc_fak;
@@ -560,7 +560,7 @@ struct trans_mouse *read_config(FILE *fd)
 		   strtok(NULL,WHITE_SPACE)!=NULL)
 		{
 			syslog(LOG_WARNING,
-			       "invalid line %d in config file ignored\n",
+			       "invalid line %d in config file ignored",
 			       line);
 			continue;			
 		}
@@ -592,7 +592,7 @@ struct trans_mouse *read_config(FILE *fd)
 			if(config_table[i].string==NULL)
 			{
 				syslog(LOG_WARNING,
-				       "unknown directive \"%s\" ignored\n",
+				       "unknown directive \"%s\" ignored",
 				       directives);
 				continue;
 			}
@@ -606,7 +606,7 @@ struct trans_mouse *read_config(FILE *fd)
 		tm_new=malloc(sizeof(struct trans_mouse));
 		if(remote==NULL || button==NULL || tm_new==NULL)
 		{
-			syslog(LOG_ERR,"out of memory\n");
+			syslog(LOG_ERR,"out of memory");
 			if(remote!=NULL) free(remote);
 			if(button!=NULL) free(button);
 			if(tm_new!=NULL) free(tm_new);
@@ -708,7 +708,7 @@ int main(int argc,char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options] [config-file]\n",progname);
-			printf("\t -h --help\t\t\tdisplay this message\n");
+			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\tdon't fork to background\n");
 			return(EXIT_SUCCESS);

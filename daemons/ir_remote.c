@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.15 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.16 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -116,45 +116,37 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		}
 		else
 		{
-			logprintf(0,"bad toggle_bit\n");
+			logprintf(LOG_ERR,"bad toggle_bit");
 		}
 	}
 	if(has_pre(remote))
 	{
 		if((pre|pre_mask)!=(remote->pre_data|pre_mask))
 		{
-#                       ifdef DEBUG
-			logprintf(1,"bad pre data\n");
+			LOGPRINTF(1,"bad pre data");
 #                       ifdef LONG_IR_CODE
-			logprintf(2,"%llx %llx\n",pre,remote->pre_data);
+			LOGPRINTF(2,"%llx %llx",pre,remote->pre_data);
 #                       else
-			logprintf(2,"%lx %lx\n",pre,remote->pre_data);
-#                       endif
+			LOGPRINTF(2,"%lx %lx",pre,remote->pre_data);
 #                       endif
 			return(0);
 		}
-#               ifdef DEBUG
-		logprintf(1,"pre\n");
-#               endif
+		LOGPRINTF(1,"pre");
 	}
 	
 	if(has_post(remote))
 	{
 		if((post|post_mask)!=(remote->post_data|post_mask))
 		{
-#                       ifdef DEBUG
-			logprintf(1,"bad post data\n");
+			LOGPRINTF(1,"bad post data");
 #                       ifdef LONG_IR_CODE
-			logprintf(2,"%llx %llx\n",post,remote->post_data);
+			LOGPRINTF(2,"%llx %llx",post,remote->post_data);
 #                       else
-			logprintf(2,"%lx %lx\n",post,remote->post_data);
-#                       endif
+			LOGPRINTF(2,"%lx %lx",post,remote->post_data);
 #                       endif
 			return(0);
 		}
-#               ifdef DEBUG
-		logprintf(1,"post\n");
-#               endif
+		LOGPRINTF(1,"post");
 	}
 	found=NULL;
 	codes=remote->codes;
@@ -181,9 +173,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	unsigned long long code;
 	struct timeval current;
 
-#       ifdef DEBUG
-	logprintf(1,"found: %s\n",found->name);
-#       endif
+	LOGPRINTF(1,"found: %s",found->name);
 
 	gettimeofday(&current,NULL);
 	if(found==remote->last_code && repeat_flag &&
@@ -238,9 +228,7 @@ char *decode_all(struct ir_remote *remotes)
 	decoding=remote=remotes;
 	while(remote)
 	{
-#               ifdef DEBUG
-		logprintf(1,"trying \"%s\" remote\n",remote->name);
-#               endif
+		LOGPRINTF(1,"trying \"%s\" remote",remote->name);
 		
 		if(hw.decode_func(remote,&pre,&code,&post,&repeat_flag,
 				   &remaining_gap) &&
@@ -271,7 +259,7 @@ char *decode_all(struct ir_remote *remotes)
 			decoding=NULL;
 			if(len==PACKET_SIZE+1)
 			{
-				logprintf(0,"message buffer overflow\n");
+				logprintf(LOG_ERR,"message buffer overflow");
 				return(NULL);
 			}
 			else
@@ -281,16 +269,12 @@ char *decode_all(struct ir_remote *remotes)
 		}
 		else
 		{
-#                       ifdef DEBUG
-			logprintf(1,"failed \"%s\" remote\n",remote->name);
-#                       endif
+			LOGPRINTF(1,"failed \"%s\" remote",remote->name);
 		}
 		remote=remote->next;
 	}
 	decoding=NULL;
 	last_remote=NULL;
-#       ifdef DEBUG
-	logprintf(1,"decoding failed for all remotes\n");
-#       endif DEBUG
+	LOGPRINTF(1,"decoding failed for all remotes");
 	return(NULL);
 }

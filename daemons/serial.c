@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.3 2000/06/12 10:05:07 columbus Exp $      */
+/*      $Id: serial.c,v 5.4 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -34,19 +34,15 @@ int tty_reset(int fd)
 
 	if(tcgetattr(fd,&options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_reset(): tcgetattr() failed\n");
-		logperror(1,"tty_reset()");
-#               endif
+		LOGPRINTF(1,"tty_reset(): tcgetattr() failed");
+		LOGPERROR(1,"tty_reset()");
 		return(0);
 	}
 	cfmakeraw(&options);
 	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_reset(): tcsetattr() failed\n");
-		logperror(1,"tty_reset()");
-#               endif
+		LOGPRINTF(1,"tty_reset(): tcsetattr() failed");
+		LOGPERROR(1,"tty_reset()");
 		return(0);
 	}
 	return(1);
@@ -58,10 +54,8 @@ int tty_setrtscts(int fd,int enable)
 
 	if(tcgetattr(fd,&options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_reset(): tcgetattr() failed\n");
-		logperror(1,"tty_reset()");
-#               endif
+		LOGPRINTF(1,"tty_reset(): tcgetattr() failed");
+		LOGPERROR(1,"tty_reset()");
 		return(0);
 	}
 	if(enable)
@@ -76,10 +70,8 @@ int tty_setrtscts(int fd,int enable)
 	}
 	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_reset(): tcsetattr() failed\n");
-		logperror(1,"tty_reset()");
-#               endif
+		LOGPRINTF(1,"tty_reset(): tcsetattr() failed");
+		LOGPERROR(1,"tty_reset()");
 		return(0);
 	}
 	return(1);
@@ -120,27 +112,21 @@ int tty_setbaud(int fd,int baud)
                 speed=B115200;
                 break;
 	default:
-#               ifdef DEBUG
-		logprintf(1,"tty_setbaud(): bad baud rate %d\n",baud);
-#               endif
+		LOGPRINTF(1,"tty_setbaud(): bad baud rate %d",baud);
 		return(0);
 	}		
 	if(tcgetattr(fd, &options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_setbaud(): tcgetattr() failed\n");
-		logperror(1,"tty_setbaud()");
-#               endif
+		LOGPRINTF(1,"tty_setbaud(): tcgetattr() failed");
+		LOGPERROR(1,"tty_setbaud()");
 		return(0);
 	}
 	(void) cfsetispeed(&options,speed);
 	(void) cfsetospeed(&options,speed);
 	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_setbaud(): tcsetattr() failed\n");
-		logperror(1,"tty_setbaud()");
-#               endif
+		LOGPRINTF(1,"tty_setbaud(): tcsetattr() failed");
+		LOGPERROR(1,"tty_setbaud()");
 		return(0);
 	}
 	return(1);
@@ -166,52 +152,56 @@ int tty_create_lock(char *name)
 	
 	if(strlen(filename)+strlen(s)>FILENAME_MAX)
 	{
-		logprintf(0,"%s: invalid filename \"%s%s\"\n",filename,s);
+		logprintf(LOG_ERR,"%s: invalid filename \"%s%s\"",
+			  filename,s);
 		return(0);
 	}
 	strcat(filename,s);
 	
 	if((len=snprintf(id,10+1+1,"%10d\n",getpid()))==-1)
 	{
-		logprintf(0,"invalid pid \"%d\"\n",getpid());
+		logprintf(LOG_ERR,"invalid pid \"%d\"",getpid());
 		return(0);
 	}
 
 	lock=open(filename,O_CREAT|O_EXCL|O_WRONLY,0644);
 	if(lock==-1)
 	{
-		logprintf(0,"could not create lock file \"%s\"\n",filename);
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"could not create lock file \"%s\"",
+			  filename);
+		logperror(LOG_ERR,NULL);
 		lock=open(filename,O_RDONLY);
 		if(lock==-1) return(0);
 		len=read(lock,id,10+1);
 		if(len<10+1) return(0);
 		if(read(lock,id,1)!=0) return(0);
-		logprintf(0,"%s is locked by PID %s",name,id);
+		logprintf(LOG_ERR,"%s is locked by PID %s",name,id);
 		close(lock);
 		return(0);
 	}
 	if(write(lock,id,len)!=len)
 	{
-		logprintf(0,"%s: could not write pid to lock file\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"%s: could not write pid to lock file");
+		logperror(LOG_ERR,NULL);
 		close(lock);
 		if(unlink(filename)==-1)
 		{
-			logprintf(0,"could not delete file \"%s\"\n",filename);
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"could not delete file \"%s\"",
+				  filename);
+			logperror(LOG_ERR,NULL);
 			/* FALLTHROUGH */
 		}
 		return(0);
 	}
 	if(close(lock)==-1)
 	{
-		logprintf(0,"could not close lock file\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"could not close lock file");
+		logperror(LOG_ERR,NULL);
 		if(unlink(filename)==-1)
 		{
-			logprintf(0,"could not delete file \"%s\"\n",filename);
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"could not delete file \"%s\"",
+				  filename);
+			logperror(LOG_ERR,NULL);
 			/* FALLTHROUGH */
 		}
 		return(0);
@@ -221,13 +211,13 @@ int tty_create_lock(char *name)
 	{
 		if(errno!=EINVAL) /* symlink */
 		{
-			logprintf(0,"readlink() failed for \"%s\"\n",name);
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"readlink() failed for \"%s\"",name);
+			logperror(LOG_ERR,NULL);
 			if(unlink(filename)==-1)
 			{
-				logprintf(0,"could not delete file \"%s\"\n",
+				logprintf(LOG_ERR,"could not delete file \"%s\"",
 					  filename);
-				logperror(0,NULL);
+				logperror(LOG_ERR,NULL);
 				/* FALLTHROUGH */
 			}
 			return(0);
@@ -243,13 +233,13 @@ int tty_create_lock(char *name)
 
 			if(getcwd(cwd,FILENAME_MAX)==NULL)
 			{
-				logprintf(0,"getcwd() failed\n");
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"getcwd() failed");
+				logperror(LOG_ERR,NULL);
 				if(unlink(filename)==-1)
 				{
-					logprintf(0,"%s: could not delete "
-						  "file \"%s\"\n",filename);
-					logperror(0,NULL);
+					logprintf(LOG_ERR,"%s: could not delete "
+						  "file \"%s\"",filename);
+					logperror(LOG_ERR,NULL);
 				        /* FALLTHROUGH */
 				}
 				return(0);
@@ -259,14 +249,14 @@ int tty_create_lock(char *name)
 			dirname[strlen(name)-strlen(last)]=0;
 			if(chdir(dirname)==-1)
 			{
-				logprintf(0,"chdir() to \"%s\" "
-					  "failed \n",dirname);
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"chdir() to \"%s\" "
+					  "failed",dirname);
+				logperror(LOG_ERR,NULL);
 				if(unlink(filename)==-1)
 				{
-					logprintf(0,"could not delete "
-						  "file \"%s\"\n",filename);
-					logperror(0,NULL);
+					logprintf(LOG_ERR,"could not delete "
+						  "file \"%s\"",filename);
+					logperror(LOG_ERR,NULL);
 				        /* FALLTHROUGH */
 				}
 				return(0);
@@ -276,9 +266,9 @@ int tty_create_lock(char *name)
 		{
 			if(unlink(filename)==-1)
 			{
-				logprintf(0,"could not delete file "
-					  "\"%s\"\n",filename);
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"could not delete file "
+					  "\"%s\"",filename);
+				logperror(LOG_ERR,NULL);
 				/* FALLTHROUGH */
 			}
 			return(0);
@@ -287,14 +277,14 @@ int tty_create_lock(char *name)
 		{
 			if(chdir(cwd)==-1)
 			{
-				logprintf(0,"chdir() to \"%s\" "
-					  "failded \n",cwd);
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"chdir() to \"%s\" "
+					  "failded ",cwd);
+				logperror(LOG_ERR,NULL);
 				if(unlink(filename)==-1)
 				{
-					logprintf(0,"could not delete "
-						  "file \"%s\"\n",filename);
-					logperror(0,NULL);
+					logprintf(LOG_ERR,"could not delete "
+						  "file \"%s\"",filename);
+					logperror(LOG_ERR,NULL);
 				        /* FALLTHROUGH */
 				}
 				return(0);
@@ -332,8 +322,8 @@ int tty_delete_lock(void)
 			pid=strtol(id,&endptr,10);
 			if(!*id || *endptr!='\n')
 			{
-				logprintf(0,"invalid lockfile (%s) "
-					  "detected\n",filename);
+				logprintf(LOG_WARNING,"invalid lockfile (%s) "
+					  "detected",filename);
 				retval=0;
 				continue;
 			}
@@ -341,9 +331,9 @@ int tty_delete_lock(void)
 			{
 				if(unlink(filename)==-1)
 				{
-					logprintf(0,"could not delete "
-						  "file \"%s\"\n",filename);
-					perror(NULL);
+					logprintf(LOG_ERR,"could not delete "
+						  "file \"%s\"",filename);
+					logperror(LOG_ERR,NULL);
 					retval=0;
 					continue;
 				}
@@ -353,7 +343,7 @@ int tty_delete_lock(void)
 	}
 	else
 	{
-		logprintf(0,"could not open directory \"/var/lock/\"");
+		logprintf(LOG_ERR,"could not open directory \"/var/lock/\"");
 		return(0);
 	}
 	return(retval);
@@ -367,10 +357,8 @@ int tty_set(int fd,int rts,int dtr)
 	mask|=dtr ? TIOCM_DTR:0;
 	if(ioctl(fd,TIOCMBIS,&mask)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_set(): ioctl() failed\n");
-		logperror(1,"tty_set()");
-#               endif
+		LOGPRINTF(1,"tty_set(): ioctl() failed");
+		LOGPERROR(1,"tty_set()");
 		return(0);
 	}
 	return(1);
@@ -384,10 +372,8 @@ int tty_clear(int fd,int rts,int dtr)
 	mask|=dtr ? TIOCM_DTR:0;
 	if(ioctl(fd,TIOCMBIC,&mask)==-1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_clear(): ioctl() failed\n");
-		logperror(1,"tty_clear()");
-#               endif
+		LOGPRINTF(1,"tty_clear(): ioctl() failed");
+		LOGPERROR(1,"tty_clear()");
 		return(0);
 	}
 	return(1);
@@ -397,10 +383,8 @@ int tty_write(int fd,char byte)
 {
 	if(write(fd,&byte,1)!=1) 
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_write(): write() failed\n");
-		logperror(1,"tty_write()");
-#               endif
+		LOGPRINTF(1,"tty_write(): write() failed");
+		LOGPERROR(1,"tty_write()");
 		return(-1);
 	}	
 	/* wait until the stop bit of Control Byte is sent
@@ -428,23 +412,19 @@ int tty_read(int fd,char *byte)
 	ret=select(fd+1,&fds,NULL,NULL,&tv);
 	if(ret==0)
 	{
-		logprintf(0,"tty_read(): timeout\n");
+		logprintf(LOG_ERR,"tty_read(): timeout");
 		return(-1); /* received nothing, bad */
 	}
 	else if(ret!=1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_read(): select() failed\n");
-		logperror(1,"tty_read()");
-#               endif
+		LOGPRINTF(1,"tty_read(): select() failed");
+		LOGPERROR(1,"tty_read()");
 		return(-1);
 	}
 	if(read(fd,byte,1)!=1)
 	{
-#               ifdef DEBUG
-		logprintf(1,"tty_read(): read() failed\n");
-		logperror(1,"tty_read()");
-#               endif
+		LOGPRINTF(1,"tty_read(): read() failed");
+		LOGPERROR(1,"tty_read()");
 		return(-1);		
 	}
 	return(1);
@@ -456,16 +436,14 @@ int tty_write_echo(int fd,char byte)
 
 	if(tty_write(fd,byte)==-1) return(-1);
 	if(tty_read(fd,&reply)==-1) return(-1);
-#       ifdef DEBUG
-	logprintf(1,"sent: A%u D%01x reply: A%u D%01x\n",
+	LOGPRINTF(1,"sent: A%u D%01x reply: A%u D%01x",
 		  (((unsigned int) (unsigned char) byte)&0xf0)>>4,
 		  ((unsigned int) (unsigned char) byte)&0x0f,
 		  (((unsigned int) (unsigned char) reply)&0xf0)>>4,
 		  ((unsigned int) (unsigned char) reply)&0x0f);
-#       endif
 	if(byte!=reply)
 	{
-		logprintf(0,"Command mismatch.\n");
+		logprintf(LOG_ERR,"Command mismatch.");
 	}
 	return(1);
 }

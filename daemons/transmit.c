@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.3 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: transmit.c,v 5.4 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -75,9 +75,7 @@ inline void send_space(lirc_t data)
 {
 	if(send_buffer.wptr==0 && send_buffer.pendingp==0)
 	{
-#ifdef DEBUG
-		logprintf(1,"first signal is a space!\n");
-#endif
+		LOGPRINTF(1,"first signal is a space!");
 		return;
 	}
 	if(send_buffer.pendings>0)
@@ -282,7 +280,7 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 			+remote->bits
 			+remote->post_data_bits)
 		{
-			logprintf(0,"bad toggle_bit\n");
+			logprintf(LOG_ERR,"bad toggle_bit");
 		}
 	}
 
@@ -306,7 +304,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
 	if(is_rcmm(remote))
 	{
-		logprintf(0,"sorry, can't send this protocol yet\n");
+		logprintf(LOG_ERR,"sorry, can't send this protocol yet");
 		return(0);
 	}
 	clear_send_buffer();
@@ -333,7 +331,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	sync_send_buffer();
 	if(bad_send_buffer())
 	{
-		logprintf(0,"buffer too small\n");
+		logprintf(LOG_ERR,"buffer too small");
 		return(0);
 	}
 	if(is_const(remote))
@@ -345,7 +343,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 		else
 		{
-			logprintf(0,"too short gap: %lu\n",remote->gap);
+			logprintf(LOG_ERR,"too short gap: %lu",remote->gap);
 			remote->remaining_gap=remote->gap;
 			return(0);
 		}

@@ -1,5 +1,8 @@
 0.6.1: future
+  * lircd now can be configured to use syslogd for log output
+    Thanks to Rainer Clasen for the suggestion.
   * irexec has a --daemon option to easily start it from an init script
+    Thanks to Eric Crahen for the suggestion.
   * added RC-MM support
   * added RC-6 support
   * added support for Slink-e by Nirvis Systems (Max Spring)

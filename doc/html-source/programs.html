@@ -36,9 +36,11 @@ exists this option has no effect.
 <P>
 The config file for lircd is located in
 <em>/usr/local/etc/lircd.conf</EM>. lircd has its own log file in
-<em>/var/log/lircd</em>. You can make lircd reread its config file and
-reopen its log file by sending the HUP signal to the program. That way
-you can rotate old log files.
+<em>/var/log/lircd</em> (beginning with LIRC version 0.6.1 you can
+configure lircd to use syslogd for log messages; then it depends on
+your system configuration where log messages will show up). You can
+make lircd reread its config file and reopen its log file by sending
+the HUP signal to the program. That way you can rotate old log files.
 </P>
 
 <P>Read also the <A HREF="#daemons">daemon note</A>.</P>

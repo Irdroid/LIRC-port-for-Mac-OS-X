@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.14 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.15 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -110,10 +110,8 @@ lirc_t readdata(void)
 	ret=read(hw.fd,&data,sizeof(data));
 	if(ret!=sizeof(data))
 	{
-#               ifdef DEBUG
-		logprintf(1,"error reading from lirc\n");
-		logperror(1,NULL);
-#               endif
+		LOGPRINTF(1,"error reading from lirc");
+		LOGPERROR(1,NULL);
 		dosigterm(SIGTERM);
 	}
 #endif
@@ -147,22 +145,20 @@ int default_init()
 #endif
 	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR))<0)
 	{
-		logprintf(0,"could not open lirc\n");
-		logperror(0,"default_init()");
+		logprintf(LOG_ERR,"could not open lirc");
+		logperror(LOG_ERR,"default_init()");
 		return(0);
 	}
 	if(fstat(hw.fd,&s)==-1)
 	{
 		default_deinit();
-		logprintf(0,"could not get file information\n");
-		logperror(0,"default_init()");
+		logprintf(LOG_ERR,"could not get file information");
+		logperror(LOG_ERR,"default_init()");
 		return(0);
 	}
 	if(S_ISFIFO(s.st_mode))
 	{
-#               ifdef DEBUG
-		logprintf(1,"using defaults for the Irman\n");
-#               endif
+		LOGPRINTF(1,"using defaults for the Irman");
 		hw.features=LIRC_CAN_REC_MODE2;
 		hw.rec_mode=LIRC_MODE_MODE2; /* this might change in future */
 		return(1);
@@ -170,18 +166,19 @@ int default_init()
 	else if(!S_ISCHR(s.st_mode))
 	{
 		default_deinit();
-		logprintf(0,"%s is not a character device!!!\n",
+		logprintf(LOG_ERR,"%s is not a character device!!!",
 			  LIRC_DRIVER_DEVICE);
-		logperror(0,"something went wrong during installation\n");
+		logperror(LOG_ERR,"something went wrong during "
+			  "installation");
 		return(0);
 	}
 	else if(ioctl(hw.fd,LIRC_GET_FEATURES,&hw.features)==-1)
 	{
-		logprintf(0,"could not get hardware features\n");
-		logprintf(0,"this device driver does not "
-			  "support the new LIRC interface\n");
-		logprintf(0,"make sure you use a current "
-			  "version of the driver\n");
+		logprintf(LOG_ERR,"could not get hardware features");
+		logprintf(LOG_ERR,"this device driver does not "
+			  "support the new LIRC interface");
+		logprintf(LOG_ERR,"make sure you use a current "
+			  "version of the driver");
 		default_deinit();
 		return(0);
 	}
@@ -192,20 +189,20 @@ int default_init()
 		     LIRC_CAN_REC(hw.features)))
 		{
 			logprintf(1,"driver supports neither "
-				  "sending nor receiving of IR signals\n");
+				  "sending nor receiving of IR signals");
 		}
 		if(LIRC_CAN_SEND(hw.features) && LIRC_CAN_REC(hw.features))
 		{
 			logprintf(1,"driver supports both sending and "
-				  "receiving\n");
+				  "receiving");
 		}
 		else if(LIRC_CAN_SEND(hw.features))
 		{
-			logprintf(1,"driver supports sending\n");
+			logprintf(1,"driver supports sending");
 		}
 		else if(LIRC_CAN_REC(hw.features))
 		{
-			logprintf(1,"driver supports receiving\n");
+			logprintf(1,"driver supports receiving");
 		}
 	}
 #       endif
@@ -223,9 +220,9 @@ int default_init()
 				mode=LIRC_SEND2MODE(supported_send_modes[i]);
 				if(ioctl(hw.fd,LIRC_SET_SEND_MODE,&mode)==-1)
 				{
-					logprintf(0,"could not set "
-						  "send mode\n");
-					logperror(0,"default_init()");
+					logprintf(LOG_ERR,"could not set "
+						  "send mode");
+					logperror(LOG_ERR,"default_init()");
 					default_deinit();
 					return(0);
 				}
@@ -236,8 +233,8 @@ int default_init()
 		}
 		if(supported_send_modes[i]==0)
 		{
-			logprintf(0,"the send method of the driver is "
-				  "not yet supported by lircd\n");
+			logprintf(LOG_NOTICE,"the send method of the "
+				  "driver is not yet supported by lircd");
 		}
 	}
 	hw.rec_mode=0;
@@ -252,9 +249,9 @@ int default_init()
 				mode=LIRC_REC2MODE(supported_rec_modes[i]);
 				if(ioctl(hw.fd,LIRC_SET_REC_MODE,&mode)==-1)
 				{
-					logprintf(0,"could not set "
-						  "receive mode\n");
-					logperror(0,"default_init()");
+					logprintf(LOG_ERR,"could not set "
+						  "receive mode");
+					logperror(LOG_ERR,"default_init()");
 					return(0);
 				}
 				hw.rec_mode=LIRC_REC2MODE
@@ -264,8 +261,8 @@ int default_init()
 		}
 		if(supported_rec_modes[i]==0)
 		{
-			logprintf(0,"the receive method of the driver "
-				  "is not yet supported by lircd\n");
+			logprintf(LOG_NOTICE,"the receive method of the "
+				  "driver is not yet supported by lircd");
 		}
 	}
 	if(hw.rec_mode==LIRC_MODE_CODE)
@@ -276,15 +273,15 @@ int default_init()
 	{
 		if(ioctl(hw.fd,LIRC_GET_LENGTH,&hw.code_length)==-1)
 		{
-			logprintf(0,"could not get code length\n");
-			logperror(0,"default_init()");
+			logprintf(LOG_ERR,"could not get code length");
+			logperror(LOG_ERR,"default_init()");
 			default_deinit();
 			return(0);
 		}
 		if(hw.code_length>sizeof(ir_code)*CHAR_BIT)
 		{
-			logprintf(0,"lircd can not handle %lu bit "
-				  "codes\n",hw.code_length);
+			logprintf(LOG_ERR,"lircd can not handle %lu bit "
+				  "codes",hw.code_length);
 			default_deinit();
 			return(0);
 		}
@@ -324,9 +321,7 @@ int write_send_buffer(int lirc,int length,lirc_t *signals)
 	
 	if(send_buffer.wptr==0) 
 	{
-#               ifdef DEBUG
-		logprintf(1,"nothing to send\n");
-#               endif
+		LOGPRINTF(1,"nothing to send");
 		return(0);
 	}
 	for(i=0;;)
@@ -344,9 +339,7 @@ int write_send_buffer(int lirc,int length,lirc_t *signals)
 	
 	if(send_buffer.wptr==0) 
 	{
-#               ifdef DEBUG
-		logprintf(1,"nothing to send\n");
-#               endif
+		LOGPRINTF(1,"nothing to send");
 		return(0);
 	}
 	return(write(lirc,send_buffer.data,
@@ -370,8 +363,9 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		freq=remote->freq==0 ? 38000:remote->freq;
 		if(ioctl(hw.fd,LIRC_SET_SEND_CARRIER,&freq)==-1)
 		{
-			logprintf(0,"could not set modulation frequency\n");
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"could not set modulation "
+				  "frequency");
+			logperror(LOG_ERR,NULL);
 			return(0);
 		}
 	}
@@ -382,8 +376,8 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		duty_cycle=remote->duty_cycle==0 ? 50:remote->duty_cycle;
 		if(ioctl(hw.fd,LIRC_SET_SEND_DUTY_CYCLE,&duty_cycle)==-1)
 		{
-			logprintf(0,"could not set duty cycle\n");
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"could not set duty cycle");
+			logperror(LOG_ERR,NULL);
 			return(0);
 		}
 	}
@@ -405,8 +399,8 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 
 	if(write_send_buffer(hw.fd,code->length,code->signals)==-1)
 	{
-		logprintf(0,"write failed\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"write failed");
+		logperror(LOG_ERR,NULL);
 		return(0);
 	}
 	else
@@ -437,8 +431,8 @@ char *default_rec(struct ir_remote *remotes)
 		{
 			if(read(hw.fd,&c,1)!=1)
 			{
-				logprintf(0,"reading in mode LIRC_MODE_STRING "
-					  "failed\n");
+				logprintf(LOG_ERR,"reading in mode "
+					  "LIRC_MODE_STRING failed");
 				return(NULL);
 			}
 			if(n>=PACKET_SIZE-1)

@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.7 2000/07/02 08:21:48 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.8 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -85,14 +85,12 @@ int pixelview_decode(struct ir_remote *remote,
 	(remote->gap>signal_length ? remote->gap-signal_length:0):
 	remote->gap;
 
-#       ifdef DEBUG
-	logprintf(1,"pre: %llx\n",(unsigned long long) *prep);
-	logprintf(1,"code: %llx\n",(unsigned long long) *codep);
-	logprintf(1,"repeat_flag: %d\n",*repeat_flagp);
-	logprintf(1,"gap: %lu\n",(unsigned long) gap);
-	logprintf(1,"rem: %lu\n",(unsigned long) remote->remaining_gap);
-	logprintf(1,"signal length: %lu\n",(unsigned long) signal_length);
-#       endif
+	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
+	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
+	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
+	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
+	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
+	LOGPRINTF(1,"signal length: %lu",(unsigned long) signal_length);
 
 
 	return(1);
@@ -104,25 +102,25 @@ int pixelview_init(void)
 	
 	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
 	{
-		logprintf(0,"could not create lock files\n");
+		logprintf(LOG_ERR,"could not create lock files");
 		return(0);
 	}
 	if((hw.fd=open(LIRC_DRIVER_DEVICE,O_RDWR|O_NONBLOCK|O_NOCTTY))<0)
 	{
-		logprintf(0,"could not open lirc\n");
-		logperror(0,"pixelview_init()");
+		logprintf(LOG_ERR,"could not open lirc");
+		logperror(LOG_ERR,"pixelview_init()");
 		tty_delete_lock();
 		return(0);
 	}
 	if(!tty_reset(hw.fd))
 	{
-		logprintf(0,"could not reset tty\n");
+		logprintf(LOG_ERR,"could not reset tty");
 		pixelview_deinit();
 		return(0);
 	}
 	if(!tty_setbaud(hw.fd,1200))
 	{
-		logprintf(0,"could not set baud rate\n");
+		logprintf(LOG_ERR,"could not set baud rate");
 		pixelview_deinit();
 		return(0);
 	}
@@ -149,19 +147,18 @@ char *pixelview_rec(struct ir_remote *remotes)
 		{
 			if(!waitfordata(10000))
 			{
-				logprintf(0,"timeout reading byte %d\n",i);
+				logprintf(LOG_ERR,"timeout reading "
+					  "byte %d",i);
 				return(NULL);
 			}
 		}
 		if(read(hw.fd,&b[i],1)!=1)
 		{
-			logprintf(0,"reading of byte %d failed\n",i);
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"reading of byte %d failed",i);
+			logperror(LOG_ERR,NULL);
 			return(NULL);
 		}
-#               ifdef DEBUG
-		logprintf(1,"byte %d: %02x\n",i,b[i]);
-#               endif		
+		LOGPRINTF(1,"byte %d: %02x",i,b[i]);
 	}
 	gettimeofday(&end,NULL);
 	

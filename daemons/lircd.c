@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.19 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: lircd.c,v 5.20 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -105,10 +105,13 @@ char *protocol_string[] =
 	"SIGHUP\n"
 };
 
+#ifndef USE_SYSLOG
 #define HOSTNAME_LEN 128
 char hostname[HOSTNAME_LEN+1];
 
 FILE *lf=NULL;
+#endif
+
 int sockfd;
 int clis[FD_SETSIZE-4]; /* substract one for lirc, sockfd, logfile, pidfile */
 int clin=0;
@@ -204,16 +207,16 @@ inline int read_timeout(int fd,char *buf,int len,int timeout)
 	while(ret==-1 && errno==EINTR);
 	if(ret==-1)
 	{
-		logprintf(0,"select() failed\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"select() failed");
+		logperror(LOG_ERR,NULL);
 		return(-1);
 	}
 	else if(ret==0) return(0); /* timeout */
 	n=read(fd,buf,len);
 	if(n==-1)
 	{
-		logprintf(0,"read() failed\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"read() failed");
+		logperror(LOG_ERR,NULL);
 		return(-1);
 	}
 	return(n);
@@ -238,7 +241,7 @@ void dosigterm(int sig)
 		free_config(free_remotes);
 	}
 	free_config(remotes);
-	logprintf(0,"caught signal\n");
+	logprintf(LOG_NOTICE,"caught signal");
 	for (i=0; i<clin; i++)
 	{
 		shutdown(clis[i],2);
@@ -249,7 +252,11 @@ void dosigterm(int sig)
 	fclose(pidfile);
 	(void) unlink(PIDFILE);
 	if(clin>0 && hw.deinit_func) hw.deinit_func();
+#ifdef USE_SYSLOG
+	closelog();
+#else
 	if(lf) fclose(lf);
+#endif
 	signal(sig,SIG_DFL);
 	raise(sig);
 }
@@ -261,11 +268,16 @@ void sighup(int sig)
 
 void dosighup(int sig)
 {
+#ifndef USE_SYSLOG
 	struct stat s;
+#endif
 	int i;
 
 	/* reopen logfile first */
-	logprintf(0,"closing logfile\n");
+#ifdef USE_SYSLOG
+	/* we don't need to do anyting as this is syslogd's task */
+#else
+	logprintf(LOG_INFO,"closing logfile");
 	if(-1==fstat(fileno(lf),&s))		
 	{
 		dosigterm(SIGTERM); /* shouldn't ever happen */
@@ -277,12 +289,13 @@ void dosighup(int sig)
 		/* can't print any error messagees */
 		dosigterm(SIGTERM);
 	}
-	logprintf(0,"reopened logfile\n");
+	logprintf(LOG_INFO,"reopened logfile");
 	if(-1==fchmod(fileno(lf),s.st_mode))
 	{
-		logprintf(0,"WARNING: could not set file permissions\n");
+		logprintf(LOG_WARNING,"could not set file permissions");
 		logperror(0,NULL);
 	}
+#endif
 
 	config();
 	
@@ -305,32 +318,31 @@ void config(void)
 	
 	if(free_remotes!=NULL)
 	{
-		logprintf(0,"cannot read config file\n");
-		logprintf(0,"old config is still in use\n");
+		logprintf(LOG_ERR,"cannot read config file");
+		logprintf(LOG_ERR,"old config is still in use");
 		return;
 	}
 	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
-		logprintf(0,"could not open config file '%s'\n",configfile);
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"could not open config file '%s'",
+			  configfile);
+		logperror(LOG_ERR,NULL);
 		return;
 	}
 	config_remotes=read_config(fd);
 	fclose(fd);
 	if(config_remotes==(void *) -1)
 	{
-		logprintf(0,"reading of config file failed\n");
+		logprintf(LOG_ERR,"reading of config file failed");
 	}
 	else
 	{
-#               ifdef DEBUG
-		logprintf(1,"config file read\n");
-#               endif
+		LOGPRINTF(1,"config file read");
 		if(config_remotes==NULL)
 		{
-			logprintf(0,"WARNING: config file contains no "
-				  "valid remote control definition\n");
+			logprintf(LOG_WARNING,"config file contains no "
+				  "valid remote control definition");
 		}
 		/* I cannot free the data structure
 		   as they could still be in use */
@@ -356,7 +368,7 @@ void remove_client(int fd)
 		{
 			shutdown(clis[i],2);
 			close(clis[i]);
-			logprintf(0,"removed client\n");
+			logprintf(LOG_INFO,"removed client");
 			
 			clin--;
 			if(clin==0 && hw.deinit_func) hw.deinit_func();
@@ -367,9 +379,7 @@ void remove_client(int fd)
 			return;
 		}
 	}
-#       ifdef DEBUG
-	logprintf(1,"internal error in remove_client: no such fd\n");
-#       endif
+	LOGPRINTF(1,"internal error in remove_client: no such fd");
 }
 
 void add_client(void)
@@ -382,14 +392,14 @@ void add_client(void)
 	fd=accept(sockfd,(struct sockaddr *)&client_addr,&clilen);
 	if(fd==-1) 
 	{
-		logprintf(0,"accept() failed\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"accept() failed");
+		logperror(LOG_ERR,NULL);
 		dosigterm(SIGTERM);
 	};
 
 	if(fd>=FD_SETSIZE)
 	{
-		logprintf(0,"connection rejected\n");
+		logprintf(LOG_ERR,"connection rejected");
 		shutdown(fd,2);
 		close(fd);
 		return;
@@ -410,10 +420,10 @@ void add_client(void)
 		}
 	}
 
-	logprintf(0,"accepted new client\n");
+	logprintf(LOG_INFO,"accepted new client");
 }
 
-void start_server(mode_t permission)
+void start_server(mode_t permission,int nodaemon)
 {
 	struct sockaddr_un serv_addr;
 	struct stat s;
@@ -524,6 +534,20 @@ void start_server(mode_t permission)
 	listen(sockfd,3);
 	nolinger(sockfd);
 	
+#ifdef USE_SYSLOG
+#ifdef DAEMONIZE
+	if(nodaemon)
+	{
+		openlog(progname,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
+	}
+	else
+	{
+		openlog(progname,LOG_CONS|LOG_PID,LIRC_SYSLOG);
+	}
+#else
+	openlog(progname,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
+#endif
+#else
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
@@ -534,18 +558,16 @@ void start_server(mode_t permission)
 		exit(EXIT_FAILURE);
 	}
 	gethostname(hostname,HOSTNAME_LEN);
-#       ifdef DEBUG
-	logprintf(1,"started server socket\n");
-#       endif
+#endif
+	LOGPRINTF(1,"started server socket");
 }
 
-void logprintf(int level,char *format_str, ...)
+#ifndef USE_SYSLOG
+void logprintf(int prio,char *format_str, ...)
 {
 	time_t current;
 	char *currents;
 	va_list ap;  
-	
-	if(level>debug) return;
 	
 	current=time(&current);
 	currents=ctime(&current);
@@ -553,24 +575,33 @@ void logprintf(int level,char *format_str, ...)
 	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
 	if(!daemonized) fprintf(stderr,"%s: ",progname);
 	va_start(ap,format_str);
-	if(lf) {vfprintf(lf,format_str,ap);fflush(lf);}
-	if(!daemonized) {vfprintf(stderr,format_str,ap);fflush(stderr);}
+	if(lf)
+	{
+		if(prio==LOG_WARNING) fprintf(lf,"WARNING: ");
+		vfprintf(lf,format_str,ap);
+		fputc('\n',lf);fflush(lf);
+	}
+	if(!daemonized)
+	{
+		if(prio==LOG_WARNING) fprintf(stderr,"WARNING: ");
+		vfprintf(stderr,format_str,ap);
+		fputc('\n',stderr);fflush(stderr);
+	}
 	va_end(ap);
 }
 
-void logperror(int level,const char *s)
+void logperror(int prio,const char *s)
 {
-	if(level>debug) return;
-
 	if(s!=NULL)
 	{
-		logprintf(level,"%s: %s\n",s,strerror(errno));
+		logprintf(prio,"%s: %s",s,strerror(errno));
 	}
 	else
 	{
-		logprintf(level,"%s\n",strerror(errno));
+		logprintf(prio,"%s",strerror(errno));
 	}
 }
+#endif
 
 #ifdef DAEMONIZE
 
@@ -578,8 +609,8 @@ void daemonize(void)
 {
 	if(daemon(0,0)==-1)
 	{
-		logprintf(0,"daemon() failed\n");
-		logperror(0,NULL);
+		logprintf(LOG_ERR,"daemon() failed");
+		logperror(LOG_ERR,NULL);
 		dosigterm(SIGTERM);
 	}
 	umask(0);
@@ -679,8 +710,8 @@ int send_error(int fd,char *message,char *format_str, ...)
 	vsprintf(buffer,format_str,ap);
 	va_end(ap);
 	
-	logprintf(0,"error processing command: %s",message);
-	logprintf(0,"%s",buffer);
+	logprintf(LOG_ERR,"error processing command: %s",message);
+	logprintf(LOG_ERR,"%s",buffer);
 
 	n=0;
 	len=strlen(buffer);
@@ -965,14 +996,12 @@ int get_command(int fd)
 		end=strchr(buffer,'\n');
 		if(end==NULL)
 		{
-			logprintf(0,"bad send packet: \"%s\"\n",buffer);
+			logprintf(LOG_ERR,"bad send packet: \"%s\"",buffer);
 			/* remove clients that behave badly */
 			return(0);
 		}
 		end[0]=0;
-#               ifdef DEBUG
-		logprintf(1,"received command: \"%s\"\n",buffer);
-#               endif		
+		LOGPRINTF(1,"received command: \"%s\"",buffer);
 		packet_length=strlen(buffer)+1;
 
 		strcpy(backup,buffer);strcat(backup,"\n");
@@ -1120,12 +1149,10 @@ void free_old_remotes()
 		free_config(free_remotes);
 		free_remotes=NULL;
 	}
-#       ifdef DEBUG
 	else
 	{
-		logprintf(1,"free_remotes still in use\n");
+		LOGPRINTF(1,"free_remotes still in use");
 	}
-#       endif
 }
 
 
@@ -1192,8 +1219,8 @@ int waitfordata(unsigned long maxusec)
 			while(ret==-1 && errno==EINTR);
 			if(ret==-1)
 			{
-				logprintf(0,"select() failed\n");
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"select() failed");
+				logperror(LOG_ERR,NULL);
 				continue;
 			}
 		}
@@ -1213,9 +1240,7 @@ int waitfordata(unsigned long maxusec)
 		}
 		if(FD_ISSET(sockfd,&fds))
 		{
-#                       ifdef DEBUG
-			logprintf(1,"registering new client\n");
-#                       endif
+			LOGPRINTF(1,"registering new client");
 			add_client();
 		}
                 if(clin>0 && hw.rec_mode!=0 && FD_ISSET(hw.fd,&fds))
@@ -1231,7 +1256,7 @@ void loop()
 	char *message;
 	int len,i;
 	
-	logprintf(0,"lircd ready\n");
+	logprintf(LOG_NOTICE,"lircd ready");
 	while(1)
 	{
 		(void) waitfordata(0);
@@ -1243,9 +1268,7 @@ void loop()
 			
 			for (i=0; i<clin; i++)
 			{
-#                               ifdef DEBUG
-				logprintf(1,"writing to client %d\n",i);
-#                               endif
+				LOGPRINTF(1,"writing to client %d",i);
 				if(write_socket(clis[i],message,len)<len)
 				{
 					remove_client(clis[i]);
@@ -1287,10 +1310,10 @@ int main(int argc,char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options] [config-file]\n",progname);
-			printf("\t -h --help\t\t\t\tdisplay this message\n");
+			printf("\t -h --help\t\t\tdisplay this message\n");
 			printf("\t -v --version\t\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\t\tdon't fork to background\n");
-			printf("\t -p --permission=mode\tfile permissions for " LIRCD "\n");
+			printf("\t -p --permission=mode\t\tfile permissions for " LIRCD "\n");
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
@@ -1336,7 +1359,7 @@ int main(int argc,char **argv)
 	
 	signal(SIGPIPE,SIG_IGN);
 	
-	start_server(permission);
+	start_server(permission,nodaemon);
 	
 	act.sa_handler=sigterm;
 	sigfillset(&act.sa_mask);

@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.5 2000/05/03 19:41:21 columbus Exp $      */
+/*      $Id: lircd.h,v 5.6 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -9,10 +9,14 @@
 #ifndef _LIRCD_H
 #define _LIRCD_H
 
+#include <syslog.h>
+
 #include "ir_remote.h"
 
 #define PACKET_SIZE (256)
 #define WHITE_SPACE " \t"
+
+extern int debug;
 
 void sigterm(int sig);
 void dosigterm(int sig);
@@ -22,9 +26,29 @@ void config(void);
 void nolinger(int sock);
 void remove_client(int fd);
 void add_client(void);
-void start_server(mode_t permission);
-void logprintf(int level,char *format_str, ...);
-void logperror(int level,const char *s);
+void start_server(mode_t permission,int nodaemon);
+
+#ifdef DEBUG
+#define LOGPRINTF(level,fmt,args...)	\
+  if(level<=debug) logprintf(LOG_DEBUG,fmt, ## args )
+#define LOGPERROR(level,s) \
+  if(level<=debug) logperror(LOG_DEBUG,s)
+#else
+#define LOGPRINTF(level,fmt,args...)	\
+  do {} while(0)
+#define LOGPERROR(level,s) \
+  do {} while(0)
+#endif
+
+#ifdef USE_SYSLOG
+#define logprintf syslog
+#define logperror(prio,s) syslog(prio,(s)!=NULL ? "%s: %m\n":"%m\n",s)
+#else
+void logprintf(int prio,char *format_str, ...);
+void logperror(int prio,const char *s);
+#endif
+
+
 void daemonize(void);
 void sigalrm(int sig);
 void dosigalrm(int sig);

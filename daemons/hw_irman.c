@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.1 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: hw_irman.c,v 5.2 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -121,14 +121,12 @@ int irman_decode(struct ir_remote *remote,
 	
 	*remaining_gapp=remote->gap;
 
-#       ifdef DEBUG
-	logprintf(1,"pre: %llx\n",(unsigned long long) *prep);
-	logprintf(1,"code: %llx\n",(unsigned long long) *codep);
-	logprintf(1,"post: %llx\n",(unsigned long long) *postp);
-	logprintf(1,"repeat_flag: %d\n",*repeat_flagp);
-	logprintf(1,"gap: %lu\n",(unsigned long) gap);
-	logprintf(1,"rem: %lu\n",(unsigned long) remote->remaining_gap);
-#       endif
+	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
+	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
+	LOGPRINTF(1,"post: %llx",(unsigned long long) *postp);
+	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
+	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
+	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
 	return(1);
 }
 
@@ -136,13 +134,13 @@ int irman_init(void)
 {
 	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
 	{
-		logprintf(0,"could not create lock files\n");
+		logprintf(LOG_ERR,"could not create lock files");
 		return(0);
 	}
 	if((hw.fd=ir_init(LIRC_DRIVER_DEVICE))<0)
 	{
-		logprintf(0,"could not open lirc\n");
-		logperror(0,"irman_init()");
+		logprintf(LOG_ERR,"could not open lirc");
+		logperror(LOG_ERR,"irman_init()");
 		tty_delete_lock();
 		return(0);
 	}
@@ -172,16 +170,16 @@ char *irman_rec(struct ir_remote *remotes)
 #               ifdef DEBUG
 		if(errno==IR_EDUPCODE)
 		{
-			logprintf(1,"received \"%s\" (dup - ignored)\n",
+			LOGPRINTF(1,"received \"%s\" (dup - ignored)",
 				  text ? text:"(null - bug)");
 		}
 		else if(errno==IR_EDISABLED)
 		{
-			logprintf(1,"irman not initialised (this is a bug)\n");
+			LOGPRINTF(1,"irman not initialised (this is a bug)");
 		}
 		else
 		{
-			logprintf(1,"error reading code: \"%s\"\n",
+			LOGPRINTF(1,"error reading code: \"%s\"",
 				  ir_strerror(errno));
 		}
 #               endif
@@ -189,9 +187,7 @@ char *irman_rec(struct ir_remote *remotes)
 	}
 	
 	text=ir_code_to_text(codestring);
-#       ifdef DEBUG
-	logprintf(1,"received \"%s\"\n",text);
-#       endif
+	LOGPRINTF(1,"received \"%s\"",text);
 
 	/* this is only historical but it's necessary for
 	   compatibility to older versionns and it's handy to

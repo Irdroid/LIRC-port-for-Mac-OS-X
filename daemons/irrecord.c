@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.16 2000/07/06 17:49:30 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.17 2000/07/08 11:27:50 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
+#include <syslog.h>
 
 #include "drivers/lirc.h"
 
@@ -113,13 +114,11 @@ FILE *lf=NULL;
 char *hostname="k6";
 int daemonized=0;
 
-void logprintf(int level,char *format_str, ...)
+void logprintf(int prio,char *format_str, ...)
 {
 	time_t current;
 	char *currents;
 	va_list ap;  
-	
-	if(level>debug) return;
 	
 	current=time(&current);
 	currents=ctime(&current);
@@ -127,27 +126,35 @@ void logprintf(int level,char *format_str, ...)
 	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
 	if(!daemonized) fprintf(stderr,"%s: ",progname);
 	va_start(ap,format_str);
-	if(lf) {vfprintf(lf,format_str,ap);fflush(lf);}
-	if(!daemonized) {vfprintf(stderr,format_str,ap);fflush(stderr);}
+	if(lf)
+	{
+		if(prio==LOG_WARNING) fprintf(lf,"WARNING: ");
+		vfprintf(lf,format_str,ap);
+		fputc('\n',lf);fflush(lf);
+	}
+	if(!daemonized)
+	{
+		if(prio==LOG_WARNING) fprintf(stderr,"WARNING: ");
+		vfprintf(stderr,format_str,ap);
+		fputc('\n',stderr);fflush(stderr);
+	}
 	va_end(ap);
 }
 
-void logperror(int level,const char *s)
+void logperror(int prio,const char *s)
 {
-	if(level>debug) return;
-
 	if(s!=NULL)
 	{
-		logprintf(level,"%s: %s\n",s,strerror(errno));
+		logprintf(prio,"%s: %s",s,strerror(errno));
 	}
 	else
 	{
-		logprintf(level,"%s\n",strerror(errno));
+		logprintf(prio,"%s",strerror(errno));
 	}
 }
 #else
-void logprintf(int level,char *format_str, ...) {}
-void logperror(int level,const char *s) {}
+void logprintf(int prio,char *format_str, ...) {}
+void logperror(int prio,const char *s) {}
 #endif
 
 void dosigterm(int sig)
@@ -733,8 +740,8 @@ int waitfordata(unsigned long maxusec)
 			while(ret==-1 && errno==EINTR);
 			if(ret==-1)
 			{
-				logprintf(0,"select() failed\n");
-				logperror(0,NULL);
+				logprintf(LOG_ERR,"select() failed\n");
+				logperror(LOG_ERR,NULL);
 				continue;
 			}
 		}
@@ -765,8 +772,8 @@ int availabledata(void)
 		while(ret==-1 && errno==EINTR);
 		if(ret==-1)
 		{
-			logprintf(0,"select() failed\n");
-			logperror(0,NULL);
+			logprintf(LOG_ERR,"select() failed\n");
+			logperror(LOG_ERR,NULL);
 			continue;
 		}
 	}

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.8 2000/05/11 11:48:20 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.9 2000/07/08 11:27:50 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -65,6 +65,12 @@
 /* Define if the complete vga libraries (vga, vgagl) are installed */
 #undef HAVE_LIBVGA
 
+/* define if you have vsyslog( prio, fmt, va_arg ) */
+#undef HAVE_VSYSLOG
+
+/* define if you want to log to syslog instead of logfile */
+#undef USE_SYSLOG
+
 /* Text string signifying which driver is configured */
 #define LIRC_DRIVER		"unknown"
 
@@ -94,6 +100,9 @@
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS
+
+/* syslog facility to use */
+#define LIRC_SYSLOG		LOG_DAEMON
 
 /* system configuration directory */
 #define SYSCONFDIR		"/etc"
