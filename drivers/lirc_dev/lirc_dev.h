@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.8 2002/12/15 08:49:21 ranty Exp $
+ * $Id: lirc_dev.h,v 1.9 2003/01/19 10:04:17 ranty Exp $
  *
  */
 
@@ -168,11 +168,20 @@ struct lirc_plugin
  * this callback should return a pointer to the task queue which will be used 
  * for external event waiting
  *
+ * rbuf:
+ * if not NULL, it will be used as a read buffer, you will have to write to
+ * the buffer by other means, like irq's (see also lirc_serial.c).
+ *
  * set_use_inc:
  * set_use_inc will be called after device is opened
  *
  * set_use_dec:
  * set_use_dec will be called after device is closed
+ *
+ * ioctl:
+ * Some ioctl's can be directly handled by lirc_dev but will be forwared here
+ * if not NULL and only handled if it returns -ENOIOCTLCMD (see also
+ * lirc_serial.c).
  *
  * fops:
  * file_operations for drivers which don't fit the current plugin model.
