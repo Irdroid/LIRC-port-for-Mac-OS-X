@@ -1,5 +1,6 @@
 
 0.6.0: future
+  * SMP support for serial port driver
   * Milan Pikula has provided a driver for the SIR (serial infrared)
     mode of IrDA ports available in many notebooks
   * lirc_client is now a library

@@ -4,6 +4,4 @@
 
 * IrDA support (SIR support is available, real CIR support is still missing)
 
-* lirc_serial: Check io region
-
 * irrecord: fancy Kenwood repeat code 78 11243 78

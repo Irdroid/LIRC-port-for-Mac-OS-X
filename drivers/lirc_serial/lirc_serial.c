@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.9 2000/02/05 12:57:28 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.10 2000/03/23 20:07:47 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -21,9 +21,6 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= 0x020100
 #define KERNEL_2_1
-#ifdef __SMP__ 
-#error "--- Sorry, this driver is not SMP safe. ---"
-#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
 #define KERNEL_2_3
 #endif
@@ -81,6 +78,10 @@ static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 static DECLARE_WAIT_QUEUE_HEAD(lirc_wait_in);
 #else
 static struct wait_queue *lirc_wait_in = NULL;
+#endif
+
+#ifdef KERNEL_2_1
+static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 #endif
 
 static int port = LIRC_PORT;
@@ -244,7 +245,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			       "We're caught!\n");
 			break;
 		}
-		if(MOD_IN_USE && (status&UART_MSR_DDCD) && sense!=-1)
+		if((status&UART_MSR_DDCD) && sense!=-1)
 		{
 			/* get current time */
 			do_gettimeofday(&tv);
@@ -299,76 +300,90 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 }
 
 #ifdef KERNEL_2_3
-static wait_queue_head_t power_supply_queue;
+static DECLARE_WAIT_QUEUE_HEAD(power_supply_queue);
 #else
 static struct wait_queue *power_supply_queue = NULL;
 #endif
+#ifndef KERNEL_2_1
 static struct timer_list power_supply_timer;
 
 static void power_supply_up(unsigned long ignored)
 {
         wake_up(&power_supply_queue);
 }
+#endif
 
 static int init_port(void)
 {
-	int result;
 	unsigned long flags;
 
         /* Check io region*/
 
-        /* if((check_region(port,8))==-EBUSY)
+        if((check_region(port,8))==-EBUSY)
 	{
-                printk(KERN_ERR  LIRC_DRIVER_NAME  ": port %04x already in use\n", port);
+#if 0
+		/* this is the correct behaviour but many people have
+                   the serial driver compiled into the kernel... */
+		printk(KERN_ERR  LIRC_DRIVER_NAME  
+		       ": port %04x already in use\n", port);
 		return(-EBUSY);
-	}*/
-
+#else
+		printk(KERN_ERR LIRC_DRIVER_NAME  
+		       ": port %04x already in use, proceding anyway\n", port);
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": compile the serial port driver as module and\n");
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": make sure this module is loaded first\n");
+		release_region(port,8);
+#endif
+	}
+	
 	/* Reserve io region. */
 	request_region(port, 8, LIRC_DRIVER_NAME);
-
-	printk(KERN_INFO  LIRC_DRIVER_NAME  ": Interrupt %d, port %04x "
-	       "obtained\n", irq, port);
-
+	
 	save_flags(flags);cli();
-
-	/* Init read buffer pointers. */
-	rbh = rbt = 0;
-
+	
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
-
+	
+	/* First of all, disable all interrupts */
+	soutp(UART_IER, sinp(UART_IER)&
+	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
+	
 	/* Clear registers. */
 	sinp(UART_LSR);
 	sinp(UART_RX);
 	sinp(UART_IIR);
 	sinp(UART_MSR);
-
+	
 	/* Set line for power source */
 	soutp(UART_MCR, LIRC_OFF);
-
+	
 	/* Clear registers again to be sure. */
 	sinp(UART_LSR);
 	sinp(UART_RX);
 	sinp(UART_IIR);
 	sinp(UART_MSR);
+	
 	restore_flags(flags);
-
+	
 	/* If DCD is high, then this must be an active low receiver. */
 	if(sense==-1)
 	{
 		/* wait 1 sec for the power supply */
-
+		
+#               ifdef KERNEL_2_1
+		sleep_on_timeout(&power_supply_queue,HZ);
+#               else
 		init_timer(&power_supply_timer);
 		power_supply_timer.expires=jiffies+HZ;
 		power_supply_timer.data=(unsigned long) current;
 		power_supply_timer.function=power_supply_up;
 		add_timer(&power_supply_timer);
-#               ifdef KERNEL_2_3
-		init_waitqueue_head(&power_supply_queue);
-#               endif
 		sleep_on(&power_supply_queue);
 		del_timer(&power_supply_timer);
-
+#               endif
+		
 		sense=(sinp(UART_MSR) & UART_MSR_DCD) ? 1:0;
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
 		       "%s receiver\n",sense ? "low":"high");
@@ -376,47 +391,79 @@ static int init_port(void)
 	else
 	{
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": Manually using active "
-		       "%s recevier\n",sense ? "low":"high");
+		       "%s receiver\n",sense ? "low":"high");
 	};
-
-	result=request_irq(irq,irq_handler,SA_INTERRUPT,LIRC_DRIVER_NAME,NULL);
-	switch(result)
-	{
-	case -EBUSY:
-		printk(KERN_ERR  LIRC_DRIVER_NAME  ": IRQ %d busy\n", irq);
-		return -EBUSY;
-	case -EINVAL:
-		printk(KERN_ERR  LIRC_DRIVER_NAME  
-		       ": Bad irq number or handler\n");
-		return -EINVAL;
-	default:
-		break;
-	};
-
-	/* finally enable interrupts. */
-
-	save_flags(flags);cli();
-
-	/* Set DLAB 0. */
-	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
-
-	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
-	restore_flags(flags);
-
+	
 	return 0;
 }
 
 static int lirc_open(struct inode *ino, struct file *filep)
 {
-	if (MOD_IN_USE)
+	int result;
+	unsigned long flags;
+	
+#       ifdef KERNEL_2_1
+	spin_lock(&lirc_lock);
+#       endif
+	if(MOD_IN_USE)
+	{
+#               ifdef KERNEL_2_1
+		spin_unlock(&lirc_lock);
+#               endif
 		return -EBUSY;
+	}
+	
+	result=request_irq(irq,irq_handler,SA_INTERRUPT,LIRC_DRIVER_NAME,NULL);
+	switch(result)
+	{
+	case -EBUSY:
+		printk(KERN_ERR LIRC_DRIVER_NAME ": IRQ %d busy\n", irq);
+#               ifdef KERNEL_2_1
+		spin_unlock(&lirc_lock);
+#               endif
+		return -EBUSY;
+	case -EINVAL:
+		printk(KERN_ERR LIRC_DRIVER_NAME
+		       ": Bad irq number or handler\n");
+#               ifdef KERNEL_2_1
+		spin_unlock(&lirc_lock);
+#               endif
+		return -EINVAL;
+	default:
+#               ifdef DEBUG
+		printk(KERN_INFO LIRC_DRIVER_NAME
+		       ": Interrupt %d, port %04x obtained\n", irq, port);
+#               endif
+		break;
+	};
+
+	/* finally enable interrupts. */
+	save_flags(flags);cli();
+	
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+	
+	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
+	
+	restore_flags(flags);
+	
+	/* Init read buffer pointers. */
+	rbh = rbt = 0;
+	
 	MOD_INC_USE_COUNT;
+#       ifdef KERNEL_2_1
+	spin_unlock(&lirc_lock);
+#       endif
 	return 0;
 }
 
 #ifdef KERNEL_2_1
 static int lirc_close(struct inode *node, struct file *file)
 {
+	free_irq(irq, NULL);
+#       ifdef DEBUG
+	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
+#       endif
 	MOD_DEC_USE_COUNT;
 	return 0;
 }
@@ -458,15 +505,14 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 #endif
 {
 	int n = 0, retval = 0;
-	/* unsigned long flags; */
+	struct wait_queue wait={current,NULL};
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
+	add_wait_queue(&lirc_wait_in,&wait);
+	current->state=TASK_INTERRUPTIBLE;
 	while (n < count)
 	{
-		/* save_flags(flags);cli(); */ /* this is unnecessary
-		   because the interrupt handler only reads rbh
-		   and we don't overwrite old data */
 		if (rbt != rbh) {
 #                       ifdef KERNEL_2_1
 			copy_to_user((void *) buf+n,
@@ -477,14 +523,11 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 #                       endif
 			rbh = (rbh + 1) & (RBUF_LEN - 1);
 			n+=sizeof(lirc_t);
-			/* restore_flags(flags); */
 		} else {
-			/* restore_flags(flags); */
 			if (file->f_flags & O_NONBLOCK) {
 				retval = -EAGAIN;
 				break;
 			}
-			interruptible_sleep_on(&lirc_wait_in);
 #                       ifdef KERNEL_2_1
 			if (signal_pending(current)) {
 				retval = -ERESTARTSYS;
@@ -496,8 +539,12 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 				break;
 			}
 #                       endif
+			schedule();
+			current->state=TASK_INTERRUPTIBLE;
 		}
 	}
+	remove_wait_queue(&lirc_wait_in,&wait);
+	current->state=TASK_RUNNING;
 	return (n ? n : retval);
 }
 
@@ -706,8 +753,6 @@ int init_module(void)
 	if (register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": register_chrdev failed!\n");
-		free_irq(irq, NULL);
-		printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 		release_region(port, 8);
 		return -EIO;
 	}
@@ -716,13 +761,11 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	if (MOD_IN_USE)
-		return;
-	free_irq(irq, NULL);
-	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 	release_region(port, 8);
 	unregister_chrdev(major, LIRC_DRIVER_NAME);
+#       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": cleaned up module\n");
+#       endif
 }
 
 #endif
