@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.6 1999/06/21 12:21:05 columbus Exp $      */
+/*      $Id: lircd.c,v 5.7 1999/08/02 19:56:49 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -41,43 +41,28 @@
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
-#include <fcntl.h>
 #include <getopt.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <errno.h>
 #include <limits.h>
 
-#include "drivers/lirc.h"
-
 #include "lircd.h"
+#include "ir_remote.h"
 #include "config_file.h"
+#include "hardware.h"
 
-unsigned long supported_send_modes[]=
-{
-	/* LIRC_CAN_SEND_STRING, I don't think there ever will be a driver 
-	   that supports that */
-	/* LIRC_CAN_SEND_LIRCCODE, */
-        /* LIRC_CAN_SEND_CODE, */
-	/* LIRC_CAN_SEND_MODE2, this one would be very easy */
-	LIRC_CAN_SEND_PULSE,
-	/* LIRC_CAN_SEND_RAW, */
-	0
-};
-unsigned long supported_rec_modes[]=
-{
-	LIRC_CAN_REC_STRING,
-	LIRC_CAN_REC_LIRCCODE,
-        LIRC_CAN_REC_CODE,
-	LIRC_CAN_REC_MODE2,
-	/* LIRC_CAN_REC_PULSE, shouldn't be too hard */
-	/* LIRC_CAN_REC_RAW, */
-	0
-};
+struct ir_remote *remotes;
+struct ir_remote *free_remotes=NULL;
+
+extern struct ir_remote *decoding;
+extern struct ir_remote *last_remote;
+extern struct ir_remote *repeat_remote;
+extern struct ir_ncode *repeat_code;
+
+extern struct hardware hw;
 
 char *progname="lircd-"VERSION;
 char *configfile=LIRCDCFGFILE;
@@ -120,10 +105,18 @@ char *protocol_string[] =
 char hostname[HOSTNAME_LEN+1];
 
 FILE *lf=NULL;
-int lirc,sockfd;
-unsigned long features;
+int sockfd;
 int clis[FD_SETSIZE-2]; /* substract one for each lirc and sockfd */
 int clin=0;
+
+#ifdef DEBUG
+int debug=DEBUG;
+#else
+int debug=0;
+#endif
+int daemonized=0;
+
+extern struct hardware hw;
 
 inline int max(int a,int b)
 {
@@ -186,16 +179,16 @@ inline int read_timeout(int fd,char *buf,int len,int timeout)
 	while(ret==-1 && errno==EINTR);
 	if(ret==-1)
 	{
-		logprintf("select() failed\n");
-		logperror(NULL);
+		logprintf(0,"select() failed\n");
+		logperror(0,NULL);
 		return(-1);
 	}
 	else if(ret==0) return(0); /* timeout */
 	n=read(fd,buf,len);
 	if(n==-1)
 	{
-		logprintf("read() failed\n");
-		logperror(NULL);
+		logprintf(0,"read() failed\n");
+		logperror(0,NULL);
 		return(-1);
 	}
 	return(n);
@@ -212,7 +205,7 @@ void sigterm(int sig)
 		free_config(free_remotes);
 	}
 	free_config(remotes);
-	logprintf("caught signal\n");
+	logprintf(0,"caught signal\n");
 	for (i=0; i<clin; i++)
 	{
 		shutdown(clis[i],2);
@@ -220,7 +213,7 @@ void sigterm(int sig)
 	};
 	shutdown(sockfd,2);
 	close(sockfd);
-	close(lirc);
+	if(hw.deinit_func) hw.deinit_func();
 	if(lf) fclose(lf);
 	signal(sig,SIG_DFL);
 	raise(sig);
@@ -232,7 +225,7 @@ void sighup(int sig)
 	int i;
 
 	/* reopen logfile first */
-	logprintf("closing logfile\n");
+	logprintf(0,"closing logfile\n");
 	if(-1==fstat(fileno(lf),&s))		
 	{
 		exit(EXIT_FAILURE); /* shouldn't ever happen */
@@ -244,11 +237,11 @@ void sighup(int sig)
 		/* can't print any error messagees */
 		exit(EXIT_FAILURE);
 	}
-	logprintf("reopened logfile\n");
+	logprintf(0,"reopened logfile\n");
 	if(-1==fchmod(fileno(lf),s.st_mode))
 	{
-		logprintf("WARNING: could not set file permissions\n");
-		logperror(NULL);
+		logprintf(0,"WARNING: could not set file permissions\n");
+		logperror(0,NULL);
 	}
 
 	config();
@@ -272,38 +265,37 @@ void config(void)
 	
 	if(free_remotes!=NULL)
 	{
-		logprintf("cannot read config file\n");
-		logprintf("old config is still in use\n");
+		logprintf(0,"cannot read config file\n");
+		logprintf(0,"old config is still in use\n");
 		return;
 	}
 	fd=fopen(configfile,"r");
 	if(fd==NULL)
 	{
-		logprintf("could not open config file '%s'\n",configfile);
-		logperror(NULL);
+		logprintf(0,"could not open config file '%s'\n",configfile);
+		logperror(0,NULL);
 		return;
 	}
 	config_remotes=read_config(fd);
 	fclose(fd);
 	if(config_remotes==(void *) -1)
 	{
-		logprintf("reading of config file failed\n");
+		logprintf(0,"reading of config file failed\n");
 	}
 	else
 	{
-		logprintf("config file read\n");
+#               ifdef DEBUG
+		logprintf(1,"config file read\n");
+#               endif
 		if(config_remotes==NULL)
 		{
-			logprintf("warning: config file contains no valid remote control definition\n");
+			logprintf(0,"WARNING: config file contains no "
+				  "valid remote control definition\n");
 		}
 		/* I cannot free the data structure
 		   as they could still be in use */
 		free_remotes=remotes;
 		remotes=config_remotes;
-		if(remotes==NULL)
-		{
-			logprintf("warning: no valid remote control defined\n");
-		}
 	}
 }
 
@@ -324,7 +316,7 @@ void remove_client(int fd)
 		{
 			shutdown(clis[i],2);
 			close(clis[i]);
-			logprintf("removed client\n");
+			logprintf(0,"removed client\n");
 			
 			clin--;
 			for(;i<clin;i++)
@@ -335,7 +327,7 @@ void remove_client(int fd)
 		}
 	}
 #       ifdef DEBUG
-	logprintf("internal error in remove_client: no such fd\n");
+	logprintf(1,"internal error in remove_client: no such fd\n");
 #       endif
 }
 
@@ -349,14 +341,14 @@ void add_client(void)
 	fd=accept(sockfd,(struct sockaddr *)&client_addr,&clilen);
 	if(fd==-1) 
 	{
-		logprintf("accept() failed\n");
-		logperror(NULL);
+		logprintf(0,"accept() failed\n");
+		logperror(0,NULL);
 		exit(EXIT_FAILURE);
 	};
 
 	if(fd>=FD_SETSIZE)
 	{
-		logprintf("connection rejected\n");
+		logprintf(0,"connection rejected\n");
 		shutdown(fd,2);
 		close(fd);
 		return;
@@ -364,7 +356,7 @@ void add_client(void)
 	nolinger(fd);
 	clis[clin++]=fd;
 
-	logprintf("accepted new client\n");
+	logprintf(0,"accepted new client\n");
 }
 
 void start_server(void)
@@ -430,184 +422,41 @@ void start_server(void)
 		exit(EXIT_FAILURE);
 	}
 	gethostname(hostname,HOSTNAME_LEN);
-	logprintf("started server socket\n");
-}
-
-void init_driver()
-{
-	struct stat s;
-	int i;
-
-	if((lirc=open("/dev/lirc",O_RDWR))<0)
-	{
-		fprintf(stderr,"%s: could not open lirc\n",progname);
-		perror(progname);
-		exit(EXIT_FAILURE);
-	}
-	if(fstat(lirc,&s)==-1)
-	{
-		fprintf(stderr,"%s: could not get file information\n",
-			progname);
-		perror(progname);
-		exit(EXIT_FAILURE);
-	}
-	if(S_ISFIFO(s.st_mode))
-	{
-#               ifdef DEBUG
-		printf("%s: using defaults for the Irman\n",progname);
-#               endif
-		features=LIRC_CAN_REC_MODE2;
-		rec_mode=LIRC_MODE_MODE2; /* this might change in future */
-		return;
-	}
-	else if(ioctl(lirc,LIRC_GET_FEATURES,&features)==-1)
-	{
-		fprintf(stderr,"%s: could not get hardware features\n",
-			progname);
-		fprintf(stderr,"%s: this device driver does not "
-			"support the new LIRC interface\n",
-			progname);
-		fprintf(stderr,"%s: make sure you use a current "
-			"version of the driver\n",
-			progname);
-		exit(EXIT_FAILURE);
-	}
 #       ifdef DEBUG
-	else
-	{
-		if(!(LIRC_CAN_SEND(features) || LIRC_CAN_REC(features)))
-		{
-			fprintf(stderr,"%s: driver supports neither "
-				"sending nor receiving of IR signals\n",
-				progname);
-			exit(EXIT_FAILURE);
-		}
-		if(LIRC_CAN_SEND(features) && LIRC_CAN_REC(features))
-		{
-			printf("%s: driver supports both sending and "
-			       "receiving\n",progname);
-		}
-		else if(LIRC_CAN_SEND(features))
-		{
-			printf("%s: driver supports sending\n",progname);
-		}
-		else if(LIRC_CAN_REC(features))
-		{
-			printf("%s: driver supports receiving\n",progname);
-		}
-	}
+	logprintf(1,"started server socket\n");
 #       endif
-	
-	/* set send/receive method */
-	send_mode=0;
-	if(LIRC_CAN_SEND(features))
-	{
-		for(i=0;supported_send_modes[i]!=0;i++)
-		{
-			if(features&supported_send_modes[i])
-			{
-				unsigned long mode;
-
-				mode=LIRC_SEND2MODE(supported_send_modes[i]);
-				if(ioctl(lirc,LIRC_SET_SEND_MODE,&mode)==-1)
-				{
-					fprintf(stderr,"%s: could not set "
-						"send mode\n",progname);
-					perror(progname);
-					exit(EXIT_FAILURE);
-				}
-				send_mode=LIRC_SEND2MODE(supported_send_modes[i]);
-				break;
-			}
-		}
-		if(supported_send_modes[i]==0)
-		{
-			fprintf(stderr,"%s: the send method of the driver is "
-				"not yet supported by lircd\n",progname);
-		}
-	}
-	rec_mode=0;
-	if(LIRC_CAN_REC(features))
-	{
-		for(i=0;supported_rec_modes[i]!=0;i++)
-		{
-			if(features&supported_rec_modes[i])
-			{
-				unsigned long mode;
-
-				mode=LIRC_REC2MODE(supported_rec_modes[i]);
-				if(ioctl(lirc,LIRC_SET_REC_MODE,&mode)==-1)
-				{
-					fprintf(stderr,"%s: could not set "
-						"receive mode\n",progname);
-					perror(progname);
-					exit(EXIT_FAILURE);
-				}
-				rec_mode=LIRC_REC2MODE(supported_rec_modes[i]);
-				break;
-			}
-		}
-		if(supported_rec_modes[i]==0)
-		{
-			fprintf(stderr,"%s: the receive method of the driver "
-				"is not yet supported by lircd\n",progname);
-		}
-	}
-	if(rec_mode==LIRC_MODE_CODE)
-	{
-		code_length=8;
-	}
-	else if(rec_mode==LIRC_MODE_LIRCCODE)
-	{
-		if(ioctl(lirc,LIRC_GET_LENGTH,&code_length)==-1)
-		{
-			fprintf(stderr,"%s: could not get code length\n",
-				progname);
-			perror(progname);
-			exit(EXIT_FAILURE);
-		}
-		if(code_length>sizeof(ir_code)*CHAR_BIT)
-		{
-			fprintf(stderr,"%s: lircd can not handle %lu bit "
-				"codes\n",progname,code_length);
-			perror(progname);
-			exit(EXIT_FAILURE);
-		}
-	}
-	if(!(send_mode || rec_mode))
-	{
-		exit(EXIT_FAILURE);
-	}
 }
 
-void logprintf(char *format_str, ...)
+void logprintf(int level,char *format_str, ...)
 {
 	time_t current;
 	char *currents;
 	va_list ap;  
-
+	
+	if(level>debug) return;
+	
 	current=time(&current);
 	currents=ctime(&current);
-		    
-	fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
+	
+	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
+	if(!daemonized) fprintf(stderr,"%s: ",progname);
 	va_start(ap,format_str);
-	vfprintf(lf,format_str,ap);
-#ifndef DAEMONIZE
-	vfprintf(stderr,format_str,ap);
-#endif DAEMONIZE
+	if(lf) {vfprintf(lf,format_str,ap);fflush(lf);}
+	if(!daemonized) {vfprintf(stderr,format_str,ap);fflush(stderr);}
 	va_end(ap);
-	fflush(lf);
 }
 
-void logperror(const char *s)
+void logperror(int level,const char *s)
 {
+	if(level>debug) return;
+
 	if(s!=NULL)
 	{
-		logprintf("%s: %s\n",s,strerror(errno));
+		logprintf(level,"%s: %s\n",s,strerror(errno));
 	}
 	else
 	{
-		logprintf("%s\n",strerror(errno));
+		logprintf(level,"%s\n",strerror(errno));
 	}
 }
 
@@ -619,8 +468,8 @@ void daemonize(void)
 	
 	if((pid=fork())<0)
 	{
-		logprintf("fork() failed\n");
-		logperror(NULL);
+		logprintf(0,"fork() failed\n");
+		logperror(0,NULL);
 		raise(SIGTERM);
 	}
 	else if(pid) /* parent */
@@ -635,6 +484,7 @@ void daemonize(void)
 		setsid();
 		chdir("/");
 		umask(0);
+		daemonized=1;
 	}
 }
 
@@ -652,7 +502,7 @@ void sigalrm(int sig)
 		   so better stop repeating */
 		return;
 	}
-	if(send_command(repeat_remote,repeat_code))
+	if(hw.send_func(repeat_remote,repeat_code))
 	{
 		repeat_timer.it_value.tv_sec=0;
 		repeat_timer.it_value.tv_usec=repeat_remote->remaining_gap;
@@ -674,7 +524,7 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 
 	name=strtok(arguments,WHITE_SPACE);
 	if(name==NULL) return(1);
-	*remote=get_ir_remote(name);
+	*remote=get_ir_remote(remotes,name);
 	if(*remote==NULL)
 	{
 		return(send_error(fd,message,"unknown remote: \"%s\"\n",
@@ -722,8 +572,8 @@ int send_error(int fd,char *message,char *format_str, ...)
 	vsprintf(buffer,format_str,ap);
 	va_end(ap);
 	
-	logprintf("error processing command: %s",message);
-	logprintf("%s",buffer);
+	logprintf(0,"error processing command: %s",message);
+	logprintf(0,"%s",buffer);
 
 	n=0;
 	len=strlen(buffer);
@@ -885,9 +735,9 @@ int send_once(int fd,char *message,char *arguments)
 	struct ir_remote *remote;
 	struct ir_ncode *code;
 	
-	if(send_mode==0) return(send_error(fd,message,"hardware does not "
-					   "support sending\n"));
-
+	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
+					      "support sending\n"));
+	
 	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
 	
 	if(remote==NULL || code==NULL) return(1);
@@ -899,7 +749,7 @@ int send_once(int fd,char *message,char *arguments)
 		remote->repeat_state=
 		!remote->repeat_state;
 	
-	if(!send_command(remote,code))
+	if(!hw.send_func(remote,code))
 	{
 		return(send_error(fd,message,"transmission failed\n"));
 	}
@@ -912,8 +762,8 @@ int send_start(int fd,char *message,char *arguments)
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
 	
-	if(send_mode==0) return(send_error(fd,message,"hardware does not "
-					   "support sending\n"));
+	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
+					      "support sending\n"));
 
 	if(parse_rc(fd,message,arguments,&remote,&code,2)==0) return(0);
 	
@@ -926,7 +776,7 @@ int send_start(int fd,char *message,char *arguments)
 	if(remote->repeat_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
-	if(!send_command(remote,code))
+	if(!hw.send_func(remote,code))
 	{
 		return(send_error(fd,message,"transmission failed\n"));
 	}
@@ -1007,13 +857,13 @@ int get_command(int fd)
 		end=strchr(buffer,'\n');
 		if(end==NULL)
 		{
-			logprintf("bad send packet: \"%s\"\n",buffer);
+			logprintf(0,"bad send packet: \"%s\"\n",buffer);
 			/* remove clients that behave badly */
 			return(0);
 		}
 		end[0]=0;
 #               ifdef DEBUG
-		logprintf("received command: \"%s\"\n",buffer);
+		logprintf(1,"received command: \"%s\"\n",buffer);
 #               endif		
 		packet_length=strlen(buffer)+1;
 
@@ -1089,7 +939,7 @@ void free_old_remotes()
 		{
 			if(last_remote==scan_remotes)
 			{
-				found=get_ir_remote(last_remote->name);
+				found=get_ir_remote(remotes,last_remote->name);
 				if(found!=NULL)
 				{
 					code=get_ir_code(found,last_remote->last_code->name);
@@ -1124,7 +974,7 @@ void free_old_remotes()
 		}
 		if(found!=NULL)
 		{
-			found=get_ir_remote(repeat_remote->name);
+			found=get_ir_remote(remotes,repeat_remote->name);
 			if(found!=NULL)
 			{
 				code=get_ir_code(found,repeat_code->name);
@@ -1165,13 +1015,13 @@ void free_old_remotes()
 #       ifdef DEBUG
 	else
 	{
-		logprintf("free_remotes still in use\n");
+		logprintf(1,"free_remotes still in use\n");
 	}
 #       endif
 }
 
 
-unsigned long readdata(unsigned long maxusec)
+int waitfordata(unsigned long maxusec)
 {
 	fd_set fds;
 	int maxfd,i,ret;
@@ -1181,19 +1031,15 @@ unsigned long readdata(unsigned long maxusec)
 	{
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
-		if(rec_mode!=0)
+		if(hw.rec_mode!=0)
 		{
-			FD_SET(lirc,&fds);
-			maxfd=max(lirc,sockfd);
+			FD_SET(hw.fd,&fds);
+			maxfd=max(hw.fd,sockfd);
 		}
 		else
 		{
 			maxfd=sockfd;
 		}
-#if defined(SIM_REC) && !defined(DAEMONIZE)
-		FD_SET(STDIN_FILENO,&fds);
-		maxfd=max(maxfd,STDIN_FILENO);
-#endif
 
 		for(i=0;i<clin;i++)
 		{
@@ -1222,8 +1068,8 @@ unsigned long readdata(unsigned long maxusec)
 			while(ret==-1 && errno==EINTR);
 			if(ret==-1)
 			{
-				logprintf("select() failed\n");
-				logperror(NULL);
+				logprintf(0,"select() failed\n");
+				logperror(0,NULL);
 				continue;
 			}
 		}
@@ -1244,59 +1090,15 @@ unsigned long readdata(unsigned long maxusec)
 		if(FD_ISSET(sockfd,&fds))
 		{
 #                       ifdef DEBUG
-			logprintf("registering new client\n");
+			logprintf(1,"registering new client\n");
 #                       endif
 			add_client();
 		}
-		if(FD_ISSET(lirc,&fds))
-		{
-			unsigned long data;
-			int ret;
-			
-			if(rec_mode!=LIRC_MODE_MODE2)
-			{
-				/* we will read later */
-				return(0);
-			}
-			do
-			{
-				ret=read(lirc,&data,sizeof(unsigned long));
-#                               ifdef DEBUG
-				if(ret!=sizeof(unsigned long))
-				{
-					logprintf("error reading from lirc\n");
-					logperror(NULL);
-				}
-#                               endif
-			}
-			while(ret!=sizeof(unsigned long));
-			
-			return(data);
-		}
-#if defined(SIM_REC) && !defined(DAEMONIZE)
-		if(FD_ISSET(STDIN_FILENO,&fds))
-		{
-			unsigned long data;
-			int ret;
-
-			ret=fscanf(stdin,"space %ld\n",&data);
-			if(ret==1)
-			{
-				return(data);
-			}
-			ret=fscanf(stdin,"pulse %ld\n",&data);
-			if(ret==1)
-			{
-				return(PULSE_BIT|data);
-			}
-			ret=fscanf(stdin,"%*s\n");
-			if(ret==EOF)
-			{
-				fflush(stdout);
-				exit(0);
-			}
-		}
-#endif
+                if(FD_ISSET(hw.fd,&fds))
+                {
+                        /* we will read later */
+			return(1);
+                }	
 	}
 }
 
@@ -1304,13 +1106,12 @@ void loop()
 {
 	char *message;
 	int len,i;
-	unsigned long data;
 
+	logprintf(0,"lircd ready\n");
 	while(1)
 	{
-		data=readdata(0);
-		
-		message=decode_command(data);
+		(void) waitfordata(0);
+		message=hw.rec_func(remotes);
 
 		if(message!=NULL)
 		{
@@ -1319,7 +1120,7 @@ void loop()
 			for (i=0; i<clin; i++)
 			{
 #                               ifdef DEBUG
-				logprintf("writing to client %d\n",i);
+				logprintf(1,"writing to client %d\n",i);
 #                               endif
 				if(write_socket(clis[i],message,len)<len)
 				{
@@ -1361,7 +1162,6 @@ int main(int argc,char **argv)
 			return(EXIT_FAILURE);
 		}
 	}
-#if !defined(SIM_REC) || defined(DAEMONIZE)
 	if(optind==argc-1)
 	{
 	        configfile=argv[optind];
@@ -1371,47 +1171,49 @@ int main(int argc,char **argv)
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		return(EXIT_FAILURE);
 	}
-#endif
-	
-	init_driver();
 	
 	signal(SIGPIPE,SIG_IGN);
-
+	
+	start_server();
+	
 	act.sa_handler=sigterm;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
 	sigaction(SIGTERM,&act,NULL);
 	sigaction(SIGINT,&act,NULL);
-
+	
 	act.sa_handler=sigalrm;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
 	sigaction(SIGALRM,&act,NULL);
-
-	start_server();
-
+	
 	remotes=NULL;
 	config();                          /* read config file */
-
+	
 	act.sa_handler=sighup;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags=SA_RESTART;           /* don't fiddle with EINTR */
 	sigaction(SIGHUP,&act,NULL);
-
+	
 #ifdef DAEMONIZE
 	/* ready to accept connections */
 	daemonize();
 #endif
-
+	
+	if(hw.init_func)
+	{
+		if(!hw.init_func()) raise(SIGTERM);
+	}
+	
 #if defined(SIM_REC) && !defined(DAEMONIZE)
-	if(argc>1) sleep(argc);
+	sleep(5);
 #endif
-
+	
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
 	{
 		struct ir_remote *r;
 		struct ir_ncode *c;
-
+		
 		printf("space 1000000\n");
 		r=remotes;
 		while(r!=NULL)
@@ -1421,13 +1223,13 @@ int main(int argc,char **argv)
 			{
 				repeat_remote=NULL;
 				repeat_code=NULL;
-				send_command(r,c);
+				hw.send_func(r,c);
 				repeat_remote=r;
 				repeat_code=c;
-				send_command(r,c);
-				send_command(r,c);
-				send_command(r,c);
-				send_command(r,c);
+				hw.send_func(r,c);
+				hw.send_func(r,c);
+				hw.send_func(r,c);
+				hw.send_func(r,c);
 				c++;
 			}
 			r=r->next;
@@ -1435,6 +1237,7 @@ int main(int argc,char **argv)
 		fflush(stdout);
 	}
 	fprintf(stderr,"Ready.\n");
+	return(EXIT_SUCCESS); 
 #endif
 	loop();
 

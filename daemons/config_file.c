@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.1 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: config_file.c,v 5.2 1999/08/02 19:56:49 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -33,7 +33,6 @@
 #define LINE_LEN 1024
 
 int line;
-extern char *progname;
 int parse_error;
 
 void **init_void_array(struct void_array *ar,size_t chunk_size, size_t item_size)
@@ -42,7 +41,7 @@ void **init_void_array(struct void_array *ar,size_t chunk_size, size_t item_size
         ar->item_size=item_size;
 	ar->nr_items=0;
         if(!(ar->ptr=calloc(chunk_size, ar->item_size))){
-                logprintf("out of memory\n");
+                logprintf(0,"out of memory\n");
                 parse_error=1;
                 return(NULL);
         }
@@ -57,7 +56,7 @@ int add_void_array (struct void_array *ar, void * dataptr)
                 /* I hope this works with the right alignment,
 		   if not we're screwed */
                 if (!(ptr=realloc(ar->ptr,ar->item_size*((ar->nr_items)+(ar->chunk_size+1))))){
-                        logprintf("out of memory\n");
+                        logprintf(0,"out of memory\n");
                         parse_error=1;
                         return(0);
                 }
@@ -78,7 +77,7 @@ void *s_malloc(size_t size)
 {
         void *ptr;
         if((ptr=malloc(size))==NULL){
-                logprintf("out of memory\n");
+                logprintf(0,"out of memory\n");
                 parse_error=1;
                 return(NULL);
         }
@@ -90,7 +89,7 @@ inline char *s_strdup(char * string)
 {
         char *ptr;
         if(!(ptr=strdup(string))){
-                logprintf("out of memory\n");
+                logprintf(0,"out of memory\n");
                 parse_error=1;
                 return(NULL);
         }
@@ -108,9 +107,9 @@ inline ir_code s_strtocode(char *val)
 	if((code==(unsigned long long) -1 && errno==ERANGE) ||
 	    strlen(endptr)!=0 || strlen(val)==0)
 	{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("\"%s\": must be a valid (unsigned long long) number\n",
-			  val);
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (unsigned long long) "
+			  "number\n",val);
 		parse_error=1;
 		return(0);
 	}
@@ -118,17 +117,18 @@ inline ir_code s_strtocode(char *val)
 	code=strtoul(val,&endptr,0);
 	if(code==ULONG_MAX && errno==ERANGE)
 	{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("code is out of range\n");
-		logprintf("try compiling lircd with the LONG_IR_CODE option\n");
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"code is out of range\n");
+		logprintf(0,"try compiling lircd with the LONG_IR_CODE "
+			  "option\n");
 		parse_error=1;
 		return(0);
 	}
 	else if(strlen(endptr)!=0 || strlen(val)==0)
 	{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("\"%s\": must be a valid (unsigned long) number\n",
-			  val);
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (unsigned long) "
+			  "number\n",val);
 		parse_error=1;
 		return(0);
 	}
@@ -146,9 +146,9 @@ unsigned long  s_strtoul(char *val)
 	if((n==ULONG_MAX && errno==ERANGE)
 	   || strlen(endptr)!=0 || strlen(val)==0)
 	{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("\"%s\": must be a valid (unsigned long) number\n",
-			  val);
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (unsigned long) "
+			  "number\n",val);
 		parse_error=1;
 		return(0);
 	}
@@ -167,8 +167,8 @@ int s_strtoi(char *val)
 	if(((n==LONG_MAX || n==LONG_MIN) && errno==ERANGE)
 	   || strlen(endptr)!=0 || strlen(val)==0 || n!=((long) h))
 	{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("\"%s\": must be a valid (int) number\n",val);
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\": must be a valid (int) number\n",val);
 		parse_error=1;
 		return(0);
 	}
@@ -180,8 +180,8 @@ int checkMode(int is_mode, int c_mode, char *error)
 
         if (is_mode!=c_mode)
 	{
-		logprintf("fatal error in configfile line %d:\n",line);
-		logprintf("\"%s\" isn´t valid at this position\n",error);
+		logprintf(0,"fatal error in configfile line %d:\n",line);
+		logprintf(0,"\"%s\" isn´t valid at this position\n",error);
 		parse_error=1;
 		return(0);
 	}
@@ -204,13 +204,13 @@ struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
 {
         code->name=s_strdup(key);
         code->code=s_strtocode(val);
-#       ifdef DEBUG2
+#       ifdef DEBUG
 #       ifdef LONG_IR_CODE
-        logprintf("      %-20s 0x%016llX\n",code->name, code->code);
+        logprintf(3,"      %-20s 0x%016llX\n",code->name, code->code);
 #       else
-        logprintf("      %-20s 0x%016lX\n",code->name, code->code);
+        logprintf(3,"      %-20s 0x%016lX\n",code->name, code->code);
 #       endif
-#       endif DEBUG2
+#       endif
         return(code);
 }
 
@@ -237,26 +237,26 @@ int parseFlags(char *val)
 		while(flaglptr->name!=NULL){
 			if(strcasecmp(flaglptr->name,flag)==0){
 				flags=flags|flaglptr->flag;
-#                               ifdef DEBUG2
-				logprintf("flag %s recognized\n",
+#                               ifdef DEBUG
+				logprintf(3,"flag %s recognized\n",
 					  flaglptr->name);
-#                               endif DEBUG2
+#                               endif
 				break;
 			}
 			flaglptr++;
 		}
 		if(flaglptr->name==NULL)
 		{
-			logprintf("error in configfile line %d:\n",line);
-			logprintf("unknown flag: \"%s\"\n",flag);
+			logprintf(0,"error in configfile line %d:\n",line);
+			logprintf(0,"unknown flag: \"%s\"\n",flag);
 			parse_error=1;
 			return(0);
 		}
 		flag=help;
 	}
-#       ifdef DEBUG2
-        logprintf("flags value: %d\n",flags);
-#       endif DEBUG2
+#       ifdef DEBUG
+        logprintf(2,"flags value: %d\n",flags);
+#       endif
 
         return(flags);
 }
@@ -267,8 +267,8 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		if(rem->name!=NULL) free(rem->name);
 		rem->name=s_strdup(val);
 #               ifdef DEBUG
-		logprintf("parsing %s remote\n",val);
-#               endif DEBUG
+		logprintf(1,"parsing %s remote\n",val);
+#               endif
 		return(1);
 	}
 	else if ((strcasecmp("bits",key))==0){
@@ -366,12 +366,12 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		}
 	}
 	if(val2){
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("unknown definiton: \"%s %s %s\"\n",
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"unknown definiton: \"%s %s %s\"\n",
 			  key, val, val2);
 	}else{
-		logprintf("error in configfile line %d:\n",line);
-		logprintf("unknown definiton or too few arguments: "
+		logprintf(0,"error in configfile line %d:\n",line);
+		logprintf(0,"unknown definiton or too few arguments: "
 			  "\"%s %s\"\n",key, val);
 	}
 	parse_error=1;
@@ -397,7 +397,7 @@ struct ir_remote * read_config(FILE *f)
 		len=strlen(buf);
 		if(len==LINE_LEN && buf[len-1]!='\n')
 		{
-			logprintf("line %d too long in config file\n",
+			logprintf(0,"line %d too long in config file\n",
 				line);
 			parse_error=1;
 			break;
@@ -415,20 +415,20 @@ struct ir_remote * read_config(FILE *f)
 		val=strtok(NULL, " \t");
 		if(val!=NULL){
 			val2=strtok(NULL, " \t");
-#                       ifdef DEBUG2
-                        logprintf("\"%s\" \"%s\"\n",key,val);
-#                       endif DEBUG2
+#                       ifdef DEBUG
+                        logprintf(3,"\"%s\" \"%s\"\n",key,val);
+#                       endif
                         if (strcasecmp("begin",key)==0){
 				if (strcasecmp("codes", val)==0){
                                         /* init codes mode */
-#                                       ifdef DEBUG2
-                                        logprintf("    begin codes\n");
-#                                       endif DEBUG2
+#                                       ifdef DEBUG
+                                        logprintf(2,"    begin codes\n");
+#                                       endif
 					if (!checkMode(mode, ID_remote,
 						       "begin codes")) break;
 					if (rem->codes){
-						logprintf("error in configfile line %d:\n",line);
-						logprintf("codes are already defined\n");
+						logprintf(0,"error in configfile line %d:\n",line);
+						logprintf(0,"codes are already defined\n");
 						parse_error=1;
 						break;
 					}
@@ -437,14 +437,14 @@ struct ir_remote * read_config(FILE *f)
                                         mode=ID_codes;
                                 }else if(strcasecmp("raw_codes",val)==0){
                                         /* init raw_codes mode */
-#                                       ifdef DEBUG2
-                                        logprintf("    begin raw_codes\n");
-#                                       endif DEBUG2
+#                                       ifdef DEBUG
+                                        logprintf(2,"    begin raw_codes\n");
+#                                       endif
 					if(!checkMode(mode, ID_remote,
 						  "begin raw_codes")) break;
 					if (rem->codes){
-						logprintf("error in configfile line %d:\n",line);
-						logprintf("codes are already defined\n");
+						logprintf(0,"error in configfile line %d:\n",line);
+						logprintf(0,"codes are already defined\n");
 						parse_error=1;
 						break;
 					}
@@ -455,33 +455,33 @@ struct ir_remote * read_config(FILE *f)
                                 }else if(strcasecmp("remote",val)==0){
 					/* create new remote */
 #                                       ifdef DEBUG
-					logprintf("parsing remote\n");
-#                                       endif DEBUG
+					logprintf(1,"parsing remote\n");
+#                                       endif
 					if(!checkMode(mode, ID_none,
 						  "begin remote")) break;
                                         mode=ID_remote;
                                         if (!top_rem){
                                                 /* create first remote */
 #                                               ifdef DEBUG
-						logprintf("creating first remote\n");
-#                                               endif DEBUG
+						logprintf(2,"creating first remote\n");
+#                                               endif
                                                 rem=top_rem=s_malloc(sizeof(struct ir_remote));
                                         }else{
                                                 /* create new remote */
 #                                               ifdef DEBUG
-						logprintf("creating next remote\n");
-#                                               endif DEBUG
+						logprintf(2,"creating next remote\n");
+#                                               endif
                                                 rem->next=s_malloc(sizeof(struct ir_remote));;
                                                 rem=rem->next;
                                         }
                                 }else{
-                                        logprintf("error in configfile line %d:\n",line);
-					logprintf("unknown section \"%s\"\n",val);
+                                        logprintf(0,"error in configfile line %d:\n",line);
+					logprintf(0,"unknown section \"%s\"\n",val);
                                         parse_error=1;
                                 }
 				if(!parse_error && val2!=NULL)
 				{
-					logprintf("WARNING: garbage after '%s'"
+					logprintf(0,"WARNING: garbage after '%s'"
 						  " token in line %d ignored\n",
 						  val,line);
 				}
@@ -489,27 +489,27 @@ struct ir_remote * read_config(FILE *f)
 
 				if (strcasecmp("codes", val)==0){
 					/* end Codes mode */
-#                                       ifdef DEBUG2
-                                        logprintf("    end codes\n");
-#                                       endif DEBUG2
+#                                       ifdef DEBUG
+                                        logprintf(2,"    end codes\n");
+#                                       endif
                                         if (!checkMode(mode, ID_codes,
-                                                  "end codes")) break;
+						       "end codes")) break;
                                         rem->codes=get_void_array(&codes_list);
                                         mode=ID_remote;     /* switch back */
 
                                 }else if(strcasecmp("raw_codes",val)==0){
                                         /* end raw codes mode */
-#                                       ifdef DEBUG2
-                                        logprintf("    end raw_codes\n");
-#                                       endif DEBUG2
+#                                       ifdef DEBUG
+                                        logprintf(2,"    end raw_codes\n");
+#                                       endif
 
 					if(mode==ID_raw_name){
 						raw_code.signals=get_void_array(&signals);
 						raw_code.length=signals.nr_items;
 						if(raw_code.length%2==0)
 						{
-							logprintf("error in configfile line %d:\n",line);
-							logprintf("bad signal length\n",val);
+							logprintf(0,"error in configfile line %d:\n",line);
+							logprintf(0,"bad signal length\n",val);
 							parse_error=1;
 						}
 						if(!add_void_array(&raw_codes, &raw_code))
@@ -522,14 +522,14 @@ struct ir_remote * read_config(FILE *f)
 					mode=ID_remote;     /* switch back */
                                 }else if(strcasecmp("remote",val)==0){
                                         /* end remote mode */
-#                                       ifdef DEBUG2
-                                        logprintf("end remote\n");
-#                                       endif DEBUG2
+#                                       ifdef DEBUG
+                                        logprintf(2,"end remote\n");
+#                                       endif
 					/* print_remote(rem); */
                                         if (!checkMode(mode,ID_remote,
                                                   "end remote")) break;
                                         if (!rem->name){
-                                                logprintf("you must specify a remote name\n");
+                                                logprintf(0,"you must specify a remote name\n");
                                                 parse_error=1;
                                                 break;
                                         }
@@ -542,16 +542,16 @@ struct ir_remote * read_config(FILE *f)
 					if(has_repeat_gap(rem) && 
 					   is_const(rem))
 					{
-						logprintf("WARNING: repeat_gap will be ignored if CONST_LENGTH flag is set\n");
+						logprintf(0,"WARNING: repeat_gap will be ignored if CONST_LENGTH flag is set\n");
 					}
                                 }else{
-                                        logprintf("error in configfile line %d:\n",line);
-					logprintf("unknown section %s",val);
+                                        logprintf(0,"error in configfile line %d:\n",line);
+					logprintf(0,"unknown section %s",val);
                                         parse_error=1;
                                 }
 				if(!parse_error && val2!=NULL)
 				{
-					logprintf("WARNING: garbage after '%s'"
+					logprintf(0,"WARNING: garbage after '%s'"
 						  " token in line %d ignored\n",
 						  val,line);
 				}
@@ -562,7 +562,7 @@ struct ir_remote * read_config(FILE *f)
 					if(!parse_error && ((argc==1 && val2!=NULL) || 
 					   (argc==2 && val2!=NULL && strtok(NULL," \t")!=NULL)))
 					{
-						logprintf("WARNING: garbage after '%s'"
+						logprintf(0,"WARNING: garbage after '%s'"
 							  " token in line %d ignored\n",
 							  key,line);
 					}
@@ -571,7 +571,7 @@ struct ir_remote * read_config(FILE *f)
 					add_void_array(&codes_list, defineCode(key, val, &name_code));
 					if(!parse_error && val2!=NULL)
 					{
-						logprintf("WARNING: garbage after '%s'"
+						logprintf(0,"WARNING: garbage after '%s'"
 							  " code in line %d ignored\n",
 							  key,line);
 					}
@@ -579,17 +579,17 @@ struct ir_remote * read_config(FILE *f)
 				case ID_raw_codes:
 				case ID_raw_name:
 					if(strcasecmp("name",key)==0){
-#                                               ifdef DEBUG2
-						logprintf("Button: \"%s\"\n",val);
-#                                               endif DEBUG2
+#                                               ifdef DEBUG
+						logprintf(3,"Button: \"%s\"\n",val);
+#                                               endif
 						if(mode==ID_raw_name)
 						{
                                                         raw_code.signals=get_void_array(&signals);
 							raw_code.length=signals.nr_items;
 							if(raw_code.length%2==0)
 							{
-								logprintf("error in configfile line %d:\n",line);
-								logprintf("bad signal length\n",val);
+								logprintf(0,"error in configfile line %d:\n",line);
+								logprintf(0,"bad signal length\n",val);
 								parse_error=1;
 							}
 							if(!add_void_array(&raw_codes, &raw_code))
@@ -603,14 +603,14 @@ struct ir_remote * read_config(FILE *f)
 						mode=ID_raw_name;
 						if(!parse_error && val2!=NULL)
 						{
-							logprintf("WARNING: garbage after '%s'"
+							logprintf(0,"WARNING: garbage after '%s'"
 								  " token in line %d ignored\n",
 								  key,line);
 						}
 					}else{
 						if(mode==ID_raw_codes)
 						{
-							logprintf("no name for signal defined at line %d\n",line);
+							logprintf(0,"no name for signal defined at line %d\n",line);
 							parse_error=1;
 							break;
 						}
@@ -633,7 +633,7 @@ struct ir_remote * read_config(FILE *f)
 				break;
 			}
 		}else{
-                        logprintf("error in configfile line %d\n", line);
+                        logprintf(0,"error in configfile line %d\n", line);
 			parse_error=1;
 			break;
                 }
@@ -661,7 +661,7 @@ struct ir_remote * read_config(FILE *f)
 		}
 		if(!parse_error)
 		{
-			logprintf("unexpected end of file\n");
+			logprintf(0,"unexpected end of file\n");
 			parse_error=1;
 		}
 	}
@@ -669,7 +669,39 @@ struct ir_remote * read_config(FILE *f)
 		free_config(top_rem);
                 return((void *) -1);
         }
-#       if defined(DEBUG2) && !defined(DAEMONIZE)
+	/* kick reverse flag */
+	rem=top_rem;
+	while(rem!=NULL)
+	{
+		if((!is_raw(rem)) && rem->flags&REVERSE)
+		{
+			struct ir_ncode *codes;
+			
+			if(has_pre(rem))
+			{
+				rem->pre_data=reverse(rem->pre_data,
+						      rem->pre_data_bits);
+			}
+			if(has_post(rem))
+			{
+				rem->post_data=reverse(rem->post_data,
+						       rem->post_data_bits);
+			}
+			codes=rem->codes;
+			while(codes->name!=NULL)
+			{
+				codes->code=reverse(codes->code,rem->bits);
+				codes++;
+			}
+			/* rem->flags=rem->flags&(~REVERSE); */
+			/* don't delete the flag because we still need
+			   it to remain compatible with older versions
+			*/
+		}
+		rem=rem->next;
+	}
+
+#       if defined(DEBUG) && !defined(DAEMONIZE)
         /*fprint_remotes(stderr, top_rem);*/
 #       endif
         return (top_rem);

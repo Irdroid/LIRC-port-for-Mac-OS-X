@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.8 1999/07/27 17:02:48 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.9 1999/08/02 19:56:49 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -15,11 +15,6 @@
 # include <config.h>
 #endif
 
-/* disable daemonise if maintainer mode SIM_REC / SIM_SEND defined */
-#if defined(SIM_REC) || defined (SIM_SEND)
-# undef DAEMONIZE
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -31,23 +26,17 @@
 
 #include "lircd.h"
 #include "ir_remote.h"
+#include "hardware.h"
 
-struct ir_remote *remotes;
-
-struct sbuf send_buffer;
-struct rbuf rec_buffer;
+struct ir_remote *decoding=NULL;
 
 struct ir_remote *last_remote=NULL;
 struct ir_remote *repeat_remote=NULL;
 struct ir_ncode *repeat_code;
-struct ir_remote *free_remotes=NULL,*decoding=NULL;
-int return_code=0;  /* used by irrecord to get the code */
-unsigned long send_mode,rec_mode;
-unsigned long code_length=0;
 
-ir_code decoded;
+extern struct hardware hw;
 
-struct ir_remote *get_ir_remote(char *name)
+struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name)
 {
 	struct ir_remote *all;
 
@@ -80,1424 +69,184 @@ struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name)
 	return(0);
 }
 
-inline ir_code reverse(ir_code data,int bits)
+struct ir_ncode *get_code(struct ir_remote *remote,
+			  ir_code pre,ir_code code,ir_code post,
+			  int *repeat_statep)
 {
-	int i;
-	ir_code c;
+	ir_code pre_mask,code_mask,post_mask;
+	int repeat_state;
+	struct ir_ncode *codes,*found;
 	
-	c=0;
-	for(i=0;i<bits;i++)
-	{
-		c|=(ir_code) (((data & (((ir_code) 1)<<i)) ? 1:0))
-						     << (bits-1-i);
-	}
-	return(c);
-}
-
-inline void set_bit(ir_code *code,int bit,int data)
-{
-	(*code)&=~((((ir_code) 1)<<bit));
-	(*code)|=((ir_code) (data ? 1:0)<<bit);
-}
-
-/*
-  sending stuff
-*/
-
-inline unsigned long time_left(struct timeval *current,struct timeval *last,
-			       unsigned long gap)
-{
-	unsigned long secs,usecs,diff;
-	
-	secs=current->tv_sec-last->tv_sec;
-	usecs=current->tv_usec-last->tv_usec;
-	
-	diff=1000000*secs+usecs;
-	
-	return(diff<gap ? gap-diff:0);
-}
-
-inline void clear_send_buffer(void)
-{
-	send_buffer.wptr=0;
-	send_buffer.too_long=0;
-	send_buffer.is_shift=0;
-	send_buffer.pendingp=0;
-	send_buffer.pendings=0;
-	send_buffer.sum=0;
-}
-
-inline void add_send_buffer(unsigned long data)
-{
-	if(send_buffer.wptr<WBUF_SIZE)
-	{
-		send_buffer.sum+=data;
-		send_buffer.data[send_buffer.wptr]=data;
-		send_buffer.wptr++;
-	}
-	else
-	{
-		send_buffer.too_long=1;
-	}
-}
-
-inline void send_pulse(unsigned long data)
-{
-	if(send_buffer.pendingp>0)
-	{
-		send_buffer.pendingp+=data;
-	}
-	else
-	{
-		if(send_buffer.pendings>0)
-		{
-			add_send_buffer(send_buffer.pendings);
-			send_buffer.pendings=0;
-		}
-		send_buffer.pendingp=data;
-	}
-}
-
-inline void send_space(unsigned long data)
-{
-	if(send_buffer.wptr==0 && send_buffer.pendingp==0)
-	{
-#ifdef DEBUG
-		logprintf("first signal is a space!\n");
-#endif
-		return;
-	}
-	if(send_buffer.pendings>0)
-	{
-		send_buffer.pendings+=data;
-	}
-	else
-	{
-		if(send_buffer.pendingp>0)
-		{
-			add_send_buffer(send_buffer.pendingp);
-			send_buffer.pendingp=0;
-		}
-		send_buffer.pendings=data;
-	}
-}
-
-inline int bad_send_buffer(void)
-{
-	if(send_buffer.too_long!=0) return(1);
-	if(send_buffer.wptr==WBUF_SIZE && send_buffer.pendingp>0)
-	{
-		return(1);
-	}
-	return(0);
-}
-
-int write_send_buffer(int length,unsigned long *signals)
-{
-#if defined(SIM_SEND) && !defined(DAEMONIZE)
-	int i;
-
-	if(send_buffer.wptr==0 && length>0 && signals!=NULL)
-	{
-		for(i=0;;)
-		{
-			printf("pulse %ld\n",signals[i++]);
-			if(i>=length) break;
-			printf("space %ld\n",signals[i++]);
-		}
-		return(length*sizeof(unsigned long));
-	}
-	
-	if(send_buffer.pendingp>0)
-	{
-		add_send_buffer(send_buffer.pendingp);
-		send_buffer.pendingp=0;
-	}
-	if(send_buffer.wptr==0) 
-	{
-#               ifdef DEBUG
-		logprintf("nothing to send\n");
-#               endif DEBUG
-		return(0);
-	}
-	if(send_buffer.wptr%2==0) send_buffer.wptr--;
-	for(i=0;;)
-	{
-		printf("pulse %ld\n",send_buffer.data[i++]);
-		if(i>=send_buffer.wptr) break;
-		printf("space %ld\n",send_buffer.data[i++]);
-	}
-	return(send_buffer.wptr*sizeof(unsigned long));
-#else
-	if(send_buffer.wptr==0 && length>0 && signals!=NULL)
-	{
-		return(write(lirc,signals,length*sizeof(unsigned long)));
-	}
-	
-	if(send_buffer.pendingp>0)
-	{
-		add_send_buffer(send_buffer.pendingp);
-		send_buffer.pendingp=0;
-	}
-	if(send_buffer.wptr==0) 
-	{
-#               ifdef DEBUG
-		logprintf("nothing to send\n");
-#               endif DEBUG
-		return(0);
-	}
-	if(send_buffer.wptr%2==0) send_buffer.wptr--;
-	return(write(lirc,send_buffer.data,
-		     send_buffer.wptr*sizeof(unsigned long)));
-#endif
-}
-
-inline void send_header(struct ir_remote *remote)
-{
-	if(has_header(remote))
-	{
-		send_pulse(remote->phead);
-		send_space(remote->shead);
-	}
-}
-
-inline void send_foot(struct ir_remote *remote)
-{
-	if(has_foot(remote))
-	{
-		send_space(remote->sfoot);
-		send_pulse(remote->pfoot);
-	}
-}
-
-inline void send_lead(struct ir_remote *remote)
-{
-	if(remote->plead!=0)
-	{
-		send_pulse(remote->plead);
-	}
-}
-
-inline void send_trail(struct ir_remote *remote)
-{
-	if(remote->ptrail!=0)
-	{
-		send_pulse(remote->ptrail);
-	}
-}
-
-inline void send_data(struct ir_remote *remote,ir_code data,int bits)
-{
-	int i;
-
-	if(!(remote->flags&REVERSE)) data=reverse(data,bits);
-	for(i=0;i<bits;i++)
-	{
-		if(data&1)
-		{
-			if(is_shift(remote))
-			{
-				send_space(remote->sone);
-				send_pulse(remote->pone);
-			}
-			else
-			{
-				send_pulse(remote->pone);
-				send_space(remote->sone);
-			}
-		}
-		else
-		{
-			send_pulse(remote->pzero);
-			send_space(remote->szero);
-		}
-		data=data>>1;
-	}
-}
-
-inline void send_pre(struct ir_remote *remote)
-{
-	if(has_pre(remote))
-	{
-		ir_code pre;
-
-		pre=remote->pre_data;
-		if(remote->repeat_bit>0)
-		{
-			if(remote->repeat_bit<=remote->pre_data_bits)
-			{
-				set_bit(&pre,
-					remote->pre_data_bits
-					-remote->repeat_bit,
-					remote->repeat_state);
-			}
-		}
-
-		send_data(remote,pre,remote->pre_data_bits);
-		if(remote->pre_p>0 && remote->pre_s>0)
-		{
-			send_pulse(remote->pre_p);
-			send_space(remote->pre_s);
-		}
-	}
-}
-
-inline void send_post(struct ir_remote *remote)
-{
-	if(has_post(remote))
-	{
-		ir_code post;
-
-		post=remote->post_data;
-		if(remote->repeat_bit>0)
-		{
-			if(remote->repeat_bit>remote->pre_data_bits
-			   +remote->bits
-			   &&
-			   remote->repeat_bit<=remote->pre_data_bits
-			   +remote->bits
-			   +remote->post_data_bits)
-			{
-				set_bit(&post,
-					remote->pre_data_bits
-					+remote->bits
-					+remote->post_data_bits
-					-remote->repeat_bit,
-					remote->repeat_state);
-			}
-		}
-		
-		if(remote->post_p>0 && remote->post_s>0)
-		{
-			send_pulse(remote->post_p);
-			send_space(remote->post_s);
-		}
-		send_data(remote,post,remote->post_data_bits);
-	}
-}
-
-inline void send_repeat(struct ir_remote *remote)
-{
-	send_lead(remote);
-	send_pulse(remote->prepeat);
-	send_space(remote->srepeat);
-	send_trail(remote);
-}
-
-inline void send_code(struct ir_remote *remote,ir_code code)
-{
+	pre_mask=code_mask=post_mask=0;
+	repeat_state=0;
 	if(remote->repeat_bit>0)
 	{
-		if(remote->repeat_bit>remote->pre_data_bits
-		   &&
-		   remote->repeat_bit<=remote->pre_data_bits
-		   +remote->bits)
+		if(remote->repeat_bit<=remote->pre_data_bits)
 		{
-			set_bit(&code,
-				remote->pre_data_bits
-				+remote->bits
-				-remote->repeat_bit,
-				remote->repeat_state);
+			repeat_state=
+			pre&(1<<(remote->pre_data_bits
+				 -remote->repeat_bit)) ? 1:0;
+			pre_mask=1<<(remote->pre_data_bits
+				     -remote->repeat_bit);
 		}
-		else if(remote->repeat_bit>remote->pre_data_bits
+		else if(remote->repeat_bit<=remote->pre_data_bits
+			+remote->bits)
+		{
+			repeat_state=
+			code&(1<<(remote->pre_data_bits
+				  +remote->bits
+				  -remote->repeat_bit)) ? 1:0;
+			code_mask=1<<(remote->pre_data_bits
+				      +remote->bits
+				      -remote->repeat_bit);
+		}
+		else if(remote->repeat_bit<=remote->pre_data_bits
 			+remote->bits
 			+remote->post_data_bits)
 		{
-			logprintf("bad repeat_bit\n");
-		}
-	}
-
-	if(repeat_remote==NULL || !(remote->flags&NO_HEAD_REP))
-		send_header(remote);
-	send_lead(remote);
-	send_pre(remote);
-	send_data(remote,code,remote->bits);
-	send_post(remote);
-	send_trail(remote);
-	if(repeat_remote==NULL || !(remote->flags&NO_FOOT_REP))
-		send_foot(remote);
-}
-
-int send_command(struct ir_remote *remote,struct ir_ncode *code)
-{
-	struct timeval current;
-
-	/* things are easy, because we only support one mode */
-	if(send_mode!=LIRC_MODE_PULSE)
-		return(0);
-
-	clear_send_buffer();
-	if(is_shift(remote))
-	{
-		send_buffer.is_shift=1;
-	}
-	
-	if(repeat_remote!=NULL && has_repeat(remote))
-	{
-		if(remote->flags&REPEAT_HEADER && has_header(remote))
-		{
-			send_header(remote);
-		}
-		send_repeat(remote);
-	}
-	else
-	{
-		if(!is_raw(remote))
-		{
-			send_code(remote,code->code);
-		}
-	}
-		
-	if(bad_send_buffer())
-	{
-		logprintf("buffer too small\n");
-		return(0);
-	}
-
-	gettimeofday(&current,NULL);
-
-#if !defined(SIM_SEND) || defined(DAEMONIZE)
-	if(remote->last_code!=NULL)
-	{
-		unsigned long usecs;
-
-		usecs=time_left(&current,&remote->last_send,
-				remote->remaining_gap);
-		if(usecs>0) usleep(usecs);
-	}
-
-	if(features&LIRC_CAN_SET_SEND_CARRIER)
-	{
-		unsigned long freq;
-		
-		freq=remote->freq==0 ? 38000:remote->freq;
-		if(ioctl(lirc,LIRC_SET_SEND_CARRIER,&freq)==-1)
-		{
-			logprintf("could not set modulation frequency\n");
-			logperror(NULL);
-			return(0);
-		}
-	}
-#endif
-
-	if(write_send_buffer(code->length,code->signals)==-1)
-	{
-		logprintf("write failed\n");
-		logperror(NULL);
-		return(0);
-	}
-	else
-	{
-		gettimeofday(&remote->last_send,NULL);
-		if(is_const(remote))
-		{
-			if(remote->gap>send_buffer.sum)
-			{
-				remote->remaining_gap=remote->gap
-				-send_buffer.sum;
-			}
-			else
-			{
-				logprintf("too short gap: %lu\n",remote->gap);
-				remote->remaining_gap=remote->gap;
-			}
+			repeat_state=
+			post&(1<<(remote->pre_data_bits
+				  +remote->bits
+				  +remote->post_data_bits
+				  -remote->repeat_bit)) ? 1:0;
+			post_mask=1<<(remote->pre_data_bits
+				      +remote->bits
+				      +remote->post_data_bits
+				      -remote->repeat_bit);
 		}
 		else
 		{
-			if(has_repeat_gap(remote) && 
-			   repeat_remote!=NULL && 
-			   has_repeat(remote))
-			{
-				remote->remaining_gap=remote->repeat_gap;
-			}
-			else
-			{
-				remote->remaining_gap=remote->gap;
-			}
-		}
-		remote->last_code=code;
-#if defined(SIM_SEND) && !defined(DAEMONIZE)
-		printf("space %ld\n",remote->remaining_gap);
-#endif
-	}
-	return(1);
-}
-
-/*
-  decoding stuff
-*/
-
-inline void clear_rec_buffer(unsigned long data)
-{
-	int move;
-
-#       ifdef DEBUG2
-	logprintf("c%ld\n",data&(PULSE_BIT-1));
-#       endif
-	move=rec_buffer.wptr-rec_buffer.rptr;
-	if(move>0 && rec_buffer.rptr>0)
-	{
-		memmove(&rec_buffer.data[0],
-			&rec_buffer.data[rec_buffer.rptr],
-			sizeof(unsigned long)*move);
-		rec_buffer.wptr-=rec_buffer.rptr;
-	}
-	else
-	{
-		rec_buffer.wptr=0;
-	}
-	rec_buffer.rptr=0;
-
-	rec_buffer.data[rec_buffer.wptr]=data;
-	rec_buffer.wptr++;
-
-	rec_buffer.too_long=0;
-	rec_buffer.is_shift=0;
-	rec_buffer.pendingp=0;
-	rec_buffer.pendings=0;
-	rec_buffer.sum=0;
-}
-
-inline void rewind_rec_buffer()
-{
-	rec_buffer.rptr=0;
-	rec_buffer.too_long=0;
-	rec_buffer.pendingp=0;
-	rec_buffer.pendings=0;
-	rec_buffer.sum=0;
-}
-
-inline void unget_rec_buffer(int count)
-{
-	if(count==1 || count==2)
-	{
-		rec_buffer.rptr-=count;
-		rec_buffer.sum-=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
-		if(count==2)
-		{
-			rec_buffer.sum-=rec_buffer.data[rec_buffer.rptr+1]
-			&(PULSE_BIT-1);
+			logprintf(0,"bad repeat_bit\n");
 		}
 	}
-}
-
-unsigned long get_next_rec_buffer(unsigned long maxusec)
-{
-	if(rec_buffer.rptr<rec_buffer.wptr)
+	if(has_pre(remote))
 	{
-#               ifdef DEBUG2
-		logprintf("<%ld\n",rec_buffer.data[rec_buffer.rptr]
-			  &(PULSE_BIT-1));
-#               endif
-		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
-		return(rec_buffer.data[rec_buffer.rptr++]);
-	}
-	else
-	{
-		if(rec_buffer.wptr<RBUF_SIZE)
-		{
-			rec_buffer.data[rec_buffer.wptr]=readdata(maxusec);
-			if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
-			rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
-			&(PULSE_BIT-1);
-			rec_buffer.wptr++;
-			rec_buffer.rptr++;
-#                       ifdef DEBUG2
-			logprintf("+%ld\n",rec_buffer.data[rec_buffer.rptr-1]
-				  &(PULSE_BIT-1));
-#                       endif
-			return(rec_buffer.data[rec_buffer.rptr-1]);
-		}
-		else
-		{
-			rec_buffer.too_long=1;
-			return(0);
-		}
-	}
-	return(0);
-}
-
-inline unsigned long get_next_pulse()
-{
-	unsigned long data;
-
-	data=get_next_rec_buffer(0);
-	if(data==0) return(0);
-	if(!is_pulse(data))
-	{
-#               ifdef DEBUG
-		logprintf("pulse expected\n");
-#               endif
-		return(0);
-	}
-	return(data&(PULSE_BIT-1));
-}
-
-inline unsigned long get_next_space()
-{
-	unsigned long data;
-
-	data=get_next_rec_buffer(0);
-	if(data==0) return(0);
-	if(!is_space(data))
-	{
-#               ifdef DEBUG
-		logprintf("space expected\n");
-#               endif
-		return(0);
-	}
-	return(data);
-}
-
-int expectpulse(struct ir_remote *remote,int exdelta)
-{
-	unsigned long deltas,deltap;
-	int retval;
-
-	if(rec_buffer.pendings>0)
-	{
-		deltas=get_next_space();
-		if(deltas==0) return(0);
-		retval=expect(remote,deltas,rec_buffer.pendings);
-		if(!retval) return(0);
-		rec_buffer.pendings=0;
-	}
-	
-	deltap=get_next_pulse();
-	if(deltap==0) return(0);
-	if(rec_buffer.pendingp>0)
-	{
-		retval=expect(remote,deltap,
-			      rec_buffer.pendingp+exdelta);
-		if(!retval) return(0);
-		rec_buffer.pendingp=0;
-	}
-	else
-	{
-		retval=expect(remote,deltap,exdelta);
-	}
-	return(retval);
-}
-
-int expectspace(struct ir_remote *remote,int exdelta)
-{
-	unsigned long deltas,deltap;
-	int retval;
-
-	if(rec_buffer.pendingp>0)
-	{
-		deltap=get_next_pulse();
-		if(deltap==0) return(0);
-		retval=expect(remote,deltap,rec_buffer.pendingp);
-		if(!retval) return(0);
-		rec_buffer.pendingp=0;
-	}
-	
-	deltas=get_next_space();
-	if(deltas==0) return(0);
-	if(rec_buffer.pendings>0)
-	{
-		retval=expect(remote,deltas,
-			      rec_buffer.pendings+exdelta);
-		if(!retval) return(0);
-		rec_buffer.pendings=0;
-	}
-	else
-	{
-		retval=expect(remote,deltas,exdelta);
-	}
-	return(retval);
-}
-
-inline int expectone(struct ir_remote *remote)
-{
-	if(is_shift(remote))
-	{
-		if(!expectspace(remote,remote->sone))
-		{
-			unget_rec_buffer(1);
-			return(0);
-		}
-		rec_buffer.pendingp=remote->pone;
-	}
-	else
-	{
-		if(!expectpulse(remote,remote->pone))
-		{
-			unget_rec_buffer(1);
-			return(0);
-		}
-		if(remote->ptrail>0)
-		{
-			if(!expectspace(remote,remote->sone))
-			{
-				unget_rec_buffer(2);
-				return(0);
-			}
-		}
-		else
-		{
-			rec_buffer.pendings=remote->sone;
-		}
-	}
-	return(1);
-}
-
-inline int expectzero(struct ir_remote *remote)
-{
-	if(is_shift(remote))
-	{
-		if(!expectpulse(remote,remote->pzero))
-		{
-			unget_rec_buffer(1);
-			return(0);
-		}
-		rec_buffer.pendings=remote->szero;
-	}
-	else
-	{
-		if(!expectpulse(remote,remote->pzero))
-		{
-			unget_rec_buffer(1);
-			return(0);
-		}
-		if(remote->ptrail>0)
-		{
-			if(!expectspace(remote,remote->szero))
-			{
-				unget_rec_buffer(2);
-				return(0);
-			}
-		}
-		else
-		{
-			rec_buffer.pendings=remote->szero;
-		}
-	}
-	return(1);
-}
-
-inline int sync_rec_buffer(struct ir_remote *remote)
-{
-	int count;
-	unsigned long deltas,deltap;
-
-	count=0;
-	deltas=get_next_space();
-	if(deltas==0) return(0);
-
-	while(deltas<remote->remaining_gap*(100-remote->eps)/100
-	      && deltas<remote->remaining_gap-remote->aeps)
-	{
-		deltap=get_next_pulse();
-		if(deltap==0) return(0);
-		deltas=get_next_space();
-		if(deltas==0) return(0);
-		count++;
-		if(count>REC_SYNC) /* no sync found, 
-				      let's try a diffrent remote */
-		{
-			return(0);
-		}
-	}
-	rec_buffer.sum=0;
-	return(deltas);
-}
-
-inline int get_header(struct ir_remote *remote)
-{
-	if(!expectpulse(remote,remote->phead))
-	{
-		unget_rec_buffer(1);
-		return(0);
-	}
-	rec_buffer.pendings=remote->shead;
-	return(1);
-}
-
-inline int get_foot(struct ir_remote *remote)
-{
-	if(!expectspace(remote,remote->sfoot)) return(0);
-	if(!expectpulse(remote,remote->pfoot)) return(0);
-	return(1);
-}
-
-inline int get_lead(struct ir_remote *remote)
-{
-	if(remote->plead==0) return(1);
-	rec_buffer.pendingp=remote->plead;
-	return(1);	
-}
-
-inline int get_trail(struct ir_remote *remote)
-{
-	if(remote->ptrail!=0)
-	{
-		if(!expectpulse(remote,remote->ptrail)) return(0);
-	}
-	if(rec_buffer.pendingp>0)
-	{
-		if(!expectpulse(remote,0)) return(0);
-	}
-	return(1);
-}
-
-inline int get_gap(struct ir_remote *remote,unsigned long gap)
-{
-	unsigned long data;
-
-	data=get_next_rec_buffer(gap*(100-remote->eps)/100);
-	if(data==0) return(1);
-	if(!is_space(data))
-	{
-#               ifdef DEBUG
-		logprintf("space expected\n");
-#               endif
-		return(0);
-	}
-#       ifdef DEBUG2
-	logprintf("sum: %ld\n",rec_buffer.sum);
-#       endif
-	if(data<gap*(100-remote->eps)/100 &&
-	   data<gap-remote->aeps)
-	{
-#               ifdef DEBUG
-		logprintf("end of signal not found\n");
-#               endif
-		return(0);
-	}
-	else
-	{
-		unget_rec_buffer(1);
-	}
-	return(1);	
-}
-
-inline int get_repeat(struct ir_remote *remote)
-{
-	if(!get_lead(remote)) return(0);
-	if(is_shift(remote))
-	{
-		if(!expectspace(remote,remote->srepeat)) return(0);
-		if(!expectpulse(remote,remote->prepeat)) return(0);
-	}
-	else
-	{
-		if(!expectpulse(remote,remote->prepeat)) return(0);
-		rec_buffer.pendings=remote->srepeat;
-	}
-	if(!get_trail(remote)) return(0);
-	if(!get_gap(remote,
-		    is_const(remote) ? 
-		    remote->gap-rec_buffer.sum:
-		    (has_repeat_gap(remote) ? remote->repeat_gap:remote->gap)
-		    )) return(0);
-	return(1);
-}
-
-ir_code get_data(struct ir_remote *remote,int bits)
-{
-	ir_code code;
-	int i;
-
-	code=0;
-
-	for(i=0;i<bits;i++)
-	{
-		code=code<<1;
-		if(expectone(remote))
-		{
-#                       ifdef DEBUG2
-			logprintf("1\n");
-#                       endif
-			code|=1;
-		}
-		else if(expectzero(remote))
-		{
-#                       ifdef DEBUG2
-			logprintf("0\n");
-#                       endif
-			code|=0;
-		}
-		else
+		if((pre|pre_mask)!=(remote->pre_data|pre_mask))
 		{
 #                       ifdef DEBUG
-			logprintf("failed on bit %d\n",i+1);
+			logprintf(1,"bad pre data\n");
 #                       endif
-			return((ir_code) -1);
-		}
-	}
-	if(remote->flags&REVERSE) return(reverse(code,bits));
-	return(code);
-}
-
-ir_code get_pre(struct ir_remote *remote)
-{
-	ir_code pre;
-
-	pre=get_data(remote,remote->pre_data_bits);
-
-	if(pre==(ir_code) -1)
-	{
-#               ifdef DEBUG
-		logprintf("failed on pre_data\n");
-#               endif
-		return((ir_code) -1);
-	}
-	if(remote->pre_p>0 && remote->pre_s>0)
-	{
-		if(!expectpulse(remote,remote->pre_p))
-			return((ir_code) -1);
-		rec_buffer.pendings=remote->pre_s;
-	}
-	return(pre);
-}
-
-ir_code get_post(struct ir_remote *remote)
-{
-	ir_code post;
-
-	if(remote->post_p>0 && remote->post_s>0)
-	{
-		if(!expectpulse(remote,remote->post_p))
-			return((ir_code) -1);
-		rec_buffer.pendings=remote->post_s;
-	}
-
-	post=get_data(remote,remote->post_data_bits);
-
-	if(post==(ir_code) -1)
-	{
-#               ifdef DEBUG
-		logprintf("failed on post_data\n");
-#               endif
-		return((ir_code) -1);
-	}
-	return(post);
-}
-
-int decode(struct ir_remote *remote)
-{
-	ir_code pre,code,post,pre_mask=0,code_mask=0,post_mask=0;
-	struct ir_ncode *codes,*found;
-	int repeat_state;
-	int sync;
-
-
-	repeat_state=0;sync=0; /* make compiler happy */
-	code=pre=post=0;
-
-	if(rec_mode==LIRC_MODE_MODE2 ||
-	   rec_mode==LIRC_MODE_PULSE ||
-	   rec_mode==LIRC_MODE_RAW)
-	{
-		rec_buffer.is_shift=is_shift(remote) ? 1:0;
-
-		/* we should get a long space first */
-		if(!(sync=sync_rec_buffer(remote)))
-		{
 #                       ifdef DEBUG
-			logprintf("failed on sync\n");
-#                       endif		
+#                       ifdef LONG_IR_CODE
+			logprintf(2,"%llx %llx\n",pre,remote->pre_data);
+#                       else
+			logprintf(2,"%lx %lx\n",pre,remote->pre_data);
+#                       endif
+#                       endif
 			return(0);
 		}
-
 #               ifdef DEBUG
-		logprintf("sync\n");
+		logprintf(1,"pre\n");
 #               endif
-
-		if(has_repeat(remote) && last_remote==remote)
-		{
-			if(remote->flags&REPEAT_HEADER && has_header(remote))
-			{
-				if(!get_header(remote))
-				{
-#                                       ifdef DEBUG
-					logprintf("failed on repeat header\n");
-#                                       endif
-					return(0);
-				}
-#                               ifdef DEBUG
-				logprintf("repeat header\n");
-#                               endif
-			}
-			if(get_repeat(remote))
-			{
-				if(remote->last_code==NULL)
-				{
-					logprintf("repeat code without last_code "
-						  "received\n");
-					return(0);
-				}
-
-				remote->remaining_gap=
-				is_const(remote) ? 
-				remote->gap-rec_buffer.sum:
-				(has_repeat_gap(remote) ?
-				 remote->repeat_gap:remote->gap);
-				remote->reps++;
-				return(1);
-			}
-			else
-			{
-#                               ifdef DEBUG
-				logprintf("no repeat\n");
-#                               endif
-				rewind_rec_buffer();
-				sync_rec_buffer(remote);
-			}
-
-		}
-
-		if(has_header(remote))
-		{
-			if(!get_header(remote)
-			   && !(remote->flags&NO_HEAD_REP && 
-				(sync<=remote->gap+remote->gap*remote->eps/100
-				 || sync<=remote->gap+remote->aeps)))
-			{
-#                               ifdef DEBUG
-				logprintf("failed on header\n");
-#                               endif
-				return(0);
-			}
-#                       ifdef DEBUG
-			logprintf("header\n");
-#                       endif
-		}
 	}
-
-	if(is_raw(remote))
+	
+	if(has_post(remote))
 	{
-		struct ir_ncode *codes;
-		int i;
-
-		if(rec_mode==LIRC_MODE_CODE ||
-		   rec_mode==LIRC_MODE_LIRCCODE)
-			return(0);
-
-		codes=remote->codes;
-		found=NULL;
-		while(codes->name!=NULL && found==NULL)
+		if((post|post_mask)!=(remote->post_data|post_mask))
 		{
-			found=codes;
-			for(i=0;i<codes->length;)
+#                       ifdef DEBUG
+			logprintf(1,"bad post data\n");
+#                       endif
+			return(0);
+		}
+#               ifdef DEBUG
+		logprintf(1,"post\n");
+#               endif
+	}
+	found=NULL;
+	codes=remote->codes;
+	if(codes!=NULL)
+	{
+		while(codes->name!=NULL)
+		{
+			if((codes->code|code_mask)==(code|code_mask))
 			{
-				if(!expectpulse(remote,codes->signals[i++]))
-				{
-					found=NULL;
-					rewind_rec_buffer();
-					sync_rec_buffer(remote);
-					break;
-				}
-				if(i<codes->length &&
-				   !expectspace(remote,codes->signals[i++]))
-				{
-					found=NULL;
-					rewind_rec_buffer();
-					sync_rec_buffer(remote);
-					break;
-				}
+				found=codes;
+				break;
 			}
 			codes++;
 		}
-		if(found!=NULL)
-		{
-			if(!get_gap(remote,
-				    is_const(remote) ? 
-				    remote->gap-rec_buffer.sum:
-				    remote->gap)) 
-				return(0);
-		}
 	}
-	else
-	{
-		if(rec_mode==LIRC_MODE_CODE ||
-		   rec_mode==LIRC_MODE_LIRCCODE)
-		{
-			int i;
-
-#                       ifdef DEBUG
-#                       ifdef LONG_IR_CODE
-			logprintf("decoded: %llx\n",decoded);
-#                       else
-			logprintf("decoded: %lx\n",decoded);
-#                       endif		
-#                       endif
-			if((rec_mode==LIRC_MODE_CODE &&
-			    code_length<remote->pre_data_bits
-			    +remote->bits+remote->post_data_bits)
-			   ||
-			   (rec_mode==LIRC_MODE_LIRCCODE && 
-			    code_length!=remote->pre_data_bits
-			    +remote->bits+remote->post_data_bits))
-			{
-				return(0);
-			}
-			if(remote->flags&REVERSE)
-			{
-				decoded=reverse(decoded,remote->pre_data_bits
-						+remote->bits
-						+remote->post_data_bits);
-			}
-			
-			for(i=0;i<remote->post_data_bits;i++)
-			{
-				post_mask=(post_mask<<1)+1;
-			}
-			post=decoded&post_mask;
-			post_mask=0;
-			decoded=decoded>>remote->post_data_bits;
-		
-			for(i=0;i<remote->bits;i++)
-			{
-				code_mask=(code_mask<<1)+1;
-			}
-			code=decoded&code_mask;
-			code_mask=0;
-			pre=decoded>>remote->bits;
-			sync=remote->gap;
-		}
-		else
-		{
-			if(!get_lead(remote))
-			{
-#                               ifdef DEBUG
-				logprintf("failed on leading pulse\n");
-#                               endif
-				return(0);
-			}
-			
-			if(has_pre(remote))
-			{
-				pre=get_pre(remote);
-				if(pre==(ir_code) -1)
-				{
-#                                       ifdef DEBUG
-					logprintf("failed on pre\n");
-#                                       endif
-					return(0);
-				}
-#                               ifdef DEBUG
-#                               ifdef LONG_IR_CODE
-				logprintf("pre: %llx\n",pre);
-#                               else
-				logprintf("pre: %lx\n",pre);
-#                               endif
-#                               endif
-			}
-			
-			code=get_data(remote,remote->bits);
-			if(code==(ir_code) -1)
-			{
-#                               ifdef DEBUG
-				logprintf("failed on code\n");
-#                               endif
-				return(0);
-			}
-#                       ifdef DEBUG
-#                       ifdef LONG_IR_CODE
-			logprintf("code: %llx\n",code);
-#                       else
-			logprintf("code: %lx\n",code);
-#                       endif		
-#                       endif
-			
-			if(has_post(remote))
-			{
-				post=get_post(remote);
-				if(post==(ir_code) -1)
-				{
-#                                       ifdef DEBUG
-					logprintf("failed on post\n");
-#                                       endif
-					return(0);
-				}
-#                               ifdef DEBUG
-#                               ifdef LONG_IR_CODE
-				logprintf("post: %llx\n",post);
-#                               else
-				logprintf("post: %lx\n",post);
-#                               endif
-#                               endif
-			}
-			if(!get_trail(remote))
-			{
-#                               ifdef DEBUG
-				logprintf("failed on trailing pulse\n");
-#                               endif
-				return(0);
-			}
-			if(has_foot(remote))
-			{
-				if(!get_foot(remote))
-				{
-#                                       ifdef DEBUG
-					logprintf("failed on foot\n");
-#                                       endif		
-					return(0);
-				}
-			}
-			if(!get_gap(remote,
-				    is_const(remote) ? 
-				    remote->gap-rec_buffer.sum:
-				    remote->gap)) 
-				return(0);
-		} /* end of mode specific code */
-
-		if(remote->repeat_bit>0)
-		{
-			if(remote->repeat_bit<=remote->pre_data_bits)
-			{
-				repeat_state=
-				pre&(1<<(remote->pre_data_bits
-					 -remote->repeat_bit)) ? 1:0;
-				pre_mask=1<<(remote->pre_data_bits
-					     -remote->repeat_bit);
-			}
-			else if(remote->repeat_bit<=remote->pre_data_bits
-				+remote->bits)
-			{
-				repeat_state=
-				code&(1<<(remote->pre_data_bits
-					  +remote->bits
-					  -remote->repeat_bit)) ? 1:0;
-				code_mask=1<<(remote->pre_data_bits
-					      +remote->bits
-					      -remote->repeat_bit);
-			}
-			else if(remote->repeat_bit<=remote->pre_data_bits
-				+remote->bits
-				+remote->post_data_bits)
-			{
-				repeat_state=
-				post&(1<<(remote->pre_data_bits
-					  +remote->bits
-					  +remote->post_data_bits
-					  -remote->repeat_bit)) ? 1:0;
-				post_mask=1<<(remote->pre_data_bits
-					      +remote->bits
-					      +remote->post_data_bits
-					      -remote->repeat_bit);
-			}
-			else
-			{
-				logprintf("bad repeat_bit\n");
-			}
-		}
-		if(has_pre(remote))
-		{
-			if((pre|pre_mask)!=(remote->pre_data|pre_mask))
-			{
-#                               ifdef DEBUG
-				logprintf("bad pre data\n");
-#                               endif
-#                               ifdef DEBUG2
-#                               ifdef LONG_IR_CODE
-				logprintf("%llx %llx\n",pre,remote->pre_data);
-#                               else
-				logprintf("%lx %lx\n",pre,remote->pre_data);
-#                               endif
-#                               endif
-				return(0);
-			}
-#                       ifdef DEBUG
-			logprintf("pre\n");
-#                       endif
-		}
-	
-		if(has_post(remote))
-		{
-			if((post|post_mask)!=(remote->post_data|post_mask))
-			{
-#                               ifdef DEBUG
-				logprintf("bad post data\n");
-#                               endif
-				return(0);
-			}
-#                       ifdef DEBUG
-			logprintf("post\n");
-#                       endif
-		}
-		found=NULL;
-		codes=remote->codes;
-		if(codes!=NULL)
-		{
-			while(codes->name!=NULL)
-			{
-				if((codes->code|code_mask)==(code|code_mask))
-				{
-					found=codes;
-					break;
-				}
-				codes++;
-			}
-		}
-	}
-	if(return_code) /* nasty hack */
-	{
-		remote->post_data=code;
-		return(1);
-	}
-	if(found==NULL)	return(0);
-	else
-	{
-		last_remote=remote;
-#               ifdef DEBUG
-		logprintf("found: %s\n",found->name);
-#               endif
-		if(found==remote->last_code && !has_repeat(remote) && 
-		   (!(remote->repeat_bit>0) || 
-		    repeat_state==remote->repeat_state))
-		{
-			if(sync<=remote->remaining_gap*(100+remote->eps)/100
-			   || sync<=remote->remaining_gap+remote->aeps)
-				remote->reps++;
-			else
-				remote->reps=0;
-		}
-		else
-		{
-			remote->reps=0;
-			remote->last_code=found;
-			if(remote->repeat_bit>0)
-			{
-				remote->repeat_state=repeat_state;
-			}
-		}
-		gettimeofday(&remote->last_send,NULL);
-		if(is_const(remote))
-		{
-			remote->remaining_gap=remote->gap
-			-rec_buffer.sum;
-		}
-		else
-		{
-			if(has_repeat_gap(remote) && 
-			   repeat_remote!=NULL && 
-			   has_repeat(remote))
-			{
-				remote->remaining_gap=remote->repeat_gap;
-			}
-			else
-			{
-				remote->remaining_gap=remote->gap;
-			}
-
-		}
-		return(1);
-	}
+	*repeat_statep=repeat_state;
+	return(found);
 }
 
-char *decode_command(unsigned long data)
+unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
+			    int repeat_state,int repeat_flag,
+			    unsigned long remaining_gap)
 {
-	struct ir_remote *all;
-	static char message[PACKET_SIZE+1];
-	char c;
-	int i,n;
+	unsigned long long code;
 
-	if(rec_mode==LIRC_MODE_STRING)
+	last_remote=remote;
+#       ifdef DEBUG
+	logprintf(1,"found: %s\n",found->name);
+#       endif
+	if(found==remote->last_code && repeat_flag &&
+	   (!(remote->repeat_bit>0) || repeat_state==remote->repeat_state))
 	{
-		/* inefficient but simple, fix this if you want */
-		n=0;
-		do
-		{
-			if(read(lirc,&c,1)!=1)
-			{
-				logprintf("reading in mode LIRC_MODE_STRING "
-					  "failed\n");
-				return(NULL);
-			}
-			message[n++]=c;
-		}
-		while(c!='\n');
-		message[n]=0;
-		return(message);
-	}
-	else if(rec_mode==LIRC_MODE_LIRCCODE)
-	{
-		unsigned char buffer[sizeof(ir_code)];
-		size_t count;
-		
-		count=code_length/CHAR_BIT;
-		if(code_length%CHAR_BIT) count++;
-		
-		if(read(lirc,buffer,count)!=count)
-		{
-			logprintf("reading in mode LIRC_MODE_LIRCCODE "
-				  "failed\n");
-			return(NULL);
-		}
-		for(i=0,decoded=0;i<count;i++)
-		{
-			decoded=(decoded<<CHAR_BIT)+(unsigned long) buffer[i];
-		}
-	}
-	else if(rec_mode==LIRC_MODE_CODE)
-	{
-		unsigned char buffer;
-
-		if(read(lirc,&buffer,1)!=1)
-		{
-			logprintf("reading in mode LIRC_MODE_CODE "
-				  "failed\n");
-			return(NULL);
-		}
-		decoded=(unsigned long) buffer;
+		remote->reps++;
 	}
 	else
 	{
-		clear_rec_buffer(data);
+		remote->reps=0;
+		remote->last_code=found;
+		if(remote->repeat_bit>0)
+		{
+			remote->repeat_state=repeat_state;
+		}
 	}
 	
+	gettimeofday(&remote->last_send,NULL);
+	remote->remaining_gap=remaining_gap;
+	
+	code=0;
+	if(has_pre(remote))
+	{
+		code|=remote->pre_data;
+		code=code<<remote->bits;
+	}
+	code|=remote->last_code->code;
+	if(has_post(remote))
+	{
+		code=code<<remote->post_data_bits;
+		code|=remote->post_data;
+	}
+	if(remote->flags&REVERSE)
+	{
+		code=reverse(code,remote->pre_data_bits+
+			     remote->bits+remote->post_data_bits);
+	}
+	return(code);
+}
+
+char *decode_all(struct ir_remote *remotes)
+{
+	struct ir_remote *remote;
+	static char message[PACKET_SIZE+1];
+	ir_code pre,code,post;
+	struct ir_ncode *ncode;
+	int repeat_flag,repeat_state;
+	unsigned long remaining_gap;
+
 	/* use remotes carefully, it may be changed on SIGHUP */
-	decoding=all=remotes;
-	while(all)
+	decoding=remote=remotes;
+	while(remote)
 	{
 #               ifdef DEBUG
-		logprintf("trying \"%s\" remote\n",all->name);
+		logprintf(1,"trying \"%s\" remote\n",remote->name);
 #               endif
 		
-		if(decode(all))
+		if(hw.decode_func(remote,&pre,&code,&post,&repeat_flag,
+				   &remaining_gap) &&
+		   (ncode=get_code(remote,pre,code,post,&repeat_state)))
 		{
 			int len;
-			unsigned long long code;
-			struct ir_remote *remote;
 
-			remote=all;
-			code=0;
-			if(!(remote->flags&REVERSE))
-			{
-				if(has_pre(remote))
-				{
-					code|=remote->pre_data;
-					code=code<<remote->bits;
-				}
-				code|=remote->last_code->code;
-				if(has_post(remote))
-				{
-					code=code<<remote->post_data_bits;
-					code|=remote->post_data;
-				}
-			}
-			else
-			{
-				if(has_post(remote))
-				{
-					code|=remote->post_data;
-					code=code<<remote->bits;
-				}
-				code|=remote->last_code->code;
-				if(has_pre(remote))
-				{
-					code=code<<remote->pre_data_bits;
-					code|=remote->pre_data;
-				}
-			}
-
+			code=set_code(remote,ncode,repeat_state,repeat_flag,
+				      remaining_gap);
 #ifdef __GLIBC__
 			/* It seems you can't print 64-bit longs on glibc */
-
+			
 			len=snprintf(message,PACKET_SIZE+1,"%08lx%08lx %02x %s %s\n",
 				     (unsigned long)
 				     (code>>32),
@@ -1516,7 +265,7 @@ char *decode_command(unsigned long data)
 			decoding=NULL;
 			if(len==PACKET_SIZE+1)
 			{
-				logprintf("message buffer overflow\n");
+				logprintf(0,"message buffer overflow\n");
 				return(NULL);
 			}
 			else
@@ -1527,21 +276,15 @@ char *decode_command(unsigned long data)
 		else
 		{
 #                       ifdef DEBUG
-			logprintf("failed \"%s\" remote\n",all->name);
+			logprintf(1,"failed \"%s\" remote\n",remote->name);
 #                       endif
-			if(rec_mode==LIRC_MODE_MODE2 ||
-			   rec_mode==LIRC_MODE_PULSE ||
-			   rec_mode==LIRC_MODE_RAW)
-			{
-				if(all->next!=NULL) rewind_rec_buffer();
-			}
 		}
-		all=all->next;
+		remote=remote->next;
 	}
 	decoding=NULL;
 	last_remote=NULL;
 #       ifdef DEBUG
-	logprintf("decoding failed for all remotes\n");
+	logprintf(1,"decoding failed for all remotes\n");
 #       endif DEBUG
 	return(NULL);
 }

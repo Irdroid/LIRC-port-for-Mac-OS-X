@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.3 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.4 1999/08/02 19:56:49 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -20,41 +20,13 @@
 #include <string.h>
 #include <math.h>
 
+struct hardware;
+
 #ifdef LONG_IR_CODE
 typedef unsigned long long ir_code;
 #else
 typedef unsigned long ir_code;
 #endif
-
-#define WBUF_SIZE (256)
-#define RBUF_SIZE (256)
-
-#define PULSE_BIT 0x1000000
-
-#define REC_SYNC 8
-
-struct sbuf
-{
-	unsigned long data[WBUF_SIZE];
-	int wptr;
-	int too_long;
-	int is_shift;
-	unsigned long pendingp;
-	unsigned long pendings;
-	unsigned long sum;
-};
-
-struct rbuf
-{
-	unsigned long data[RBUF_SIZE];
-	int rptr;
-	int wptr;
-	int too_long;
-	int is_shift;
-	unsigned long pendingp;
-	unsigned long pendings;
-	unsigned long sum;
-};
 
 /*
   Code with name string
@@ -139,9 +111,23 @@ struct ir_remote
         struct ir_remote *next;
 };
 
-static inline int is_shift(struct ir_remote *remote)
+static inline ir_code reverse(ir_code data,int bits)
 {
-	if(remote->flags&SHIFT_ENC) return(1);
+	int i;
+	ir_code c;
+	
+	c=0;
+	for(i=0;i<bits;i++)
+	{
+		c|=(ir_code) (((data & (((ir_code) 1)<<i)) ? 1:0))
+						     << (bits-1-i);
+	}
+	return(c);
+}
+
+static inline int has_repeat(struct ir_remote *remote)
+{
+	if(remote->prepeat>0 && remote->srepeat>0) return(1);
 	else return(0);
 }
 
@@ -154,24 +140,6 @@ static inline int is_raw(struct ir_remote *remote)
 static inline int is_const(struct ir_remote *remote)
 {
 	if(remote->flags&CONST_LENGTH) return(1);
-	else return(0);
-}
-
-static inline int has_header(struct ir_remote *remote)
-{
-	if(remote->phead>0 && remote->shead>0) return(1);
-	else return(0);
-}
-
-static inline int has_foot(struct ir_remote *remote)
-{
-	if(remote->pfoot>0 && remote->sfoot>0) return(1);
-	else return(0);
-}
-
-static inline int has_repeat(struct ir_remote *remote)
-{
-	if(remote->prepeat>0 && remote->srepeat>0) return(1);
 	else return(0);
 }
 
@@ -193,16 +161,6 @@ static inline int has_post(struct ir_remote *remote)
 	else return(0);
 }
 
-static inline int is_pulse(unsigned long data)
-{
-	return(data&PULSE_BIT ? 1:0);
-}
-
-static inline int is_space(unsigned long data)
-{
-	return(!is_pulse(data));
-}
-
 /* check if delta is inside exdelta +/- exdelta*eps/100 */
 
 static inline int expect(struct ir_remote *remote,int delta,int exdelta)
@@ -213,22 +171,14 @@ static inline int expect(struct ir_remote *remote,int delta,int exdelta)
 	return 0;
 }
 
-struct ir_remote *get_ir_remote(char *name);
+struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
-inline unsigned long time_left(struct timeval *current,struct timeval *last,
-			       unsigned long gap);
-int send_command(struct ir_remote *remote,struct ir_ncode *code);
-void clear_rec_buffer(unsigned long data);
-int decode(struct ir_remote *remote);
-char *decode_command(unsigned long data);
+struct ir_ncode *get_code(struct ir_remote *remote,
+			  ir_code pre,ir_code code,ir_code post,
+			  int *repeat_bit);
+unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
+			    int repeat_state,int repeat_flag,
+			    unsigned long remaining_gap);
+char *decode_all(struct ir_remote *remotes);
 
-extern struct ir_remote *repeat_remote;
-extern struct ir_ncode *repeat_code;
-extern struct ir_remote *last_remote;
-
-extern struct ir_remote *remotes,*free_remotes,*decoding;
-
-extern int return_code;
-extern unsigned long send_mode,rec_mode;
-extern unsigned long code_length;
 #endif

@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.2 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: lircd.h,v 5.3 1999/08/02 19:56:49 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -11,7 +11,6 @@
 
 #include "ir_remote.h"
 
-
 #define PACKET_SIZE (256)
 #define WHITE_SPACE " \t"
 
@@ -22,8 +21,8 @@ void nolinger(int sock);
 void remove_client(int fd);
 void add_client(void);
 void start_server(void);
-void logprintf(char *format_str, ...);
-void logperror(const char *s);
+void logprintf(int level,char *format_str, ...);
+void logperror(int level,const char *s);
 void daemonize(void);
 void sigalrm(int sig);
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
@@ -40,7 +39,7 @@ int send_stop(int fd,char *message,char *arguments);
 int version(int fd,char *message,char *arguments);
 int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);
-unsigned long readdata();
+int waitfordata(unsigned long maxusec);
 void loop(void);
 
 
@@ -50,6 +49,4 @@ struct protocol_directive
 	int (*function)(int fd,char *message,char *arguments);
 };
 
-extern int lirc;
-extern unsigned long features;
 #endif _LIRCD_H

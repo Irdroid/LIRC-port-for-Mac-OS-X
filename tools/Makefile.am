@@ -1,9 +1,10 @@
-## $Id: Makefile.am,v 5.1 1999/05/07 17:50:49 columbus Exp $
+## $Id: Makefile.am,v 5.2 1999/08/02 19:56:49 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
-bin_PROGRAMS = irw irpty irexec irrecord mode2 @vga_progs@ @x_progs@
+bin_PROGRAMS = irw irpty irexec mode2 @vga_progs@ @x_progs@
+## irrecord - currently broken
 
 ## simple programs
 irw_SOURCES = irw.c
@@ -12,10 +13,10 @@ irexec_SOURCES = irexec.c lirc_client.c lirc_client.h
 mode2_SOURCES = mode2.c
 
 ## irrecord
-irrecord_SOURCES = irrecord.c
-irrecord_LDADD = $(top_srcdir)/daemons/dump_config.o \
-                 $(top_srcdir)/daemons/config_file.o \
-                 $(top_srcdir)/daemons/ir_remote.o
+##irrecord_SOURCES = irrecord.c
+##irrecord_LDADD = $(top_srcdir)/daemons/dump_config.o \
+##                 $(top_srcdir)/daemons/config_file.o \
+##                 $(top_srcdir)/daemons/ir_remote.o
 
 $(top_srcdir)/daemons/dump_config.o: $(top_srcdir)/daemons/dump_config.c
 	$(COMPILE) -c $(top_srcdir)/daemons/dump_config.c -o $@

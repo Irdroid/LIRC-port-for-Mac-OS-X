@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 
 LIRC_VERSION="CVS pre0.5.5"
 
@@ -46,6 +46,7 @@ CONFIG_DRIVER_TEXT="Please select a driver, that supports your hardware."
 CONFIG_SOFTWARE_TEXT="Here you can change some compile-time settings for LIRC applications"
 SET_PORT_TEXT="Either choose a predefined IO Port/IRQ combination, or enter costum values"
 SET_PORT_TEXT="$SET_PORT_TEXT Hint: use <Space> to choose and <Enter> to proceed"
+SET_TTY_TEXT="Choose the tty where your hardware is available."
 GET_PORT_TEXT="Enter the IO port followed with a space and the IRQ (none for no IRQ)"
 
 #############################################################################
@@ -54,20 +55,26 @@ function GetSelectedDriver
     {
     COM1="off"; COM2="off"; COM3="off"; COM4="off"
     LPT1="off"; LPT2="off"; LPT3="off"; USER="off"
+    IRTTY="none"
     if   test "$DRIVER_PARAMETER" = "com1"; then COM1="on"; LIRC_PORT=$COM1_PORT; LIRC_IRQ=$COM1_IRQ
     elif test "$DRIVER_PARAMETER" = "com2"; then COM2="on"; LIRC_PORT=$COM2_PORT; LIRC_IRQ=$COM2_IRQ
     elif test "$DRIVER_PARAMETER" = "com3"; then COM3="on"; LIRC_PORT=$COM3_PORT; LIRC_IRQ=$COM3_IRQ
     elif test "$DRIVER_PARAMETER" = "com4"; then COM4="on"; LIRC_PORT=$COM4_PORT; LIRC_IRQ=$COM4_IRQ
+    elif test "$DRIVER_PARAMETER" = "tty1"; then COM1="on"; IRTTY="/dev/ttyS0"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "tty2"; then COM2="on"; IRTTY="/dev/ttyS1"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "tty3"; then COM3="on"; IRTTY="/dev/ttyS2"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "tty4"; then COM4="on"; IRTTY="/dev/ttyS3"; LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "lpt1"; then LPT1="on"; LIRC_PORT=$LPT1_PORT; LIRC_IRQ=$LPT1_IRQ
     elif test "$DRIVER_PARAMETER" = "lpt2"; then LPT2="on"; LIRC_PORT=$LPT2_PORT; LIRC_IRQ=$LPT2_IRQ
     elif test "$DRIVER_PARAMETER" = "lpt3"; then LPT3="on"; LIRC_PORT=$LPT3_PORT; LIRC_IRQ=$LPT3_IRQ
-    elif test "$DRIVER_PARAMETER" = "none"; then LIRC_PORT="none";       LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "none"; then LIRC_PORT="none"; LIRC_IRQ="none"
     elif test "$DRIVER_PARAMETER" = "user"; then USER="on"
     fi
 
     SELECTED_DRIVER="driver:$LIRC_DRIVER"
     if test "$LIRC_PORT" != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER io:$LIRC_PORT"; fi
     if test "$LIRC_IRQ"  != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER irq:$LIRC_IRQ"; fi
+    if test "$IRTTY" != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER tty:$IRTTY"; fi
     }
 
 
@@ -90,10 +97,10 @@ function GetPortAndIrq
 
 function SetPortAndIrq
     {
-    if test "$LIRC_DRIVER" = "serial" -o "$LIRC_DRIVER" = "irman"; then
+    if test "$LIRC_DRIVER" = "serial"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Specify Port And IRQ of your Hardware" \
+               --title "Specify port and IRQ of your hardware" \
                --radiolist "$SET_PORT_TEXT" 13 74 6 \
                  1 "COM1 ($COM1_PORT, $COM1_IRQ)" $COM1 \
                  2 "COM2 ($COM2_PORT, $COM2_IRQ)" $COM2 \
@@ -117,7 +124,7 @@ function SetPortAndIrq
     elif test "$LIRC_DRIVER" = "parallel"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Specify Port And IRQ of your Hardware" \
+               --title "Specify port And IRQ of your hardware" \
                --radiolist "$SET_PORT_TEXT" 13 74 6 \
                  1 "LPT1 ($LPT1_PORT, $LPT1_IRQ)" $LPT1 \
                  2 "LPT2 ($LPT2_PORT, $LPT2_IRQ)" $LPT2 \
@@ -136,6 +143,28 @@ function SetPortAndIrq
             }
         fi
         }
+    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman"; then
+	{
+        dialog --clear --backtitle "$BACKTITLE" \
+               --title "Select tty to usefy Port And IRQ of your Hardware" \
+               --radiolist "$SET_TTY_TEXT" 13 74 6 \
+                 1 "COM1 (/dev/ttyS0)" $COM1 \
+                 2 "COM2 (/dev/ttyS1)" $COM2 \
+                 3 "COM3 (/dev/ttyS2)" $COM3 \
+                 4 "COM4 (/dev/ttyS3)" $COM4 \
+               2> $TEMP
+	}
+        if test "$?" = "0"; then
+            {
+            set `cat $TEMP`
+            if   test "$1" = "1"; then DRIVER_PARAMETER="tty1"
+            elif test "$1" = "2"; then DRIVER_PARAMETER="tty2"
+            elif test "$1" = "3"; then DRIVER_PARAMETER="tty3"
+            elif test "$1" = "4"; then DRIVER_PARAMETER="tty4"
+            fi
+            GetSelectedDriver
+            }
+        fi
     fi
     }
 
@@ -187,23 +216,25 @@ function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 13 74 6 \
+           --menu "$CONFIG_DRIVER_TEXT" 15 74 8 \
              1 "Serial port driver" \
              2 "Parallel port driver" \
-             3 "IrMAN" \
+             3 "Irman" \
              4 "Hauppauge TV-Card" \
              5 "Avermadia TV-Card" \
-             6 "Fly98 TV-Card" 2> $TEMP
+             6 "Fly98 TV-Card" \
+	     7 "PixelView RemoteMaster RC2000/RC3000" 2> $TEMP
 
     if test "$?" = "0"; then
         {
         set `cat $TEMP`
-        if   test "$1" = "1"; then LIRC_DRIVER=serial;    DRIVER_PARAMETER=com1
-        elif test "$1" = "2"; then LIRC_DRIVER=parallel;  DRIVER_PARAMETER=lpt1
-        elif test "$1" = "3"; then LIRC_DRIVER=irman;     DRIVER_PARAMETER=com1
-        elif test "$1" = "4"; then LIRC_DRIVER=hauppauge; DRIVER_PARAMETER=none
-        elif test "$1" = "5"; then LIRC_DRIVER=avermedia; DRIVER_PARAMETER=none
-        elif test "$1" = "6"; then LIRC_DRIVER=fly98;     DRIVER_PARAMETER=none
+        if   test "$1" = "1"; then LIRC_DRIVER=serial;       DRIVER_PARAMETER=com1
+        elif test "$1" = "2"; then LIRC_DRIVER=parallel;     DRIVER_PARAMETER=lpt1
+        elif test "$1" = "3"; then LIRC_DRIVER=irman;        DRIVER_PARAMETER=tty1
+        elif test "$1" = "4"; then LIRC_DRIVER=hauppauge;    DRIVER_PARAMETER=none
+        elif test "$1" = "5"; then LIRC_DRIVER=avermedia;    DRIVER_PARAMETER=none
+        elif test "$1" = "6"; then LIRC_DRIVER=fly98;        DRIVER_PARAMETER=none
+        elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1
         fi
         GetSelectedDriver
         SetPortAndIrq
@@ -249,6 +280,7 @@ function SaveConfig
     echo "LIRC_PORT=$LIRC_PORT" >>$CONFIG
     echo "LIRC_IRQ=$LIRC_IRQ" >>$CONFIG
     echo "LIRC_MAJOR=$LIRC_MAJOR" >>$CONFIG
+    echo "IRTTY=$IRTTY" >>$CONFIG
     echo "DRIVER_PARAMETER=$DRIVER_PARAMETER" >>$CONFIG
     echo "ANIMAX=$ANIMAX" >>$CONFIG
     echo "SOFT_CARRIER=$SOFT_CARRIER" >>$CONFIG
@@ -274,6 +306,10 @@ function SaveConfig
 	else echo "--without-timer \\" >>$START;
 	fi
         }
+    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster"; then
+        {
+	echo "--with-tty=$IRTTY \\" >>$START
+	}
     fi
     if test "$X11_WINDOWS" = "on"; then echo "--with-x \\" >>$START; fi
     if test "$DEBUG" = "on"; then echo "--enable-debug \\" >>$START; fi

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.1 1999/05/14 22:21:22 wheeley Exp $      */
+/*      $Id: acconfig.h,v 5.2 1999/08/02 19:56:48 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -76,8 +76,8 @@
 /* Set the timer for the parallel port driver */
 #define LIRC_TIMER		65536
 
-/* Set the default tty used by the irman driver */
-#define LIRC_IRMAN_TTY		"/dev/ttyS0"
+/* Set the default tty used by the irman/remotemaster driver */
+#define LIRC_IRTTY		"/dev/ttyS0"
 
 /* Define if you have an animax serial port receiver */
 #undef LIRC_SERIAL_ANIMAX

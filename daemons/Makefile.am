@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.3 1999/07/08 18:18:28 columbus Exp $
+## $Id: Makefile.am,v 5.4 1999/08/02 19:56:48 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -11,22 +11,33 @@ sbin_PROGRAMS = lircd lircmd
 
 
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
-                lircd.h ir_remote.h config_file.h
+		lircd.h ir_remote.h config_file.h \
+		hardware.h
+lircd_LDADD = @hw_module@
+lircd_DEPENDENCIES = @hw_module@
+
+EXTRA_lircd_SOURCES = hw_tekram.c hw_default.c hw_default.h \
+			hw_pixelview.c hw_pixelview.h\
+			serial.c serial.h
 lircmd_SOURCES = lircmd.c
 
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec
 noinst_PROGRAMS = @maintmode_daemons_extra@
 lircd_simsend_SOURCES = 
-lircd_simsend_LDADD = lircd_simsend.o ir_remote_simsend.o config_file.o
-lircd_simsend.o:
+lircd_simsend_LDADD = lircd_simsend.o hw_default_simsend.o config_file.o \
+			ir_remote.o
+lircd_simsend.o: lircd.c lircd.h ir_remote.h config_file.h hardware.h
 	$(COMPILE) -DSIM_SEND -c lircd.c -o lircd_simsend.o
-ir_remote_simsend.o: lircd.c ir_remote.c config_file.c
-	$(COMPILE) -DSIM_SEND -c ir_remote.c -o ir_remote_simsend.o
+hw_default_simsend.o: hw_default.c hw_default.h hardware.h ir_remote.h lircd.h
+	$(COMPILE) -DSIM_SEND -c hw_default.c -o hw_default_simsend.o
 lircd_simrec_SOURCES = 
-lircd_simrec_LDADD = lircd_simrec.o ir_remote.o config_file.o
-lircd_simrec.o: lircd.c ir_remote.c config_file.c
+lircd_simrec_LDADD = lircd_simrec.o hw_default_simrec.o config_file.o \
+			ir_remote.o
+lircd_simrec.o: lircd.c lircd.h ir_remote.h config_file.h hardware.h
 	$(COMPILE) -DSIM_REC -c lircd.c -o lircd_simrec.o
+hw_default_simrec.o: hw_default.c hw_default.h hardware.h ir_remote.h lircd.h
+	$(COMPILE) -DSIM_REC -c hw_default.c -o hw_default_simrec.o
 
 
 install-exec-local: mkdev
