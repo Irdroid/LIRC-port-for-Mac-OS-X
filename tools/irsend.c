@@ -1,4 +1,4 @@
-/* 	$Id: irsend.c,v 5.1 2002/10/21 20:47:15 ranty Exp $	 */
+/* 	$Id: irsend.c,v 5.2 2003/05/01 20:20:01 lirc Exp $	 */
 
 /*
   
@@ -242,13 +242,14 @@ int main(int argc,char **argv)
 	char *directive;
 	char *remote;
 	char *code;
+        char *lircd=NULL;
 	struct sockaddr_un addr;
 	int fd;
 	char buffer[PACKET_SIZE+1];
 	struct sigaction act;
-
+	
 	progname=argv[0];
-
+	
 	while(1)
 	{
 		int c;
@@ -256,21 +257,26 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+                        {"device",required_argument,NULL,'d'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hv",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s DIRECTIVE REMOTE CODE [CODE...]\n",progname);
+			printf("Usage: %s [options] DIRECTIVE REMOTE CODE [CODE...]\n",progname);
 			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
-			return(0);
+                        printf("\t -d --device\t\tuse given lircd socket [%s]\n", LIRCD);
+			return(EXIT_SUCCESS);
 		case 'v':
 			printf("irsend %s\n",VERSION);
 			return(EXIT_SUCCESS);
+                case 'd':
+                        lircd = optarg;
+                        break;
 		default:
 			return(EXIT_FAILURE);
 		}
@@ -280,14 +286,29 @@ int main(int argc,char **argv)
 		fprintf(stderr,"%s: not enough arguments\n",progname);
 		return(EXIT_FAILURE);
 	}
-
+	
+	if(lircd==NULL)
+	{
+		lircd=LIRCD;
+	}
+        else
+	{
+                if(strlen(lircd)+1 > sizeof(addr.sun_path))
+		{
+			/* lircd is longer than sockaddr_un.sun_path field */
+			fprintf(stderr, "%s: socket name is too long\n",
+				progname);
+			return(EXIT_FAILURE);
+                }
+	}
+	
 	act.sa_handler=sigalrm;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags=0;           /* we need EINTR */
 	sigaction(SIGALRM,&act,NULL);
 
 	addr.sun_family=AF_UNIX;
-	strcpy(addr.sun_path,LIRCD);
+	strcpy(addr.sun_path,lircd);
 	fd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(fd==-1)
 	{
