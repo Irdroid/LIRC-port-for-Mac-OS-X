@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.34 2004/09/26 16:17:53 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.35 2004/09/26 18:08:48 pmiller9 Exp $
  */
 
 /*
@@ -416,6 +416,10 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 		usb_unlink_urb(urb);
 		return;
+
+	case -EPIPE:
+	default:
+		break;
 	}
 
 	/* resubmit urb */
