@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.17 2000/08/28 20:23:16 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.18 2000/09/07 16:05:22 columbus Exp $
  *
  */
 
@@ -74,6 +74,7 @@ static struct rcv_info rcv_infos[] = {
 	/* just a guess */
 	{BTTV_MAGICTVIEW061, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32},
  	{BTTV_MAGICTVIEW063, 0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
+ 	{BTTV_PHOEBE_TVMAS,  0x0028e000,          0, 0x0020000,          0,   0, 20, 32}
 };
 
 static unsigned char code_length = 0;
@@ -165,6 +166,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		break;
         case BTTV_MAGICTVIEW061:
         case BTTV_MAGICTVIEW063:
+	case BTTV_PHOEBE_TVMAS:
 		codes[0] = (codes[0]&0x01)
 			|((codes[0]&0x02)<<1)
 			|((codes[0]&0x04)<<2)

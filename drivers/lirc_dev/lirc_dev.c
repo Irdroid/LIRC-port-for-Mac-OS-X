@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@kki.net.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.c,v 1.11 2000/07/28 11:10:44 columbus Exp $
+ * $Id: lirc_dev.c,v 1.12 2000/09/07 16:05:22 columbus Exp $
  *
  */
 
@@ -306,7 +306,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 
 #ifdef LIRC_HAVE_DEVFS
 	sprintf (name, DEV_LIRC "/%d", ir->p.minor);
-	ir->devfs_handle = devfs_register(NULL, name, 0,
+	ir->devfs_handle = devfs_register(NULL, name, DEVFS_FL_DEFAULT,
 					  IRCTL_DEV_MAJOR, ir->p.minor,
 					  S_IFCHR | S_IRUSR | S_IWUSR,
 					  &fops, NULL);
