@@ -21,6 +21,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ *
+ *  14-07-03 log flood fixed (vss)
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -108,6 +111,7 @@ int bte_sendcmd(char* str, int next_state)
 char *bte_readline()
 {
 	static char msg[PACKET_SIZE+1];
+	static int read_failed = 0;
 	char c;
 	int n=0;
 	int ok=1;
@@ -117,10 +121,20 @@ char *bte_readline()
 	{
 		if((ok=read(hw.fd,&c,1))!=1)
 		{
-			logprintf(LOG_ERR,
+			if (!read_failed) // don't bloat to log 
+			    logprintf(LOG_ERR,
 				  "bte_readline: read failed - %d : %s",
 				  errno, strerror(errno));
+			else
+			    sleep(1);
+			read_failed = 1;
 			return(NULL);
+		}
+		else if (read_failed) // restored 
+		{
+			logprintf(LOG_ERR,
+				  "bte_readline: read restored!");
+			read_failed = 0;
 		}
 		if(n>=PACKET_SIZE-1)
 		{
