@@ -1,14 +1,8 @@
-* add owner field to lirc_plugin and handle module locking in lirc_dev
-
 * lirc_unregister_plugin() must be possible even when the device is open
-
-* accept comments not only at beginning of line
 
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes
-
-* proper devfs
 
 * make the package portable (you will be able to use LIRC with an
   Irman on Solaris)

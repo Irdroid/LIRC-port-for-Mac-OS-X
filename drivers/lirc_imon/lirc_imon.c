@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.3 2005/02/01 01:11:14 venkyr Exp $
+ *   $Id: lirc_imon.c,v 1.4 2005/02/19 15:13:00 lirc Exp $
  *
  *   Version 0.2 beta 2 [January 31, 2005]
  *		USB disconnect/reconnect no longer causes problems for lircd
@@ -953,6 +953,7 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		plugin ->rbuf = rbuf;
 		plugin ->set_use_inc = ir_open;
 		plugin ->set_use_dec = ir_close;
+		plugin->owner = THIS_MODULE;
 
 		LOCK_CONTEXT;
 

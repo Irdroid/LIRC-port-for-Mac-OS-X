@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.64 2005/02/19 14:38:36 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.65 2005/02/19 15:13:02 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1024,6 +1024,7 @@ static struct lirc_plugin plugin = {
 	set_use_dec:	set_use_dec,
 	ioctl:		lirc_ioctl,
 	fops:		&lirc_fops,
+	owner:		THIS_MODULE,
 };
 
 #ifdef MODULE

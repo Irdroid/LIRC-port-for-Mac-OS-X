@@ -161,6 +161,7 @@ static void * s_sasemProbe(t_usb_device *p_dev, unsigned p_iInterfaceNum,
 			l_lircPlugin->rbuf = l_lircBuffer;
 			l_lircPlugin->set_use_inc = &s_lirc_set_use_inc;
 			l_lircPlugin->set_use_dec = &s_lirc_set_use_dec;
+			l_lircPlugin->owner = THIS_MODULE;
 
 			if ((l_iLircMinor = lirc_register_plugin(l_lircPlugin)) < 0) {
 				printk("lirc_register_plugin(l_lircPlugin)) failed");

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.36 2004/09/05 16:48:48 lirc Exp $
+ * $Id: lirc_dev.c,v 1.37 2005/02/19 15:12:59 lirc Exp $
  *
  */
 
@@ -349,8 +349,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			S_IFCHR|S_IRUSR|S_IWUSR,
 			DEV_LIRC "/%u", ir->p.minor);
 #endif
-	class_simple_device_add(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
-				NULL, "lirc%u", ir->p.minor);
+	(void) class_simple_device_add(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+				       NULL, "lirc%u", ir->p.minor);
 
 	if(p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
@@ -525,14 +525,26 @@ static int irctl_open(struct inode *inode, struct file *file)
 	ir->buf->head = ir->buf->tail;
 	ir->buf->fill = 0;
 
-	++ir->open;
-	retval = ir->p.set_use_inc(ir->p.data);
-
-	up(&plugin_lock);
-
-	if (retval != SUCCESS) {
-		--ir->open;
-		return retval;
+	if(ir->p.owner!=NULL && try_module_get(ir->p.owner))
+	{
+		++ir->open;
+		retval = ir->p.set_use_inc(ir->p.data);
+		
+		up(&plugin_lock);
+		
+		if (retval != SUCCESS) {
+			module_put(ir->p.owner);
+			--ir->open;
+			return retval;
+		}
+	}
+	else
+	{
+		if(ir->p.owner==NULL)
+		{
+			dprintk(LOGHEAD "no module owner!!!\n", ir->p.name, ir->p.minor);
+		}
+		retval = -ENODEV;
 	}
 
 	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, SUCCESS);
@@ -557,6 +569,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 
 	--ir->open;
 	ir->p.set_use_dec(ir->p.data);
+	module_put(ir->p.owner);
 
 	up(&plugin_lock);
 

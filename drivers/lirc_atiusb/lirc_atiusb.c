@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.45 2005/01/26 00:37:39 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.46 2005/02/19 15:12:58 lirc Exp $
  */
 
 /*
@@ -1004,6 +1004,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			plugin->rbuf = rbuf;
 			plugin->set_use_inc = &set_use_inc;
 			plugin->set_use_dec = &set_use_dec;
+			plugin->owner = THIS_MODULE;
 			ir->usbdev = dev;
 			ir->p = plugin;
 			ir->remote_type = type;
@@ -1218,7 +1219,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.45 2005/01/26 00:37:39 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.46 2005/02/19 15:12:58 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

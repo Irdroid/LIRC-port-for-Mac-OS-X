@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.10 2004/12/25 16:31:00 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.11 2005/02/19 15:12:58 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -84,25 +84,38 @@ struct class_simple
 #define KERNEL_2_5
 
 /*
- * Recent kernels should handle some of this autmatically by 
- * increasing/decreasing use count when a dependant module is 
- * loaded/unloaded but we need to keep track when a chardev is 
- * opened/closed.
+ * We still are using MOD_INC_USE_COUNT/MOD_DEC_USE_COUNT in the set_use_inc 
+ * function of all modules for 2.4 kernel compatibility.
+ * 
+ * For 2.6 kernels reference counting is done in lirc_dev by 
+ * try_module_get()/module_put() because the old approach is racy.
+ * 
  */
 #ifdef MOD_INC_USE_COUNT
 #undef MOD_INC_USE_COUNT
 #endif
-#define MOD_INC_USE_COUNT try_module_get(THIS_MODULE)
+#define MOD_INC_USE_COUNT
 
 #ifdef MOD_DEC_USE_COUNT
 #undef MOD_DEC_USE_COUNT
 #endif
-#define MOD_DEC_USE_COUNT module_put(THIS_MODULE)
+#define MOD_DEC_USE_COUNT
 
 #ifdef EXPORT_NO_SYMBOLS
 #undef EXPORT_NO_SYMBOLS
 #endif
 #define EXPORT_NO_SYMBOLS
+
+#else  /* Kernel < 2.5.0 */
+
+static inline int try_module_get(struct module *module)
+{
+	return 1;
+}
+
+static inline void module_put(struct module *module)
+{
+}
 
 #endif /* Kernel >= 2.5.0 */
 

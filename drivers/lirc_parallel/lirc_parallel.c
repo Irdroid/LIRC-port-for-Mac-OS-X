@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.28 2005/01/07 21:54:13 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.29 2005/02/19 15:13:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -630,6 +630,7 @@ static struct lirc_plugin plugin = {
        set_use_inc:    set_use_inc,
        set_use_dec:    set_use_dec,
        fops:           &lirc_fops,
+       owner:          THIS_MODULE,
 };
 
 #ifdef MODULE
@@ -760,7 +761,6 @@ int init_module(void)
   
 void cleanup_module(void)
 {
-	if(MOD_IN_USE) return;
 	parport_unregister_device(ppdevice);
 	lirc_unregister_plugin(plugin.minor);
 }
