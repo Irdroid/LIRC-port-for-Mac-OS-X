@@ -1080,7 +1080,6 @@ static int init_port(void)
 
 static void drop_port(void)
 {
-	disable_irq(irq);
 	free_irq(irq, NULL);
 	del_timer_sync(&timerlist);
 #ifndef LIRC_ON_SA1100
@@ -1243,7 +1242,6 @@ static int init_lirc_sir(void)
 	if (retval < 0)
 		return retval;
 	init_hardware();
-	enable_irq(irq);
 	printk(KERN_INFO LIRC_DRIVER_NAME
 		": Installed.\n");
 	return 0;
