@@ -509,3 +509,18 @@ There is also a more complex m4 macro in the contrib directory of the
 current LIRC distribution if you plan to add LIRC support to your
 application without using the lirc_client library.
 </P>
+
+<A NAME="bugs"><HR></A>
+<H1 ALIGN="CENTER">Known bugs</H1>
+<HR WIDTH="70%">
+
+<P>
+If you use the <em>lirc_serial</em> or <em>lirc_parallel</em> driver
+regularly to transmit infra-red signals you might notice that your
+system clock will slow down. During transmit the driver turns off
+interrupts and hence some clock interrupts might get lost causing
+system clock inaccuracy. Unfortunately in order to ensure a good
+signal timing interrupts have to be disabled. Currently no work-around
+is known for this problem except using a program like <em>netdate</em>
+to synchronize your system clock regularly.
+</P>
