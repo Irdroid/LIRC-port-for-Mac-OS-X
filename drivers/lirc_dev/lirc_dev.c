@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.40 2005/03/11 20:17:42 lirc Exp $
+ * $Id: lirc_dev.c,v 1.41 2005/03/12 11:15:34 lirc Exp $
  *
  */
 
@@ -201,7 +201,7 @@ static int lirc_thread(void *irctl)
 	do {
 		if (ir->open) {
 			if (ir->jiffies_to_wait) {
-				current->state = TASK_INTERRUPTIBLE;
+				set_current_state(TASK_INTERRUPTIBLE);
 				schedule_timeout(ir->jiffies_to_wait);
 			} else {
 				interruptible_sleep_on(ir->p.get_queue(ir->p.data));
@@ -214,7 +214,7 @@ static int lirc_thread(void *irctl)
 			}
 		} else {
 			/* if device not opened so we can sleep half a second */
-			current->state = TASK_INTERRUPTIBLE;
+			set_current_state(TASK_INTERRUPTIBLE);
 			schedule_timeout(HZ/2);
 		}
 	} while (!ir->shutdown);
@@ -749,7 +749,7 @@ static ssize_t irctl_read(struct file *file,
 	 * beetwen while condition checking and scheduling)
 	 */
 	add_wait_queue(&ir->buf->wait_poll, &wait);
-	current->state = TASK_INTERRUPTIBLE;
+	set_current_state(TASK_INTERRUPTIBLE);
 
 	/* while we did't provide 'length' bytes, device is opened in blocking
 	 * mode and 'copy_to_user' is happy, wait for data.
@@ -770,7 +770,7 @@ static ssize_t irctl_read(struct file *file,
 				break;
 			}
 			schedule();
-			current->state = TASK_INTERRUPTIBLE;
+			set_current_state(TASK_INTERRUPTIBLE);
 			if(!ir->attached)
 			{
 				ret = -ENODEV;
@@ -785,7 +785,7 @@ static ssize_t irctl_read(struct file *file,
 	}
 
 	remove_wait_queue(&ir->buf->wait_poll, &wait);
-	current->state = TASK_RUNNING;
+	set_current_state(TASK_RUNNING);
 	up(&ir->buffer_sem);
 	
 	dprintk(LOGHEAD "read result = %s (%d)\n",

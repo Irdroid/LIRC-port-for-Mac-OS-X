@@ -302,7 +302,7 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
 	add_wait_queue(&lirc_read_queue,&wait);
-	current->state=TASK_INTERRUPTIBLE;
+	set_current_state(TASK_INTERRUPTIBLE);
 	while(n<count)
 	{
 		if(rx_head!=rx_tail)
@@ -331,11 +331,11 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 				break;
 			}
 			schedule();
-			current->state=TASK_INTERRUPTIBLE;
+			set_current_state(TASK_INTERRUPTIBLE);
 		}
 	}
 	remove_wait_queue(&lirc_read_queue,&wait);
-	current->state=TASK_RUNNING;
+	set_current_state(TASK_RUNNING);
 	return (n ? n : retval);
 }
 static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos)

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.29 2005/02/19 15:13:01 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.30 2005/03/12 11:15:36 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -394,7 +394,7 @@ static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 	if(result) return(result);
 	
 	add_wait_queue(&lirc_wait,&wait);
-	current->state=TASK_INTERRUPTIBLE;
+	set_current_state(TASK_INTERRUPTIBLE);
 	while(count<n)
 	{
 		if(rptr!=wptr)
@@ -417,11 +417,11 @@ static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 				break;
 			}
 			schedule();
-			current->state=TASK_INTERRUPTIBLE;
+			set_current_state(TASK_INTERRUPTIBLE);
 		}
 	}
 	remove_wait_queue(&lirc_wait,&wait);
-	current->state=TASK_RUNNING;
+	set_current_state(TASK_RUNNING);
 	return(count ? count:result);
 }
 
