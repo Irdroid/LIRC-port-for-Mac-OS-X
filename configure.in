@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.12 1999/09/13 05:52:41 columbus Exp $
+dnl $Id: configure.in,v 5.13 1999/10/27 13:15:38 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -69,11 +69,11 @@ if test x${no_kernel} != xyes; then
 	(lirc_aver) (lirc_haup) (lirc_fly98) (lirc_pixview)"
 fi
 
-AC_CHECK_LIB(irman, ir_get_code,
+AC_CHECK_LIB(irman, ir_strerror,
   AC_DEFINE(HAVE_LIBIRMAN)
   possible_drivers="${possible_drivers} (irman)"
 )
-AC_CHECK_LIB(irman_sw, ir_get_code,
+AC_CHECK_LIB(irman_sw, ir_strerror,
   AC_DEFINE(HAVE_LIBIRMAN_SW)
   possible_drivers="${possible_drivers} (irman_sw)"
 )
@@ -100,12 +100,12 @@ if test "$driver" = "none"; then
 fi
 
 if test "$driver" = "irman"; then
-  lirc_driver="none"
+  lirc_driver="irman"
   hw_module="hw_irman.o serial.o"
   irman_lib=-lirman
 fi
 if test "$driver" = "irman_sw"; then
-  lirc_driver="none"
+  lirc_driver="irman_sw"
   hw_module="hw_irman.o serial.o"
   irman_lib=-lirman_sw
 fi
@@ -198,20 +198,23 @@ if echo ${possible_drivers} | grep "($lirc_driver)" >/dev/null 2>&1; then
 else
   case $lirc_driver in
   irman*)
-    AC_MSG_ERROR([you need to first install the libirman package before you can use this driver])
+    AC_MSG_ERROR([*** you need to first install the libirman package
+	(libirman-0.4.2 or better) before you can use this driver])
     ;;
   lirc_*)
-    AC_MSG_ERROR([you need to have the Linux kernel source installed for this driver])
+    AC_MSG_ERROR([*** you need to have the Linux kernel source installed
+	for this driver])
     ;;
   *)
-    AC_MSG_ERROR([it is not possible to install the specified driver on this system])
+    AC_MSG_ERROR([*** it is not possible to install the specified driver
+	on this system])
     ;;
   esac
 fi
 
 dnl now we've checked, we can rename things for the drivers/Makefile
 
-if test "$lirc_driver" = "none"; then
+if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman"; then
   lirc_driver=
 fi
 
