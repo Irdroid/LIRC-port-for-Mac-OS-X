@@ -13,7 +13,6 @@
 /*
   TODO:
 
-  - proper support for repeat
   - use more than 32 bits (?)
   
   CB
@@ -36,7 +35,7 @@
 
 
 static ir_code code;
-
+static int repeat_flag=0;
 
 int devinput_init()
 {
@@ -78,7 +77,7 @@ int devinput_decode(struct ir_remote *remote,
 	*prep = 0;
 	*codep = code;
 	*postp = 0;
-	*repeat_flagp = 0;
+	*repeat_flagp = repeat_flag;
 	*remaining_gapp = 0;
 	
 	return 1;
@@ -106,6 +105,8 @@ char *devinput_rec(struct ir_remote *remotes)
 	code = event.value ? 0x80000000 : 0;
 	code |= ((event.type & 0x7fff) << 16);
 	code |= event.code;
+
+	repeat_flag = (event.value == 2) ? 1:0;
 
 	logprintf(LOG_DEBUG, "code %.8llx", code);
 
