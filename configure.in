@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.64 2001/08/26 12:27:47 lirc Exp $
+dnl $Id: configure.in,v 5.65 2001/09/14 20:39:14 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -109,9 +109,9 @@ AC_ARG_WITH(driver,
                           none, any, animax, avermedia, avermedia98,
                           bestbuy, bestbuy2, caraca, chronos, comX,
                           cph03x, cph06x, creative, fly98, flyvideo,
-			  hauppauge,ipaq, irdeo, irman, irreal,
-			  knc_one, logitech, lptX, mediafocusI,
-	                  packard_bell, parallel, pctv,
+			  hauppauge,ipaq, irdeo, irdeo_remote, irman,
+			  irreal, knc_one, logitech, lptX,
+			  mediafocusI, packard_bell, parallel, pctv,
 		          pixelview_bt878, pixelview_pak,
                           pixelview_pro, provideo, realmagic,
                           remotemaster, serial, silitek, sir, slinke,
@@ -413,6 +413,10 @@ fi
 if test "$driver" = "irdeo"; then
   lirc_driver=lirc_serial
   AC_DEFINE(LIRC_SERIAL_IRDEO)
+fi
+if test "$driver" = "irdeo_remote"; then
+  lirc_driver=lirc_serial
+  AC_DEFINE(LIRC_SERIAL_IRDEO_REMOTE)
 fi
 if test "$driver" = "mediafocusI"; then
   lirc_driver="none"

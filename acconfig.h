@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.17 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: acconfig.h,v 5.18 2001/09/14 20:39:14 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -101,6 +101,9 @@
 
 /* Define if you have an IRdeo serial port receiver */
 #undef LIRC_SERIAL_IRDEO
+
+/* Define if you have an IRdeo remote transmitter */
+#undef LIRC_SERIAL_IRDEO_REMOTE
 
 /* Define if you want to cross-compile for the iPAQ */
 #undef LIRC_ON_IPAQ

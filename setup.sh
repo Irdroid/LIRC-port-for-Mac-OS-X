@@ -103,7 +103,8 @@ SetPortAndIrq ()
 	    "$LIRC_DRIVER" = "tekram" -o \
 	    "$LIRC_DRIVER" = "packard_bell" -o \
 	    "$LIRC_DRIVER" = "animax" -o \
-	    "$LIRC_DRIVER" = "irdeo"; then
+	    "$LIRC_DRIVER" = "irdeo" -o \
+	    "$LIRC_DRIVER" = "irdeo_remote"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify port and IRQ of your hardware" \
@@ -248,16 +249,17 @@ ConfigDriver ()
 			2 "CARACA" \
 			3 "Creative Infra Receiver" \
 			4 "IRdeo" \
-			5 "Irman / UIR" \
-			6 "Logitech/AST" \
-			7 "Miro PCTV receiver" \
-			8 "Packard Bell receiver" \
-			9 "Pinnacle Systems PCTV (pro) receiver" \
-			0 "PixelView RemoteMaster RC2000/RC3000" \
-			a "REALmagic (bundled with Hollywood Plus DVD card)" \
-			b "Slink-e" \
-                        c "Silitek SM-1000" \
-			d "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
+			5 "IRdeo Remote" \
+			6 "Irman / UIR" \
+			7 "Logitech/AST" \
+			8 "Miro PCTV receiver" \
+			9 "Packard Bell receiver" \
+			0 "Pinnacle Systems PCTV (pro) receiver" \
+			a "PixelView RemoteMaster RC2000/RC3000" \
+			b "REALmagic (bundled with Hollywood Plus DVD card)" \
+			c "Slink-e" \
+                        d "Silitek SM-1000" \
+			e "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -265,16 +267,17 @@ ConfigDriver ()
 		elif test "$1" = "2"; then LIRC_DRIVER=caraca;       DRIVER_PARAMETER=tty1;
 		elif test "$1" = "3"; then LIRC_DRIVER=creative;     DRIVER_PARAMETER=tty1;
 		elif test "$1" = "4"; then LIRC_DRIVER=irdeo;        DRIVER_PARAMETER=com1;
-		elif test "$1" = "5"; then LIRC_DRIVER=irman;        DRIVER_PARAMETER=tty1;
-		elif test "$1" = "6"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
-		elif test "$1" = "7"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
-		elif test "$1" = "8"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
-		elif test "$1" = "9"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
-		elif test "$1" = "0"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
-		elif test "$1" = "a"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
-		elif test "$1" = "b"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
-		elif test "$1" = "c"; then LIRC_DRIVER=silitek;      DRIVER_PARAMETER=tty1;
-		elif test "$1" = "d"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "5"; then LIRC_DRIVER=irdeo_remote; DRIVER_PARAMETER=com1;
+		elif test "$1" = "6"; then LIRC_DRIVER=irman;        DRIVER_PARAMETER=tty1;
+		elif test "$1" = "7"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
+		elif test "$1" = "8"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
+		elif test "$1" = "9"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
+		elif test "$1" = "0"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
+		elif test "$1" = "a"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
+		elif test "$1" = "b"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
+		elif test "$1" = "c"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
+		elif test "$1" = "d"; then LIRC_DRIVER=silitek;      DRIVER_PARAMETER=tty1;
+		elif test "$1" = "e"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
 		fi
 		}
 	    else

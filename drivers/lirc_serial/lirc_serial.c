@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.29 2001/08/08 13:26:42 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.30 2001/09/14 20:39:14 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -102,7 +102,7 @@
 #endif
 #endif
 
-#ifdef LIRC_SERIAL_IRDEO
+#if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
 
 #define LIRC_SIGNAL_PIN UART_MSR_DSR
 #define LIRC_SIGNAL_PIN_CHANGE UART_MSR_DDSR
@@ -239,6 +239,11 @@ unsigned long space_width = 3368; /* (period - pulse_width) */
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
 #define LIRC_ON  UART_MCR_OUT2
 
+#elif defined(LIRC_SERIAL_IRDEO_REMOTE)
+
+#define LIRC_OFF (UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2)
+#define LIRC_ON  LIRC_OFF
+
 #else
 #define LIRC_OFF (UART_MCR_RTS|UART_MCR_OUT2)
 #define LIRC_ON  (LIRC_OFF|UART_MCR_DTR)
@@ -319,7 +324,7 @@ void calc_pulse_lengths_in_clocks(void)
 
 long send_pulse(unsigned long length)
 {
-#ifdef LIRC_SERIAL_IRDEO
+#if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
 	long rawbits;
 	int i;
 	unsigned char output;
@@ -443,8 +448,8 @@ long send_pulse(unsigned long length)
 
 void send_space(long length)
 {
-#       ifndef LIRC_SERIAL_IRDEO
-	off();
+#       if !defined(LIRC_SERIAL_IRDEO) && !defined(LIRC_SERIAL_IRDEO_REMOTE)
+        off();
 #       endif
 	if(length<=0) return;
 	udelay(length);
@@ -674,7 +679,7 @@ static int init_port(void)
 	sinp(UART_IIR);
 	sinp(UART_MSR);
 
-#ifdef LIRC_SERIAL_IRDEO
+#       if defined(LIRC_SERIAL_IRDEO) || defined(LIRC_SERIAL_IRDEO_REMOTE)
 	/* setup port to 7N1 @ 115200 Baud */
 	/* 7N1+start = 9 bits at 115200 ~ 3 bits at 38kHz */
 
@@ -686,7 +691,7 @@ static int init_port(void)
 	/* Set DLAB 0 +  7N1 */
 	soutp(UART_LCR,UART_LCR_WLEN7);
 	/* THR interrupt already disabled at this point */
-#endif
+#       endif
 	
 	restore_flags(flags);
 	
@@ -951,7 +956,11 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 #       endif
 	LIRC_CAN_SEND_PULSE|
 #       endif
+#       if defined(LIRC_SERIAL_IRDEO_REMOTE)
+	0;
+#       else
 	LIRC_CAN_REC_MODE2;
+#       endif
 	
 	switch(cmd)
 	{
