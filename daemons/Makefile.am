@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.19 2001/06/11 08:29:38 ranty Exp $
+## $Id: Makefile.am,v 5.20 2001/06/23 10:42:17 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -11,9 +11,9 @@ sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h config_file.h \
-		hardware.h
-lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @daemon@ hw-types.o
-lircd_DEPENDENCIES = @hw_module@ hw-types.o
+		hw-types.c hw-types.h hardware.h
+lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @daemon@
+lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \
@@ -33,9 +33,9 @@ bin_PROGRAMS = irrecord
 
 irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 		config_file.c config_file.h hardware.h \
-		ir_remote.c ir_remote.h
-irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ hw-types.o
-irrecord_DEPENDENCIES = @hw_module@ hw-types.o
+		hw-types.c hw-types.h ir_remote.c ir_remote.h
+irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@
+irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
 			hw_pinsys.c hw_pinsys.h \

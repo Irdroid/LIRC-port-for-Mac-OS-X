@@ -15,6 +15,11 @@ extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
 
+#ifndef HW_DEFAULT
+# define HW_DEFAULT hw_default
+# warning HW_DEFAULT is not defined
+#endif
+
 struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
@@ -27,14 +32,11 @@ struct hardware *hw_list[] =
 	&hw_silitek,
 	&hw_slinke,
 #else
-# warning LIRC_DRIVER_ANY is not defined
+	&HW_DEFAULT,
 #endif
 	NULL
 };
-#ifndef HW_DEFAULT
-# define HW_DEFAULT hw_default
-# warning HW_DEFAULT is not defined
-#endif
+
 struct hardware hw;
 // which one is HW_DEFAULT could be selected with autoconf in a similar
 // way as it is now done upstream
@@ -57,7 +59,7 @@ int hw_choose_driver (char *name)
 		return -1;
 	hw = *hw_list[i];
 
-	/* just in case the device was already selectec by the user */
+	/* just in case the device was already selected by the user */
 	if(device)
 		hw.device = device;
 

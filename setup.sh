@@ -201,7 +201,7 @@ function DriverOptions
                 fi
                 }
             done
-	    if test "$TRANSMITTER" = "off"; then SOFT_CARRIER="off"; fi
+#	    if test "$TRANSMITTER" = "off"; then SOFT_CARRIER="off"; fi
             }
         fi
         }
