@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.54 2004/11/21 11:34:41 lirc Exp $      */
+/*      $Id: lircd.c,v 5.55 2005/03/11 18:39:24 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -91,6 +91,8 @@ char *progname="lircd " VERSION;
 char *configfile=LIRCDCFGFILE;
 #ifndef USE_SYSLOG
 char *logfile=LOGFILE;
+#else
+static const char *syslogident = "lircd-" VERSION;
 #endif
 FILE *pidf;
 char *pidfile = PIDFILE;
@@ -807,14 +809,14 @@ void start_server(mode_t permission,int nodaemon)
 #ifdef DAEMONIZE
 	if(nodaemon)
 	{
-		openlog(progname,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
+		openlog(syslogident,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
 	}
 	else
 	{
-		openlog(progname,LOG_CONS|LOG_PID,LIRC_SYSLOG);
+		openlog(syslogident,LOG_CONS|LOG_PID,LIRC_SYSLOG);
 	}
 #else
-	openlog(progname,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
+	openlog(syslogident,LOG_CONS|LOG_PID|LOG_PERROR,LIRC_SYSLOG);
 #endif
 #else
 	lf=fopen(logfile,"a");

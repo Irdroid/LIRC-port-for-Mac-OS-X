@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.16 2004/11/20 10:23:36 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.17 2005/03/11 18:39:24 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -136,6 +136,7 @@ struct state_mouse new_ms,ms=
 };
 
 char *progname="lircmd "VERSION;
+static const char *syslogident = "lircmd-" VERSION;
 char *configfile=LIRCMDCFGFILE;
 
 int lircd,lircm;
@@ -819,7 +820,7 @@ int main(int argc,char **argv)
 #ifdef DAEMONIZE
 	if(!nodaemon) daemonize();
 #endif
-	openlog(progname,LOG_CONS,LOG_DAEMON);
+	openlog(syslogident,LOG_CONS,LOG_DAEMON);
 	
 	signal(SIGPIPE,SIG_IGN);
 
