@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.21 2000/11/24 19:52:13 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.22 2001/04/24 19:30:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -126,9 +126,30 @@ static int rbh, rbt;
 #ifdef LIRC_SERIAL_TRANSMITTER
 static lirc_t wbuf[WBUF_LEN];
 
-/* 1 is substracted from the actual value to compensate the port
-   access latency */
+#if defined(__i386__)
+/*
+  From:
+  Linux I/O port programming mini-HOWTO
+  Author: Riku Saikkonen <Riku.Saikkonen@hut.fi>
+  v, 28 December 1997
+  
+  [...]
+  Actually, a port I/O instruction on most ports in the 0-0x3ff range
+  takes almost exactly 1 microsecond, so if you're, for example, using
+  the parallel port directly, just do additional inb()s from that port
+  to delay.
+  [...]
+*/
+
+/* 2 is subtracted from the actual value to compensate the port
+   access latency, 2 instead of 1 because that generated better
+   results according to my oscilloscope */
+  
+#define LIRC_SERIAL_TRANSMITTER_LATENCY 2
+#else
+/* does anybody have information on other platforms ? */
 #define LIRC_SERIAL_TRANSMITTER_LATENCY 1
+#endif
 
 /* pulse/space ratio of 50/50 */
 unsigned long pulse_width = (13-LIRC_SERIAL_TRANSMITTER_LATENCY);
@@ -251,7 +272,9 @@ static void inline rbwrite(lirc_t l)
 	nrbt=(rbt+1) & (RBUF_LEN-1);
 	if(nrbt==rbh)      /* no new signals will be accepted */
 	{
+#               ifdef DEBUG
 		printk(KERN_WARNING  LIRC_DRIVER_NAME  ": Buffer overrun\n");
+#               endif
 		return;
 	}
 	rbuf[rbt]=l;
@@ -378,6 +401,20 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 					       tv.tv_usec-
 					       lasttv.tv_usec);
 			};
+			if(tv.tv_sec<lasttv.tv_sec ||
+			   (tv.tv_sec==lasttv.tv_sec &&
+			    tv.tv_usec<lasttv.tv_usec))
+			{
+				printk(KERN_WARNING LIRC_DRIVER_NAME
+				       ": AIEEEE: your clock just jumped "
+				       "backwards\n");
+				printk(KERN_WARNING LIRC_DRIVER_NAME
+				       "%d %d %lx %lx %lx %lx\n",
+				       dcd,sense,
+				       tv.tv_sec,lasttv.tv_sec,
+				       tv.tv_usec,lasttv.tv_usec);
+				data=PULSE_MASK;
+			}
 			frbwrite(dcd^sense ? data : (data|PULSE_BIT));
 			lasttv=tv;
 			wake_up_interruptible(&lirc_wait_in);
