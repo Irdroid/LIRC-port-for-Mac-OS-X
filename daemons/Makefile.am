@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.2 1999/05/15 15:34:04 columbus Exp $
+## $Id: Makefile.am,v 5.3 1999/07/08 18:18:28 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -17,13 +17,15 @@ lircmd_SOURCES = lircmd.c
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec
 noinst_PROGRAMS = @maintmode_daemons_extra@
-lircd_simsend_SOURCES = lircd_simsend.c ir_remote_simsend.c config_file.c
+lircd_simsend_SOURCES = 
+lircd_simsend_LDADD = lircd_simsend.o ir_remote_simsend.o config_file.o
 lircd_simsend.o:
 	$(COMPILE) -DSIM_SEND -c lircd.c -o lircd_simsend.o
-ir_remote_simsend.o:
+ir_remote_simsend.o: lircd.c ir_remote.c config_file.c
 	$(COMPILE) -DSIM_SEND -c ir_remote.c -o ir_remote_simsend.o
-lircd_simrec_SOURCES = lircd_simrec.c ir_remote.c config_file.c
-lircd_simrec.o:
+lircd_simrec_SOURCES = 
+lircd_simrec_LDADD = lircd_simrec.o ir_remote.o config_file.o
+lircd_simrec.o: lircd.c ir_remote.c config_file.c
 	$(COMPILE) -DSIM_REC -c lircd.c -o lircd_simrec.o
 
 

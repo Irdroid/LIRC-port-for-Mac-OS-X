@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.5 1999/06/21 13:22:22 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.6 1999/07/08 18:18:28 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -424,7 +424,6 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 int send_command(struct ir_remote *remote,struct ir_ncode *code)
 {
 	struct timeval current;
-	unsigned long usecs;
 
 	/* things are easy, because we only support one mode */
 	if(send_mode!=LIRC_MODE_PULSE)
@@ -463,6 +462,8 @@ int send_command(struct ir_remote *remote,struct ir_ncode *code)
 #if !defined(SIM_SEND) || defined(DAEMONIZE)
 	if(remote->last_code!=NULL)
 	{
+		unsigned long usecs;
+
 		usecs=time_left(&current,&remote->last_send,
 				remote->remaining_gap);
 		if(usecs>0) usleep(usecs);
