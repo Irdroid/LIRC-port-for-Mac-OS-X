@@ -80,6 +80,7 @@ hw_menu_entry: @hw-tv-card
 	provideo: "ProVideo PV951 (card=42)"
 	mediafocusI: "Technisat MediaFocus I"
 	tekram_bt829: "Tekram M230 Mach64 (and others bt829 based)"
+	cph03x: "TriTan Technology TView95 CPH03x (card=1)"
 	cph06x: "TView99 CPH063 (card=38)"
 	knc_one: "Typhoon TView RDS / FM Stereo (card=53)"
 	leadtek_0010: "Winfast TV2000/XP (card=34)"
