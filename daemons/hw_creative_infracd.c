@@ -1,4 +1,4 @@
-/*      $Id: hw_creative_infracd.c,v 5.2 2003/05/24 21:24:26 lirc Exp $      */
+/*      $Id: hw_creative_infracd.c,v 5.3 2003/11/10 15:48:48 lirc Exp $      */
 
 /*
  * Remote control driver for the Creative iNFRA CDrom
@@ -76,7 +76,7 @@ int is_my_device(int fd,char *name)
 	int k;
 	unsigned char inqCmdBlk [SCSI_INQ_CMD_LEN] = 
 		{INQUIRY, 0, 0, 0, MAX_SCSI_REPLY_LEN, 0};
-	unsigned char Buff[SCSI_INQ_CMD_LEN];
+	unsigned char Buff[MAX_SCSI_REPLY_LEN];
 	unsigned char sense_buffer[32];
 
 	/* Just to be safe, check we have a sg device wigh version > 3 */
