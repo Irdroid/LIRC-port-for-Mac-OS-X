@@ -19,3 +19,13 @@
 * internationalization
 
 * IrDA support (SIR support is available, real CIR support is still missing)
+
+* integrate lircrc_config with lirc source package.
+
+* add 'debian/' directory. (ranty)
+
+* renaming --disable-manage-devices to --enable-sandboxed and make it
+  prevent any changes out of the instalation directory on 'make install'.
+  (ranty)
+
+* write a daemon to keep track of state.
