@@ -606,6 +606,15 @@ fi</PRE>
 	  receiver circuits and can't be addressed in software except
 	  keeping the time where interrupts are disabled to a minimum.
 	</P>
+	<P>
+	  If you are using an IDE system you might want to try calling
+	  <em>hdparm -u1 -d1</em> for all of your drives. This enables
+	  DMA for the drive and allows the driver to unmask other
+	  interrupts during handling of a disk interrupt. But be aware
+	  that this can be dangerous for some (buggy) IDE
+	  chipsets. Consult the hdparm man page for further
+	  information.
+	</P>
       </LI>
     </UL>
     
