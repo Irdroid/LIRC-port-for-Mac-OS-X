@@ -96,7 +96,7 @@ hw_menu_entry: @hw-pda
 	sa1100: "Sharp Zaurus"
 
 hw_menu_entry: @hw-usb
-	atiusb: "ATI/NVidia/X10 RF Remote"
+	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	tira: "Home Electronics Tira USB device"
