@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.27 2004/01/12 10:21:12 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.28 2004/03/07 19:01:07 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -22,12 +22,12 @@
 #define DEV_LIRCD	"lircd"
 #define DEV_LIRCM	"lircm"
 
-/* config file names - beneath SYSCONFDIR (default /usr/local/etc) */
+/* config file names - beneath SYSCONFDIR (default /etc) */
 #define CFG_LIRCD	"lircd.conf"
 #define CFG_LIRCM	"lircmd.conf"
 
-/* config file names - beneath $HOME */
-#define CFG_USER	".lircrc"
+/* config file names - beneath $HOME or SYSCONFDIR */
+#define CFG_LIRCRC	"lircrc"
 
 /* log files */
 #define LOG_LIRCD	"lircd"
@@ -178,7 +178,8 @@
 #define LIRCDCFGFILE		SYSCONFDIR "/" CFG_LIRCD
 #define LIRCMDCFGFILE		SYSCONFDIR "/" CFG_LIRCM
 
-#define LIRCCFGFILE		CFG_USER
+#define LIRCRC_USER_FILE	"." CFG_LIRCRC
+#define LIRCRC_ROOT_FILE	SYSCONFDIR "/" CFG_LIRCRC
 
 #define LOGFILE			LOCALSTATEDIR "/log/" LOG_LIRCD
 #define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND

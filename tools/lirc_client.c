@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.15 2003/11/10 20:35:25 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.16 2004/03/07 19:01:08 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -9,6 +9,7 @@
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
  * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
+ * System wide LIRCRC support by Michal Svec <rebel@atrey.karlin.mff.cuni.cz>
  */ 
 
 #ifdef HAVE_CONFIG_H
@@ -605,7 +606,7 @@ static FILE *lirc_open(const char *file, const char *current_file,
 			home="/";
 		}
 		filename=(char *) malloc(strlen(home)+1+
-					 strlen(LIRCCFGFILE)+1);
+					 strlen(LIRCRC_USER_FILE)+1);
 		if(filename==NULL)
 		{
 			lirc_printf("%s: out of memory\n",lirc_prog);
@@ -616,7 +617,7 @@ static FILE *lirc_open(const char *file, const char *current_file,
 		{
 			strcat(filename,"/");
 		}
-		strcat(filename,LIRCCFGFILE);
+		strcat(filename,LIRCRC_USER_FILE);
 	}
 	else if(strncmp(file, "~/", 2)==0)
 	{
@@ -662,11 +663,39 @@ static FILE *lirc_open(const char *file, const char *current_file,
 	}
 
 	fin=fopen(filename,"r");
-	if(fin==NULL)
+	if(fin==NULL && (file!=NULL || errno!=ENOENT))
 	{
 		lirc_printf("%s: could not open config file %s\n",
 			    lirc_prog,filename);
 		lirc_perror(lirc_prog);
+	}
+	else if(fin==NULL)
+	{
+		fin=fopen(LIRCRC_ROOT_FILE,"r");
+		if(fin==NULL && errno!=ENOENT)
+		{
+			lirc_printf("%s: could not open config file %s\n",
+				    lirc_prog,LIRCRC_ROOT_FILE);
+			lirc_perror(lirc_prog);
+		}
+		else if(fin==NULL)
+		{
+			lirc_printf("%s: could not open config files "
+				    "%s and %s\n",
+				    lirc_prog,filename,LIRCRC_ROOT_FILE);
+			lirc_perror(lirc_prog);
+		}
+		else
+		{
+			free(filename);
+			filename = strdup(LIRCRC_ROOT_FILE);
+			if(filename==NULL)
+			{
+				fclose(fin);
+				lirc_printf("%s: out of memory\n",lirc_prog);
+				return NULL;
+			}
+		}
 	}
 	if(full_name && fin!=NULL)
 	{

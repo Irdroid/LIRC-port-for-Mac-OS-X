@@ -1,4 +1,6 @@
 0.7.0: future
+  * if no .lircrc file is found in the user's home directory,
+    /etc/lircrc is used
   * replaced get_key interface with more flexible add_to_buf method
   * added support for Windows Media Center Remotes (Dan Conti)
   * fine-tuning of lirc_sir driver available with threshold parameter:

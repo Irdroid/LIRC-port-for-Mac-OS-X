@@ -282,9 +282,12 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       At this point all you need are the tools, which react on the
       signals decoded by lircd. To do this you need a file called
       <em>.lircrc</em>. It should be placed in your home
-      directory. The idea is to have configuration information of all
-      clients in one place. That lets you keep a better overview of
-      clients and simplifies the use of modes explained later.
+      directory. Optionally you can create a system-wide configuration
+      file located in /etc/lircrc, which will be used when no .lircrc
+      file can be found in the user's home directory. The idea is to
+      have configuration information of all clients in one place. That
+      lets you keep a better overview of clients and simplifies the
+      use of modes explained later.
     </P>
     <P>
       First I will explain the syntax of the .lircrc file itself.  The
