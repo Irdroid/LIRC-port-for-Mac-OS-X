@@ -1,7 +1,13 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.1 2005/01/26 20:07:28 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.2 2005/01/29 23:14:25 venkyr Exp $
+ *
+ *   Version 0.2 beta 1 [January 29, 2005]
+ *		Added support for original iMON receiver (ext USB)
+ *   
+ *   Version 0.2 alpha 2 [January 24, 2005]
+ *   		Added support for VFDs with 6-packet protocol
  *
  *   Version 0.2 alpha 1 [January 23, 2005]
  *   		Added support for 2.6 kernels
@@ -158,11 +164,21 @@ static struct file_operations vfd_fops = {
 
 /* USB Device ID for IMON USB Control Board */
 static struct usb_device_id imon_usb_id_table [] = {
-	{ USB_DEVICE(0x0aa8, 0xffda) },
-	{ USB_DEVICE(0x0aa8, 0x8001) },
-	{ USB_DEVICE(0x15c2, 0xffda) },
+	{ USB_DEVICE(0x0aa8, 0xffda) },		/* IR & VFD    */
+	{ USB_DEVICE(0x0aa8, 0x8001) },		/* IR only     */
+	{ USB_DEVICE(0x15c2, 0xffda) },		/* IR & VFD    */
+	{ USB_DEVICE(0x04e8, 0xff30) },		/* ext IR only */
 	{}
 };
+
+/* Some iMON VFD models requires a 6th packet */
+static int vfd_proto_6p = FALSE;
+static unsigned short vfd_proto_6p_vendor_list [] = {
+			/* terminate this list with a 0 */
+			0x15c2,
+			0 };
+static unsigned char vfd_packet6 [] = {
+		0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
 
 /* USB Device data */
 static struct usb_driver imon_driver = {
@@ -186,7 +202,6 @@ static struct usb_class_driver imon_class = {
 };
 #endif
 
-
 /* to prevent races between open() and disconnect() */
 static DECLARE_MUTEX (disconnect_sem);
 
@@ -208,12 +223,6 @@ extern devfs_handle_t usb_devfs_handle;
 
 #endif
 
-/* Local function prototypes */
-static inline int send_packet (struct imon_context *, int offset, int seq);
-static inline void incoming_packet (struct imon_context *, struct urb *r_urb);
-static inline void submit_data (struct imon_context *);
-static inline void delete_context (struct imon_context *context);
-
 /* ------------------------------------------------------------
  *                     M O D U L E   C O D E
  * ------------------------------------------------------------
@@ -222,8 +231,24 @@ static inline void delete_context (struct imon_context *context);
 MODULE_AUTHOR (MOD_AUTHOR);
 MODULE_DESCRIPTION (MOD_DESC);
 MODULE_LICENSE ("GPL");
-MODULE_PARM (debug, "i");
+module_param (debug, int, 0);
+module_param (vfd_proto_6p, int, 0);
 MODULE_PARM_DESC (debug, "Debug messages: 0=no, 1=yes (default: no)");
+MODULE_PARM_DESC (vfd_proto_6p, "Force the 6 packet VFD protocol: 0=no 1=yes (default: no)");
+
+
+static inline void delete_context (struct imon_context *context) {
+
+	if (context ->vfd_supported)
+		usb_free_urb (context ->tx_urb);
+	usb_free_urb (context ->rx_urb);
+	lirc_buffer_free (context ->plugin ->rbuf);
+	kfree (context ->plugin ->rbuf);
+	kfree (context ->plugin);
+	kfree (context);
+
+	if (debug) info ("%s: context deleted", __FUNCTION__);
+}
 
 /**
  * Called when the VFD device (e.g. /dev/usb/lcd)
@@ -337,6 +362,53 @@ static int vfd_close (struct inode *inode, struct file *file)
 }
 
 /**
+ * Sends a packet to the VFD.
+ */
+static inline int send_packet (struct imon_context *context)
+{
+	unsigned int pipe;
+	int interval = 0;
+	int retval = SUCCESS;
+
+	pipe = usb_sndintpipe (context ->dev,
+			context-> tx_endpoint ->bEndpointAddress);
+#ifdef KERNEL_2_5
+	interval = context ->tx_endpoint ->bInterval;
+#endif	/* Use 0 for 2.4 kernels */
+
+	usb_fill_int_urb (context ->tx_urb, context ->dev, pipe,
+		context ->usb_tx_buf, sizeof (context ->usb_tx_buf),
+		usb_tx_callback, context, interval);
+
+	context ->tx_urb ->actual_length = 0;
+
+	init_completion (&context ->tx.finished);
+	atomic_set (&(context ->tx.busy), 1);
+
+#ifdef KERNEL_2_5
+	retval =  usb_submit_urb (context ->tx_urb, GFP_KERNEL);
+#else
+	retval =  usb_submit_urb (context ->tx_urb);
+#endif
+	if (retval != SUCCESS) {
+		atomic_set (&(context ->tx.busy), 0);
+		err ("%s: error submitting urb (%d)", __FUNCTION__, retval);
+	}
+	else {
+		/* Wait for tranmission to complete (or abort) */
+		UNLOCK_CONTEXT;
+		wait_for_completion (&context ->tx.finished);
+		LOCK_CONTEXT;
+
+		retval = context ->tx.status;
+		if (retval != SUCCESS)
+			err ("%s: packet tx failed (%d)", __FUNCTION__, retval);
+	}
+
+	return retval;
+}
+
+/**
  * Writes data to the VFD.  The IMON VFD is 2x16 characters
  * and requires data in 5 consecutive USB interrupt packets,
  * each packet but the last carrying 7 bytes.
@@ -352,8 +424,8 @@ static ssize_t vfd_write (struct file *file, const char *buf,
 {
 
 	int i;
-	int indx = 0;
-	int seq = 0;
+	int offset;
+	int seq;
 	int retval = SUCCESS;
 	struct imon_context *context;
 
@@ -378,72 +450,47 @@ static ssize_t vfd_write (struct file *file, const char *buf,
 	}
 
 	copy_from_user (context ->tx.data_buf, buf, n_bytes);
-	for (i=n_bytes; i < 35; ++i)
+
+	/* Pad with spaces */
+	for (i=n_bytes; i < 32; ++i)
 		context ->tx.data_buf [i] = ' ';
+	
+	for (i=32; i < 35; ++i)
+		context ->tx.data_buf [i] = 0xFF;
+
+	offset = seq = 0;
 
 	do {
-		init_completion (&context ->tx.finished);
+		memcpy (context ->usb_tx_buf, context ->tx.data_buf + offset, 7);
+		context ->usb_tx_buf [7] = (unsigned char) seq;
 
-		atomic_set (&(context ->tx.busy), 1);
-		if ((retval = send_packet (context, indx, seq)) < 0) {
+		if ((retval = send_packet (context)) != SUCCESS) {
 
-			atomic_set (&context ->tx.busy, 0);
-			err ("%s: packet submit failed for chunk %d (%d)", 
-				__FUNCTION__, seq/2, retval);
-			break;
-		}
-
-		UNLOCK_CONTEXT;
-		wait_for_completion (&context ->tx.finished);
-		LOCK_CONTEXT;
-		retval = context ->tx.status;
-		if (retval != SUCCESS) {
-
-			err ("%s: packet tx failed for chunk %d (%d)", 
-				__FUNCTION__, seq/2, retval);
-			break;
+			err ("%s: send packet failed for packet #%d", 
+					__FUNCTION__, seq/2);
+			goto exit;
 		}
 		else {
 			seq += 2;
-			indx += 7;
+			offset += 7;
 		}
 
-	} while (indx < 35);
+	} while (offset < 35);
+
+	if (vfd_proto_6p) {
+
+		/* Send packet #6 */
+		memcpy (context ->usb_tx_buf, vfd_packet6, 7);
+		context ->usb_tx_buf [7] = (unsigned char) seq;
+		if ((retval = send_packet (context)) != SUCCESS)
+			err ("%s: send packet failed for packet #%d",
+					__FUNCTION__, seq/2);
+	}
 
 exit:
-
 	UNLOCK_CONTEXT;
 
 	return (retval == SUCCESS) ? n_bytes : retval;
-}
-
-/**
- * Sends a packet to the VFD.
- */
-static inline int send_packet (struct imon_context *context, int offset, int seq)
-{
-	unsigned int pipe;
-	int interval = 0;
-
-	memcpy (context ->usb_tx_buf, context ->tx.data_buf + offset, 7);
-	context ->usb_tx_buf [7] = (unsigned char) seq;
-	pipe = usb_sndintpipe (context ->dev,
-			context-> tx_endpoint ->bEndpointAddress);
-#ifdef KERNEL_2_5
-	interval = context ->tx_endpoint ->bInterval;
-#endif	/* Use 0 for 2.4 kernels */
-
-	usb_fill_int_urb (context ->tx_urb, context ->dev, pipe,
-		context ->usb_tx_buf, sizeof (context ->usb_tx_buf),
-		usb_tx_callback, context, interval);
-
-	context ->tx_urb ->actual_length = 0;
-
-#ifdef KERNEL_2_5
-	return usb_submit_urb (context ->tx_urb, GFP_KERNEL);
-#else
-	return usb_submit_urb (context ->tx_urb);
-#endif
 }
 
 /**
@@ -557,38 +604,27 @@ static void ir_close (void *data)
 }
 
 /**
- * Callback function for USB core API: receive data
+ * Convert bit count to time duration (in us) and submit
+ * the value to lirc_dev.
  */
-#ifdef KERNEL_2_5
-static void usb_rx_callback (struct urb *urb, struct pt_regs *regs)
-#else
-static void usb_rx_callback (struct urb *urb)
-#endif
+static inline void submit_data (struct imon_context *context)
 {
-	struct imon_context *context;
+	unsigned char buf [4];
+	int value = context ->rx.count;
+	int i;
 
-	if (!urb || !(context = (struct imon_context *) urb->context))
-		return;
+	if (debug) info ("submitting data to LIRC");
+	
+	value *= BIT_DURATION;
+	value &= PULSE_MASK;
+	if (context ->rx.prev_bit)
+		value |= PULSE_BIT;
 
-	switch (urb ->status) {
+	for (i=0; i < 4; ++i)
+		buf [i] = value >> (i*8);
 
-		case -ENOENT: 		/* usbcore unlink successful! */ 
-			return;
-
-		case SUCCESS:
-			if (context ->ir_isopen)
-				incoming_packet (context, urb);
-		       	break;
-
-		default	:
-			warn ("%s: status (%d): ignored",
-				 __FUNCTION__, urb ->status);
-			break;
-	}
-
-#ifdef KERNEL_2_5
-	usb_submit_urb (context ->rx_urb, GFP_KERNEL);
-#endif
+	lirc_buffer_write_1 (context ->plugin ->rbuf, buf);
+	wake_up (&context ->plugin ->rbuf ->wait_poll);
 	return;
 }
 
@@ -668,29 +704,42 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 }
 
 /**
- * Convert bit count to time duration (in us) and submit
- * the value to lirc_dev.
+ * Callback function for USB core API: receive data
  */
-static inline void submit_data (struct imon_context *context)
+#ifdef KERNEL_2_5
+static void usb_rx_callback (struct urb *urb, struct pt_regs *regs)
+#else
+static void usb_rx_callback (struct urb *urb)
+#endif
 {
-	unsigned char buf [4];
-	int value = context ->rx.count;
-	int i;
+	struct imon_context *context;
 
-	if (debug) info ("submitting data to LIRC");
-	
-	value *= BIT_DURATION;
-	value &= PULSE_MASK;
-	if (context ->rx.prev_bit)
-		value |= PULSE_BIT;
+	if (!urb || !(context = (struct imon_context *) urb->context))
+		return;
 
-	for (i=0; i < 4; ++i)
-		buf [i] = value >> (i*8);
+	switch (urb ->status) {
 
-	lirc_buffer_write_1 (context ->plugin ->rbuf, buf);
-	wake_up (&context ->plugin ->rbuf ->wait_poll);
+		case -ENOENT: 		/* usbcore unlink successful! */ 
+			return;
+
+		case SUCCESS:
+			if (context ->ir_isopen)
+				incoming_packet (context, urb);
+		       	break;
+
+		default	:
+			warn ("%s: status (%d): ignored",
+				 __FUNCTION__, urb ->status);
+			break;
+	}
+
+#ifdef KERNEL_2_5
+	usb_submit_urb (context ->rx_urb, GFP_KERNEL);
+#endif
 	return;
 }
+
+
 
 /**
  * Callback function for USB core API: Probe
@@ -805,6 +854,25 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		goto exit;
 	}
 
+	/* Determine if VFD requires 6 packets */
+	if (vfd_ep_found) {
+
+		unsigned short vendor_id;
+		unsigned short *id_list_item;
+
+		vendor_id = dev ->descriptor.idVendor;
+		id_list_item = vfd_proto_6p_vendor_list;
+		while (*id_list_item) {
+			if (*id_list_item++ == vendor_id) {
+				vfd_proto_6p = TRUE;
+				break;
+			}
+		}
+
+		if (debug) info ("vfd_proto_6p: %d", vfd_proto_6p);
+	}
+
+
 	/* Allocate memory */
 
 	alloc_status = SUCCESS;
@@ -851,7 +919,7 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 
 		strcpy (plugin ->name, MOD_NAME);
 		plugin ->minor = -1;
-		plugin ->code_length = 0;
+		plugin ->code_length = sizeof (lirc_t) * 8;
 		plugin ->sample_rate = 0;
 		plugin ->features = LIRC_CAN_REC_MODE2;
 		plugin ->data = context;
@@ -1000,19 +1068,7 @@ static void imon_disconnect (struct usb_device *dev, void *data)
 	if (!context ->ir_isopen && !context ->vfd_isopen)
 		delete_context (context);
 	
-}
-
-static inline void delete_context (struct imon_context *context) {
-
-	if (context ->vfd_supported)
-		usb_free_urb (context ->tx_urb);
-	usb_free_urb (context ->rx_urb);
-	lirc_buffer_free (context ->plugin ->rbuf);
-	kfree (context ->plugin ->rbuf);
-	kfree (context ->plugin);
-	kfree (context);
-
-	if (debug) info ("%s: context deleted", __FUNCTION__);
+	up (&disconnect_sem);
 }
 
 static int __init imon_init (void)
