@@ -1,4 +1,5 @@
 0.6.6: future
+  * added support for hardware connected to soundcard input (Pavel Machek)
   * added support for Tekram M230 Mach64 (Froenchenko Leonid)
 
 0.6.5: 01/26/02

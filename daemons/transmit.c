@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.7 2002/02/22 14:47:47 lirc Exp $      */
+/*      $Id: transmit.c,v 5.8 2002/04/22 19:07:48 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -345,7 +345,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 				remote->toggle_mask_state++;
 				if(remote->toggle_mask_state==4)
 				{
-					remote->toggle_mask_state==2;
+					remote->toggle_mask_state=2;
 				}
 			}
 			else

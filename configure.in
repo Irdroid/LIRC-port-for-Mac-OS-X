@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.78 2002/03/28 21:26:54 lirc Exp $
+dnl $Id: configure.in,v 5.79 2002/04/22 19:07:45 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -93,8 +93,8 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) \
-	(silitek) (mediafocusI) (irreal)"
+possible_drivers="(none) (dsp) (remotemaster) (pctv) (logitech) \
+	(slinke) (silitek) (mediafocusI) (irreal)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
@@ -121,15 +121,15 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, animax, avermedia, avermedia98,
                           bestbuy, bestbuy2, caraca, chronos, comX,
-                          cph03x, cph06x, creative, fly98, flyvideo,
-			  hauppauge,hauppauge_dvb, ipaq, irdeo,
-			  irdeo_remote, irman, irreal, it87, knc_one,
-			  logitech, lptX, mediafocusI, packard_bell,
-			  parallel, pctv, pixelview_bt878,
-			  pixelview_pak, pixelview_pro, provideo,
-			  realmagic, remotemaster, serial, silitek,
-			  sir, slinke, tekram,tekram_bt829, winfast_tv2000],
-
+			  dsp, cph03x, cph06x, creative, fly98,
+			  flyvideo, hauppauge, hauppauge_dvb, ipaq,
+			  irdeo, irdeo_remote, irman, irreal, it87,
+			  knc_one, logitech, lptX, mediafocusI,
+			  packard_bell, parallel, pctv,
+			  pixelview_bt878, pixelview_pak,
+			  pixelview_pro, provideo, realmagic,
+			  remotemaster, serial, silitek, sir, slinke,
+			  tekram, tekram_bt829, winfast_tv2000],
 driver=${withval},
 driver="unset"
 )
@@ -218,6 +218,9 @@ if test "$driver" = "any"; then
 	  #hw_module="${hw_module} hw_irman.o serial.o"
 	  #irman_lib=-lirman_sw
 	  #;;
+	  dsp)
+	  hw_module="${hw_module} hw_dsp.o receive.o"
+	  ;;
   esac
   done
   #remove duplicates
@@ -430,6 +433,10 @@ if test "$driver" = "caraca"; then
 #  lircmd_conf="caraca/lircmd.conf.caraca"
 fi
 if test "$driver" = "slinke"; then
+  echo
+  echo "Please use lirc-0.6.5. The Slink-e is no longer supported."
+  echo
+  exit 1
   lirc_driver="none"
   hw_module="hw_slinke.o serial.o receive.o"
   HW_DEFAULT="hw_slinke"
@@ -470,6 +477,11 @@ if test "$driver" = "knc_one"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="knc_one/lircd.conf.knc_one"
 #  lircmd_conf="knc_one/lircmd.conf.knc_one"
+fi
+if test "$driver" = "dsp"; then
+  lirc_driver="none"
+  hw_module="hw_dsp.o receive.o"
+  HW_DEFAULT="hw_dsp"
 fi
 
 #END HARDWARE HEURISTIC
@@ -515,6 +527,8 @@ if test "$lirc_driver" = "lirc_dev lirc_gpio"; then
   kernel_module="lirc_gpio"
 elif test "$lirc_driver" = "lirc_dev lirc_i2c"; then
   kernel_module="lirc_i2c"
+elif test "$lirc_driver" = "lirc_dev lirc_bt829"; then
+  kernel_module="lirc_bt829"
 elif test "$lirc_driver" != ""; then
   kernel_module=$lirc_driver
 fi

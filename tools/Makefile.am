@@ -1,9 +1,11 @@
-## $Id: Makefile.am,v 5.6 2001/11/04 00:13:28 ranty Exp $
+## $Id: Makefile.am,v 5.7 2002/04/22 19:07:48 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
 bin_PROGRAMS = irw irpty irexec mode2 @vga_progs@ @x_progs@
+
+AM_CPPFLAGS = @X_CFLAGS@
 
 ## simple programs
 irw_SOURCES = irw.c
@@ -21,11 +23,9 @@ smode2_LDADD = -lvga -lvgagl
 
 ## x programs
 irxevent_SOURCES = irxevent.c
-irxevent_CFLAGS = @X_CFLAGS@
 irxevent_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@ liblirc_client.la
 irxevent_DEPENDENCIES = liblirc_client.la
 xmode2_SOURCES = xmode2.c
-xmode2_CFLAGS = @X_CFLAGS@
 xmode2_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@
 
 ## libraries

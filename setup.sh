@@ -1,6 +1,6 @@
 #! /bin/sh
 
-LIRC_VERSION="0.6.5"
+LIRC_VERSION="0.6.6-CVS"
 
 #############################################################################
 ## Default Values
@@ -226,21 +226,23 @@ ConfigDriver ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 15 74 7 \
+           --menu "$CONFIG_DRIVER_TEXT" 16 74 8 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
-	     3 "Other serial port devices" \
-	     4 "TV card" \
-	     5 "IrDA hardware" \
-	     6 "iPAQ" \
-	     7 "None (network connections only)" 2> $TEMP
+	     3 "Home-brew (soundcard input)" \
+	     4 "Other serial port devices" \
+	     5 "TV card" \
+	     6 "IrDA hardware" \
+	     7 "iPAQ" \
+	     8 "None (network connections only)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
 	set `cat $TEMP`
         if   test "$1" = "1"; then LIRC_DRIVER=serial;   DRIVER_PARAMETER=com1;
         elif test "$1" = "2"; then LIRC_DRIVER=parallel; DRIVER_PARAMETER=lpt1;
-        elif test "$1" = "3"; then
+        elif test "$1" = "3"; then LIRC_DRIVER=dsp;      DRIVER_PARAMETER=none;
+        elif test "$1" = "4"; then
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
@@ -284,7 +286,7 @@ ConfigDriver ()
 		return;
 	    fi;
 
-        elif test "$1" = "4"; then
+        elif test "$1" = "5"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
 		--menu "$CONFIG_DRIVER_TEXT" 19 74 12\
@@ -353,7 +355,7 @@ ConfigDriver ()
 	    else
 		return;
 	    fi;
-        elif test "$1" = "5"; then
+        elif test "$1" = "6"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
 		--menu "$CONFIG_DRIVER_TEXT" 10 74 3 \
@@ -369,8 +371,8 @@ ConfigDriver ()
 	    else
 		return;
 	    fi;
-	elif test "$1" = "6"; then LIRC_DRIVER=ipaq;         DRIVER_PARAMETER=none;
-        elif test "$1" = "7"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
+	elif test "$1" = "7"; then LIRC_DRIVER=ipaq;         DRIVER_PARAMETER=none;
+        elif test "$1" = "8"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
     fi
         GetSelectedDriver
         SetPortAndIrq
