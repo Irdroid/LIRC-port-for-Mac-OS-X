@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.4 1999/05/14 22:21:22 wheeley Exp $      */
+/*      $Id: lircd.c,v 5.5 1999/05/28 19:51:37 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -59,7 +59,7 @@
 
 unsigned long supported_send_modes[]=
 {
-	/* LIRC_CAN_SEND_STRING, I donÅ¥t think there ever will be a driver 
+	/* LIRC_CAN_SEND_STRING, I don't think there ever will be a driver 
 	   that supports that */
 	/* LIRC_CAN_SEND_LIRCCODE, */
         /* LIRC_CAN_SEND_CODE, */
@@ -140,11 +140,11 @@ inline int write_socket(int fd, char *buf, int len)
 	while(todo)
 	{
 		done=write(fd,buf,todo);
-		if (done<=0) return(done);    
+		if(done<=0) return(done);
 		buf+=done;
 		todo-=done;
 	}
-	return(len-todo);
+	return(len);
 }
 
 inline int write_socket_len(int fd, char *buf)
@@ -154,6 +154,51 @@ inline int write_socket_len(int fd, char *buf)
 	len=strlen(buf);
 	if(write_socket(fd,buf,len)<len) return(0);
 	return(1);
+}
+
+inline int read_timeout(int fd,char *buf,int len,int timeout)
+{
+	fd_set fds;
+	struct timeval tv;
+	int ret,n;
+	
+	FD_ZERO(&fds);
+	FD_SET(fd,&fds);
+	tv.tv_sec=timeout;
+	tv.tv_usec=0;
+	
+	/* CAVEAT: (from libc documentation)
+     Any signal will cause `select' to return immediately.  So if your
+     program uses signals, you can't rely on `select' to keep waiting
+     for the full time specified.  If you want to be sure of waiting
+     for a particular amount of time, you must check for `EINTR' and
+     repeat the `select' with a newly calculated timeout based on the
+     current time.  See the example below.
+
+     Obviously the timeout is not recalculated in the example because
+     this is done automatically on Linux systems...
+	*/
+     
+	do
+	{
+		ret=select(fd+1,&fds,NULL,NULL,&tv);
+	}
+	while(ret==-1 && errno==EINTR);
+	if(ret==-1)
+	{
+		logprintf("select() failed\n");
+		logperror(NULL);
+		return(-1);
+	}
+	else if(ret==0) return(0); /* timeout */
+	n=read(fd,buf,len);
+	if(n==-1)
+	{
+		logprintf("read() failed\n");
+		logperror(NULL);
+		return(-1);
+	}
+	return(n);
 }
 
 void sigterm(int sig)
@@ -312,7 +357,6 @@ void add_client(void)
 	if(fd>=FD_SETSIZE)
 	{
 		logprintf("connection rejected\n");
-		logperror(NULL);
 		shutdown(fd,2);
 		close(fd);
 		return;
@@ -362,18 +406,18 @@ void start_server(void)
 	strcpy(serv_addr.sun_path,LIRCD);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
 	{
-		fprintf(stderr,"%s; could not assign address to socket\n",
+		fprintf(stderr,"%s: could not assign address to socket\n",
 			progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
-	};
+	}
 
 	if(chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
 	{
 		fprintf(stderr,"%s: could not set file permissions\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
-	};
+	}
 
 	listen(sockfd,3);
 	nolinger(sockfd);
@@ -410,7 +454,7 @@ void init_driver()
 	if(S_ISFIFO(s.st_mode))
 	{
 #               ifdef DEBUG
-		printf("%s: using defauls for the Irman\n",progname);
+		printf("%s: using defaults for the Irman\n",progname);
 #               endif
 		features=LIRC_CAN_REC_MODE2;
 		rec_mode=LIRC_MODE_MODE2; /* this might change in future */
@@ -574,10 +618,10 @@ void daemonize(void)
 	pid_t pid;
 	
 	if((pid=fork())<0)
-{
-		fprintf(stderr,"%s: fork() failed\n",progname);
-		perror(progname);
-		exit(EXIT_FAILURE);
+	{
+		logprintf("fork() failed\n");
+		logperror(NULL);
+		raise(SIGTERM);
 	}
 	else if(pid) /* parent */
 	{
@@ -947,7 +991,7 @@ int get_command(int fd)
 	int packet_length,i;
 	char *directive;
 
-	length=read(fd,buffer,PACKET_SIZE);
+	length=read_timeout(fd,buffer,PACKET_SIZE,0);
 	packet_length=0;
 	while(length>packet_length)
 	{
@@ -956,11 +1000,8 @@ int get_command(int fd)
 		if(end==NULL)
 		{
 			logprintf("bad send packet: \"%s\"\n",buffer);
-			while(length>0)
-			{
-				length=read(fd,buffer,PACKET_SIZE);
-			}
-			return(1);
+			/* remove clients that behave badly */
+			return(0);
 		}
 		end[0]=0;
 #               ifdef DEBUG
@@ -972,8 +1013,7 @@ int get_command(int fd)
 		directive=strtok(buffer,WHITE_SPACE);
 		if(directive==NULL)
 		{
-			if(!send_error(fd,backup,"bad send packet\n",
-				       directive))
+			if(!send_error(fd,backup,"bad send packet\n"))
 				return(0);
 			goto skip;
 		}
@@ -1000,8 +1040,11 @@ int get_command(int fd)
 				length-packet_length+1);
 			if(strchr(buffer,'\n')==NULL)
 			{
-				new_length=read(fd,buffer+length-packet_length,
-						PACKET_SIZE-(length-packet_length));
+				new_length=read_timeout(fd,buffer+length-
+							packet_length,
+							PACKET_SIZE-
+							(length-
+							 packet_length),5);
 				if(new_length>0)
 				{
 					length=length-packet_length+new_length;
@@ -1022,10 +1065,6 @@ int get_command(int fd)
 	if(length==0) /* EOF: connection closed by client */
 	{
 		return(0);
-	}
-	else if(length==-1)
-	{
-		logprintf("read failed\n");
 	}
 	return(1);
 }
@@ -1154,11 +1193,6 @@ unsigned long readdata(unsigned long maxusec)
 			maxfd=max(maxfd,clis[i]);
 		}
 		
-		/*
-		  select() is still interrupted despite of SA_RESTART
-		  Is this a bug or desired behaviour ???
-		*/
-		
 		do{
 			do{
 				if(maxusec>0)
@@ -1180,7 +1214,7 @@ unsigned long readdata(unsigned long maxusec)
 			while(ret==-1 && errno==EINTR);
 			if(ret==-1)
 			{
-				logprintf("select failed\n");
+				logprintf("select() failed\n");
 				logperror(NULL);
 				continue;
 			}
