@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.4 2005/02/19 21:37:52 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.5 2005/02/27 15:05:39 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.4 $"
+#define DRIVER_VERSION	"$Revision: 1.5 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -164,6 +164,8 @@ static void usb_streamzap_irq(struct urb *urb);
 #endif
 static int streamzap_use_inc( void *data );
 static void streamzap_use_dec( void *data );
+static int streamzap_ioctl(struct inode *node, struct file *filep,
+			   unsigned int cmd, unsigned long arg);
 
 /* usb specific object needed to register this driver with the usb subsystem */
 
@@ -360,6 +362,8 @@ static void usb_streamzap_irq(struct urb *urb)
 	dprintk("received %d", sz->plugin.minor, urb->actual_length);
 	for (i=0 ; i < urb->actual_length; i++ )
 	{
+		dprintk("%d: %x", sz->plugin.minor,
+			i, (unsigned char) sz->buf_in[i]);
 		switch(sz->decoder_state)
 		{
 		case PulseSpace:
@@ -572,6 +576,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->plugin.rbuf = &sz->lirc_buf;
 	sz->plugin.set_use_inc = &streamzap_use_inc;
 	sz->plugin.set_use_dec = &streamzap_use_dec;
+	sz->plugin.ioctl = streamzap_ioctl;
 	sz->plugin.owner = THIS_MODULE;
 
 	sz->connected = 0;
@@ -679,12 +684,12 @@ static int streamzap_use_inc(void *data)
 		while(!lirc_buffer_empty(&sz->delay_buf))
 			lirc_buffer_remove_1(&sz->delay_buf);
 #ifdef KERNEL_2_5
-                if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC)) {
+                if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
 #else
-                if (usb_submit_urb(sz->urb_in)) {
+                if (usb_submit_urb(sz->urb_in))
 #endif
-
-                        dprintk("open result = -EIO error submitting urb",
+		{
+			dprintk("open result = -EIO error submitting urb",
 				sz->plugin.minor);
                         MOD_DEC_USE_COUNT;
                         return -EIO;
@@ -714,7 +719,22 @@ static void streamzap_use_dec(void *data)
         MOD_DEC_USE_COUNT;
 }
 
-
+static int streamzap_ioctl(struct inode *node, struct file *filep,
+			   unsigned int cmd, unsigned long arg)
+{
+        int result;
+	
+	switch(cmd)
+	{
+	case LIRC_GET_REC_RESOLUTION:
+		result=put_user(STREAMZAP_RESOLUTION, (unsigned long *) arg);
+		if(result) return(result); 
+		break;
+	default:
+		return(-ENOIOCTLCMD);
+	}
+	return(0);
+}
 
 /**
  *	streamzap_disconnect

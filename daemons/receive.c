@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.24 2005/02/19 12:25:30 lirc Exp $      */
+/*      $Id: receive.c,v 5.25 2005/02/27 15:05:39 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -399,9 +399,8 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 	
 	if(last_remote!=NULL && !is_rcmm(remote))
 	{
-		while(deltas<last_remote->remaining_gap*
-		      (100-last_remote->eps)/100 &&
-		      deltas<last_remote->remaining_gap-last_remote->aeps)
+		while(!expect_at_least(last_remote, deltas,
+				       last_remote->remaining_gap))
 		{
 			deltap=get_next_pulse(1000000);
 			if(deltap==0) return(0);
@@ -416,9 +415,8 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 		}
 		if(has_toggle_mask(remote))
 		{
-			if(deltas>last_remote->remaining_gap*
-			   (100+last_remote->eps)/100 &&
-			   deltas>last_remote->remaining_gap+last_remote->aeps)
+			if(!expect_at_most(last_remote, deltas,
+					   last_remote->remaining_gap))
 			{
 				remote->toggle_mask_state=0;
 				remote->toggle_code=NULL;
@@ -530,8 +528,7 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 		return(0);
 	}
 	unget_rec_buffer(1);
-	if(data<gap*(100-remote->eps)/100 &&
-	   data<gap-remote->aeps)
+	if(!expect_at_least(remote, data, gap))
 	{
 		LOGPRINTF(1,"end of signal not found");
 		return(0);
@@ -996,8 +993,7 @@ int receive_decode(struct ir_remote *remote,
 			{
 				header=0;
 				if(!(remote->flags&NO_HEAD_REP && 
-				     (sync<=remote->gap+remote->gap*remote->eps/100
-				      || sync<=remote->gap+remote->aeps)))
+				     expect_at_most(remote,sync,remote->gap)))
 				{
 					LOGPRINTF(1,"failed on header");
 					return(0);
@@ -1197,8 +1193,7 @@ int receive_decode(struct ir_remote *remote,
 	}
 	*prep=pre;*codep=code;*postp=post;
 	if(!has_repeat(remote) &&
-	   (sync<=remote->remaining_gap*(100+remote->eps)/100
-	    || sync<=remote->remaining_gap+remote->aeps))
+	   expect_at_most(remote, sync, remote->remaining_gap))
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;

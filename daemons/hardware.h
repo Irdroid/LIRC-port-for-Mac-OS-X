@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.7 2002/07/13 09:30:17 ranty Exp $      */
+/*      $Id: hardware.h,v 5.8 2005/02/27 15:05:38 lirc Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -14,7 +14,7 @@
 #define _HARDWARE_H
 
 #include "drivers/lirc.h"
-#include "ir_remote.h"
+#include "ir_remote_types.h"
 
 struct hardware
 {
@@ -34,6 +34,8 @@ struct hardware
 			   int *repeat_flag,lirc_t *remaining_gapp);
 	lirc_t (*readdata)(lirc_t timeout);
 	char *name;
+	
+	int resolution;
 };
 
 extern struct hardware hw;

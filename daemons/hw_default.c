@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.28 2004/11/20 11:43:35 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.29 2005/02/27 15:05:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -80,7 +80,7 @@ struct hardware hw_default=
 	"default"
 };
 
-unsigned int min_freq=0,max_freq=0;
+static unsigned int min_freq=0,max_freq=0;
 
 /**********************************************************************
  *
@@ -332,7 +332,18 @@ int default_init()
 				  "driver is not yet supported by lircd");
 		}
 	}
-	if(hw.rec_mode==LIRC_MODE_CODE)
+	if(hw.rec_mode==LIRC_MODE_MODE2)
+	{
+		/* get resolution */
+		hw.resolution=0;
+		if(ioctl(hw.fd, LIRC_GET_REC_RESOLUTION, &hw.resolution)!=-1)
+		{
+			LOGPRINTF(1, "resolution of receiver: %d",
+				  hw.resolution);
+		}
+		
+	}
+	else if(hw.rec_mode==LIRC_MODE_CODE)
 	{
 		hw.code_length=8;
 	}
@@ -360,7 +371,7 @@ int default_init()
 	}
 	if(min_freq!=0 && max_freq!=0)
 	{
-		(void) default_config_frequency(min_freq,max_freq);
+		(void) default_config_frequency();
 	}
 #endif
 	return(1);
