@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.114 2003/10/12 14:08:29 lirc Exp $
+dnl $Id: configure.in,v 5.115 2003/11/23 12:15:43 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -138,7 +138,7 @@ AC_MSG_RESULT()
 possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
 	(irreal) (livedrive_midi) (livedrive_seq) (logitech) \
 	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
-	(slinke) (uirt2) (uirt2_raw) (udp)"
+	(slinke) (tira) (uirt2) (uirt2_raw) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -256,26 +256,6 @@ if test "$driver" = "any"; then
 	irreal)
 		#hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
 		;;
-	logitech)
-		hw_module="${hw_module} hw_logitech.o serial.o"
-		;;
-	mediafocusI)
-		;;
-	mp3anywhere)
-		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
-		;;
-	pctv)
-		hw_module="${hw_module} hw_pinsys.o serial.o"
-		;;
-	remotemaster)
-		hw_module="${hw_module} hw_pixelview.o serial.o"
-		;;
-	silitek)
-		hw_module="${hw_module} hw_silitek.o serial.o"
-		;;
-	#slinke)
-		#hw_module="${hw_module} hw_slinke.o serial.o receive.o"
-		#;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
 		;;
@@ -299,6 +279,29 @@ if test "$driver" = "any"; then
 		;;
 	livedrive_seq)
 		hw_module="${hw_module} hw_livedrive_common.o hw_livedrive_seq.o"
+		;;
+	logitech)
+		hw_module="${hw_module} hw_logitech.o serial.o"
+		;;
+	mediafocusI)
+		;;
+	mp3anywhere)
+		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
+		;;
+	pctv)
+		hw_module="${hw_module} hw_pinsys.o serial.o"
+		;;
+	remotemaster)
+		hw_module="${hw_module} hw_pixelview.o serial.o"
+		;;
+	silitek)
+		hw_module="${hw_module} hw_silitek.o serial.o"
+		;;
+	#slinke)
+		#hw_module="${hw_module} hw_slinke.o serial.o receive.o"
+		#;;
+	tira)
+		hw_module="${hw_module} hw_tira.o"
 		;;
 	udp)
 		hw_module="${hw_module} hw_udp.o receive.o"
