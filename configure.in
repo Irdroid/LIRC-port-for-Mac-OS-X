@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.27 2000/05/06 15:42:02 columbus Exp $
+dnl $Id: configure.in,v 5.28 2000/06/12 10:05:07 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -81,7 +81,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (remotemaster) (logitech)"
+possible_drivers="(none) (remotemaster) (logitech) (irreal)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
@@ -104,7 +104,8 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, comX, lptX, avermedia,
-                          hauppauge, fly98, pixelview_pro, logitech],
+                          hauppauge, fly98, pixelview_pro, logitech, irreal],
+
 driver=${withval},
 driver="unset"
 )
@@ -113,7 +114,7 @@ lirc_driver="$driver"
 lircd_conf=""
 lircmd_conf=""
 irman_lib=""
-hw_module="hw_default.o"
+hw_module="hw_default.o receive.o transmit.o"
 
 if test "$driver" = "none"; then
   lirc_driver=none

@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.2 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: serial.c,v 5.3 2000/06/12 10:05:07 columbus Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -10,6 +10,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <termios.h>
@@ -20,6 +24,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 
 #include "lircd.h"
 
@@ -36,6 +41,39 @@ int tty_reset(int fd)
 		return(0);
 	}
 	cfmakeraw(&options);
+	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_reset(): tcsetattr() failed\n");
+		logperror(1,"tty_reset()");
+#               endif
+		return(0);
+	}
+	return(1);
+}
+
+int tty_setrtscts(int fd,int enable)
+{
+	struct termios options;
+
+	if(tcgetattr(fd,&options)==-1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_reset(): tcgetattr() failed\n");
+		logperror(1,"tty_reset()");
+#               endif
+		return(0);
+	}
+	if(enable)
+	{
+		options.c_cflag|=CRTSCTS;
+		options.c_cflag|=CSTOPB;
+	}
+	else
+	{
+		options.c_cflag&=~CRTSCTS;
+		options.c_cflag&=~CSTOPB;
+	}
 	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
 	{
 #               ifdef DEBUG
@@ -114,7 +152,7 @@ int tty_create_lock(char *name)
 	char symlink[FILENAME_MAX+1];
 	char cwd[FILENAME_MAX+1];
 	char *last,*s;
-	char id[10+1];
+	char id[10+1+1];
 	int lock;
 	int len;
 	
@@ -133,7 +171,7 @@ int tty_create_lock(char *name)
 	}
 	strcat(filename,s);
 	
-	if((len=snprintf(id,10+1,"%d",getpid()))==-1)
+	if((len=snprintf(id,10+1+1,"%10d\n",getpid()))==-1)
 	{
 		logprintf(0,"invalid pid \"%d\"\n",getpid());
 		return(0);
@@ -146,10 +184,10 @@ int tty_create_lock(char *name)
 		logperror(0,NULL);
 		lock=open(filename,O_RDONLY);
 		if(lock==-1) return(0);
-		len=read(lock,id,10);
-		if(len<=0) return(0);
-		if(read(lock,id,10)!=0) return(0);
-		logprintf(0,"%s is locked by PID %s\n",name,id);
+		len=read(lock,id,10+1);
+		if(len<10+1) return(0);
+		if(read(lock,id,1)!=0) return(0);
+		logprintf(0,"%s is locked by PID %s",name,id);
 		close(lock);
 		return(0);
 	}
@@ -292,7 +330,13 @@ int tty_delete_lock(void)
 			if(len<=0) {retval=0;continue;}
 			id[len]=0;
 			pid=strtol(id,&endptr,10);
-			if(!*id || *endptr) {retval=0;continue;}
+			if(!*id || *endptr!='\n')
+			{
+				logprintf(0,"invalid lockfile (%s) "
+					  "detected\n",filename);
+				retval=0;
+				continue;
+			}
 			if(pid==getpid())
 			{
 				if(unlink(filename)==-1)
@@ -313,4 +357,115 @@ int tty_delete_lock(void)
 		return(0);
 	}
 	return(retval);
+}
+
+int tty_set(int fd,int rts,int dtr)
+{
+	int mask;
+	
+	mask=rts ? TIOCM_RTS:0;
+	mask|=dtr ? TIOCM_DTR:0;
+	if(ioctl(fd,TIOCMBIS,&mask)==-1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_set(): ioctl() failed\n");
+		logperror(1,"tty_set()");
+#               endif
+		return(0);
+	}
+	return(1);
+}
+
+int tty_clear(int fd,int rts,int dtr)
+{
+	int mask;
+	
+	mask=rts ? TIOCM_RTS:0;
+	mask|=dtr ? TIOCM_DTR:0;
+	if(ioctl(fd,TIOCMBIC,&mask)==-1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_clear(): ioctl() failed\n");
+		logperror(1,"tty_clear()");
+#               endif
+		return(0);
+	}
+	return(1);
+}
+
+int tty_write(int fd,char byte)
+{
+	if(write(fd,&byte,1)!=1) 
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_write(): write() failed\n");
+		logperror(1,"tty_write()");
+#               endif
+		return(-1);
+	}	
+	/* wait until the stop bit of Control Byte is sent
+	   (for 9600 baud rate, it takes about 100 msec */
+	usleep(100*1000);
+	
+	/* we don´t wait because tcdrain() does this for us */
+	/* tcdrain(fd); */ 
+	/* but unfortunately this does not seem to be
+	   implemented in 2.0.x kernels ... */
+	return(1);
+}
+
+int tty_read(int fd,char *byte)
+{
+	fd_set fds;
+	int ret;
+	struct timeval tv;
+	
+	FD_ZERO(&fds);
+	FD_SET(fd,&fds);
+	
+	tv.tv_sec=1;    /* timeout after 1 sec */
+	tv.tv_usec=0;
+	ret=select(fd+1,&fds,NULL,NULL,&tv);
+	if(ret==0)
+	{
+		logprintf(0,"tty_read(): timeout\n");
+		return(-1); /* received nothing, bad */
+	}
+	else if(ret!=1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_read(): select() failed\n");
+		logperror(1,"tty_read()");
+#               endif
+		return(-1);
+	}
+	if(read(fd,byte,1)!=1)
+	{
+#               ifdef DEBUG
+		logprintf(1,"tty_read(): read() failed\n");
+		logperror(1,"tty_read()");
+#               endif
+		return(-1);		
+	}
+	return(1);
+}
+
+int tty_write_echo(int fd,char byte)
+{
+	char reply;
+
+	if(tty_write(fd,byte)==-1) return(-1);
+	if(tty_read(fd,&reply)==-1) return(-1);
+#       ifdef DEBUG
+	logprintf(1,"sent: A%u D%01x reply: A%u D%01x\n",
+		  (((unsigned int) (unsigned char) byte)&0xf0)>>4,
+		  ((unsigned int) (unsigned char) byte)&0x0f,
+		  (((unsigned int) (unsigned char) reply)&0xf0)>>4,
+		  ((unsigned int) (unsigned char) reply)&0x0f);
+#       endif
+	if(byte!=reply)
+	{
+		logprintf(0,"Command mismatch.\n");
+	}
+	return(1);
 }
