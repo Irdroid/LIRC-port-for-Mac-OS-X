@@ -1,4 +1,5 @@
 0.7.1: future
+  * added support for Soundgraph iMON MultiMedian IR/VFD (Venky Raju)
   * added support for X10 MouseRemote RF Receiver (Geoffrey Hausheer)
   * added support for Hauppauge PVR150 (Per Jönsson)
   * 2.2.x kernels are no longer supported

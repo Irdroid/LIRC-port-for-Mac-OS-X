@@ -108,6 +108,7 @@ hw_menu_entry: @hw-usb
 	pcmak_usb: "PCMAK USB receiver"
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card"
+	imon: "Soundgraph iMON MultiMedian IR/VFD"
 	mceusb: "Windows Media Center Remotes"
 
 param_type: act200l animax irdeo irdeo_remote packard_bell serial \
@@ -129,7 +130,7 @@ param_type: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox bte \
 		chronos cph03x cph06x creative_infracd devinput dsp \
 		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
+		hercules_smarttv_stereo igorplugusb imon it87 knc_one kworld \
 		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
 		mceusb mediafocusI mouseremote_ps2 none \
 		pixelview_bt878 pixelview_pak pixelview_pro provideo \
@@ -140,7 +141,7 @@ default_param: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		avermedia_vdomate bestbuy bestbuy2 breakoutbox chronos \
 		cph03x cph06x creative_infracd devinput dsp exaudio \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
-		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
+		hercules_smarttv_stereo igorplugusb imon it87 knc_one kworld \
 		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
 		livedrive_seq mceusb mediafocusI mouseremote_ps2 none \
 		pixelview_bt878 pixelview_pak pixelview_pro provideo \

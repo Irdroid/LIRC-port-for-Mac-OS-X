@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.136 2005/01/22 10:40:42 lirc Exp $
+dnl $Id: configure.in,v 5.137 2005/01/26 20:07:27 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -145,9 +145,10 @@ possible_drivers="(none) (bte) (ea65) (exaudio) (irreal) \
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev) (lirc_dev lirc_atiusb) \
 	(lirc_dev lirc_bt829) (lirc_dev lirc_gpio) (lirc_dev lirc_i2c) \
-	(lirc_dev lirc_igorplugusb) (lirc_dev lirc_it87) \
-	(lirc_dev lirc_mceusb) (lirc_dev lirc_parallel) \
-	(lirc_dev lirc_sasem) (lirc_dev lirc_serial) (lirc_dev lirc_sir)"
+	(lirc_dev lirc_igorplugusb) (lirc_dev lirc_imon) \
+	(lirc_dev lirc_it87) (lirc_dev lirc_mceusb) \
+	(lirc_dev lirc_parallel) (lirc_dev lirc_sasem) \
+	(lirc_dev lirc_serial) (lirc_dev lirc_sir)"
 fi
 
 if test -n "${LIBUSB_CONFIG}"; then
@@ -212,9 +213,9 @@ AC_ARG_WITH(driver,
                           creative_infracd, dsp, cph03x, cph06x,
                           creative, devinput, ea65, exaudio, flyvideo,
                           gvbctv5pci, hauppauge, hauppauge_dvb,
-                          hercules_smarttv_stereo, igorplugusb, irdeo,
-                          irdeo_remote, irman, irreal, it87, knc_one,
-                          kworld, leadtek_0007, leadtek_0010,
+                          hercules_smarttv_stereo, igorplugusb, imon,
+                          irdeo, irdeo_remote, irman, irreal, it87,
+                          knc_one, kworld, leadtek_0007, leadtek_0010,
                           livedrive_midi, livedrive_seq, logitech,
                           lptX, mceusb, mediafocusI, mouseremote,
                           mouseremote_ps2, mp3anywhere, packard_bell,
@@ -317,6 +318,8 @@ if test "$driver" = "any"; then
 		#lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
 		;;
 	lirc_dev-lirc_igorplugusb)
+		;;
+	lirc_dev-lirc_imon)
 		;;
 	lirc_dev-lirc_it87)
 		;;
@@ -598,6 +601,11 @@ fi
 
 if test "$driver" = "igorplugusb"; then
   lirc_driver="lirc_dev lirc_igorplugusb"
+fi
+
+if test "$driver" = "imon"; then
+  lirc_driver="lirc_dev lirc_imon"
+  lircd_conf="imon/lircd.conf.imon"  
 fi
 
 if test "$driver" = "irdeo"; then
@@ -1140,6 +1148,7 @@ AC_OUTPUT([
   drivers/lirc_gpio/Makefile
   drivers/lirc_i2c/Makefile
   drivers/lirc_igorplugusb/Makefile
+  drivers/lirc_imon/Makefile
   drivers/lirc_it87/Makefile
   drivers/lirc_mceusb/Makefile
   drivers/lirc_parallel/Makefile
