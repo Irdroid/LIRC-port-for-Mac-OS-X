@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.55 2005/03/11 18:39:24 lirc Exp $      */
+/*      $Id: lircd.c,v 5.56 2005/03/24 22:25:34 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1912,6 +1912,14 @@ int main(int argc,char **argv)
 	{
 		fprintf(stderr,"%s: there's no hardware I can use and "
 			"no peers are specified\n",progname);
+		return(EXIT_FAILURE);
+	}
+	if(strcmp(hw.device, lircdfile)==0)
+	{
+		fprintf(stderr, "%s: refusing to connect to myself\n",
+			progname);
+		fprintf(stderr, "%s: device and output must not be the "
+			"same file: %s\n", progname, lircdfile);
 		return(EXIT_FAILURE);
 	}
 
