@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.73 2001/12/12 14:54:47 ranty Exp $
+dnl $Id: configure.in,v 5.74 2001/12/12 22:40:43 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -99,7 +99,7 @@ possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) \
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
 	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio) \
-	(lirc_dev)"
+	(lirc_dev) (lirc_it87)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -123,7 +123,7 @@ AC_ARG_WITH(driver,
                           bestbuy, bestbuy2, caraca, chronos, comX,
                           cph03x, cph06x, creative, fly98, flyvideo,
 			  hauppauge,hauppauge_dvb, ipaq, irdeo,
-			  irdeo_remote, irman, irreal, knc_one,
+			  irdeo_remote, irman, irreal, it87, knc_one,
 			  logitech, lptX, mediafocusI, packard_bell,
 			  parallel, pctv, pixelview_bt878,
 			  pixelview_pak, pixelview_pro, provideo,
@@ -186,6 +186,8 @@ if test "$driver" = "any"; then
 	  ;;
 	  lirc_sir)
 	  ;;
+	  lirc_it87)
+	  ;;
 	  lirc_parallel)
 	  ;;
 	  lirc_aver)
@@ -241,6 +243,9 @@ fi
 
 if test "$driver" = "serial"; then
   lirc_driver=lirc_serial
+fi
+if test "$driver" = "it87"; then
+  lirc_driver=lirc_it87
 fi
 if test "$driver" = "sir"; then
   lirc_driver=lirc_sir
@@ -694,6 +699,7 @@ AC_OUTPUT([
   drivers/lirc_i2c/Makefile
   drivers/lirc_gpio/Makefile
   drivers/lirc_dev/Makefile
+  drivers/lirc_it87/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

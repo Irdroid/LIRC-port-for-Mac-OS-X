@@ -231,7 +231,7 @@ ConfigDriver ()
              2 "Home-brew (parallel port)" \
 	     3 "Other serial port devices" \
 	     4 "TV card" \
-             5 "SIR IrDA (built-in IR ports)" \
+	     5 "IrDA hardware" \
 	     6 "iPAQ" \
 	     7 "None (network connections only)" 2> $TEMP
 
@@ -349,7 +349,22 @@ ConfigDriver ()
 	    else
 		return;
 	    fi;
-        elif test "$1" = "5"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
+        elif test "$1" = "5"; then
+	    dialog --clear --backtitle "$BACKTITLE" \
+                --title "Select your driver" \
+		--menu "$CONFIG_DRIVER_TEXT" 10 74 3 \
+			1 "SIR IrDA (built-in IR ports)" \
+			2 "ITE IT8712/IT8705 CIR port (experimantal, 2.4.x required)" 2> $TEMP;
+	    if test "$?" = "0"; then
+		{
+		set `cat $TEMP`
+		if   test "$1" = "1"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
+		elif test "$1" = "2"; then LIRC_DRIVER=it87;         DRIVER_PARAMETER=none;
+		fi
+		}
+	    else
+		return;
+	    fi;
 	elif test "$1" = "6"; then LIRC_DRIVER=ipaq;         DRIVER_PARAMETER=none;
         elif test "$1" = "7"; then LIRC_DRIVER=none;         DRIVER_PARAMETER=none;
     fi

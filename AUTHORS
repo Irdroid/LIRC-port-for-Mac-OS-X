@@ -50,5 +50,8 @@ Slink-e support:
 Winfast TV2000:
   Juan Toledo <toledo@users.sourceforge.net>
 
+ITE IT8712/IT8705 CIR port:
+  Hans-Günter Lütke Uphues <hg_lu@web.de>
+
 I have only pieced this together by grepping the source for @ signs
 and then guessing the contribution.
