@@ -14,3 +14,4 @@ config.sub
 ltconfig
 ltmain.sh
 libtool
+setup-driver.sh
