@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.7 1999/08/02 19:56:49 columbus Exp $      */
+/*      $Id: lircd.c,v 5.8 1999/08/18 06:36:22 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -109,11 +109,7 @@ int sockfd;
 int clis[FD_SETSIZE-2]; /* substract one for each lirc and sockfd */
 int clin=0;
 
-#ifdef DEBUG
-int debug=DEBUG;
-#else
 int debug=0;
-#endif
 int daemonized=0;
 
 extern struct hardware hw;
@@ -1143,9 +1139,16 @@ int main(int argc,char **argv)
 		{
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
+#                       ifdef DEBUG
+			{"debug",optional_argument,NULL,'d'},
+#                       endif
 			{0, 0, 0, 0}
 		};
+#               ifdef DEBUG
+		c = getopt_long(argc,argv,"hvd:",long_options,NULL);
+#               else
 		c = getopt_long(argc,argv,"hv",long_options,NULL);
+#               endif
 		if(c==-1)
 			break;
 		switch (c)
@@ -1154,10 +1157,23 @@ int main(int argc,char **argv)
 			printf("Usage: %s [options] [config-file]\n",progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
+#                       ifdef DEBUG
+			printf("\t -d[debug_level] --debug[=debug_level]\n");
+#                       endif
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s\n",progname);
 			return(EXIT_SUCCESS);
+#               ifdef DEBUG
+		case 'd':
+			if(optarg==NULL) debug=1;
+			else
+			{
+				/* don't check for errors */
+				debug=atoi(optarg);
+			}
+			break;
+#               endif
 		default:
 			return(EXIT_FAILURE);
 		}
