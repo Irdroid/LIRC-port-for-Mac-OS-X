@@ -1,3 +1,8 @@
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < 0x020200
+#error "--- Sorry, this driver needs kernel version 2.2.0 or higher. ---"
+#endif
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
