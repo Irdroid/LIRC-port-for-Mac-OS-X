@@ -103,6 +103,7 @@ SetPortAndIrq ()
     if test "$LIRC_DRIVER" = "serial" -o \
 	    "$LIRC_DRIVER" = "sir" -o \
 	    "$LIRC_DRIVER" = "tekram" -o \
+	    "$LIRC_DRIVER" = "act200l" -o \
 	    "$LIRC_DRIVER" = "packard_bell" -o \
 	    "$LIRC_DRIVER" = "animax" -o \
 	    "$LIRC_DRIVER" = "irdeo" -o \
@@ -243,7 +244,7 @@ ConfigDriver ()
            --menu "$CONFIG_DRIVER_TEXT" 16 74 9 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
-	     3 "Home-brew (soundcard input)" \
+	     3 "Home-brew (soundcard input, EXPERIMENTAL)" \
 	     4 "Other serial port devices" \
 	     5 "TV card" \
 	     6 "IrDA hardware" \
@@ -373,16 +374,18 @@ ConfigDriver ()
         elif test "$1" = "6"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
+		--menu "$CONFIG_DRIVER_TEXT" 11 74 4 \
 			1 "SIR IrDA (built-in IR ports)" \
 			2 "Tekram Irmate 210 (16x50 UART compatible serial port)" \
-			3 "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)" 2> $TEMP;
+			3 "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)" \
+			4 "Actisys Act200L SIR driver support" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
 		if   test "$1" = "1"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
 		elif test "$1" = "2"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
 		elif test "$1" = "3"; then LIRC_DRIVER=it87;         DRIVER_PARAMETER=none;
+		elif test "$1" = "4"; then LIRC_DRIVER=act200l;      DRIVER_PARAMETER=com1;
 		fi
 		}
 	    else

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.21 2002/07/13 09:30:17 ranty Exp $      */
+/*      $Id: acconfig.h,v 5.22 2002/07/27 09:17:08 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -113,6 +113,9 @@
 
 /* Define if you want to use a Tekram Irmate 210 */
 #undef LIRC_SIR_TEKRAM
+
+/* Define if you want to use a Actisys Act200L */
+#undef LIRC_SIR_ACTISYS_ACT200L
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS

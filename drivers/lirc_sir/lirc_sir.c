@@ -116,6 +116,10 @@
 
 #endif
 
+#ifdef LIRC_SIR_ACTISYS_ACT200L
+static void init_act200(void);
+#endif
+
 /******************************* SA1100 ********************************/
 #ifdef LIRC_ON_SA1100
 struct sa1100_ser2_registers
@@ -1064,6 +1068,9 @@ static int init_hardware(void)
 	outb(UART_IER_RDI, io + UART_IER);	
 	/* turn on UART */
 	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, io + UART_MCR);
+#ifdef LIRC_SIR_ACTISYS_ACT200L
+	init_act200();
+#endif
 #endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	return 0;
@@ -1154,6 +1161,152 @@ static void drop_port(void)
 #endif
 }
 
+#ifdef LIRC_SIR_ACTISYS_ACT200L
+/******************************************************/
+/* Crystal/Cirrus CS8130 IR transceiver, used in Actisys Act200L dongle */
+/* some code borrowed from Linux IRDA driver */
+
+/* Regsiter 0: Control register #1 */
+#define ACT200L_REG0    0x00
+#define ACT200L_TXEN    0x01 /* Enable transmitter */
+#define ACT200L_RXEN    0x02 /* Enable receiver */
+#define ACT200L_ECHO    0x08 /* Echo control chars */
+
+/* Register 1: Control register #2 */
+#define ACT200L_REG1    0x10
+#define ACT200L_LODB    0x01 /* Load new baud rate count value */
+#define ACT200L_WIDE    0x04 /* Expand the maximum allowable pulse */
+
+/* Register 3: Transmit mode register #2 */
+#define ACT200L_REG3    0x30
+#define ACT200L_B0      0x01 /* DataBits, 0=6, 1=7, 2=8, 3=9(8P)  */
+#define ACT200L_B1      0x02 /* DataBits, 0=6, 1=7, 2=8, 3=9(8P)  */
+#define ACT200L_CHSY    0x04 /* StartBit Synced 0=bittime, 1=startbit */
+
+/* Register 4: Output Power register */
+#define ACT200L_REG4    0x40
+#define ACT200L_OP0     0x01 /* Enable LED1C output */
+#define ACT200L_OP1     0x02 /* Enable LED2C output */
+#define ACT200L_BLKR    0x04
+
+/* Register 5: Receive Mode register */
+#define ACT200L_REG5    0x50
+#define ACT200L_RWIDL   0x01 /* fixed 1.6us pulse mode */
+    /*.. other various IRDA bit modes, and TV remote modes..*/
+
+/* Register 6: Receive Sensitivity register #1 */
+#define ACT200L_REG6    0x60
+#define ACT200L_RS0     0x01 /* receive threshold bit 0 */
+#define ACT200L_RS1     0x02 /* receive threshold bit 1 */
+
+/* Register 7: Receive Sensitivity register #2 */
+#define ACT200L_REG7    0x70
+#define ACT200L_ENPOS   0x04 /* Ignore the falling edge */
+
+/* Register 8,9: Baud Rate Dvider register #1,#2 */
+#define ACT200L_REG8    0x80
+#define ACT200L_REG9    0x90
+
+#define ACT200L_2400    0x5f
+#define ACT200L_9600    0x17
+#define ACT200L_19200   0x0b
+#define ACT200L_38400   0x05
+#define ACT200L_57600   0x03
+#define ACT200L_115200  0x01
+
+/* Register 13: Control register #3 */
+#define ACT200L_REG13   0xd0
+#define ACT200L_SHDW    0x01 /* Enable access to shadow registers */
+
+/* Register 15: Status register */
+#define ACT200L_REG15   0xf0
+
+/* Register 21: Control register #4 */
+#define ACT200L_REG21   0x50
+#define ACT200L_EXCK    0x02 /* Disable clock output driver */
+#define ACT200L_OSCL    0x04 /* oscillator in low power, medium accuracy mode */
+
+static void init_act200(void)
+{
+  int i;
+	__u8 control[] = {
+		ACT200L_REG15,
+		ACT200L_REG13 | ACT200L_SHDW,
+		ACT200L_REG21 | ACT200L_EXCK | ACT200L_OSCL,
+		ACT200L_REG13,
+		ACT200L_REG7  | ACT200L_ENPOS,
+		ACT200L_REG6  | ACT200L_RS0  | ACT200L_RS1,
+		ACT200L_REG5  | ACT200L_RWIDL,
+		ACT200L_REG4  | ACT200L_OP0  | ACT200L_OP1 | ACT200L_BLKR,
+		ACT200L_REG3  | ACT200L_B0,
+		ACT200L_REG0  | ACT200L_TXEN | ACT200L_RXEN,
+		ACT200L_REG8 |  (ACT200L_115200       & 0x0f),
+		ACT200L_REG9 | ((ACT200L_115200 >> 4) & 0x0f),
+		ACT200L_REG1 | ACT200L_LODB | ACT200L_WIDE
+	};
+
+	/* Set DLAB 1. */
+	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN8);
+	
+	/* Set divisor to 12 => 9600 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,12);
+	
+	/* Set DLAB 0. */
+	soutp(UART_LCR, UART_LCR_WLEN8);
+	/* Set divisor to 12 => 9600 Baud */
+
+	/* power supply */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	for (i=0; i<50; i++) {
+		safe_udelay(1000);
+	}
+
+		/* Reset the dongle : set RTS low for 25 ms */
+	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
+	for (i=0; i<25; i++) {
+		udelay(1000);
+	}
+
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(100);
+
+	/* Clear DTR and set RTS to enter command mode */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
+	udelay(7);
+
+/* send out the control register settings for 115K 7N1 SIR operation */
+	for (i=0; i<sizeof(control); i++) {
+		soutp(UART_TX, control[i]);
+		/* one byte takes ~1042 usec to transmit at 9600,8N1 */
+		udelay(1500);
+	}
+
+	/* back to normal operation */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	udelay(50);
+
+	udelay(1500);
+	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
+
+	/* Set DLAB 1. */
+	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN7);
+
+	/* Set divisor to 1 => 115200 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,1);
+
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+
+	/* Set DLAB 0, 7 Bit */
+	soutp(UART_LCR, UART_LCR_WLEN7);
+
+	/* enable interrupts */
+	soutp(UART_IER, sinp(UART_IER)|UART_IER_RDI);
+}
+#endif
+
 int init_lirc_sir(void)
 {
 	int retval;
@@ -1174,27 +1327,21 @@ int init_lirc_sir(void)
 #ifdef MODULE
 
 #ifdef KERNEL_2_1
+
 #ifdef LIRC_SIR_TEKRAM
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
-#else
-#ifdef LIRC_ON_SA1100
+#elif defined(LIRC_ON_SA1100)
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_DESCRIPTION("LIRC driver for StrongARM SA1100 embedded microprocessor");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
-#endif
+#elif defined(LIRC_SIR_ACTISYS_ACT200L)
+MODULE_AUTHOR("Karl Bongers");
+MODULE_DESCRIPTION("LIRC driver for Actisys Act200L");
 #else
 MODULE_AUTHOR("Milan Pikula");
 MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
-#ifdef MODULE_LICENSE
-MODULE_LICENSE("GPL");
 #endif
-#endif
-#endif
+
 #ifdef LIRC_ON_SA1100
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (16)");
@@ -1203,6 +1350,10 @@ MODULE_PARM(io, "i");
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 MODULE_PARM(irq, "i");
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
+#endif
+
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("GPL");
 #endif
 
 EXPORT_NO_SYMBOLS;
