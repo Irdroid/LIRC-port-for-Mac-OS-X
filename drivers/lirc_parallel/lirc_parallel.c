@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.26 2004/08/21 21:24:11 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.27 2004/11/07 13:31:18 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -61,6 +61,9 @@
 #include <asm/io.h>
 #include <asm/signal.h>
 #include <asm/irq.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#include <asm/div64.h>
+#endif
 
 #include <asm/uaccess.h>
 #include <linux/poll.h>
@@ -336,7 +339,15 @@ static void irq_handler(int i,void *blah,struct pt_regs * regs)
 	if(signal!=0)
 	{
 		/* ajust value to usecs */
-		signal=(long) (((unsigned long long) signal)*1000000)/timer;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+		unsigned long long helper;
+		
+		helper = ((unsigned long long) signal)*1000000;
+		do_div(helper, timer);
+		signal = (long) helper;
+#else
+		signal=(long) ((((double) signal)*1000000)/timer);
+#endif
 
 		if(signal>LIRC_SFH506_DELAY)
 		{
@@ -447,7 +458,15 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 	/* ajust values from usecs */
 	for(i=0;i<count;i++)
 	{
-		wbuf[i]=(lirc_t) (((unsigned long long) wbuf[i])*timer/1000000);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+		unsigned long long helper;
+		
+		helper = ((unsigned long long) wbuf[i])*timer;
+		do_div(helper, 1000000);
+		wbuf[i] = (lirc_t) helper;
+#else
+		wbuf[i]=(lirc_t) (((double) wbuf[i])*timer/1000000);
+#endif
 	}
 	
 	local_irq_save(flags);
