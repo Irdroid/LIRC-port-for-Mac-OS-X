@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.16 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: transmit.c,v 5.17 2005/03/27 11:55:07 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -198,6 +198,11 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 					send_pulse(remote->pone);
 				}
 			}
+			else if(is_space_first(remote))
+			{
+				send_space(remote->sone);
+				send_pulse(remote->pone);
+			}
 			else
 			{
 				send_pulse(remote->pone);
@@ -210,6 +215,11 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 			{
 				send_pulse(2*remote->pzero);
 				send_space(2*remote->szero);
+			}
+			else if(is_space_first(remote))
+			{
+				send_space(remote->szero);
+				send_pulse(remote->pzero);
 			}
 			else
 			{

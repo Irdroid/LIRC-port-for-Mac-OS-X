@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.7 2004/02/08 20:42:35 lirc Exp $      */
+/*      $Id: config_file.h,v 5.8 2005/03/27 11:55:07 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -30,6 +30,7 @@ static struct flaglist all_flags[]=
 	{"RCMM",            RCMM},
 	{"SHIFT_ENC",       SHIFT_ENC}, /* obsolete */
 	{"SPACE_ENC",       SPACE_ENC},
+	{"SPACE_FIRST",     SPACE_FIRST},
 	{"REVERSE",         REVERSE},
 	{"NO_HEAD_REP",     NO_HEAD_REP},
         {"NO_FOOT_REP",     NO_FOOT_REP},

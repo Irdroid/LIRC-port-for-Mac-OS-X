@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.30 2005/03/06 13:33:08 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.31 2005/03/27 11:55:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -67,6 +67,12 @@ static inline int is_raw(struct ir_remote *remote)
 static inline int is_space_enc(struct ir_remote *remote)
 {
 	if(remote->flags&SPACE_ENC) return(1);
+	else return(0);
+}
+
+static inline int is_space_first(struct ir_remote *remote)
+{
+	if(is_space_enc(remote) && remote->flags&SPACE_FIRST) return(1);
 	else return(0);
 }
 

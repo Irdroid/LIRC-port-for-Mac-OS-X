@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.1 2005/02/27 15:05:38 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.2 2005/03/27 11:55:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -73,6 +73,7 @@ struct ir_ncode {
 #define GOLDSTAR        0x0400    /* encoding found on Goldstar remote */
 #define GRUNDIG         0x0800    /* encoding found on Grundig remote */
 #define SERIAL          0x1000    /* serial protocol */
+#define SPACE_FIRST     0x2000    /* bits are encoded as space+pulse */
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 #define COMPAT_REVERSE  0x8000    /* compatibility mode for REVERSE flag */

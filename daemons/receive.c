@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.26 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: receive.c,v 5.27 2005/03/27 11:55:07 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -312,6 +312,19 @@ inline int expectone(struct ir_remote *remote,int bit)
 			set_pending_pulse(remote->pone);
 		}
 	}
+	else if(is_space_first(remote))
+	{
+		if(remote->sone>0 && !expectspace(remote,remote->sone))
+		{
+			unget_rec_buffer(1);
+			return(0);
+		}
+		if(remote->pone>0 && !expectpulse(remote,remote->pone))
+		{
+			unget_rec_buffer(2);
+			return(0);
+		}
+	}
 	else
 	{
 		if(remote->pone>0 && !expectpulse(remote,remote->pone))
@@ -363,6 +376,19 @@ inline int expectzero(struct ir_remote *remote,int bit)
 				return(0);
 			}
 			set_pending_space(remote->szero);
+		}
+	}
+	else if(is_space_first(remote))
+	{
+		if(remote->szero>0 && !expectspace(remote,remote->szero))
+		{
+			unget_rec_buffer(1);
+			return(0);
+		}
+		if(remote->pzero>0 && !expectpulse(remote,remote->pzero))
+		{
+			unget_rec_buffer(2);
+			return(0);
 		}
 	}
 	else
