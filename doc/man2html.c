@@ -465,12 +465,24 @@ void add_links(char *c)
 		    *h=t;
 		    t=*e;
 		    *e='\0';
+#if LIRC_RELATIVE_PATH
 		    if (subsec)
 			printf("<A HREF=\"../man%c/%s.%c%c\">%s</A>",
 			       sec, h, sec, tolower(subsec), h);
 		    else
 			printf("<A HREF=\"../man%c/%s.%c\">%s</A>",
 			       sec, h, sec, h);
+#elif LIRC_ABSOLUTE_PATH
+		    if (subsec)
+			printf("<A HREF=\"file:///usr/man/man%c/%s.%c%c\">%s</A>",
+			       sec, h, sec, tolower(subsec), h);
+		    else
+			printf("<A HREF=\"file:///usr/man/man%c/%s.%c\">%s</A>",
+			       sec, h, sec, h);
+#else
+		    /* links to man pages make no sense for us */
+		    printf("%s",h);
+#endif
 		    *e=t;
 		    c=e;
 		}
@@ -2804,7 +2816,7 @@ int main(int argc, char **argv)
 	if (t) {
 	    char *s1, *s2;
 	    i++;
-	    l=strlen(t);
+	    l=strlen(t)+1;
 	    s2=t;
 	    t=s1=(char*) malloc(l);
 	    while ((*s1=*s2)) {
