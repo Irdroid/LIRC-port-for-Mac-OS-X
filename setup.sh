@@ -222,7 +222,7 @@ function ConfigDriver
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
            --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
-             1 "Home-brew (16x50A UART compatible serial port)" \
+             1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
              3 "Irman" \
 	     4 "TV card (EXPERIMENTAL, read README.tv)" \
