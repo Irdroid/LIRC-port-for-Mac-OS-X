@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.2 2001/01/05 21:28:06 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.3 2001/01/10 22:14:58 columbus Exp $
  *
  */
 
@@ -172,6 +172,12 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	dprintk(LOGHEAD "code is %lx\n",card,(unsigned long) codes[0]);
 	switch (rcv_infos[card_type].bttv_id)
 	{
+	case BTTV_AVERMEDIA:
+		codes[2] = (codes[0]<<2)&0xff;
+		codes[3] = (~codes[2])&0xff;
+		codes[0] = 0x02;
+		codes[1] = 0xFD;
+		break;
 	case BTTV_AVPHONE98:
 		codes[2] = ((codes[0]&(~0x1))<<2)&0xff;
 		codes[3] = (~codes[2])&0xff;
