@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.3 1999/05/06 08:08:32 columbus Exp $      */
+/*      $Id: lircd.c,v 5.4 1999/05/14 22:21:22 wheeley Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -25,6 +25,11 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+/* disable daemonise if maintainer mode SIM_REC / SIM_SEND defined */
+#if defined(SIM_REC) || defined (SIM_SEND)
+# undef DAEMONIZE
 #endif
 
 #define __USE_BSD
@@ -54,7 +59,7 @@
 
 unsigned long supported_send_modes[]=
 {
-	/* LIRC_CAN_SEND_STRING, I don¥t think there ever will be a driver 
+	/* LIRC_CAN_SEND_STRING, I donÅ¥t think there ever will be a driver 
 	   that supports that */
 	/* LIRC_CAN_SEND_LIRCCODE, */
         /* LIRC_CAN_SEND_CODE, */
