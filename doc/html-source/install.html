@@ -483,7 +483,13 @@
     </P>
 
     <P>
-      Parameters are:
+      The following gives a list of parameters for the module. If your
+      TV card is already listed as supported than you don't need to
+      care about parameters except <em>debug</em> and <em>card</em>
+      because all other are set to the correct values
+      automatically. Setting the values manually only makes sense
+      while adding support for a new TV card so that you don't have to
+      recompile the module each time you try a different value.
     </P>
     <UL>
       <LI><B>debug</B> (0) - value other than 0 (zero) enables
@@ -509,17 +515,9 @@
 	some cards are translated to match original codes</LI>
     </UL>
     <P>
-      Supported hardware:
+      Usage example would be e.g:
     </P>
-    <UL>
-      <LI><B>Prolink - PixelView PlayTV pro</B> - parameters:
-	gpio_mask=0x1f00, gpio_lock_mask=0x8000, gpio_xor_mask=0,
-	soft_gap=400, sample_rate=12</LI>
-      <LI><B>AVerMedia - TVCapture98 and TVPhone98 (pre 98 also)</B> -
-	parameters: gpio_mask=0xf88000, gpio_lock_mask=0x10000,
-	gpio_xor_mask=0x10000, soft_gap=0, sample_rate=10</LI>
-      <LI>many more...</LI>
-    </UL>
+    <em>modprobe lirc_gpio gpio_mask=0x1f00 gpio_lock_mask=0x8000 gpio_xor_mask=0 soft_gap=400 sample_rate=12</em>
     <P>
       Autodetection is performed using the API from the <em>bttv</em>
       module - this means that if <em>bttv</em> doesn't properly
@@ -604,7 +602,7 @@
     <P>lircd.conf and lircmd.conf are in /etc again.</P>
     
     <P>
-      Two independend bugs were fixed in the Irdeo and home-brew
+      Two independend bugs were fixed in the IRdeo and home-brew
       transmitter code that affected correct pulse/space timings in
       some situations. This might break config files that did work
       with previous versions.
