@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.12 2003/11/14 05:38:24 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.13 2003/11/17 16:58:15 pmiller9 Exp $
  */
 
 /*
@@ -350,7 +350,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		return NULL;
 	}
 
-	if (lirc_buffer_init(rbuf, sizeof(lirc_t), buf_len)) {
+	if (lirc_buffer_init(rbuf, bytes_in_key, buf_len/bytes_in_key)) {
 		printk(DRIVER_NAME "[%d]: out of memory\n", devnum);
 		kfree(ir);
 		kfree(plugin);
