@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.29 2004/12/30 21:42:59 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.30 2005/01/14 16:07:12 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -138,18 +138,19 @@ static int add_to_buf_pcf8574(void* data, struct lirc_buffer* buf)
 	return 0;
 }
 
-static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
+/* common for Hauppauge IR receivers */
+static int add_to_buf_haup_common(void* data, struct lirc_buffer* buf,
+		unsigned char* keybuf, int size, int offset)
 {
 	struct IR *ir = data;
-	unsigned char keybuf[3];
 	__u16 code;
 	unsigned char codes[2];
 
 	/* poll IR chip */
-	if (3 == i2c_master_recv(&ir->c,keybuf,3)) {
-		ir->b[0] = keybuf[0];
-		ir->b[1] = keybuf[1];
-		ir->b[2] = keybuf[2];
+	if (size == i2c_master_recv(&ir->c,keybuf,size)) {
+		ir->b[0] = keybuf[offset];
+		ir->b[1] = keybuf[offset+1];
+		ir->b[2] = keybuf[offset+2];
 		dprintk("key (0x%02x/0x%02x)\n", ir->b[0], ir->b[1]);
 	} else {
 		dprintk("read error\n");
@@ -170,6 +171,23 @@ static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
 	lirc_buffer_write_1( buf, codes );
 	return 0;
 }
+
+/* specific for the Hauppauge PVR150 IR receiver */
+static int add_to_buf_haup_pvr150(void* data, struct lirc_buffer* buf)
+{
+	unsigned char keybuf[6];
+	/* fetch 6 bytes, first relevant is at offset 3 */
+	return add_to_buf_haup_common(data, buf, keybuf, 6, 3);
+}
+
+/* used for all Hauppauge IR receivers but the PVR150 */
+static int add_to_buf_haup(void* data, struct lirc_buffer* buf)
+{
+	unsigned char keybuf[3];
+	/* fetch 3 bytes, first relevant is at offset 0 */
+	return add_to_buf_haup_common(data, buf, keybuf, 3, 0);
+}
+
 
 static int add_to_buf_pixelview(void* data, struct lirc_buffer* buf)
 {
@@ -326,6 +344,15 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.code_length = 32;
 		ir->l.add_to_buf=add_to_buf_pv951;
 		break;
+	case 0x71:
+		/* The PVR150 IR receiver uses the same protocol as other 
+		   Hauppauge cards, but the data flow is different, so we need
+		   to deal with it by its own.
+		 */
+		strcpy(ir->c.name,"Hauppauge IR (PVR150)");
+		ir->l.code_length = 13;
+		ir->l.add_to_buf=add_to_buf_haup_pvr150;
+		break;
 	case 0x18:
 	case 0x1a:
 		strcpy(ir->c.name,"Hauppauge IR");
@@ -385,9 +412,12 @@ static int ir_probe(struct i2c_adapter *adap) {
 	   internal. 
 	   
 	   That's why we probe 0x1a (~0x34) first. CB 
+
+	   The i2c address for the Hauppauge PVR-150 card is 0xe2,
+	   so we need to probe 0x71 as well.
 	*/
 	
-	static const int probe[] = { 0x1a, 0x18, 0x4b, 0x64, 0x30, -1};
+	static const int probe[] = { 0x1a, 0x18, 0x71, 0x4b, 0x64, 0x30, -1};
 	struct i2c_client c; char buf; int i,rc;
 
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
