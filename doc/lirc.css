@@ -7,6 +7,7 @@ p,h1,h2,h3,h4,ul,ol,li,div,td,th,dt,dd,address,blockquote,nobr,b,i,center {font-
 pre {font-family:monospace;}
 p {text-align:justify;}
 h1 {text-align:center;}
+hr {text-align:center;}
 
 .menu     {color:#C0C0C0;background-color:#000080;font-weight:bold;}
 .menuhead {color:#FFFFFF;background-color:#6060C0;font-weight:bold;text-align:center;}
