@@ -1,5 +1,8 @@
-/* $Id: lirc_aver.c,v 1.2 1999/06/08 12:01:42 denis Exp $ */
+/* $Id: lirc_aver.c,v 1.3 1999/06/14 12:02:36 denis Exp $ */
 /* $Log: lirc_aver.c,v $
+/* Revision 1.3  1999/06/14 12:02:36  denis
+/* Changed indentation from 2 to 8 chars.
+/*
 /* Revision 1.2  1999/06/08 12:01:42  denis
 /* Compilation with new lirc fixed.
 /* New lirc ioctl interface added.
@@ -104,12 +107,12 @@ static int card = 1;
 static int major = LIRC_MAJOR;
 
 struct remote_status {
-  int is_open;
-  int mode_decoded;
+	int is_open;
+	int mode_decoded;
 	unsigned char code;
 	struct wait_queue *wait_poll, *wait_cleanup;
 	int status_changed;
-  char repeat;
+	char repeat;
 };
 
 static struct tq_struct polling_task = {
@@ -168,8 +171,8 @@ static void remote_timer(void *unused)
 
 	if((result != 0) || (!ready))
 	{
-    if(remote.code != 0xFF)
-      remote.repeat = !remote.repeat;
+		if(remote.code != 0xFF)
+		remote.repeat = !remote.repeat;
 		remote.code = 0xFF;
 		return;
 	}
@@ -182,14 +185,14 @@ static void remote_timer(void *unused)
 	code = (gpio & 0xF0) >> 4;
 	if(gpio & 0x08)	code += 0x10;
 
-  remote.code = code;
-  remote.status_changed = 1;
-  wake_up_interruptible(&remote.wait_poll);
+	remote.code = code;
+	remote.status_changed = 1;
+	wake_up_interruptible(&remote.wait_poll);
 }
 
 static unsigned int remote_poll(struct file *file, struct poll_table_struct * wait)
 {
-  poll_wait(file, &remote.wait_poll, wait);
+	poll_wait(file, &remote.wait_poll, wait);
 
 	if(remote.status_changed)
 	{
@@ -202,47 +205,47 @@ static unsigned int remote_poll(struct file *file, struct poll_table_struct * wa
 
 static int remote_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-  int result;
+	int result;
 	unsigned long features = LIRC_CAN_REC_CODE, mode;
 
 	switch(cmd)
 	{
-    case LIRC_GET_FEATURES:
-      result = put_user(features,(unsigned long*)arg);
-      if(result)
-        return(result); 
-      break;
-    case LIRC_GET_REC_MODE:
-      result = put_user(LIRC_MODE_CODE,(unsigned long*)arg);
-      if(result)
-        return(result); 
-      break;
-    case LIRC_SET_REC_MODE:
-      result = get_user(mode,(unsigned long*)arg);
-      if(result)
-        return(result);
-      if(mode != LIRC_MODE_CODE)
-      {
-        if(remote.mode_decoded)
-        {
-          remote.mode_decoded = FALSE;
-          sleep_on(&remote.wait_cleanup);
-        }
-        return -ENOSYS;
-      }
-      else
-      {
-        if(!remote.mode_decoded)
-        {
-          remote.mode_decoded = TRUE;
-          queue_task(&polling_task, &tq_timer);
-        }
-      }
-      break;
-    default:
-      return -ENOIOCTLCMD;
+		case LIRC_GET_FEATURES:
+			result = put_user(features,(unsigned long*)arg);
+			if(result)
+				return(result); 
+			break;
+		case LIRC_GET_REC_MODE:
+			result = put_user(LIRC_MODE_CODE,(unsigned long*)arg);
+			if(result)
+				return(result); 
+			break;
+		case LIRC_SET_REC_MODE:
+			result = get_user(mode,(unsigned long*)arg);
+			if(result)
+				return(result);
+			if(mode != LIRC_MODE_CODE)
+			{
+				if(remote.mode_decoded)
+				{
+					remote.mode_decoded = FALSE;
+					sleep_on(&remote.wait_cleanup);
+				}
+				return -ENOSYS;
+			}
+			else
+			{
+				if(!remote.mode_decoded)
+				{
+					remote.mode_decoded = TRUE;
+					queue_task(&polling_task, &tq_timer);
+				}
+			}
+			break;
+		default:
+			return -ENOIOCTLCMD;
 	}
-  return 0;
+	return 0;
 }
 
 static int remote_open(struct inode *inode, struct file *file)
@@ -256,7 +259,7 @@ static int remote_open(struct inode *inode, struct file *file)
 	remote.wait_cleanup = NULL;
 	remote.status_changed = FALSE;
 	remote.code = 0xFF;
-  remote.repeat = 0;
+	remote.repeat = 0;
 
 	MOD_INC_USE_COUNT;
 
@@ -293,7 +296,7 @@ static ssize_t remote_read(struct file * file, char * buffer, size_t count, loff
 
 static ssize_t remote_write(struct file * file, const char * buffer, size_t count, loff_t *ppos)
 {
-  return -EINVAL;
+	return -EINVAL;
 }
 
 int init_module(void)
@@ -307,8 +310,8 @@ int init_module(void)
 		printk("remote: registration of device with major %d failed, code %d\n", major, ret);
 		return ret;
 	}
-  remote.mode_decoded = FALSE;
-  remote.is_open = FALSE;
+	remote.mode_decoded = FALSE;
+	remote.is_open = FALSE;
 
 	return 0;
 }
