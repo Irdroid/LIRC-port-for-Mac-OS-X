@@ -145,7 +145,7 @@ function SetPortAndIrq
             }
         fi
         }
-    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman"; then
+    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "logitech"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to usefy Port And IRQ of your Hardware" \
@@ -227,7 +227,8 @@ function ConfigDriver
 	     4 "TV card" \
 	     5 "Packard Bell receiver" \
 	     6 "Anir Multimedia Magic" \
-             7 "PixelView RemoteMaster RC2000/RC3000" 2> $TEMP
+             7 "PixelView RemoteMaster RC2000/RC3000" \
+             8 "Logitech/AST" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -258,7 +259,8 @@ function ConfigDriver
         elif test "$1" = "5"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
         elif test "$1" = "6"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
         elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
-        fi
+	elif test "$1" = "8"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1
+    fi
         GetSelectedDriver
         SetPortAndIrq
         DriverOptions
@@ -329,7 +331,7 @@ function SaveConfig
 	else echo "--without-timer \\" >>$START;
 	fi
         }
-    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster"; then
+    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "logitech"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

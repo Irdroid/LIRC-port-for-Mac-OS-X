@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.8 1999/08/06 18:12:48 columbus Exp $
+dnl $Id: configure.in,v 5.9 1999/08/12 18:49:17 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -61,7 +61,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (remotemaster)"
+possible_drivers="(none) (remotemaster) (logitech)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) \
@@ -83,7 +83,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, animax, packard_bell,
 			  parallel, irman, remotemaster, comX, lptX, 
-			  avermedia, hauppauge, fly98, pixelview],
+			  avermedia, hauppauge, fly98, pixelview, logitech],
 driver=${withval},
 driver="unset"
 )
@@ -175,6 +175,12 @@ fi
 if test "$driver" = "remotemaster"; then
   lirc_driver="none"
   hw_module="hw_pixelview.o serial.o"
+fi
+if test "$driver" = "logitech"; then
+  lirc_driver="none"
+  hw_module="hw_logitech.o serial.o"
+#  lircd_conf="logitech/lircd.conf.logitech"
+#  lircmd_conf="logitech/lircmd.conf.logitech"
 fi
 
 dnl now check to see if the user is behaving himself
