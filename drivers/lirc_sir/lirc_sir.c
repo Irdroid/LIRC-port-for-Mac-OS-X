@@ -297,48 +297,65 @@ static int lirc_select(struct inode * inode, struct file * file,
 static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 		loff_t * ppos)
 {
-	int i = 0;
+	int n=0;
 	int retval = 0;
-	unsigned long flags;
+#ifdef KERNEL_2_3
+	DECLARE_WAITQUEUE(wait,current);
+#else
+	struct wait_queue wait={current,NULL};
+#endif
 	
-	while (i < count) {
-		save_flags(flags); cli();
-		if (rx_head != rx_tail) {
-			retval = verify_area(VERIFY_WRITE,
-					(void *)buf + i,
-					sizeof(lirc_t));
-			if (retval) {
-				restore_flags(flags);
+	if(n%sizeof(lirc_t)) return(-EINVAL);
+	
+	add_wait_queue(&lirc_read_queue,&wait);
+	current->state=TASK_INTERRUPTIBLE;
+	while(n<count)
+	{
+		if(rx_head!=rx_tail)
+		{
+			retval=verify_area(VERIFY_WRITE,
+					   (void *) buf+n,sizeof(lirc_t));
+			if (retval)
+			{
 				return retval;
 			}
 #ifdef KERNEL_2_1
-			copy_to_user((void *)buf + i,
-					(void *)(rx_buf + rx_head),
-					sizeof(lirc_t));
+			copy_to_user((void *) buf+n,(void *) (rx_buf+rx_head),
+				     sizeof(lirc_t));
 #else
-			memcpy_tofs((void *)buf + i,
-					(void *)(rx_buf + rx_head),
-					sizeof(lirc_t));
+			memcpy_tofs((void *) buf+n,(void *) (rx_buf+rx_head),
+				    sizeof(lirc_t));
 #endif
-			rx_head = (rx_head + 1) & (RBUF_LEN - 1);
-			i+=sizeof(lirc_t);
-			restore_flags(flags);
-		} else {
-			restore_flags(flags);
-			if (file->f_flags & O_NONBLOCK) {
-				retval = -EAGAIN;
+			rx_head=(rx_head+1)&(RBUF_LEN-1);
+			n+=sizeof(lirc_t);
+		}
+		else
+		{
+			if(file->f_flags & O_NONBLOCK)
+			{
+				retval=-EAGAIN;
 				break;
 			}
-			interruptible_sleep_on(&lirc_read_queue);
-			if (signal_pending(current)) {
-				retval = -ERESTARTSYS;
+#                       ifdef KERNEL_2_1
+			if(signal_pending(current))
+			{
+				retval=-ERESTARTSYS;
 				break;
 			}
+#                       else
+			if(current->signal & ~current->blocked)
+			{
+				retval=-EINTR;
+				break;
+			}
+#                       endif
+			schedule();
+			current->state=TASK_INTERRUPTIBLE;
 		}
 	}
-	if (i)
-		return i;
-	return retval;
+	remove_wait_queue(&lirc_read_queue,&wait);
+	current->state=TASK_RUNNING;
+	return (n ? n : retval);
 }
 static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos)
 {
@@ -390,7 +407,9 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 {
 	int retval = 0;
 	unsigned long value = 0;
+#ifdef LIRC_ON_IPAQ
 	unsigned int ivalue;
+#endif
 
 #ifdef LIRC_SIR_TEKRAM
 	if (cmd == LIRC_GET_FEATURES)
