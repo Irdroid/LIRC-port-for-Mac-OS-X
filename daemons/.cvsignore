@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+.deps
+lircd.simrec
+lircd.simsend
+lircd
+lircmd

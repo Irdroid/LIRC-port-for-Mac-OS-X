@@ -1,0 +1,10 @@
+Makefile.in
+Makefile
+.deps
+irw
+irpty
+irexec
+irrecord
+mode2
+irxevent
+xmode2

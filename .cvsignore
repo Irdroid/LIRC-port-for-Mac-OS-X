@@ -1,0 +1,11 @@
+*.in
+aclocal.m4
+configure
+config.log
+config.h
+Makefile
+stamp-h
+.setup.config
+configure.sh
+config.cache
+config.status
