@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.71 2001/11/20 15:18:51 ranty Exp $
+dnl $Id: configure.in,v 5.72 2001/12/02 16:14:40 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -65,14 +65,17 @@ if test "$ac_cv_func_forkpty" != yes; then
 fi
 
 vga_progs=
-AC_CHECK_LIB(vga, vga_init,
-  AC_CHECK_LIB(vgagl, gl_setcontextvga,
-    AC_DEFINE(HAVE_LIBVGA)
-    vga_progs=smode2,,
-    -lvga
+AC_CHECK_HEADER(vga.h,
+  AC_CHECK_HEADER(vgagl.h,
+    AC_CHECK_LIB(vga, vga_init,
+      AC_CHECK_LIB(vgagl, gl_setcontextvga,
+        AC_DEFINE(HAVE_LIBVGA)
+        vga_progs=smode2,,
+        -lvga
+      )
+    )
   )
 )
-
 x_progs="irxevent xmode2"
 AC_PATH_XTRA
 if test "$no_x" = "yes"; then
