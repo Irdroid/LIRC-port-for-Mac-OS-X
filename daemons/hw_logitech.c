@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.11 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: hw_logitech.c,v 1.12 2001/12/02 11:49:57 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -32,7 +32,7 @@
 #include "hw_logitech.h"
 
 #define NUMBYTES 16 
-#define TIMEOUT 20000
+#define TIMEOUT 50000
 
 extern struct ir_remote *repeat_remote,*last_remote;
 
@@ -158,7 +158,7 @@ char *logitech_rec(struct ir_remote *remotes)
 		{
 			if(!waitfordata(TIMEOUT))
 			{
-				logprintf(LOG_ERR,"timeout reading byte %d",i);
+				LOGPRINTF(0,"timeout reading byte %d",i);
 				return(NULL);
 			}
 		}
