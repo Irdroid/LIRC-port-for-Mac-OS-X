@@ -85,6 +85,7 @@ end remote
 # brand:             AVerMedia
 # model:             ? (36 buttons)
 # supported devices: TVPhone98 card (ID 0x00031461)
+#                    TVCapture98 card (ID 0x00041461)
 #
 # This config file does work with both homebrew receivers and 
 # original AVerMedia TV cards !!!
