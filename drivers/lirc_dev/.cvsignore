@@ -1,4 +1,9 @@
 .lirc_dev.o.flags
+.lirc_dev.ko.cmd
+.lirc_dev.mod.o.cmd
+.lirc_dev.o.cmd
+lirc_dev.ko
+lirc_dev.mod.c
 Makefile.in
 Makefile
 .deps

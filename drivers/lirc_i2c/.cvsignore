@@ -1,4 +1,9 @@
 .lirc_i2c.o.flags
+.lirc_i2c.ko.cmd
+.lirc_i2c.mod.o.cmd
+.lirc_i2c.o.cmd
+lirc_i2c.ko
+lirc_i2c.mod.c
 Makefile.in
 Makefile
 .deps

@@ -1,4 +1,9 @@
 .lirc_it87.o.flags
+.lirc_it87.ko.cmd
+.lirc_it87.mod.o.cmd
+.lirc_it87.o.cmd
+lirc_it87.ko
+lirc_it87.mod.c
 Makefile.in
 Makefile
 .deps

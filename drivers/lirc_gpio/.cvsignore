@@ -1,4 +1,9 @@
 .lirc_gpio.o.flags
+.lirc_gpio.ko.cmd
+.lirc_gpio.mod.o.cmd
+.lirc_gpio.o.cmd
+lirc_gpio.ko
+lirc_gpio.mod.c
 Makefile.in
 Makefile
 .deps

@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.6 2000/12/23 11:23:57 columbus Exp $
+## $Id: acinclude.m4,v 1.7 2004/04/25 16:29:23 lirc Exp $
 ##
 ## additional m4 macros
 ##
@@ -11,6 +11,7 @@ dnl check for kernel source
 AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
 [
   kerneldir=missing
+  kernelext=ko
   no_kernel=yes
 
   if test `uname` != "Linux"; then
@@ -36,6 +37,18 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
       echo "	echo \$(CC)" >>${ac_pkss_makefile}
 
       kernelcc=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_cc_is`
+
+      echo "lirc_tell_me_what_version_is:" >>${ac_pkss_makefile}
+      echo "	echo \$(VERSION)" >>${ac_pkss_makefile}
+      echo "lirc_tell_me_what_patchlevel_is:" >>${ac_pkss_makefile}
+      echo "	echo \$(PATCHLEVEL)" >>${ac_pkss_makefile}
+      version=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_version_is`
+      patchlevel=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_patchlevel_is`
+      if test ${version} -eq 2; then
+        if test ${patchlevel} -lt 5; then
+          kernelext=o
+        fi
+      fi
       rm -f ${ac_pkss_makefile}
     else
       kerneldir="no Makefile found"
@@ -44,6 +57,7 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
   fi
   ac_cv_have_kernel="no_kernel=${no_kernel} \
 		kerneldir=\"${kerneldir}\" \
+		kernelext=\"${kernelext}\" \
 		kernelcc=\"${kernelcc}\""
 ]
 )
@@ -68,6 +82,7 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE,
 
   AC_SUBST(kerneldir)
   AC_SUBST(kernelcc)
+  AC_SUBST(kernelext)
   AC_MSG_RESULT(${kerneldir})
 ]
 )

@@ -1,4 +1,9 @@
 .lirc_parallel.o.flags
+.lirc_parallel.ko.cmd
+.lirc_parallel.mod.o.cmd
+.lirc_parallel.o.cmd
+lirc_parallel.ko
+lirc_parallel.mod.c
 Makefile.in
 Makefile
 .deps

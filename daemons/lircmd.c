@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.14 2002/08/17 11:17:41 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.15 2004/04/25 16:29:24 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -6,7 +6,7 @@
  *
  * lircmd - LIRC Mouse Daemon
  * 
- * Copyright (C) 1998 Christoph Bartelmus <columbus@hit.handshake.de>
+ * Copyright (C) 1998 Christoph Bartelmus <lirc@bartelmus.de>
  *
  * Wheel support based on lirc-imps2 by 
  * Ryan Gammon <rggammon@engmail.uwaterloo.ca>

@@ -1,4 +1,9 @@
 .lirc_mceusb.o.flags
+.lirc_mceusb.ko.cmd
+.lirc_mceusb.mod.o.cmd
+.lirc_mceusb.o.cmd
+lirc_mceusb.ko
+lirc_mceusb.mod.c
 Makefile.in
 Makefile
 .deps

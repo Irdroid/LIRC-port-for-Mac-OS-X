@@ -1,4 +1,9 @@
 .lirc_bt829.o.flags
+.lirc_bt829.ko.cmd
+.lirc_bt829.mod.o.cmd
+.lirc_bt829.o.cmd
+lirc_bt829.ko
+lirc_bt829.mod.c
 Makefile.in
 Makefile
 .deps
