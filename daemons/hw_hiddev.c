@@ -59,7 +59,8 @@ static int pre_code_length = 32;
 static int main_code_length = 32;
 
 static unsigned int pre_code;
-static signed int last_code = 0;
+static signed int main_code = 0;
+static int last_dvico_code = -1;
 
 static int repeat_flag = 0;
 
@@ -93,7 +94,7 @@ int hiddev_decode(struct ir_remote *remote,
 
 	if(!map_code(remote,prep,codep,postp,
 			 pre_code_length,pre_code,
-			 main_code_length,last_code,
+			 main_code_length,main_code,
 			 0,0))
 	{
 		return(0);
@@ -112,7 +113,6 @@ char *hiddev_rec(struct ir_remote *remotes)
 {
 	struct hiddev_event event;
 	int rd;
-	signed int this_code;
 
 	LOGPRINTF(1, "hiddev_rec");
 	
@@ -125,19 +125,25 @@ char *hiddev_rec(struct ir_remote *remotes)
 	LOGPRINTF(1, "hid 0x%X  value 0x%X", event.hid, event.value);
 
 	pre_code = event.hid;
-	this_code = event.value;
+	main_code = event.value;
 
 	/*
 	 * This stuff is probably dvico specific.
 	 * I don't have any other hid devices to test...
 	 */
-	repeat_flag = (event.hid == 0x10046) &&
-		/* repeat flag in hid event */
-		((this_code & dvico_repeat_mask) &&
-		 /* same key code */
-		(last_code == (this_code & ~dvico_repeat_mask)));
+	if (event.hid == 0x10046) {
+		int base_code = (main_code & ~dvico_repeat_mask);
+		repeat_flag = 
+			/* repeat flag in hid event */
+			((main_code & dvico_repeat_mask) &&
+			 /* same key code */
+			(last_dvico_code == base_code));
+		last_dvico_code = main_code = base_code;
+	}
+	else
+	{
+		return 0;
+	}
 	
-	last_code = this_code & ~dvico_repeat_mask;
-
 	return decode_all(remotes);
 }
