@@ -6,6 +6,7 @@ hw_menu_entry: @any
 	@hw-tv-card: "TV card"
 	@hw-irda: "IrDA hardware"
 	@hw-pda: "PDAs"
+	@hw-usb: "USB devices"
 	udp: "Network (UDP)"
 	@hw-other: "Other (MIDI, Bluetooth, etc.)"
 	none: "None (network connections only)"
@@ -15,7 +16,6 @@ hw_menu_entry: @hw-soundcard
 	audio: "IR receiver IC connected to auido input (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other
-	atiusb: "ATI RF Remote Wonder (USB)"
 	livedrive_midi: "Creative LiveDrive midi"
 	livedrive_seq: "Creative LiveDrive sequencer"
 	creative_infracd: "Creative iNFRA CDROM"
@@ -89,6 +89,10 @@ hw_menu_entry: @hw-pda
 	sa1100: "HP iPAQ"
 	sa1100: "Sharp Zaurus"
 
+hw_menu_entry: @hw-usb
+	atiusb: "ATI RF Remote Wonder"
+	tira: "Home Electronics Tira USB device"
+
 param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 		sir tekram
 	com:
@@ -97,8 +101,11 @@ param_type: parallel
 	lpt:
 
 param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
-		remotemaster silitek slinke
+		remotemaster silitek slinke 
 	tty:
+
+param_type: tira
+        ttyUSB:
 
 param_type: atiusb audio avermedia avermedia98 avermedia_vdomate \
 		bestbuy bestbuy2 breakoutbox bte chronos cph03x cph06x \
@@ -134,5 +141,10 @@ default_param: act200l animax irdeo irdeo_remote packard_bell \
 
 default_param: sir
 	com3:
+
 default_param: bte
 	btty:
+
+default_parm: tira
+	ttyUSB1:
+

@@ -22,7 +22,9 @@ extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
+extern struct hardware hw_tira;
 extern struct hardware hw_udp;
+
 
 #ifndef HW_DEFAULT
 # define HW_DEFAULT hw_default
@@ -71,6 +73,7 @@ struct hardware *hw_list[] =
 	&hw_pixelview,
 	&hw_silitek,
 	/*	&hw_slinke,*/
+	&hw_tira,
 	&hw_udp,
 #else
 	&HW_DEFAULT,

@@ -62,6 +62,8 @@ GetSelectedDriver ()
     IRTTY="none"
 
     if   test "$DRIVER_PARAMETER" = "btty"; then IRTTY="/dev/btty"; LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB1"; then IRTTY="/dev/ttyUSB0"; LIRC_PORT="none"; LIRC_IRO="none"
+    elif test "$DRIVER_PARAMETER" = "ttyUSB2"; then IRTTY="/dev/ttyUSB1"; LIRC_PORT="none"; LIRC_IRO="none"
     elif test "$DRIVER_PARAMETER" = "com1"; then COM1="on"; LIRC_PORT=$COM1_PORT; LIRC_IRQ=$COM1_IRQ
     elif test "$DRIVER_PARAMETER" = "com2"; then COM2="on"; LIRC_PORT=$COM2_PORT; LIRC_IRQ=$COM2_IRQ
     elif test "$DRIVER_PARAMETER" = "com3"; then COM3="on"; LIRC_PORT=$COM3_PORT; LIRC_IRQ=$COM3_IRQ
@@ -319,7 +321,7 @@ SaveConfig ()
 	else echo "--without-timer \\" >>$START;
 	fi
         }
-    elif test "$DRIVER_PARAM_TYPE" = "tty" -o "$LIRC_DRIVER" = "bte"; then
+    elif test "$DRIVER_PARAM_TYPE" = "tty" -o "$DRIVER_PARAM_TYPE" = "ttyUSB" -o "$LIRC_DRIVER" = "bte"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

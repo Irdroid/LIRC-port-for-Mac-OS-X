@@ -85,10 +85,12 @@ query_setup_data() {
 	if [ $N -eq 0 ] && [ -z "$DEFAULT" ]; then
 		#Nothing found assume 'none' and return error.
 		echo none
+		rm $TEMP
 		return 1
 	elif [ $N -le 1 ]; then
 		#param_type or default_param entry
 		echo $DEFAULT
+		rm $TEMP
 		return
 	elif [ $N -gt 12 ]; then
 		#More than 12 items at once don't look good.

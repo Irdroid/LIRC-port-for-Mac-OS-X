@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.112 2003/08/15 20:52:21 lirc Exp $
+dnl $Id: configure.in,v 5.113 2003/09/21 13:53:14 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -186,7 +186,7 @@ AC_ARG_WITH(driver,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, tvbox, udp],
+			  slinke, tekram, tekram_bt829, tira, tvbox, udp],
 driver=${withval},
 driver="unset"
 )
@@ -489,6 +489,12 @@ if test "$driver" = "irman"; then
   hw_module="hw_irman.o serial.o"
   HW_DEFAULT="hw_irman"
   irman_lib=-lirman
+fi
+
+if test "$driver" = "tira"; then
+  lirc_driver="none"
+  hw_module="hw_tira.o serial.o"
+  HW_DEFAULT="hw_tira"
 fi
 
 if test "$driver" = "irman_sw"; then
