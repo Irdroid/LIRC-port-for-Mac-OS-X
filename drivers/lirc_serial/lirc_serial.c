@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.25 2001/07/18 10:16:39 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.26 2001/07/28 07:39:58 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -13,6 +13,20 @@
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *
  */
+
+/* Steve's changes to improve transmission quality:
+     - non-integer pulse/space lengths, done using fixed point binary.  So
+       much more accurate carrier frequency.
+     - fine tuned transmitter latency, taking advantage of fractional
+       microseconds.
+     - Fixed bug in the way transmitter latency was accounted for by
+       tuning the pulse lengths down - the send_pulse routine ignored this
+       overhead as it timed the overall pulse length - so the pulse
+       frequency was right but overall pulse length was too long.  Fixed by
+       accounting for latency on each pulse/space iteration.
+
+   Steve Davies <steve@daviesfam.org>
+*/
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -128,6 +142,7 @@ static struct timeval lasttv = {0, 0};
 
 static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
+
 #ifdef LIRC_SERIAL_TRANSMITTER
 static lirc_t wbuf[WBUF_LEN];
 
@@ -146,22 +161,32 @@ static lirc_t wbuf[WBUF_LEN];
   [...]
 */
 
-/* 2 is subtracted from the actual value to compensate the port
-   access latency, 2 instead of 1 because that generated better
-   results according to my oscilloscope */
-  
-#define LIRC_SERIAL_TRANSMITTER_LATENCY 2
+/* transmitter latency 1.5625us 0x1.90 - this figure arrived at from
+ * comment above plus trimming to match actual measured frequency.
+ * This will be sensitive to cpu speed, though hopefully most of the 1.5us
+ * is spent in the uart access.  Still - for reference test machine was a
+ * 1.13GHz Athlon system - Steve
+ */
+
+#define LIRC_SERIAL_TRANSMITTER_LATENCY 400
+
 #else
+
 /* does anybody have information on other platforms ? */
-#define LIRC_SERIAL_TRANSMITTER_LATENCY 1
+/* 256 = 1<<8 */
+#define LIRC_SERIAL_TRANSMITTER_LATENCY 256
 #endif
 
-/* pulse/space ratio of 50/50 */
-unsigned long pulse_width = (13-LIRC_SERIAL_TRANSMITTER_LATENCY);
-/* 1000000/freq-pulse_width */
-unsigned long space_width = (13-LIRC_SERIAL_TRANSMITTER_LATENCY);
-unsigned int freq = 38000;      /* modulation frequency */
-unsigned int duty_cycle = 50;   /* duty cycle of 50% */
+/* period, pulse/space width are kept with 8 binary places -
+   IE multiplied by 256. */
+
+unsigned int freq = 38000;
+unsigned int duty_cycle = 50;
+
+unsigned long period = 6736; /* 256*1000000L/freq; */
+unsigned long pulse_width = 3368; /* (period*duty_cycle/100) */
+unsigned long space_width = 3368; /* (period - pulse_width) */
+
 #endif
 
 #ifdef LIRC_SERIAL_ANIMAX
@@ -199,7 +224,7 @@ void off(void)
 
 /* return value: space length delta */
 
-unsigned long send_pulse(unsigned long length)
+long send_pulse(long length)
 {
 #ifdef LIRC_SERIAL_IRDEO
 	long rawbits;
@@ -241,30 +266,39 @@ unsigned long send_pulse(unsigned long length)
 	}
 #else
 #ifdef LIRC_SERIAL_SOFTCARRIER
-	unsigned long k,delay;
+	unsigned long actual, target, d;
 	int flag;
 #endif
 
-	if(length==0) return;
+	if(length<=0) return 0;
 #ifdef LIRC_SERIAL_SOFTCARRIER
-	/* this won't give us the carrier frequency we really want
-	   due to integer arithmetic, but we can accept this inaccuracy */
+	/* here we use fixed point arithmetic, with 8 fractional bits.
+	   that gets us within 0.1% or so of the right average frequency,
+	   albeit with some jitter in pulse length - Steve */
 
-	for(k=flag=0;k<length;k+=delay,flag=!flag)
+	length <<= 8; /* To match 8 fractional bits used for
+			 pulse/space length */
+	actual=target=0; flag=0;
+	while (actual<length)
 	{
 		if(flag)
 		{
 			off();
-			delay=space_width;
+			target+=space_width;
 		}
 		else
 		{
 			on();
-			delay=pulse_width;
+			target+=pulse_width;
 		}
-		udelay(delay);
+		d = (target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
+		/* Note - we've checked in ioctl that the pulse/space
+		   widths are big enough that d is > 0 */
+		udelay(d);
+		actual+=(d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
+		flag=!flag;
 	}
-	return(k-length);
+        return((actual-length)>>8);
 #else
 	on();
 	udelay(length);
@@ -273,12 +307,12 @@ unsigned long send_pulse(unsigned long length)
 #endif
 }
 
-void send_space(unsigned long length)
+void send_space(long length)
 {
-	if(length==0) return;
 #       ifndef LIRC_SERIAL_IRDEO
 	off();
 #       endif
+	if(length<=0) return;
 	udelay(length);
 }
 #endif
@@ -730,7 +764,7 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 #ifdef LIRC_SERIAL_TRANSMITTER
 	int retval,i,count;
 	unsigned long flags;
-	unsigned long delta=0;
+	long delta=0;
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	retval=verify_area(VERIFY_READ,buf,n);
@@ -749,7 +783,7 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 #       endif
 	for(i=0;i<count;i++)
 	{
-		if(i%2) send_space(wbuf[i]>delta ? wbuf[i]-delta:0);
+		if(i%2) send_space(wbuf[i]-delta);
 		else delta=send_pulse(wbuf[i]);
 	}
 	off();
@@ -854,14 +888,14 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		ivalue=get_user((unsigned int *) arg);
 #               endif
 		if(ivalue<=0 || ivalue>100) return(-EINVAL);
-		/* (ivalue/100)*(1000000/freq) */
+		if(256*1000000L/freq*ivalue/100<=
+		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
+		if(256*1000000L/freq*(100-ivalue)/100<=
+		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		duty_cycle=ivalue;
-		pulse_width=(unsigned long) duty_cycle*10000/freq;
-		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
-			space_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
+		period=256*1000000L/freq;
+		pulse_width=period*duty_cycle/100;
+		space_width=period-pulse_width;
 		break;
 	case LIRC_SET_SEND_CARRIER:
 #               ifdef KERNEL_2_1
@@ -874,13 +908,22 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		ivalue=get_user((unsigned int *) arg);
 #               endif
 		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
+		if(256000000L/freq*ivalue/100<=
+		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
+		if(256000000L/freq*(100-ivalue)/100<=
+		   LIRC_SERIAL_TRANSMITTER_LATENCY) return(-EINVAL);
 		freq=ivalue;
-		pulse_width=(unsigned long) duty_cycle*10000/freq;
-		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_SERIAL_TRANSMITTER_LATENCY)
-			space_width-=LIRC_SERIAL_TRANSMITTER_LATENCY;
+		period=256*1000000L/freq;
+		pulse_width=period*duty_cycle/100;
+		space_width=period-pulse_width;
+
+#               ifdef DEBUG
+		printk(KERN_INFO LIRC_DRIVER_NAME
+		       ": after LIRC_SET_SEND_CARRIER:"
+		       " freq=%d, pulse_width=%ld, space_width=%ld\n",
+		       freq,pulse_width,space_width);
+#               endif
+
 		break;
 #       endif
 #       endif
