@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.43 2004/11/20 13:47:11 lirc Exp $
+## $Id: Makefile.am,v 5.44 2005/01/22 10:40:42 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -30,6 +30,7 @@ EXTRA_lircd_SOURCES = \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
 			hw_logitech.c hw_logitech.h \
+			hw_mouseremote.c hw_mouseremote.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
 			hw_pcmak.c hw_pcmak.h \
 			hw_pinsys.c hw_pinsys.h \
@@ -70,6 +71,7 @@ EXTRA_irrecord_SOURCES = \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
 			hw_logitech.c hw_logitech.h \
+			hw_mouseremote.c hw_mouseremote.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
 			hw_pcmak.c hw_pcmak.h \
 			hw_pinsys.c hw_pinsys.h \

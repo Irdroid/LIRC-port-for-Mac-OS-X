@@ -20,6 +20,8 @@ extern struct hardware hw_irman;
 extern struct hardware hw_livedrive_midi;
 extern struct hardware hw_livedrive_seq;
 extern struct hardware hw_logitech;
+extern struct hardware hw_mouseremote;
+extern struct hardware hw_mouseremote_ps2;
 extern struct hardware hw_mp3anywhere;
 extern struct hardware hw_pcmak;
 extern struct hardware hw_pinsys;
@@ -87,6 +89,8 @@ struct hardware *hw_list[] =
 	&hw_livedrive_seq,
 	&hw_logitech,
 	&hw_mp3anywhere,
+	&hw_mouseremote,
+	&hw_mouseremote_ps2,
 	&hw_null,
 	&hw_pcmak,
 	&hw_pinsys,

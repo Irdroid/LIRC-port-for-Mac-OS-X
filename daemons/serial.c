@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.9 2002/06/24 18:35:20 lirc Exp $      */
+/*      $Id: serial.c,v 5.10 2005/01/22 10:40:42 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -128,6 +128,46 @@ int tty_setbaud(int fd,int baud)
 	{
 		LOGPRINTF(1,"tty_setbaud(): tcsetattr() failed");
 		LOGPERROR(1,"tty_setbaud()");
+		return(0);
+	}
+	return(1);
+}
+
+int tty_setcsize(int fd,int csize)
+{
+	struct termios options;
+	int size;
+
+	switch(csize)
+	{
+	case 5:
+		size=CS5;
+		break;
+	case 6:
+		size=CS6;
+		break;
+	case 7:
+                size=CS7;
+                break;
+	case 8:
+                size=CS8;
+                break;
+	default:
+		LOGPRINTF(1,"tty_setcsize(): bad csize rate %d",csize);
+		return(0);
+	}		
+	if(tcgetattr(fd, &options)==-1)
+	{
+		LOGPRINTF(1,"tty_setcsize(): tcgetattr() failed");
+		LOGPERROR(1,"tty_setcsize()");
+		return(0);
+	}
+	options.c_cflag &= ~CSIZE;
+	options.c_cflag |= size;
+	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
+	{
+		LOGPRINTF(1,"tty_setcsize(): tcsetattr() failed");
+		LOGPERROR(1,"tty_setcsize()");
 		return(0);
 	}
 	return(1);

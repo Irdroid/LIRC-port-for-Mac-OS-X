@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.135 2004/12/18 18:55:30 lirc Exp $
+dnl $Id: configure.in,v 5.136 2005/01/22 10:40:42 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -138,8 +138,9 @@ AC_MSG_RESULT()
 
 possible_drivers="(none) (bte) (ea65) (exaudio) (irreal) \
 	(livedrive_midi) (livedrive_seq) (logitech) (mediafocusI) \
-	(mp3anywhere) (pcmak) (pcmak_usb) (pctv) (remotemaster) \
-	(silitek) (slinke) (tira) (uirt2) (uirt2_raw) (udp)"
+	(mouseremote) (mouseremote_ps2) (mp3anywhere) (pcmak) \
+	(pcmak_usb) (pctv) (remotemaster) (silitek) (slinke) (tira) \
+	(uirt2) (uirt2_raw) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev) (lirc_dev lirc_atiusb) \
@@ -215,9 +216,10 @@ AC_ARG_WITH(driver,
                           irdeo_remote, irman, irreal, it87, knc_one,
                           kworld, leadtek_0007, leadtek_0010,
                           livedrive_midi, livedrive_seq, logitech,
-                          lptX, mceusb, mediafocusI, mp3anywhere,
-                          packard_bell, parallel, pcmak, pcmak_usb,
-                          pctv, pixelview_bt878, pixelview_pak,
+                          lptX, mceusb, mediafocusI, mouseremote,
+                          mouseremote_ps2, mp3anywhere, packard_bell,
+                          parallel, pcmak, pcmak_usb, pctv,
+                          pixelview_bt878, pixelview_pak,
                           pixelview_pro, provideo, realmagic,
                           remotemaster, sa1100, sasem, serial,
                           silitek, sir, slinke, tekram, tekram_bt829,
@@ -340,6 +342,12 @@ if test "$driver" = "any"; then
 		hw_module="${hw_module} hw_logitech.o serial.o"
 		;;
 	mediafocusI)
+		;;
+	mouseremote)
+		hw_module="${hw_module} hw_mouseremote.o serial.o"
+		;;
+	mouseremote_ps2)
+		hw_module="${hw_module} hw_mouseremote.o serial.o"
 		;;
 	mp3anywhere)
 		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
@@ -695,6 +703,22 @@ if test "$driver" = "mediafocusI"; then
   lirc_driver="none"
   lircd_conf="technisat/lircd.conf.mediafocusI"
 #  lircmd_conf="technisat/lircmd.conf.mediafocusI"
+fi
+
+if test "$driver" = "mouseremote"; then
+  lirc_driver="none"
+  hw_module="hw_mouseremote.o serial.o"
+  HW_DEFAULT="hw_mouseremote"
+  lircd_conf="x10/lircd.conf.mouseremote"
+  lircmd_conf="x10/lircmd.conf.mouseremote"
+fi
+
+if test "$driver" = "mouseremote_ps2"; then
+  lirc_driver="none"
+  hw_module="hw_mouseremote.o serial.o"
+  HW_DEFAULT="hw_mouseremote_ps2"
+  lircd_conf="x10/lircd.conf.mouseremote"
+  lircmd_conf="x10/lircmd.conf.mouseremote"
 fi
 
 if test "$driver" = "mp3anywhere"; then

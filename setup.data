@@ -43,6 +43,8 @@ hw_menu_entry: @hw-other-serial
 	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
 	uirt2: "UIRT2 (receive only, UIR mode)"
 	uirt2_raw: "UIRT2 (receive and transmit)"
+	mouseremote: "X10 MouseRemote RF Receiver (Serial)"
+	mouseremote_ps2: "X10 MouseRemote RF Receiver (PS/2)"
 	mp3anywhere: "X10 MP3 Anywhere RF Receiver"
 
 hw_menu_entry: @hw-tv-card
@@ -115,8 +117,9 @@ param_type: act200l animax irdeo irdeo_remote packard_bell serial \
 param_type: parallel
 	lpt:
 
-param_type: caraca creative ea65 irman logitech mp3anywhere pcmak pctv \
-		realmagic remotemaster silitek slinke uirt2 uirt2_raw
+param_type: caraca creative ea65 irman logitech mouseremote \
+		mp3anywhere pcmak pctv realmagic remotemaster silitek \
+		slinke uirt2 uirt2_raw
 	tty:
 
 param_type: pcmak_usb tira
@@ -128,8 +131,9 @@ param_type: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		exaudio flyvideo gvbctv5pci hauppauge hauppauge_dvb \
 		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
 		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
-		mceusb mediafocusI none pixelview_bt878 pixelview_pak \
-		pixelview_pro provideo sa1100 sasem tekram_bt829 tvbox udp
+		mceusb mediafocusI mouseremote_ps2 none \
+		pixelview_bt878 pixelview_pak pixelview_pro provideo \
+		sa1100 sasem tekram_bt829 tvbox udp
 	none:
 
 default_param: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
@@ -138,13 +142,14 @@ default_param: atilibusb atiusb audio audio_alsa avermedia avermedia98 \
 		flyvideo gvbctv5pci hauppauge hauppauge_dvb \
 		hercules_smarttv_stereo igorplugusb it87 knc_one kworld \
 		leadtek leadtek_0007 leadtek_0010 livedrive_midi \
-		livedrive_seq mceusb mediafocusI none pixelview_bt878 \
-		pixelview_pak pixelview_pro provideo sa1100 sasem \
-		tekram_bt829 tvbox udp
+		livedrive_seq mceusb mediafocusI mouseremote_ps2 none \
+		pixelview_bt878 pixelview_pak pixelview_pro provideo \
+		sa1100 sasem tekram_bt829 tvbox udp
 	none:
 
-default_param: caraca creative irman logitech mp3anywhere pcmak pctv \
-		realmagic remotemaster silitek uirt2 uirt2_raw
+default_param: caraca creative irman logitech mouseremote mp3anywhere \
+		pcmak pctv realmagic remotemaster silitek uirt2 \
+		uirt2_raw
 	tty1:
 
 default_param: ea65
