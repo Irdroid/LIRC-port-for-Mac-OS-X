@@ -15,6 +15,10 @@ select_vars ()
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
 	;;
+	ircat)
+		MANPAGE=$PROG.1
+		DIR=$TOPDIR/tools/
+	;;
 	irxevent)
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
@@ -71,7 +75,7 @@ install -d man-html
 HELP2MAN=help2man
 MAN2HTML=./man2html
 
-for PROG in irpty irexec irw mode2 smode2 xmode2 irrecord lircd lircmd irxevent
+for PROG in irpty irexec ircat irw mode2 smode2 xmode2 irrecord lircd lircmd irxevent
 do
 	PROG_PARAMS=""
 	PROG_PRE_PARAMS=""
@@ -91,6 +95,7 @@ do
 	# happen
 	sed \
 		-e 's/lt-irexec/irexec/' \
+		-e 's/lt-ircat/ircat/' \
 		-e 's/LT-IRPTY/IRPTY/' \
 		-e 's/lt-irpty/irpty/' \
 		-e 's/lt-irxevent/irxevent/' \

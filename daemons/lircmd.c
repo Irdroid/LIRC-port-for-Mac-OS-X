@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.13 2001/12/15 16:35:20 ranty Exp $      */
+/*      $Id: lircmd.c,v 5.14 2002/08/17 11:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -134,7 +134,7 @@ struct state_mouse new_ms,ms=
 	{button_up,button_up,button_up}
 };
 
-char *progname="lircmd-"VERSION;
+char *progname="lircmd "VERSION;
 char *configfile=LIRCMDCFGFILE;
 
 int lircd,lircm;

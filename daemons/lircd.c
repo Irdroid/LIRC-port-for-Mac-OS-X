@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.42 2002/07/28 08:53:27 lirc Exp $      */
+/*      $Id: lircd.c,v 5.43 2002/08/17 11:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -87,7 +87,7 @@ static char *repeat_message=NULL;
 
 extern struct hardware hw;
 
-char *progname="lircd-"VERSION;
+char *progname="lircd " VERSION;
 char *configfile=LIRCDCFGFILE;
 char *logfile=LOGFILE;
 FILE *pidfile;

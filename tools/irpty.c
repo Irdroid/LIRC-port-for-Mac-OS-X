@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.6 2001/11/14 18:05:52 ranty Exp $      */
+/*      $Id: irpty.c,v 5.7 2002/08/17 11:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 			!= EOF) {
 		switch (c) {
 		case 'h':
-			printf("Usage: %s [options] [config_file] -- "
+			printf("Usage: %s [options] config_file -- "
 					"program [args ...]\n",argv[0]);
 			printf("\t -h --help \t\tdisplay usage summary\n");
 			printf("\t -V --version \t\tdisplay version\n");

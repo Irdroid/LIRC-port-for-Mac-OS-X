@@ -1,4 +1,4 @@
-/*      $Id: irw.c,v 5.3 2001/11/20 15:12:33 ranty Exp $      */
+/*      $Id: irw.c,v 5.4 2002/08/17 11:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** irw.c *******************************************************************
@@ -30,7 +30,7 @@
 static struct option long_options[] =
 {
 	{"help", no_argument, NULL, 'h'},
-	{"version", no_argument, NULL, 'V'},
+	{"version", no_argument, NULL, 'v'},
 	{0, 0, 0, 0}
 };
 
@@ -42,20 +42,20 @@ int main(int argc,char *argv[])
 	int c;
 	char *progname;
 
-	progname=argv[0];
+	progname="irw " VERSION;
 
 	addr.sun_family=AF_UNIX;
 
-	while ((c = getopt_long(argc, argv, "hV", long_options, NULL))
+	while ((c = getopt_long(argc, argv, "hv", long_options, NULL))
 	       != EOF) {
 		switch (c){
 		case 'h':
 			printf("Usage: %s [socket]\n",argv[0]);
 			printf("\t -h --help \t\tdisplay usage summary\n");
-			printf("\t -V --version \t\tdisplay version\n");
+			printf("\t -v --version \t\tdisplay version\n");
 			return(EXIT_SUCCESS);
-		case 'V':
-			printf("%s %s\n", progname, VERSION);
+		case 'v':
+			printf("%s\n", progname);
 			return(EXIT_SUCCESS);
 		case '?':
 			fprintf(stderr, "unrecognized option: -%c\n", optopt);

@@ -1,3 +1,5 @@
+* fix tool command line options for config file
+
 * on_enter, on_leave in .lircrc modes
 
 * proper devfs

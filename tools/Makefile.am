@@ -1,9 +1,9 @@
-## $Id: Makefile.am,v 5.7 2002/04/22 19:07:48 lirc Exp $
+## $Id: Makefile.am,v 5.8 2002/08/17 11:17:41 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
-bin_PROGRAMS = irw irpty irexec mode2 @vga_progs@ @x_progs@
+bin_PROGRAMS = irw irpty irexec ircat mode2 @vga_progs@ @x_progs@
 
 AM_CPPFLAGS = @X_CFLAGS@
 
@@ -15,6 +15,9 @@ irpty_LDADD = liblirc_client.la @forkpty@
 irexec_SOURCES = irexec.c
 irexec_DEPENDENCIES = liblirc_client.la
 irexec_LDADD = liblirc_client.la @daemon@
+ircat_SOURCES = ircat.c
+ircat_DEPENDENCIES = liblirc_client.la
+ircat_LDADD = liblirc_client.la
 mode2_SOURCES = mode2.c
 
 ## vga programs

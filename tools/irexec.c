@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.3 2000/07/08 08:17:48 columbus Exp $      */
+/*      $Id: irexec.c,v 5.4 2002/08/17 11:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	struct lirc_config *config;
 	int daemonize=0;
 
-	progname="irexec-" VERSION;
+	progname="irexec " VERSION;
 	while(1)
 	{
 		int c;
