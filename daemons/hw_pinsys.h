@@ -8,7 +8,7 @@
  * Original routines from hw_pixelview.h :
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *
- * Adapted by Bart Alewijnse <scarfman@geocities.com>
+ * Adapted by Bart Alewijnse <scarfboy@yahoo.com>
  */
 
 #ifndef _HW_PINSYS_H

@@ -8,7 +8,7 @@
  * Original routines from hw_pixelview.c :
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *
- * Adapted by Bart Alewijnse (scarfman@geocities.com)
+ * Adapted by Bart Alewijnse (scarfboy@yahoo.com)
  */
 
 #ifdef HAVE_CONFIG_H
@@ -286,7 +286,7 @@ char *pinsys_rec(struct ir_remote *remotes)
 	{
 		if (i>0)
 		{
-			if(!waitfordata(10000))
+			if(!waitfordata(20000))
 			{
 				logprintf(LOG_WARNING,
 					  "timeout reading byte %d",i);
