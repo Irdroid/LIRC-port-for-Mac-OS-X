@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: hw_ea65.c,v 5.1 2004/11/20 13:43:48 lirc Exp $
+ * $Id: hw_ea65.c,v 5.2 2004/11/20 13:47:11 lirc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -67,8 +67,8 @@ struct hardware hw_ea65 =
 	"ea65"
 };
 
-int ea65_decode(struct ir_remote *remote, ir_code *ppre, ir_code *pcode, ir_code *ppost,
-		  int *repeat, lirc_t *gap)
+int ea65_decode(struct ir_remote *remote, ir_code *ppre, ir_code *pcode,
+		ir_code *ppost, int *repeat, lirc_t *gap)
 {
 	lirc_t d = 0;
 
@@ -76,23 +76,24 @@ int ea65_decode(struct ir_remote *remote, ir_code *ppre, ir_code *pcode, ir_code
 			0, 0, CODE_LENGTH, code, 0, 0))
 		return 0;
 
-	//*pcode = code;
-	//*ppre  = 0;
-	//*ppost = 0;
-
 	if (start.tv_sec - last.tv_sec >= 2) {
 		*repeat = 0;
 	} else {
-		d = (start.tv_sec - last.tv_sec) * 1000000 + start.tv_usec - last.tv_usec;
+		d = (start.tv_sec - last.tv_sec) * 1000000 +
+			start.tv_usec - last.tv_usec;
 		if (d < 960000)
+		{
 			*repeat = 1;
+		}
 		else
+		{
 			*repeat = 0;
+		}
 	}
 	
 	*gap = 0;
 
-	LOGPRINTF(1, "EA65:decode code: %llx", (unsigned long long) *pcode);
+	LOGPRINTF(1, "EA65: decode code: %llx", (unsigned long long) *pcode);
 
 	return 1;
 }
@@ -151,7 +152,8 @@ char *ea65_receive(struct ir_remote *remote)
 
 	r = read(hw.fd, data, sizeof(data));
 	if (r < 4) {
-		logprintf(LOG_ERR, "EA65: read failed. %s(%d)", strerror(r), r);
+		logprintf(LOG_ERR, "EA65: read failed. %s(%d)",
+			  strerror(r), r);
 		return NULL;
 	}
 
@@ -172,7 +174,8 @@ char *ea65_receive(struct ir_remote *remote)
 		code = (0xff << 16) | (data[2] << 8) | data[3];
 		break;
 	}
-	logprintf(LOG_INFO, "EA65: receive code: %llx", (unsigned long long) code);
+	logprintf(LOG_INFO, "EA65: receive code: %llx",
+		  (unsigned long long) code);
 
 	gettimeofday(&end, NULL);
 

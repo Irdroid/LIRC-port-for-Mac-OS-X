@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.42 2004/11/20 13:43:48 lirc Exp $
+## $Id: Makefile.am,v 5.43 2004/11/20 13:47:11 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -25,6 +25,7 @@ EXTRA_lircd_SOURCES = \
 			hw_default.c hw_default.h \
 			hw_devinput.c \
 		        hw_dsp.c \
+			hw_ea65.c hw_ea65.h \
 			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
@@ -39,7 +40,6 @@ EXTRA_lircd_SOURCES = \
 			hw_udp.c \
 			hw_uirt2.c hw_uirt2_raw.c \
 			hw_uirt2_common.c hw_uirt2_common.h \
-			hw_ea65.h hw_ea65.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -65,6 +65,7 @@ EXTRA_irrecord_SOURCES = \
 			hw_default.c hw_default.h \
 			hw_devinput.c \
 			hw_dsp.c \
+			hw_ea65.c hw_ea65.h \
 			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
 			hw_livedrive_midi.c hw_livedrive_seq.c \
@@ -79,7 +80,6 @@ EXTRA_irrecord_SOURCES = \
 			hw_udp.c \
 			hw_uirt2.c hw_uirt2_raw.c \
 			hw_uirt2_common.c hw_uirt2_common.h \
-			hw_ea65.h hw_ea65.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
