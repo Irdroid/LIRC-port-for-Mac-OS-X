@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.6 2004/04/09 15:33:40 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.7 2004/04/27 18:52:33 lirc Exp $      */
 
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
@@ -37,6 +37,12 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
 #define KERNEL_2_5
+
+#undef MOD_INC_USE_COUNT
+#define MOD_INC_USE_COUNT try_module_get(THIS_MODULE)
+#undef MOD_DEC_USE_COUNT
+#define MOD_DEC_USE_COUNT module_put(THIS_MODULE)
+
 #endif
 
 #ifndef IRQ_RETVAL

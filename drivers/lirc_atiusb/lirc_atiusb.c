@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.23 2004/04/10 07:48:44 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.24 2004/04/27 18:52:33 lirc Exp $
  */
 
 /*
@@ -217,7 +217,9 @@ static int set_use_inc(void *data)
 		return -EIO;
 	}
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
-
+	
+	MOD_INC_USE_COUNT;
+	
 	if (!ir->connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
@@ -229,6 +231,7 @@ static int set_use_inc(void *data)
 #endif
 			printk(DRIVER_NAME "[%d]: open result = -EIO error "
 				"submitting urb\n", ir->devnum);
+			MOD_DEC_USE_COUNT;
 			return -EIO;
 		}
 		ir->connected = 1;
@@ -253,6 +256,7 @@ static void set_use_dec(void *data)
 		ir->connected = 0;
 		IRUNLOCK;
 	}
+	MOD_DEC_USE_COUNT;
 }
 
 

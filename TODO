@@ -1,3 +1,5 @@
+* add owner field to lirc_plugin and handle module locking in lirc_dev
+
 * lirc_unregister_plugin() must be possible even when the device is open
 
 * accept comments not only at beginning of line

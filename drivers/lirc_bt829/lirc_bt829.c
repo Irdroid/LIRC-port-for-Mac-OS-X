@@ -117,12 +117,14 @@ int atir_add_to_buf (void* data, struct lirc_buffer* buf)
 
 int atir_set_use_inc(void* data)
 {
+	MOD_INC_USE_COUNT;
 	printk(KERN_DEBUG "ATIR driver is opened\n");
 	return 0;
 }
 
 void atir_set_use_dec(void* data)
 {
+	MOD_DEC_USE_COUNT;
 	printk(KERN_DEBUG "ATIR driver is closed\n");
 }
 
