@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.10 1999/11/07 20:20:34 columbus Exp $      */
+/*      $Id: lircd.c,v 5.11 2000/01/23 18:37:06 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -687,7 +687,8 @@ int send_name(int fd,char *message,struct ir_ncode *code)
 
 	if(!(write_socket_len(fd,protocol_string[P_BEGIN]) &&
 	     write_socket_len(fd,message) &&
-	     write_socket_len(fd,protocol_string[P_SUCCESS]))) return(0);
+	     write_socket_len(fd,protocol_string[P_SUCCESS]) && 
+	     write_socket_len(fd,protocol_string[P_DATA]))) return(0);
 #ifdef __GLIBC__
 	/* It seems you can't print 64-bit longs on glibc */
 	
