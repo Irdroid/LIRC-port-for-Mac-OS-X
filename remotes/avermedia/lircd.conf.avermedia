@@ -6,8 +6,8 @@
 #
 # brand:             AVerMedia
 # model:             ?
-# supported devices: some TVCapture98 (?) and some TVPhone98 (ID
-#                    0x00011461) cards
+# supported devices: some TVCapture98 (ID 0x00021461) and
+#                    some TVPhone98 (ID 0x00011461) cards
 
 begin remote
 
