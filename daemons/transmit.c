@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.13 2004/02/08 20:42:35 lirc Exp $      */
+/*      $Id: transmit.c,v 5.14 2004/11/20 11:43:35 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -50,7 +50,7 @@ inline void add_send_buffer(lirc_t data)
 	if(send_buffer.wptr<WBUF_SIZE)
 	{
 		send_buffer.sum+=data;
-		send_buffer.data[send_buffer.wptr]=data;
+		send_buffer._data[send_buffer.wptr]=data;
 		send_buffer.wptr++;
 	}
 	else
@@ -314,6 +314,17 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			{
 				send_code(remote,code->code);
 			}
+			send_buffer.data=send_buffer._data;
+		}
+		else
+		{
+			if(code->signals==NULL)
+			{
+				logprintf(LOG_ERR, "no signals for raw send");
+				return 0;
+			}
+			send_buffer.data=code->signals;
+			send_buffer.wptr=code->length;
 		}
 	}
 	sync_send_buffer();

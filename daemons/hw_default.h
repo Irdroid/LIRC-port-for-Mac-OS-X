@@ -1,4 +1,4 @@
-/*      $Id: hw_default.h,v 5.7 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: hw_default.h,v 5.8 2004/11/20 11:43:35 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.h ************************************************************
@@ -21,7 +21,6 @@ inline lirc_t time_left(struct timeval *current,struct timeval *last,
 int default_init(void);
 int default_config(struct ir_remote *remotes);
 int default_deinit(void);
-int write_send_buffer(int lirc,int length,lirc_t *signals);
 int default_send(struct ir_remote *remote,struct ir_ncode *code);
 char *default_rec(struct ir_remote *remotes);
 int default_decode(struct ir_remote *remote,

@@ -1,4 +1,4 @@
-/*      $Id: transmit.h,v 5.4 2001/08/25 16:17:44 lirc Exp $      */
+/*      $Id: transmit.h,v 5.5 2004/11/20 11:43:35 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.h **************************************************************
@@ -19,7 +19,8 @@
 
 struct sbuf
 {
-	lirc_t data[WBUF_SIZE];
+	lirc_t *data;
+	lirc_t _data[WBUF_SIZE];
 	int wptr;
 	int too_long;
 	int is_biphase;

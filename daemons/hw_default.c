@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.27 2003/11/12 11:52:14 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.28 2004/11/20 11:43:35 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -89,6 +89,7 @@ unsigned int min_freq=0,max_freq=0;
  **********************************************************************/
 
 static int default_config_frequency();
+static int write_send_buffer(int lirc);
 
 /**********************************************************************
  *
@@ -384,22 +385,11 @@ int default_deinit(void)
 	return(1);
 }
 
-int write_send_buffer(int lirc,int length,lirc_t *signals)
+static int write_send_buffer(int lirc)
 {
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
 	int i;
 
-	if(send_buffer.wptr==0 && length>0 && signals!=NULL)
-	{
-		for(i=0;;)
-		{
-			printf("pulse %lu\n",(unsigned long) signals[i++]);
-			if(i>=length) break;
-			printf("space %lu\n",(unsigned long) signals[i++]);
-		}
-		return(length*sizeof(lirc_t));
-	}
-	
 	if(send_buffer.wptr==0) 
 	{
 		LOGPRINTF(1,"nothing to send");
@@ -413,11 +403,6 @@ int write_send_buffer(int lirc,int length,lirc_t *signals)
 	}
 	return(send_buffer.wptr*sizeof(lirc_t));
 #else
-	if(send_buffer.wptr==0 && length>0 && signals!=NULL)
-	{
-		return(write(lirc,signals,length*sizeof(lirc_t)));
-	}
-	
 	if(send_buffer.wptr==0) 
 	{
 		LOGPRINTF(1,"nothing to send");
@@ -486,7 +471,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 	}
 #endif
 
-	if(write_send_buffer(hw.fd,code->length,code->signals)==-1)
+	if(write_send_buffer(hw.fd)==-1)
 	{
 		logprintf(LOG_ERR,"write failed");
 		logperror(LOG_ERR,NULL);

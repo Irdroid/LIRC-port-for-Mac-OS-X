@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.3 2004/11/20 11:43:35 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -278,18 +278,16 @@ static char *uirt2_raw_rec(struct ir_remote *remotes)
 
 static int uirt2_send(struct ir_remote *remote,struct ir_ncode *code)
 {
-	int length = code->length;
-	lirc_t *signals = code->signals;
+	int length;
+	lirc_t *signals;
 	int res = 0;
 
 	if(!init_send(remote,code)) {
 		return 0;
 	}
 
-	if(send_buffer.wptr!=0) {
-		length = send_buffer.wptr;
-		signals = send_buffer.data;
-	}
+	length = send_buffer.wptr;
+	signals = send_buffer.data;
 
 	if (length <= 0 || signals == NULL) {
 		LOGPRINTF(1,"nothing to send");
