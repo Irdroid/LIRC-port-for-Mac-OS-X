@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 LIRC_VERSION="0.6.3"
 
@@ -52,7 +52,7 @@ GET_PORT_TEXT="Enter the IO port followed with a space and the IRQ (none for no 
 
 #############################################################################
 ## Functions
-function GetSelectedDriver
+GetSelectedDriver ()
     {
     COM1="off"; COM2="off"; COM3="off"; COM4="off"
     LPT1="off"; LPT2="off"; LPT3="off"; USER="off"
@@ -80,7 +80,7 @@ function GetSelectedDriver
 
 
 
-function GetPortAndIrq
+GetPortAndIrq ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Enter IO Port and IRQ" \
@@ -96,7 +96,7 @@ function GetPortAndIrq
     }
 
 
-function SetPortAndIrq
+SetPortAndIrq ()
     {
     if test "$LIRC_DRIVER" = "serial" -o \
 	    "$LIRC_DRIVER" = "sir" -o \
@@ -179,7 +179,7 @@ function SetPortAndIrq
 
 
 
-function DriverOptions
+DriverOptions ()
     {
     if   test "$LIRC_DRIVER" = "serial"; then
         {
@@ -221,7 +221,7 @@ function DriverOptions
     fi
     }
 
-function ConfigDriver
+ConfigDriver ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
@@ -351,7 +351,7 @@ function ConfigDriver
 
 
 
-function ConfigSoftware
+ConfigSoftware ()
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Software Configuration" \
@@ -383,7 +383,7 @@ function ConfigSoftware
 
 
 
-function SaveConfig
+SaveConfig ()
     {
     echo "LIRC_DRIVER=$LIRC_DRIVER" >$CONFIG
     echo "LIRC_PORT=$LIRC_PORT" >>$CONFIG
@@ -450,7 +450,7 @@ fi
 if test -f $CONFIG; then
     {
     echo "Loading saved configuration from $CONFIG"
-    source $CONFIG
+    . $CONFIG
     sleep 1
     }
 fi
