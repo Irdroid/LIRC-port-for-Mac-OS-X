@@ -1,9 +1,9 @@
-## $Id: Makefile.am,v 1.8 1999/12/29 08:49:51 jochym Exp $
+## $Id: Makefile.am,v 1.9 2000/01/18 19:17:46 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in
 EXTRA_DIST = patches/lirc_fly98-kernel-2.2.10.diff \
              patches/lirc_fly98-kernel-2.2.11.diff \
-             patches/lirc_fly98-bttv-0.6.4.diff
+             patches/lirc_fly98-bttv-0.6.3.diff
 ## this is so that Automake includes the C compiling definitions, and
 ## includes the source files in the distribution.
 EXTRA_PROGRAMS = automake_dummy
