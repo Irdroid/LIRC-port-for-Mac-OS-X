@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.3 1999/08/06 18:12:48 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.4 2000/02/02 20:23:19 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -44,7 +44,7 @@
 #undef MAINTAINER_MODE
 
 /* Define to use long long IR codes */
-#define LONG_IR_CODE
+#undef LONG_IR_CODE
 
 /* Define to enable debugging output */
 #undef DEBUG
