@@ -1,4 +1,4 @@
-/*      $Id: lirmand.c,v 5.1 1999/05/04 23:34:03 wheeley Exp $      */
+/*      $Id: lirmand.c,v 5.2 1999/05/06 22:08:12 wheeley Exp $      */
 
 /* lirmand.c v0.5.5 (c) 1998-1999 Tom Wheeley <tomw@tsys.demon.co.uk> */
 /* This program is free software.  See file COPYING for details       */
@@ -174,16 +174,21 @@ void write_encoded_uchar(unsigned char value, int numbits)
 
 RETSIGTYPE sigterm(int sig)
 {
-  /* restore original handler (required on some systems) 
-   * thanks to Yoann <yoann@coldserver.com>
-   */
   signal(sig, SIG_DFL);
   
   ir_finish();
   close(lirc);
   close_log();
   
-  /* raise original handler to boot us out */
+  /* Vandoorselaere Yoann : yoann@coldserver.com
+   * The problem here is that we call raise(sig)
+   * without calling signal(signo, SIG_DFL) first.
+   * According to the manpage: On linux system, signal uses 
+   * BSD semantics and the default behaviour is not reset 
+   * when the signal is reset.
+   * This made lirmand entered in an endless loop when a signal was caught.
+   */ 
+  signal(sig, SIG_DFL);
   raise(sig);
 }
 
