@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.3 2000/03/25 12:09:41 columbus Exp $      */
+/*      $Id: irpty.c,v 5.4 2001/06/11 08:32:01 ranty Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -280,6 +280,17 @@ static void set_noecho(int fd)
 		die("tcsetattr error");
 }
 
+static struct option long_options[] =
+{
+	{"help",no_argument,NULL,'h'},
+	{"version",no_argument,NULL,'V'},
+	{"socket",required_argument,NULL,'s'},
+	{"no-echo",no_argument,NULL,'e'},
+	{"ignore-eof",no_argument,NULL,'i'},
+	{"non-interactive",no_argument,NULL,'n'},
+	{"verbose",no_argument,NULL,'v'},
+	{0, 0, 0, 0}
+};
 
 int main(int argc, char *argv[])
 {
@@ -299,8 +310,24 @@ int main(int argc, char *argv[])
 	verbose = 0;
 	config = NULL;
 
-	while ((c = getopt(argc, argv, "s:einv")) != EOF) {
+	while ((c = getopt_long(argc, argv, "hVs:einv",long_options,NULL))
+			!= EOF) {
 		switch (c) {
+		case 'h':
+			printf("Usage: %s [options] [config_file] -- "
+					"program [args ...]\n",argv[0]);
+			printf("\t -h --help \t\tdisplay usage summary\n");
+			printf("\t -V --version \t\tdisplay version\n");
+			printf("\t -s --socket=socket \tselect a non-default "
+					"socket location\n");
+			printf("\t -e --no-echo \t\tdisable echo\n");
+			printf("\t -i --ignore-eof \tignore EOF\n");
+			printf("\t -n --non-interactive \tforce non-interactive mode\n");
+			printf("\t -v --verbose \t\tverbose mode\n");
+			return(EXIT_SUCCESS);
+		case 'V':
+			printf("%s %s\n", progname, VERSION);
+			return(EXIT_SUCCESS);
 		case 's':
 			sname = optarg;
 			break;
