@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.18 2004/01/27 23:31:42 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.19 2004/01/29 00:18:06 pmiller9 Exp $
  */
 
 /*
@@ -215,6 +215,16 @@ static int unregister_from_lirc(struct irctl *ir)
 	return SUCCESS;
 }
 
+static int set_use_inc(void *data)
+{
+	return SUCCESS;
+}
+
+static void set_use_dec(void *data)
+{
+
+}
+
 
 #if KERNEL26
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
@@ -222,11 +232,14 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 static void usb_remote_recv(struct urb *urb)
 #endif
 {
-	struct irctl *ir = urb->context;
+	struct irctl *ir;
 	char buf[CODE_LENGTH];
 	int i, len;
 
-	if (!ir) {
+	if (!urb)
+		return;
+
+	if (!(ir = urb->context)) {
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -254,9 +267,12 @@ static void usb_remote_send(struct urb *urb, struct pt_regs *regs)
 static void usb_remote_send(struct urb *urb)
 #endif
 {
-	struct irctl *ir = urb->context;
+	struct irctl *ir;
 
-	if (!ir) {
+	if (!urb)
+		return;
+
+	if (!(ir = urb->context)) {
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -373,6 +389,8 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			plugin->features = LIRC_CAN_REC_LIRCCODE;
 			plugin->data = ir;
 			plugin->rbuf = rbuf;
+			plugin->set_use_inc = &set_use_inc;
+			plugin->set_use_dec = &set_use_dec;
 
 			init_MUTEX(&ir->lock);
 			init_waitqueue_head(&ir->wait_out);
