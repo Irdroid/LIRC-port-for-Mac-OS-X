@@ -1,3 +1,21 @@
+/*
+  $Id: lirc_fly98.c,v 1.2 1999/07/23 12:41:04 jochym Exp $
+  
+  This is bttv (not kernel version !) driver 
+  module for remote control in FlyVideo98 card.
+  This code is under GPL v.2
+  (L) 1999 Pawel T. Jochym <jochym@ifj.edu.pl>
+
+  http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
+
+    History:
+    
+    0.0.1 First test version released to the public.
+          No blocking mode device. No support for
+	  real IRQ driven readout.
+
+*/  
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
