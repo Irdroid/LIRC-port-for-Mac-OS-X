@@ -54,17 +54,17 @@ begin remote
           9                        0x000000000000906F
           LOOP                     0x000000000000C837
           0                        0x00000000000050AF
-          LEFT                     0x00000000000000FF
-          RIGHT                    0x000000000000E817
+          LEFTARROW                0x00000000000000FF
+          RIGHTARROW               0x000000000000E817
           MUTE                     0x00000000000008F7
           COLOR                    0x000000000000B04F
           PREVIEW                  0x000000000000708F
-          CHUP                     0x000000000000D827
-          VOLUP                    0x00000000000058A7
+          CHANNELUP                0x000000000000D827
+          VOL_UP                   0x00000000000058A7
           AUTOSCAN                 0x000000000000B847
           ENTER                    0x0000000000009867
-          CHDOWN                   0x000000000000F807
-          VOLDOWN                  0x0000000000007887
+          CHANNELDOWN              0x000000000000F807
+          VOL_DOWN                 0x0000000000007887
       end codes
 
 end remote
