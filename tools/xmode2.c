@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.13 2003/03/30 12:26:44 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.14 2004/10/23 18:41:43 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -99,7 +99,11 @@ void initscreen(void)
   cm1=DefaultColormap(d1,0);
   if (!XAllocNamedColor(d1,cm1,"blue",&xc1,&xc2)) printf("coudn't allocate blue color\n");
   f1_str=XLoadQueryFont(d1,font1_name);
-  if (f1_str==NULL) printf("could't load font\n");
+  if (f1_str==NULL)
+  {
+	  printf("could't load font\n");
+	  exit(EXIT_FAILURE);
+  }
 
   gcval1.foreground = xc1.pixel;
   gcval1.font = f1_str -> fid;
