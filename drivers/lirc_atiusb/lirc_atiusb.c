@@ -11,7 +11,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.31 2004/08/07 09:52:45 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.32 2004/08/09 13:07:07 pmiller9 Exp $
  */
 
 /*
@@ -294,7 +294,7 @@ static void usb_remote_recv(struct urb *urb)
 {
 	struct irctl *ir;
 	int i, len;
-	int chan;
+	unsigned char chan;
 
 	if (!urb)
 		return;
@@ -328,8 +328,10 @@ static void usb_remote_recv(struct urb *urb)
 			ir->devnum, chan+1);
 
 		/* strip channel code */
-		if (!unique)
+		if (!unique) {
 			ir->buf_in[len-1] &= 0x0F;
+			ir->buf_in[len-3] -= (chan<<4);
+		}
 
 		/* check for repeats */
 		if (memcmp(ir->old, ir->buf_in, len) == 0) {
