@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.63 2004/12/31 21:21:39 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.64 2005/02/19 14:38:36 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -269,8 +269,6 @@ static struct lirc_serial hardware[]=
 
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 static int txsense = 0;   /* 0 = active high, 1 = active low */
-
-static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
@@ -844,13 +842,6 @@ static int set_use_inc(void* data)
 	int result;
 	unsigned long flags;
 	
-	spin_lock(&lirc_lock);
-	if(MOD_IN_USE)
-	{
-		spin_unlock(&lirc_lock);
-		return -EBUSY;
-	}
-	
 	/* Init read buffer. */
 	if (lirc_buffer_init(&rbuf, sizeof(lirc_t), RBUF_LEN) < 0)
 		return -ENOMEM;
@@ -866,13 +857,11 @@ static int set_use_inc(void* data)
 	{
 	case -EBUSY:
 		printk(KERN_ERR LIRC_DRIVER_NAME ": IRQ %d busy\n", irq);
-		spin_unlock(&lirc_lock);
                 lirc_buffer_free(&rbuf);
 		return -EBUSY;
 	case -EINVAL:
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": Bad irq number or handler\n");
-		spin_unlock(&lirc_lock);
                 lirc_buffer_free(&rbuf);
 		return -EINVAL;
 	default:
@@ -890,7 +879,6 @@ static int set_use_inc(void* data)
 	local_irq_restore(flags);
 	
 	MOD_INC_USE_COUNT;
-	spin_unlock(&lirc_lock);
 	return 0;
 }
 
