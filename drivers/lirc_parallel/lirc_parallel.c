@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.10 2000/06/18 09:28:01 columbus Exp $      */
+/*      $Id: lirc_parallel.c,v 5.11 2001/01/18 21:32:23 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -363,7 +363,7 @@ void irq_handler(int i,void *blah,struct pt_regs * regs)
  ***********************************************************************/
 
 #ifdef KERNEL_2_2
-static long long lirc_lseek(struct file *filep,long long offset,int orig)
+static loff_t lirc_lseek(struct file *filep,loff_t offset,int orig)
 {
 	return(-ESPIPE);
 }
@@ -697,7 +697,11 @@ static void lirc_close(struct inode* node,struct file* filep)
 
 static struct file_operations lirc_fops = 
 {
+#ifdef KERNEL_2_2
 	llseek:  lirc_lseek,
+#else
+	lseek:   lirc_lseek,
+#endif
 	read:    lirc_read,
 	write:   lirc_write,
 #ifdef KERNEL_2_2
