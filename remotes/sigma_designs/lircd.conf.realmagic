@@ -37,6 +37,14 @@ begin remote
           4                        0x0000000000072DCB
           5                        0x000000000000AC2B
           6                        0x0000000000052D4B
+
+# Nicolas Vignal reported that this code is sent for his remote
+# version (1.5). It should be no problem to just have two entries for
+# "6" unless you want to send codes what won't work for this receiver
+# anyway.
+
+          6                        0x0000000000041505
+
           7                        0x0000000000058561
           8                        0x0000000000044511
           9                        0x000000000004AD2B
