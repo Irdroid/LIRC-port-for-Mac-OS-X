@@ -1,4 +1,4 @@
-/*      $Id: hw_mouseremote.c,v 5.2 2005/01/22 10:42:39 lirc Exp $      */
+/*      $Id: hw_mouseremote.c,v 5.3 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** hw_mouseremote.c ********************************************************
@@ -239,7 +239,7 @@ char *mouseremote_rec(struct ir_remote *remotes)
 		    (char)(b[2]) == 0x3f && ((char)(b[2]) & 0x07)) {
 			code=(ir_code) (char)(b[1]) | 
 			               (((char)(b[0]) & 0x03)<<6);
-			LOGPRINTF(1,"result %x",code);
+			LOGPRINTF(1,"result %llx", (unsigned long long) code);
 			m=decode_all(remotes);
 			return(m);
 		}
@@ -256,7 +256,7 @@ char *mouseremote_rec(struct ir_remote *remotes)
 				return(NULL);
 			}
 			code = (ir_code)b[1];
-			LOGPRINTF(1,"result %x",code);
+			LOGPRINTF(1,"result %llx", (unsigned long long) code);
 			m=decode_all(remotes);
 			return(m);
 		}
@@ -297,12 +297,12 @@ char *mouseremote_rec(struct ir_remote *remotes)
 	}
 	if (code != 0) {
 		code |= 0x0100;
-		LOGPRINTF(1,"result %x",code);
+		LOGPRINTF(1,"result %llx", (unsigned long long) code);
 		m=decode_all(remotes);
 		return(m);
 	} else if (dx == 0 && dy == 0) {
 		code = 0x0800 | stat;
-		LOGPRINTF(1,"result %x",code);
+		LOGPRINTF(1,"result %llx", (unsigned long long) code);
 		m=decode_all(remotes);
 		return(m);
 	}

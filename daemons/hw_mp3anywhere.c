@@ -154,7 +154,7 @@ char *mp3anywhere_rec(struct ir_remote *remotes)
 		i++;
 		if(i>=NUMBYTES)
 		{
-			LOGPRINTF(0,"buffer overflow",i);
+			LOGPRINTF(0,"buffer overflow at byte %d",i);
 			break;
 		}
 		if(i>0)

@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.10 2005/01/22 10:40:42 lirc Exp $      */
+/*      $Id: serial.c,v 5.11 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -193,7 +193,7 @@ int tty_create_lock(char *name)
 	
 	if(strlen(filename)+strlen(s)>FILENAME_MAX)
 	{
-		logprintf(LOG_ERR,"%s: invalid filename \"%s%s\"",
+		logprintf(LOG_ERR,"invalid filename \"%s%s\"",
 			  filename,s);
 		return(0);
 	}
@@ -263,7 +263,7 @@ int tty_create_lock(char *name)
 	}
 	if(write(lock,id,len)!=len)
 	{
-		logprintf(LOG_ERR,"%s: could not write pid to lock file");
+		logprintf(LOG_ERR,"could not write pid to lock file");
 		logperror(LOG_ERR,NULL);
 		close(lock);
 		if(unlink(filename)==-1)
@@ -319,7 +319,7 @@ int tty_create_lock(char *name)
 				logperror(LOG_ERR,NULL);
 				if(unlink(filename)==-1)
 				{
-					logprintf(LOG_ERR,"%s: could not delete "
+					logprintf(LOG_ERR,"could not delete "
 						  "file \"%s\"",filename);
 					logperror(LOG_ERR,NULL);
 				        /* FALLTHROUGH */
@@ -359,8 +359,8 @@ int tty_create_lock(char *name)
 		{
 			if(chdir(cwd)==-1)
 			{
-				logprintf(LOG_ERR,"chdir() to \"%s\" "
-					  "failded ",cwd);
+				logprintf(LOG_ERR,"chdir() to \"%s\" failed",
+					  cwd);
 				logperror(LOG_ERR,NULL);
 				if(unlink(filename)==-1)
 				{

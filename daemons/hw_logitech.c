@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.13 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_logitech.c,v 1.14 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -152,7 +152,7 @@ char *logitech_rec(struct ir_remote *remotes)
 		i++;
 		if(i>=NUMBYTES)
 		{
-			LOGPRINTF(0,"buffer overflow",i);
+			LOGPRINTF(0,"buffer overflow at byte %d",i);
 			break;
 		}
 		if(i>0)

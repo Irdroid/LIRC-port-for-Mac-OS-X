@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.3 2004/11/20 11:43:35 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.4 2005/03/07 09:33:48 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -149,7 +149,7 @@ static int uirt2_raw_decode(struct ir_remote *remote,
 	res = receive_decode(remote,prep,codep,postp,
 			     repeat_flagp,remaining_gapp);
 
-	LOGPRINTF(1, "uirt2_raw_decode: %d");
+	LOGPRINTF(1, "uirt2_raw_decode: %d", res);
 
 	return res;
 }
@@ -325,7 +325,7 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 
 	if (length > 48) {
 		logprintf(LOG_ERR, 
-			  "uirt2_raw: to long RAW transmission %d > 48");
+			  "uirt2_raw: too long RAW transmission %d > 48", length);
 		return 0;
 	}
 

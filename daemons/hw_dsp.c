@@ -1,4 +1,4 @@
-/*      $Id: hw_dsp.c,v 5.2 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: hw_dsp.c,v 5.3 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dsp.c ****************************************************************
@@ -85,7 +85,7 @@ lirc_t dsp_readdata(lirc_t timeout)
 			data = lastlength | (laststate ? PULSE_BIT : 0);
 			lastlength = ((1000000 / SAMPLE) * BUFSIZE);
 			laststate = state;
-			LOGPRINTF(1,"Pulse came %8lx,  %8d...",
+			LOGPRINTF(1,"Pulse came %8x,  %8d...",
 				  data, data & ~PULSE_BIT);
 			return data;
 		}

@@ -43,7 +43,7 @@ int udp_init()
 	int port;
 	struct sockaddr_in addr;
 
-	logprintf(LOG_INFO,"Initializing UDP",hw.device);
+	logprintf(LOG_INFO,"Initializing UDP: %s",hw.device);
 	
 	init_rec_buffer();
 	

@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.15 2004/11/21 11:34:41 lirc Exp $      */
+/*      $Id: transmit.c,v 5.16 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -56,7 +56,7 @@ inline void add_send_buffer(lirc_t data)
 {
 	if(send_buffer.wptr<WBUF_SIZE)
 	{
-		LOGPRINTF(3, "adding to transmit buffer: %lu", data);
+		LOGPRINTF(3, "adding to transmit buffer: %u", data);
 		send_buffer.sum+=data;
 		send_buffer._data[send_buffer.wptr]=data;
 		send_buffer.wptr++;

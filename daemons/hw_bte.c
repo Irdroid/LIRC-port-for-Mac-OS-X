@@ -212,11 +212,12 @@ char *bte_automaton()
 		key = msg[7];
 		key_up = msg[9]=='0';
 		code= key_up<<8 | key;
-		LOGPRINTF(1, "bte_automaton: code 0x%x", code);
+		LOGPRINTF(1, "bte_automaton: code 0x%llx",
+			  (unsigned long long) code);
 		if ( key=='G' && !key_up ) // MEMO key kills widget
 		{
 			// recreate widget
-			LOGPRINTF(1, "bte_automaton: MEMO key", code);
+			LOGPRINTF(1, "bte_automaton: MEMO key");
 			bte_sendcmd("*EAID=13,1,\"BTE Remote\"", 0);
 		}
 	}

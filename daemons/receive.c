@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.25 2005/02/27 15:05:39 lirc Exp $      */
+/*      $Id: receive.c,v 5.26 2005/03/07 09:33:48 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -60,7 +60,7 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 			data=hw.readdata(2*maxusec<50000 ? 50000:2*maxusec);
 			if(!data)
 			{
-				LOGPRINTF(3,"timeout: %lu", maxusec);
+				LOGPRINTF(3,"timeout: %u", maxusec);
 				return 0;
 			}
 
@@ -519,7 +519,7 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 {
 	lirc_t data;
 	
-	LOGPRINTF(2,"sum: %ld",rec_buffer.sum);
+	LOGPRINTF(2,"sum: %d",rec_buffer.sum);
 	data=get_next_rec_buffer(gap*(100-remote->eps)/100);
 	if(data==0) return(1);
 	if(!is_space(data))
@@ -611,7 +611,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			}
 			else
 			{
-				LOGPRINTF(2,"no match for %ld+%ld=%ld",
+				LOGPRINTF(2,"no match for %d+%d=%d",
 					 deltap,deltas,sum);
 				return((ir_code) -1);
 			}
@@ -665,7 +665,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			}
 			else
 			{
-				LOGPRINTF(2,"no match for %ld+%ld=%ld",
+				LOGPRINTF(2,"no match for %d+%d=%d",
 					 deltas,deltap,sum);
 				return((ir_code) -1);
 			}
