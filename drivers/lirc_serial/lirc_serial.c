@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.51 2004/03/28 15:20:56 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.52 2004/04/24 19:59:07 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1036,7 +1036,7 @@ MODULE_LICENSE("GPL");
 
 MODULE_PARM(type, "i");
 MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
-		 " 2 = IRdeo Remote, 3 = AnimaX");
+		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug");
 
 MODULE_PARM(io, "i");
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
