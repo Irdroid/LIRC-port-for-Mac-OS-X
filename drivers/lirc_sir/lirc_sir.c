@@ -1068,6 +1068,7 @@ static int init_port(void)
 
 static void drop_port(void)
 {
+	del_timer_sync(&timerlist);
 	disable_irq(irq);
 	free_irq(irq, NULL);
 #ifndef LIRC_ON_IPAQ
