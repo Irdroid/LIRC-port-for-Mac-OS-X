@@ -196,7 +196,7 @@ DriverOptions ()
                --checklist "" 10 74 3 \
                  1 "With transmitter diode" $TRANSMITTER \
                  2 "Software generated carrier" $SOFT_CARRIER \
-                 3 "Igor Ceska's variation" $IGOR \
+                 3 "Igor Cesko's variation" $IGOR \
                2> $TEMP
         if test "$?" = "0"; then
             {

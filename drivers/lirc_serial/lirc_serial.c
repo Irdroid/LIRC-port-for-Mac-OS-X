@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.48 2003/12/27 16:49:58 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.49 2004/01/12 10:21:12 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -220,7 +220,7 @@ struct lirc_serial hardware[]=
 		LIRC_CAN_REC_MODE2
 	},
 	
-	/* home-brew receiver/transmitter (Igor Ceska's variation) */
+	/* home-brew receiver/transmitter (Igor Cesko's variation) */
 	{
 		LIRC_HOMEBREW,
 		UART_MSR_DSR,

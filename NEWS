@@ -16,7 +16,7 @@
   * added support for I-O Data GV-BCTV5/PCI TV card (Jens C. Rasmussen)
   * added support for Creative iNFRA CDROM (Leonid Froenchenko)
   * added support for Creative BreakOut-Box (Stefan Jahn)
-  * added support for Igor Ceska's receiver variation
+  * added support for Igor Cesko's receiver variation
   * added support for Ericsson mobile phone via Bluetooth (Vadim Shliakhov)
   * added support for X10 MP3 Anywhere RF receiver (Shawn Nycz)
   * added support for Creative LiveDrive (Stephen Beahm)
