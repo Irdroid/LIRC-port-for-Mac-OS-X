@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.58 2004/12/01 18:27:36 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.59 2004/12/25 16:26:03 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -645,6 +645,11 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 	int status,counter,dcd;
 	long deltv;
 	lirc_t data;
+	
+	if(!(sinp(UART_IIR) & UART_IIR_NO_INT))
+	{
+		return IRQ_RETVAL(IRQ_NONE);
+	}
 	
 	counter=0;
 	do{
