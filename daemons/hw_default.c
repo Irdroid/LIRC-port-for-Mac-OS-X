@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.2 1999/08/03 18:16:52 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.3 1999/08/03 19:45:11 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -526,6 +526,9 @@ int clear_rec_buffer()
 	}
 	else
 	{
+		unsigned long data;
+		int ret;
+		
 		move=rec_buffer.wptr-rec_buffer.rptr;
 		if(move>0 && rec_buffer.rptr>0)
 		{
@@ -538,11 +541,21 @@ int clear_rec_buffer()
 		{
 			rec_buffer.wptr=0;
 		}
-#if 0
-		/* FIXME */
-		rec_buffer.data[rec_buffer.wptr]=get_next_rec_buffer(hw,0);
+		do
+		{
+			ret=read(hw.fd,&data,sizeof(unsigned long));
+#                       ifdef DEBUG
+			if(ret!=sizeof(unsigned long))
+			{
+				logprintf(1,"error reading from lirc\n");
+				logperror(1,NULL);
+			}
+#                       endif
+		}
+		while(ret!=sizeof(unsigned long));
+
+		rec_buffer.data[rec_buffer.wptr]=data;
 		rec_buffer.wptr++;
-#endif
 	}
 	rec_buffer.rptr=0;
 
