@@ -273,7 +273,7 @@ ConfigDriver ()
 			0 "Pinnacle Systems PCTV (pro) receiver" \
 			a "PixelView RemoteMaster RC2000/RC3000" \
 			b "REALmagic (bundled with Hollywood Plus DVD card)" \
-			c "Slink-e" \
+			c "Slink-e (receive only)" \
                         d "Silitek SM-1000" \
 			e "Tekram Irmate 210 (16x50 UART compatible serial port)" 2> $TEMP;
 	    if test "$?" = "0"; then
