@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.6 2000/10/02 10:54:53 columbus Exp $      */
+/*      $Id: serial.c,v 5.7 2001/07/12 14:17:11 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -178,6 +178,8 @@ int tty_create_lock(char *name)
 			{
 				if(read(lock,id,1)==0)
 				{
+					s=strchr(id,'\n');
+					if(s!=NULL) *s=0;
 					logprintf(LOG_ERR,
 						  "%s is locked by PID %s",
 						  name,id);
