@@ -147,7 +147,9 @@ function SetPortAndIrq
             }
         fi
         }
-    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "slinke"; then
+    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
+	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
+	"$LIRC_DRIVER" = "slinke"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to usefy Port And IRQ of your Hardware" \
@@ -180,7 +182,7 @@ function DriverOptions
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Driver specific Options" \
-               --checklist "" 13 74 5 \
+               --checklist "" 14 74 5 \
                  1 "With transmitter diode" $TRANSMITTER \
                  2 "Software generated carrier" $SOFT_CARRIER \
                2> $TEMP
@@ -216,34 +218,54 @@ function DriverOptions
     fi
     }
 
-
-
 function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
+           --menu "$CONFIG_DRIVER_TEXT" 14 74 5 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
-             3 "Irman / UIR" \
+	     3 "Other serial port devices" \
 	     4 "TV card" \
-	     5 "Packard Bell receiver" \
-	     6 "Anir Multimedia Magic" \
-             7 "PixelView RemoteMaster RC2000/RC3000" \
-             8 "Logitech/AST" \
-             9 "Slink-e" \
-             10 "SIR IrDA (built-in IR ports)" 2> $TEMP
+             5 "SIR IrDA (built-in IR ports)" 2> $TEMP
 
     if test "$?" = "0"; then
         {
 	set `cat $TEMP`
         if   test "$1" = "1"; then LIRC_DRIVER=serial;   DRIVER_PARAMETER=com1;
         elif test "$1" = "2"; then LIRC_DRIVER=parallel; DRIVER_PARAMETER=lpt1;
-        elif test "$1" = "3"; then LIRC_DRIVER=irman;    DRIVER_PARAMETER=tty1;
+        elif test "$1" = "3"; then
+	    # "Other serial port devices"
+	    dialog --clear --backtitle "$BACKTITLE" \
+                --title "Select your driver" \
+		--menu "$CONFIG_DRIVER_TEXT" 14 74 7 \
+			1 "Irman / UIR" \
+			2 "Packard Bell receiver" \
+			3 "Anir Multimedia Magic" \
+			4 "PixelView RemoteMaster RC2000/RC3000" \
+			5 "Logitech/AST" \
+			6 "Pinnacle Systems PCTV (pro) receiver" \
+			7 "Slink-e" 2> $TEMP;
+	    if test "$?" = "0"; then
+		{
+		set `cat $TEMP`
+		if test "$1" = "1"; then LIRC_DRIVER=irman;    DRIVER_PARAMETER=tty1;
+		elif test "$1" = "2"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
+		elif test "$1" = "3"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
+		elif test "$1" = "4"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
+		elif test "$1" = "5"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
+		elif test "$1" = "6"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
+		elif test "$1" = "7"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
+		fi
+		}
+	    else
+		return;
+	    fi;
+
         elif test "$1" = "4"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 15 74 6 \
+		--menu "$CONFIG_DRIVER_TEXT" 14 74 5 \
 			1 "Hauppauge TV card (new I2C layer required)" \
 			2 "AverMedia TV card" \
 			3 "Fly98 TV card" \
@@ -262,12 +284,7 @@ function ConfigDriver
 	    else
 		return;
 	    fi;
-        elif test "$1" = "5"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
-        elif test "$1" = "6"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
-        elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
-	elif test "$1" = "8"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
-        elif test "$1" = "9"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
-        elif test "$1" = "10"; then LIRC_DRIVER=sir;         DRIVER_PARAMETER=com3;
+        elif test "$1" = "5"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
     fi
         GetSelectedDriver
         SetPortAndIrq
@@ -343,7 +360,9 @@ function SaveConfig
 	else echo "--without-timer \\" >>$START;
 	fi
         }
-    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "slinke"; then
+    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o \
+	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
+	"$LIRC_DRIVER" = "slinke"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}

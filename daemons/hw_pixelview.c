@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.8 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.9 2000/07/08 17:33:34 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -98,7 +98,7 @@ int pixelview_decode(struct ir_remote *remote,
 
 int pixelview_init(void)
 {
-	signal_length=(hw.code_length+(hw.code_length/8)*2)*1000000/1200;
+	signal_length=hw.code_length*1000000/1200;
 	
 	if(!tty_create_lock(LIRC_DRIVER_DEVICE))
 	{

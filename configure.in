@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.31 2000/07/08 11:27:50 columbus Exp $
+dnl $Id: configure.in,v 5.32 2000/07/08 17:33:34 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -82,7 +82,7 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (remotemaster) (logitech) (slinke) (irreal)"
+possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) (irreal)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
@@ -104,7 +104,7 @@ dnl here we see what driver the user wants.
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, serial, sir, animax, packard_bell, parallel,
-                          irman, remotemaster, comX, lptX, avermedia,
+                          irman, remotemaster, pctv, comX, lptX, avermedia,
                           hauppauge, fly98, pixelview_pro, logitech, slinke, irreal],
 
 driver=${withval},
@@ -221,6 +221,12 @@ if test "$driver" = "remotemaster"; then
   lircd_conf="pixelview/lircd.conf.remotemaster"
   lircmd_conf="pixelview/lircmd.conf.remotemaster"
 fi
+if test "$driver" = "pctv"; then
+  lirc_driver="none"
+  hw_module="hw_pinsys.o serial.o"
+  lircd_conf="pinnacle_systems/lircd.conf.pctv"
+#  lircmd_conf="pinnacle_systems/lircmd.conf.pctv"
+fi
 if test "$driver" = "logitech"; then
   lirc_driver="none"
   hw_module="hw_logitech.o serial.o"
@@ -325,9 +331,9 @@ AC_ARG_WITH(timer,
 timer=${withval},
 timer=65536)
 
-dnl I dont think libirman / lirmand will accept this at the moment
+dnl I dont think libirman  will accept this at the moment
 AC_ARG_WITH(tty,
-[  --with-tty=file         specify the tty to use (Irman,q RemoteMaster)],
+[  --with-tty=file         specify the tty to use (Irman, RemoteMaster, etc.)],
 irtty=${withval})
 
 AC_ARG_WITH(soft-carrier,

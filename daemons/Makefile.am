@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.12 2000/07/02 12:03:38 columbus Exp $
+## $Id: Makefile.am,v 5.13 2000/07/08 17:33:34 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -16,6 +16,7 @@ lircd_LDADD = @hw_module@ @irman_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
+			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
@@ -36,10 +37,13 @@ irrecord_LDADD = @hw_module@ @irman_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
+			hw_pinsys.c hw_pinsys.h \
 			hw_logitech.c hw_logitech.h \
 			hw_slinke.c hw_slinke.h \
 			hw_irman.c hw_irman.h \
 			hw_irreal.c hw_irreal.h \
+			receive.c receive.h \
+			transmit.c transmit.h \
 			serial.c serial.h
 
 ## maintainer mode stuff

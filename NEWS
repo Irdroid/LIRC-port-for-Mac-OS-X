@@ -1,4 +1,5 @@
 0.6.1: future
+  * added support for PCTV (pro) receiver by Pinnacle Systems (Bart Alewijnse)
   * lircd now can be configured to use syslogd for log output
     Thanks to Rainer Clasen for the suggestion.
   * irexec has a --daemon option to easily start it from an init script
