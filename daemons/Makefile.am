@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.9 1999/10/08 18:56:57 columbus Exp $
+## $Id: Makefile.am,v 5.10 2000/04/11 15:53:35 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,7 +12,7 @@ sbin_PROGRAMS = lircd lircmd
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h config_file.h \
 		hardware.h
-lircd_LDADD = @hw_module@ @irman_lib@
+lircd_LDADD = @hw_module@ @irman_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			hw_pixelview.c hw_pixelview.h \
@@ -21,6 +21,7 @@ EXTRA_lircd_SOURCES = hw_default.c hw_default.h \
 			serial.c serial.h
 
 lircmd_SOURCES = lircmd.c
+lircmd_LDADD = @daemon@
 
 bin_PROGRAMS = irrecord
 
