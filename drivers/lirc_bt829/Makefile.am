@@ -11,18 +11,22 @@ module_DATA = lirc_bt829.o
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
 
+LIRC_DEVDIR = $(shell pwd)
+
 # some magic for using linux kernel settings
 # when compiling module(s)
-CC           = @kernelcc@
-MI_OBJS      = $(module_DATA)
-EXTRA_CFLAGS = $(DEFS) $(DEFAULT_INCLUDES)
+KBUILD_VERBOSE = 1
+LIRC_EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS) \
+		$(DEFAULT_INCLUDES) -I $(LIRC_DEVDIR)/../.. \
+		-I $(KERNEL_LOCATION)/include/
+export LIRC_EXTRA_CFLAGS KERNEL_LOCATION module_DATA
 
 $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
-  ifndef MAKING_MODULES
-	DIR=`pwd`; (cd $(KERNEL_LOCATION); make SUBDIRS=$$DIR obj-m=$(module_DATA) modules)
-  endif
-# the spaces above are necessary because automake otherwise will complain
-# and even worse, it will delete the line
+	mv Makefile Makefile.automake
+	cp ../Makefile.kernel Makefile
+	$(MAKE) -C $(KERNEL_LOCATION) SUBDIRS=$(LIRC_DEVDIR) modules \
+		KBUILD_VERBOSE=$(KBUILD_VERBOSE)
+	mv Makefile.automake Makefile
 
 if SANDBOXED
 else
