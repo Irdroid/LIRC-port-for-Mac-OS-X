@@ -582,7 +582,7 @@
     <HR WIDTH="70%">
 
     <P>
-      The lirc_gpio_p has been renamed to lirc_gpio. I now also
+      The lirc_gpio_p has been renamed to lirc_gpio. It now also
       contains support for TV cards that are able to generate
       interrupts if infra-red commands are received. The lirc_gpio_i
       driver that implemented this has been removed. The lirc_fly98
@@ -681,3 +681,16 @@
       <em>threshold</em> is now set to 3. You might even want to try
       higher values.
     </P>
+    <P>
+      When you are using LIRC with the <B>Linux input layer</B>
+      driver, make sure that your config file contains the following
+      line in its header:
+    </P>
+    <pre>
+	bits 32
+    </pre>
+    <P>
+      Otherwise lircd will not recoginise any events.
+    </P>
+    
+
