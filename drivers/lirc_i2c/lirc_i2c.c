@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.6 2000/12/08 19:24:22 columbus Exp $      */
+/*      $Id: lirc_i2c.c,v 1.7 2001/01/18 21:35:24 columbus Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -51,7 +51,7 @@
 
 /* Addresses to scan */
 static unsigned short normal_i2c[] = {I2C_CLIENT_END};
-static unsigned short normal_i2c_range[] = {0x18,0x1a,I2C_CLIENT_END};
+static unsigned short normal_i2c_range[] = {0x18,0x1a,0x4b,I2C_CLIENT_END};
 static unsigned short probe[2]        = { I2C_CLIENT_END, I2C_CLIENT_END };
 static unsigned short probe_range[2]  = { I2C_CLIENT_END, I2C_CLIENT_END };
 static unsigned short ignore[2]       = { I2C_CLIENT_END, I2C_CLIENT_END };
@@ -149,6 +149,24 @@ static int get_key_pixelview(void* data, unsigned char* key, int key_no)
 	return 0;
 }
 
+static int get_key_pv951(void* data, unsigned char* key, int key_no)
+{
+	struct IR *ir = data;
+        unsigned char b;
+	
+	/* poll IR chip */
+	if (1 != i2c_master_recv(&ir->c,&b,1)) {
+		dprintk(KERN_DEBUG DEVICE_NAME ": read error\n");
+		return -1;
+	}
+	/* ignore 0xaa */
+	if (b==0xaa)
+		return -1
+	dprintk(KERN_DEBUG DEVICE_NAME ": key %02x\n", b);
+	*key = b;
+	return 0;
+}
+
 static void set_use_inc(void* data)
 {
 	struct IR *ir = data;
@@ -226,6 +244,11 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		strcpy(ir->c.name,"Pixelview IR");
 		ir->l.code_length = 8;
 		ir->l.get_key=get_key_pixelview;
+		break;
+	case 0x4b:
+		strcpy(ir->c.name,"PV951 IR");
+		ir->l.code_length = 8;
+		ir->l.get_key=get_key_pv951;
 		break;
 	case 0x18:
 	case 0x19:

@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio.c,v 1.5 2001/01/13 10:35:51 columbus Exp $
+ * $Id: lirc_gpio.c,v 1.6 2001/01/18 21:35:24 columbus Exp $
  *
  */
 
@@ -88,6 +88,7 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_AVPHONE98,     0x00011461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
 	{BTTV_AVERMEDIA98,   0x00021461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
 	{BTTV_AVPHONE98,     0x00031461, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32}, /*mapped to Phone98*/
+	/* is this one correct? */
 	{BTTV_AVERMEDIA98,   0x00041461, 0x003b8000,          0, 0x0800000, 0x00800000,   0, 10, 32}, /*mapped to Phone98*/
 	{BTTV_CHRONOS_VS2,            0, 0x000000f8,          0, 0x0000100,          0,   0, 20,  0},
 	/* CPH031 and CPH033 cards (?) */

@@ -293,8 +293,9 @@ function ConfigDriver
                         0 "Pixelview PlayTV pro (card=37)" \
                         a "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
 			b "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
-			c "Technisat MediaFocus I" \
-			d "TView99 CPH063 (card=38)" 2> $TEMP;
+			c "ProVideo PV951 (card=42)" \
+			d "Technisat MediaFocus I" \
+			e "TView99 CPH063 (card=38)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -310,8 +311,9 @@ function ConfigDriver
 		elif test "$1" = "0"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
 		elif test "$1" = "a"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
 		elif test "$1" = "b"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
-		elif test "$1" = "c"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "d"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "c"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
+		elif test "$1" = "d"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
+		elif test "$1" = "e"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
 		fi
 		}
 	    else
