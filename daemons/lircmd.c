@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.11 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: lircmd.c,v 5.12 2001/11/24 09:45:08 ranty Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -213,7 +213,7 @@ void daemonize(void)
 	}
 	umask(0);
 }
-#endif DAEMONIZE
+#endif /* DAEMONIZE */
 
 void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 {

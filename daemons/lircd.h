@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.8 2001/04/24 19:12:19 lirc Exp $      */
+/*      $Id: lircd.h,v 5.9 2001/11/24 09:45:08 ranty Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -90,4 +90,4 @@ struct protocol_directive
 	int (*function)(int fd,char *message,char *arguments);
 };
 
-#endif _LIRCD_H
+#endif /* _LIRCD_H */

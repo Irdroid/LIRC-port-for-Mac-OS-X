@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.34 2001/10/18 16:15:36 lirc Exp $      */
+/*      $Id: lircd.c,v 5.35 2001/11/24 09:45:08 ranty Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -898,7 +898,7 @@ void daemonize(void)
 	daemonized=1;
 }
 
-#endif DAEMONIZE
+#endif /* DAEMONIZE */
 
 void sigalrm(int sig)
 {
