@@ -11,4 +11,6 @@ xmode2
 lirc_client.lo
 liblirc_client.la
 smode2
+ircat
+rc
 

@@ -10,3 +10,5 @@ lircd.8
 lircmd.8
 Makefile.in
 irxevent.1
+ircat.1
+rc.1

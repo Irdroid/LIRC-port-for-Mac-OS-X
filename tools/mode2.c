@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.8 2002/07/27 09:03:21 lirc Exp $      */
+/*      $Id: mode2.c,v 5.9 2002/09/12 19:53:56 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -55,7 +55,7 @@ int main(int argc,char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options]\n",progname);
-			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -d --device=device\tread from given device\n");
 			printf("\t -m --mode\t\tenable alternative display mode\n");
@@ -122,7 +122,7 @@ int main(int argc,char **argv)
 			static int bitno = 1;
 			
 			/* print output like irrecord raw config file data */
-			printf(" %8lu" , data&PULSE_MASK);
+			printf(" %8lu" , (unsigned long) data&PULSE_MASK);
 			++bitno;
 			if (data&PULSE_BIT)
 			{

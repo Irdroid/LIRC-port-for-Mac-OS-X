@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.11 2002/07/27 09:03:22 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.12 2002/09/12 19:53:56 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
 		{
 		case 'h':
 			printf("Usage: %s [options]\n",progname);
-			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -d --device=device\tread from given device\n");
 			printf("\t -t --timediv=value\tms per unit\n");

@@ -1,4 +1,6 @@
-0.6.6pre1: 07/07/02
+0.6.6: future
+  * added rc tool for sending IR commands (previously included in xrc package)
+  * bugfix for Winfast TV2000 card
   * added SIR support for Actisys Act200L dongle (Karl Bongers)
   * added UDP network driver for use with the IPC@Chip (Jim Paris)
   * added support for hardware connected to soundcard input (Pavel Machek)

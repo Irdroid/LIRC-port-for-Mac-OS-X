@@ -51,9 +51,9 @@
 void print_usage (char *prog_name)
 {
 	printf("Usage: %s [options] <prog>\n", prog_name);
-	printf("\t -c --config=<file>\t\tset config file\n");
-	printf("\t -h --help\t\tdisplay this message\n");
+	printf("\t -h --help\t\tdisplay usage summary\n");
 	printf("\t -v --version\t\tdisplay version\n");
+	printf("\t -c --config=<file>\tset config file\n");
 }
 
 int main(int argc, char *argv[])

@@ -391,6 +391,30 @@
       you choose the detail level of debug information.
     </P>
     
+    <A NAME="sending"></A><HR>
+    <H1 ALIGN="CENTER">Sending infrared signals</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      The LIRC package contains the <A HREF="rc.html">rc</A> tool for
+      sending infrared signals to e.g. your TV or CD player. For
+      reliable transmission a good config file is even more important
+      than for receiving. A discussion of all the infrared protocols
+      is way beyond the scope of this manual but when creating a
+      config file at least read the <A
+	HREF="help.html#new_remote">hints</A> at the end of this
+      manual. You can find exact timing specifications for most common
+      inside the remotes/generic/ directory of the LIRC package.
+    </P>
+    <P>
+      If you want a graphical interface for controlling your devices
+      using LIRC, you should have a look at xrc. You can download the
+      xrc package from the LIRC homepage. xrc is a Qt based
+      program. Setting up xrc and Qt is a bit tricky so if you don't
+      manage to compile it you can still use rc. It has the full
+      functionality you need.
+    </P>
+
     <!-- Uninstall LIRC ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     
     <A NAME="uninstall"></A><HR>
@@ -574,4 +598,9 @@
       The config file for the Pixelview PlayTV pro and compatible TV
       cards has changed. Please use the config file in
       <em>remotes/pixelview/lircd.conf.playtv_pro</em>.
+    </P>
+    <P>
+      The config file for the Winfast TV2000 and compatible TV cards
+      has changed. Please use the config file in
+      <em>remotes/winfast/lircd.conf.tv2000</em>.
     </P>

@@ -17,7 +17,7 @@ The config string consists of the command to be run.
 If you add the --daemon option irexec will fork to
 background. That way you can easily start irexec from an init script. In
 this case you should specify a config file on the command line as irexec
-won't be able to find your home directory. Potential uses are shuting
+won't be able to find your home directory. Potential uses are shutting
 down the computer, starting a dial-up connection etc.
 
 [NOTE]

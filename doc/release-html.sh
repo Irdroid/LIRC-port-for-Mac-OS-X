@@ -10,7 +10,7 @@ fi
 
 FILES1="index.html install.html configure.html programs.html technical.html help.html"
 FILES2=" irexec.html ircat.html irw.html irpty.html irrecord.html irxevent.html lircd.html
-lircmd.html mode2.html smode2.html xmode2.html"
+lircmd.html mode2.html smode2.html xmode2.html rc.html"
 
 echo -n "Pass1:"
 for FILE in $FILES1; do

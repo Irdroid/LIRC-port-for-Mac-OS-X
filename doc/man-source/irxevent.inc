@@ -66,9 +66,11 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> <windowname> | WindowID id | CurrentWindow | RootWindow
+config = Key [shift-][ctrl-][alt-]<key> <windowname> | WindowID id 
+	| CurrentWindow | RootWindow
 config = Button <button> <x> <y> <windowname> | CurrentWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> | WindowID id | CurrentWindow | RootWindow
+config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> <windowname> 
+	| WindowID id | CurrentWindow | RootWindow
 .RE
 .fi
 
@@ -127,7 +129,7 @@ this to send events to the window manager.
 .I WindowID id:
 .RS 2
 refers to the window with window identifier \fIid\fR. \fIid\fR should be a
-decimal number. It is usefull when irxevent can't find the desired window by
+decimal number. It is useful when irxevent can't find the desired window by
 other means.
 .RE
 .RE

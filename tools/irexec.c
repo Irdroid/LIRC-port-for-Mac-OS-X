@@ -1,4 +1,4 @@
-/*      $Id: irexec.c,v 5.4 2002/08/17 11:17:41 lirc Exp $      */
+/*      $Id: irexec.c,v 5.5 2002/09/12 19:53:56 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 		{
 		case 'h':
 			printf("Usage: %s [options] [config_file]\n",argv[0]);
-			printf("\t -h --help\t\tdisplay this message\n");
+			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -d --daemon\t\trun in background\n");
 			return(EXIT_SUCCESS);

@@ -22,7 +22,7 @@ should read from. The default currently is /dev/lirc but it probably
 will change in future.
 
 With the --listen option you can let lircd listen for network
-connections on the given port. The default port is 8765. No sequirity
+connections on the given port. The default port is 8765. No security
 checks are currently implemented.
 
 The --connect option allows you to connect to other lircd servers that
