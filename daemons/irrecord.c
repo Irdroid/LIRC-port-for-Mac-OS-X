@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.7 1999/10/14 15:42:52 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.8 1999/10/18 10:14:55 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -931,7 +931,7 @@ unsigned int count,count_spaces,count_3repeats,count_5repeats,count_signals;
 int get_lengths(struct ir_remote *remote,int force)
 {
 	int ret,retval;
-	lirc_t data,average,sum,remaining_gap;
+	lirc_t data,average,sum,remaining_gap,header;
 	enum analyse_mode mode=MODE_GAP;
 	int first_signal;
 
@@ -944,7 +944,7 @@ int get_lengths(struct ir_remote *remote,int force)
 	retval=1;
 	average=0;sum=0;count=0;count_spaces=0;
 	count_3repeats=0;count_5repeats=0;count_signals=0;
-	first_signal=1;
+	first_signal=-1;header=0;
 	while(1)
 	{
 		if(!waitfordata(10000000))
@@ -1147,17 +1147,6 @@ int get_lengths(struct ir_remote *remote,int force)
 						lengths[count-2]++;
 						add_length(&first_signal_length,sum-data);
 						merge_lengths(first_signal_length);
-						if(first_signal)
-						{
-							first_lengths++;
-							first_length=count-2;
-						}
-						else if(first_length-2==count-2)
-						{
-							lengths[count-2]--;
-							lengths[count-2+2]++;
-							second_lengths++;
-						}
 						if(first_signal || first_length-2!=count-2)
 						{
 							add_length(&first_3lead,signals[2]);
@@ -1166,6 +1155,19 @@ int get_lengths(struct ir_remote *remote,int force)
 							merge_lengths(first_headerp);
 							add_length(&first_headers,signals[1]);
 							merge_lengths(first_headers);
+						}
+						if(first_signal==1)
+						{
+							first_lengths++;
+							first_length=count-2;
+							header=signals[0]+signals[1];
+						}
+						else if(first_signal==0 &&
+							first_length-2==count-2)
+						{
+							lengths[count-2]--;
+							lengths[count-2+2]++;
+							second_lengths++;
 						}
 					}
 					count=0;
@@ -1192,9 +1194,12 @@ int get_lengths(struct ir_remote *remote,int force)
 					}
 					break;
 				}
-				if((data&PULSE_MASK)<=remaining_gap*(100+EPS)/100
-				   || (data&PULSE_MASK)>=remaining_gap+AEPS)
+				if((data&PULSE_MASK)<=(remaining_gap+header)*(100+EPS)/100
+				   || (data&PULSE_MASK)<=(remaining_gap+header)+AEPS)
+				{
 					first_signal=0;
+					header=0;
+				}
 				else
 					first_signal=1;
 			}
@@ -1349,7 +1354,7 @@ void get_scheme(struct ir_remote *remote)
 	}
 #       ifdef DEBUG
 	printf("get_scheme(): sum: %u length: %u signals: %lu\n"
-	       "first_lengths: %u second_lengths: %u\n",
+	       "first_lengths: %lu second_lengths: %lu\n",
 	       sum,length+1,lengths[length],first_lengths,second_lengths);
 #       endif
 	if(lengths[length]>=TH_SPACE_ENC*sum/100)
@@ -1526,10 +1531,10 @@ int get_repeat_length(struct ir_remote *remote)
 				       " but no header found!\n");
 				return(0);
 			}
-			if(count_3repeats>count_5repeats &&
+			if(count_5repeats>count_3repeats &&
 			   has_header(remote))
 			{
-				remote->flags|=NO_HEAD_REP;
+				remote->flags|=REPEAT_HEADER;
 			}
 			repeatp=max_plength->sum/max_plength->count;
 			repeats=max_slength->sum/max_slength->count;
@@ -1622,7 +1627,7 @@ int get_data_length(struct ir_remote *remote)
 		max_slength=get_max_length(first_space,&sum);
 		max_count=max_slength->count;
 #               ifdef DEBUG
-		printf("get_header_length(): sum: %u, max_count %u\n",
+		printf("get_data_length(): sum: %u, max_count %u\n",
 		       sum,max_count);
 #               endif
 		if(max_count>=sum*TH_IS_BIT/100)

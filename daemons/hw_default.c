@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.7 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: hw_default.c,v 5.8 1999/10/18 10:14:54 columbus Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -348,6 +348,11 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 	send_trail(remote);
 	if(repeat_remote==NULL || !(remote->flags&NO_FOOT_REP))
 		send_foot(remote);
+
+	if(repeat_remote==NULL && (remote->flags&(NO_HEAD_REP|CONST_LENGTH)))
+	{
+		send_buffer.sum-=remote->phead+remote->shead;
+	}
 }
 
 int init_send(struct ir_remote *remote,struct ir_ncode *code)
@@ -963,9 +968,11 @@ int default_decode(struct ir_remote *remote,
 {
 	ir_code pre,code,post,code_mask=0,post_mask=0;
 	lirc_t sync;
+	int header;
 
 	sync=0; /* make compiler happy */
 	code=pre=post=0;
+	header=0;
 
 	if(hw.rec_mode==LIRC_MODE_MODE2 ||
 	   hw.rec_mode==LIRC_MODE_PULSE ||
@@ -1038,15 +1045,19 @@ int default_decode(struct ir_remote *remote,
 
 		if(has_header(remote))
 		{
-			if(!get_header(remote)
-			   && !(remote->flags&NO_HEAD_REP && 
-				(sync<=remote->gap+remote->gap*remote->eps/100
-				 || sync<=remote->gap+remote->aeps)))
+			header=1;
+			if(!get_header(remote))
 			{
-#                               ifdef DEBUG
-				logprintf(1,"failed on header\n");
-#                               endif
-				return(0);
+				header=0;
+				if(!(remote->flags&NO_HEAD_REP && 
+				     (sync<=remote->gap+remote->gap*remote->eps/100
+				      || sync<=remote->gap+remote->aeps)))
+				{
+#                                       ifdef DEBUG
+					logprintf(1,"failed on header\n");
+#                                       endif
+					return(0);
+				}
 			}
 #                       ifdef DEBUG
 			logprintf(1,"header\n");
@@ -1220,6 +1231,11 @@ int default_decode(struct ir_remote *remote,
 #                                       endif
 					return(0);
 				}
+			}
+			if(header==1 && is_const(remote) &&
+			   (remote->flags&NO_HEAD_REP))
+			{
+				rec_buffer.sum-=remote->phead+remote->shead;
 			}
 			if(!get_gap(remote,
 				    is_const(remote) ? 

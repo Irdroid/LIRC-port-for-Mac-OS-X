@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.8 1999/09/13 05:52:41 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.9 1999/10/18 10:14:55 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -48,18 +48,15 @@ struct ir_ncode {
 
 /* definitions for flags */
 
-/*
-  Don't forget to take a look at parseFlags in read_config
-  when adding new flags
-*/
+/* Don't forget to take a look at config_file.h when adding new flags */
 
-#define NR_FLAGS 7
+#define NR_FLAGS 8
 
 #define SHIFT_ENC	0x0001    /* IR data is shift encoded */
 #define SPACE_ENC	0x0002	  /* IR data is space encoded */
 #define REVERSE		0x0004
-#define NO_HEAD_REP	0x0008	  /* no header for key repeates */
-#define NO_FOOT_REP	0x0010	  /* no foot for key repeates */
+#define NO_HEAD_REP	0x0008	  /* no header for key repeats */
+#define NO_FOOT_REP	0x0010	  /* no foot for key repeats */
 #define CONST_LENGTH    0x0020    /* signal length+gap is always constant */
 #define RAW_CODES       0x0040    /* for internal use only */
 #define REPEAT_HEADER   0x0080    /* header is also sent before repeat code */
