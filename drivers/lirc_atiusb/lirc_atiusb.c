@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.8 2003/11/07 00:14:24 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.9 2003/11/09 16:50:16 pmiller9 Exp $
  */
 
 /*
@@ -254,7 +254,9 @@ static void usb_remote_irq(struct urb *urb)
 	dprintk(DRIVER_NAME "[%d]: data received (length %d)\n",
 			ir->devnum, urb->actual_length);
 
-	if (urb->actual_length != ir->p->code_length/8) return;
+	/* this is ugly - apparently, some remotes emit both 4 and 5 byte codes. */
+	if (urb->actual_length < ir->p->code_length/8) return;
+//	if (urb->actual_length != ir->p->code_length/8) return;
 
 	lirc_buffer_write_1(ir->p->rbuf, urb->transfer_buffer);
 	wake_up(&ir->p->rbuf->wait_poll);
