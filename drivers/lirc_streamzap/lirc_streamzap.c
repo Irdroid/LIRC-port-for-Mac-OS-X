@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.1 2005/02/12 14:20:23 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.2 2005/02/12 22:44:14 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Rev$"
+#define DRIVER_VERSION	"$Revision: 1.2 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
