@@ -1,10 +1,10 @@
-/*      $Id: hw_creative.c,v 5.1 2001/01/05 20:30:27 columbus Exp $      */
+/*      $Id: hw_creative.c,v 5.2 2001/01/06 16:19:13 columbus Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
  ****************************************************************************
  *
- * routines for Creative reciever 
+ * routines for Creative receiver
  * 
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
  *
@@ -86,10 +86,12 @@ int creative_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
 		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
-	*prep=pre;
-	*codep=code;
-	*postp=0;
-
+	if(!map_code(remote,prep,codep,postp,
+		     16,pre,16,code,0,0))
+	{
+		return(0);
+	}
+	
 	gap=0;
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
 	{

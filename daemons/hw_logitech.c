@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.7 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: hw_logitech.c,v 1.8 2001/01/06 16:19:13 columbus Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -60,9 +60,11 @@ int logitech_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
 		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
-	*prep=pre;
-	*codep=code;
-	*postp=0;
+	if(!map_code(remote,prep,codep,postp,
+		     8,pre,8,code,0,0))
+	{
+		return(0);
+	}
 
 	gap=0;
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */

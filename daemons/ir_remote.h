@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.14 2000/07/26 19:49:16 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.15 2001/01/06 16:19:13 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -243,6 +243,47 @@ static inline unsigned long time_elapsed(struct timeval *last,
 	diff=1000000*secs+usecs;
 	
 	return(diff);
+}
+
+static inline ir_code gen_mask(int bits)
+{
+	int i;
+	ir_code mask;
+
+	mask=0;
+	for(i=0;i<bits;i++)
+	{
+		mask<<=1;
+		mask|=1;
+	}
+	return(mask);
+}
+
+static inline int map_code(struct ir_remote *remote,
+			   ir_code *prep,ir_code *codep,ir_code *postp,
+			   int pre_bits,ir_code pre,
+			   int bits,ir_code code,
+			   int post_bits,ir_code post)
+{
+	ir_code all;
+	
+	if(pre_bits+bits+post_bits!=
+	   remote->pre_data_bits+remote->bits+remote->post_data_bits)
+	{
+		return(0);
+	}
+	all=(pre&gen_mask(pre_bits));
+	all<<=bits;
+	all|=(code&gen_mask(bits));
+	all<<=post_bits;
+	all|=(post&gen_mask(post_bits));
+	
+	*postp=(all&gen_mask(remote->post_data_bits));
+	all>>=remote->post_data_bits;
+	*codep=(all&gen_mask(remote->bits));
+	all>>=remote->bits;
+	*postp=(all&gen_mask(remote->pre_data_bits));
+	return(1);
 }
 
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);

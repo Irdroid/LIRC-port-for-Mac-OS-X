@@ -130,7 +130,7 @@ function SetPortAndIrq
     elif test "$LIRC_DRIVER" = "parallel"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Specify port And IRQ of your hardware" \
+               --title "Specify port and IRQ of your hardware" \
                --radiolist "$SET_PORT_TEXT" 13 74 6 \
                  1 "LPT1 ($LPT1_PORT, $LPT1_IRQ)" $LPT1 \
                  2 "LPT2 ($LPT2_PORT, $LPT2_IRQ)" $LPT2 \
@@ -151,10 +151,11 @@ function SetPortAndIrq
         }
     elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
 	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
+	"$LIRC_DRIVER" = "creative" -o \
 	"$LIRC_DRIVER" = "slinke" -o "$LIRC_DRIVER" = "realmagic"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
-               --title "Select tty to usefy Port And IRQ of your Hardware" \
+               --title "Select tty to use" \
                --radiolist "$SET_TTY_TEXT" 13 74 6 \
                  1 "COM1 (/dev/ttyS0)" $COM1 \
                  2 "COM2 (/dev/ttyS1)" $COM2 \

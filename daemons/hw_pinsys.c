@@ -143,9 +143,11 @@ int pinsys_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
 		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
-	*prep=0;
-	*codep=code&(~REPEAT_FLAG);
-	*postp=0;
+	if(!map_code(remote,prep,codep,postp,
+		     0,0,8,code&(~REPEAT_FLAG),0,0))
+	{
+		return(0);
+	}
 	
 	gap=0;
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */

@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.10 2000/12/08 23:36:30 columbus Exp $      */
+/*      $Id: hw_pixelview.c,v 5.11 2001/01/06 16:19:13 columbus Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -61,9 +61,11 @@ int pixelview_decode(struct ir_remote *remote,
 	if(remote->pzero!=833 || remote->szero!=0) return(0);
 #endif
 
-	*prep=pre;
-	*codep=code;
-	*postp=0;
+	if(!map_code(remote,prep,codep,postp,
+		     10,pre,20,code,0,0))
+	{
+		return(0);
+	}
 
 	gap=0;
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */

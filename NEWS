@@ -1,4 +1,5 @@
 0.6.3: future
+  * added support for Creative Infra receiver (PC-DVD remote, Stephen White)
   * major changes to the SIR driver, if you used this driver before
     you may have to generate new config files for your remotes
   * Tekram Irmate 210 support (receiving only, EXPERIMENTAL)
