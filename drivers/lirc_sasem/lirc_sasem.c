@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.6 2005/03/28 17:05:40 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.7 2005/03/29 17:51:45 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.3  [beta status]
@@ -22,40 +22,12 @@
  * 2004/11/22   -   0.3
  *                  Ported to 2.6 kernel - Tim Davies <tim@opensystems.net.au>
  *
+ * 2005/03/29   -   0.4
+ *                  A few tidyups and keypress timings - Tim Davies <tim@opensystems.net.au>
+ *
  * TODO
- *	- keypresses seem to be rather sluggish sometimes; check
- *	  intervall and timing
  *	- check USB Minor allocation
  *	- param to enable/disable LIRC communication (??)
- *
- * About naming
- *
- *  variables use the following naming rule: [scope]_[type]Name
- *  functions use the following naming rule: [scope]_[returntype]Name
- *
- *  scope:
- *      c : const
- *      g : global
- *      l : local
- *      m : member
- *      p : parameter
- *      s : static
- *
- *  type:
- *      a : array
- *      c : char
- *      d : double
- *      f : float
- *      i : integer
- *      k : short
- *      l : long
- *      p : pointer
- *      s : struct
- *      u : unsigned
- *      v : signed
- *
- *  example:    p_iCount = Parameter, Integer
- *              s_acBuf  = Static, Array of chars
  *
  */
 
@@ -103,54 +75,54 @@ static int debug = 0;
 MODULE_PARM(debug, "i");
 MODULE_PARM_DESC(debug, "enable debug = 1, disable = 0 (default)");
 
-static t_usb_device_id s_sSasemID [] = {
+static struct usb_device_id SasemID [] = {
 	{ USB_DEVICE(0x11ba, 0x0101) },
 	{ }
 };
 
-MODULE_DEVICE_TABLE (usb, s_sSasemID);
+MODULE_DEVICE_TABLE (usb, SasemID);
 
-static t_file_operations s_sSasemFileOps =
+static struct file_operations SasemFileOps =
 {
 	owner:      THIS_MODULE,
-	read:       s_sSasemFSRead,
-	write:      s_sSasemFSWrite,
-	ioctl:      s_iSasemFSIoctl,
-	open:       s_iSasemFSOpen,
-	release:    s_iSasemFSRelease,
-	poll:       s_uSasemFSPoll,
+	read:       SasemFSRead,
+	write:      SasemFSWrite,
+	ioctl:      SasemFSIoctl,
+	open:       SasemFSOpen,
+	release:    SasemFSRelease,
+	poll:       SasemFSPoll,
 };
 
 #ifdef KERNEL_2_5
-static t_usb_class_driver s_sSasemClass =
+static struct usb_class_driver SasemClass =
 {
 	name:		"usb/lcd",
-	fops:		&s_sSasemFileOps,
+	fops:		&SasemFileOps,
 	mode:		S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH,
 	minor_base:	SASEM_MINOR,
 };
 #endif
 
-static t_usb_driver s_sSasemDriver =
+static struct usb_driver SasemDriver =
 {
-	owner:			THIS_MODULE,
-	name:			"Sasem",
-	probe:          s_SasemProbe,
-	disconnect:     s_SasemDisconnect,
+	owner:		THIS_MODULE,
+	name:		"Sasem",
+	probe:          SasemProbe,
+	disconnect:     SasemDisconnect,
 #ifndef KERNEL_2_5
-	fops:           &s_sSasemFileOps,
-	minor:			SASEM_MINOR,
+	fops:           &SasemFileOps,
+	minor:		SASEM_MINOR,
 #endif
-	id_table:       s_sSasemID,
+	id_table:       SasemID,
 };
 
-static t_sasemDevice *s_psSasemDevice = NULL;
+static struct SasemDevice *SasemDevice = NULL;
 
-static int __init s_iSasemInit (void)
+static int __init SasemInit (void)
 {
 	printk(BANNER);
 
-	if (usb_register(&s_sSasemDriver)) {
+	if (usb_register(&SasemDriver)) {
 		err("USB registration failed");
 		return -ENOSYS;
 	}
@@ -158,52 +130,53 @@ static int __init s_iSasemInit (void)
 	return 0;
 }
 
-static void __exit s_SasemExit (void)
+static void __exit SasemExit (void)
 {
-	usb_deregister (&s_sSasemDriver);
+	usb_deregister (&SasemDriver);
 }
 
-module_init (s_iSasemInit);
-module_exit (s_SasemExit);
+module_init (SasemInit);
+module_exit (SasemExit);
 
 #ifndef KERNEL_2_5
-static void * s_SasemProbe(struct usb_device *p_psDevice,
-			   unsigned p_uInterfaceNum,
-			   const struct usb_device_id *p_psID)
+static void * SasemProbe(struct usb_device *Device,
+			   unsigned InterfaceNum,
+			   const struct usb_device_id *ID)
 {
-	struct usb_interface_descriptor *l_psCurrentInterfaceDescriptor;
+	struct usb_interface_descriptor *lCurrentInterfaceDescriptor;
 #else
-static int s_SasemProbe(t_usb_interface *p_psInt, const t_usb_device_id *p_psID)
+static int SasemProbe(struct usb_interface *Int,
+		      const struct usb_device_id *ID)
 {
-	struct usb_device *p_psDevice = NULL;
-	t_usb_host_interface *iface_host = NULL;
+	struct usb_device *Device = NULL;
+	struct usb_host_interface *iface_host = NULL;
 #endif
-	t_sasemDevice *l_psSasemDevice = NULL;
-	struct usb_endpoint_descriptor *l_psEndpoint, *l_psEndpoint2;
-	int l_iPipe;
-	int l_iDevnum;
-	t_lirc_plugin *l_psLircPlugin = NULL;
-	t_lirc_buffer *l_psLircBuffer = NULL;
-	int l_iLircMinor = -1;
-	int l_iMemFailure;
-	char l_acBuf[63], l_acName[128]="";
+	struct SasemDevice *lSasemDevice = NULL;
+	struct usb_endpoint_descriptor *lEndpoint, *lEndpoint2;
+	int lPipe;
+	int lDevnum;
+	struct lirc_plugin *lLircPlugin = NULL;
+	struct lirc_buffer *lLircBuffer = NULL;
+	int lLircMinor = -1;
+	int lMemFailure;
+	char lBuf[63], lName[128]="";
 
 	dbg(" {\n");
 	
 #ifndef KERNEL_2_5
-	l_psCurrentInterfaceDescriptor = p_psDevice->actconfig->interface->
+	lCurrentInterfaceDescriptor = Device->actconfig->interface->
 		altsetting;
-	l_psEndpoint = l_psCurrentInterfaceDescriptor->endpoint;
-	l_psEndpoint2 = l_psEndpoint + 1;
+	lEndpoint = lCurrentInterfaceDescriptor->endpoint;
+	lEndpoint2 = lEndpoint + 1;
 #else
-	p_psDevice = interface_to_usbdev(p_psInt);
-	iface_host = p_psInt->cur_altsetting;
-	l_psEndpoint = &(iface_host->endpoint[0].desc);
-	l_psEndpoint2 = &(iface_host->endpoint[1].desc);
+	Device = interface_to_usbdev(Int);
+	iface_host = Int->cur_altsetting;
+	lEndpoint = &(iface_host->endpoint[0].desc);
+	lEndpoint2 = &(iface_host->endpoint[1].desc);
 #endif
 	
-	if (!(l_psEndpoint->bEndpointAddress & 0x80) ||
-		((l_psEndpoint->bmAttributes & 3) != 0x03)) {
+	if (!(lEndpoint->bEndpointAddress & 0x80) ||
+		((lEndpoint->bmAttributes & 3) != 0x03)) {
 		err("OnAir config endpoint error");
 #ifndef KERNEL_2_5
 		return NULL;
@@ -212,71 +185,71 @@ static int s_SasemProbe(t_usb_interface *p_psInt, const t_usb_device_id *p_psID)
 #endif
 	}
 
-	l_iDevnum = p_psDevice->devnum;
+	lDevnum = Device->devnum;
 
-	l_iMemFailure = 0;
-	if (!(l_psSasemDevice = kmalloc(sizeof(t_sasemDevice), GFP_KERNEL))) {
-		err("kmalloc(sizeof(t_sasemDevice), GFP_KERNEL)) failed");
-		l_iMemFailure = 1;
+	lMemFailure = 0;
+	if (!(lSasemDevice = kmalloc(sizeof(*lSasemDevice), GFP_KERNEL))) {
+		err("kmalloc(sizeof(*lSasemDevice), GFP_KERNEL)) failed");
+		lMemFailure = 1;
 	}
 	else {
-		memset(l_psSasemDevice, 0, sizeof(t_sasemDevice));
-		if (!(l_psLircPlugin = 
-			kmalloc(sizeof(t_lirc_plugin), GFP_KERNEL))) {
-			err("kmalloc(sizeof(t_lirc_plugin), GFP_KERNEL))"
+		memset(lSasemDevice, 0, sizeof(*lSasemDevice));
+		if (!(lLircPlugin = 
+			kmalloc(sizeof(*lLircPlugin), GFP_KERNEL))) {
+			err("kmalloc(sizeof(*lLircPlugin), GFP_KERNEL))"
 				"failed");
-			l_iMemFailure = 2;
+			lMemFailure = 2;
 		}
-		else if (!(l_psLircBuffer = 
-			kmalloc(sizeof(t_lirc_buffer), GFP_KERNEL))) {
-			err("kmalloc(sizeof(t_lirc_buffer), GFP_KERNEL))"  
+		else if (!(lLircBuffer = 
+			kmalloc(sizeof(*lLircBuffer), GFP_KERNEL))) {
+			err("kmalloc(sizeof(*lLircBuffer), GFP_KERNEL))"  
 				" failed");
-			l_iMemFailure = 3;
+			lMemFailure = 3;
 		}
-		else if (lirc_buffer_init(l_psLircBuffer, MAX_INTERRUPT_DATA,
+		else if (lirc_buffer_init(lLircBuffer, MAX_INTERRUPT_DATA,
 				4)) {
 			err("lirc_buffer_init failed");
-			l_iMemFailure = 4;
+			lMemFailure = 4;
 		}
 #ifndef KERNEL_2_5
-		else if (!(l_psSasemDevice->m_psUrbIn = usb_alloc_urb(0))) {
+		else if (!(lSasemDevice->UrbIn = usb_alloc_urb(0))) {
 #else
-		else if (!(l_psSasemDevice->m_psUrbIn = usb_alloc_urb(0, GFP_KERNEL))) {
+		else if (!(lSasemDevice->UrbIn = usb_alloc_urb(0, GFP_KERNEL))) {
 #endif
 			err("usb_alloc_urb(0) failed");
-			l_iMemFailure = 5;
+			lMemFailure = 5;
 		} else {
 
-			memset(l_psLircPlugin, 0, sizeof(t_lirc_plugin));
-			strcpy(l_psLircPlugin->name, DRIVER_NAME " ");
-			l_psLircPlugin->minor = -1;
-			l_psLircPlugin->code_length = MAX_INTERRUPT_DATA*8;
-			l_psLircPlugin->features = LIRC_CAN_REC_LIRCCODE;
-			l_psLircPlugin->data = l_psSasemDevice;
+			memset(lLircPlugin, 0, sizeof(*lLircPlugin));
+			strcpy(lLircPlugin->name, DRIVER_NAME " ");
+			lLircPlugin->minor = -1;
+			lLircPlugin->code_length = MAX_INTERRUPT_DATA*8;
+			lLircPlugin->features = LIRC_CAN_REC_LIRCCODE;
+			lLircPlugin->data = lSasemDevice;
 			
-			l_psLircPlugin->rbuf = l_psLircBuffer;
-			l_psLircPlugin->set_use_inc = &s_iLircSetUseInc;
-			l_psLircPlugin->set_use_dec = &s_iLircSetUseDec;
-			l_psLircPlugin->owner = THIS_MODULE;
+			lLircPlugin->rbuf = lLircBuffer;
+			lLircPlugin->set_use_inc = &LircSetUseInc;
+			lLircPlugin->set_use_dec = &LircSetUseDec;
+			lLircPlugin->owner = THIS_MODULE;
 
-			if ((l_iLircMinor = 
-				lirc_register_plugin(l_psLircPlugin)) < 0) {
-				err("lirc_register_plugin(l_psLircPlugin))"  
+			if ((lLircMinor = 
+				lirc_register_plugin(lLircPlugin)) < 0) {
+				err("lirc_register_plugin(lLircPlugin))"  
 					" failed");
-				l_iMemFailure = 9;
+				lMemFailure = 9;
 			}
 		}
 	}
-	switch (l_iMemFailure) {
+	switch (lMemFailure) {
 	case 9:
-		usb_free_urb(l_psSasemDevice->m_psUrbIn);
+		usb_free_urb(lSasemDevice->UrbIn);
 	case 5:
 	case 4:
-		kfree(l_psLircBuffer);
+		kfree(lLircBuffer);
 	case 3:
-		kfree(l_psLircPlugin);
+		kfree(lLircPlugin);
 	case 2:
-		kfree(l_psSasemDevice);
+		kfree(lSasemDevice);
 	case 1:
 #ifndef KERNEL_2_5
 		return NULL;
@@ -285,58 +258,58 @@ static int s_SasemProbe(t_usb_interface *p_psInt, const t_usb_device_id *p_psID)
 #endif
 	}
 	
-	l_psLircPlugin->minor = l_iLircMinor; 
+	lLircPlugin->minor = lLircMinor; 
 	
 	dbg(": init device structure\n");
-	init_MUTEX(&l_psSasemDevice->m_sSemLock);
-	down_interruptible(&l_psSasemDevice->m_sSemLock);
-	l_psSasemDevice->m_psDescriptorIn = l_psEndpoint;
-	l_psSasemDevice->m_psDescriptorOut = l_psEndpoint2;    
-	l_psSasemDevice->m_psDevice = p_psDevice;
-	l_psSasemDevice->m_psLircPlugin = l_psLircPlugin;
-	l_psSasemDevice->m_iOpen = 0;
-	l_psSasemDevice->m_psUrbOut = NULL;
-	l_psSasemDevice->m_sPressTime.tv_sec = 0; 
-	l_psSasemDevice->m_sPressTime.tv_usec = 0;
-	init_waitqueue_head(&l_psSasemDevice->m_sQueueOpen);
-	init_waitqueue_head(&l_psSasemDevice->m_sQueueWrite);
+	init_MUTEX(&lSasemDevice->SemLock);
+	down(&lSasemDevice->SemLock);
+	lSasemDevice->DescriptorIn = lEndpoint;
+	lSasemDevice->DescriptorOut = lEndpoint2;    
+	lSasemDevice->Device = Device;
+	lSasemDevice->LircPlugin = lLircPlugin;
+	lSasemDevice->Open = 0;
+	lSasemDevice->UrbOut = NULL;
+	lSasemDevice->PressTime.tv_sec = 0; 
+	lSasemDevice->PressTime.tv_usec = 0;
+	init_waitqueue_head(&lSasemDevice->QueueOpen);
+	init_waitqueue_head(&lSasemDevice->QueueWrite);
 
 	dbg(": init inbound URB\n");
-	l_iPipe = usb_rcvintpipe(l_psSasemDevice->m_psDevice,
-		l_psSasemDevice->m_psDescriptorIn->bEndpointAddress);
+	lPipe = usb_rcvintpipe(lSasemDevice->Device,
+		lSasemDevice->DescriptorIn->bEndpointAddress);
 	
-	usb_fill_int_urb(l_psSasemDevice->m_psUrbIn, 
-			 l_psSasemDevice->m_psDevice,
-			 l_iPipe, l_psSasemDevice->m_aucBufferIn,
-			 sizeof(l_psSasemDevice->m_aucBufferIn),
-			 s_SasemCallbackIn, l_psSasemDevice, 
-			 l_psSasemDevice->m_psDescriptorIn->bInterval);
+	usb_fill_int_urb(lSasemDevice->UrbIn, 
+			 lSasemDevice->Device,
+			 lPipe, lSasemDevice->BufferIn,
+			 sizeof(lSasemDevice->BufferIn),
+			 SasemCallbackIn, lSasemDevice, 
+			 lSasemDevice->DescriptorIn->bInterval);
 
 	dbg(": get USB device info\n");
-	if (p_psDevice->descriptor.iManufacturer &&
-			usb_string(p_psDevice, 
-			p_psDevice->descriptor.iManufacturer, 
-			l_acBuf, 63) > 0) {
-		strncpy(l_acName, l_acBuf, 128);
+	if (Device->descriptor.iManufacturer &&
+			usb_string(Device, 
+			Device->descriptor.iManufacturer, 
+			lBuf, 63) > 0) {
+		strncpy(lName, lBuf, 128);
 	}
-	if (p_psDevice->descriptor.iProduct &&
-			usb_string(p_psDevice, p_psDevice->descriptor.iProduct, 
-			l_acBuf, 63) > 0) {
-		snprintf(l_acName, 128, "%s %s", l_acName, l_acBuf);
+	if (Device->descriptor.iProduct &&
+			usb_string(Device, Device->descriptor.iProduct, 
+			lBuf, 63) > 0) {
+		snprintf(lName, 128, "%s %s", lName, lBuf);
 	}
-	printk(DRIVER_NAME "[%d]: %s on usb%d\n", l_iDevnum, l_acName,
-		p_psDevice->bus->busnum);
+	printk(DRIVER_NAME "[%d]: %s on usb%d\n", lDevnum, lName,
+		Device->bus->busnum);
 
-	s_psSasemDevice = l_psSasemDevice;
-	up(&l_psSasemDevice->m_sSemLock);
+	SasemDevice = lSasemDevice;
+	up(&lSasemDevice->SemLock);
 	dbg(" }\n");
 #ifndef KERNEL_2_5
-	return l_psSasemDevice;
+	return lSasemDevice;
 #else
-	usb_set_intfdata(p_psInt, l_psSasemDevice);
-	if (usb_register_dev(p_psInt, &s_sSasemClass)) {
+	usb_set_intfdata(Int, lSasemDevice);
+	if (usb_register_dev(Int, &SasemClass)) {
 		dbg(": Can't get minor for this device\n");
-		usb_set_intfdata(p_psInt, NULL);
+		usb_set_intfdata(Int, NULL);
 		return -ENODEV;
 	}
 	return 0;
@@ -345,95 +318,95 @@ static int s_SasemProbe(t_usb_interface *p_psInt, const t_usb_device_id *p_psID)
 
 
 #ifndef KERNEL_2_5
-static void s_SasemDisconnect(t_usb_device *p_psDevice, void *p_pPtr) {
-	t_sasemDevice *l_psSasemDevice = p_pPtr;
+static void SasemDisconnect(struct usb_device *Device, void *Ptr) {
+	struct SasemDevice *lSasemDevice = Ptr;
 #else
-static void s_SasemDisconnect(t_usb_interface *p_psInt) {
-	t_sasemDevice *l_psSasemDevice = usb_get_intfdata(p_psInt);
-	usb_set_intfdata(p_psInt, NULL);
+static void SasemDisconnect(struct usb_interface *Int) {
+	struct SasemDevice *lSasemDevice = usb_get_intfdata(Int);
+	usb_set_intfdata(Int, NULL);
 #endif
 
 	dbg(" {\n");
 
-	down_interruptible(&l_psSasemDevice->m_sSemLock);
+	down(&lSasemDevice->SemLock);
 
 #ifdef KERNEL_2_5
-	usb_deregister_dev(p_psInt, &s_sSasemClass);
+	usb_deregister_dev(Int, &SasemClass);
 #endif
 
 	dbg(": free inbound URB\n");    
-	usb_unlink_urb(l_psSasemDevice->m_psUrbIn);
-	usb_free_urb(l_psSasemDevice->m_psUrbIn);
-	s_iUnregisterFromLirc(l_psSasemDevice);
+	usb_unlink_urb(lSasemDevice->UrbIn);
+	usb_free_urb(lSasemDevice->UrbIn);
+	UnregisterFromLirc(lSasemDevice);
 
-	if (l_psSasemDevice->m_psUrbOut != NULL) {
+	if (lSasemDevice->UrbOut != NULL) {
 		dbg(": free outbound URB\n");    
-		usb_unlink_urb(l_psSasemDevice->m_psUrbOut);
-		usb_free_urb(l_psSasemDevice->m_psUrbOut);
+		usb_unlink_urb(lSasemDevice->UrbOut);
+		usb_free_urb(lSasemDevice->UrbOut);
 }
-	up(&l_psSasemDevice->m_sSemLock);
-	kfree (l_psSasemDevice);
+	up(&lSasemDevice->SemLock);
+	kfree (lSasemDevice);
 	dbg(" }\n");
 }
 
 #ifndef KERNEL_2_5
-static void s_SasemCallbackIn(t_urb *p_psUrb) {
+static void SasemCallbackIn(struct urb *Urb) {
 #else
-static void s_SasemCallbackIn(t_urb *p_psUrb, struct pt_regs *regs) {
+static void SasemCallbackIn(struct urb *Urb, struct pt_regs *regs) {
 #endif
-	t_sasemDevice *l_psSasemDevice;
-	int l_iDevnum;
-	int l_iLen;
-	char l_acBuf[MAX_INTERRUPT_DATA];
-	int l_i;
-	struct timeval l_stv;
-	long l_lms;
+	struct SasemDevice *lSasemDevice;
+	int lDevnum;
+	int lLen;
+	char lBuf[MAX_INTERRUPT_DATA];
+	int li;
+	struct timeval lstv;
+	long llms;
 
 	dbg(" {\n");
 	
-	if (!p_psUrb) {
-		dbg(": p_psUrb == NULL\n");
+	if (!Urb) {
+		dbg(": Urb == NULL\n");
 		return;
 	}
 
-	if (!(l_psSasemDevice = p_psUrb->context)) {
+	if (!(lSasemDevice = Urb->context)) {
 		dbg(": no context\n");
 #ifdef KERNEL_2_5
-		p_psUrb->transfer_flags |= URB_ASYNC_UNLINK;
+		Urb->transfer_flags |= URB_ASYNC_UNLINK;
 #endif
-		usb_unlink_urb(p_psUrb);
+		usb_unlink_urb(Urb);
 		return;
 	}
 
-	l_iDevnum = l_psSasemDevice->m_iDevnum;
+	lDevnum = lSasemDevice->Devnum;
 	if (debug) {
 		printk(DRIVER_NAME "[%d]: data received (length %d)\n",
-		       l_iDevnum, p_psUrb->actual_length);
+		       lDevnum, Urb->actual_length);
 		printk(DRIVER_NAME 
 		       " intr_callback called %x %x %x %x %x %x %x %x\n", 
-		       l_psSasemDevice->m_aucBufferIn[0],
-		       l_psSasemDevice->m_aucBufferIn[1],
-		       l_psSasemDevice->m_aucBufferIn[2],
-		       l_psSasemDevice->m_aucBufferIn[3],
-		       l_psSasemDevice->m_aucBufferIn[4],
-		       l_psSasemDevice->m_aucBufferIn[5],
-		       l_psSasemDevice->m_aucBufferIn[6],
-		       l_psSasemDevice->m_aucBufferIn[7]);
+		       lSasemDevice->BufferIn[0],
+		       lSasemDevice->BufferIn[1],
+		       lSasemDevice->BufferIn[2],
+		       lSasemDevice->BufferIn[3],
+		       lSasemDevice->BufferIn[4],
+		       lSasemDevice->BufferIn[5],
+		       lSasemDevice->BufferIn[6],
+		       lSasemDevice->BufferIn[7]);
 	}
 
-	switch (p_psUrb->status) {
+	switch (Urb->status) {
 
 	/* success */
 	case 0:
-		l_iLen = p_psUrb->actual_length;
-		if (l_iLen > MAX_INTERRUPT_DATA) return;
+		lLen = Urb->actual_length;
+		if (lLen > MAX_INTERRUPT_DATA) return;
 
-		memcpy(l_acBuf,p_psUrb->transfer_buffer,l_iLen);
+		memcpy(lBuf,Urb->transfer_buffer,lLen);
 
 		// is this needed? The OnAir device should always
 		// return 8 bytes
-		for (l_i = l_iLen; l_i < MAX_INTERRUPT_DATA; l_i++) 
-			l_acBuf[l_i] = 0;
+		for (li = lLen; li < MAX_INTERRUPT_DATA; li++) 
+			lBuf[li] = 0;
 
 		// the OnAir device seems not to be able to signal a
 		// pressed button by repeating its code. Keeping a
@@ -462,10 +435,10 @@ static void s_SasemCallbackIn(t_urb *p_psUrb, struct pt_regs *regs) {
 		//  0C 80 7F 41 BE 00 00 00   0C 80 7F 41 BE 00 00 00
 		
 		// get the time since the last button press
-		do_gettimeofday(&l_stv);
-		l_lms = (l_stv.tv_sec - l_psSasemDevice->m_sPressTime.tv_sec) * 1000 + (l_stv.tv_usec - l_psSasemDevice->m_sPressTime.tv_usec) / 1000;
+		do_gettimeofday(&lstv);
+		llms = (lstv.tv_sec - lSasemDevice->PressTime.tv_sec) * 1000 + (lstv.tv_usec - lSasemDevice->PressTime.tv_usec) / 1000;
 
-		if (memcmp(l_acBuf, sc_cSasemCode, MAX_INTERRUPT_DATA) == 0) {
+		if (memcmp(lBuf, SasemCode, MAX_INTERRUPT_DATA) == 0) {
 			// the repeat code is being sent, so we copy
 			// the old code to LIRC
 			
@@ -473,11 +446,11 @@ static void s_SasemCallbackIn(t_urb *p_psUrb, struct pt_regs *regs) {
 			// - no one should be able to push another (undetected) button
 			//   in that time and then get a false repeat of the previous press
 			// - but it is long enough for a genuine repeat
-			if ((l_lms < 250) && (l_psSasemDevice->m_iCodeSaved != 0)) {
-				memcpy(l_acBuf, &l_psSasemDevice->m_acLastCode,
+			if ((llms < 250) && (lSasemDevice->CodeSaved != 0)) {
+				memcpy(lBuf, &lSasemDevice->LastCode,
 				       MAX_INTERRUPT_DATA);
-				l_psSasemDevice->m_sPressTime.tv_sec = l_stv.tv_sec; 
-				l_psSasemDevice->m_sPressTime.tv_usec = l_stv.tv_usec;
+				lSasemDevice->PressTime.tv_sec = lstv.tv_sec; 
+				lSasemDevice->PressTime.tv_usec = lstv.tv_usec;
 			}
 			// there was no old code
 			else {
@@ -486,331 +459,333 @@ static void s_SasemCallbackIn(t_urb *p_psUrb, struct pt_regs *regs) {
 		}
 		else {
 			// save the current valid code for repeats
-			memcpy(&l_psSasemDevice->m_acLastCode, l_acBuf,
+			memcpy(&lSasemDevice->LastCode, lBuf,
 			       MAX_INTERRUPT_DATA);
 			// set flag to signal a valid code was save;
 			// just for safety reasons
-			l_psSasemDevice->m_iCodeSaved = 1;
-			l_psSasemDevice->m_sPressTime.tv_sec = l_stv.tv_sec; 
-			l_psSasemDevice->m_sPressTime.tv_usec = l_stv.tv_usec;
+			lSasemDevice->CodeSaved = 1;
+			lSasemDevice->PressTime.tv_sec = lstv.tv_sec; 
+			lSasemDevice->PressTime.tv_usec = lstv.tv_usec;
 		}
 		
 		/* copy 1 code to lirc_buffer */
-		lirc_buffer_write_1(l_psSasemDevice->m_psLircPlugin->rbuf,
-			l_acBuf);
-		wake_up(&l_psSasemDevice->m_psLircPlugin->rbuf->wait_poll);
+		lirc_buffer_write_1(lSasemDevice->LircPlugin->rbuf,
+			lBuf);
+		wake_up(&lSasemDevice->LircPlugin->rbuf->wait_poll);
 		break;
 
 	/* unlink */
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
-		err(": urb failed, status %d\n", p_psUrb->status);
+		err(": urb failed, status %d\n", Urb->status);
 #ifdef KERNEL_2_5
-		p_psUrb->transfer_flags |= URB_ASYNC_UNLINK;
+		Urb->transfer_flags |= URB_ASYNC_UNLINK;
 #endif
-		usb_unlink_urb(p_psUrb);
+		usb_unlink_urb(Urb);
 		return;
 	}
 
 #ifdef KERNEL_2_5
 	/* resubmit urb */
-	usb_submit_urb(p_psUrb, SLAB_ATOMIC);
+	usb_submit_urb(Urb, SLAB_ATOMIC);
 #endif
 	dbg(" }\n");
 }
 
 /* lirc stuff */
 
-static int s_iUnregisterFromLirc(t_sasemDevice *p_psSasemDevice) {
-	t_lirc_plugin *l_psLircPlugin = p_psSasemDevice->m_psLircPlugin;
-	int l_iDevnum;
+static int UnregisterFromLirc(struct SasemDevice *SasemDevice) {
+	struct lirc_plugin *lLircPlugin = SasemDevice->LircPlugin;
+	int lDevnum;
 
 	dbg(" {\n");
-	l_iDevnum = p_psSasemDevice->m_iDevnum;
+	lDevnum = SasemDevice->Devnum;
 	
-	lirc_unregister_plugin(l_psLircPlugin->minor);
+	lirc_unregister_plugin(lLircPlugin->minor);
 	
-	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", l_iDevnum);
+	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", lDevnum);
 	
-	lirc_buffer_free(l_psLircPlugin->rbuf);
-	kfree(l_psLircPlugin->rbuf);
-	kfree(l_psLircPlugin);
+	lirc_buffer_free(lLircPlugin->rbuf);
+	kfree(lLircPlugin->rbuf);
+	kfree(lLircPlugin);
 	dbg(" }\n");
 	return 0;
 }
 
-static int s_iLircSetUseInc(void *p_pData) {
-	t_sasemDevice *l_psSasemDevice = p_pData;
-	int l_iDevnum;
+static int LircSetUseInc(void *Data) {
+	struct SasemDevice *lSasemDevice = Data;
+	int lDevnum;
 
 	dbg(" {\n");
-	if (!l_psSasemDevice) {
+	if (!lSasemDevice) {
 		err(" no context\n");
 		return -EIO;
 	}
 	
-	l_iDevnum = l_psSasemDevice->m_iDevnum;
+	lDevnum = lSasemDevice->Devnum;
 
-	if (!l_psSasemDevice->m_iConnected) {
+	if (!lSasemDevice->Connected) {
 		
 		/*
 			this is the trigger from LIRC to start
 			transfering data so the URB is being submitted
 		*/
 
-		if (!l_psSasemDevice->m_psDevice)
+		if (!lSasemDevice->Device)
 			return -ENOENT;
 		
 		/* set USB device in URB */
-		l_psSasemDevice->m_psUrbIn->dev = l_psSasemDevice->m_psDevice;
+		lSasemDevice->UrbIn->dev = lSasemDevice->Device;
 		
 		/* start communication by submitting URB */
 #ifndef KERNEL_2_5
-		if (usb_submit_urb(l_psSasemDevice->m_psUrbIn)) {
+		if (usb_submit_urb(lSasemDevice->UrbIn)) {
 #else
-		if (usb_submit_urb(l_psSasemDevice->m_psUrbIn, SLAB_ATOMIC)) {
+		if (usb_submit_urb(lSasemDevice->UrbIn, SLAB_ATOMIC)) {
 #endif
 			err(" URB submit failed\n");
 			return -EIO;
 		}
 		
 		/* indicate that URB has been submitted */
-		l_psSasemDevice->m_iConnected = 1;
+		lSasemDevice->Connected = 1;
 	}
 
 	dbg(" }\n");
 	return 0;
 }
 
-static void s_iLircSetUseDec(void *p_pData) {
-	t_sasemDevice *l_psSasemDevice = p_pData;
-	int l_iDevnum;
+static void LircSetUseDec(void *Data) {
+	struct SasemDevice *lSasemDevice = Data;
+	int lDevnum;
 	
 	dbg(" {\n");
-	if (!l_psSasemDevice) {
+	if (!lSasemDevice) {
 		err(" no context\n");
 		return;
 	}
 
-	l_iDevnum = l_psSasemDevice->m_iDevnum;
+	lDevnum = lSasemDevice->Devnum;
 
-	if (l_psSasemDevice->m_iConnected) {
+	if (lSasemDevice->Connected) {
 
 		/*
 			URB has been submitted before so it can be unlinked
 		*/
 
-		down_interruptible(&l_psSasemDevice->m_sSemLock);
-		usb_unlink_urb(l_psSasemDevice->m_psUrbIn);
-		l_psSasemDevice->m_iConnected = 0;
-		up(&l_psSasemDevice->m_sSemLock);
+		down(&lSasemDevice->SemLock);
+		usb_unlink_urb(lSasemDevice->UrbIn);
+		lSasemDevice->Connected = 0;
+		up(&lSasemDevice->SemLock);
 	}
 	dbg(" }\n");
 }
 
 /* FS Operations for LCDProc */
 
-static int s_iSasemFSOpen(t_inode *p_psInode, t_file *p_psFile) {
-	t_sasemDevice *l_psSasemDevice;
-	int l_iReturn = 0;
-	int l_iPipe;
+static int SasemFSOpen(struct inode *Inode, struct file *File) {
+	struct SasemDevice *lSasemDevice;
+	int lReturn = 0;
+	int lPipe;
 
 	dbg(" {\n");
-	if (s_psSasemDevice == NULL) {
+	if (SasemDevice == NULL) {
 		err(" no device\n");
 		return -ENODEV;
 	}
 
-	l_psSasemDevice = s_psSasemDevice;
-	down(&l_psSasemDevice->m_sSemLock);
+	lSasemDevice = SasemDevice;
+	down(&lSasemDevice->SemLock);
 
-	if (l_psSasemDevice->m_iOpen) {
+	if (lSasemDevice->Open) {
 		// already open
 		dbg(": already open\n");
 
 		// return error immediately
-		if (p_psFile->f_flags & O_NONBLOCK) {
-			up(&l_psSasemDevice->m_sSemLock);
+		if (File->f_flags & O_NONBLOCK) {
+			up(&lSasemDevice->SemLock);
 			return -EAGAIN;
 		}
 
 		dbg(": open & block\n");
 		// wait for release, on global variable
-		if ((l_iReturn = 
-			wait_event_interruptible(l_psSasemDevice->m_sQueueOpen, 
-				s_psSasemDevice !=NULL))) {
-			up(&l_psSasemDevice->m_sSemLock);
-			return l_iReturn;
+		if ((lReturn = 
+			wait_event_interruptible(lSasemDevice->QueueOpen, 
+				SasemDevice !=NULL))) {
+			up(&lSasemDevice->SemLock);
+			return lReturn;
 		}
 	}
 
 	// indicate status as open
-	l_psSasemDevice->m_iOpen=1;
+	lSasemDevice->Open=1;
 
 	// handle URB for Out Interface
 #ifndef KERNEL_2_5
-	l_psSasemDevice->m_psUrbOut = usb_alloc_urb(0);
+	lSasemDevice->UrbOut = usb_alloc_urb(0);
 #else
-	l_psSasemDevice->m_psUrbOut = usb_alloc_urb(0, GFP_KERNEL);
+	lSasemDevice->UrbOut = usb_alloc_urb(0, GFP_KERNEL);
 #endif
 
-/*	l_iPipe = usb_sndintpipe(l_psSasemDevice->m_psDevice,
-			l_psSasemDevice->m_psDescriptorOut->bEndpointAddress);
+/*	lPipe = usb_sndintpipe(lSasemDevice->Device,
+			lSasemDevice->DescriptorOut->bEndpointAddress);
 */    
 	dbg(": init outbound URB\n");
-	l_iPipe = usb_sndbulkpipe(l_psSasemDevice->m_psDevice,
-			l_psSasemDevice->m_psDescriptorOut->bEndpointAddress);
+	lPipe = usb_sndbulkpipe(lSasemDevice->Device,
+			lSasemDevice->DescriptorOut->bEndpointAddress);
 
-	usb_fill_int_urb(l_psSasemDevice->m_psUrbOut, 
-			l_psSasemDevice->m_psDevice,
-			l_iPipe, l_psSasemDevice->m_aucBufferOut,
-			sizeof(l_psSasemDevice->m_aucBufferOut),
-			s_SasemCallbackOut, l_psSasemDevice, 
-			l_psSasemDevice->m_psDescriptorOut->bInterval);
+	usb_fill_int_urb(lSasemDevice->UrbOut, 
+			lSasemDevice->Device,
+			lPipe, lSasemDevice->BufferOut,
+			sizeof(lSasemDevice->BufferOut),
+			SasemCallbackOut, lSasemDevice, 
+			lSasemDevice->DescriptorOut->bInterval);
 
 	// store pointer to device in file handle
-	p_psFile->private_data = l_psSasemDevice;
-	up(&l_psSasemDevice->m_sSemLock);
+	File->private_data = lSasemDevice;
+	up(&lSasemDevice->SemLock);
 	dbg(" }\n");
 	return 0;
 }
 
-static int s_iSasemFSRelease(t_inode *p_psInode, t_file *p_psFile) {
-	t_sasemDevice *lp_sasemDevice;
+static int SasemFSRelease(struct inode *Inode, struct file *File) {
+	struct SasemDevice *lpSasemDevice;
 
 	dbg(" {\n");
 	// get pointer to device
-	lp_sasemDevice = (t_sasemDevice *)p_psFile->private_data;
-	down(&lp_sasemDevice->m_sSemLock);
+	lpSasemDevice = (struct SasemDevice *)File->private_data;
+	down(&lpSasemDevice->SemLock);
 
 	// is the device open?
-	if ((lp_sasemDevice) && (lp_sasemDevice->m_iOpen)) {
+	if ((lpSasemDevice) && (lpSasemDevice->Open)) {
 		dbg(": check open\n");
 
 		// yes, free URB and set status to closed
-		usb_unlink_urb(lp_sasemDevice->m_psUrbOut);
-		usb_free_urb(lp_sasemDevice->m_psUrbOut);
-		lp_sasemDevice->m_psUrbOut = NULL;
-		lp_sasemDevice->m_iOpen = 0;
+		usb_unlink_urb(lpSasemDevice->UrbOut);
+		usb_free_urb(lpSasemDevice->UrbOut);
+		lpSasemDevice->UrbOut = NULL;
+		lpSasemDevice->Open = 0;
 	}
-	up(&lp_sasemDevice->m_sSemLock);
+	up(&lpSasemDevice->SemLock);
 
 	// wake up any anybody who is waiting for release
 	dbg(": wake up\n");
-	wake_up_interruptible(&lp_sasemDevice->m_sQueueOpen);
+	wake_up_interruptible(&lpSasemDevice->QueueOpen);
 	dbg(" }\n");
 	return 0;
 }
 
-static ssize_t s_sSasemFSWrite(t_file *p_psFile, const char *p_pcBuffer,
-				size_t p_psCount, loff_t *p_psPos) {
-	t_sasemDevice *l_psSasemDevice;
-	int l_iCount = 0;
-	int l_iResult;
+static ssize_t SasemFSWrite(struct file *File, const char *cBuffer,
+				size_t Count, loff_t *Pos) {
+	struct SasemDevice *lSasemDevice;
+	int lCount = 0;
+	int lResult;
 
 	dbg(" {\n");
 	// sanity check
-	l_psSasemDevice = (t_sasemDevice *)p_psFile->private_data;
+	lSasemDevice = (struct SasemDevice *)File->private_data;
 	dbg(": lock\n");
-	down(&l_psSasemDevice->m_sSemLock);
+	down(&lSasemDevice->SemLock);
 
 	dbg(": check device \n");
-	if (l_psSasemDevice->m_psDevice == NULL) {
+	if (lSasemDevice->Device == NULL) {
 		dbg(": device is null \n");
-		up(&l_psSasemDevice->m_sSemLock);
+		up(&lSasemDevice->SemLock);
 		return -ENODEV;
 	}
 
 	// is device open?
 	dbg(": check open \n");
-	if (l_psSasemDevice->m_iOpen == 0) {
+	if (lSasemDevice->Open == 0) {
 		dbg(": device not open\n");
-		up(&l_psSasemDevice->m_sSemLock);
+		up(&lSasemDevice->SemLock);
 		return -EBADF;
 	}
 
-	if (p_psCount == 0) {
-		up(&l_psSasemDevice->m_sSemLock);
+	if (Count == 0) {
+		up(&lSasemDevice->SemLock);
 		return 0;
 	}
 
-	if (l_psSasemDevice->m_psUrbOut->status == -EINPROGRESS) {
+	if (lSasemDevice->UrbOut->status == -EINPROGRESS) {
 		dbg(": status -EINPROGRESS \n");
-		up(&l_psSasemDevice->m_sSemLock);
+		up(&lSasemDevice->SemLock);
 		return 0;
 	}
 
-	if (l_psSasemDevice->m_psUrbOut->status) {
-		err(": status %d \n", l_psSasemDevice->m_psUrbOut->status);
-		up(&l_psSasemDevice->m_sSemLock);
+	if (lSasemDevice->UrbOut->status) {
+		err(": status %d \n", lSasemDevice->UrbOut->status);
+		up(&lSasemDevice->SemLock);
 		return -EAGAIN;
 	}
 
-	memset(l_psSasemDevice->m_aucBufferOut, 0, 
-			sizeof(l_psSasemDevice->m_aucBufferOut));
-	l_iCount = (p_psCount>MAX_INTERRUPT_DATA)?MAX_INTERRUPT_DATA:p_psCount;
-	copy_from_user(l_psSasemDevice->m_aucBufferOut, p_pcBuffer, l_iCount);
+	memset(lSasemDevice->BufferOut, 0, 
+			sizeof(lSasemDevice->BufferOut));
+	lCount = (Count>MAX_INTERRUPT_DATA)?MAX_INTERRUPT_DATA:Count;
+	copy_from_user(lSasemDevice->BufferOut, cBuffer, lCount);
 
 #ifndef KERNEL_2_5
-	l_iResult = usb_submit_urb(l_psSasemDevice->m_psUrbOut);
+	lResult = usb_submit_urb(lSasemDevice->UrbOut);
 #else
-	l_iResult = usb_submit_urb(l_psSasemDevice->m_psUrbOut, SLAB_ATOMIC);
+	lResult = usb_submit_urb(lSasemDevice->UrbOut, SLAB_ATOMIC);
 #endif
 
-	if (l_iResult) {
-		err(": usb_submit_urb failed %d\n", l_iResult);
-		l_iCount = l_iResult;
+	if (lResult) {
+		err(": usb_submit_urb failed %d\n", lResult);
+		lCount = lResult;
 	}
 	else {
 		// wait for write to finish
-		//interruptible_sleep_on(&l_psSasemDevice->m_sQueueWrite);
-		wait_event_interruptible(l_psSasemDevice->m_sQueueWrite, l_psSasemDevice->m_psUrbOut->status != -EINPROGRESS);
+		//interruptible_sleep_on(&lSasemDevice->QueueWrite);
+		wait_event_interruptible(lSasemDevice->QueueWrite, lSasemDevice->UrbOut->status != -EINPROGRESS);
 	}
 
-	up(&l_psSasemDevice->m_sSemLock);
+	up(&lSasemDevice->SemLock);
 	dbg(" }\n");
-	return l_iCount;
+	return lCount;
 }
 
-static ssize_t s_sSasemFSRead(t_file *p_psFile, char *p_pcBuffer,
-				size_t p_psCount, loff_t *p_psUnused_pos) {
+static ssize_t SasemFSRead(struct file *File, char *cBuffer,
+			   size_t Count, loff_t *Unused_pos)
+{
 	dbg(" {}\n");
 	// no read support
 	return -EINVAL;
 }
 
-static int s_iSasemFSIoctl(t_inode *p_psInode, t_file *p_psFile,
-				unsigned p_uCmd, unsigned long p_ulArg) {
-	int l_i;
-	char l_acBuf[30];
-	t_sasemDevice *l_psSasemDevice;
+static int SasemFSIoctl(struct inode *Inode, struct file *File,
+			unsigned Cmd, unsigned long lArg)
+{
+	int l;
+	char lBuf[30];
+	struct SasemDevice *lSasemDevice;
 
 	dbg(" {\n");
 	// sanity check
-	l_psSasemDevice = (t_sasemDevice *)p_psFile->private_data;
-	if (!l_psSasemDevice->m_psDevice)
+	lSasemDevice = (struct SasemDevice *)File->private_data;
+	if (!lSasemDevice->Device)
 	return -ENOLINK;
 
-	switch (p_uCmd) {
+	switch (Cmd) {
 
 	case IOCTL_GET_HARD_VERSION:
 		// return device information
 		dbg(": IOCTL_GET_HARD_VERSION\n");
-		l_i = (l_psSasemDevice->m_psDevice)->descriptor.bcdDevice;
-		sprintf(l_acBuf,"%1d%1d.%1d%1d",
-				(l_i & 0xF000)>>12,(l_i & 0xF00)>>8,
-				(l_i & 0xF0)>>4,(l_i & 0xF));
-		if (copy_to_user((void *)p_ulArg, l_acBuf, strlen(l_acBuf))!=0)
+		l = (lSasemDevice->Device)->descriptor.bcdDevice;
+		sprintf(lBuf,"%1d%1d.%1d%1d",
+				(l & 0xF000)>>12,(l & 0xF00)>>8,
+				(l & 0xF0)>>4,(l & 0xF));
+		if (copy_to_user((void *)lArg, lBuf, strlen(lBuf))!=0)
 			return -EFAULT;
 		break;
 
 	case IOCTL_GET_DRV_VERSION:
 		// return driver information
-		// sprintf(l_acBuf,"USBLCD Driver Version 1.03");
+		// sprintf(lBuf,"USBLCD Driver Version 1.03");
 		dbg(": IOCTL_GET_DRV_VERSION\n");
-		sprintf(l_acBuf,DRIVER_DESC);
-		if (copy_to_user((void *)p_ulArg, l_acBuf, strlen(l_acBuf))!=0)
+		sprintf(lBuf,DRIVER_DESC);
+		if (copy_to_user((void *)lArg, lBuf, strlen(lBuf))!=0)
 			return -EFAULT;
 		break;  
 
@@ -824,7 +799,7 @@ static int s_iSasemFSIoctl(t_inode *p_psInode, t_file *p_psFile,
 	return 0;
 }
 
-static unsigned s_uSasemFSPoll(t_file *p_psFile, poll_table *p_psWait) {
+static unsigned SasemFSPoll(struct file *File, poll_table *Wait) {
 
 	dbg(" {}\n");
 	// no poll support
@@ -832,24 +807,25 @@ static unsigned s_uSasemFSPoll(t_file *p_psFile, poll_table *p_psWait) {
 }
 
 #ifndef KERNEL_2_5
-static void s_SasemCallbackOut(t_urb *p_psUrb) {
+static void SasemCallbackOut(struct urb *Urb)
 #else
-static void s_SasemCallbackOut(t_urb *p_psUrb, struct pt_regs *regs) {
+static void SasemCallbackOut(struct urb *Urb, struct pt_regs *regs)
 #endif
-	t_sasemDevice *l_psSasemDevice;
+{
+	struct SasemDevice *lSasemDevice;
 
 	dbg(" {\n");
 
-	l_psSasemDevice = p_psUrb->context;  
+	lSasemDevice = Urb->context;  
 
 	// sanity check
-	if (p_psUrb->status != 0) {
-		err(": urb failed, status %d\n", p_psUrb->status);
+	if (Urb->status != 0) {
+		err(": urb failed, status %d\n", Urb->status);
 	}
-	if (waitqueue_active(&l_psSasemDevice->m_sQueueWrite)) {
+	if (waitqueue_active(&lSasemDevice->QueueWrite)) {
 		dbg(": wake up \n");
-		l_psSasemDevice->m_psUrbOut->dev = l_psSasemDevice->m_psDevice;
-		wake_up(&l_psSasemDevice->m_sQueueWrite);
+		lSasemDevice->UrbOut->dev = lSasemDevice->Device;
+		wake_up(&lSasemDevice->QueueWrite);
 	}
 	dbg(" }\n");
 }
