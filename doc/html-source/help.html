@@ -4,7 +4,71 @@
 <H1 ALIGN="CENTER">FAQ</H1>
 <HR WIDTH="70%">
 
-<P></P>
+<P>
+There are various sources of information you should check before
+writing mails directly to <A HREF="lirc@bartelmus.de">me</A>. Please
+read the <A
+HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/index.html">LIRC
+homepage</A> carefully and have a look at the <A
+HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/index.html">FAQ</A>.
+</P>
+<P>
+If your question is not answered there try the LIRC mailing
+list. Before posting to the list check the <A
+HREF="http://www.wh9.tu-dresden.de/~heinrich/lirc/list-archive/">mailing
+list archive</A> for an answer.
+</P>
+<P>
+To subscribe to the LIRC mailing list send an email to <A
+HREF="mailto:lirc-request@lists.xmission.com">lirc-request@lists.xmission.com</A>
+with the word "subscribe" in the <B>body</B> of the message.
+</P>
+<P>
+To unsubscribe send an email to <A
+HREF="mailto:lirc-request@lists.xmission.com">lirc-request@lists.xmission.com</A>
+containing the line "unsubscribe you@your.domain" in the <B>body</B>
+of the message.
+</P>
+
+<!-- BUGS ------------------------------------------------------------------>
+
+<A NAME="bugs"><HR></A>
+<H1 ALIGN="CENTER">Reporting bugs</H1>
+<HR WIDTH="70%">
+
+<P>
+If you believe that you have found a bug in LIRC your bug report
+should contain the following information:
+
+<UL>
+<LI>LIRC version, versions of all other packages involved</LI>
+<LI>description of the hardware you are using</LI>
+<LI>output of <em>ls -l /dev/lirc*</em></LI>
+<LI>output of <em>lsmod</em></LI>
+<LI>relevant passages from <em>/var/log/messages</em></LI>
+<LI>contents of lircd's logfile <em>/var/log/lircd</em><BR> Compile
+LIRC in debug mode. A new command line option
+(<em>-d[debug_level]</em>) will become available for
+<em>lircd</em>. The debug level (0 to 5) will control how much
+additional debug output will be displayed. But be careful with
+this. After some extensive debug sessions I once discovered that my
+logfile was using 110 MBytes of disk space. :-)</LI>
+<LI>a description of the problem so I can reproduce it</LI>
+<LI>a patch that solves the problem (this one is optional)</LI>
+<LI>the config files you are using (<em>lircd.conf</em>,
+<em>lircmd.conf</em>, <em>.lircrc</em>)</LI>
+<LI>If you have problems with a config file try to find the shortest
+example that does not work as one would expect and include it.</LI>
+</UL>
+
+If you have problems with one of the TV card drivers you should write
+to the according authors directly. You will find their email addresses
+in the source code and at the <A
+HREF="http://fsinfo.cs.uni-sb.de/~columbus/lirc/developers.html">developers
+page<A>.
+</P>
+
+<!-- New remotes ----------------------------------------------------------->
 
 <A NAME="new_remote"><HR></A>
 <H1 ALIGN="CENTER">Adding new remote controls</H1>

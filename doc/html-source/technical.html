@@ -4,7 +4,8 @@
 <CENTER><H1>Driver Model</H1></CENTER>
 <HR WIDTH="70%">
 
-<PRE>  |  +------------------------------------------------------+
+<PRE>
+  |  +------------------------------------------------------+
 S |  | 'gpm -t msc -m /dev/lircm' or a well configured X    |
 O |  | (see INSTALL Chapter 'Configuring lircmd')           |
 F |  +--------------+---------------------------------------+
@@ -14,7 +15,7 @@ A |                 |
 R |     +-----------+-----------+   +-------------------------------+
 E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
   |     | configured with       |   | configured with ~/.lircrc     |
-  |     | /etc/lircmd.conf      |   |                               |
+  |     | lircmd.conf           |   |                               |
   |     +-----------+-----------+   +-----------+-------------------+
   |                 |                           |
   |                 +-------------+-------------+
@@ -24,15 +25,15 @@ E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
 S |              +----------------+--------------------------+
 O |              | decoder daemon (lircd), irrecord or mode2 |
 F |              | lircd is configured through               |
-T | Userspace    | /etc/lircd.conf                           |
-W |              +----------+---------------+----------------+
-A |                         |               |
-R |                         |       +-------+-------+
-E |                         |       |  Irman daemon |
-  |                         |       |   (lirmand)   |
-  |                         |       +-------+-------+
-  |                         |               |
-  +-------------------------+---------------+--------------------------
+T | Userspace    | lircd.conf                                |
+W |              +------------------+------------------------+
+A |                                 |
+R |                                 |
+E |                                 |
+  |                                 |
+  |                                 |
+  |                                 |
+  +-------------------------+-------+-------+--------------------------
   | Kernelspace             |               |       (character device
   |                     /dev/lirc       /dev/ttyS?   driver ==> one
   |                         |               |        connection)
@@ -108,4 +109,86 @@ W |          +------------------------+  +---------+
 <H1 ALIGN="CENTER">Writing Applications for LIRC</H1>
 <HR WIDTH="70%">
 
-<P>TODO</P>
+<P>
+As LIRC is able to both receive and send IR commands there are two
+possible types of applications. Programs that send IR commands like
+<em>xrc</em> and <em>rc</em> or programs that receive commands like
+<em>irexec</em>, <em>irxevent</em> and <em>irpty</em>.  Both types of
+applications will have to connect to the lircd daemon using the socket
+usually located in /dev/lircd. Communication on the socket uses human
+readable format. The end of a line is indicated with a newline
+character.
+</P>
+<P>
+Whenever lircd receives a IR signal it will broadcast the following
+string to its clients:
+<PRE>
+  &lt;code&gt; &lt;repeat count&gt; &lt;button name&gt; &lt;remote control name&gt;
+</PRE>
+
+<em>code</em> is a 64-bit long code (in hexadecimal representation) of
+the IR signal. It's usage in applications is deprecated and should be
+ignored. The <em>repeat count</em> shows how long the user has been
+holding down a button. The counter will start at 0 and increment each
+time a new IR signal has been received. The <em>button name</em> and
+<em>remote control name</em> are defined in the lircd config
+file. Their purpose should be quite self-explanatory. They must not
+contain any whitespace.<BR>
+
+The only other situation when lircd broadcasts to all clients is when
+it receives the SIGHUP signal. Then it will send a SIGHUP packet to
+its clients indicating that it's config file might have changed. This
+feature is <NOBR>e.g.</NOBR> used in <em>xrc</em> to rebuild the list
+of supported remote controls each time lircd's config changes. The
+format of the packet will be explained later.
+</P>
+<P>
+Applications that want to send out IR commands can use the following
+commands:
+
+<PRE>
+  SEND_ONCE &lt;remote control name&gt; &lt;button name&gt;
+  SEND_START &lt;remote control name&gt; &lt;button name&gt;
+  SEND_STOP &lt;remote control name&gt; &lt;button name&gt;
+</PRE>
+
+The SEND_ONCE directive tells lircd to send the IR signal associated
+with the given remote control and button name once. Consequently
+SEND_START tells lircd to start repeating the given button until it
+receives a SEND_STOP command. As repeating of IR signal is very CPU
+intensive on most systems there should be a limit on the time for
+repeating buttons in each applications. Currently there is no such
+limit in lircd itself but it is likely to appear in future versions.
+lircd won't accept any new send commands while it is repeating.
+</P>
+
+<P>
+lircd also understands the following commands:
+<PRE>
+  VERSION
+  LIST [&lt;remote control name&gt;]
+</PRE>
+
+The response to the VERSION command will be a packet containing
+lircd's version.<BR>
+The LIST command without further arguments can be used to get a list
+of all remote controls known to lircd. If a name of a supported remote 
+control is given as argument all buttons of the given remote control
+are listed in the reply packet. Have a look at <em>xrc</em> for an
+example how this can be used.
+</P>
+<P>
+There still remains to explain the format of lircd's reply
+packets. Here is a formal description of the packets:
+
+<PRE>
+  BEGIN
+  &lt;command&gt;
+  [SUCCESS|ERROR]
+  [DATA
+  n
+  n lines of data]
+  END
+</PRE>
+
+</P>
