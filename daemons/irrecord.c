@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.29 2001/06/11 08:29:38 ranty Exp $      */
+/*      $Id: irrecord.c,v 5.30 2001/07/05 18:01:06 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1099,39 +1099,60 @@ void get_post_data(struct ir_remote *remote)
 }
 
 #ifdef DEBUG
-void remove_pre_data(struct ir_remote *remote)
+void remove_pre_data(struct ir_remote *remotes)
 {
 	struct ir_ncode *codes;
+	struct ir_remote *remote;
 	
-	if(remote->pre_data_bits==0) return;
-
-	codes=remote->codes;
-	while(codes->name!=NULL)
+	remote=remotes;
+	while(remote!=NULL)
 	{
-		codes->code|=remote->pre_data<<remote->bits;
-		codes++;
+		if(remote->pre_data_bits==0)
+		{
+			remote=remote->next;
+			continue;
+		}
+
+		codes=remote->codes;
+		while(codes->name!=NULL)
+		{
+			codes->code|=remote->pre_data<<remote->bits;
+			codes++;
+		}
+		remote->bits+=remote->pre_data_bits;
+		remote->pre_data=0;
+		remote->pre_data_bits=0;
+		remote=remote->next;
 	}
-	remote->bits+=remote->pre_data_bits;
-	remote->pre_data=0;
-	remote->pre_data_bits=0;
 }
 
-void remove_post_data(struct ir_remote *remote)
+void remove_post_data(struct ir_remote *remotes)
 {
 	struct ir_ncode *codes;
 	
-	if(remote->post_data_bits==0) return;
-
-	codes=remote->codes;
-	while(codes->name!=NULL)
+	struct ir_remote *remote;
+	
+	remote=remotes;
+	while(remote!=NULL)
 	{
-		codes->code<<=remote->post_data_bits;
-		codes->code|=remote->post_data;
-		codes++;
+		if(remote->post_data_bits==0)
+		{
+			remote=remote->next;
+			continue;
+		}
+		
+		codes=remote->codes;
+		while(codes->name!=NULL)
+		{
+			codes->code<<=remote->post_data_bits;
+			codes->code|=remote->post_data;
+			codes++;
+		}
+		remote->bits+=remote->post_data_bits;
+		remote->post_data=0;
+		remote->post_data_bits=0;
+		remote=remote->next;
 	}
-	remote->bits+=remote->post_data_bits;
-	remote->post_data=0;
-	remote->post_data_bits=0;
 }
 #endif
 
