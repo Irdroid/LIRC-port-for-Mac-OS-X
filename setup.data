@@ -1,0 +1,153 @@
+hw_menu_entry: @any
+	serial: "Home-brew (16x50 UART compatible serial port)"
+	parallel: "Home-brew (parallel port)"
+	@hw-soundcard: "Home-brew (soundcard input)"
+	@hw-other-serial: "Other serial port devices"
+	@hw-tv-card: "TV card"
+	@hw-irda: "IrDA hardware"
+	@hw-pda: "PDAs"
+	udp: "Network (UDP)"
+	@hw-other: "Other (MIDI, Bluetooth, etc.)"
+	none: "None (network connections only)"
+
+hw_menu_entry: @hw-soundcard
+	dsp: "Simple IR diode (EXPERIMENTAL)"
+	audio: "IR receiver IC connected to auido input (EXPERIMENTAL)"
+
+hw_menu_entry: @hw-other
+	livedrive_midi: "Creative LiveDrive midi"
+	livedrive_seq: "Creative LiveDrive sequencer"
+	bte: "Ericsson mobile phone via Bluetooth"
+
+hw_menu_entry: @hw-other-serial
+	animax: "Anir Multimedia Magic"
+	caraca: "CARACA"
+	creative: "Creative Infra Receiver/CIMR100"
+	irdeo: "IRdeo"
+	irdeo_remote: "IRdeo Remote"
+	irman: "Irman / UIR"
+	logitech: "Logitech/AST"
+	pctv: "Miro PCTV receiver"
+	packard_bell: "Packard Bell receiver"
+	pctv: "Pinnacle Systems PCTV (pro) receiver"
+	remotemaster: "PixelView RemoteMaster RC2000/RC3000"
+	realmagic: "REALmagic (bundled with Hollywood Plus DVD card)"
+	slinke: "Slink-e (receive only)"
+	silitek: "Silitek SM-1000"
+	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
+	mp3anywhere: "X10 MP3 Anywhere RF Receiver"
+
+hw_menu_entry: @hw-tv-card 
+	cph03x: "Askey Magic TView CPH03x (card=1)"
+	cph06x: "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)"
+	tvbox: "Asus TV-Box"
+	avermedia: "AverMedia TV card (TVCapture, TVPhone) (card=6)"
+	avermedia98: "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)"
+	avermedia_vdomate: "AverMedia TV card (VDOMATE) (use card=13)"
+	bestbuy: "BestBuy Easy TV (BT848) (card=55)"
+	bestbuy2: "BestBuy Easy TV (BT878) (card=62)"
+	chronos: "Chronos Video Shuttle II (card=35)"
+	cph03x: "Dynalink Magic TView (card=48)"
+	flyvideo: "FlyVideo II (card=8)"
+	flyvideo: "FlyVideo 98 (card=30)"
+	flyvideo: "FlyVideo 98/FM /2000S (card=56)"
+	flyvideo: "Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner (card=36)"
+	hauppauge: "Hauppauge TV card (new I2C layer required)"
+	hauppauge_dvb: "Hauppauge DVB-s card (ver. 2.1)"
+	kworld: "Jetway TV/Capture JW-TV878-FBK, Kworld KW-TV878RF (card=78)"
+	knc_one: "KNC ONE TV Station (-/SE/PRO/RDS)"
+	pixelview_pak: "Lenco MXTV-9578 CP (card=50)"
+	pctv: "Miro PCTV serial port receiver"
+	cph06x: "Phoebe Tv Master + FM (card=22)"
+	pixelview_pak: "PixelView PlayTV PAK (card=50)"
+	pixelview_pro: "Pixelview PlayTV pro (card=37)"
+	pixelview_bt878: "Pixelview PlayTV (bt878) \
+		(Prolink PV-BT878P+, card=16)"
+	pixelview_pak: "Prolink PV-BT878P+4E (card=50)"
+	pixelview_pro: "Prolink PV-BT878P+9B \
+		(PlayTV Pro rev.9B FM+NICAM) (card=72)"
+	provideo: "ProVideo PV951 (card=42)"
+	mediafocusI: "Technisat MediaFocus I"
+	tekram_bt829: "Tekram M230 Mach64 (and others bt829 based)"
+	tvbox: "VisionTek BreakOut-Box"
+	cph06x: "TView99 CPH063 (card=38)"
+	knc_one: "Typhoon TView RDS / FM Stereo (card=53)"
+	leadtek_0010: "Winfast TV2000/XP (card=34)"
+	leadtek_0007: "WinView 601 (card=17)"
+
+hw_menu_entry: @hw-irda
+	sir: "SIR IrDA (built-in IR ports)"
+	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
+	it87: "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)"
+	act200l: "Actisys Act200L SIR driver support"
+
+hw_menu_entry: @hw-pda
+	sa1100: "HP iPAQ"
+	sa1100: "Sharp Zaurus"
+
+param_type: act200l animax irdeo irdeo_remote packard_bell serial \
+		sir tekram
+	com:
+
+old_hardware_param_old:
+	com1: "COM1 ($COM1_PORT, $COM1_IRQ)"
+	com2: "COM2 ($COM2_PORT, $COM2_IRQ)"
+	com3: "COM3 ($COM3_PORT, $COM3_IRQ)"
+	com4: "COM4 ($COM4_PORT, $COM4_IRQ)"
+	user: "Other (custom values)"
+
+param_type: parallel
+	lpt:
+
+old_hardware_param_old:
+	lpt1: "LPT1 ($LPT1_PORT, $LPT1_IRQ)"
+	lpt2: "LPT2 ($LPT2_PORT, $LPT2_IRQ)"
+	lpt3: "LPT3 ($LPT3_PORT, $LPT3_IRQ)"
+	user: "Other (custom values)"
+
+param_type: caraca creative irman logitech mp3anywhere pctv realmagic \
+		remotemaster silitek slinke
+	tty:
+
+old_hardware_param_old:
+	TITLE="Select tty to use"
+	CONFIG_TEXT="Choose the tty where your hardware is available."
+	tty1: "COM1 (/dev/ttyS0)"
+	tty2: "COM2 (/dev/ttyS1)"
+	tty3: "COM3 (/dev/ttyS2)"
+	tty4: "COM4 (/dev/ttyS3)"
+
+param_type: audio avermedia avermedia98 avermedia_vdomate bestbuy \
+		bestbuy2 bte chronos cph03x cph06x dsp flyvideo \
+		hauppauge hauppauge_dvb it87 knc_one kworld \
+		leadtek_0007 leadtek_0010 livedrive_midi livedrive_seq \
+		mediafocusI none pixelview_bt878 pixelview_pak \
+		pixelview_pro provideo sa1100 tekram_bt829 tvbox udp 
+	none:
+
+default_param: audio avermedia avermedia98 avermedia_vdomate bestbuy \
+		bestbuy2 chronos cph03x cph06x dsp flyvideo hauppauge \
+		hauppauge_dvb it87 knc_one kworld leadtek leadtek_0007 \
+		leadtek_0010 livedrive_midi livedrive_seq mediafocusI \
+		none pixelview_bt878 pixelview_pak pixelview_pro \
+		provideo sa1100 tekram_bt829 tvbox udp 
+	none:
+
+default_param: caraca creative irman logitech mp3anywhere pctv \
+		realmagic remotemaster silitek
+	tty1:
+
+default_param: slinke
+	tty3:
+
+default_param: parallel
+	lpt1:
+
+default_param: act200l animax irdeo irdeo_remote packard_bell \
+		serial tekram
+	com1:
+
+default_param: sir
+	com3:
+default_param: bte
+	btty:

@@ -23,6 +23,7 @@ LIRC_DRIVER="serial"
 LIRC_MAJOR=61
 SELECTED_DRIVER=""
 DRIVER_PARAMETER="com1"
+DRIVER_PARAM_TYPE=""
 SOFT_CARRIER="on"
 TRANSMITTER="off"
 IGOR="off"
@@ -103,14 +104,7 @@ GetPortAndIrq ()
 
 SetPortAndIrq ()
     {
-    if test "$LIRC_DRIVER" = "serial" -o \
-	    "$LIRC_DRIVER" = "sir" -o \
-	    "$LIRC_DRIVER" = "tekram" -o \
-	    "$LIRC_DRIVER" = "act200l" -o \
-	    "$LIRC_DRIVER" = "packard_bell" -o \
-	    "$LIRC_DRIVER" = "animax" -o \
-	    "$LIRC_DRIVER" = "irdeo" -o \
-	    "$LIRC_DRIVER" = "irdeo_remote"; then
+    if test "$DRIVER_PARAM_TYPE" = "com"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify I/O base address and IRQ of your hardware" \
@@ -136,7 +130,7 @@ SetPortAndIrq ()
 	    return 1;
         fi
         }
-    elif test "$LIRC_DRIVER" = "parallel"; then
+    elif test "$DRIVER_PARAM_TYPE" = "lpt"; then
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify I/O base address and IRQ of your hardware" \
@@ -160,11 +154,7 @@ SetPortAndIrq ()
 	    return 1;
         fi
         }
-    elif test "$LIRC_DRIVER" = "remotemaster" -o "$LIRC_DRIVER" = "irman" -o \
-	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
-        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic" -o \
-	"$LIRC_DRIVER" = "mp3anywhere" ; then
+    elif test "$DRIVER_PARAM_TYPE" = "tty"; then
 	{
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Select tty to use" \
@@ -246,238 +236,13 @@ DriverOptions ()
 
 ConfigDriver ()
     {
-    dialog --clear --backtitle "$BACKTITLE" \
-           --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 17 74 10 \
-             1 "Home-brew (16x50 UART compatible serial port)" \
-             2 "Home-brew (parallel port)" \
-	     3 "Home-brew (soundcard input)" \
-	     4 "Other serial port devices" \
-	     5 "TV card" \
-	     6 "IrDA hardware" \
-	     7 "PDAs" \
-	     8 "Network (UDP)" \
-	     9 "Other (MIDI, Bluetooth, etc.)" \
-	     A "None (network connections only)" 2> $TEMP
-
+    . setup-driver.sh
     if test "$?" = "0"; then
-        {
-	set `cat $TEMP`
-        if   test "$1" = "1"; then LIRC_DRIVER=serial;   DRIVER_PARAMETER=com1;
-        elif test "$1" = "2"; then LIRC_DRIVER=parallel; DRIVER_PARAMETER=lpt1;
-        elif test "$1" = "3"; then 
-	    dialog --clear --backtitle "$BACKTITLE" \
-		--title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
-		    1 "Simple IR diode (EXPERIMENTAL)" \
-		    2 "IR receiver IC connected to auido input (EXPERIMENTAL)" 2> $TEMP;
-
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=dsp;   DRIVER_PARAMETER=none;
-		elif test "$1" = "2"; then LIRC_DRIVER=audio; DRIVER_PARAMETER=none;
-		fi
-		}
-	    else
-		return;
-	    fi;
-        elif test "$1" = "4"; then
-	    # "Other serial port devices"
-	    dialog --clear --backtitle "$BACKTITLE" \
-                --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 19 74 12 \
-			1 "Anir Multimedia Magic" \
-			2 "CARACA" \
-			3 "Creative Infra Receiver/CIMR100" \
-			4 "IRdeo" \
-			5 "IRdeo Remote" \
-			6 "Irman / UIR" \
-			7 "Logitech/AST" \
-			8 "Miro PCTV receiver" \
-			9 "Packard Bell receiver" \
-			0 "Pinnacle Systems PCTV (pro) receiver" \
-			a "PixelView RemoteMaster RC2000/RC3000" \
-			b "REALmagic (bundled with Hollywood Plus DVD card)" \
-			c "Slink-e (receive only)" \
-                        d "Silitek SM-1000" \
-			e "Tekram Irmate 210 (16x50 UART compatible serial port)" \
-			f "X10 MP3 Anywhere RF Receiver" \
-			2> $TEMP;
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
-		elif test "$1" = "2"; then LIRC_DRIVER=caraca;       DRIVER_PARAMETER=tty1;
-		elif test "$1" = "3"; then LIRC_DRIVER=creative;     DRIVER_PARAMETER=tty1;
-		elif test "$1" = "4"; then LIRC_DRIVER=irdeo;        DRIVER_PARAMETER=com1;
-		elif test "$1" = "5"; then LIRC_DRIVER=irdeo_remote; DRIVER_PARAMETER=com1;
-		elif test "$1" = "6"; then LIRC_DRIVER=irman;        DRIVER_PARAMETER=tty1;
-		elif test "$1" = "7"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1;
-		elif test "$1" = "8"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
-		elif test "$1" = "9"; then LIRC_DRIVER=packard_bell; DRIVER_PARAMETER=com1;
-		elif test "$1" = "0"; then LIRC_DRIVER=pctv;         DRIVER_PARAMETER=tty1;
-		elif test "$1" = "a"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
-		elif test "$1" = "b"; then LIRC_DRIVER=realmagic;    DRIVER_PARAMETER=tty1;
-		elif test "$1" = "c"; then LIRC_DRIVER=slinke;       DRIVER_PARAMETER=tty3;
-		elif test "$1" = "d"; then LIRC_DRIVER=silitek;      DRIVER_PARAMETER=tty1;
-		elif test "$1" = "e"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
-		elif test "$1" = "f"; then LIRC_DRIVER=mp3anywhere;  DRIVER_PARAMETER=tty1;
-		fi
-		}
-	    else
-		return;
-	    fi;
-
-        elif test "$1" = "5"; then
-	    dialog --clear --backtitle "$BACKTITLE" \
-                --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 19 74 12\
-                        1 "Askey Magic TView CPH03x (card=1)" \
-			2 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
-			3 "Asus TV-Box" \
-			4 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
-			5 "AverMedia TV card (TVCapture98, TVPhone98) (card=13/41)" \
-			6 "AverMedia TV card (VDOMATE) (use card=13)" \
-			7 "BestBuy Easy TV (BT848) (card=55)" \
-			8 "BestBuy Easy TV (BT878) (card=62)" \
-			9 "Chronos Video Shuttle II (card=35)" \
-                        0 "Dynalink Magic TView (card=48)" \
-			a "FlyVideo II (card=8)" \
-			b "FlyVideo 98 (card=30)" \
-			c "FlyVideo 98/FM /2000S (card=56)" \
-			d "Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner (card=36)" \
-			e "Hauppauge TV card (new I2C layer required)" \
-			f "Hauppauge DVB-s card (ver. 2.1)" \
-			g "Jetway TV/Capture JW-TV878-FBK, Kworld KW-TV878RF (card=78)" \
-			h "KNC ONE TV Station (-/SE/PRO/RDS)" \
-			i "Lenco MXTV-9578 CP (card=50)" \
-			j "Miro PCTV serial port receiver" \
-			k "Phoebe Tv Master + FM (card=22)" \
-                        l "PixelView PlayTV PAK (card=50)" \
-                        m "Pixelview PlayTV pro (card=37)" \
-                        n "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
-			o "Prolink PV-BT878P+4E (card=50)" \
-			p "Prolink PV-BT878P+9B (PlayTV Pro rev.9B FM+NICAM) (card=72)" \
-			q "ProVideo PV951 (card=42)" \
-			r "Technisat MediaFocus I" \
-			s "Tekram M230 Mach64 (and others bt829 based)" \
-			t "VisionTek BreakOut-Box" \
-			u "TView99 CPH063 (card=38)" \
-			v "Typhoon TView RDS / FM Stereo (card=53)" \
-			w "Winfast TV2000/XP (card=34)" \
-			x "WinView 601 (card=17)" \
-			2> $TEMP;
-
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=cph03x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "2"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "3"; then LIRC_DRIVER=tvbox;             DRIVER_PARAMETER=none;
-		elif test "$1" = "4"; then LIRC_DRIVER=avermedia;         DRIVER_PARAMETER=none;
-		elif test "$1" = "5"; then LIRC_DRIVER=avermedia98;       DRIVER_PARAMETER=none;
-		elif test "$1" = "6"; then LIRC_DRIVER=avermedia_vdomate; DRIVER_PARAMETER=none;
-		elif test "$1" = "7"; then LIRC_DRIVER=bestbuy;		  DRIVER_PARAMETER=none;
-		elif test "$1" = "8"; then LIRC_DRIVER=bestbuy2;	  DRIVER_PARAMETER=none;
-		elif test "$1" = "9"; then LIRC_DRIVER=chronos;           DRIVER_PARAMETER=none;
-		elif test "$1" = "0"; then LIRC_DRIVER=cph03x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "a"; then LIRC_DRIVER=flyvideo;          DRIVER_PARAMETER=none;
-		elif test "$1" = "b"; then LIRC_DRIVER=flyvideo;          DRIVER_PARAMETER=none;
-		elif test "$1" = "c"; then LIRC_DRIVER=flyvideo;          DRIVER_PARAMETER=none;
-		elif test "$1" = "d"; then LIRC_DRIVER=flyvideo;          DRIVER_PARAMETER=none;
-		elif test "$1" = "e"; then LIRC_DRIVER=hauppauge;         DRIVER_PARAMETER=none;
-		elif test "$1" = "f"; then LIRC_DRIVER=hauppauge_dvb;     DRIVER_PARAMETER=none;
-		elif test "$1" = "g"; then LIRC_DRIVER=kworld;            DRIVER_PARAMETER=none;
-		elif test "$1" = "h"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
-		elif test "$1" = "i"; then LIRC_DRIVER=pixelview_pak;     DRIVER_PARAMETER=none;
-		elif test "$1" = "j"; then LIRC_DRIVER=pctv;              DRIVER_PARAMETER=tty1;
-		elif test "$1" = "k"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "l"; then LIRC_DRIVER=pixelview_pak;     DRIVER_PARAMETER=none;
-		elif test "$1" = "m"; then LIRC_DRIVER=pixelview_pro;     DRIVER_PARAMETER=none;
-		elif test "$1" = "n"; then LIRC_DRIVER=pixelview_bt878;   DRIVER_PARAMETER=none;
-		elif test "$1" = "o"; then LIRC_DRIVER=pixelview_pak;     DRIVER_PARAMETER=none;
-		elif test "$1" = "p"; then LIRC_DRIVER=pixelview_pro;     DRIVER_PARAMETER=none;
-		elif test "$1" = "q"; then LIRC_DRIVER=provideo;          DRIVER_PARAMETER=none;
-		elif test "$1" = "r"; then LIRC_DRIVER=mediafocusI;       DRIVER_PARAMETER=none;
-		elif test "$1" = "s"; then LIRC_DRIVER=tekram_bt829;      DRIVER_PARAMETER=none;
-		elif test "$1" = "t"; then LIRC_DRIVER=tvbox;             DRIVER_PARAMETER=none;
-		elif test "$1" = "u"; then LIRC_DRIVER=cph06x;            DRIVER_PARAMETER=none;
-		elif test "$1" = "v"; then LIRC_DRIVER=knc_one;           DRIVER_PARAMETER=none;
-		elif test "$1" = "w"; then LIRC_DRIVER=leadtek_0010;      DRIVER_PARAMETER=none;
-		elif test "$1" = "x"; then LIRC_DRIVER=leadtek_0007;      DRIVER_PARAMETER=none;
-		fi
-		}
-	    else
-		return;
-	    fi;
-
-        elif test "$1" = "6"; then
-	    dialog --clear --backtitle "$BACKTITLE" \
-                --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 11 74 4 \
-			1 "SIR IrDA (built-in IR ports)" \
-			2 "Tekram Irmate 210 (16x50 UART compatible serial port)" \
-			3 "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)" \
-			4 "Actisys Act200L SIR driver support" 2> $TEMP;
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3;
-		elif test "$1" = "2"; then LIRC_DRIVER=tekram;       DRIVER_PARAMETER=com1;
-		elif test "$1" = "3"; then LIRC_DRIVER=it87;         DRIVER_PARAMETER=none;
-		elif test "$1" = "4"; then LIRC_DRIVER=act200l;      DRIVER_PARAMETER=com1;
-		fi
-		}
-	    else
-		return;
-	    fi;
-	elif test "$1" = "7"; then 
-	    dialog --clear --backtitle "$BACKTITLE" \
-                --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
-			1 "HP iPAQ" \
-			2 "Sharp Zaurus" 2> $TEMP;
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=sa1100; DRIVER_PARAMETER=none;
-		elif test "$1" = "2"; then LIRC_DRIVER=sa1100; DRIVER_PARAMETER=none;
-		fi
-		}
-	    else
-		return 1;
-	    fi;
-        elif test "$1" = "8"; then LIRC_DRIVER=udp;     DRIVER_PARAMETER=none;
-        elif test "$1" = "9"; then
-	    dialog --clear --backtitle "$BACKTITLE" \
-                --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 10 74 3 \
-			1 "Creative LiveDrive midi" \
-			2 "Creative LiveDrive sequencer" \
-			3 "Ericsson mobile phone via Bluetooth" \
-			2> $TEMP;
-	    if test "$?" = "0"; then
-		{
-		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=livedrive_midi; DRIVER_PARAMETER=none;
-		elif test "$1" = "2"; then LIRC_DRIVER=livedrive_seq; DRIVER_PARAMETER=none;
-		elif test "$1" = "3"; then LIRC_DRIVER=bte;       DRIVER_PARAMETER=btty;
-		fi
-		}
-	    else
-		return;
-	    fi;
-        elif test "$1" = "A"; then LIRC_DRIVER=none;    DRIVER_PARAMETER=none;
-	fi
-	if test "$?" = "0"; then
-	    GetSelectedDriver
-	    SetPortAndIrq
-	    if test "$?" = "0"; then
-		DriverOptions
-	    fi
-	fi
-        }
+        GetSelectedDriver
+        SetPortAndIrq
+        if test "$?" = "0"; then
+            DriverOptions
+        fi
     fi
     }
 
@@ -550,11 +315,7 @@ SaveConfig ()
 	else echo "--without-timer \\" >>$START;
 	fi
         }
-    elif test "$LIRC_DRIVER" = "irman" -o "$LIRC_DRIVER" = "remotemaster" -o \
-	"$LIRC_DRIVER" = "logitech" -o "$LIRC_DRIVER" = "pctv" -o \
-	"$LIRC_DRIVER" = "creative" -o "$LIRC_DRIVER" = "slinke" -o \
-        "$LIRC_DRIVER" = "silitek" -o "$LIRC_DRIVER" = "realmagic" -o \
-	"$LIRC_DRIVER" = "mp3anywhere" -o "$LIRC_DRIVER" = "bte"; then
+    elif test "$DRIVER_PARAM_TYPE" = "tty" -o "$LIRC_DRIVER" = "bte"; then
         {
 	echo "--with-tty=$IRTTY \\" >>$START
 	}
