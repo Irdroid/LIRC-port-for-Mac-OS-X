@@ -1,8 +1,11 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.2 2005/01/29 23:14:25 venkyr Exp $
+ *   $Id: lirc_imon.c,v 1.3 2005/02/01 01:11:14 venkyr Exp $
  *
+ *   Version 0.2 beta 2 [January 31, 2005]
+ *		USB disconnect/reconnect no longer causes problems for lircd
+ *   
  *   Version 0.2 beta 1 [January 29, 2005]
  *		Added support for original iMON receiver (ext USB)
  *   
@@ -58,7 +61,7 @@
 #define MOD_AUTHOR	"Venky Raju <dev@venky.ws>"
 #define MOD_DESC	"Driver for Soundgraph iMON MultiMedian IR/VFD"
 #define MOD_NAME	"lirc_imon"
-#define MOD_VERSION	"0.2"
+#define MOD_VERSION	"0.2b2"
 
 #define VFD_MINOR_BASE	144	/* Same as LCD */
 #define DEVFS_MODE	S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
@@ -248,6 +251,21 @@ static inline void delete_context (struct imon_context *context) {
 	kfree (context);
 
 	if (debug) info ("%s: context deleted", __FUNCTION__);
+}
+
+static inline void deregister_from_lirc (struct imon_context *context) {
+
+	int retval;
+	int minor = context ->plugin ->minor;
+
+	if ((retval = lirc_unregister_plugin (minor))) {
+
+		err ("%s: unable to deregister from lirc (%d)", 
+			__FUNCTION__, retval);
+	}
+	else
+		info ("Deregistered iMON plugin (minor:%d)", minor);
+
 }
 
 /**
@@ -590,13 +608,22 @@ static void ir_close (void *data)
 	MOD_DEC_USE_COUNT;
 	info ("IR port closed");
 
-	if (!context ->dev_present && !context ->vfd_isopen) {
+	if (!context ->dev_present) {
 
-		/* Device disconnected before close and VFD port is not open.  */
-		/* If VFD port is open, context will be deleted by vfd_close.  */
-		UNLOCK_CONTEXT;
-		delete_context (context);
-		return;
+		/* 
+		 * Device disconnected while IR port was 
+		 * still open. Plugin was not deregistered 
+		 * at disconnect time, so do it now.
+		 */
+		deregister_from_lirc (context);
+
+		if (!context ->vfd_isopen) {
+
+			UNLOCK_CONTEXT;
+			delete_context (context);
+			return;
+		}
+		/* If VFD port is open, context will be deleted by vfd_close */
 	}
 
 	UNLOCK_CONTEXT;
@@ -934,6 +961,9 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 			alloc_status = 7;
 			UNLOCK_CONTEXT;
 		}
+		else
+			info ("%s: Registered iMON plugin (minor:%d)", 
+				__FUNCTION__, lirc_minor);
 	}
 
 	switch (alloc_status) {
@@ -1048,11 +1078,9 @@ static void imon_disconnect (struct usb_device *dev, void *data)
 		wait_for_completion (&context ->tx.finished);
 	}
 
-	/* De-register from lirc_dev */
-	if (lirc_unregister_plugin (context ->plugin ->minor)) {
-		err ("%s: unable to deregister from lirc."
-			"Expect problems when reconnecting", __FUNCTION__);
-	}
+	/* De-register from lirc_dev if IR port is not open */
+	if (!context ->ir_isopen)
+		deregister_from_lirc (context);
 
 	if (context ->vfd_supported) {
 #ifdef KERNEL_2_5
