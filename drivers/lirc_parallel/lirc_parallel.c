@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.14 2002/01/06 13:33:30 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.15 2002/03/06 12:40:59 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -190,7 +190,7 @@ unsigned int init_lirc_timer(void)
 	}
 	while(count<1000 && (now.tv_sec<tv.tv_sec 
 			     || (now.tv_sec==tv.tv_sec 
-				 && now.tv_usec<tv.tv_sec)));
+				 && now.tv_usec<tv.tv_usec)));
 
 	timeelapsed=((now.tv_sec+1-tv.tv_sec)*1000000
 		     +(now.tv_usec-tv.tv_usec));
