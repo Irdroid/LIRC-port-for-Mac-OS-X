@@ -108,6 +108,17 @@ Section "InputDevice"
 EndSection
 </PRE>
 
+<P>
+Another mail I got pointed out that you will also have to add a line
+to the ServerLayout section like this:
+</P>
+<PRE>
+Section "ServerLayout"
+        ...
+        InputDevice "Mouse2"           <-- add this line
+EndSection
+</PRE>
+
 <H3>gpm</H3>
 
 <P>You can also e.g. use <em>multimouse</em> (available at <A
