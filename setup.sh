@@ -375,7 +375,7 @@ ConfigDriver ()
 		--menu "$CONFIG_DRIVER_TEXT" 11 74 3 \
 			1 "SIR IrDA (built-in IR ports)" \
 			2 "Tekram Irmate 210 (16x50 UART compatible serial port)" \
-			3 "ITE IT8712/IT8705 CIR port (experimantal, 2.4.x required)" 2> $TEMP;
+			3 "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`

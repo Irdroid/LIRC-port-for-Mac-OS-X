@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.8 2001/10/18 16:15:36 lirc Exp $      */
+/*      $Id: serial.c,v 5.9 2002/06/24 18:35:20 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -434,7 +434,7 @@ int tty_write(int fd,char byte)
 	   (for 9600 baud rate, it takes about 100 msec */
 	usleep(100*1000);
 	
-	/* we don´t wait because tcdrain() does this for us */
+	/* we don't wait because tcdrain() does this for us */
 	/* tcdrain(fd); */ 
 	/* but unfortunately this does not seem to be
 	   implemented in 2.0.x kernels ... */

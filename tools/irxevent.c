@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.8 2002/06/16 14:19:04 ranty Exp $      */
+/*      $Id: irxevent.c,v 5.9 2002/06/24 18:35:20 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -56,7 +56,7 @@
  *
  * 0.5.0
  *     -fixed finding subwindows recursively
- *     -added xy_Key (though xterm and xemacs still don´t like me)
+ *     -added xy_Key (though xterm and xemacs still don't like me)
  *     -added compilation patch from Ben Hochstedler 
  *      <benh@eeyore.moneng.mei.com> for compiling on systems 
  * 	without strsep() (like some solaris)

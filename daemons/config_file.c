@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.9 2002/02/22 14:47:46 lirc Exp $      */
+/*      $Id: config_file.c,v 5.10 2002/06/24 18:35:20 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -216,7 +216,7 @@ int checkMode(int is_mode, int c_mode, char *error)
 	{
 		logprintf(LOG_ERR,"fatal error in configfile line %d:",
 			  line);
-		logprintf(LOG_ERR,"\"%s\" isn´t valid at this position",
+		logprintf(LOG_ERR,"\"%s\" isn't valid at this position",
 			  error);
 		parse_error=1;
 		return(0);

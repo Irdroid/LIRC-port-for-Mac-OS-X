@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.39 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.40 2002/06/24 18:35:20 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -419,7 +419,7 @@ int main(int argc,char **argv)
 			if(remote.gap==0)
 			{
 				fprintf(stderr,"%s: gap not found,"
-					" can´t continue\n",progname);
+					" can't continue\n",progname);
 				fclose(fout);
 				unlink(filename);
 				if(hw.deinit_func) hw.deinit_func();
@@ -452,7 +452,7 @@ int main(int argc,char **argv)
 		if(!get_gap_length(&remote))
 		{
 			fprintf(stderr,"%s: gap not found,"
-				" can´t continue\n",progname);
+				" can't continue\n",progname);
 			fclose(fout);
 			unlink(filename);
 			if(hw.deinit_func) hw.deinit_func();
