@@ -72,7 +72,7 @@ int devinput_init()
 	}
 	
 #ifdef EVIOCGRAB
-	if (ioctl(hw.fd, EVIOCGRAB) == -1)
+	if (ioctl(hw.fd, EVIOCGRAB, 1) == -1)
 	{
 		logprintf(LOG_WARNING, "can't get exclusive access to events "
 			  "comming from `%s' interface",
