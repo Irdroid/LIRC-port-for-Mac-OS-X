@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.9 2003/01/19 10:04:17 ranty Exp $
+ * $Id: lirc_dev.h,v 1.10 2003/05/02 14:46:19 ranty Exp $
  *
  */
 
@@ -24,7 +24,7 @@
 struct lirc_buffer
 {
         wait_queue_head_t wait_poll;
-	struct semaphore lock;
+	spinlock_t lock;
 
 	unsigned char *data;
 	unsigned int chunk_size;
@@ -41,7 +41,7 @@ static inline int lirc_buffer_init(struct lirc_buffer *buf,
 	/* Adjusting size to the next power of 2 would allow for
 	 * inconditional LIRC_BUFF_POWER_OF_2 optimization */
 	init_waitqueue_head(&buf->wait_poll);
-	init_MUTEX(&buf->lock);
+	spin_lock_init(&buf->lock);
 	buf->head = buf->tail = buf->fill = 0;
 	buf->chunk_size = chunk_size;
 	buf->size = size;
@@ -67,14 +67,13 @@ static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
 {
 	return !(buf->fill);
 }
-static inline void lirc_buffer_lock(struct lirc_buffer *buf)
+extern inline void lirc_buffer_lock(struct lirc_buffer *buf, unsigned long *flags)
 {
-#warning maybe this should be an spinlock
-	down_interruptible(&buf->lock);
+	spin_lock_irqsave(&buf->lock, *flags);
 }
-static inline void lirc_buffer_unlock(struct lirc_buffer *buf)
+extern inline void lirc_buffer_unlock(struct lirc_buffer *buf, unsigned long *flags)
 {
-	up(&buf->lock);
+	spin_unlock_irqrestore(&buf->lock, *flags);
 }
 static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
 {
@@ -83,9 +82,10 @@ static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
 }
 static inline void lirc_buffer_remove_1(struct lirc_buffer *buf)
 {
-	lirc_buffer_lock(buf);
+	unsigned long flags;
+	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_remove_1(buf);
-	lirc_buffer_unlock(buf);
+	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
 				     unsigned char *dest)
@@ -97,9 +97,10 @@ static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
 static inline void lirc_buffer_read_1(struct lirc_buffer *buf,
 				      unsigned char *dest)
 {
-	lirc_buffer_lock(buf);
+	unsigned long flags;
+	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_read_1(buf, dest);
-	lirc_buffer_unlock(buf);
+	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
 				      unsigned char *orig)
@@ -111,9 +112,10 @@ static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
 static inline void lirc_buffer_write_1(struct lirc_buffer *buf,
 				       unsigned char *orig)
 {
-	lirc_buffer_lock(buf);
+	unsigned long flags;
+	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_write_1(buf, orig);
-	lirc_buffer_unlock(buf);
+	lirc_buffer_unlock(buf, &flags);
 }
 
 struct lirc_plugin
