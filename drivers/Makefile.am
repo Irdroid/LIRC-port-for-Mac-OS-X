@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.6 1999/09/06 14:56:04 columbus Exp $
+## $Id: Makefile.am,v 5.7 2000/03/03 20:10:30 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -8,7 +8,7 @@
 EXTRA_DIST = lirc.h
 
 DIST_SUBDIRS = lirc_serial lirc_parallel lirc_aver lirc_haup lirc_fly98 \
-	lirc_pixview
+	lirc_pixview lirc_sir
 SUBDIRS = @lirc_driver@
 
 CLEANFILES = *~

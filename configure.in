@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.15 2000/02/12 12:29:46 columbus Exp $
+dnl $Id: configure.in,v 5.16 2000/03/03 20:10:30 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -65,8 +65,9 @@ AC_MSG_RESULT()
 possible_drivers="(none) (remotemaster) (logitech)"
 
 if test x${no_kernel} != xyes; then
-  possible_drivers="${possible_drivers} (lirc_serial) (lirc_parallel) \
-	(lirc_aver) (lirc_haup) (lirc_haup_new) (lirc_fly98) (lirc_pixview)"
+  possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
+	(lirc_parallel) (lirc_aver) (lirc_haup) (lirc_haup_new) \
+	(lirc_fly98) (lirc_pixview)"
 fi
 
 AC_CHECK_LIB(irman, ir_strerror,
@@ -82,7 +83,7 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, serial, animax, packard_bell, parallel,
+                          none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, comX, lptX, avermedia,
                           hauppauge, hauppauge_new, fly98, pixelview,
                           logitech],
@@ -114,6 +115,9 @@ fi
 if test "$driver" = "serial"; then
   lirc_driver=lirc_serial
 fi
+if test "$driver" = "sir"; then
+  lirc_driver=lirc_sir
+fi
 if test "$driver" = "animax"; then
   lirc_driver=lirc_serial
   lircd_conf="animax/lircd.conf.animax"
@@ -136,6 +140,11 @@ if test "$driver" = "com2"; then
 fi
 if test "$driver" = "com3"; then
   lirc_driver=lirc_serial
+  port=0x3e8
+  irq=4
+fi
+if test "$driver" = "sir_com3"; then
+  lirc_driver=lirc_sir
   port=0x3e8
   irq=4
 fi
@@ -266,6 +275,7 @@ AC_ARG_WITH(port,
 port=${withval},
 [case $lirc_driver in
 lirc_serial)   port=${port:-0x3f8} ;;
+lirc_sir)   port=${port:-0x3f8} ;;
 lirc_parallel) port=${port:-0x378} ;;
 esac]
 )
@@ -275,6 +285,7 @@ AC_ARG_WITH(irq,
 irq=${withval},
 [case $lirc_driver in
 lirc_serial)   irq=${irq:-4} ;;
+lirc_sir)   irq=${irq:-4} ;;
 lirc_parallel) irq=${irq:-7} ;;
 esac]
 )
@@ -352,6 +363,7 @@ AC_OUTPUT([
   Makefile
   drivers/Makefile
   drivers/lirc_serial/Makefile
+  drivers/lirc_sir/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_aver/Makefile
   drivers/lirc_haup/Makefile

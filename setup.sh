@@ -98,6 +98,7 @@ function GetPortAndIrq
 function SetPortAndIrq
     {
     if test "$LIRC_DRIVER" = "serial" -o \
+	    "$LIRC_DRIVER" = "sir" -o \
 	    "$LIRC_DRIVER" = "packard_bell" -o \
 	    "$LIRC_DRIVER" = "animax"; then
         {
@@ -220,7 +221,7 @@ function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 15 74 8 \
+           --menu "$CONFIG_DRIVER_TEXT" 16 74 10 \
              1 "Serial port driver" \
              2 "Parallel port driver" \
              3 "Irman" \
@@ -228,7 +229,8 @@ function ConfigDriver
 	     5 "Packard Bell receiver" \
 	     6 "Anir Multimedia Magic" \
              7 "PixelView RemoteMaster RC2000/RC3000" \
-             8 "Logitech/AST" 2> $TEMP
+             8 "Logitech/AST" \
+             9 "SIR IrDA" 2> $TEMP
 
     if test "$?" = "0"; then
         {
@@ -240,11 +242,11 @@ function ConfigDriver
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
 		--menu "$CONFIG_DRIVER_TEXT" 15 74 6 \
-                       1 "Hauppauge TV card (old I2C layer)" \
-                       2 "Hauppauge TV card (new I2C layer)" \
-                       3 "AverMedia TV card" \
-                       4 "Fly98 TV card" \
-                       5 "Pixelview PlayTV card" 2> $TEMP;
+			1 "Hauppauge TV card (old I2C layer)" \
+			2 "Hauppauge TV card (new I2C layer)" \
+			3 "AverMedia TV card" \
+			4 "Fly98 TV card" \
+			5 "Pixelview PlayTV card" 2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
@@ -262,6 +264,7 @@ function ConfigDriver
         elif test "$1" = "6"; then LIRC_DRIVER=animax;       DRIVER_PARAMETER=com1;
         elif test "$1" = "7"; then LIRC_DRIVER=remotemaster; DRIVER_PARAMETER=tty1;
 	elif test "$1" = "8"; then LIRC_DRIVER=logitech;     DRIVER_PARAMETER=tty1
+        elif test "$1" = "9"; then LIRC_DRIVER=sir;          DRIVER_PARAMETER=com3
     fi
         GetSelectedDriver
         SetPortAndIrq

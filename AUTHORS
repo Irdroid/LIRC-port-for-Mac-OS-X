@@ -26,6 +26,9 @@ Hauppauge driver:
   Roger Hardiman <roger@freebsd.org>
   Ryan Gammon <rggammon@engmail.uwaterloo.ca>
 
+SIR IrDA driver:
+  Milan Pikula <www@fornax.sk>
+
 Fly Video 98:
   Pawel T. Jochym <jochym@ifj.edu.pl>
   Ryan Gammon <rggammon@engmail.uwaterloo.ca>

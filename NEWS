@@ -1,5 +1,7 @@
 
 0.6.0: future
+  * Milan Pikula has provided a driver for the SIR (serial infrared)
+    mode of IrDA ports available in many notebooks
   * lirc_client is now a library
   * irxevent: new keyword:
      xy_Key <x_position> <y_position> [modifiers-]<key> <windowname>
