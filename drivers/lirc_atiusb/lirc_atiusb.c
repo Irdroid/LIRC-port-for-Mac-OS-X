@@ -206,7 +206,6 @@ static int set_use_inc(void *data)
 		printk(DRIVER_NAME
 		       "[%d]: open result = -E10 error submitting urb\n",
 		       ir->devnum);
-		IRUNLOCK;
 		return -EIO;
 	}
 
@@ -220,7 +219,7 @@ static void set_use_dec(void *data)
 
 	usb_remote_disconnect(NULL,ir);
 
-	/* the device was unplugged while we where open */
+	/* the device was unplugged while we were open */
 	if(!ir->usbdev)
 		unregister_from_lirc(ir);
 
