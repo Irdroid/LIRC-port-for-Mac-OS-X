@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.120 2004/04/25 16:29:23 lirc Exp $
+dnl $Id: configure.in,v 5.121 2004/05/20 13:17:57 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -548,6 +548,7 @@ fi
 
 if test "$driver" = "atiusb"; then
   lirc_driver="lirc_dev lirc_atiusb"
+  lircd_conf="atiusb/lircd.conf.atiusb"
 fi
 
 if test "$driver" = "mceusb"; then
