@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.2 1999/05/10 17:11:56 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.3 1999/07/24 18:19:20 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -21,13 +21,16 @@
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= 0x020100
 #define KERNEL_2_1
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0)
+#define KERNEL_2_3
 #endif
-#include <linux/module.h>
+#endif
 
-#include <linux/sched.h>
+#include <linux/config.h>
+#include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
-#include <linux/config.h>
+#include <linux/sched.h>
 #include <linux/fs.h>
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
@@ -71,7 +74,11 @@
 static int major = LIRC_MAJOR;
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 
+#ifdef KERNEL_2_3
+static DECLARE_WAIT_QUEUE_HEAD(lirc_wait_in);
+#else
 static struct wait_queue *lirc_wait_in = NULL;
+#endif
 
 static int port = LIRC_PORT;
 static int irq = LIRC_IRQ;
@@ -238,7 +245,11 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 	} while(!(sinp(UART_IIR) & UART_IIR_NO_INT)); /* still pending ? */
 }
 
+#ifdef KERNEL_2_3
+static wait_queue_head_t power_supply_queue;
+#else
 static struct wait_queue *power_supply_queue = NULL;
+#endif
 static struct timer_list power_supply_timer;
 
 static void power_supply_up(unsigned long ignored)
@@ -299,6 +310,9 @@ static int init_port(void)
 		power_supply_timer.data=(unsigned long) current;
 		power_supply_timer.function=power_supply_up;
 		add_timer(&power_supply_timer);
+#               ifdef KERNEL_2_3
+		init_waitqueue_head(&power_supply_queue);
+#               endif
 		sleep_on(&power_supply_queue);
 		del_timer(&power_supply_timer);
 
@@ -319,7 +333,8 @@ static int init_port(void)
 		printk(KERN_ERR  LIRC_DRIVER_NAME  ": IRQ %d busy\n", irq);
 		return -EBUSY;
 	case -EINVAL:
-		printk(KERN_ERR  LIRC_DRIVER_NAME  ": Bad irq number or handler\n");
+		printk(KERN_ERR  LIRC_DRIVER_NAME  
+		       ": Bad irq number or handler\n");
 		return -EINVAL;
 	default:
 		break;
@@ -396,11 +411,11 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 	{
 		save_flags(flags);cli();
 		if (rbt != rbh) {
-#ifdef KERNEL_2_1
-			copy_to_user((void *) buf + n, (void *) (rbuf + rbh), 1);
-#else
-			memcpy_tofs((void *) buf + n, (void *) (rbuf + rbh), 1);
-#endif
+#                       ifdef KERNEL_2_1
+			copy_to_user((void *) buf+n,(void *) (rbuf+rbh),1);
+#                       else
+			memcpy_tofs((void *) buf+n,(void *) (rbuf+rbh),1);
+#                       endif
 			rbh = (rbh + 1) & (RBUF_LEN - 1);
 			n++;
 			restore_flags(flags);
@@ -410,17 +425,17 @@ static int lirc_read(struct inode *node, struct file *file, char *buf,
 				retval = -EAGAIN;
 				break;
 			}
-#ifdef KERNEL_2_1
+#                       ifdef KERNEL_2_1
 			if (signal_pending(current)) {
 				retval = -ERESTARTSYS;
 				break;
 			}
-#else
+#                       else
 			if (current->signal & ~current->blocked) {
 				retval = -EINTR;
 				break;
 			}
-#endif
+#                       endif
 			interruptible_sleep_on(&lirc_wait_in);
 			current->state = TASK_RUNNING;
 		}
@@ -438,23 +453,26 @@ static int lirc_write(struct inode *node, struct file *file, const char *buf,
 {
 #ifndef LIRC_SERIAL_ANIMAX
 	int retval,i,count;
+	unsigned long flags;
 	
 	if(n%sizeof(unsigned long) || n>WBUF_LEN) return(-EINVAL);
 	retval=verify_area(VERIFY_READ,buf,n);
 	if(retval) return(retval);
 	count=n/sizeof(unsigned long);
 	if(count%2==0) return(-EINVAL);
-#ifdef KERNEL_2_1
+#       ifdef KERNEL_2_1
 	copy_from_user(wbuf,buf,n);
-#else
+#       else
 	memcpy_fromfs(wbuf,buf,n);
-#endif
+#       endif
+	save_flags(flags);cli();
 	for(i=0;i<count;i++)
 	{
 		if(i%2) send_space(*((unsigned long *) (wbuf+i*4)));
 		else send_pulse(*((unsigned long *) (wbuf+i*4)));
 	}
 	off();
+	restore_flags(flags);
 	return(n);
 #else
 	return(-EBADF);
@@ -565,7 +583,7 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		if(result) return(result);
 		value=get_user((unsigned long *) arg);
 #               endif
-		if(value>500000 || value <30000) return(-EINVAL);
+		if(value>500000 || value <20000) return(-EINVAL);
 		freq=value;
 		pulse_width=1000000/2/value;
 		space_width=1000000/freq-pulse_width;
@@ -584,17 +602,17 @@ static struct file_operations lirc_fops =
 	lirc_read,		/* read */
 	lirc_write,		/* write */
 	NULL,			/* readdir */
-#ifdef KERNEL_2_1
+#       ifdef KERNEL_2_1
 	lirc_poll,		/* poll */
-#else
+#       else
 	lirc_select,		/* select */
-#endif
+#       endif
 	lirc_ioctl,		/* ioctl */
 	NULL,			/* mmap  */
 	lirc_open,		/* open */
-#ifdef KERNEL_2_1
+#       ifdef KERNEL_2_1
 	NULL,
-#endif
+#       endif
 	lirc_close,		/* release */
 	NULL,			/* fsync */
 	NULL,			/* fasync */
@@ -628,7 +646,8 @@ int init_module(void)
 	if ((result = init_port()) < 0)
 		return result;
 	if (register_chrdev(major, LIRC_DRIVER_NAME, &lirc_fops) < 0) {
-		printk(KERN_ERR  LIRC_DRIVER_NAME  ": register_chrdev failed!\n");
+		printk(KERN_ERR  LIRC_DRIVER_NAME  
+		       ": register_chrdev failed!\n");
 		free_irq(irq, NULL);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 		release_region(port, 8);
