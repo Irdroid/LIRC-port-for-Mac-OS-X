@@ -300,7 +300,7 @@ ConfigDriver ()
 			0 "FlyVideo 98 (card=30)" \
 			a "FlyVideo 98/FM /2000S (card=56)" \
 			b "Hauppauge TV card (new I2C layer required)" \
-			c "Hauppauge DVB-s card (version 2.1)" \
+			c "Hauppauge DVB-s card (ver. 2.1)" \
 			d "KNC ONE TV Station (-/SE/PRO/RDS)" \
 			e "Phoebe Tv Master + FM (card=22)" \
                         f "Pixelview PlayTV pro (card=37)" \

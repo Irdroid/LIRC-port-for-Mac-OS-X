@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.33 2001/09/28 07:01:30 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.34 2001/10/14 11:59:56 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -281,6 +281,22 @@ void off(void)
 	soutp(UART_MCR,LIRC_OFF);
 }
 
+#ifndef MAX_UDELAY_MS
+#define MAX_UDELAY_US 5000
+#else
+#define MAX_UDELAY_US (MAX_UDELAY_MS*1000)
+#endif
+
+static inline void safe_udelay(unsigned long usecs)
+{
+	while(usecs>MAX_UDELAY_US)
+	{
+		udelay(MAX_UDELAY_US);
+		usecs-=MAX_UDELAY_US;
+	}
+	udelay(usecs);
+}
+
 #ifdef USE_RDTSC
 
 /* This is an overflow/precision juggle, complicated in that we can't
@@ -451,7 +467,7 @@ long send_pulse(unsigned long length)
 #endif
 #else /* SOFT_CARRIER */
 	on();
-	udelay(length);
+	safe_udelay(length);
 	return(0);
 #endif
 #endif
@@ -463,7 +479,7 @@ void send_space(long length)
         off();
 #       endif
 	if(length<=0) return;
-	udelay(length);
+	safe_udelay(length);
 }
 #endif
 

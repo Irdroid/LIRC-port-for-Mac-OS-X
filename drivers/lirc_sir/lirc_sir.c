@@ -231,6 +231,22 @@ static inline void soutp(int offset, int value)
 }
 #endif
 
+#ifndef MAX_UDELAY_MS
+#define MAX_UDELAY_US 5000
+#else
+#define MAX_UDELAY_US (MAX_UDELAY_MS*1000)
+#endif
+
+static inline void safe_udelay(unsigned long usecs)
+{
+	while(usecs>MAX_UDELAY_US)
+	{
+		udelay(MAX_UDELAY_US);
+		usecs-=MAX_UDELAY_US;
+	}
+	udelay(usecs);
+}
+
 /* SECTION: Communication with user-space */
 
 static int lirc_open(struct inode * inode, struct file * file)
@@ -805,7 +821,7 @@ void send_pulse(unsigned long length)
 			on();
 			delay=pulse_width;
 		}
-		udelay(delay);
+		safe_udelay(delay);
 	}
 	off();
 }
@@ -814,13 +830,13 @@ void send_space(unsigned long length)
 {
 	if(length==0) return;
 	off();
-	udelay(length);
+	safe_udelay(length);
 }
 #elif defined(LIRC_SIR_TEKRAM)
 #else
 static void send_space(unsigned long len)
 {
-	udelay(len);
+	safe_udelay(len);
 }
 
 static void send_pulse(unsigned long len)
@@ -838,7 +854,7 @@ static void send_pulse(unsigned long len)
 	}
 #if 0
 	if (time_left > 0)
-		udelay(time_left);
+		safe_udelay(time_left);
 #endif
 }
 #endif
@@ -924,7 +940,7 @@ static int init_hardware(void)
 	
 	/* power supply */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
-	udelay(50*1000);
+	safe_udelay(50*1000);
 	
 	/* -DTR low -> reset PIC */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
