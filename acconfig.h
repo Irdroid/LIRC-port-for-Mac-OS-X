@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.9 2000/07/08 11:27:50 columbus Exp $      */
+/*      $Id: acconfig.h,v 5.10 2000/08/23 19:08:04 columbus Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -55,6 +55,9 @@
 
 /* Define to run daemons as daemons */
 #undef DAEMONIZE
+
+/* Define if the caraca library is installed */
+#undef HAVE_LIBCARACA
 
 /* Define if the libirman library is installed */
 #undef HAVE_LIBIRMAN

@@ -1,4 +1,5 @@
 0.6.2: future
+  * Konrad Riedel has added support for CARACA (caraca.sourceforge.net)
   * added min_repeat option to lircd.conf
     Some remotes (e.g. Sony) send the IR codes several times if you
     press a button even though you don't hold the button down. This

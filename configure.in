@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.37 2000/07/26 19:49:16 columbus Exp $
+dnl $Id: configure.in,v 5.38 2000/08/23 19:08:04 columbus Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -90,6 +90,10 @@ if test x${no_kernel} != xyes; then
         (lirc_fly98) (lirc_dev lirc_gpio)"
 fi
 
+AC_CHECK_LIB(caraca_client, caraca_init,
+  AC_DEFINE(HAVE_LIBCARACA)
+  possible_drivers="${possible_drivers} (caraca)"
+)
 AC_CHECK_LIB(irman, ir_strerror,
   AC_DEFINE(HAVE_LIBIRMAN)
   possible_drivers="${possible_drivers} (irman)"
@@ -106,7 +110,7 @@ AC_ARG_WITH(driver,
                           none, serial, sir, animax, packard_bell, parallel,
                           irman, remotemaster, pctv, comX, lptX, avermedia,
 			  avermedia98, hauppauge, fly98, pixelview_pro,
-			  cph03x, cph06x, logitech, slinke, irreal],
+			  cph03x, cph06x, logitech, caraca, slinke, irreal],
 
 driver=${withval},
 driver="unset"
@@ -116,6 +120,7 @@ lirc_driver="$driver"
 lircd_conf=""
 lircmd_conf=""
 irman_lib=""
+caraca_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 kernel_module=""
 
@@ -247,6 +252,13 @@ if test "$driver" = "logitech"; then
   lircd_conf="logitech/lircd.conf.logitech"
   lircmd_conf="logitech/lircmd.conf.logitech"
 fi
+if test "$driver" = "caraca"; then
+  lirc_driver="caraca"
+  hw_module="hw_caraca.o"
+  caraca_lib=-lcaraca_client
+  lircd_conf= "caraca/lircd.conf.caraca"
+#  lircmd_conf="caraca/lircmd.conf.caraca"
+fi
 if test "$driver" = "slinke"; then
   lirc_driver="none"
   hw_module="hw_slinke.o serial.o receive.o"
@@ -270,6 +282,10 @@ else
     AC_MSG_ERROR([*** you need to first install the libirman package
 	(libirman-0.4.2 or better) before you can use this driver])
     ;;
+  caraca*)
+    AC_MSG_ERROR([*** you need to first install the caraca package
+	before you can use this driver])
+    ;;
   lirc_*)
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
@@ -283,7 +299,7 @@ fi
 
 dnl now we've checked, we can rename things for the drivers/Makefile
 
-if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw"; then
+if test "$lirc_driver" = "none" || test "$lirc_driver" = "irman" || test "$lirc_driver" = "irman_sw" || test "$lirc_driver" = "caraca"; then
   lirc_driver=
 fi
 
@@ -434,6 +450,7 @@ AC_SUBST(lirc_major)
 AC_SUBST(lirc_driver)
 AC_SUBST(gpio_module)
 AC_SUBST(irman_lib)
+AC_SUBST(caraca_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
