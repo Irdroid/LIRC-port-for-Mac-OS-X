@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.12 2003/02/15 09:00:56 lirc Exp $      */
+/*      $Id: config_file.c,v 5.13 2003/08/15 11:36:20 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -753,7 +753,8 @@ struct ir_remote * read_config(FILE *f)
 				codes->code=reverse(codes->code,rem->bits);
 				codes++;
 			}
-			/* rem->flags=rem->flags&(~REVERSE); */
+			 rem->flags=rem->flags&(~REVERSE);
+			 rem->flags=rem->flags|COMPAT_REVERSE;
 			/* don't delete the flag because we still need
 			   it to remain compatible with older versions
 			*/

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.20 2003/01/04 16:10:48 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.21 2003/08/15 11:36:20 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -301,8 +301,12 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		code=code<<remote->post_data_bits;
 		code|=remote->post_data;
 	}
-	if(remote->flags&REVERSE)
+	if(remote->flags&COMPAT_REVERSE)
 	{
+		/* actually this is wrong: pre, code and post should
+		   be rotated separately but we have to stay
+		   compatible with older software
+		 */
 		code=reverse(code,remote->pre_data_bits+
 			     remote->bits+remote->post_data_bits);
 	}

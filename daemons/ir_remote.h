@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.23 2002/11/12 18:04:43 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.24 2003/08/15 11:36:20 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -70,6 +70,7 @@ struct ir_ncode {
 #define GRUNDIG         0x0800    /* encoding found on Grundig remote */
 
 #define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
+#define COMPAT_REVERSE  0x8000    /* compatibility mode for REVERSE flag */
 
 /* stop repeating after 600 signals (approx. 1 minute) */
 /* update technical.html when changing this value */
