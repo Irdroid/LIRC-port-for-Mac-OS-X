@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.8 2005/03/05 09:59:04 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.9 2005/03/06 13:17:29 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.8 $"
+#define DRIVER_VERSION	"$Revision: 1.9 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -258,9 +258,16 @@ static inline void push(struct usb_streamzap *sz, unsigned char *data)
 {
 	if(lirc_buffer_full(&sz->delay_buf))
 	{
+		lirc_t data;
+		unsigned long flags;
+		
+		spin_lock_irqsave(&sz->timer_lock, flags);
+		
+		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
+		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
+		
+		spin_unlock_irqrestore(&sz->timer_lock, flags);
 		dprintk("buffer overflow", sz->plugin.minor);
-		/* TODO */
-		return;
 	}
 	
 	lirc_buffer_write_1(&sz->delay_buf, data);
@@ -292,6 +299,7 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 				      sz->signal_last.tv_usec);
 			tmp-=sz->sum;
 		}
+		dprintk("ls %u", sz->plugin.minor, tmp);
 		push(sz, (char *)&tmp);
 		
 		sz->idle = 0;
@@ -304,6 +312,7 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 	pulse |= PULSE_BIT;
 	
 	spin_lock_irqsave(&sz->timer_lock, flags);
+	dprintk("p %u", sz->plugin.minor, pulse&PULSE_MASK);
 	push(sz, (char *)&pulse);
 	
 	if(!sz->timer_running)
@@ -329,6 +338,7 @@ static inline void push_full_space(struct usb_streamzap *sz,
 	space = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	space += STREAMZAP_RESOLUTION/2;
 	sz->sum += space;
+	dprintk("s %u", sz->plugin.minor, space);
 	push(sz, (char *)&space);
 }
 
