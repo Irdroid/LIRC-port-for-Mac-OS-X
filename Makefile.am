@@ -1,10 +1,10 @@
-## $Id: Makefile.am,v 5.8 2001/11/20 15:12:32 ranty Exp $
+## $Id: Makefile.am,v 5.9 2003/01/26 18:49:59 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
-## we need version 1.4 of automake for DIST_SUBDIRS to work.
-AUTOMAKE_OPTIONS = 1.4 check-news
+## we need version 1.5 of automake for DIST_SUBDIRS to work and dist-bzip2.
+AUTOMAKE_OPTIONS = 1.5 check-news dist-bzip2
 
 EXTRA_DIST = setup.sh ANNOUNCE TODO
 
@@ -21,9 +21,6 @@ dist-hook:
 		cp -pr $(srcdir)/$$f $(distdir)/$$f; done
 	rm -r `find $(distdir) -name "CVS"`
 	-rcs2log >$(distdir)/ChangeLog
-
-dist-bz2: dist
-	gunzip -c @PACKAGE@-@VERSION@.tar.gz | bzip2 >@PACKAGE@-@VERSION@.tar.bz2
 
 DISTCLEANFILES = configure.sh .setup.config
 
