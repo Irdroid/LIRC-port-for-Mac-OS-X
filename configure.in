@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.104 2003/04/19 11:28:27 lirc Exp $
+dnl $Id: configure.in,v 5.105 2003/04/21 14:14:44 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -135,9 +135,9 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (bte) (dsp) (irreal) (livedrive) (logitech) \
-	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
-	(slinke) (udp)"
+possible_drivers="(none) (bte) (dsp) (irreal) (livedrive_midi) \
+	(livedrive_seq) (logitech) (mediafocusI) (mp3anywhere) (pctv) \
+	(remotemaster) (silitek) (slinke) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -161,6 +161,7 @@ AC_CHECK_LIB(irman_sw, ir_strerror,
 dnl audio driver requires PortAudio library installed and some linker flags
 AC_CHECK_HEADERS(portaudio.h,[
   AC_CHECK_LIB(portaudio, Pa_Initialize,[
+    AC_DEFINE(HAVE_LIBPORTAUDIO)
     possible_drivers="${possible_drivers} (audio)"
     ],,${portaudio_lib_other}
   )]
@@ -177,8 +178,9 @@ AC_ARG_WITH(driver,
 			  flyvideo, hauppauge, hauppauge_dvb, irdeo,
 			  irdeo_remote, irman, irreal, it87, knc_one,
 			  kworld, leadtek_0007, leadtek_0010,
-			  livedrive, logitech, lptX, mediafocusI,
-			  mp3anywhere, packard_bell, parallel, pctv,
+			  livedrive_midi, livedrive_seq, logitech,
+			  lptX, mediafocusI, mp3anywhere,
+			  packard_bell, parallel, pctv,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
@@ -262,9 +264,9 @@ if test "$driver" = "any"; then
 	silitek)
 		hw_module="${hw_module} hw_silitek.o serial.o"
 		;;
-	slinke)
-		hw_module="${hw_module} hw_slinke.o serial.o receive.o"
-		;;
+	#slinke)
+		#hw_module="${hw_module} hw_slinke.o serial.o receive.o"
+		#;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
 		;;
@@ -281,8 +283,11 @@ if test "$driver" = "any"; then
 		;;
 	lirc_flyvideo)
 		;;
-	livedrive)
-		hw_module="${hw_module} hw_livedrive.o"
+	livedrive_midi)
+		hw_module="${hw_module} hw_livedrive_common.o hw_livedrive_midi.o"
+		;;
+	livedrive_seq)
+		hw_module="${hw_module} hw_livedrive_common.o hw_livedrive_seq.o"
 		;;
 	udp)
 		hw_module="${hw_module} hw_udp.o receive.o"
@@ -503,10 +508,18 @@ if test "$driver" = "leadtek_0010"; then
   lircmd_conf="leadtek/lircmd.conf.RM-0010"
 fi
 
-if test "$driver" = "livedrive"; then
+if test "$driver" = "livedrive_midi"; then
   lirc_driver="none"
-  hw_module="hw_livedrive.o"
-  HW_DEFAULT="hw_livedrive"
+  hw_module="hw_livedrive_common.o hw_livedrive_midi.o"
+  HW_DEFAULT="hw_livedrive_midi"
+  lircd_conf="creative/lircd.conf.livedrive"
+#  lircmd_conf="creative/lircmd.conf.livedrive"
+fi
+
+if test "$driver" = "livedrive_seq"; then
+  lirc_driver="none"
+  hw_module="hw_livedrive_common.o hw_livedrive_seq.o"
+  HW_DEFAULT="hw_livedrive_seq"
   lircd_conf="creative/lircd.conf.livedrive"
 #  lircmd_conf="creative/lircmd.conf.livedrive"
 fi

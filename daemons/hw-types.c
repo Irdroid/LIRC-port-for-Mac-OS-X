@@ -16,7 +16,8 @@ extern struct hardware hw_pixelview;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
 extern struct hardware hw_dsp;
-extern struct hardware hw_livedrive;
+extern struct hardware hw_livedrive_midi;
+extern struct hardware hw_livedrive_seq;
 extern struct hardware hw_audio;
 extern struct hardware hw_udp;
 extern struct hardware hw_bte;
@@ -48,22 +49,25 @@ struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
 	&hw_default,
+#ifdef HAVE_LIBPORTAUDIO
+	&hw_audio,
+#endif
+	&hw_bte,
 	&hw_creative,
+	&hw_dsp,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,
 #endif
+	&hw_livedrive_midi,
+	&hw_livedrive_seq,
 	&hw_logitech,
 	&hw_mp3anywhere,
+	&hw_null,
 	&hw_pinsys,
 	&hw_pixelview,
 	&hw_silitek,
-	&hw_slinke,
-	&hw_dsp,
-	&hw_livedrive,
-	&hw_audio,
+	/*	&hw_slinke,*/
 	&hw_udp,
-	&hw_bte,
-	&hw_null,
 #else
 	&HW_DEFAULT,
 #endif

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.23 2003/04/19 11:28:27 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.24 2003/04/21 14:14:43 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -68,6 +68,9 @@
 
 /* Define if the software only test version of libirman is installed */
 #undef HAVE_LIBIRMAN_SW
+
+/* Define if the portaudio library is installed */
+#undef HAVE_LIBPORTAUDIO
 
 /* Define if the complete vga libraries (vga, vgagl) are installed */
 #undef HAVE_LIBVGA

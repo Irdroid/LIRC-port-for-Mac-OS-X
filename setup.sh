@@ -449,15 +449,17 @@ ConfigDriver ()
         elif test "$1" = "9"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 9 74 2 \
-			1 "Creative LiveDrive" \
-			2 "Ericsson mobile phone via Bluetooth" \
+		--menu "$CONFIG_DRIVER_TEXT" 10 74 3 \
+			1 "Creative LiveDrive midi" \
+			2 "Creative LiveDrive sequencer" \
+			3 "Ericsson mobile phone via Bluetooth" \
 			2> $TEMP;
 	    if test "$?" = "0"; then
 		{
 		set `cat $TEMP`
-		if   test "$1" = "1"; then LIRC_DRIVER=livedrive; DRIVER_PARAMETER=none;
-		elif test "$1" = "2"; then LIRC_DRIVER=bte;       DRIVER_PARAMETER=btty;
+		if   test "$1" = "1"; then LIRC_DRIVER=livedrive_midi; DRIVER_PARAMETER=none;
+		elif test "$1" = "2"; then LIRC_DRIVER=livedrive_seq; DRIVER_PARAMETER=none;
+		elif test "$1" = "3"; then LIRC_DRIVER=bte;       DRIVER_PARAMETER=btty;
 		fi
 		}
 	    else
