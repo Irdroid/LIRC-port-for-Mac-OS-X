@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.7 2000/03/25 12:14:55 columbus Exp $      */
+/*      $Id: lirc_client.c,v 5.8 2000/09/19 17:55:07 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -132,8 +132,15 @@ int lirc_readline(char **line,FILE *f)
 		ret=fgets(newline+len,LIRC_READ+1,f);
 		if(ret==NULL)
 		{
-			free(newline);
-			*line=NULL;
+			if(feof(f) && len>0)
+			{
+				*line=newline;
+			}
+			else
+			{
+				free(newline);
+				*line=NULL;
+			}
 			return(0);
 		}
 		len=strlen(newline);
@@ -314,7 +321,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 	      int line)
 {
 	struct lirc_config_entry *new_entry;
-
+	
 	new_entry=*new_config;
 	if(strcasecmp(token,"begin")==0)
 	{
@@ -384,6 +391,7 @@ int lirc_mode(char *token,char *token2,char **mode,
 						    "config before line %d\n",
 						    lirc_prog,line);
 					lirc_freeconfigentries(new_entry);
+					*new_config=NULL;
 					return(-1);
 				}
 				if(strcasecmp(new_entry->prog,lirc_prog)!=0)
@@ -448,6 +456,13 @@ int lirc_mode(char *token,char *token2,char **mode,
 		{
 			if(*mode!=NULL)
 			{
+				if(new_entry!=NULL)
+				{
+					lirc_printf("%s: line %d: missing "
+						    "'end' token\n",lirc_prog,
+						    line);
+					return(-1);
+				}
 				if(strcasecmp(*mode,token2)==0)
 				{
 					free(*mode);
@@ -460,6 +475,13 @@ int lirc_mode(char *token,char *token2,char **mode,
 						    lirc_prog,token2,*mode);
 					return(-1);
 				}
+			}
+			else
+			{
+				lirc_printf("%s: line %d: 'end %s' without "
+					    "'begin'\n",lirc_prog,line,
+					    token2);
+				return(-1);
 			}
 		}
 	}
@@ -576,6 +598,20 @@ int lirc_readconfig(char *file,
 						if(remote!=LIRC_ALL)
 							free(remote);
 						remote=LIRC_ALL;
+					}
+					else
+					{
+						if(mode!=NULL)
+						{
+							free(mode);
+							mode=NULL;
+						}
+						if(new_entry!=NULL)
+						{
+							lirc_freeconfigentries
+								(new_entry);
+							new_entry=NULL;
+						}
 					}
 				}
 			}
@@ -747,17 +783,35 @@ int lirc_readconfig(char *file,
 	}
 	if(remote!=LIRC_ALL)
 		free(remote);
+	if(new_entry!=NULL)
+	{
+		if(ret==0)
+		{
+			ret=lirc_mode("end",NULL,&mode,&new_entry,
+				      &first,&last,check,line);
+			lirc_printf("%s: warning: end token missing at end "
+				    "of file\n",lirc_prog);
+		}
+		else
+		{
+			lirc_freeconfigentries(new_entry);
+			new_entry=NULL;
+		}
+	}
 	if(mode!=NULL)
 	{
-		lirc_printf("%s: warning: no end token found for mode "
-			    "\"%s\"\n",lirc_prog,mode);
+		if(ret==0)
+		{
+			lirc_printf("%s: warning: no end token found for mode "
+				    "\"%s\"\n",lirc_prog,mode);
+		}
 		free(mode);
 	}
-
 	fclose(fin);
 	if(ret==0)
 	{
-		*config=(struct lirc_config *) malloc(sizeof(struct lirc_config));
+		*config=(struct lirc_config *)
+			malloc(sizeof(struct lirc_config));
 		if(*config==NULL)
 		{
 			lirc_freeconfigentries(first);
