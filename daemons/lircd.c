@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.18 2000/05/11 11:48:20 columbus Exp $      */
+/*      $Id: lircd.c,v 5.19 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -853,7 +853,7 @@ int send_once(int fd,char *message,char *arguments)
 	{
 		return(send_error(fd,message,"remote is repeating\n"));
 	}
-	if(remote->repeat_bit>0)
+	if(remote->toggle_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
 	
@@ -881,7 +881,7 @@ int send_start(int fd,char *message,char *arguments)
 		return(send_error(fd,message,"already repeating\n"));
 	}
 	
-	if(remote->repeat_bit>0)
+	if(remote->toggle_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
 	if(!hw.send_func(remote,code))

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.3 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: receive.c,v 5.4 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -36,9 +36,9 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
 	{
 #               ifdef DEBUG
 		logprintf(3,"<%lu\n",(unsigned long)
-			  rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1));
+			  rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK));
 #               endif
-		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
+		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK);
 		return(rec_buffer.data[rec_buffer.rptr++]);
 	}
 	else
@@ -52,13 +52,13 @@ lirc_t get_next_rec_buffer(unsigned long maxusec)
                         rec_buffer.data[rec_buffer.wptr]=data;
                         if(rec_buffer.data[rec_buffer.wptr]==0) return(0);
                         rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]
-				&(PULSE_BIT-1);
+				&(PULSE_MASK);
                         rec_buffer.wptr++;
                         rec_buffer.rptr++;
 #                       ifdef DEBUG
                         logprintf(3,"+%lu\n",(unsigned long)
 				  rec_buffer.data[rec_buffer.rptr-1]
-                                  &(PULSE_BIT-1));
+                                  &(PULSE_MASK));
 #                       endif
                         return(rec_buffer.data[rec_buffer.rptr-1]);
 		}
@@ -127,7 +127,7 @@ int clear_rec_buffer()
 		data=readdata();
 		
 #               ifdef DEBUG
-		logprintf(3,"c%lu\n",(unsigned long) data&(PULSE_BIT-1));
+		logprintf(3,"c%lu\n",(unsigned long) data&(PULSE_MASK));
 #               endif
 		
 		rec_buffer.data[rec_buffer.wptr]=data;
@@ -158,11 +158,11 @@ inline void unget_rec_buffer(int count)
 	if(count==1 || count==2)
 	{
 		rec_buffer.rptr-=count;
-		rec_buffer.sum-=rec_buffer.data[rec_buffer.rptr]&(PULSE_BIT-1);
+		rec_buffer.sum-=rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK);
 		if(count==2)
 		{
 			rec_buffer.sum-=rec_buffer.data[rec_buffer.rptr+1]
-			&(PULSE_BIT-1);
+			&(PULSE_MASK);
 		}
 	}
 }
@@ -180,7 +180,7 @@ inline lirc_t get_next_pulse()
 #               endif
 		return(0);
 	}
-	return(data&(PULSE_BIT-1));
+	return(data&(PULSE_MASK));
 }
 
 inline lirc_t get_next_space()
@@ -203,7 +203,7 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 {
 	lirc_t deltas,deltap;
 	int retval;
-
+	
 	if(rec_buffer.pendings>0)
 	{
 		deltas=get_next_space();
@@ -264,8 +264,8 @@ inline int expectone(struct ir_remote *remote,int bit)
 	if(is_biphase(remote))
 	{
 		if(is_rc6(remote) &&
-		   remote->repeat_bit>0 &&
-		   bit==remote->repeat_bit-1)
+		   remote->toggle_bit>0 &&
+		   bit==remote->toggle_bit-1)
 		{
 			if(remote->sone>0 &&
 			   !expectspace(remote,2*remote->sone))
@@ -314,8 +314,8 @@ inline int expectzero(struct ir_remote *remote,int bit)
 	if(is_biphase(remote))
 	{
 		if(is_rc6(remote) &&
-		   remote->repeat_bit>0 &&
-		   bit==remote->repeat_bit-1)
+		   remote->toggle_bit>0 &&
+		   bit==remote->toggle_bit-1)
 		{
 			if(!expectpulse(remote,2*remote->pzero))
 			{
@@ -367,7 +367,7 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 	deltas=get_next_space();
 	if(deltas==0) return(0);
 	
-	if(last_remote!=NULL)
+	if(last_remote!=NULL && !is_rcmm(remote))
 	{
 		while(deltas<last_remote->remaining_gap*
 		      (100-last_remote->eps)/100 &&
@@ -391,6 +391,29 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 
 inline int get_header(struct ir_remote *remote)
 {
+	if(is_rcmm(remote))
+	{
+		lirc_t deltap,deltas,sum;
+		deltap=get_next_pulse();
+		if(deltap==0)
+		{
+			unget_rec_buffer(1);
+			return(0);
+		}
+		deltas=get_next_space();
+		if(deltas==0)
+		{
+			unget_rec_buffer(2);
+			return(0);
+		}
+		sum=deltap+deltas;
+		if(expect(remote,sum,remote->phead+remote->shead))
+		{
+			return(1);
+		}
+		unget_rec_buffer(2);
+		return(0);
+	}
 	if(!expectpulse(remote,remote->phead))
 	{
 		unget_rec_buffer(1);
@@ -434,7 +457,7 @@ inline int get_trail(struct ir_remote *remote)
 inline int get_gap(struct ir_remote *remote,lirc_t gap)
 {
 	lirc_t data;
-
+	
 #       ifdef DEBUG
 	logprintf(2,"sum: %ld\n",rec_buffer.sum);
 #       endif
@@ -488,8 +511,70 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 {
 	ir_code code;
 	int i;
-
+	
 	code=0;
+	
+	if(is_rcmm(remote))
+	{
+		lirc_t deltap,deltas,sum;
+		
+		if(bits%2 || done%2)
+		{
+			logprintf(0,"invalid bit number.\n");
+			return((ir_code) -1);
+		}
+		for(i=0;i<bits;i+=2)
+		{
+			code<<=2;
+			deltap=get_next_pulse();
+			deltas=get_next_space();
+			if(deltap==0 || deltas==0) 
+			{
+				logprintf(0,"failed on bit %d\n",done+i+1);
+			}
+			sum=deltap+deltas;
+#                       ifdef DEBUG
+			logprintf(3,"rcmm: sum %ld\n",(unsigned long) sum);
+#                       endif
+			if(expect(remote,sum,remote->pzero+remote->szero))
+			{
+				code|=0;
+#                               ifdef DEBUG
+				logprintf(2,"00\n");
+#                               endif
+			}
+			else if(expect(remote,sum,remote->pone+remote->sone))
+			{
+				code|=1;
+#                               ifdef DEBUG
+				logprintf(2,"01\n");
+#                               endif
+			}
+			else if(expect(remote,sum,remote->ptwo+remote->stwo))
+			{
+				code|=2;
+#                               ifdef DEBUG
+				logprintf(2,"10\n");
+#                               endif
+			}
+			else if(expect(remote,sum,remote->pthree+remote->sthree))
+			{
+				code|=3;
+#                               ifdef DEBUG
+				logprintf(2,"11\n");
+#                               endif
+			}
+			else
+			{
+#                               ifdef DEBUG
+				logprintf(2,"no match for %ld+%ld=%ld\n",
+					  deltap,deltas,sum);
+#                               endif
+				return((ir_code) -1);
+			}
+		}
+		return(code);
+	}
 
 	for(i=0;i<bits;i++)
 	{
@@ -858,12 +943,23 @@ int receive_decode(struct ir_remote *remote,
 			{
 				rec_buffer.sum-=remote->phead+remote->shead;
 			}
-			if(!get_gap(remote,
-				    is_const(remote) ? 
-				    (remote->gap>rec_buffer.sum ?
-				     remote->gap-rec_buffer.sum:0):
-				    remote->gap)) 
-				return(0);
+			if(is_rcmm(remote))
+			{
+				if(!get_gap(remote,1000))
+					return(0);
+			}
+			else if(is_const(remote))
+			{
+				if(!get_gap(remote,
+					    remote->gap>rec_buffer.sum ?
+					    remote->gap-rec_buffer.sum:0))
+					return(0);
+			}
+			else
+			{
+				if(!get_gap(remote,remote->gap))
+					return(0);
+			}
 		} /* end of mode specific code */
 	}
 	*prep=pre;*codep=code;*postp=post;
@@ -872,8 +968,14 @@ int receive_decode(struct ir_remote *remote,
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;
-	*remaining_gapp=is_const(remote) ?
-	(remote->gap>rec_buffer.sum ? remote->gap-rec_buffer.sum:0):
-	remote->gap;
+	if(is_const(remote))
+	{
+		*remaining_gapp=remote->gap>rec_buffer.sum ?
+			remote->gap-rec_buffer.sum:0;
+	}
+	else
+	{
+		*remaining_gapp=remote->gap;
+	}
 	return(1);
 }

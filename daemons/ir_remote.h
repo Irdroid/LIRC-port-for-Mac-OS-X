@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.11 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: ir_remote.h,v 5.12 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -85,6 +85,8 @@ struct ir_remote
 	/* pulse and space lengths of: */
 	
 	lirc_t phead,shead;         /* header */
+	lirc_t pthree,sthree;       /* 3 (only used for RC-MM) */
+	lirc_t ptwo,stwo;           /* 2 (only used for RC-MM) */
 	lirc_t pone,sone;           /* 1 */
 	lirc_t pzero,szero;         /* 0 */
 	lirc_t plead;		    /* leading pulse */
@@ -104,7 +106,7 @@ struct ir_remote
 	lirc_t gap;                 /* time between signals in usecs */
 	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
-	int repeat_bit;             /* 1..bits */
+	int toggle_bit;             /* 1..bits */
 	unsigned int freq;          /* modulation frequency */
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	
@@ -163,6 +165,12 @@ static inline int is_biphase(struct ir_remote *remote)
 static inline int is_rc6(struct ir_remote *remote)
 {
 	if(remote->flags&RC6) return(1);
+	else return(0);
+}
+
+static inline int is_rcmm(struct ir_remote *remote)
+{
+	if(remote->flags&RCMM) return(1);
 	else return(0);
 }
 
@@ -229,7 +237,7 @@ struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
-			  int *repeat_bit);
+			  int *toggle_bit);
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    int repeat_state,int repeat_flag,
 			    lirc_t remaining_gap);

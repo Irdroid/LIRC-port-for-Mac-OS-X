@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.4 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: dump_config.c,v 5.5 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -82,6 +82,14 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 				(unsigned long) rem->phead,
 				(unsigned long) rem->shead);
 		}
+		if(rem->pthree!=0 || rem->sthree!=0)
+			fprintf(f, "  three       %5lu %5lu\n",
+				(unsigned long) rem->pthree,
+				(unsigned long) rem->sthree);
+		if(rem->ptwo!=0 || rem->stwo!=0)
+			fprintf(f, "  two         %5lu %5lu\n",
+				(unsigned long) rem->ptwo,
+				(unsigned long)  rem->stwo);
 		fprintf(f, "  one         %5lu %5lu\n",
 			(unsigned long) rem->pone,
 			(unsigned long) rem->sone);
@@ -147,7 +155,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 			fprintf(f, "  repeat_gap   %lu\n",
 				(unsigned long) rem->repeat_gap);
 		}
-		fprintf(f, "  repeat_bit      %d\n\n",rem->repeat_bit);
+		fprintf(f, "  toggle_bit      %d\n\n",rem->toggle_bit);
 	}
 	else
 	{

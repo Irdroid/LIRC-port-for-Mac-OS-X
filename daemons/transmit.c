@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.2 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: transmit.c,v 5.3 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -160,7 +160,7 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits)
 		{
 			if(is_biphase(remote))
 			{
-				if(is_rc6(remote) && i+1==remote->repeat_bit)
+				if(is_rc6(remote) && i+1==remote->toggle_bit)
 				{
 					send_space(2*remote->sone);
 					send_pulse(2*remote->pone);
@@ -179,7 +179,7 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits)
 		}
 		else
 		{
-			if(is_rc6(remote) && i+1==remote->repeat_bit)
+			if(is_rc6(remote) && i+1==remote->toggle_bit)
 			{
 				send_pulse(2*remote->pzero);
 				send_space(2*remote->szero);
@@ -201,13 +201,13 @@ inline void send_pre(struct ir_remote *remote)
 		ir_code pre;
 
 		pre=remote->pre_data;
-		if(remote->repeat_bit>0)
+		if(remote->toggle_bit>0)
 		{
-			if(remote->repeat_bit<=remote->pre_data_bits)
+			if(remote->toggle_bit<=remote->pre_data_bits)
 			{
 				set_bit(&pre,
 					remote->pre_data_bits
-					-remote->repeat_bit,
+					-remote->toggle_bit,
 					remote->repeat_state);
 			}
 		}
@@ -228,12 +228,12 @@ inline void send_post(struct ir_remote *remote)
 		ir_code post;
 
 		post=remote->post_data;
-		if(remote->repeat_bit>0)
+		if(remote->toggle_bit>0)
 		{
-			if(remote->repeat_bit>remote->pre_data_bits
+			if(remote->toggle_bit>remote->pre_data_bits
 			   +remote->bits
 			   &&
-			   remote->repeat_bit<=remote->pre_data_bits
+			   remote->toggle_bit<=remote->pre_data_bits
 			   +remote->bits
 			   +remote->post_data_bits)
 			{
@@ -241,7 +241,7 @@ inline void send_post(struct ir_remote *remote)
 					remote->pre_data_bits
 					+remote->bits
 					+remote->post_data_bits
-					-remote->repeat_bit,
+					-remote->toggle_bit,
 					remote->repeat_state);
 			}
 		}
@@ -265,24 +265,24 @@ inline void send_repeat(struct ir_remote *remote)
 
 inline void send_code(struct ir_remote *remote,ir_code code)
 {
-	if(remote->repeat_bit>0)
+	if(remote->toggle_bit>0)
 	{
-		if(remote->repeat_bit>remote->pre_data_bits
+		if(remote->toggle_bit>remote->pre_data_bits
 		   &&
-		   remote->repeat_bit<=remote->pre_data_bits
+		   remote->toggle_bit<=remote->pre_data_bits
 		   +remote->bits)
 		{
 			set_bit(&code,
 				remote->pre_data_bits
 				+remote->bits
-				-remote->repeat_bit,
+				-remote->toggle_bit,
 				remote->repeat_state);
 		}
-		else if(remote->repeat_bit>remote->pre_data_bits
+		else if(remote->toggle_bit>remote->pre_data_bits
 			+remote->bits
 			+remote->post_data_bits)
 		{
-			logprintf(0,"bad repeat_bit\n");
+			logprintf(0,"bad toggle_bit\n");
 		}
 	}
 
@@ -304,6 +304,11 @@ inline void send_code(struct ir_remote *remote,ir_code code)
 
 int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
+	if(is_rcmm(remote))
+	{
+		logprintf(0,"sorry, can't send this protocol yet\n");
+		return(0);
+	}
 	clear_send_buffer();
 	if(is_biphase(remote))
 	{

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.14 2000/05/03 18:18:23 columbus Exp $      */
+/*      $Id: ir_remote.c,v 5.15 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -79,28 +79,28 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	
 	pre_mask=code_mask=post_mask=0;
 	repeat_state=0;
-	if(remote->repeat_bit>0)
+	if(remote->toggle_bit>0)
 	{
-		if(remote->repeat_bit<=remote->pre_data_bits)
+		if(remote->toggle_bit<=remote->pre_data_bits)
 		{
 			repeat_state=
 			pre&(1<<(remote->pre_data_bits
-				 -remote->repeat_bit)) ? 1:0;
+				 -remote->toggle_bit)) ? 1:0;
 			pre_mask=1<<(remote->pre_data_bits
-				     -remote->repeat_bit);
+				     -remote->toggle_bit);
 		}
-		else if(remote->repeat_bit<=remote->pre_data_bits
+		else if(remote->toggle_bit<=remote->pre_data_bits
 			+remote->bits)
 		{
 			repeat_state=
 			code&(1<<(remote->pre_data_bits
 				  +remote->bits
-				  -remote->repeat_bit)) ? 1:0;
+				  -remote->toggle_bit)) ? 1:0;
 			code_mask=1<<(remote->pre_data_bits
 				      +remote->bits
-				      -remote->repeat_bit);
+				      -remote->toggle_bit);
 		}
-		else if(remote->repeat_bit<=remote->pre_data_bits
+		else if(remote->toggle_bit<=remote->pre_data_bits
 			+remote->bits
 			+remote->post_data_bits)
 		{
@@ -108,15 +108,15 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			post&(1<<(remote->pre_data_bits
 				  +remote->bits
 				  +remote->post_data_bits
-				  -remote->repeat_bit)) ? 1:0;
+				  -remote->toggle_bit)) ? 1:0;
 			post_mask=1<<(remote->pre_data_bits
 				      +remote->bits
 				      +remote->post_data_bits
-				      -remote->repeat_bit);
+				      -remote->toggle_bit);
 		}
 		else
 		{
-			logprintf(0,"bad repeat_bit\n");
+			logprintf(0,"bad toggle_bit\n");
 		}
 	}
 	if(has_pre(remote))
@@ -188,7 +188,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	gettimeofday(&current,NULL);
 	if(found==remote->last_code && repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
-	   (!(remote->repeat_bit>0) || repeat_state==remote->repeat_state))
+	   (!(remote->toggle_bit>0) || repeat_state==remote->repeat_state))
 	{
 		remote->reps++;
 	}
@@ -196,7 +196,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	{
 		remote->reps=0;
 		remote->last_code=found;
-		if(remote->repeat_bit>0)
+		if(remote->toggle_bit>0)
 		{
 			remote->repeat_state=repeat_state;
 		}

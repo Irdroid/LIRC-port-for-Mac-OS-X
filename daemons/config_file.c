@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.4 2000/04/24 19:41:42 columbus Exp $      */
+/*      $Id: config_file.c,v 5.5 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -351,8 +351,13 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		rem->repeat_gap=s_strtoul(val);
 		return(1);
 	}
+	else if (strcasecmp("toggle_bit",key)==0){
+		rem->toggle_bit=s_strtoi(val);
+		return(1);
+	}
+	/* obsolete name */
 	else if (strcasecmp("repeat_bit",key)==0){
-		rem->repeat_bit=s_strtoi(val);
+		rem->toggle_bit=s_strtoi(val);
 		return(1);
 	}
 	else if (strcasecmp("frequency",key)==0){
@@ -368,6 +373,16 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		if (strcasecmp("header",key)==0){
 			rem->phead=s_strtolirc_t(val);
 			rem->shead=s_strtolirc_t(val2);
+			return(2);
+		}
+		else if (strcasecmp("three",key)==0){
+			rem->pthree=s_strtolirc_t(val);
+			rem->sthree=s_strtolirc_t(val2);
+			return(2);
+		}
+		else if (strcasecmp("two",key)==0){
+			rem->ptwo=s_strtolirc_t(val);
+			rem->stwo=s_strtolirc_t(val2);
 			return(2);
 		}
 		else if (strcasecmp("one",key)==0){

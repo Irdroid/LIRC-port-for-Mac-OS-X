@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.15 2000/07/05 12:25:03 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.16 2000/07/06 17:49:30 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -43,8 +43,8 @@ void flushhw(void);
 int resethw(void);
 int waitfordata(unsigned long maxusec);
 int availabledata(void);
-int get_repeat_bit(struct ir_remote *remote);
-void set_repeat_bit(struct ir_remote *remote,ir_code xor);
+int get_toggle_bit(struct ir_remote *remote);
+void set_toggle_bit(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
 #ifdef DEBUG
@@ -218,7 +218,7 @@ int main(int argc,char **argv)
 #ifdef DEBUG
 		remotes=read_config(fin);
 		fclose(fin);
-		if(remotes==NULL)
+		if(remotes==(void *) -1)
 		{
 			exit(EXIT_FAILURE);
 		}
@@ -374,7 +374,7 @@ int main(int argc,char **argv)
 		{
 			hw.rec_func(NULL);
 		}
-		if(!get_repeat_bit(&remote))
+		if(!get_toggle_bit(&remote))
 		{
 			fclose(fout);
 			unlink(filename);
@@ -637,14 +637,14 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(remotes->repeat_bit==0)
+	if(remotes->toggle_bit==0)
 	{
-		get_repeat_bit(remotes);
+		get_toggle_bit(remotes);
 	}
 	else
 	{
-		set_repeat_bit(remotes,
-			       1<<(remotes->bits-remotes->repeat_bit));
+		set_toggle_bit(remotes,
+			       1<<(remotes->bits-remotes->toggle_bit));
 	}
 	if(hw.deinit_func) hw.deinit_func();
 	get_pre_data(remotes);
@@ -779,7 +779,7 @@ int availabledata(void)
 	return(0);
 }
 
-int get_repeat_bit(struct ir_remote *remote)
+int get_toggle_bit(struct ir_remote *remote)
 {
 	ir_code pre,code,post;
 	int repeat_flag;
@@ -788,7 +788,7 @@ int get_repeat_bit(struct ir_remote *remote)
 	int retries,flag,success;
 	ir_code first;
 	
-	printf("Checking for repeat bit.\n");
+	printf("Checking for toggle bit.\n");
 	printf("Please press an arbitrary button repeatedly "
 	       "(don't hold it down).\n");
 	retries=30;flag=success=0;first=0;
@@ -808,9 +808,9 @@ int get_repeat_bit(struct ir_remote *remote)
 		hw.rec_func(NULL);
 		if(is_rc6(remote))
 		{
-			for(remote->repeat_bit=1,success=0;
-			    remote->repeat_bit<=remote->bits;
-			    remote->repeat_bit++)
+			for(remote->toggle_bit=1,success=0;
+			    remote->toggle_bit<=remote->bits;
+			    remote->toggle_bit++)
 			{
 				if(hw.decode_func(remote,&pre,&code,&post,
 						  &repeat_flag,&remaining_gap))
@@ -819,7 +819,7 @@ int get_repeat_bit(struct ir_remote *remote)
 					break;
 				}
 			}
-			if(success==0) remote->repeat_bit=0;
+			if(success==0) remote->toggle_bit=0;
 		}
 		else
 		{
@@ -839,16 +839,16 @@ int get_repeat_bit(struct ir_remote *remote)
 				{
 					if(!is_rc6(remote))
 					{
-						set_repeat_bit(remote,first^code);
+						set_toggle_bit(remote,first^code);
 					}
-					if(remote->repeat_bit>0)
+					if(remote->toggle_bit>0)
 					{
-						printf("\nRepeat bit is %d.\n",
-						       remote->repeat_bit);
+						printf("\nToggle bit is %d.\n",
+						       remote->toggle_bit);
 						return(1);
 					}
 					else
-						printf("\nInvalid repeat bit.\n");
+						printf("\nInvalid toggle bit.\n");
 					break;
 				}
 				printf(".");fflush(stdout);
@@ -862,32 +862,32 @@ int get_repeat_bit(struct ir_remote *remote)
 		}
 		if(retries==0)
 		{
-			printf("\nNo repeat bit found.\n");
+			printf("\nNo toggle bit found.\n");
 		}
 	}
 	return(0);
 }
 
-void set_repeat_bit(struct ir_remote *remote,ir_code xor)
+void set_toggle_bit(struct ir_remote *remote,ir_code xor)
 {
 	ir_code mask;
-	int repeat_bit;
+	int toggle_bit;
 	struct ir_ncode *codes;
 
 	if(!remote->codes) return;
 
 
 	mask=((ir_code) 1)<<(remote->bits+remote->pre_data_bits+remote->post_data_bits-1);
-	repeat_bit=1;
+	toggle_bit=1;
 	while(mask)
 	{
 		if(mask==xor) break;
 		mask=mask>>1;
-		repeat_bit++;
+		toggle_bit++;
 	}
 	if(mask)
 	{
-		remote->repeat_bit=repeat_bit;
+		remote->toggle_bit=toggle_bit;
 		
 		codes=remote->codes;
 		while(codes->name!=NULL)
@@ -1611,13 +1611,14 @@ int get_trail_length(struct ir_remote *remote)
 int get_lead_length(struct ir_remote *remote)
 {
 	unsigned int sum,max_count;
-	struct lengths *max_length;
-
+	struct lengths *first_lead,*max_length,*max2_length;
+	lirc_t a,b;
+	
 	if(!is_biphase(remote)) return(1);
 	if(is_rc6(remote)) return(1);
 	
-	max_length=get_max_length(has_header(remote) ?
-				  first_3lead:first_1lead,&sum);
+	first_lead=has_header(remote) ? first_3lead:first_1lead;
+	max_length=get_max_length(first_lead,&sum);
 	max_count=max_length->count;
 #       ifdef DEBUG
 	printf("get_lead_length(): sum: %u, max_count %u\n",sum,max_count);
@@ -1627,6 +1628,20 @@ int get_lead_length(struct ir_remote *remote)
 		printf("Found lead pulse: %lu\n",
 		       (unsigned long) calc_signal(max_length));
 		remote->plead=calc_signal(max_length);
+		return(1);
+	}
+	unlink_length(&first_lead,max_length);
+	max2_length=get_max_length(first_lead,&sum);
+	max_length->next=first_lead;first_lead=max_length;
+
+	a=calc_signal(max_length);
+	b=calc_signal(max2_length);
+	if(a>b)	b^=a^=b^=a;
+	if(abs(2*a-b)<b*EPS/100 || abs(2*a-b)<AEPS)
+	{
+		printf("Found hidden lead pulse: %lu\n",
+		       (unsigned long) a);
+		remote->plead=a;
 		return(1);
 	}
 	printf("No lead pulse found.\n");
