@@ -1,4 +1,5 @@
 0.6.5: future
+  * added support for IntelliMouse to lircmd
   * added support for ITE IT8712/IT8705 CIR port (Hans-Günter Lütke Uphues)
   * added support for Prolink PV-BT878P+9B card (Arkadiusz Miskiewicz)
   * added support for Hauppauge DVB-s card

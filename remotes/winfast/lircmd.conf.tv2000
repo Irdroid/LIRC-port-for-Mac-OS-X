@@ -2,7 +2,7 @@
 # lircmd config file
 # 
 
-PROTOCOL IMPS/2
+PROTOCOL IntelliMouse
 
 # ACCELERATOR start max multiplier
 

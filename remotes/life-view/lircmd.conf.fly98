@@ -3,7 +3,7 @@
 # Contributed by Pawel T. Jochym <jochym@ifj.edu.pl>
 # 
 
-PROTOCOL IMPS/2
+PROTOCOL IntelliMouse
 
 # ACCELERATOR start max multiplier
 

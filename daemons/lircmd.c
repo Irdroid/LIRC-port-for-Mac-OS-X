@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.12 2001/11/24 09:45:08 ranty Exp $      */
+/*      $Id: lircmd.c,v 5.13 2001/12/15 16:35:20 ranty Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -105,7 +105,7 @@ struct config_mouse config_table[]=
 	{NULL                 ,button3_click   , 0, 0, 0,      0,      0, 0}
 };
 
-enum protocol {mouse_systems,imps_2};
+enum protocol {mouse_systems,imps_2,im_serial};
 
 struct trans_mouse
 {
@@ -261,6 +261,25 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 		buffer[1]=dx+(dx>=0 ? 0:256);
 		buffer[2]=dy+(dy>=0 ? 0:256);
 		buffer[3]=dz;
+
+		while(f>0)
+		{
+			f--;
+			write(lircm,buffer,4);
+		}
+		break;
+	case im_serial:
+		dy = -dy;
+		buffer[0] = ((buttons&BUTTON1) ? 0x20:0x00)
+		           |((buttons&BUTTON3) ? 0x10:0x00)
+		           |                     0x40
+		           |((dx & 0xC0) >> 6)
+    		           |((dy & 0xC0) >> 4);
+		buffer[1]=dx & ~0xC0;
+		buffer[2]=dy & ~0xC0;
+		buffer[3] = ((dz < 0) ? 0x0f:0x00)
+			   |((dz > 0) ? 0x01:0x00)
+			   |((buttons&BUTTON2) ? 0x10:0x00);
 
 		while(f>0)
 		{
@@ -511,6 +530,10 @@ struct trans_mouse *read_config(FILE *fd)
 				else if(strcasecmp("IMPS/2",name)==0)
 				{
 					new_ms.protocol=imps_2;
+				}
+				else if(strcasecmp("IntelliMouse",name)==0)
+				{
+					new_ms.protocol=im_serial;
 				}
 				else
 				{

@@ -5,7 +5,7 @@
 
 # ACCELERATOR start max multiplier
 
-#PROTOCOL IMPS/2
+#PROTOCOL IntelliMouse
 
 ACCELERATOR 2 20 5
 

@@ -44,12 +44,18 @@ important part of the package.</P>
 
 <P><em>lircmd</em> can be used to emulate a mouse with your remote
 control. Depending on the config file described in the next section it
-converts IR signals into mouse events. It currently supports two mouse
-protocols. For compatibility reasons the default protocol is the
-MouseSystems protocol but the preferred is the IMPS/2 protocol. The
-advantage of this protocol is its wheel-mouse support. That way you
-can for example configure Netscape to scroll if you press certain
-buttons.</P>
+converts IR signals into mouse events. It currently supports three mouse
+protocols (MouseSystems, IntelliMouse and IMPS/2). For compatibility reasons
+the default protocol is the MouseSystems protocol but the preferred is the
+IntelliMouse protocol. The advantage of this protocol is its wheel-mouse
+support. That way you can for example configure Netscape to scroll if you
+press certain buttons.</P>
+
+<P>IMPS/2 used to be the preferred protocol since it also has wheel-mouse
+support and IntelliMouse was not available. However PS/2 protocol specifies
+that the mouse must accept and reply to specific commands, and that can not be
+done through the pipe <em>lircmd</em> uses. For this reason IntelliMouse
+support was written and is currently the prefered protocol.</P>
 
 <P>lircmd can basically be used with two applications: X11 and gpm<BR>
 
@@ -65,7 +71,7 @@ addition to your normal one.</P>
 <PRE>
     Section "XInput"
         Subsection "Mouse"
-            Protocol    "IMPS/2"
+            Protocol    "IntelliMouse"
             Device      "/dev/lircm"
             DeviceName  "Remote"
             AlwaysCore
@@ -77,9 +83,9 @@ Additionally you might have to add
         Buttons 5
 </PRE>
 to your normal &quot;Pointer&quot; Section in order to make the wheel
-buttons work. Of course you have to replace IMPS/2 with MouseSystems if
-you really want to use this protocol. Colas Nahaboo's <A
-HREF="http://www.inria.fr/koala/colas/mouse-wheel-scroll/">X mouse
+buttons work. Of course you have to replace IntelliMouse with IMPS/2 or
+MouseSystems if you really want to use one of this protocols. Colas Nahaboo's
+<A HREF="http://www.inria.fr/koala/colas/mouse-wheel-scroll/">X mouse
 wheel scroll page</A> gives you further information how to make use of
 your new wheel mouse.</P>
 
@@ -88,7 +94,7 @@ in X version 3.3 that can make X crash if you use both mouse and
 remote control mouse simultaneously. At least I couldn't reproduce
 this with other versions. I also received some notes that lircmd does
 not work with certain X11 versions. But almost always at least one of
-the protocols did work. So try them both before trying another X11
+the protocols did work. So try them all before trying another X11
 version. But always remember that you have to modify both XF86Config and
 lircmd.conf so they use the same protocol.</P>
 
@@ -100,11 +106,12 @@ I received this configuration from a user. I didn't test it myself yet.
 Section "InputDevice"
         Identifier  "Mouse2"
         Driver      "mouse"
-        Option      "Protocol" "ImPS/2"
+        Option      "Protocol" "IntelliMouse"
         Option      "Device" "/dev/lircm"
         Option      "DeviceName" "Remote"
         Option      "AlwaysCore"
         Option      "Buttons" "5"
+	Option      "ZAxisMapping" "4 5"
 EndSection
 </PRE>
 
@@ -125,15 +132,19 @@ EndSection
 HREF="ftp://sunsite.unc.edu/">ftp://sunsite.unc.edu/</A> or mirrors)
 or <em>gpm</em> to use it parallel to your normal mouse. With:
 <PRE>
+    gpm -t ps2 -R -M -m /dev/lircm -t ms3
+</PRE>
+or.<BR>
+<PRE>
     gpm -t ps2 -R -M -m /dev/lircm -t imps2
 </PRE>
-resp.<BR>
+or.<BR>
 <PRE>
     gpm -t ps2 -R -M -m /dev/lircm -t msc
 </PRE>
 
-I can use my usual PS/2 mouse and my remote control (IMPS/2
-resp. MouseSystems protocol) at the same time to control the mouse
+I can use my usual PS/2 mouse and my remote control (IntelliMouse, IMPS/2
+or MouseSystems protocol) at the same time to control the mouse
 pointer.</P>
 
 <P><B>Note:</B> If you update lircmd.conf you can send the HUP signal
