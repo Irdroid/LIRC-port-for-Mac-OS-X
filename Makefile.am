@@ -1,12 +1,12 @@
-## $Id: Makefile.am,v 5.0 1999/04/29 21:30:59 columbus Exp $
+## $Id: Makefile.am,v 5.1 1999/07/08 18:30:24 columbus Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
 ## we need version 1.4 of automake for DIST_SUBDIRS to work.
-AUTOMAKE_OPTIONS = 1.4
+AUTOMAKE_OPTIONS = 1.4 check-news
 
-EXTRA_DIST = ANNOUNCE 
+EXTRA_DIST = setup.sh ANNOUNCE 
 #TECHNICAL TODO USAGE
 
 SUBDIRS = drivers daemons tools
@@ -16,10 +16,16 @@ SUBDIRS = drivers daemons tools
 ## work we will have to specify every remote. (otherwise uninstall would
 ## also remove files put in locally.  not good)
 
-## according to the documentation, I should be able to list these dirs
-## in EXTRA_DIST, but that doesn't seem to work.
+## From automake documentation:
+## Note that EXTRA_DIST can only handle files in the current
+## directory; files in other directories will cause make dist runtime
+## failures.
+
 dist-hook:
 	for f in contrib remotes; do \
 		cp -pr $(srcdir)/$$f $(distdir)/$$f; done
+	rcs2log >$(distdir)/ChangeLog
+
+DISTCLEANFILES = configure.sh .setup.config
 
 CLEANFILES = *~ remotes/*~ contrib/*~
