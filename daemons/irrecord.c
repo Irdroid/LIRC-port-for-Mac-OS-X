@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.25 2001/01/05 20:30:27 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.26 2001/01/11 08:16:55 columbus Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -453,7 +453,7 @@ int main(int argc,char **argv)
 		char buffer[BUTTON];
 		char *string;
 
-		printf("\nPlease enter the name for the next button\n");
+		printf("\nPlease enter the name for the next button (press <ENTER> to finish recording)\n");
 		string=fgets(buffer,BUTTON,stdin);
 		
 		if(string!=buffer)
