@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.35 2003/09/21 13:53:14 lirc Exp $
+## $Id: Makefile.am,v 5.36 2003/10/12 14:08:29 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -33,6 +33,8 @@ EXTRA_lircd_SOURCES = hw_audio.c\
 			hw_slinke.c hw_slinke.h \
 			hw_tira.c hw_tira.h \
 			hw_udp.c \
+			hw_uirt2.c hw_uirt2_raw.c \
+			hw_uirt2_common.c hw_uirt2_common.h \
 			receive.c receive.h \
 			transmit.c transmit.h \
 			serial.c serial.h
@@ -68,7 +70,9 @@ EXTRA_irrecord_SOURCES = hw_audio.c \
 			hw_udp.c \
 			receive.c receive.h \
 			transmit.c transmit.h \
-			serial.c serial.h
+			serial.c serial.h \
+			hw_uirt2.c hw_uirt2_raw.c uirt2.c uirt2.c
+
 
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke

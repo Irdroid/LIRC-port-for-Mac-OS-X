@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.113 2003/09/21 13:53:14 lirc Exp $
+dnl $Id: configure.in,v 5.114 2003/10/12 14:08:29 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -138,7 +138,7 @@ AC_MSG_RESULT()
 possible_drivers="(none) (bte) (creative_infracd) (devinput) (dsp) \
 	(irreal) (livedrive_midi) (livedrive_seq) (logitech) \
 	(mediafocusI) (mp3anywhere) (pctv) (remotemaster) (silitek) \
-	(slinke) (udp)"
+	(slinke) (uirt2) (uirt2_raw) (udp)"
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_dev lirc_serial) \
@@ -186,7 +186,8 @@ AC_ARG_WITH(driver,
 			  pixelview_bt878, pixelview_pak,
 			  pixelview_pro, provideo, realmagic,
 			  remotemaster, sa1100, serial, silitek, sir,
-			  slinke, tekram, tekram_bt829, tira, tvbox, udp],
+			  slinke, tekram, tekram_bt829, tira, tvbox,
+			  udp, uirt2, uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -301,6 +302,12 @@ if test "$driver" = "any"; then
 		;;
 	udp)
 		hw_module="${hw_module} hw_udp.o receive.o"
+		;;
+	uirt2)
+		hw_module="${hw_module} hw_uirt2.o serial.o"
+		;;
+	uirt2_raw)
+		hw_module="${hw_module} hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
 		;;
   esac
   done
@@ -711,6 +718,17 @@ if test "$driver" = "udp"; then
   lirc_driver="none"
   hw_module="hw_udp.o receive.o"
   HW_DEFAULT="hw_udp"
+fi
+
+if test "$driver" = "uirt2"; then
+  lirc_driver="none"
+  hw_module="hw_uirt2.o serial.o"
+  HW_DEFAULT="hw_uirt2"
+fi
+if test "$driver" = "uirt2_raw"; then
+  lirc_driver="none"
+  hw_module="hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
+  HW_DEFAULT="hw_uirt2_raw"
 fi
 
 #END HARDWARE HEURISTIC
