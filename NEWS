@@ -1,4 +1,5 @@
 0.7.0: future
+  * fixed show-stopper bug in RC-6 transmit code
   * added support for Jetway TV/Capture JW-TV878-FBK, Kworld KW-TV878RF cards
   * added support for Leadtek WinView 601 TV card
   * renamed rc tool to irsend due to name clash with another rc program
