@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.10 2000/03/23 20:07:47 columbus Exp $      */
+/*      $Id: lirc_serial.c,v 5.11 2000/03/25 12:12:34 columbus Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -86,6 +86,8 @@ static spinlock_t lirc_lock = SPIN_LOCK_UNLOCKED;
 
 static int port = LIRC_PORT;
 static int irq = LIRC_IRQ;
+
+static struct timeval lasttv = {0, 0};
 
 static lirc_t rbuf[RBUF_LEN];
 static int rbh, rbt;
@@ -233,8 +235,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 	int status,counter,dcd;
 	long deltv;
 	lirc_t data;
-	static struct timeval lasttv = {0, 0};
-
+	
 	counter=0;
 	do{
 		counter++;
@@ -274,7 +275,7 @@ void irq_handler(int i, void *blah, struct pt_regs *regs)
 			/* calculate time since last interrupt in
 			   microseconds */
 			dcd=(status & UART_MSR_DCD) ? 1:0;
- 
+			
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(deltv>15) 
 			{
@@ -318,7 +319,7 @@ static int init_port(void)
 	unsigned long flags;
 
         /* Check io region*/
-
+	
         if((check_region(port,8))==-EBUSY)
 	{
 #if 0
@@ -413,6 +414,9 @@ static int lirc_open(struct inode *ino, struct file *filep)
 		return -EBUSY;
 	}
 	
+	/* initialize timestamp */
+	do_gettimeofday(&lasttv);
+	
 	result=request_irq(irq,irq_handler,SA_INTERRUPT,LIRC_DRIVER_NAME,NULL);
 	switch(result)
 	{
@@ -459,21 +463,30 @@ static int lirc_open(struct inode *ino, struct file *filep)
 
 #ifdef KERNEL_2_1
 static int lirc_close(struct inode *node, struct file *file)
-{
+#else
+static void lirc_close(struct inode *node, struct file *file)
+#endif
+{	unsigned long flags;
+	
+	save_flags(flags);cli();
+	
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+	
+	/* First of all, disable all interrupts */
+	soutp(UART_IER, sinp(UART_IER)&
+	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
+	restore_flags(flags);
+	
 	free_irq(irq, NULL);
 #       ifdef DEBUG
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": freed IRQ %d\n", irq);
 #       endif
 	MOD_DEC_USE_COUNT;
+#ifdef KERNEL_2_1
 	return 0;
-}
-#else
-static void lirc_close(struct inode *node, struct file *file)
-{
-	MOD_DEC_USE_COUNT;
-}
-
 #endif
+}
 
 #ifdef KERNEL_2_1
 static unsigned int lirc_poll(struct file *file, poll_table * wait)
