@@ -6,8 +6,11 @@
 domain socket</P>
 
 <PRE>
-  <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> | --permission=<em>mode</em>] 
-        [-d<em>device</em> | --device=<em>device</em>] [config_file]
+  <B>lircd</B> [-n | --nodaemon] [-p<em>mode</em> |
+  --permission=<em>mode</em>] [-d<em>device</em> |
+  --device=<em>device</em>] [-l[<em>port</em>] |
+  --listen[=<em>port</em>]] [-c<em>host:[port]</em> ... |
+  --connect=host[:port] ...] [config_file]
   <B>lircd</B> -h | --help
   <B>lircd</B> -v | --version
 </PRE>
@@ -38,6 +41,18 @@ exists this option has no effect.
 With the --device option you can select the character device which
 lircd should read from. The default currently is /dev/lirc but it
 probably will change in future.
+</P>
+
+<P>
+With the --listen option you can let lircd listen for network
+connections on the given port. The default port is 8765. No sequirity
+checks are currently implemented.
+</P>
+
+<P>
+The --connect option allows you to connect to other lircd servers that
+provide a network socket at the given host and port number. The number
+of such connections is currently limited to 100.
 </P>
 
 <P>

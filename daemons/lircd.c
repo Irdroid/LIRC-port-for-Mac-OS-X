@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.25 2001/01/20 13:32:00 columbus Exp $      */
+/*      $Id: lircd.c,v 5.26 2001/04/24 19:12:19 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -33,6 +33,7 @@
 #endif
 
 #define __USE_BSD
+#define __USE_GNU
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,9 @@
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -68,7 +72,24 @@ extern struct ir_ncode *repeat_code;
 static int repeat_fd=-1;
 static char *repeat_message=NULL;
 
+#ifdef LIRC_NETWORK_ONLY
+struct hardware hw=
+{
+	"/dev/null",        /* default device */
+	-1,                 /* fd */
+	0,                  /* features */
+	0,                  /* send_mode */
+	0,                  /* rec_mode */
+	0,                  /* code_length */
+	NULL,               /* init_func */
+	NULL,               /* deinit_func */
+	NULL,               /* send_func */
+	NULL,               /* rec_func */
+	NULL,               /* decode_func */
+};
+#else
 extern struct hardware hw;
+#endif
 
 char *progname="lircd-"VERSION;
 char *configfile=LIRCDCFGFILE;
@@ -115,14 +136,26 @@ char hostname[HOSTNAME_LEN+1];
 FILE *lf=NULL;
 #endif
 
-int sockfd;
-int clis[FD_SETSIZE-4]; /* substract one for lirc, sockfd, logfile, pidfile */
+/* fixme: */
+#define MAX_PEERS	100
+
+int sockfd, sockinet;
+int clis[FD_SETSIZE-5-MAX_PEERS]; /* substract one for lirc, sockfd, sockinet, logfile, pidfile */
+
+#define CT_LOCAL  1
+#define CT_REMOTE 2
+
+int cli_type[FD_SETSIZE-5-MAX_PEERS];
 int clin=0;
+
+int listen_tcpip=0;
+unsigned short int port=LIRC_INET_PORT;
+
+struct	peer_connection *peers[MAX_PEERS];
+int	peern = 0;
 
 int debug=0;
 int daemonized=0;
-
-extern struct hardware hw;
 
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
@@ -252,6 +285,11 @@ void dosigterm(int sig)
 	};
 	shutdown(sockfd,2);
 	close(sockfd);
+	if(listen_tcpip)
+	{
+		shutdown(sockinet,2);
+		close(sockinet);
+	}
 	fclose(pidfile);
 	(void) unlink(PIDFILE);
 	if(clin>0 && hw.deinit_func) hw.deinit_func();
@@ -312,6 +350,15 @@ void dosighup(int sig)
 			i--;
 		}
 	}
+      /* restart all connection timers */
+      for (i=0; i<peern; i++)
+      {
+              if (peers[i]->socket == -1)
+              {
+                      gettimeofday(&peers[i]->reconnect, NULL);
+                      peers[i]->connection_failure = 0;
+              }
+      }
 }
 
 void config(void)
@@ -390,17 +437,17 @@ void remove_client(int fd)
 	LOGPRINTF(1,"internal error in remove_client: no such fd");
 }
 
-void add_client(void)
+void add_client(int sock)
 {
 	int fd;
 	int clilen;
-	struct sockaddr_un client_addr;
+	struct sockaddr client_addr;
 
 	clilen=sizeof(client_addr);
-	fd=accept(sockfd,(struct sockaddr *)&client_addr,&clilen);
+	fd=accept(sock,(struct sockaddr *)&client_addr,&clilen);
 	if(fd==-1) 
 	{
-		logprintf(LOG_ERR,"accept() failed");
+		logprintf(LOG_ERR,"accept() failed for new client");
 		logperror(LOG_ERR,NULL);
 		dosigterm(SIGTERM);
 	};
@@ -413,6 +460,21 @@ void add_client(void)
 		return;
 	}
 	nolinger(fd);
+	if(client_addr.sa_family==AF_UNIX)
+	{
+		cli_type[clin]=CT_LOCAL;
+		logprintf(LOG_NOTICE,"accepted new client on %s",LIRCD);
+	}
+	else if(client_addr.sa_family==AF_INET)
+	{
+		cli_type[clin]=CT_REMOTE;
+		logprintf(LOG_NOTICE,"accepted new client from %s",
+			  inet_ntoa(((struct sockaddr_in *)&client_addr)->sin_addr));
+	}
+	else
+	{
+		cli_type[clin]=0; /* what? */
+	}
 	clis[clin++]=fd;
 	if(clin==1 && repeat_remote==NULL)
 	{
@@ -427,13 +489,175 @@ void add_client(void)
 			}
 		}
 	}
+}
 
-	logprintf(LOG_INFO,"accepted new client");
+int add_peer_connection(char *server)
+{
+	char *sep;
+	struct servent *service;
+	
+	if(peern<MAX_PEERS)
+	{
+		peers[peern]=malloc(sizeof(struct peer_connection));
+		if(peers[peern]!=NULL)
+		{
+			gettimeofday(&peers[peern]->reconnect,NULL);
+			peers[peern]->connection_failure = 0;
+			sep=strchr(server,':');
+			if(sep!=NULL)
+			{
+				*sep=0;sep++;
+				peers[peern]->host=strdup(server);
+				service=getservbyname(sep,"tcp");
+				if(service)
+				{
+					peers[peern]->port=
+						ntohs(service->s_port);
+				}
+				else
+				{
+					long p;
+					char *endptr;
+				
+					p=strtol(sep,&endptr,10);
+					if(!*sep || *endptr ||
+					   p<1 || p>USHRT_MAX)
+					{
+						fprintf(stderr,
+							"%s: bad port number \"%s\"\n",
+							progname,sep);
+						return(0);
+					}
+					
+					peers[peern]->port=
+						(unsigned short int) p;
+				}
+			}
+			else
+			{
+				peers[peern]->host=strdup(server);
+				peers[peern]->port=LIRC_INET_PORT;
+			}
+			if(peers[peern]->host==NULL)
+			{
+				fprintf(stderr, "%s: out of memory\n",progname);
+			}
+		}
+		else
+		{
+			fprintf(stderr, "%s: out of memory\n",progname);
+			return(0);
+		}
+		peers[peern]->socket=-1;
+		peern++;
+		return(1);
+	}
+	else
+	{
+		fprintf(stderr,"%s: too many client connections\n",
+			progname);
+	}
+	return(0);
+}
+
+void connect_to_peers()
+{
+	int	i;
+	struct	hostent *host;
+	struct	sockaddr_in	addr;
+	struct timeval now;
+	
+	gettimeofday(&now,NULL);
+	for(i=0;i<peern;i++)
+	{
+		if(peers[i]->socket!=-1)
+			continue;
+		if(timercmp(&peers[i]->reconnect,&now,<=))
+		{
+			peers[i]->socket=socket(AF_INET, SOCK_STREAM,0);
+			host=gethostbyname(peers[i]->host);
+			if(host==NULL)
+			{
+				logprintf(LOG_ERR,"name lookup failure "
+					  "connecting to %s",peers[i]->host);
+				peers[i]->connection_failure++;
+				gettimeofday(&peers[i]->reconnect,NULL);
+				peers[i]->reconnect.tv_sec+=
+					5*peers[i]->connection_failure;
+				close(peers[i]->socket);
+				peers[i]->socket=-1;
+				continue;
+			}
+			
+			addr.sin_family=host->h_addrtype;;
+			addr.sin_addr=*((struct in_addr *)host->h_addr);
+			addr.sin_port=htons(peers[i]->port);
+			
+			if(connect(peers[i]->socket,(struct sockaddr *) &addr,
+				   sizeof(addr))==-1)
+			{
+				logprintf(LOG_ERR, "failure connecting to %s",
+					  peers[i]->host);
+				logperror(LOG_ERR, NULL);
+				peers[i]->connection_failure++;
+				gettimeofday(&peers[i]->reconnect,NULL);
+				peers[i]->reconnect.tv_sec+=
+					5*peers[i]->connection_failure;
+				close(peers[i]->socket);
+				peers[i]->socket=-1;
+				continue;
+			}
+			peers[i]->connection_failure=0;
+		}
+	}
+}
+
+int get_peer_message(struct peer_connection *peer)
+{
+	int length;
+	char buffer[PACKET_SIZE+1];
+	char *end;
+	int	i;
+
+	length=read_timeout(peer->socket,buffer,PACKET_SIZE,0);
+	if(length)
+	{
+		buffer[length]=0;
+		end=strchr(buffer,'\n');
+		if(end==NULL)
+		{
+			logprintf(LOG_ERR,"bad send packet: \"%s\"",buffer);
+			/* remove clients that behave badly */
+			return(0);
+		}
+		end++;	/* include the \n */
+		end[0]=0;
+		LOGPRINTF(1,"received peer message: \"%s\"",buffer);
+		for(i=0;i<clin;i++)
+		{
+			/* don't relay messages to remote clients */
+			if(cli_type[i]==CT_REMOTE)
+				continue;
+			LOGPRINTF(1,"writing to client %d",i);
+			if(write_socket(clis[i],buffer,length)<length)
+			{
+				remove_client(clis[i]);
+				i--;
+			}			
+		}
+	}
+
+	if(length==0) /* EOF: connection closed by client */
+	{
+		return(0);
+	}
+	return(1);
 }
 
 void start_server(mode_t permission,int nodaemon)
 {
 	struct sockaddr_un serv_addr;
+	struct sockaddr_in serv_addr_in;
 	struct stat s;
 	int ret;
 	int new=1;
@@ -477,6 +701,7 @@ void start_server(mode_t permission,int nodaemon)
 	sockfd=socket(AF_UNIX,SOCK_STREAM,0);
 	if(sockfd==-1)
 	{
+		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not create socket\n",progname);
@@ -492,6 +717,7 @@ void start_server(mode_t permission,int nodaemon)
 	ret=stat(LIRCD,&s);
 	if(ret==-1 && errno!=ENOENT)
 	{
+		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not get file information for %s\n",
@@ -505,6 +731,7 @@ void start_server(mode_t permission,int nodaemon)
 		ret=unlink(LIRCD);
 		if(ret==-1)
 		{
+			close(sockfd);
 			fclose(pidfile);
 			(void) unlink(PIDFILE);
 			fprintf(stderr,"%s: could not delete %s\n",
@@ -518,6 +745,7 @@ void start_server(mode_t permission,int nodaemon)
 	strcpy(serv_addr.sun_path,LIRCD);
 	if(bind(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1)
 	{
+		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not assign address to socket\n",
@@ -531,6 +759,7 @@ void start_server(mode_t permission,int nodaemon)
 	   (chmod(LIRCD,s.st_mode)==-1 || chown(LIRCD,s.st_uid,s.st_gid)==-1)
 	   )
 	{
+		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not set file permissions\n",
@@ -541,6 +770,42 @@ void start_server(mode_t permission,int nodaemon)
 	
 	listen(sockfd,3);
 	nolinger(sockfd);
+
+	if(listen_tcpip)
+	{
+		/* create socket*/
+		sockinet=socket(AF_INET,SOCK_STREAM,0);
+		if(sockinet==-1)
+		{
+			close(sockfd);
+			fclose(pidfile);
+			(void) unlink(PIDFILE);
+			fprintf(stderr,"%s: could not create TCP/IP socket\n",
+				progname);
+			perror(progname);
+			exit(EXIT_FAILURE);
+		};
+		
+		serv_addr_in.sin_family=AF_INET;
+		serv_addr_in.sin_addr.s_addr=htonl(INADDR_ANY);
+		serv_addr_in.sin_port=htons(port);
+		
+		if(bind(sockinet,(struct sockaddr *) &serv_addr_in,
+			sizeof(serv_addr_in))==-1)
+		{
+			close(sockinet);
+			close(sockfd);
+			fclose(pidfile);
+			(void) unlink(PIDFILE);
+			fprintf(stderr,"%s: could not assign address to socket\n",
+				progname);
+			perror(progname);
+			exit(EXIT_FAILURE);
+		}
+		
+		listen(sockinet,3);
+		nolinger(sockinet);
+	}
 	
 #ifdef USE_SYSLOG
 #ifdef DAEMONIZE
@@ -559,6 +824,11 @@ void start_server(mode_t permission,int nodaemon)
 	lf=fopen(logfile,"a");
 	if(lf==NULL)
 	{
+		if(listen_tcpip)
+		{
+			close(sockinet);
+		}
+		close(sockfd);
 		fclose(pidfile);
 		(void) unlink(PIDFILE);
 		fprintf(stderr,"%s: could not open logfile\n",progname);
@@ -1237,8 +1507,8 @@ void free_old_remotes()
 int waitfordata(unsigned long maxusec)
 {
 	fd_set fds;
-	int maxfd,i,ret;
-	struct timeval tv;
+	int maxfd,i,ret,reconnect;
+	struct timeval tv,start,now;
 
 	while(1)
 	{
@@ -1261,14 +1531,17 @@ int waitfordata(unsigned long maxusec)
 			}
 			FD_ZERO(&fds);
 			FD_SET(sockfd,&fds);
+
+			maxfd=sockfd;
+			if(listen_tcpip)
+			{
+				FD_SET(sockinet,&fds);
+				maxfd=max(maxfd,sockinet);
+			}
 			if(clin>0 && hw.rec_mode!=0)
 			{
 				FD_SET(hw.fd,&fds);
-				maxfd=max(hw.fd,sockfd);
-			}
-			else
-			{
-				maxfd=sockfd;
+				maxfd=max(maxfd,hw.fd);
 			}
 			
 			for(i=0;i<clin;i++)
@@ -1283,21 +1556,84 @@ int waitfordata(unsigned long maxusec)
 					maxfd=max(maxfd,clis[i]);
 				}
 			}
-			
+			timerclear(&tv);
+			reconnect=0;
+			for(i=0;i<peern;i++)
+			{
+				if(peers[i]->socket!=-1)
+				{
+					FD_SET(peers[i]->socket,&fds);
+					maxfd=max(maxfd,peers[i]->socket);
+				}
+				else
+				{
+					if(timerisset(&tv))
+					{
+						if(timercmp(&tv,
+							    &peers[i]->reconnect,
+							    >))
+						{
+							tv=peers[i]->reconnect;
+						}
+					}
+					else
+					{
+						tv=peers[i]->reconnect;
+					}
+				}
+			}
+			if(timerisset(&tv))
+			{
+				gettimeofday(&now,NULL);
+				if(timercmp(&now,&tv,>=))
+				{
+					timerclear(&tv);
+				}
+				else
+				{
+					timersub(&tv,&now,&start);
+					tv=start;
+				}
+				reconnect=1;
+			}
+			gettimeofday(&start,NULL);
 			if(maxusec>0)
 			{
 				tv.tv_sec=0;
 				tv.tv_usec=maxusec;
+			}
+			if(timerisset(&tv) || reconnect)
+			{
 				ret=select(maxfd+1,&fds,NULL,NULL,&tv);
-				if(ret==0) return(0);
 			}
 			else
 			{
 				ret=select(maxfd+1,&fds,NULL,NULL,NULL);
 			}
+			gettimeofday(&now,NULL);
 			if(free_remotes!=NULL)
 			{
 				free_old_remotes();
+			}
+			if(maxusec>0)
+			{
+				if(ret==0)
+				{
+					return(0);
+				}
+				if(time_elapsed(&start,&now)>=maxusec)
+				{
+					return(0);
+				}
+				else
+				{
+					maxusec-=time_elapsed(&start,&now);
+				}
+				
+			}
+			if(reconnect)
+			{
+				connect_to_peers();
 			}
 		}
 		while(ret==-1 && errno==EINTR);
@@ -1320,10 +1656,32 @@ int waitfordata(unsigned long maxusec)
 				}
 			}
 		}
+		for(i=0;i<peern;i++)
+		{
+			if(peers[i]->socket!=-1 &&
+			   FD_ISSET(peers[i]->socket,&fds))
+			{
+				if(get_peer_message(peers[i])==0)
+				{
+					shutdown(peers[i]->socket,2);
+					close(peers[i]->socket);
+					peers[i]->socket=-1;
+					peers[i]->connection_failure = 1;
+					gettimeofday(&peers[i]->reconnect,NULL);
+					peers[i]->reconnect.tv_sec+=5;
+				}
+			}
+		}
+
 		if(FD_ISSET(sockfd,&fds))
 		{
-			LOGPRINTF(1,"registering new client");
-			add_client();
+			LOGPRINTF(1,"registering local client");
+			add_client(sockfd);
+		}
+		if(listen_tcpip && FD_ISSET(sockinet,&fds))
+		{
+			LOGPRINTF(1,"registering inet client");
+			add_client(sockinet);
 		}
                 if(clin>0 && hw.rec_mode!=0 && FD_ISSET(hw.fd,&fds))
                 {
@@ -1342,6 +1700,7 @@ void loop()
 	while(1)
 	{
 		(void) waitfordata(0);
+		if(!hw.rec_func) continue;
 		message=hw.rec_func(remotes);
 		
 		if(message!=NULL)
@@ -1377,15 +1736,17 @@ int main(int argc,char **argv)
 			{"nodaemon",no_argument,NULL,'n'},
 			{"permission",required_argument,NULL,'p'},
 			{"device",required_argument,NULL,'d'},
+			{"listen",optional_argument,NULL,'l'},
+			{"connect",required_argument,NULL,'c'},
 #                       ifdef DEBUG
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{0, 0, 0, 0}
 		};
 #               ifdef DEBUG
-		c = getopt_long(argc,argv,"hvnp:d:D::",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:d:l::c:D::",long_options,NULL);
 #               else
-		c = getopt_long(argc,argv,"hvnp:d:",long_options,NULL);
+		c = getopt_long(argc,argv,"hvnp:d:l::c:",long_options,NULL);
 #               endif
 		if(c==-1)
 			break;
@@ -1398,6 +1759,8 @@ int main(int argc,char **argv)
 			printf("\t -n --nodaemon\t\t\tdon't fork to background\n");
 			printf("\t -p --permission=mode\t\tfile permissions for " LIRCD "\n");
 			printf("\t -d --device=device\t\tread from given device\n");
+			printf("\t -l --listen[=port]\t\tlisten for network connections on port\n");
+			printf("\t -c --connect=host[:port]\t\tconnect to remote lircd server\n");
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
@@ -1418,6 +1781,32 @@ int main(int argc,char **argv)
 			break;
 		case 'd':
 			hw.device=optarg;
+			break;
+		case 'l':
+			listen_tcpip=1;
+			if(optarg)
+			{
+				long p;
+				char *endptr;
+				
+				p=strtol(optarg,&endptr,10);
+				if(!*optarg || *endptr || p<1 || p>USHRT_MAX)
+				{
+					fprintf(stderr,
+						"%s: bad port number \"%s\"\n",
+						progname,optarg);
+					return(EXIT_FAILURE);
+				}
+				port=(unsigned short int) p;
+			}
+			else
+			{
+				port=LIRC_INET_PORT;
+			}
+			break;
+		case 'c':
+			if(!add_peer_connection(optarg))
+				return(EXIT_FAILURE);
 			break;
 #               ifdef DEBUG
 		case 'D':
@@ -1444,6 +1833,14 @@ int main(int argc,char **argv)
 		return(EXIT_FAILURE);
 	}
 	
+#ifdef LIRC_NETWORK_ONLY
+	if(peern==0)
+	{
+		fprintf(stderr,"%s: there's no hardware I can use and "
+			"no peers are specified\n",progname);
+		return(EXIT_FAILURE);
+	}
+#endif
 	signal(SIGPIPE,SIG_IGN);
 	
 	start_server(permission,nodaemon);

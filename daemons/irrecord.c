@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.27 2001/01/21 12:54:42 columbus Exp $      */
+/*      $Id: irrecord.c,v 5.28 2001/04/24 19:12:19 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -68,7 +68,11 @@ int get_data_length(struct ir_remote *remote);
 int get_gap_length(struct ir_remote *remote);
 void fprint_copyright(FILE *fout);
 
+#ifdef LIRC_NETWORK_ONLY 
+struct hardware hw;
+#else
 extern struct hardware hw;
+#endif
 extern struct ir_remote *last_remote;
 
 char *progname;
@@ -241,6 +245,11 @@ int main(int argc,char **argv)
 		fprintf(stderr,"%s: invalid argument count\n",progname);
 		exit(EXIT_FAILURE);
 	}
+#ifdef LIRC_NETWORK_ONLY 
+	fprintf(stderr,"%s: irrecord does not make sense without hardware\n",
+		progname);
+	exit(EXIT_FAILURE);
+#endif
 	filename=argv[optind];
 	fin=fopen(filename,"r");
 	if(fin!=NULL)
@@ -355,13 +364,15 @@ int main(int argc,char **argv)
 	printf(
 "This program will record the signals from your remote control\n"
 "and create a config file for lircd.\n\n"
+"\n"
 "A proper config file for lircd is maybe the most vital part of this\n"
-"package, so you should invest some time to create a working config file.\n"
-"Although I put a good deal of effort in this program it is often\n"
-"not possible to automatically recognize all features of a remote control.\n"
-"Often short-comings of the receiver hardware make it nearly impossible.\n"
-"If the config file this program generated does not work like expected\n"
-"read the documentation of this package how to get help.\n"
+"package, so you should invest some time to create a working config\n"
+"file. Although I put a good deal of effort in this program it is often\n"
+"not possible to automatically recognize all features of a remote\n"
+"control. Often short-comings of the receiver hardware make it nearly\n"
+"impossible. If you have problems to create a config file READ THE\n"
+"DOCUMENTATION of this package, especially section \"Adding new remote\n"
+"controls\" for how to get help.\n"
 "\n"
 "IMPORTANT: The license of the config files created by this program requires\n"
 "that you send them to the author. If you don't like this license exit this\n"
@@ -887,7 +898,6 @@ int get_toggle_bit(struct ir_remote *remote)
 				}
 			}
 			if(success==0) remote->toggle_bit=0;
-			printf("%d\n",remote->toggle_bit);
 		}
 		else
 		{
@@ -987,11 +997,9 @@ void get_pre_data(struct ir_remote *remote)
 
 	mask=(-1);
 	codes=remote->codes;
-	if(codes->name!=NULL)
-	{
-		last=codes->code;
-		codes++;
-	}
+	if(codes->name==NULL) return; /* at least 2 codes needed */
+	last=codes->code;
+	codes++;
 	if(codes->name==NULL) return; /* at least 2 codes needed */
 	while(codes->name!=NULL)
 	{
@@ -1042,11 +1050,9 @@ void get_post_data(struct ir_remote *remote)
 
 	mask=(-1);
 	codes=remote->codes;
-	if(codes->name!=NULL)
-	{
-		last=codes->code;
-		codes++;
-	}
+	if(codes->name==NULL) return; /* at least 2 codes needed */
+	last=codes->code;
+	codes++;
 	if(codes->name==NULL) return; /* at least 2 codes needed */
 	while(codes->name!=NULL)
 	{
@@ -1165,6 +1171,7 @@ int get_lengths(struct ir_remote *remote,int force)
 	average=0;sum=0;count=0;count_spaces=0;
 	count_3repeats=0;count_5repeats=0;count_signals=0;
 	first_signal=-1;header=0;
+	first_length=0;
 	while(1)
 	{
 		if(!waitfordata(10000000))
@@ -1368,7 +1375,9 @@ int get_lengths(struct ir_remote *remote,int force)
 						lengths[count-2]++;
 						add_length(&first_signal_length,sum-data);
 						merge_lengths(first_signal_length);
-						if(first_signal || first_length-2!=count-2)
+						if(first_signal==1 ||
+						   (first_length>2 &&
+						    first_length-2!=count-2))
 						{
 							add_length(&first_3lead,signals[2]);
 							merge_lengths(first_3lead);
@@ -1608,7 +1617,7 @@ void get_scheme(struct ir_remote *remote)
 			max2p=get_max_length(first_pulse,NULL);
 			maxp->next=first_pulse;
 			first_pulse=maxp;
-
+			
 			maxs=get_max_length(first_space,NULL);
 			unlink_length(&first_space,maxs);
 			if(first_space==NULL)

@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.7 2000/07/26 19:49:16 columbus Exp $      */
+/*      $Id: lircd.h,v 5.8 2001/04/24 19:12:19 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -10,11 +10,21 @@
 #define _LIRCD_H
 
 #include <syslog.h>
+#include <sys/time.h>
 
 #include "ir_remote.h"
 
 #define PACKET_SIZE (256)
 #define WHITE_SPACE " \t"
+
+struct peer_connection
+{
+	char *host;
+	unsigned short port;
+	struct timeval reconnect;
+	int connection_failure;
+	int socket;
+};
 
 extern int debug;
 
@@ -25,7 +35,10 @@ void dosighup(int sig);
 void config(void);
 void nolinger(int sock);
 void remove_client(int fd);
-void add_client(void);
+void add_client(int);
+int add_peer_connection(char *server);
+void connect_to_peers();
+int get_peer_message(struct peer_connection *peer);
 void start_server(mode_t permission,int nodaemon);
 
 #ifdef DEBUG

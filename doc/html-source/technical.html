@@ -23,9 +23,9 @@ E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
   |                       /dev/lircd (socket ==> multiple connections)
   |                               |
 S |              +----------------+--------------------------+
-O |              | decoder daemon (lircd), irrecord or mode2 |
-F |              | lircd is configured through lircd.conf    |
-T | User space   |                                           |
+O |              | decoder daemon (lircd), irrecord or mode2 |    TCP/IP
+F |              | lircd is configured through lircd.conf    +---  port
+T | User space   |                                           |     8765
 W |              +------------------+------------------------+
 A |                                 |
 R |                                 |
