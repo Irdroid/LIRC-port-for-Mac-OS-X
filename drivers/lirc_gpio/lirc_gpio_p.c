@@ -7,7 +7,7 @@
  *                            and Christoph Bartelmus <lirc@bartelmus.de>
  * This code is licensed under GNU GPL
  *
- * $Id: lirc_gpio_p.c,v 1.16 2000/08/26 21:03:43 columbus Exp $
+ * $Id: lirc_gpio_p.c,v 1.17 2000/08/28 20:23:16 columbus Exp $
  *
  */
 
@@ -166,10 +166,10 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
         case BTTV_MAGICTVIEW061:
         case BTTV_MAGICTVIEW063:
 		codes[0] = (codes[0]&0x01)
-			|(codes[0]&0x02<<3)
-			|(codes[0]&0x04<<1)
-			|(codes[0]&0x08>>1)
-			|(codes[0]&0x10>>3);
+			|((codes[0]&0x02)<<1)
+			|((codes[0]&0x04)<<2)
+			|((codes[0]&0x08)>>2)
+			|((codes[0]&0x10)>>1);
 		/* FALLTHROUGH */
 	case BTTV_MIRO:
 	case BTTV_DYNALINK:
