@@ -6,7 +6,7 @@
  *        For newer versions look at:
  *        http://wolf.ifj.edu.pl/~jochym/FlyVideo98/
  *
- * $Id: lirc_fly98.c,v 1.3 1999/07/26 09:48:10 jochym Exp $
+ * $Id: lirc_fly98.c,v 1.4 1999/07/27 09:17:26 jochym Exp $
  *
  */
 
@@ -18,8 +18,10 @@
  *        code written by Unai Uribarri <unai@dobra.aic.uniovi.es>
  *        Added blocking reads with wait queue, support for multiple
  *        TV cards, changes in bttv part to further simplify it.
- *        Also modified to support Lirc library/daemon (not fully tested).
- * 	  Patch for the bttv-0.6.3 version for now (not the kernel version).
+ *        Also modified to support Lirc library/daemon (not fully tested)
+ *
+ * 0.0.3  Ported to kernel 2.2.10 bttv driver. Poll function added
+ *	  some clean-up.
  */
 
 #include <linux/module.h>
@@ -47,7 +49,6 @@
 #include "bttv.h"
 #include "bt848.h"
 #include "lirc_fly98.h"
-#include "lirc.h"
 
 #define SUCCESS 0
 
@@ -138,7 +139,8 @@ static int irctl_release(struct inode *inode, struct file *file)
 
 	/* Flush the buffer */
 	irctls[nr].head=irctls[nr].tail;
-
+	spin_unlock(&irctls[nr].lock);
+	
 	/* Decrement the usage count, 
 	 * otherwise once you opened the file you'll
 	 * never get rid of the module.
@@ -146,6 +148,23 @@ static int irctl_release(struct inode *inode, struct file *file)
 	MOD_DEC_USE_COUNT;
 	
 	return SUCCESS;
+}
+
+/*
+ *      Poll to see if we're readable
+ */
+static unsigned int irctl_poll(struct file *file, poll_table * wait)
+{
+	struct irctl *ir=&irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+	
+	dprintk("irctl%d: poll head=%d tail=%d\n",
+		MINOR(file->f_dentry->d_inode->i_rdev),
+		    ir->head, ir->tail);
+		    
+	poll_wait(file, &ir->wait, wait);
+	if (ir->head!=ir->tail)
+		return POLLIN | POLLRDNORM;
+	return 0;
 }
 
 static int irctl_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
@@ -190,7 +209,7 @@ static ssize_t irctl_read(struct file *file,
 {
 	/* Minor device number */
 	struct irctl *ir=&irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
-	
+	int r;
 #if 1
 	dprintk("irctl_read(%p,%p,%d)\n",
 		file, buffer, length);
@@ -205,17 +224,18 @@ static ssize_t irctl_read(struct file *file,
 	if (ir->head==ir->tail) {
 		spin_unlock(&ir->lock);
 		if (file->f_flags & O_NONBLOCK)
-			return 0;
+			return -EAGAIN;
 		if (signal_pending(current))
 		    return -ERESTARTSYS;
 		interruptible_sleep_on(&ir->wait);
 		current->state = TASK_RUNNING;
 		spin_lock(&ir->lock);
 	} 
-	put_user(ir->buffer[ir->head++],(unsigned char *)buffer);
+	r=put_user(ir->buffer[ir->head++],(unsigned char *)buffer);
 	ir->head%=BUFLEN;
 	spin_unlock(&ir->lock);
-	return 1;
+	dprintk("irctl_read: ret %d data %d\n", r, *buffer);
+	return (r==0) ? 1 : -EIO;
 
 #if 0
 	    /*
@@ -278,7 +298,7 @@ struct file_operations Fops = {
   irctl_read, 
   NULL,   /* write */
   NULL,   /* readdir */
-  NULL,   /* poll */
+  irctl_poll,   /* poll */
   irctl_ioctl,   /* ioctl */
   NULL,   /* mmap */
   irctl_open,
