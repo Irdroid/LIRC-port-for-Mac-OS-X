@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.61 2001/06/11 08:29:38 ranty Exp $
+dnl $Id: configure.in,v 5.62 2001/06/24 10:25:06 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -86,8 +86,7 @@ possible_drivers="(none) (remotemaster) (pctv) (logitech) (slinke) \
 
 if test x${no_kernel} != xyes; then
   possible_drivers="${possible_drivers} (lirc_serial) (lirc_sir) \
-	(lirc_parallel) (lirc_aver) (lirc_dev lirc_i2c) \
-        (lirc_fly98) (lirc_dev lirc_gpio)"
+	(lirc_parallel) (lirc_dev lirc_i2c) (lirc_dev lirc_gpio)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -109,13 +108,14 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           none, any, animax, avermedia, avermedia98,
                           bestbuy, bestbuy2, caraca, chronos, comX,
-                          cph03x, cph06x, creative, fly98, hauppauge,
-                          ipaq, irdeo, irman, irreal, knc_one,
-                          logitech, lptX, mediafocusI, packard_bell,
-                          parallel, pctv, pixelview_bt878,
-                          pixelview_pak, pixelview_pro, provideo,
-                          realmagic, remotemaster, serial, silitek,
-                          sir, slinke, tekram, winfast_tv2000],
+                          cph03x, cph06x, creative, fly98, flyvideo,
+			  hauppauge,ipaq, irdeo, irman, irreal,
+			  knc_one, logitech, lptX, mediafocusI,
+	                  packard_bell, parallel, pctv,
+		          pixelview_bt878, pixelview_pak,
+                          pixelview_pro, provideo, realmagic,
+                          remotemaster, serial, silitek, sir, slinke,
+                          tekram, winfast_tv2000],
 
 driver=${withval},
 driver="unset"
@@ -177,6 +177,8 @@ if test "$driver" = "any"; then
 	  ;;
 	  lirc_dev-lirc_i2c)
 	  #lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
+	  ;;
+	  lirc_flyvideo)
 	  ;;
 	  lirc_fly98)
 	  ;;
@@ -293,6 +295,11 @@ if test "$driver" = "fly98"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="life-view/lircd.conf.fly98"
   lircmd_conf="life-view/lircmd.conf.fly98"
+fi
+if test "$driver" = "flyvideo"; then
+  lirc_driver="lirc_dev lirc_gpio"
+  lircd_conf="life-view/lircd.conf.FlyVideo_II"
+#  lircmd_conf="life-view/lircmd.conf.FlyVideo_II"
 fi
 if test "$driver" = "cph03x"; then
   lirc_driver="lirc_dev lirc_gpio"

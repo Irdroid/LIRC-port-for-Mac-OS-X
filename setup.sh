@@ -107,7 +107,7 @@ function SetPortAndIrq
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify port and IRQ of your hardware" \
-               --radiolist "$SET_PORT_TEXT" 13 74 6 \
+               --radiolist "$SET_PORT_TEXT" 14 74 5 \
                  1 "COM1 ($COM1_PORT, $COM1_IRQ)" $COM1 \
                  2 "COM2 ($COM2_PORT, $COM2_IRQ)" $COM2 \
                  3 "COM3 ($COM3_PORT, $COM3_IRQ)" $COM3 \
@@ -131,7 +131,7 @@ function SetPortAndIrq
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Specify port and IRQ of your hardware" \
-               --radiolist "$SET_PORT_TEXT" 13 74 6 \
+               --radiolist "$SET_PORT_TEXT" 13 74 4 \
                  1 "LPT1 ($LPT1_PORT, $LPT1_IRQ)" $LPT1 \
                  2 "LPT2 ($LPT2_PORT, $LPT2_IRQ)" $LPT2 \
                  3 "LPT3 ($LPT3_PORT, $LPT3_IRQ)" $LPT3 \
@@ -185,7 +185,7 @@ function DriverOptions
         {
         dialog --clear --backtitle "$BACKTITLE" \
                --title "Driver specific Options" \
-               --checklist "" 14 74 5 \
+               --checklist "" 10 74 2 \
                  1 "With transmitter diode" $TRANSMITTER \
                  2 "Software generated carrier" $SOFT_CARRIER \
                2> $TEMP
@@ -225,7 +225,7 @@ function ConfigDriver
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Select your driver" \
-           --menu "$CONFIG_DRIVER_TEXT" 14 74 6 \
+           --menu "$CONFIG_DRIVER_TEXT" 15 74 7 \
              1 "Home-brew (16x50 UART compatible serial port)" \
              2 "Home-brew (parallel port)" \
 	     3 "Other serial port devices" \
@@ -243,7 +243,7 @@ function ConfigDriver
 	    # "Other serial port devices"
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 18 74 12 \
+		--menu "$CONFIG_DRIVER_TEXT" 19 74 12 \
 			1 "Anir Multimedia Magic" \
 			2 "CARACA" \
 			3 "Creative Infra Receiver" \
@@ -284,7 +284,7 @@ function ConfigDriver
         elif test "$1" = "4"; then
 	    dialog --clear --backtitle "$BACKTITLE" \
                 --title "Select your driver" \
-		--menu "$CONFIG_DRIVER_TEXT" 18 74 12\
+		--menu "$CONFIG_DRIVER_TEXT" 19 74 12\
                         1 "Askey Magic TView CPH03x (card=1)" \
 			2 "Askey/Typhoon/Anubis Magic TView CPH051/061 (bt878) (card=24)" \
 			3 "AverMedia TV card (TVCapture, TVPhone) (card=6)" \
@@ -293,19 +293,20 @@ function ConfigDriver
 			6 "BestBuy Easy TV (BT878) (card=62)" \
 			7 "Chronos Video Shuttle II (card=35)" \
                         8 "Dynalink Magic TView (card=48)" \
-			9 "FlyVideo 98 (card=30)" \
-			0 "FlyVideo 98/FM /2000S (card=56)" \
-			a "Hauppauge TV card (new I2C layer required)" \
-			b "KNC ONE TV Station (-/SE/PRO/RDS)" \
-			c "Phoebe Tv Master + FM (card=22)" \
-                        d "Pixelview PlayTV pro (card=37)" \
-                        e "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
-			f "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
-			g "ProVideo PV951 (card=42)" \
-			h "Technisat MediaFocus I" \
-			i "TView99 CPH063 (card=38)" \
-			l "Typhoon TView RDS / FM Stereo (card=53)" \
-			k "Winfast TV2000 (card=34)" 2> $TEMP;
+			9 "FlyVideo II (card=8)" \
+			0 "FlyVideo 98 (card=30)" \
+			a "FlyVideo 98/FM /2000S (card=56)" \
+			b "Hauppauge TV card (new I2C layer required)" \
+			c "KNC ONE TV Station (-/SE/PRO/RDS)" \
+			d "Phoebe Tv Master + FM (card=22)" \
+                        e "Pixelview PlayTV pro (card=37)" \
+                        f "Pixelview PlayTV (bt878) (Prolink PV-BT878P+, card=16)" \
+			g "Prolink PV-BT878P+4E (PixelView PlayTV PAK) (card=50)" \
+			h "ProVideo PV951 (card=42)" \
+			i "Technisat MediaFocus I" \
+			j "TView99 CPH063 (card=38)" \
+			k "Typhoon TView RDS / FM Stereo (card=53)" \
+			l "Winfast TV2000 (card=34)" 2> $TEMP;
 
 	    if test "$?" = "0"; then
 		{
@@ -318,19 +319,20 @@ function ConfigDriver
 		elif test "$1" = "6"; then LIRC_DRIVER=bestbuy2;	DRIVER_PARAMETER=none;
 		elif test "$1" = "7"; then LIRC_DRIVER=chronos;         DRIVER_PARAMETER=none;
 		elif test "$1" = "8"; then LIRC_DRIVER=cph03x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "9"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
+		elif test "$1" = "9"; then LIRC_DRIVER=flyvideo;        DRIVER_PARAMETER=none;
 		elif test "$1" = "0"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
-		elif test "$1" = "a"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
-		elif test "$1" = "b"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "c"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "d"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
-		elif test "$1" = "e"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
-		elif test "$1" = "f"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
-		elif test "$1" = "g"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
-		elif test "$1" = "h"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
-		elif test "$1" = "i"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
-		elif test "$1" = "j"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
-		elif test "$1" = "k"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
+		elif test "$1" = "a"; then LIRC_DRIVER=fly98;           DRIVER_PARAMETER=none;
+		elif test "$1" = "b"; then LIRC_DRIVER=hauppauge;       DRIVER_PARAMETER=none;
+		elif test "$1" = "c"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "d"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "e"; then LIRC_DRIVER=pixelview_pro;   DRIVER_PARAMETER=none;
+		elif test "$1" = "f"; then LIRC_DRIVER=pixelview_bt878; DRIVER_PARAMETER=none;
+		elif test "$1" = "g"; then LIRC_DRIVER=pixelview_pak;   DRIVER_PARAMETER=none;
+		elif test "$1" = "h"; then LIRC_DRIVER=provideo;        DRIVER_PARAMETER=none;
+		elif test "$1" = "i"; then LIRC_DRIVER=mediafocusI;     DRIVER_PARAMETER=none;
+		elif test "$1" = "l"; then LIRC_DRIVER=cph06x;          DRIVER_PARAMETER=none;
+		elif test "$1" = "k"; then LIRC_DRIVER=knc_one;         DRIVER_PARAMETER=none;
+		elif test "$1" = "l"; then LIRC_DRIVER=winfast_tv2000;  DRIVER_PARAMETER=none;
 		fi
 		}
 	    else
@@ -353,7 +355,7 @@ function ConfigSoftware
     {
     dialog --clear --backtitle "$BACKTITLE" \
            --title "Software Configuration" \
-           --checklist "$CONFIG_SOFTWARE_TEXT" 12 74 5 \
+           --checklist "$CONFIG_SOFTWARE_TEXT" 13 74 5 \
              1 "Compile tools for X-Windows" $X11_WINDOWS \
              2 "Compile with DEBUG code" $DEBUG \
              3 "Disable daemonize" $NO_DAEMONIZE \
