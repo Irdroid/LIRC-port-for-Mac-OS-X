@@ -1,6 +1,6 @@
 /* lirc_usb - USB remote support for LIRC
  * (currently only supports ATI Remote Wonder USB)
- * Version 0.1  [pre-alpha status]
+ * Version 0.2  [beta status]
  *
  * Copyright (C) 2003 Paul Miller <pmiller9@users.sourceforge.net>
  *
@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.9 2003/11/09 16:50:16 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.10 2003/11/11 03:10:19 pmiller9 Exp $
  */
 
 /*
@@ -65,6 +65,8 @@
 #define DRIVER_NAME			"lirc_atiusb"
 
 #define BUFLEN				16
+#define CODE_LENGTH			5
+#define CODE_MIN_LENGTH		4
 
 #ifdef CONFIG_USB_DEBUG
 	static int debug = 1;
@@ -243,6 +245,9 @@ static void set_use_dec(void *data)
 static void usb_remote_irq(struct urb *urb)
 {
 	struct irctl *ir = urb->context;
+	char buf[CODE_LENGTH];
+	char *ptr;
+	int i;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: usb irq called with no context\n");
@@ -254,11 +259,14 @@ static void usb_remote_irq(struct urb *urb)
 	dprintk(DRIVER_NAME "[%d]: data received (length %d)\n",
 			ir->devnum, urb->actual_length);
 
-	/* this is ugly - apparently, some remotes emit both 4 and 5 byte codes. */
-	if (urb->actual_length < ir->p->code_length/8) return;
-//	if (urb->actual_length != ir->p->code_length/8) return;
+	/* some remotes emit both 4 and 5 byte length codes. */
+	if (urb->actual_length < CODE_MIN_LENGTH || urb->actual_length > CODE_LENGTH) return;
 
-	lirc_buffer_write_1(ir->p->rbuf, urb->transfer_buffer);
+	ptr = urb->transfer_buffer;
+	for (i = 0; i < urb->actual_length; i++) buf[i] = *ptr++;
+	for (; i < CODE_LENGTH; i++) buf[i] = 0;
+
+	lirc_buffer_write_1(ir->p->rbuf, buf);
 	wake_up(&ir->p->rbuf->wait_poll);
 }
 
@@ -317,7 +325,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	devnum = dev->devnum;
 
 	features = LIRC_CAN_REC_LIRCCODE;
-	bytes_in_key = 4;
+	bytes_in_key = CODE_LENGTH;
 
 
 	len = (maxp > BUFLEN) ? BUFLEN : maxp;
