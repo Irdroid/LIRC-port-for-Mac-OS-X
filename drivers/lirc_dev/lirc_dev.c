@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.25 2003/05/04 09:31:28 ranty Exp $
+ * $Id: lirc_dev.c,v 1.26 2003/08/05 08:54:21 ranty Exp $
  *
  */
 
@@ -255,7 +255,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		printk("lirc_dev: lirc_register_plugin:"
 		       "fops->read, get_queue and rbuf cannot all be NULL!\n");
 		return -EBADRQC;
-	} else if (!p->rbuf) {
+	} else if (!p->get_queue && !p->rbuf) {
 		if (!(p->fops && p->fops->read && p->fops->poll) 
 				|| (!p->fops->ioctl && !p->ioctl)) {
 			printk("lirc_dev: lirc_register_plugin:"
