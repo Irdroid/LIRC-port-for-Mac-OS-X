@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.19 2004/01/29 00:18:06 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.20 2004/01/31 02:51:20 pmiller9 Exp $
  */
 
 /*
@@ -52,6 +52,7 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <linux/module.h>
+#include <linux/kmod.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
 #include <asm/uaccess.h>
@@ -109,6 +110,7 @@ struct irctl {
 	/* buffers and dma */
 	unsigned char *buf_in;
 	unsigned char *buf_out;
+	unsigned int len_in;
 #if KERNEL26
 	dma_addr_t dma_in;
 	dma_addr_t dma_out;
@@ -116,6 +118,7 @@ struct irctl {
 
 	/* lirc */
 	struct lirc_plugin *p;
+	int connected;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -217,12 +220,49 @@ static int unregister_from_lirc(struct irctl *ir)
 
 static int set_use_inc(void *data)
 {
+	struct irctl *ir = data;
+
+	if (!ir) {
+		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		return -EIO;
+	}
+	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
+
+	if (!ir->connected) {
+		if (!ir->usbdev)
+			return -ENOENT;
+		ir->urb_in->dev = ir->usbdev;
+#if KERNEL26
+		if (usb_submit_urb(ir->urb_in, SLAB_ATOMIC)) {
+#else
+		if (usb_submit_urb(ir->urb_in)) {
+#endif
+			printk(DRIVER_NAME "[%d]: open result = -EIO error"
+				"submitting urb\n", ir->devnum);
+			return -EIO;
+		}
+		ir->connected = 1;
+	}
+
 	return SUCCESS;
 }
 
 static void set_use_dec(void *data)
 {
+	struct irctl *ir = data;
 
+	if (!ir) {
+		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		return;
+	}
+	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
+
+	if (ir->connected) {
+		IRLOCK;
+		usb_unlink_urb(ir->urb_in);
+		ir->connected = 0;
+		IRUNLOCK;
+	}
 }
 
 
@@ -244,21 +284,38 @@ static void usb_remote_recv(struct urb *urb)
 		return;
 	}
 
-	if (urb->status)
-		return;
-
 	dprintk(DRIVER_NAME "[%d]: data received (length %d)\n",
 		ir->devnum, urb->actual_length);
 
-	/* some remotes emit both 4 and 5 byte length codes. */
-	len = urb->actual_length;
-	if (len < CODE_MIN_LENGTH || len > CODE_LENGTH) return;
+	switch (urb->status) {
 
-	memcpy(buf,urb->transfer_buffer,len);
-	for (i = len; i < CODE_LENGTH; i++) buf[i] = 0;
+	/* success */
+	case SUCCESS:
+		/* some remotes emit both 4 and 5 byte length codes. */
+		len = urb->actual_length;
+		if (len < CODE_MIN_LENGTH || len > CODE_LENGTH) return;
 
-	lirc_buffer_write_1(ir->p->rbuf, buf);
-	wake_up(&ir->p->rbuf->wait_poll);
+		memcpy(buf,urb->transfer_buffer,len);
+		for (i = len; i < CODE_LENGTH; i++) buf[i] = 0;
+
+		lirc_buffer_write_1(ir->p->rbuf, buf);
+		wake_up(&ir->p->rbuf->wait_poll);
+		break;
+
+	/* unlink */
+	case -ECONNRESET:
+	case -ENOENT:
+	case -ESHUTDOWN:
+		usb_unlink_urb(urb);
+		return;
+	}
+
+	/* resubmit urb */
+#if KERNEL26
+	usb_submit_urb(urb, SLAB_ATOMIC);
+#else
+	usb_submit_urb(urb);
+#endif
 }
 
 #if KERNEL26
@@ -310,7 +367,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	char buf[63], name[128]="";
 	int mem_failure = 0;
 
-	dprintk(DRIVER_NAME "usb probe called\n");
+	dprintk(DRIVER_NAME ": usb probe called\n");
 
 #if KERNEL26
 	dev = interface_to_usbdev(intf);
@@ -361,7 +418,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		} else if (lirc_buffer_init(rbuf, bytes_in_key, USB_BUFLEN/bytes_in_key)) {
 			mem_failure = 4;
 #if KERNEL26
-		} else if (!(ir->buf_in = usb_buffer_alloc(dev, USB_BUFLEN, SLAB_ATOMIC, &ir->dma_in))) {
+		} else if (!(ir->buf_in = usb_buffer_alloc(dev, buf_len, SLAB_ATOMIC, &ir->dma_in))) {
 			mem_failure = 5;
 		} else if (!(ir->buf_out = usb_buffer_alloc(dev, USB_BUFLEN, SLAB_ATOMIC, &ir->dma_out))) {
 			mem_failure = 6;
@@ -370,7 +427,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		} else if (!(ir->urb_out = usb_alloc_urb(0, GFP_KERNEL))) {
 			mem_failure = 8;
 #else
-		} else if (!(ir->buf_in = kmalloc(USB_BUFLEN, GFP_KERNEL))) {
+		} else if (!(ir->buf_in = kmalloc(buf_len, GFP_KERNEL))) {
 			mem_failure = 5;
 		} else if (!(ir->buf_out = kmalloc(USB_BUFLEN, GFP_KERNEL))) {
 			mem_failure = 6;
@@ -413,7 +470,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	case 6:
 		usb_buffer_free(dev, USB_BUFLEN, ir->buf_out, ir->dma_out);
 	case 5:
-		usb_buffer_free(dev, USB_BUFLEN, ir->buf_in, ir->dma_in);
+		usb_buffer_free(dev, buf_len, ir->buf_in, ir->dma_in);
 #else
 	case 6:
 		kfree(ir->buf_out);
@@ -440,6 +497,8 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	ir->p = plugin;
 	ir->devnum = devnum;
 	ir->usbdev = dev;
+	ir->len_in = buf_len;
+	ir->connected = 0;
 
 	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
 		buf_len, usb_remote_recv, ir, ep_in->bInterval);
@@ -492,7 +551,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	usb_free_urb(ir->urb_in);
 	usb_free_urb(ir->urb_out);
 #if KERNEL26
-	usb_buffer_free(dev, USB_BUFLEN, ir->buf_in, ir->dma_in);
+	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
 	usb_buffer_free(dev, USB_BUFLEN, ir->buf_out, ir->dma_out);
 #else
 	kfree(ir->buf_in);
