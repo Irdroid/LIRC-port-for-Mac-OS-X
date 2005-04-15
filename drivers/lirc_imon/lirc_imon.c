@@ -1,7 +1,14 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.4 2005/02/19 15:13:00 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.5 2005/04/15 00:49:03 venkyr Exp $
+ *
+ *   Version 0.3 
+ *   		Supports newer iMON models that send decoded IR signals.
+ *   			This includes the iMON PAD model.
+ *   		Removed module option for vfd_proto_6p. This driver supports
+ *   			multiple iMON devices so it is meaningless to have
+ *   			a global option to set protocol variants.
  *
  *   Version 0.2 beta 2 [January 31, 2005]
  *		USB disconnect/reconnect no longer causes problems for lircd
@@ -61,7 +68,7 @@
 #define MOD_AUTHOR	"Venky Raju <dev@venky.ws>"
 #define MOD_DESC	"Driver for Soundgraph iMON MultiMedian IR/VFD"
 #define MOD_NAME	"lirc_imon"
-#define MOD_VERSION	"0.2b2"
+#define MOD_VERSION	"0.3"
 
 #define VFD_MINOR_BASE	144	/* Same as LCD */
 #define DEVFS_MODE	S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
@@ -130,6 +137,9 @@ struct imon_context {
 	struct semaphore sem;		/* to lock this object            */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
+	int vfd_proto_6p;		/* VFD requires 6th packet        */
+	int ir_onboard_decode;		/* IR signals decoded onboard     */
+
 	struct lirc_plugin *plugin;
 	struct usb_endpoint_descriptor *rx_endpoint;
 	struct usb_endpoint_descriptor *tx_endpoint;
@@ -170,18 +180,24 @@ static struct usb_device_id imon_usb_id_table [] = {
 	{ USB_DEVICE(0x0aa8, 0xffda) },		/* IR & VFD    */
 	{ USB_DEVICE(0x0aa8, 0x8001) },		/* IR only     */
 	{ USB_DEVICE(0x15c2, 0xffda) },		/* IR & VFD    */
+	{ USB_DEVICE(0x15c2, 0xffdc) },		/* IR & VFD    */
 	{ USB_DEVICE(0x04e8, 0xff30) },		/* ext IR only */
 	{}
 };
 
 /* Some iMON VFD models requires a 6th packet */
-static int vfd_proto_6p = FALSE;
 static unsigned short vfd_proto_6p_vendor_list [] = {
 			/* terminate this list with a 0 */
 			0x15c2,
 			0 };
 static unsigned char vfd_packet6 [] = {
 		0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
+
+/* Newer iMON models decode the signal onboard */
+static unsigned short ir_onboard_decode_product_list [] = {
+			/* terminate this list with a 0 */
+			0xffdc,
+			0 };
 
 /* USB Device data */
 static struct usb_driver imon_driver = {
@@ -235,10 +251,7 @@ MODULE_AUTHOR (MOD_AUTHOR);
 MODULE_DESCRIPTION (MOD_DESC);
 MODULE_LICENSE ("GPL");
 module_param (debug, int, 0);
-module_param (vfd_proto_6p, int, 0);
 MODULE_PARM_DESC (debug, "Debug messages: 0=no, 1=yes (default: no)");
-MODULE_PARM_DESC (vfd_proto_6p, "Force the 6 packet VFD protocol: 0=no 1=yes (default: no)");
-
 
 static inline void delete_context (struct imon_context *context) {
 
@@ -495,7 +508,7 @@ static ssize_t vfd_write (struct file *file, const char *buf,
 
 	} while (offset < 35);
 
-	if (vfd_proto_6p) {
+	if (context ->vfd_proto_6p) {
 
 		/* Send packet #6 */
 		memcpy (context ->usb_tx_buf, vfd_packet6, 7);
@@ -665,6 +678,7 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 	int octet, bit;
 	unsigned char mask;
 	int chunk_num;
+	int i;
 
 
 	if (len != 8) {
@@ -673,10 +687,23 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 	}
 
 	chunk_num = buf [7];
-
+	
 	if (chunk_num == 0xFF)
 		return;		/* filler frame, no data here */
 
+	for (i=0; i < 8; ++i)
+		printk ("%02x ", buf [i]);
+	printk ("\n");
+
+	if (context ->ir_onboard_decode) {
+
+		/* The signals have been decoded onboard the iMON controller */
+
+		lirc_buffer_write_1 (context ->plugin ->rbuf, buf);
+		wake_up (&context ->plugin ->rbuf ->wait_poll);
+		return;
+	}
+	
 	/*
 	 * Translate received data to pulse and space lengths.
 	 * Received data is active low, i.e. pulses are 0 and
@@ -800,6 +827,8 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 	int vfd_ep_found;
 	int ir_ep_found;
 	int alloc_status;
+	int vfd_proto_6p = FALSE;
+	int ir_onboard_decode = FALSE;
 	struct imon_context *context = NULL;
 	int i;
 
@@ -880,6 +909,24 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		retval = -ENODEV;
 		goto exit;
 	}
+	else {
+
+		/* Determine if the IR signals are decoded onboard */
+
+		unsigned short product_id;
+		unsigned short *id_list_item;
+
+		product_id = dev ->descriptor.idProduct;
+		id_list_item = ir_onboard_decode_product_list;
+		while (*id_list_item) {
+			if (*id_list_item++ == product_id) {
+				ir_onboard_decode = TRUE;
+				break;
+			}
+		}
+
+		if (debug) info ("ir_onboard_decode: %d", ir_onboard_decode);
+	}
 
 	/* Determine if VFD requires 6 packets */
 	if (vfd_ep_found) {
@@ -941,14 +988,18 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		/* clear all members of imon_context and lirc_plugin */
 		memset (context, 0, sizeof (struct imon_context));
 		init_MUTEX (&context ->sem);
+		context ->vfd_proto_6p = vfd_proto_6p;
+		context ->ir_onboard_decode = ir_onboard_decode;
 
 		memset (plugin, 0, sizeof (struct lirc_plugin));
 
 		strcpy (plugin ->name, MOD_NAME);
 		plugin ->minor = -1;
-		plugin ->code_length = sizeof (lirc_t) * 8;
+		plugin ->code_length = (ir_onboard_decode) ?
+			32 : sizeof (lirc_t) * 8;
 		plugin ->sample_rate = 0;
-		plugin ->features = LIRC_CAN_REC_MODE2;
+		plugin ->features = (ir_onboard_decode) ?
+			LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
 		plugin ->data = context;
 		plugin ->rbuf = rbuf;
 		plugin ->set_use_inc = ir_open;
