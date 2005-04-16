@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.5 2005/04/15 00:49:03 venkyr Exp $
+ *   $Id: lirc_imon.c,v 1.6 2005/04/16 18:10:02 venkyr Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -678,7 +678,6 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 	int octet, bit;
 	unsigned char mask;
 	int chunk_num;
-	int i;
 
 
 	if (len != 8) {
@@ -691,9 +690,14 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 	if (chunk_num == 0xFF)
 		return;		/* filler frame, no data here */
 
-	for (i=0; i < 8; ++i)
-		printk ("%02x ", buf [i]);
-	printk ("\n");
+#ifdef DEBUG	
+	{
+		int i;
+		for (i=0; i < 8; ++i)
+			printk ("%02x ", buf [i]);
+		printk ("\n");
+	}
+#endif
 
 	if (context ->ir_onboard_decode) {
 
