@@ -12,6 +12,7 @@
   * 2.2.x kernels are no longer supported
   * added support for AOpen XC Cube EA65, EA65-II (Max Krasnyansky)
   * added IGNORE directive to lircmd (Steven Mueller)
+  * added support for iMON-PAD and iMON-RSC models (Venky Raju)
 
 0.7.0: 11/07/04
   * added userspace USB driver for ATI remotes (Michael Gold)
