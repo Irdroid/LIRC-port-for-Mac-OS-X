@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.143 2005/04/16 18:15:16 venkyr Exp $
+dnl $Id: configure.in,v 5.144 2005/04/17 11:39:24 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
   exit 0
 fi
 
-AM_INIT_AUTOMAKE(lirc, 0.7.1-CVS)
+AM_INIT_AUTOMAKE(lirc, 0.7.1)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
@@ -215,20 +215,19 @@ AC_ARG_WITH(driver,
                           creative, devinput, dvico, ea65, exaudio,
                           flyvideo, gvbctv5pci, hauppauge,
                           hauppauge_dvb, hercules_smarttv_stereo,
-                          igorplugusb, imon, imon-rsc, imon-pad,
-			  irdeo, irdeo_remote,
-                          irman, irreal, it87, knc_one, kworld,
-                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
-                          livedrive_midi, livedrive_seq, logitech,
-                          lptX, mceusb, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere, packard_bell,
-                          parallel, pcmak, pcmak_usb, pctv,
-                          pixelview_bt878, pixelview_pak,
-                          pixelview_pro, provideo, realmagic,
-                          remotemaster, sa1100, sasem, serial,
-                          silitek, sir, slinke, streamzap, tekram,
-                          tekram_bt829, tira, tvbox, udp, uirt2,
-                          uirt2_raw],
+                          igorplugusb, imon, imon_rsc, imon_pad,
+                          irdeo, irdeo_remote, irman, irreal, it87,
+                          knc_one, kworld, leadtek_0007, leadtek_0010,
+                          leadtek_pvr2000, livedrive_midi,
+                          livedrive_seq, logitech, lptX, mceusb,
+                          mediafocusI, mouseremote, mouseremote_ps2,
+                          mp3anywhere, packard_bell, parallel, pcmak,
+                          pcmak_usb, pctv, pixelview_bt878,
+                          pixelview_pak, pixelview_pro, provideo,
+                          realmagic, remotemaster, sa1100, sasem,
+                          serial, silitek, sir, slinke, streamzap,
+                          tekram, tekram_bt829, tira, tvbox, udp,
+                          uirt2, uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -630,14 +629,14 @@ if test "$driver" = "imon"; then
   lircd_conf="imon/lircd.conf.imon"  
 fi
 
-if test "$driver" = "imon-rsc"; then
-  lirc_driver="lirc_dev lirc_imon"
-  lircd_conf="imon/lircd.conf.imon-rsc"  
-fi
-
-if test "$driver" = "imon-pad"; then
+if test "$driver" = "imon_pad"; then
   lirc_driver="lirc_dev lirc_imon"
   lircd_conf="imon/lircd.conf.imon-pad"  
+fi
+
+if test "$driver" = "imon_rsc"; then
+  lirc_driver="lirc_dev lirc_imon"
+  lircd_conf="imon/lircd.conf.imon-rsc"  
 fi
 
 if test "$driver" = "irdeo"; then

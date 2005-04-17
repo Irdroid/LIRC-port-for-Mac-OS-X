@@ -112,8 +112,8 @@ hw_menu_entry: @hw-usb
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card"
 	imon: "Soundgraph iMON MultiMedian IR/VFD"
-	imon-rsc: "Soundgraph iMON RSC"
-	imon-pad: "Soundgraph iMON PAD IR/VFD"
+	imon_pad: "Soundgraph iMON PAD IR/VFD"
+	imon_rsc: "Soundgraph iMON RSC"
 	streamzap: "Streamzap PC Remote"
 	mceusb: "Windows Media Center Remotes"
 
@@ -182,8 +182,8 @@ param_type: \
 	hercules_smarttv_stereo \
 	igorplugusb \
 	imon \
-	imon-rsc \
-	imon-pad \
+	imon_pad \
+	imon_rsc \
 	it87 \
 	knc_one \
 	kworld \
@@ -235,8 +235,8 @@ default_param: \
 	hercules_smarttv_stereo \
 	igorplugusb \
 	imon \
-	imon-rsc \
-	imon-pad \
+	imon_pad \
+	imon_rsc \
 	it87 \
 	knc_one \
 	kworld \
