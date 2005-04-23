@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.65 2005/02/19 15:13:02 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.66 2005/04/23 11:40:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -269,6 +269,13 @@ static struct lirc_serial hardware[]=
 
 static int sense = -1;   /* -1 = auto, 0 = active high, 1 = active low */
 static int txsense = 0;   /* 0 = active high, 1 = active low */
+
+#ifndef LIRC_IRQ
+#define LIRC_IRQ 4
+#endif
+#ifndef LIRC_PORT
+#define LIRC_PORT 0x3f8
+#endif
 
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;

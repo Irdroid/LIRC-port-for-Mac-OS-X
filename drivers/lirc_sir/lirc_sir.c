@@ -165,6 +165,13 @@ static unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #define SIR_TIMEOUT	(HZ*5/100)
 
 #ifndef LIRC_ON_SA1100
+#ifndef LIRC_IRQ
+#define LIRC_IRQ 4
+#endif
+#ifndef LIRC_PORT
+#define LIRC_PORT 0x3e8
+#endif
+
 static int io = LIRC_PORT;
 static int irq = LIRC_IRQ;
 static int threshold = 3;

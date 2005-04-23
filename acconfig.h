@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.30 2004/12/18 18:55:30 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.31 2005/04/23 11:40:00 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -106,13 +106,13 @@
 #define LIRC_MAJOR		61
 
 /* Set the IRQ for the lirc driver */
-#define LIRC_IRQ		4
+#undef LIRC_IRQ
 
 /* Set the port address for the lirc driver */
-#define LIRC_PORT		0x3f8
+#undef LIRC_PORT
 
 /* Set the timer for the parallel port driver */
-#define LIRC_TIMER		65536
+#undef LIRC_TIMER
 
 /* Define if you have an animax serial port receiver */
 #undef LIRC_SERIAL_ANIMAX

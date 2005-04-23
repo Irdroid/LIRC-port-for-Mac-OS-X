@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.31 2005/04/23 11:08:21 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.32 2005/04/23 11:40:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -76,6 +76,16 @@
 #include "lirc_parallel.h"
 
 #define LIRC_DRIVER_NAME "lirc_parallel"
+
+#ifndef LIRC_IRQ
+#define LIRC_IRQ 7
+#endif
+#ifndef LIRC_PORT
+#define LIRC_PORT 0x378
+#endif
+#ifndef LIRC_TIMER
+#define LIRC_TIMER 65536
+#endif
 
 /***********************************************************************
  *************************   Globale Variablen   ***********************

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.144 2005/04/17 11:39:24 lirc Exp $
+dnl $Id: configure.in,v 5.145 2005/04/23 11:40:00 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -136,19 +136,47 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
-possible_drivers="(none) (bte) (dvico) (ea65) (exaudio) (irreal) \
-	(livedrive_midi) (livedrive_seq) (logitech) (mediafocusI) \
-	(mouseremote) (mouseremote_ps2) (mp3anywhere) (pcmak) \
-	(pcmak_usb) (pctv) (remotemaster) (silitek) (slinke) (tira) \
-	(uirt2) (uirt2_raw) (udp)"
+possible_drivers="(none) \
+	(bte) \
+	(creative) \
+	(dvico) \
+	(ea65) \
+	(exaudio) \
+	(irreal) \
+	(livedrive_midi) \
+	(livedrive_seq) \
+	(logitech) \
+	(mediafocusI) \
+	(mouseremote) \
+	(mouseremote_ps2) \
+	(mp3anywhere) \
+	(pcmak) \
+	(pcmak_usb) \
+	(pctv) \
+	(remotemaster) \
+	(silitek) \
+	(slinke) \
+	(tira) \
+	(uirt2) \
+	(uirt2_raw) \
+	(udp)"
 
 if test x${no_kernel} != xyes; then
-  possible_drivers="${possible_drivers} (lirc_dev) (lirc_dev lirc_atiusb) \
-	(lirc_dev lirc_bt829) (lirc_dev lirc_gpio) (lirc_dev lirc_i2c) \
-	(lirc_dev lirc_igorplugusb) (lirc_dev lirc_imon) \
-	(lirc_dev lirc_it87) (lirc_dev lirc_mceusb) \
-	(lirc_dev lirc_parallel) (lirc_dev lirc_sasem) \
-	(lirc_dev lirc_serial) (lirc_dev lirc_sir) \
+  possible_drivers="${possible_drivers} \
+	(any) \
+	(lirc_dev) \
+	(lirc_dev lirc_atiusb) \
+	(lirc_dev lirc_bt829) \
+	(lirc_dev lirc_gpio) \
+	(lirc_dev lirc_i2c) \
+	(lirc_dev lirc_igorplugusb) \
+	(lirc_dev lirc_imon) \
+	(lirc_dev lirc_it87) \
+	(lirc_dev lirc_mceusb) \
+	(lirc_dev lirc_parallel) \
+	(lirc_dev lirc_sasem) \
+	(lirc_dev lirc_serial) \
+	(lirc_dev lirc_sir) \
 	(lirc_dev lirc_streamzap)"
 fi
 
@@ -211,11 +239,11 @@ AC_ARG_WITH(driver,
                           atilibusb, atiusb, audio, avermedia,
                           avermedia_vdomate, avermedia98, bestbuy,
                           bestbuy2, breakoutbox, bte, caraca, chronos,
-                          comX, creative_infracd, dsp, cph03x, cph06x,
-                          creative, devinput, dvico, ea65, exaudio,
+                          comX, cph06x, creative, creative_infracd,
+                          devinput, dsp, dvico, ea65, exaudio,
                           flyvideo, gvbctv5pci, hauppauge,
                           hauppauge_dvb, hercules_smarttv_stereo,
-                          igorplugusb, imon, imon_rsc, imon_pad,
+                          igorplugusb, imon, imon_pad, imon_rsc,
                           irdeo, irdeo_remote, irman, irreal, it87,
                           knc_one, kworld, leadtek_0007, leadtek_0010,
                           leadtek_pvr2000, livedrive_midi,
@@ -254,9 +282,7 @@ fi
 
 if test "$driver" = "any"; then
   AC_DEFINE(LIRC_DRIVER_ANY)
-  lirc_driver="none"
-  #include creative driver
-  hw_module="${hw_module} hw_creative.o serial.o"
+  lirc_driver="any"
   
   any_possible_drivers=`echo ${possible_drivers} | sed -e's/ /-/g' \
 			  -e's/)-(/ /g'  -e's/(//g' -e's/)//g' \
@@ -282,6 +308,9 @@ if test "$driver" = "any"; then
 	caraca)
 		hw_module="${hw_module} hw_caraca.o"
 		caraca_lib=-lcaraca_client
+		;;
+	creative)
+		hw_module="${hw_module} hw_creative.o serial.o"
 		;;
 	creative_infracd)
 		hw_module="${hw_module} hw_creative_infracd.o"
@@ -988,6 +1017,21 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "irman" || \
 	test "$lirc_driver" = "irman_sw"; then
   lirc_driver=
+elif test "$lirc_driver" = "any"; then
+  lirc_driver="lirc_dev \
+	lirc_atiusb \
+	lirc_bt829 \
+	lirc_gpio \
+	lirc_i2c \
+	lirc_igorplugusb \
+	lirc_imon \
+	lirc_it87 \
+	lirc_mceusb \
+	lirc_parallel \
+	lirc_sasem \
+	lirc_serial \
+	lirc_sir \
+	lirc_streamzap"
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
   :
@@ -1042,28 +1086,17 @@ lirc_major=61)
 
 AC_ARG_WITH(port,
 [  --with-port=port        specify the port number for the lirc device.],
-port=${withval},
-[case $lirc_driver in
-*lirc_serial)   port=${port:-0x3f8} ;;
-*lirc_sir)   port=${port:-0x3f8} ;;
-*lirc_parallel) port=${port:-0x378} ;;
-esac]
+port=${withval}
 )
 
 AC_ARG_WITH(irq,
 [  --with-irq=irq          specify the irq line for the lirc device.],
-irq=${withval},
-[case $lirc_driver in
-*lirc_serial)   irq=${irq:-4} ;;
-*lirc_sir)   irq=${irq:-4} ;;
-*lirc_parallel) irq=${irq:-7} ;;
-esac]
+irq=${withval}
 )
 
 AC_ARG_WITH(timer,
 [  --with-timer=value      specify the timer value for the parallel driver],
-timer=${withval},
-timer=65536)
+timer=${withval})
 
 dnl I dont think libirman  will accept this at the moment
 AC_ARG_WITH(tty,
@@ -1171,9 +1204,15 @@ AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 
 AC_DEFINE_UNQUOTED(LIRC_DRIVER, "$driver")
 AC_DEFINE_UNQUOTED(LIRC_MAJOR, $lirc_major)
-AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
-AC_DEFINE_UNQUOTED(LIRC_IRQ, $irq)
-AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
+if test "$port" != ""; then
+  AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
+fi
+if test "$irq" != ""; then
+  AC_DEFINE_UNQUOTED(LIRC_IRQ, $irq)
+fi
+if test "$timer" != ""; then
+  AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
+fi
 AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
 AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
@@ -1205,7 +1244,9 @@ AC_OUTPUT([
 ])
 
 echo
-if test "$driver" = "mediafocusI"; then
+if test "$driver" = "any"; then
+  echo "All kernel mdoules will be built."
+elif test "$driver" = "mediafocusI"; then
   echo "You will have to use the MediaFocus driver from:"
   echo "http://people.freenet.de/mediafocus/"
 elif test "$driver" = "exaudio"; then
