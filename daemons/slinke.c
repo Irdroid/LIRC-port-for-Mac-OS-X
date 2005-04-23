@@ -1,4 +1,4 @@
-/*      $Id: slinke.c,v 5.1 2000/07/13 19:01:41 columbus Exp $      */
+/*      $Id: slinke.c,v 5.2 2005/04/23 12:08:46 lirc Exp $      */
 
 /****************************************************************************
  ** slinke.c ****************************************************************
@@ -267,8 +267,7 @@ int fill_struct(struct ir_remote *r,FILE *f,char **desc)
 				{
 					r->pone=(lirc_t) b;
 					r->sone=(lirc_t) abs(a);
-					r->flags&=~SPACE_ENC;
-					r->flags|=RC5;
+					set_protocol(r, RC5);
 					continue;
 				}
 				r->pone=(lirc_t) a;
@@ -456,7 +455,7 @@ struct ir_remote *read_slinke(char *filename,char **desc)
 	}
 	/* set defaults */
 	memset(r,0,sizeof(*r));
-	r->flags=SPACE_ENC;
+	set_protocol(r, SPACE_ENC);
 	r->eps=20;
 	r->aeps=200;
 

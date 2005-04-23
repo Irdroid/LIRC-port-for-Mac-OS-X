@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.2 2005/03/27 11:55:07 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.3 2005/04/23 12:08:46 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -53,29 +53,33 @@ struct ir_ncode {
 
 /* definitions for flags */
 
+#define IR_PROTOCOL_MASK 0x01ff
+
+/* protocols: must not be combined */
 /* Don't forget to take a look at config_file.h when adding new flags */
 
-#define RC5             0x0001    /* IR data follows RC5 protocol */
-
+#define RAW_CODES       0x0001    /* for internal use only */
+#define RC5             0x0002    /* IR data follows RC5 protocol */
+#define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
 /* Hm, RC6 protocols seem to have changed the biphase semantics so
    that lircd will calculate the bit-wise complement of the codes. But
    this is only a guess as I did not have a datasheet... */
 
-#define RC6             0x0002    /* IR data follows RC6 protocol */
-#define RCMM            0x0004    /* IR data follows RC-MM protocol */
-#define SPACE_ENC	0x0008	  /* IR data is space encoded */
-#define REVERSE		0x0010
-#define NO_HEAD_REP	0x0020	  /* no header for key repeats */
-#define NO_FOOT_REP	0x0040	  /* no foot for key repeats */
-#define CONST_LENGTH    0x0080    /* signal length+gap is always constant */
-#define RAW_CODES       0x0100    /* for internal use only */
-#define REPEAT_HEADER   0x0200    /* header is also sent before repeat code */
-#define GOLDSTAR        0x0400    /* encoding found on Goldstar remote */
-#define GRUNDIG         0x0800    /* encoding found on Grundig remote */
-#define SERIAL          0x1000    /* serial protocol */
-#define SPACE_FIRST     0x2000    /* bits are encoded as space+pulse */
+#define RC6             0x0004    /* IR data follows RC6 protocol */
+#define RCMM            0x0008    /* IR data follows RC-MM protocol */
+#define SPACE_ENC	0x0010	  /* IR data is space encoded */
+#define SPACE_FIRST     0x0020    /* bits are encoded as space+pulse */
+#define GOLDSTAR        0x0040    /* encoding found on Goldstar remote */
+#define GRUNDIG         0x0080    /* encoding found on Grundig remote */
+#define SERIAL          0x0100    /* serial protocol */
 
-#define SHIFT_ENC	   RC5    /* IR data is shift encoded (name obsolete) */
+/* additinal flags: can be orred together with protocol flag */
+#define REVERSE		0x0400
+#define NO_HEAD_REP	0x0800	  /* no header for key repeats */
+#define NO_FOOT_REP	0x1000	  /* no foot for key repeats */
+#define CONST_LENGTH    0x2000    /* signal length+gap is always constant */
+#define REPEAT_HEADER   0x4000    /* header is also sent before repeat code */
+
 #define COMPAT_REVERSE  0x8000    /* compatibility mode for REVERSE flag */
 
 /* stop repeating after 600 signals (approx. 1 minute) */

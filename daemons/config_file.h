@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.8 2005/03/27 11:55:07 lirc Exp $      */
+/*      $Id: config_file.h,v 5.9 2005/04/23 12:08:46 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -25,24 +25,24 @@ struct flaglist {
 
 static struct flaglist all_flags[]=
 {
+        {"RAW_CODES",       RAW_CODES},
 	{"RC5",             RC5},
+	{"SHIFT_ENC",       SHIFT_ENC}, /* obsolete */
 	{"RC6",             RC6},
 	{"RCMM",            RCMM},
-	{"SHIFT_ENC",       SHIFT_ENC}, /* obsolete */
 	{"SPACE_ENC",       SPACE_ENC},
 	{"SPACE_FIRST",     SPACE_FIRST},
+        {"GOLDSTAR",        GOLDSTAR},
+	{"GRUNDIG",         GRUNDIG},
+	{"SERIAL",          SERIAL},
+	
 	{"REVERSE",         REVERSE},
 	{"NO_HEAD_REP",     NO_HEAD_REP},
         {"NO_FOOT_REP",     NO_FOOT_REP},
 	{"CONST_LENGTH",    CONST_LENGTH}, /* remember to adapt warning
 					      message when changing this */
-        {"RAW_CODES",       RAW_CODES},
         {"REPEAT_HEADER",   REPEAT_HEADER},
-        {"GOLDSTAR",        GOLDSTAR},
-	{"GRUNDIG",         GRUNDIG},
-	{"SERIAL",          SERIAL},
-	
-        {NULL,0},
+	{NULL,0},
 };
 
 /*

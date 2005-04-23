@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.52 2005/03/06 13:33:08 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.53 2005/04/23 12:08:46 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -459,8 +459,7 @@ int main(int argc,char **argv)
 				exit(EXIT_FAILURE);
 			}
 			printf("Creating config file in raw mode.\n");
-			remote.flags&=~(RC5|RC6|RCMM|SPACE_ENC);
-			remote.flags|=RAW_CODES;
+			set_protocol(&remote, RAW_CODES);
 			remote.eps=EPS;
 			remote.aeps=AEPS;
 			break;
@@ -549,7 +548,7 @@ int main(int argc,char **argv)
 			break;
 		}
 		
-		if(remote.flags&RAW_CODES)
+		if(is_raw(&remote))
 		{
 			flushhw();
 		}
@@ -563,7 +562,7 @@ int main(int argc,char **argv)
 		printf("\nNow hold down button \"%s\".\n",buffer);
 		fflush(stdout);
 		
-		if(remote.flags&RAW_CODES)
+		if(is_raw(&remote))
 		{
 			lirc_t data,sum;
 			unsigned int count;
@@ -717,7 +716,7 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(remote.flags&RAW_CODES)
+	if(is_raw(&remote))
 	{
 		return(EXIT_SUCCESS);
 	}
@@ -1810,7 +1809,7 @@ void get_scheme(struct ir_remote *remote)
 		/* this is not yet the
 		   number of bits */
 		remote->bits=length;
-		remote->flags|=SPACE_ENC;
+		set_protocol(remote, SPACE_ENC);
 		return;
 	}
 	else
@@ -1849,12 +1848,12 @@ void get_scheme(struct ir_remote *remote)
 				    calc_signal(max2s)<500))
 				{
 					printf("RC-6 remote control found.\n");
-					remote->flags|=RC6;
+					set_protocol(remote, RC6);
 				}
 				else
 				{
 					printf("RC-5 remote control found.\n");
-					remote->flags|=RC5;
+					set_protocol(remote, RC5);
 				}
 				return;
 			}
@@ -1864,7 +1863,7 @@ void get_scheme(struct ir_remote *remote)
 	printf("Suspicious data length: %u.\n",length);
 	/* this is not yet the number of bits */
 	remote->bits=length;
-	remote->flags|=SPACE_ENC;
+	set_protocol(remote, SPACE_ENC);
 }
 
 struct lengths *get_max_length(struct lengths *first,unsigned int *sump)

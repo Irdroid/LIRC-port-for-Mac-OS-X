@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.18 2005/02/05 10:07:40 lirc Exp $      */
+/*      $Id: config_file.c,v 5.19 2005/04/23 12:08:45 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -301,6 +301,18 @@ int parseFlags(char *val)
 		flaglptr=all_flags;
 		while(flaglptr->name!=NULL){
 			if(strcasecmp(flaglptr->name,flag)==0){
+				if(flaglptr->flag&IR_PROTOCOL_MASK &&
+				   flags&IR_PROTOCOL_MASK)
+				{
+					logprintf(LOG_ERR, "error in "
+						  "configfile line %d:",
+						  line);
+					logprintf(LOG_ERR, "multiple "
+						  "protocols given in flags: "
+						  "\"%s\"",flag);
+					parse_error=1;
+					return(0);
+				}
 				flags=flags|flaglptr->flag;
 				LOGPRINTF(3,"flag %s recognized",
 					  flaglptr->name);
@@ -584,7 +596,7 @@ struct ir_remote * read_config(FILE *f)
 						parse_error=1;
 						break;
 					}
-					rem->flags|=RAW_CODES;
+					set_protocol(rem, RAW_CODES);
 					raw_code.code=0;
                                         init_void_array(&raw_codes,30, sizeof(struct ir_ncode));
                                         mode=ID_raw_codes;

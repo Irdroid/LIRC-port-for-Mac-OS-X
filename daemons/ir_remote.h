@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.31 2005/03/27 11:55:07 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.32 2005/04/23 12:08:46 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -58,33 +58,40 @@ static inline int has_repeat(struct ir_remote *remote)
 	else return(0);
 }
 
+static inline void set_protocol(struct ir_remote *remote, int protocol)
+{
+	remote->flags&=~(IR_PROTOCOL_MASK);
+	remote->flags|=protocol;
+}
+
 static inline int is_raw(struct ir_remote *remote)
 {
-	if(remote->flags&RAW_CODES) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == RAW_CODES) return(1);
 	else return(0);
 }
 
 static inline int is_space_enc(struct ir_remote *remote)
 {
-	if(remote->flags&SPACE_ENC) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == SPACE_ENC) return(1);
 	else return(0);
 }
 
 static inline int is_space_first(struct ir_remote *remote)
 {
-	if(is_space_enc(remote) && remote->flags&SPACE_FIRST) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == SPACE_FIRST) return(1);
 	else return(0);
 }
 
 static inline int is_rc5(struct ir_remote *remote)
 {
-	if(remote->flags&RC5) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == RC5) return(1);
 	else return(0);
 }
 
 static inline int is_rc6(struct ir_remote *remote)
 {
-	if(remote->flags&RC6 || remote->rc6_mask) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == RC6 ||
+	   remote->rc6_mask) return(1);
 	else return(0);
 }
 
@@ -96,25 +103,25 @@ static inline int is_biphase(struct ir_remote *remote)
 
 static inline int is_rcmm(struct ir_remote *remote)
 {
-	if(remote->flags&RCMM) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == RCMM) return(1);
 	else return(0);
 }
 
 static inline int is_goldstar(struct ir_remote *remote)
 {
-	if(remote->flags&GOLDSTAR) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == GOLDSTAR) return(1);
 	else return(0);
 }
 
 static inline int is_grundig(struct ir_remote *remote)
 {
-	if(remote->flags&GRUNDIG) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == GRUNDIG) return(1);
 	else return(0);
 }
 
 static inline int is_serial(struct ir_remote *remote)
 {
-	if(remote->flags&SERIAL) return(1);
+	if((remote->flags&IR_PROTOCOL_MASK) == SERIAL) return(1);
 	else return(0);
 }
 
