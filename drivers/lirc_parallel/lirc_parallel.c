@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.30 2005/03/12 11:15:36 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.31 2005/04/23 11:08:21 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -675,6 +675,7 @@ static void kf(void *handle)
 	if(!lirc_claim())
 		return;
 	parport_enable_irq(pport);
+	lirc_off();
 	/* this is a bit annoying when you actually print...*/
 	/*
 	printk(KERN_INFO "%s: reclaimed port\n",LIRC_DRIVER_NAME);
