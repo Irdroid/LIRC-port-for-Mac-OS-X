@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.17 2005/03/27 11:55:07 lirc Exp $      */
+/*      $Id: transmit.c,v 5.18 2005/05/28 13:00:51 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -167,7 +167,41 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 		remote->bits+
 		remote->post_data_bits;
 	ir_code mask;
-	
+	if(is_rcmm(remote))
+	{
+		data=reverse(data,bits);
+		mask=1<<(all_bits-1-done);
+		if(bits%2 || done%2)
+		{
+			logprintf(LOG_ERR,"invalid bit number.");
+			return;
+		}
+		for(i=0;i<bits;i+=2,mask>>=2)
+		{
+			switch(data&3)
+			{
+			case 0:
+				send_pulse(remote->pzero);
+				send_space(remote->szero);
+				break;
+			/* 2 and 1 swapped due to reverse() */
+			case 2:
+				send_pulse(remote->pone);
+				send_space(remote->sone);
+				break;
+			case 1:
+				send_pulse(remote->ptwo);
+				send_space(remote->stwo);
+				break;
+			case 3:
+				send_pulse(remote->pthree);
+				send_space(remote->sthree);
+				break;
+			}
+			data=data>>2;
+		}
+		return;
+	}
 	if(remote->toggle_bit>0)
 	{
 		if(remote->toggle_bit>done &&
@@ -300,7 +334,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
 	int i, repeat=0;
 	
-	if(is_rcmm(remote) || is_grundig(remote) || 
+	if(is_grundig(remote) || 
 	   is_goldstar(remote) || is_serial(remote))
 	{
 		logprintf(LOG_ERR,"sorry, can't send this protocol yet");
