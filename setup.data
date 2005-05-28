@@ -109,6 +109,7 @@ hw_menu_entry: @hw-usb
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
+	bw6130: "Remotec Multimedia PC Remote BW6130"
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card"
 	imon: "Soundgraph iMON MultiMedian IR/VFD"
@@ -167,6 +168,7 @@ param_type: \
 	bestbuy2 \
 	breakoutbox \
 	bte \
+	bw6130 \
 	chronos \
 	cph03x \
 	cph06x \
@@ -220,6 +222,7 @@ default_param: \
 	bestbuy \
 	bestbuy2 \
 	breakoutbox \
+	bw6130 \
 	chronos \
 	cph03x \
 	cph06x \

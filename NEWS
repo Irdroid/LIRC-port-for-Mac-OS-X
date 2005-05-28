@@ -1,3 +1,6 @@
+0.7.2-CVS: future
+  * added support for Remotec Multimedia PC Remote BW6130 (Maik Freudenberg)
+
 0.7.1: 04/17/05
   * added support for iMON-PAD and iMON-RSC models (Venky Raju)
   * added support for DViCO USB Remote (William Uther)

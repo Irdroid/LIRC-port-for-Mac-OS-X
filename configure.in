@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.145 2005/04/23 11:40:00 lirc Exp $
+dnl $Id: configure.in,v 5.146 2005/05/28 14:29:09 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -14,7 +14,7 @@ if test "$#" = "0"; then
   exit 0
 fi
 
-AM_INIT_AUTOMAKE(lirc, 0.7.1)
+AM_INIT_AUTOMAKE(lirc, 0.7.2-CVS)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="-O2 -g -Wall"
@@ -138,6 +138,7 @@ AC_MSG_RESULT()
 
 possible_drivers="(none) \
 	(bte) \
+	(bw6130) \
 	(creative) \
 	(dvico) \
 	(ea65) \
@@ -238,24 +239,25 @@ AC_ARG_WITH(driver,
                           none, any, act200l, adaptec, animax,
                           atilibusb, atiusb, audio, avermedia,
                           avermedia_vdomate, avermedia98, bestbuy,
-                          bestbuy2, breakoutbox, bte, caraca, chronos,
-                          comX, cph06x, creative, creative_infracd,
-                          devinput, dsp, dvico, ea65, exaudio,
-                          flyvideo, gvbctv5pci, hauppauge,
-                          hauppauge_dvb, hercules_smarttv_stereo,
-                          igorplugusb, imon, imon_pad, imon_rsc,
-                          irdeo, irdeo_remote, irman, irreal, it87,
-                          knc_one, kworld, leadtek_0007, leadtek_0010,
-                          leadtek_pvr2000, livedrive_midi,
-                          livedrive_seq, logitech, lptX, mceusb,
-                          mediafocusI, mouseremote, mouseremote_ps2,
-                          mp3anywhere, packard_bell, parallel, pcmak,
-                          pcmak_usb, pctv, pixelview_bt878,
-                          pixelview_pak, pixelview_pro, provideo,
-                          realmagic, remotemaster, sa1100, sasem,
-                          serial, silitek, sir, slinke, streamzap,
-                          tekram, tekram_bt829, tira, tvbox, udp,
-                          uirt2, uirt2_raw],
+                          bestbuy2, breakoutbox, bte, bw6130, caraca,
+                          chronos, comX, cph06x, creative,
+                          creative_infracd, devinput, dsp, dvico,
+                          ea65, exaudio, flyvideo, gvbctv5pci,
+                          hauppauge, hauppauge_dvb,
+                          hercules_smarttv_stereo, igorplugusb, imon,
+                          imon_pad, imon_rsc, irdeo, irdeo_remote,
+                          irman, irreal, it87, knc_one, kworld,
+                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, mceusb, mediafocusI, mouseremote,
+                          mouseremote_ps2, mp3anywhere, packard_bell,
+                          parallel, pcmak, pcmak_usb, pctv,
+                          pixelview_bt878, pixelview_pak,
+                          pixelview_pro, provideo, realmagic,
+                          remotemaster, sa1100, sasem, serial,
+                          silitek, sir, slinke, streamzap, tekram,
+                          tekram_bt829, tira, tvbox, udp, uirt2,
+                          uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -304,6 +306,9 @@ if test "$driver" = "any"; then
 		;;
 	bte)
 		hw_module="${hw_module} hw_bte.o serial.o"
+		;;
+	bw6130)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	caraca)
 		hw_module="${hw_module} hw_caraca.o"
@@ -526,6 +531,14 @@ if test "$driver" = "bte"; then
   HW_DEFAULT="hw_bte"
   lircd_conf="ericsson/lircd.conf.bte"
 #  lircmd_conf="ericsson/lircmd.conf.bte"
+fi
+
+if test "$driver" = "bw6130"; then
+  lirc_driver="none"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_bw6130"
+  lircd_conf="remotec/lircd.conf.BW6130"
+  lircmd_conf="remotec/lircmd.conf.BW6130"
 fi
 
 if test "$driver" = "caraca"; then

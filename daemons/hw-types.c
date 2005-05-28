@@ -10,6 +10,7 @@ extern struct hardware hw_atilibusb;
 extern struct hardware hw_audio;
 extern struct hardware hw_audio_alsa;
 extern struct hardware hw_bte;
+extern struct hardware hw_bw6130;
 extern struct hardware hw_creative;
 extern struct hardware hw_creative_infracd;
 extern struct hardware hw_default;
@@ -71,6 +72,7 @@ struct hardware *hw_list[] =
 	&hw_audio_alsa,
 #endif
 	&hw_bte,
+	&hw_bw6130,
 	&hw_creative,
 #ifdef HAVE_SCSI
 	&hw_creative_infracd,
