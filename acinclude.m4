@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.7 2004/04/25 16:29:23 lirc Exp $
+## $Id: acinclude.m4,v 1.8 2005/05/29 10:45:22 lirc Exp $
 ##
 ## additional m4 macros
 ##
@@ -8,7 +8,7 @@
 
 dnl check for kernel source
 
-AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
+AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
 [
   kerneldir=missing
   kernelext=ko
@@ -62,7 +62,7 @@ AC_DEFUN(AC_PATH_KERNEL_SOURCE_SEARCH,
 ]
 )
 
-AC_DEFUN(AC_PATH_KERNEL_SOURCE,
+AC_DEFUN([AC_PATH_KERNEL_SOURCE],
 [
   AC_CHECK_PROG(ac_pkss_mktemp,mktemp,yes,no)
   AC_PROVIDE([AC_PATH_KERNEL_SOURCE])
