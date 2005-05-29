@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.31 2005/04/23 11:40:00 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.32 2005/05/29 11:54:51 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -77,6 +77,9 @@
 
 /* Define if the ALSA library is installed */
 #undef HAVE_LIBALSA
+
+/* Define if the ALSA library with SB RC support is installed */
+#undef HAVE_ALSA_SB_RC
 
 /* Define if libusb is installed */
 #undef HAVE_LIBUSB

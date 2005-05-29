@@ -1,0 +1,56 @@
+#
+# contributed by Clemens Ladisch <clemens|ladisch.de>
+#
+# brand:             Creative
+# model:             RM-1500
+# supported devices: Sound Blaster Extigy, SB Audigy 2 NX
+#
+# This is for the integrated IR receiver in Creative USB audio devices
+# when accessed with LIRC's alsa_usb driver (requires the snd-usb-audio
+# driver from ALSA 1.0.9 or later).
+#
+# This file should work with the exaudio driver, too.
+#
+
+begin remote
+
+	name	RM-1500
+	bits	8
+
+	begin codes
+		power		0x01
+		1		0x02
+		2		0x03
+		3		0x04
+		4		0x05
+		5		0x06
+		6		0x07
+		7		0x08
+		8		0x09
+		9		0x0a
+		0		0x0b
+		cmss		0x0c
+		mute		0x0d
+		rec		0x0e
+		vol-		0x0f
+		vol+		0x10
+		stop-eject	0x11
+		play-pause	0x12
+		slow		0x13
+		prev		0x14
+		next		0x15
+		step		0x16
+		eax		0x17
+		options		0x18
+		display		0x19
+		return		0x1a
+		start		0x1b
+		cancel		0x1c
+		up		0x1d
+		left		0x1e
+		ok		0x1f
+		right		0x20
+		down		0x21
+	end codes
+
+end remote

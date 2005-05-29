@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.146 2005/05/28 14:29:09 lirc Exp $
+dnl $Id: configure.in,v 5.147 2005/05/29 11:54:51 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -206,13 +206,30 @@ AC_CHECK_HEADERS(portaudio.h,[
   )]
 )
 dnl audio_alsa driver requires ALSA library installed and some linker flags
+have_alsa=no
 AC_CHECK_HEADERS(alsa/asoundlib.h,[
   AC_CHECK_LIB(asound, snd_pcm_open,[
     AC_DEFINE(HAVE_LIBALSA)
+    have_alsa=yes
     possible_drivers="${possible_drivers} (audio_alsa)"
     ],,
   )]
 )
+dnl alsa_usb driver requires an ALSA that knows about our hwdep device
+if test "$have_alsa" = "yes"; then
+  AC_MSG_CHECKING(for ALSA SB RC hwdep support)
+  AC_TRY_COMPILE([
+#include <alsa/asoundlib.h>
+],[
+  if (snd_hwdep_info_get_iface(NULL) == SND_HWDEP_IFACE_SB_RC) {}
+],[
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_ALSA_SB_RC)
+    possible_drivers="${possible_drivers} (alsa_usb)"
+    ],[
+    AC_MSG_RESULT(no)]
+  )
+fi
 dnl creative_infracd driver requires linux scsi api
 AC_CHECK_HEADERS(scsi/sg.h,[
   AC_DEFINE(HAVE_SCSI)
@@ -236,7 +253,7 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          none, any, act200l, adaptec, animax,
+                          none, any, act200l, adaptec, alsa_usb, animax,
                           atilibusb, atiusb, audio, avermedia,
                           avermedia_vdomate, avermedia98, bestbuy,
                           bestbuy2, breakoutbox, bte, bw6130, caraca,
@@ -291,6 +308,10 @@ if test "$driver" = "any"; then
 			  -e's/-$//g'`
   for any_driver in ${any_possible_drivers}; do
   case ${any_driver} in
+	alsa_usb)
+		hw_module="${hw_module} hw_alsa_usb.o"
+		alsa_lib=-lasound
+		;;
 	atilibusb)
 		hw_module="${hw_module} hw_atilibusb.o receive.o"
 		atilibusb_lib=`libusb-config --libs`
@@ -452,6 +473,14 @@ if test "$driver" = "adaptec"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="adaptec/lircd.conf.AVC-2410"
 #  lircmd_conf="adaptec/lircmd.conf.AVC-2410"
+fi
+
+if test "$driver" = "alsa_usb"; then
+  lirc_driver="alsa_usb"
+  hw_module="hw_alsa_usb.o"
+  HW_DEFAULT="hw_alsa_usb"
+  alsa_lib=-lasound
+  lircd_conf="creative/lircd.conf.alsa_usb"
 fi
 
 if test "$driver" = "animax"; then
@@ -1013,6 +1042,10 @@ in its directory.
     AC_MSG_ERROR([*** you need to have the ALSA headers and libraries
 	for this driver])
     ;;
+  alsa_usb)
+    AC_MSG_ERROR([*** you need to have the ALSA libraries and drivers
+	from at least version 1.0.9 for this driver])
+    ;;
   *)
     AC_MSG_ERROR([*** it is not possible to install the specified driver
 	on this system])
@@ -1023,6 +1056,7 @@ fi
 dnl now we've checked, we can rename things for the drivers/Makefile
 
 if test "$lirc_driver" = "none" || \
+	test "$lirc_driver" = "alsa_usb" || \
 	test "$lirc_driver" = "atilibusb" || \
 	test "$lirc_driver" = "audio" || \
 	test "$lirc_driver" = "audio_alsa" || \
@@ -1265,6 +1299,9 @@ elif test "$driver" = "mediafocusI"; then
 elif test "$driver" = "exaudio"; then
   echo "You will have to use the Exaudio driver from:"
   echo "http://exaudio.sourceforge.net/"
+elif test "$driver" = "alsa_usb"; then
+  echo "You will have to use the snd-usb-audio driver from:"
+  echo "http://www.alsa-project.org/"
 elif test "$driver" = "hauppauge_dvb"; then
   echo "You will have to use the DVB driver from:"
   echo "http://www.linuxtv.org"

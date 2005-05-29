@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.47 2005/03/26 10:01:50 lirc Exp $
+## $Id: Makefile.am,v 5.48 2005/05/29 11:54:52 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -15,6 +15,7 @@ lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 lircd_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@ @daemon@
 lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = \
+			hw_alsa_usb.c \
 			hw_atilibusb.c \
 			hw_audio.c \
 			hw_audio_alsa.c \
@@ -57,6 +58,7 @@ irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
 irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = \
+			hw_alsa_usb.c \
 			hw_atilibusb.c \
 			hw_audio.c \
 			hw_audio_alsa.c \

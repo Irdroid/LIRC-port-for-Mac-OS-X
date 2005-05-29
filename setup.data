@@ -111,7 +111,8 @@ hw_menu_entry: @hw-usb
 	pcmak_usb: "PCMAK USB receiver"
 	bw6130: "Remotec Multimedia PC Remote BW6130"
 	sasem: "Sasem OnAir Remocon-V"
-	exaudio: "Sound Blaster Extigy USB sound card"
+	exaudio: "Sound Blaster Extigy USB sound card (exaudio)"
+	alsa_usb: "Sound Blaster Extigy/Audigy 2 NX (ALSA snd-usb-audio)"
 	imon: "Soundgraph iMON MultiMedian IR/VFD"
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
@@ -157,6 +158,7 @@ param_type: \
 
 param_type: \
 	adaptec \
+	alsa_usb \
 	atilibusb \
 	atiusb \
 	audio \
@@ -212,6 +214,7 @@ param_type: \
 
 default_param: \
 	adaptec \
+	alsa_usb \
 	atilibusb \
 	atiusb \
 	audio \
