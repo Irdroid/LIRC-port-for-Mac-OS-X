@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.c,v 5.2 2003/10/12 12:09:14 lirc Exp $  */
+/*   $Id: hw_tira.c,v 5.3 2005/06/05 08:45:17 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.c ****************************************************************
  *****************************************************************************
@@ -190,8 +190,6 @@ int tira_setup(void)
 
 int tira_init(void)
 {
-	struct termios options;
-
 	LOGPRINTF (1, "Tira init");
 	if(!tty_create_lock(hw.device))
 	{
@@ -224,7 +222,12 @@ int tira_init(void)
 	/* Device should be activated by this point... wait... */
 	usleep (50000);
 	
-	return tira_setup();
+	if(!tira_setup())
+	{
+		tira_deinit();
+		return 0;
+	}
+	return 1;
 }
 
 int tira_deinit (void)
