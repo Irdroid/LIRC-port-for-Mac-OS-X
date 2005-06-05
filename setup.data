@@ -94,7 +94,8 @@ hw_menu_entry: @hw-tv-card
 hw_menu_entry: @hw-irda
 	sir: "SIR IrDA (built-in IR ports)"
 	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
-	it87: "ITE IT8712/IT8705 CIR port (experimental, 2.4.x required)"
+	it87: "ITE IT8712/IT8705 CIR port"
+	digimatrix: "Asus Digimatrix IT87xx CIR port"
 	act200l: "Actisys Act200L SIR driver support"
 
 hw_menu_entry: @hw-pda
@@ -176,6 +177,7 @@ param_type: \
 	cph06x \
 	creative_infracd \
 	devinput \
+	digimatrix \
 	dsp \
 	dvico \
 	exaudio \
@@ -231,6 +233,7 @@ default_param: \
 	cph06x \
 	creative_infracd \
 	devinput \
+	digimatrix \
 	dsp \
 	dvico \
 	exaudio \

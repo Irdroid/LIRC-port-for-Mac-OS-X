@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.32 2005/05/29 11:54:51 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.33 2005/06/05 15:43:28 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -116,6 +116,9 @@
 
 /* Set the timer for the parallel port driver */
 #undef LIRC_TIMER
+
+/* Define if you want to use lirc_it87 with an Asus Digimatrix */
+#undef LIRC_IT87_DIGIMATRIX
 
 /* Define if you have an animax serial port receiver */
 #undef LIRC_SERIAL_ANIMAX

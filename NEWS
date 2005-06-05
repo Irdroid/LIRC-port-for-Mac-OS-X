@@ -1,4 +1,5 @@
 0.7.2-CVS: future
+  * added support for Asus Digimatrix (Andrew Calkin)
   * bug fixes for Streamzap driver:
     - device stops responding in some situations
     - one pulse was dropped from output in certain situations

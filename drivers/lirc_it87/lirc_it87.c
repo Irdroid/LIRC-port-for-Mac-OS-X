@@ -25,6 +25,9 @@
  *
  * 2001/02/27 Christoph Bartelmus <lirc@bartelmus.de> :
  *   reimplemented read function
+ * 2005/06/05 Andrew Calkin implemented support for Asus Digimatrix,
+ *   based on work of the following member of the Outertrack Digimatrix 
+ *   Forum: Art103 <r_tay@hotmail.com>
  */
 
 
@@ -68,6 +71,16 @@
 
 #include "lirc_it87.h"
 
+#ifdef LIRC_IT87_DIGIMATRIX
+static int digimatrix = 1;
+static int it87_freq = 36; /* kHz */
+static int irq = 9;
+#else
+static int digimatrix = 0;
+static int it87_freq = 38; /* kHz */
+static int irq = IT87_CIR_DEFAULT_IRQ;
+#endif
+
 static unsigned long it87_bits_in_byte_out = 0;
 static unsigned long it87_send_counter = 0;
 static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
@@ -90,11 +103,10 @@ static int debug = 0;
 	}while(0)
 
 static int io = IT87_CIR_DEFAULT_IOBASE;
-static int irq = IT87_CIR_DEFAULT_IRQ;
-static unsigned char it87_freq = 38; /* kHz */
 /* receiver demodulator default: off */
 static int it87_enable_demodulator = 0;
 
+static int timer_enabled = 0;
 static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
 static struct timer_list timerlist;
 /* time of last signal change detected */
@@ -333,8 +345,7 @@ static int lirc_ioctl(struct inode *node,
 	return retval;
 }
 
-static void add_read_queue(int flag,
-			   unsigned long val)
+static void add_read_queue(int flag, unsigned long val)
 {
 	unsigned int new_rx_tail;
 	lirc_t newval;
@@ -442,32 +453,53 @@ static long delta(struct timeval * tv1,
 	return deltv;
 }
 
-
 static void it87_timeout(unsigned long data) 
 {
-	/* if last received signal was a pulse, but receiving stopped
-	   within the 9 bit frame, we need to finish this pulse and
-	   simulate a signal change to from pulse to space. Otherwise
-	   upper layers will receive two sequences next time. */
-	
 	unsigned long flags;
-	unsigned long pulse_end;
 	
 	/* avoid interference with interrupt */
  	spin_lock_irqsave(&timer_lock, flags);
-	if (last_value) {
-		/* determine 'virtual' pulse end: */
-	 	pulse_end = delta(&last_tv, &last_intr_tv);
-		dprintk("timeout add %d for %lu usec\n", 
-			last_value, pulse_end);
-		add_read_queue(last_value,
-			       pulse_end);
-		last_value = 0;
-		last_tv=last_intr_tv;
+	
+ 	if (digimatrix) {
+		/* We have timed out.
+		   Disable the RX mechanism.
+		*/
+		
+		outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
+		     IT87_CIR_RCR_RXACT, io + IT87_CIR_RCR);
+		if (it87_RXEN_mask) {
+			outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN,
+			     io + IT87_CIR_RCR);
+		}
+		dprintk(" TIMEOUT\n");
+		timer_enabled = 0;
+
+		/* fifo clear */
+		outb(inb(io + IT87_CIR_TCR1) | IT87_CIR_TCR1_FIFOCLR,
+		     io+IT87_CIR_TCR1);
+
+	}
+	else {
+		/* if last received signal was a pulse, but receiving
+		   stopped within the 9 bit frame, we need to finish
+		   this pulse and simulate a signal change to from
+		   pulse to space. Otherwise upper layers will receive
+		   two sequences next time. */
+	
+		if (last_value) {
+			unsigned long pulse_end;
+			
+			/* determine 'virtual' pulse end: */
+	 		pulse_end = delta(&last_tv, &last_intr_tv);
+			dprintk("timeout add %d for %lu usec\n", 
+				last_value, pulse_end);
+			add_read_queue(last_value, pulse_end);
+			last_value = 0;
+			last_tv=last_intr_tv;
+		}
 	}
 	spin_unlock_irqrestore(&timer_lock, flags);		
 }
-
 
 static irqreturn_t it87_interrupt(int irq,
 				 void * dev_id,
@@ -480,6 +512,13 @@ static irqreturn_t it87_interrupt(int irq,
 	unsigned long flags, hw_flags;
 	int iir, lsr;
 	int fifo = 0;
+	static char lastbit = 0;
+	char bit;
+
+	/* Bit duration in microseconds */
+	const unsigned long bit_duration = 1000000ul / 
+		(115200 / IT87_CIR_BAUDRATE_DIVISOR);
+
 
 	iir = inb(io + IT87_CIR_IIR);
 
@@ -487,74 +526,119 @@ static irqreturn_t it87_interrupt(int irq,
 	case 0x4:
 	case 0x6:
 		lsr = inb(io + IT87_CIR_RSR) & (IT87_CIR_RSR_RXFTO |
-						    IT87_CIR_RSR_RXFBC);
+						IT87_CIR_RSR_RXFBC);
 		fifo = lsr & IT87_CIR_RSR_RXFBC;
 		dprintk("iir: 0x%x fifo: 0x%x\n", iir, lsr);
 	
 		/* avoid interference with timer */
 		spin_lock_irqsave(&timer_lock, flags);
 		spin_lock_irqsave(&hardware_lock, hw_flags);
-		do {
-			del_timer(&timerlist);
-			data = inb(io + IT87_CIR_DR);
-
-			dprintk("data=%.2x\n", data);
-			do_gettimeofday(&curr_tv);
-			deltv = delta(&last_tv, &curr_tv);
-			deltintrtv = delta(&last_intr_tv, &curr_tv);
-
-			dprintk("t %lu , d %d\n", deltintrtv, (int)data);
+		if (digimatrix) { 
+			static unsigned long acc_pulse = 0;
+			static unsigned long acc_space = 0;
 			
-			/* if nothing came in last 2 cycles,
-			   it was gap */
-			if (deltintrtv > TIME_CONST * 2) {
-				if (last_value) {
-					dprintk("GAP\n");
+			do {
+				data = inb(io + IT87_CIR_DR);
+				data =~ data;
+				fifo--;
+				if (data != 0x00) {
+					if (timer_enabled) {
+						del_timer(&timerlist);
+					}
+					/* start timer for end of sequence detection */
+					timerlist.expires = jiffies + IT87_TIMEOUT;
+					add_timer(&timerlist);
+					timer_enabled = 1;
+				}
+				/* Loop through */
+				for(bit = 0; bit < 8; ++bit)
+				{
+					if((data >> bit) & 1)
+					{
+						++acc_pulse;
+						if(lastbit == 0)
+						{
+							add_read_queue(0, acc_space * bit_duration);
+							acc_space = 0;
+						}
+        				}
+					else
+					{
+						++acc_space;
+						if(lastbit == 1)
+						{
+							add_read_queue(1, acc_pulse * bit_duration);
+							acc_pulse = 0;
+						}
+					}
+					lastbit = (data >> bit) & 1;
+				}
 
-					/* simulate signal change */
+			} while (fifo != 0);
+	 	}
+		else {/* Normal Operation */
+			do {
+				del_timer(&timerlist);
+				data = inb(io + IT87_CIR_DR);
+
+				dprintk("data=%.2x\n", data);
+				do_gettimeofday(&curr_tv);
+				deltv = delta(&last_tv, &curr_tv);
+				deltintrtv = delta(&last_intr_tv, &curr_tv);
+
+				dprintk("t %lu , d %d\n", deltintrtv, (int)data);
+			
+				/* if nothing came in last 2 cycles,
+				   it was gap */
+				if (deltintrtv > TIME_CONST * 2) {
+					if (last_value) {
+						dprintk("GAP\n");
+
+						/* simulate signal change */
+						add_read_queue(last_value,
+							       deltv-
+							       deltintrtv);
+						last_value = 0;
+						last_tv.tv_sec = last_intr_tv.tv_sec;
+						last_tv.tv_usec = last_intr_tv.tv_usec;
+						deltv = deltintrtv;
+					}
+				}
+				data = 1;
+				if (data ^ last_value) {
+					/* deltintrtv > 2*TIME_CONST,
+					   remember ? */
+					/* the other case is timeout */
 					add_read_queue(last_value,
-						       deltv-
-						       deltintrtv);
-					last_value = 0;
-					last_tv.tv_sec = last_intr_tv.tv_sec;
-					last_tv.tv_usec = last_intr_tv.tv_usec;
-					deltv = deltintrtv;
+						       deltv-TIME_CONST);
+					last_value = data;
+					last_tv = curr_tv;
+					if(last_tv.tv_usec>=TIME_CONST) {
+						last_tv.tv_usec-=TIME_CONST;
+					}
+					else {
+						last_tv.tv_sec--;
+						last_tv.tv_usec+=1000000-
+							TIME_CONST;
+					}
 				}
-			}
-			data = 1;
-			if (data ^ last_value) {
-				/* deltintrtv > 2*TIME_CONST,
-				   remember ? */
-				/* the other case is timeout */
-				add_read_queue(last_value,
-					       deltv-TIME_CONST);
-				last_value = data;
-				last_tv = curr_tv;
-				if(last_tv.tv_usec>=TIME_CONST) {
-					last_tv.tv_usec-=TIME_CONST;
+				last_intr_tv = curr_tv;
+				if (data) {
+					/* start timer for end of sequence detection */
+					timerlist.expires = jiffies + IT87_TIMEOUT;
+					add_timer(&timerlist);
 				}
-				else {
-					last_tv.tv_sec--;
-					last_tv.tv_usec+=1000000-
-						TIME_CONST;
-				}
-			}
-			last_intr_tv = curr_tv;
-			if (data) {
-				/* start timer for end of sequence detection */
-				timerlist.expires = jiffies + IT87_TIMEOUT;
-				add_timer(&timerlist);
-			}
-			outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
-			     IT87_CIR_RCR_RXACT,
-			     io + IT87_CIR_RCR);
-			if (it87_RXEN_mask) {
-				outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN, 
+				outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
+				     IT87_CIR_RCR_RXACT,
 				     io + IT87_CIR_RCR);
+				if (it87_RXEN_mask) {
+					outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN, 
+					     io + IT87_CIR_RCR);
+				}
+				fifo--;
 			}
-			fifo--;
+			while (fifo != 0);
 		}
-		while (fifo != 0);
 		spin_unlock_irqrestore(&hardware_lock, hw_flags);
 		spin_unlock_irqrestore(&timer_lock, flags);
 		
@@ -681,15 +765,33 @@ static int init_hardware(void)
 	outb(IT87_CIR_BAUDRATE_DIVISOR % 0x100, io+IT87_CIR_BDLR);
 	outb(IT87_CIR_BAUDRATE_DIVISOR / 0x100, io+IT87_CIR_BDHR);
 	/* Baudrate Register off, define IRQs: Input only */
-	outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RDAIE, io + IT87_CIR_IER);
-	/* RX: HCFS=0, RXDCR = 001b (35,6..40,3 kHz), RXEN=1 */
+	if (digimatrix) {
+		outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RFOIE, io + IT87_CIR_IER);
+		/* RX: HCFS=0, RXDCR = 001b (33,75..38,25 kHz), RXEN=1 */
+	}
+	else {
+		outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RDAIE, io + IT87_CIR_IER);
+		/* RX: HCFS=0, RXDCR = 001b (35,6..40,3 kHz), RXEN=1 */
+	}
 	it87_rcr = (IT87_CIR_RCR_RXEN & it87_RXEN_mask) | 0x1;
 	if (it87_enable_demodulator)
 		it87_rcr |= IT87_CIR_RCR_RXEND;
 	outb(it87_rcr, io + IT87_CIR_RCR);
-	/* TX: 38kHz, 13,3us (pulse-width */
-	outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x06,
-	     io + IT87_CIR_TCR2);
+	if (digimatrix) {
+		/* Set FIFO depth to 1 byte, and disable TX */
+		outb(inb(io + IT87_CIR_TCR1) |  0x00,
+		     io + IT87_CIR_TCR1);
+
+		/* TX: it87_freq (36kHz), 
+		   'reserved' sensitivity setting (0x00) */
+		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x00,
+		     io + IT87_CIR_TCR2);
+	}
+	else {
+		/* TX: 38kHz, 13,3us (pulse-width */
+		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x06,
+		     io + IT87_CIR_TCR2);
+	}
 	spin_unlock_irqrestore(&hardware_lock, flags);
 	return 0;
 }
@@ -734,6 +836,7 @@ static void it87_write(unsigned char port,
 
 static int init_port(void)
 {
+	unsigned long hw_flags;
 	int retval = 0;
 	
 	unsigned char init_bytes[4] = {IT87_INIT};
@@ -787,7 +890,7 @@ static int init_port(void)
 		io = it87_io;
 	
 	it87_irq = it87_read(IT87_CIR_IRQ);
-	if (it87_irq == 0) {
+	if (digimatrix || it87_irq == 0) {
 		if (irq == 0)
 			irq = IT87_CIR_DEFAULT_IRQ;
 		printk(KERN_INFO LIRC_DRIVER_NAME
@@ -796,21 +899,19 @@ static int init_port(void)
 		it87_write(IT87_CIR_IRQ, irq);
 	}
 	else
-		irq = it87_irq;
-	
 	{
-		unsigned long hw_flags;
-
-		spin_lock_irqsave(&hardware_lock, hw_flags);
-		/* reset */
-		outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
-		/* fifo clear */
-		outb(IT87_CIR_TCR1_FIFOCLR |
-		     /*	     IT87_CIR_TCR1_ILE | */
-		     IT87_CIR_TCR1_TXRLE |
-		     IT87_CIR_TCR1_TXENDF, io+IT87_CIR_TCR1);
-		spin_unlock_irqrestore(&hardware_lock, hw_flags);
+		irq = it87_irq;
 	}
+
+	spin_lock_irqsave(&hardware_lock, hw_flags);
+	/* reset */
+	outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
+	/* fifo clear */
+	outb(IT87_CIR_TCR1_FIFOCLR |
+	     /*	     IT87_CIR_TCR1_ILE | */
+	     IT87_CIR_TCR1_TXRLE |
+	     IT87_CIR_TCR1_TXENDF, io+IT87_CIR_TCR1);
+	spin_unlock_irqrestore(&hardware_lock, hw_flags);
 	
 	/* get I/O port access and IRQ line */
 	if (request_region(io, 8, LIRC_DRIVER_NAME) == NULL)
@@ -924,7 +1025,11 @@ module_param(io, int, 0444);
 MODULE_PARM_DESC(io, "I/O base address (default: 0x310)");
 
 module_param(irq, int, 0444);
+#ifdef LIRC_IT87_DIGIMATRIX
+MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 9)");
+#else
 MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
+#endif
 
 module_param(it87_enable_demodulator, bool, 0444);
 MODULE_PARM_DESC(it87_enable_demodulator, 
@@ -932,6 +1037,25 @@ MODULE_PARM_DESC(it87_enable_demodulator,
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+module_param(digimatrix, bool, 0644);
+#ifdef LIRC_IT87_DIGIMATRIX
+MODULE_PARM_DESC(digimatrix, 
+	"Asus Digimatrix it87 compat. enable/disable (1/0), default: 1");
+#else
+MODULE_PARM_DESC(digimatrix, 
+	"Asus Digimatrix it87 compat. enable/disable (1/0), default: 0");
+#endif
+
+
+module_param(it87_freq, int, 0444);
+#ifdef LIRC_IT87_DIGIMATRIX
+MODULE_PARM_DESC(it87_freq,
+    "Carrier demodulator frequency (kHz), (default: 36)");
+#else
+MODULE_PARM_DESC(it87_freq,
+    "Carrier demodulator frequency (kHz), (default: 38)");
+#endif
 
 EXPORT_NO_SYMBOLS;
 
