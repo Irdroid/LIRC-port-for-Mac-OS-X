@@ -1,4 +1,7 @@
 0.7.2-CVS: future
+  * bug fixes for Streamzap driver:
+    - device stops responding in some situations
+    - one pulse was dropped from output in certain situations
   * added support for Sound Blaster Extigy/Audigy 2 NX (Clemens Ladisch)
   * added support for Remotec Multimedia PC Remote BW6130 (Maik Freudenberg)
 

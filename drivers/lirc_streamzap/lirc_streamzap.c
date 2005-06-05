@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.11 2005/05/29 10:15:49 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.12 2005/06/05 14:59:07 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.11 $"
+#define DRIVER_VERSION	"$Revision: 1.12 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -152,7 +152,8 @@ struct usb_streamzap {
 	struct timeval          signal_last;
 	struct timeval          signal_start;
 	enum StreamzapDecoderState decoder_state;
-	unsigned long           flush_jiffies;
+	struct timer_list	flush_timer;
+	int                     flush;
 };
 
 
@@ -196,6 +197,13 @@ static void stop_timer(struct usb_streamzap *sz)
 	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
+static void flush_timeout(unsigned long arg)
+{
+	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
+	
+	/* finally start accepting data */
+	sz->flush = 0;
+}
 static void delay_timeout(unsigned long arg)
 {
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
@@ -382,7 +390,7 @@ static void usb_streamzap_irq(struct urb *urb)
 	}
 
 	dprintk("received %d", sz->plugin.minor, urb->actual_length);
-	if(sz->flush_jiffies < jiffies) for (i=0; i < urb->actual_length; i++)
+	if(!sz->flush) for (i=0; i < urb->actual_length; i++)
 	{
 		dprintk("%d: %x", sz->plugin.minor,
 			i, (unsigned char) sz->buf_in[i]);
@@ -600,6 +608,9 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->timer_running = 0;
 	spin_lock_init(&sz->timer_lock);
 
+	init_timer(&sz->flush_timer);
+	sz->flush_timer.function = flush_timeout;
+	sz->flush_timer.data = (unsigned long) sz;
 	/***************************************************
 	 * Complete final initialisations
 	 */
@@ -691,7 +702,10 @@ static int streamzap_use_inc(void *data)
 	while(!lirc_buffer_empty(&sz->delay_buf))
 		lirc_buffer_remove_1(&sz->delay_buf);
 		
-	sz->flush_jiffies = jiffies + HZ;
+	sz->flush_timer.expires = jiffies + HZ;
+	sz->flush = 1;
+	add_timer(&sz->flush_timer);
+
 	sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
 	if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
@@ -717,6 +731,12 @@ static void streamzap_use_dec(void *data)
                 return;
         }
         dprintk("set use dec", sz->plugin.minor);
+	
+	if(sz->flush)
+	{
+		sz->flush = 0;
+		del_timer_sync(&sz->flush_timer);
+	}
 	
 	stop_timer(sz);
 	
