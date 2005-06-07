@@ -495,8 +495,9 @@
     <P>
       This module receives scan codes from the GPIO register of bt8[47]8
       chips using polling or interrupts if the card supports this. It is a
-      "plugin" for the <em>lirc_dev</em> module. It loads <em>bttv</em> and
-      <em>lirc_dev</em> modules if they are not loaded yet.<BR>
+      &quot;plugin&quot; for the <em>lirc_dev</em> module. It loads
+      <em>bttv</em> and <em>lirc_dev</em> modules if they are not
+      loaded yet.<BR>
     </P>
 
     <P>
@@ -519,9 +520,10 @@
 	bits from GPIO value<BR> If this parameter is equal to 0 then
 	the module tries to autodetect the TV card and the remaining
 	parameters are ignored.</LI>
-      <LI><B>gpio_lock_mask</B> (0) - if this value "anded" with GPIO
-	value is non zero than it indicates that scan code is not
-	ready (value of 0 of this parameter disables checking)</LI>
+      <LI><B>gpio_lock_mask</B> (0) - if this value &quot;anded&quot;
+	with GPIO value is non zero than it indicates that scan code
+	is not ready (value of 0 of this parameter disables
+	checking)</LI>
       <LI><B>gpio_xor_mask</B> (0) - bitmask applied (by xor
 	operation) to GPIO value before lock_mask is checked</LI>
       <LI><B>soft_gap</B> (0) - minimal gap (in milliseconds) between
