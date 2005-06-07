@@ -117,7 +117,7 @@ Supported drivers:
       might be done automatically if you are using devfs or sysfs):
     </P>
 <pre>
-> ls -l /dev/lirc*
+&gt; ls -l /dev/lirc*
 crw-r--r--    1 root     root      61,   0 Apr 25  2001 /dev/lirc
 crw-r--r--    1 root     root      61,   1 Nov  6 19:24 /dev/lirc1
 srw-rw-rw-    1 root     root            0 Dez 19 09:44 /dev/lircd
@@ -125,10 +125,10 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
 </pre>
     <P>
       You can create new entries by running:
-<pre>
-> mknod /dev/lirc2 c 61 2
-</pre>
     </P>
+<pre>
+&gt; mknod /dev/lirc2 c 61 2
+</pre>
     <P>
       For each device you want to use you have to start an individual
       lircd instance. If you want to receive events from all receivers
@@ -137,9 +137,9 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
       e.g. like this:
     </P>
 <pre>
-> lircd --driver=default --device=/dev/lirc1 --output=/dev/lircd1 \
+&gt; lircd --driver=default --device=/dev/lirc1 --output=/dev/lircd1 \
     --pidfile=/var/run/lircd1.pid --listen
-> lircd --driver=default --device=/dev/lirc --output=/dev/lircd \
+&gt; lircd --driver=default --device=/dev/lirc --output=/dev/lircd \
     --pidfile=/var/run/lircd.pid --connect=localhost:8765
 </pre>
     <P>
@@ -157,7 +157,7 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
       being received, just use irw providing the according socket
       interface on the command line:
 <pre>
-> irw /dev/lircd1
+&gt; irw /dev/lircd1
 </pre>
     <P>
       Also using a special lircd instance to send infra-red commands
@@ -218,11 +218,11 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
     </P>
     
     <PRE>
-    Section "XInput"
-        Subsection "Mouse"
-            Protocol    "IntelliMouse"
-            Device      "/dev/lircm"
-            DeviceName  "Remote"
+    Section &quot;XInput&quot;
+        Subsection &quot;Mouse&quot;
+            Protocol    &quot;IntelliMouse&quot;
+            Device      &quot;/dev/lircm&quot;
+            DeviceName  &quot;Remote&quot;
             AlwaysCore
         EndSubsection
     EndSection</PRE>
@@ -259,23 +259,23 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
       addition to your normal one.
     </P>
     <PRE>
-Section "InputDevice"
-        Identifier  "LIRC-Mouse"
-        Driver      "mouse"
-        Option      "Device" "/dev/lircm"
-        Option      "Protocol" "IntelliMouse"
-        Option      "SendCoreEvents"
-        Option      "Buttons" "5"
-        Option      "ZAxisMapping" "4 5"
+Section &quot;InputDevice&quot;
+        Identifier  &quot;LIRC-Mouse&quot;
+        Driver      &quot;mouse&quot;
+        Option      &quot;Device&quot; &quot;/dev/lircm&quot;
+        Option      &quot;Protocol&quot; &quot;IntelliMouse&quot;
+        Option      &quot;SendCoreEvents&quot;
+        Option      &quot;Buttons&quot; &quot;5&quot;
+        Option      &quot;ZAxisMapping&quot; &quot;4 5&quot;
 EndSection</PRE>
     
     <P>
       And add a line to the ServerLayout section like this:
     </P>
     <PRE>
-Section "ServerLayout"
+Section &quot;ServerLayout&quot;
         ...
-        InputDevice    "LIRC-Mouse"           &lt;-- add this line
+        InputDevice    &quot;LIRC-Mouse&quot;           &lt;-- add this line
 EndSection</PRE>
 
     <H3>gpm</H3>
@@ -477,10 +477,10 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       </DD>
       <DT>delay</DT>
       <DD>tells the program to ignore the specified number of key repeats
-	before using the "repeat" configuration directive above. This is
-	used to prevent double triggers of events when using a fast repeat
-	rate. A value of zero, which also is the default, will disable the
-	delay function.
+	before using the &quot;repeat&quot; configuration directive
+	above. This is used to prevent double triggers of events when
+	using a fast repeat rate. A value of zero, which also is the
+	default, will disable the delay function.
       </DD>
       <DT>config</DT>
       <DD>is the string that will be passed to the according
@@ -586,7 +586,7 @@ include ~/.lirc/xawtv</PRE>
         button = MENU_DOWN
         prog   = irexec
         repeat = 0
-        config = echo "Hello world!"
+        config = echo &quot;Hello world!&quot;
     end</PRE>
     <P>
       If you have saved this as <em>.lircrc</em> in your home

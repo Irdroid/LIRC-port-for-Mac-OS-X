@@ -9,7 +9,7 @@ S |  | 'gpm -t msc -m /dev/lircm' or a well configured X    |
 O |  | (see section 'Configuring lircmd') for details       |
 F |  +--------------+---------------------------------------+
 T |                 |
-W |   /dev/lircm (named pipe (FIFO) ==> one connection)
+W |   /dev/lircm (named pipe (FIFO) ==&gt; one connection)
 A |                 |
 R |     +-----------+-----------+   +-------------------------------+
 E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
@@ -19,7 +19,7 @@ E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
   |                 |                           |
   |                 +-------------+-------------+
   |                               |
-  |                       /dev/lircd (socket ==> multiple connections)
+  |                       /dev/lircd (socket ==&gt; multiple connections)
   |                               |
 S |              +----------------+--------------------------+
 O |              | decoder daemon (lircd), irrecord or mode2 |    TCP/IP
@@ -34,7 +34,7 @@ E |                                 |
   |                                 |
   +---------------------------------+----------------------------------
   | Kernel space                    |              (character device
-  |                                 |                  driver ==>
+  |                                 |                  driver ==&gt;
   |                    +------------+----------+    one connection)
   |                    |                       |  
   |                /dev/lirc               /dev/ttySx
@@ -307,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      &#36;Id: irexec.c,v 5.2 2000/02/02 20:28:42 columbus Exp $      */
+/*      $Id: technical.html,v 1.25 2005/06/07 22:35:16 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
