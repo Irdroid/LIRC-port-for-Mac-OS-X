@@ -62,3 +62,81 @@ begin remote
 
 end remote
 
+#
+# this config file was automatically generated
+# using lirc-0.7.0(dvico) on Sat Jun 18 00:56:01 2005
+#
+# contributed by anonymous
+#
+# brand:                       DVICO
+# model no. of remote control: MCE Remote
+#
+
+begin remote
+
+  name           DVICO_MCE
+  bits           32
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x0
+  post_data_bits  8
+  post_data      0x0
+  gap          195956
+  toggle_bit      0
+
+
+      begin codes
+          ok                       0x0000000000FE5E00
+          dtv                      0x0000000000FE0200
+          mp3                      0x0000000000FE0E00
+          dvd                      0x0000000000FE1A00
+          cpf                      0x0000000000FE1E00
+          setup                    0x0000000000FE1600
+          tv_onoff                 0x0000000000FE4600
+          guide                    0x0000000000FE0A00
+          back                     0x0000000000FE4900
+          more                     0x0000000000FE5900
+          dvd_menu                 0x0000000000FE4D00
+          alt_tab                  0x0000000000FE5500
+          replay                   0x0000000000FE0F00
+          skip                     0x0000000000FE1200
+          up                       0x0000000000FE5100
+          down                     0x0000000000FE5300
+          left                     0x0000000000FE5B00
+          right                    0x0000000000FE5F00
+          start                    0x0000000000FE4200
+          vol_up                   0x0000000000FE1500
+          vol_down                 0x0000000000FE0500
+          ch_up                    0x0000000000FE1100
+          ch_down                  0x0000000000FE0900
+          snapshot                 0x0000000000FE5200
+          live                     0x0000000000FE5A00
+          folder_open              0x0000000000FE1900
+          1                        0x0000000000FE0B00
+          2                        0x0000000000FE1700
+          3                        0x0000000000FE1B00
+          4                        0x0000000000FE0700
+          5                        0x0000000000FE5000
+          6                        0x0000000000FE5400
+          7                        0x0000000000FE4800
+          8                        0x0000000000FE4C00
+          9                        0x0000000000FE5800
+          0                        0x0000000000FE0300
+          aspect                   0x0000000000FE1300
+          fullscreen               0x0000000000FE1F00
+          rewind                   0x0000000000FE4300
+          playpause                0x0000000000FE4700
+          fastforward              0x0000000000FE4F00
+          stop                     0x0000000000FE0D00
+          mute                     0x0000000000FE5700
+          record                   0x0000000000FE0100
+	  white_onoff              0x0000000000FE4E00
+      end codes
+
+end remote
+
+
