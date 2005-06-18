@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.19 2005/04/23 12:08:45 lirc Exp $      */
+/*      $Id: config_file.c,v 5.20 2005/06/18 20:39:45 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -444,8 +444,18 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 			return 0;
 		}
 		rem->bits_in_byte=val[0]-'0';
-		if(toupper(val[1])!='N')
+		switch(toupper(val[1]))
 		{
+		case 'N':
+			rem->parity = IR_PARITY_NONE;
+			break;
+		case 'E':
+			rem->parity = IR_PARITY_EVEN;
+			break;
+		case 'O':
+			rem->parity = IR_PARITY_ODD;
+			break;
+		default:
 			logprintf(LOG_ERR,"error in configfile line %d:",
 				  line);
 			logprintf(LOG_ERR,"unsupported parity mode");

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.3 2005/04/23 12:08:46 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.4 2005/06/18 20:39:45 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -87,6 +87,10 @@ struct ir_ncode {
 #define REPEAT_MAX 600
 
 #define DEFAULT_FREQ 38000
+
+#define IR_PARITY_NONE 0
+#define IR_PARITY_EVEN 1
+#define IR_PARITY_ODD  2
 
 struct ir_remote 
 {

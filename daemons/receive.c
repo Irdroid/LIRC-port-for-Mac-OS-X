@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.27 2005/03/27 11:55:07 lirc Exp $      */
+/*      $Id: receive.c,v 5.28 2005/06/18 20:39:45 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -178,6 +178,13 @@ inline void unget_rec_buffer(int count)
 			&(PULSE_MASK);
 		}
 	}
+}
+
+inline void unget_rec_buffer_delta(lirc_t delta)
+{
+	rec_buffer.rptr--;
+	rec_buffer.sum-=delta&(PULSE_MASK);
+	rec_buffer.data[rec_buffer.rptr]=delta;
 }
 
 inline lirc_t get_next_pulse(lirc_t maxusec)
@@ -732,9 +739,11 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 	else if(is_serial(remote))
 	{
 		int received;
-		int space, start_bit, stop_bit;
-		lirc_t delta,origdelta,pending,expecting;
+		int space, start_bit, stop_bit, parity_bit;
+		int parity;
+		lirc_t delta,origdelta,pending,expecting, gap_delta;
 		lirc_t base, stop;
+		lirc_t max_space, max_pulse;
 		
 		base=1000000/remote->baud;
 		
@@ -745,26 +754,34 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 		space=(rec_buffer.pendingp==0); /* expecting space ? */
 		start_bit=0;
 		stop_bit=0;
+		parity_bit=0;
 		delta=origdelta=0;
 		stop=base*remote->stop_bits/2;
+		parity=0;
+		gap_delta=0;
 		
-		while(received<bits)
+		max_space = remote->sone*remote->bits_in_byte+stop;
+		max_pulse = remote->pzero*(1+remote->bits_in_byte);
+		if(remote->parity != IR_PARITY_NONE)
+		{
+			parity_bit = 1;
+			max_space += remote->sone;
+			max_pulse += remote->pzero;
+			bits += bits/remote->bits_in_byte;
+		}
+		
+		while(received<bits || stop_bit)
 		{
 			if(delta==0)
 			{
 				delta=space ?
-					get_next_space(remote->sone*
-						       remote->bits_in_byte+
-						       base*remote->stop_bits/2):
-					get_next_pulse(remote->pzero*
-						       remote->bits_in_byte);
+					get_next_space(max_space):
+					get_next_pulse(max_pulse);
 				if(delta==0 && space &&
-				   received+remote->bits_in_byte>=bits)
+				   received+remote->bits_in_byte+parity_bit>=bits)
 				{
 					/* open end */
-					delta=remote->sone*
-						remote->bits_in_byte+
-						base*remote->stop_bits/2;
+					delta=max_space;
 				}
 				origdelta=delta;
 			}
@@ -776,26 +793,29 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			}
 			pending=(space ?
 				 rec_buffer.pendings:rec_buffer.pendingp);
-			if(delta<=pending)
+			if(expect(remote, delta, pending))
 			{
-				if(!expect(remote, delta, pending))
-				{
-					LOGPRINTF(1,"failed before bit %d",
-						  received+1);
-					return((ir_code) -1);
-				}
 				delta=0;
+			}
+			else if(delta>pending)
+			{
+				delta-=pending;
 			}
 			else
 			{
-				delta-=pending;
+				LOGPRINTF(1,"failed before bit %d",
+					  received+1);
+				return((ir_code) -1);
 			}
 			if(pending>0)
 			{
 				if(stop_bit)
 				{
+					LOGPRINTF(5, "delta: %lu", delta);
+					gap_delta = delta;
 					delta=0;
 					set_pending_pulse(base);
+					set_pending_space(0);
 					stop_bit=0;
 					space=0;
 					LOGPRINTF(3,"stop bit found");
@@ -819,15 +839,28 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 				received++;
 				code<<=1;
 				code|=space;
+				parity^=space;
 				LOGPRINTF(2,"adding %d",space);
-				if(received%remote->bits_in_byte==0)
+				if(received%(remote->bits_in_byte+parity_bit)==0)
 				{
 					ir_code temp;
 					
-					temp=code>>remote->bits_in_byte;
+					if((remote->parity == IR_PARITY_EVEN && parity) ||
+					   (remote->parity == IR_PARITY_ODD && !parity))
+					{
+						LOGPRINTF(1, "parity error "
+							  "after %d bits",
+							  received+1);
+						return((ir_code) -1);
+					}
+					parity = 0;
+					
+					/* parity bit is filtered out */
+					temp=code>>(remote->bits_in_byte+parity_bit);
 					code=temp<<remote->bits_in_byte|
-						reverse(code,remote->bits_in_byte);
-
+						reverse(code>>parity_bit,
+							remote->bits_in_byte);
+					
 					if(space && delta==0)
 					{
 						LOGPRINTF(1,"failed at stop "
@@ -855,6 +888,8 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 				space=(space ? 0:1);
 			}
 		}
+		if(gap_delta) unget_rec_buffer_delta(gap_delta);
+		set_pending_pulse(0);
 		set_pending_space(0);
 		return code;
 	}
