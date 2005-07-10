@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.6 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.7 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -56,6 +56,7 @@ struct hardware hw_irman=
 	NULL,                     /* send_func */
 	irman_rec,                /* rec_func */
 	irman_decode,             /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"irman"
 };

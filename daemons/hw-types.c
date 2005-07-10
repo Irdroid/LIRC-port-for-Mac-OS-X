@@ -56,6 +56,7 @@ struct hardware hw_null=
 	NULL,               /* send_func */
 	NULL,               /* rec_func */
 	NULL,               /* decode_func */
+	NULL,               /* ioctl_func */
 	NULL,		    /* readdata */
 	"null",		    /* name */
 };

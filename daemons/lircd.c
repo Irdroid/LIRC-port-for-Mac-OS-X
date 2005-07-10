@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.56 2005/03/24 22:25:34 lirc Exp $      */
+/*      $Id: lircd.c,v 5.57 2005/07/10 08:34:12 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -105,6 +105,7 @@ struct protocol_directive directives[] =
 	{"SEND_START",send_start},
 	{"SEND_STOP",send_stop},
 	{"VERSION",version},
+	{"SET_TRANSMITTERS",set_transmitters},
 	{NULL,NULL}
 	/*
 	{"DEBUG",debug},
@@ -161,6 +162,9 @@ int daemonized=0;
 
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
+
+/* set_transmitters only supports 32 bit int */
+#define MAX_TX (CHAR_BIT*sizeof(unsigned long))
 
 inline int max(int a,int b)
 {
@@ -1206,6 +1210,62 @@ int list(int fd,char *message,char *arguments)
 		return(send_remote(fd,message,remote));
 	}
 	return(send_name(fd,message,code));
+}
+
+int set_transmitters(int fd,char *message,char *arguments)
+{
+	char *next_arg=NULL,*end_ptr;
+	unsigned long next_tx_int;
+	unsigned long next_tx_hex;
+	unsigned int channels=0;
+	int retval=0;
+	int i;
+	
+	if(arguments==NULL) goto string_error;
+	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
+					      "support sending\n"));
+	if(hw.ioctl_func == NULL ||
+	   !(hw.features & LIRC_CAN_SET_TRANSMITTER_MASK))
+	{
+		return(send_error(fd,message,"hardware does not support "
+				  "multiple transmitters\n"));
+	}
+	
+	next_arg=strtok(arguments,WHITE_SPACE);
+	if (next_arg==NULL) goto string_error;
+	do
+	{
+		next_tx_int=-1;
+		next_tx_int = strtoul(next_arg,&end_ptr,10);
+		if(*end_ptr || (next_tx_int == ULONG_MAX && errno == ERANGE))
+		{
+			return(send_error(fd,message, "invalid argument\n"));
+		}
+		if(next_tx_int > MAX_TX)
+		{
+			return(send_error(fd, message, "cannot support more "
+					  "than %d transmitters\n", MAX_TX));
+		}
+		next_tx_hex=1;
+		for(i=1; i<next_tx_int; i++) next_tx_hex = next_tx_hex << 1;
+		channels |= next_tx_hex;
+	}while ((next_arg=strtok(NULL,WHITE_SPACE))!=NULL);
+	
+	retval = hw.ioctl_func(LIRC_SET_TRANSMITTER_MASK, channels);
+	if(retval<0)
+	{
+		return(send_error(fd, message, "error - could not set "
+				  "transmitters\n"));
+	}
+	if (retval>0)
+	{
+		return(send_error(fd, message, "error - maximum of %d "
+				  "transmitters\n", retval));
+	}
+	return(send_success(fd,message));
+	
+string_error:
+	return(send_error(fd,message,"no arguments given\n"));
 }
 
 int send_once(int fd,char *message,char *arguments)

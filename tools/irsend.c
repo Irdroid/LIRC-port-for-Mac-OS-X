@@ -1,4 +1,4 @@
-/* 	$Id: irsend.c,v 5.2 2003/05/01 20:20:01 lirc Exp $	 */
+/* 	$Id: irsend.c,v 5.3 2005/07/10 08:34:13 lirc Exp $	 */
 
 /*
   
@@ -281,7 +281,7 @@ int main(int argc,char **argv)
 			return(EXIT_FAILURE);
 		}
 	}
-	if (optind + 3 > argc)
+	if (optind + 2 > argc)
 	{
 		fprintf(stderr,"%s: not enough arguments\n",progname);
 		return(EXIT_FAILURE);
@@ -325,24 +325,65 @@ int main(int argc,char **argv)
 
 
 	directive=argv[optind++];
-	remote=argv[optind++];
-	while(optind<argc)
+
+	if(strcasecmp(directive,"set_transmitters")==0)
 	{
 		code=argv[optind++];
-		
-		if(strlen(directive)+strlen(remote)+strlen(code)+3<PACKET_SIZE)
+		if (strlen(directive)+strlen(code)+2<PACKET_SIZE)
 		{
-			sprintf(buffer,"%s %s %s\n",directive,remote,code);
-			
-			if(send_packet(fd,buffer)==-1)
-			{
-				exit(EXIT_FAILURE);
-			}
+			sprintf(buffer,"%s %s",directive,code);
 		}
 		else
 		{
 			fprintf(stderr,"%s: input too long\n",progname);
 			exit(EXIT_FAILURE);
+		}
+		while(optind<argc)
+		{
+			code=argv[optind++];
+			if (strlen(buffer)+strlen(code)+2<PACKET_SIZE)
+			{
+				sprintf(buffer+strlen(buffer)," %s",code);
+			}
+			else
+			{
+				fprintf(stderr,"%s: input too long\n",progname);
+				exit(EXIT_FAILURE);
+			}
+		}
+		strcat(buffer,"\n");
+		if(send_packet(fd,buffer)==-1)
+		{
+			exit(EXIT_FAILURE);
+		}
+	}
+	else
+	{
+		remote=argv[optind++];
+
+		if (optind==argc)
+		{
+			fprintf(stderr,"%s: not enough arguments\n",progname);
+			exit(EXIT_FAILURE);
+		}
+		while(optind<argc)
+		{
+			code=argv[optind++];
+		
+			if(strlen(directive)+strlen(remote)+strlen(code)+3<PACKET_SIZE)
+			{
+				sprintf(buffer,"%s %s %s\n",directive,remote,code);
+			
+				if(send_packet(fd,buffer)==-1)
+				{
+					exit(EXIT_FAILURE);
+				}
+			}
+			else
+			{
+				fprintf(stderr,"%s: input too long\n",progname);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 	close(fd);

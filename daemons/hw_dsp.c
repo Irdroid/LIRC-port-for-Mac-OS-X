@@ -1,4 +1,4 @@
-/*      $Id: hw_dsp.c,v 5.3 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: hw_dsp.c,v 5.4 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dsp.c ****************************************************************
@@ -174,12 +174,13 @@ struct hardware hw_dsp=
 	0,                  /* send_mode */
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
-	dsp_init,       /* init_func */
-	NULL,		   /* config_func */
-	dsp_deinit,     /* deinit_func */
-	NULL,		   /* send_func */
-	dsp_rec,        /* rec_func */
-	dsp_decode,     /* decode_func */
+	dsp_init,           /* init_func */
+	NULL,               /* config_func */
+	dsp_deinit,         /* deinit_func */
+	NULL,               /* send_func */
+	dsp_rec,            /* rec_func */
+	dsp_decode,         /* decode_func */
+	NULL,               /* ioctl_func */
 	dsp_readdata,
 	"dsp"
 };

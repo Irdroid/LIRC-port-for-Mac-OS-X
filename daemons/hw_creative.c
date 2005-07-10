@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.6 2003/02/16 19:00:55 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.7 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -81,6 +81,7 @@ struct hardware hw_creative=
 	NULL,                     /* send_func */
 	creative_rec,             /* rec_func */
 	creative_decode,          /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"creative"
 };

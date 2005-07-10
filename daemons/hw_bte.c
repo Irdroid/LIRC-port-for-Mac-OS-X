@@ -85,6 +85,7 @@ struct hardware hw_bte=
 #endif
 	bte_rec,                  /* rec_func */
 	bte_decode,               /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"bte"
 };

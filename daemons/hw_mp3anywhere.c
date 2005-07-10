@@ -54,6 +54,7 @@ struct hardware hw_mp3anywhere=
 	NULL,                     	/* send_func */
 	mp3anywhere_rec,             	/* rec_func */
 	mp3anywhere_decode,          	/* decode_func */
+	NULL,                           /* ioctl_func */
 	NULL,                     	/* readdata */
 	"mp3anywhere"
 };

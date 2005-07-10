@@ -1,4 +1,4 @@
-/*      $Id: hw_pcmak.c,v 5.1 2004/07/24 15:36:14 lirc Exp $      */
+/*      $Id: hw_pcmak.c,v 5.2 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pcmak.c ***********************************************************
@@ -55,6 +55,7 @@ struct hardware hw_pcmak=
 	NULL,                     /* send_func */
 	pcmak_rec,                /* rec_func */
 	pcmak_decode,             /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"pcmak"
 };

@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.14 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: hw_logitech.c,v 1.15 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -55,6 +55,7 @@ struct hardware hw_logitech=
 	NULL,                     /* send_func */
 	logitech_rec,             /* rec_func */
 	logitech_decode,          /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"logitech"
 };

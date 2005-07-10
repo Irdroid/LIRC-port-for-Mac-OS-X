@@ -55,6 +55,7 @@ struct hardware hw_silitek=
 	NULL,                     /* send_func */
 	silitek_rec,              /* rec_func */
 	silitek_decode,           /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"silitek"
 };

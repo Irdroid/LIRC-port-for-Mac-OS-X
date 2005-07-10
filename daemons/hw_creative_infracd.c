@@ -1,4 +1,4 @@
-/*      $Id: hw_creative_infracd.c,v 5.3 2003/11/10 15:48:48 lirc Exp $      */
+/*      $Id: hw_creative_infracd.c,v 5.4 2005/07/10 08:34:11 lirc Exp $      */
 
 /*
  * Remote control driver for the Creative iNFRA CDrom
@@ -56,6 +56,7 @@ struct hardware hw_creative_infracd = {
 	NULL,			/* send_func */
 	creative_infracd_rec,	/* rec_func */
 	creative_infracd_decode,/* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,
 	"creative_infracd"
 };

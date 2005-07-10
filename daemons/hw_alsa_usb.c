@@ -1,4 +1,4 @@
-/*      $Id: hw_alsa_usb.c,v 5.1 2005/05/29 11:54:52 lirc Exp $   */
+/*      $Id: hw_alsa_usb.c,v 5.2 2005/07/10 08:34:11 lirc Exp $   */
 
 /****************************************************************************
  ** hw_alsa_usb.c ***********************************************************
@@ -45,6 +45,7 @@ struct hardware hw_alsa_usb = {
 	NULL,			/* send_func */
 	rec,			/* rec_func */
 	decode,			/* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"alsa_usb"
 };

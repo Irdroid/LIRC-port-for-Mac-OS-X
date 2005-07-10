@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.30 2005/03/27 10:51:12 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.31 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -76,6 +76,7 @@ struct hardware hw_default=
 	default_send,       /* send_func */
 	default_rec,        /* rec_func */
 	default_decode,     /* decode_func */
+	default_ioctl,      /* ioctl_func */
 	default_readdata,
 	"default"
 };
@@ -577,4 +578,9 @@ static int default_config_frequency()
 		return(0);
 	}
 	return(1);
+}
+
+int default_ioctl(unsigned int cmd, unsigned long arg)
+{
+	return ioctl(hw.fd, cmd, &arg);
 }

@@ -1,4 +1,4 @@
-/*      $Id: hw_pixelview.c,v 5.14 2001/12/08 15:07:03 lirc Exp $      */
+/*      $Id: hw_pixelview.c,v 5.15 2005/07/10 08:34:12 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pixelview.c **********************************************************
@@ -51,6 +51,7 @@ struct hardware hw_pixelview=
 	NULL,                     /* send_func */
 	pixelview_rec,            /* rec_func */
 	pixelview_decode,         /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"pixelview"
 };

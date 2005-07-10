@@ -9,10 +9,11 @@ of electronic devices such as TV boxes, HiFi sets, etc.
 \fIDIRECTIVE\fR can be:
 .nf
 .RS 3
-\fBSEND_ONCE\fR    - send \fICODE\fR [\fICODE\fR ...] once
-\fBSEND_START\fR   - start repeating \fICODE\fR
-\fBSEND_STOP\fR    - stop repeating \fICODE\fR
-\fBLIST\fR         - list configured remote items
+\fBSEND_ONCE\fR         - send \fICODE\fR [\fICODE\fR ...] once
+\fBSEND_START\fR        - start repeating \fICODE\fR
+\fBSEND_STOP\fR         - stop repeating \fICODE\fR
+\fBLIST\fR              - list configured remote items
+\fBSET_TRANSMITTERS\fR  - set transmitters \fINUM\fR [\fINUM\fR ...]
 .RE
 .fi
 
@@ -23,6 +24,9 @@ configuration file.
 .TP
 \fICODE\fR is the name of a remote control key of \fIREMOTE\fR, as it
 appears in the \fBlircd\fR configuration file.
+
+.TP
+\fINUM\fR is the transmitter number of the hardware device. 
 
 .PP
 For the \fBLIST\fR \fIDIRECTIVE\fR, \fIREMOTE\fR and/or \fICODE\fR
@@ -44,6 +48,8 @@ irsend SEND_ONCE  DenonTuner PROG-SCAN
 irsend SEND_ONCE  OnkyoAmpli VOL-UP VOL-UP VOL-UP VOL-UP
 irsend SEND_START OnkyoAmpli VOL-DOWN ; sleep 3
 irsend SEND_STOP  OnkyoAmpli VOL-DOWN
+irsend SET_TRANSMITTERS 1
+irsend SET_TRANSMITTERS 1 3 4
 .RE
 .fi
 [FILES]

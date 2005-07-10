@@ -80,6 +80,7 @@ struct hardware hw_livedrive_midi = {
 	NULL,			/* send_func */
 	livedrive_rec_midi,	/* rec_func */
 	livedrive_decode,	/* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,
 	"livedrive_midi"
 };

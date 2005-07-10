@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: hw_ea65.c,v 5.2 2004/11/20 13:47:11 lirc Exp $
+ * $Id: hw_ea65.c,v 5.3 2005/07/10 08:34:11 lirc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -63,6 +63,7 @@ struct hardware hw_ea65 =
 	NULL,                  /* send_func      */
 	ea65_receive,          /* rec_func       */
 	ea65_decode,           /* decode_func    */
+	NULL,                  /* ioctl_func     */
 	NULL,                  /* readdata       */
 	"ea65"
 };

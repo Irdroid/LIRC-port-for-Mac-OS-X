@@ -1,4 +1,4 @@
-/*	$Id: hw_audio_alsa.c,v 5.1 2003/12/30 15:26:35 lirc Exp $	*/
+/*	$Id: hw_audio_alsa.c,v 5.2 2005/07/10 08:34:11 lirc Exp $	*/
 
 /****************************************************************************
  ** hw_audio_alsa.c *********************************************************
@@ -518,6 +518,7 @@ struct hardware hw_audio_alsa=
 	NULL,               /* send_func */
 	audio_alsa_rec,     /* rec_func */
 	audio_alsa_decode,  /* decode_func */
+	NULL,               /* ioctl_func */
 	audio_alsa_readdata,
 	"audio_alsa"
 };

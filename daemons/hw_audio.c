@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.1 2003/01/26 21:44:40 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.2 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -357,12 +357,13 @@ struct hardware hw_audio=
 	0,                  /* send_mode */
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
-	audio_init,       	/* init_func */
-	NULL,		   		/* config_func */
-	audio_deinit,     	/* deinit_func */
-	NULL,		   		/* send_func */
-	audio_rec,        	/* rec_func */
-	audio_decode,     	/* decode_func */
+	audio_init,         /* init_func */
+	NULL,		    /* config_func */
+	audio_deinit,       /* deinit_func */
+	NULL,		    /* send_func */
+	audio_rec,          /* rec_func */
+	audio_decode,       /* decode_func */
+	NULL,               /* ioctl_func */
 	audio_readdata,
 	"audio"
 };

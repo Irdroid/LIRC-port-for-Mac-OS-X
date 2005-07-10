@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.12 2003/02/15 09:00:58 lirc Exp $      */
+/*      $Id: lircd.h,v 5.13 2005/07/10 08:34:12 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -73,6 +73,7 @@ int send_remote_list(int fd,char *message);
 int send_remote(int fd,char *message,struct ir_remote *remote);
 int send_name(int fd,char *message,struct ir_ncode *code);
 int list(int fd,char *message,char *arguments);
+int set_transmitters(int fd, char *message, char *arguments);
 int send_once(int fd,char *message,char *arguments);
 int send_start(int fd,char *message,char *arguments);
 int send_stop(int fd,char *message,char *arguments);
@@ -82,7 +83,6 @@ int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);
 int waitfordata(long maxusec);
 void loop(void);
-
 
 struct protocol_directive
 {

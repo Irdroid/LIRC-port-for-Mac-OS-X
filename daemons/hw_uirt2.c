@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2.c,v 5.2 2003/10/26 14:52:45 lirc Exp $      */
+/*      $Id: hw_uirt2.c,v 5.3 2005/07/10 08:34:12 lirc Exp $      */
 
 /****************************************************************************
  ** hw_uirt2.c **************************************************************
@@ -76,6 +76,7 @@ struct hardware hw_uirt2=
 	NULL,                     /* send_func */
 	uirt2_rec,                /* rec_func */
 	uirt2_decode,             /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"uirt2"
 };

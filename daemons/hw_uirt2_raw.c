@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.4 2005/03/07 09:33:48 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.5 2005/07/10 08:34:12 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -90,6 +90,7 @@ struct hardware hw_uirt2_raw =
 	uirt2_send,               /* send_func */
 	uirt2_raw_rec,            /* rec_func */
 	uirt2_raw_decode,         /* decode_func */
+	NULL,                     /* ioctl_func */
 	uirt2_raw_readdata,       /* readdata */
 	"uirt2_raw"
 };

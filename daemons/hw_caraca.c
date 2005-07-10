@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.5 2001/12/08 15:07:03 lirc Exp $   */
+/*      $Id: hw_caraca.c,v 1.6 2005/07/10 08:34:11 lirc Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -57,6 +57,7 @@ struct hardware hw_caraca=
 	NULL,                     /* send_func */
 	caraca_rec,               /* rec_func */
 	caraca_decode             /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"caraca"
 };

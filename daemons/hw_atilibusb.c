@@ -1,4 +1,4 @@
-/*      $Id: hw_atilibusb.c,v 5.1 2004/09/11 19:56:53 lirc Exp $      */
+/*      $Id: hw_atilibusb.c,v 5.2 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_atilibusb.c **********************************************************
@@ -62,6 +62,7 @@ struct hardware hw_atilibusb =
 	NULL,                       /* send_func */
 	ati_rec,                    /* rec_func */
 	receive_decode,             /* decode_func */
+	NULL,                       /* ioctl_func */
 	NULL,                       /* readdata */
 	"atilibusb"
 };

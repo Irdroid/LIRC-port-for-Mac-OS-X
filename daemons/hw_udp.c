@@ -180,6 +180,7 @@ struct hardware hw_udp=
 	NULL,		    /* send_func */
 	udp_rec,            /* rec_func */
 	udp_decode,         /* decode_func */
+	NULL,               /* ioctl_func */
 	udp_readdata,       /* readdata */
 	"udp"
 };

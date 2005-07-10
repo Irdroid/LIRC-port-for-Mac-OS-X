@@ -1,4 +1,4 @@
-/*      $Id: hw_mouseremote.c,v 5.3 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: hw_mouseremote.c,v 5.4 2005/07/10 08:34:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_mouseremote.c ********************************************************
@@ -60,6 +60,7 @@ struct hardware hw_mouseremote=
 	NULL,                     	/* send_func */
 	mouseremote_rec,           	/* rec_func */
 	mouseremote_decode,        	/* decode_func */
+	NULL,                           /* ioctl_func */
 	NULL,                     	/* readdata */
 	"mouseremote"
 };
@@ -77,6 +78,7 @@ struct hardware hw_mouseremote_ps2=
 	NULL,                     	/* send_func */
 	mouseremote_rec,           	/* rec_func */
 	mouseremote_decode,        	/* decode_func */
+	NULL,                           /* ioctl_func */
 	NULL,                     	/* readdata */
 	"mouseremote_ps2"
 };

@@ -37,18 +37,19 @@ static char *hiddev_rec(struct ir_remote *remotes);
 
 struct hardware hw_dvico=
 {
-	"/dev/usb/hiddev0", /* "device" */
+	"/dev/usb/hiddev0",     /* "device" */
 	-1,			/* fd (device) */
 	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
-	LIRC_MODE_LIRCCODE, /* rec_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	32,			/* code_length */
 	hiddev_init,		/* init_func */
 	NULL,			/* config_func */
-	hiddev_deinit,	/* deinit_func */
+	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	hiddev_rec,		/* rec_func */
-	hiddev_decode,	/* decode_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"dvico"
 };
@@ -70,14 +71,15 @@ struct hardware hw_bw6130=
 	-1,			/* fd (device) */
 	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
-	LIRC_MODE_LIRCCODE, /* rec_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	32,			/* code_length */
 	hiddev_init,		/* init_func */
 	NULL,			/* config_func */
-	hiddev_deinit,	/* deinit_func */
+	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	hiddev_rec,		/* rec_func */
-	hiddev_decode,	/* decode_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"bw6130"
 };

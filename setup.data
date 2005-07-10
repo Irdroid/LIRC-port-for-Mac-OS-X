@@ -105,6 +105,7 @@ hw_menu_entry: @hw-pda
 hw_menu_entry: @hw-usb
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
+	cmdir: "COMMANDIR USB Transceiver"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
 	tira: "Home Electronics Tira USB device"
@@ -173,6 +174,7 @@ param_type: \
 	bte \
 	bw6130 \
 	chronos \
+	cmdir \
 	cph03x \
 	cph06x \
 	creative_infracd \
@@ -229,6 +231,7 @@ default_param: \
 	breakoutbox \
 	bw6130 \
 	chronos \
+	cmdir \
 	cph03x \
 	cph06x \
 	creative_infracd \

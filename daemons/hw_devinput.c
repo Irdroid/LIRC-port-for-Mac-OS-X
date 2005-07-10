@@ -55,6 +55,7 @@ struct hardware hw_devinput=
 	NULL,			/* send_func */
 	devinput_rec,		/* rec_func */
 	devinput_decode,	/* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"dev/input"
 };

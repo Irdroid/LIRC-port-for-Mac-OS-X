@@ -80,6 +80,7 @@ struct hardware hw_livedrive_seq = {
 	NULL,			/* send_func */
 	livedrive_rec_seq,	/* rec_func */
 	livedrive_decode,	/* decode_func */
+	NULL,                   /* ioctl_func */
 	NULL,
 	"livedrive_seq"
 };

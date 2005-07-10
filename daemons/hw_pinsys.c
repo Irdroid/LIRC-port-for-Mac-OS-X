@@ -70,6 +70,7 @@ struct hardware hw_pinsys=
 	NULL,                     /* send_func */
 	pinsys_rec,               /* rec_func */
 	pinsys_decode,            /* decode_func */
+	NULL,                     /* ioctl_func */
 	NULL,                     /* readdata */
 	"pinsys"
 };

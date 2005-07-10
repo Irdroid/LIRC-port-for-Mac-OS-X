@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.149 2005/06/05 15:47:57 lirc Exp $
+dnl $Id: configure.in,v 5.150 2005/07/10 08:34:04 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -168,6 +168,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev) \
 	(lirc_dev lirc_atiusb) \
 	(lirc_dev lirc_bt829) \
+	(lirc_dev lirc_cmdir) \
 	(lirc_dev lirc_gpio) \
 	(lirc_dev lirc_i2c) \
 	(lirc_dev lirc_igorplugusb) \
@@ -257,7 +258,7 @@ AC_ARG_WITH(driver,
                           atilibusb, atiusb, audio, avermedia,
                           avermedia_vdomate, avermedia98, bestbuy,
                           bestbuy2, breakoutbox, bte, bw6130, caraca,
-                          chronos, comX, cph06x, creative,
+                          chronos, cmdir, comX, cph06x, creative,
                           creative_infracd, devinput, digimatrix, dsp,
                           dvico, ea65, exaudio, flyvideo, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
@@ -371,6 +372,8 @@ if test "$driver" = "any"; then
 		#hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
 		;;
 	lirc_dev-lirc_atiusb)
+		;;
+	lirc_dev-lirc_cmdir)
 		;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
@@ -583,6 +586,10 @@ if test "$driver" = "chronos"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="chronos/lircd.conf.chronos"
 #  lircmd_conf="chronos/lircmd.conf.chronos"
+fi
+
+if test "$driver" = "cmdir"; then
+  lirc_driver="lirc_dev lirc_cmdir"
 fi
 
 if test "$driver" = "com1"; then
@@ -1074,6 +1081,7 @@ elif test "$lirc_driver" = "any"; then
   lirc_driver="lirc_dev \
 	lirc_atiusb \
 	lirc_bt829 \
+	lirc_cmdir \
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
@@ -1278,6 +1286,7 @@ AC_OUTPUT([
   drivers/Makefile
   drivers/lirc_atiusb/Makefile
   drivers/lirc_bt829/Makefile
+  drivers/lirc_cmdir/Makefile
   drivers/lirc_dev/Makefile
   drivers/lirc_gpio/Makefile
   drivers/lirc_i2c/Makefile
