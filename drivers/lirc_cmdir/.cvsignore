@@ -1,0 +1,10 @@
+.deps
+.lirc_cmdir.o.flags
+.lirc_cmdir.ko.cmd
+.lirc_cmdir.mod.o.cmd
+.lirc_cmdir.o.cmd
+.tmp_versions
+lirc_cmdir.ko
+lirc_cmdir.mod.c
+Makefile.in
+Makefile

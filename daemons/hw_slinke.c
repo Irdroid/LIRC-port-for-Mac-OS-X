@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.8 2002/05/04 09:36:27 lirc Exp $      */
+/*      $Id: hw_slinke.c,v 5.9 2005/07/10 09:28:41 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -101,7 +101,8 @@ struct hardware hw_slinke = {
     NULL,               /* send_func */
     slinke_rec,         /* rec_func */
     slinke_decode,      /* decode_func */
-    slinke_readdata,	/* readdata */
+    NULL,               /* ioctl_func */
+    slinke_readdata,    /* readdata */
     "slinke"
 };
 
