@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.41 2005/03/12 11:15:34 lirc Exp $
+ * $Id: lirc_dev.c,v 1.42 2005/07/11 18:57:44 lirc Exp $
  *
  */
 
@@ -304,6 +304,13 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		}
 	}
 
+	if (p->owner == NULL) {
+		printk(KERN_WARNING "lirc_dev: lirc_register_plugin: "
+				    "no module owner registered\n");
+		err = -EBADRQC;
+		goto out;
+	}
+
 	down(&plugin_lock);
 
 	minor = p->minor;
@@ -522,7 +529,10 @@ static int irctl_open(struct inode *inode, struct file *file)
 	if(ir->p.fops && ir->p.fops->open)
 		return ir->p.fops->open(inode, file);
 
-	down_interruptible(&plugin_lock);
+	if (down_interruptible(&plugin_lock))
+	{
+		return -ERESTARTSYS;
+	}
 
 	if (ir->p.minor == NOPLUG) {
 		up(&plugin_lock);
@@ -551,12 +561,9 @@ static int irctl_open(struct inode *inode, struct file *file)
 		++ir->open;
 		retval = ir->p.set_use_inc(ir->p.data);
 		
-		up(&plugin_lock);
-		
 		if (retval != SUCCESS) {
 			module_put(ir->p.owner);
 			--ir->open;
-			return retval;
 		}
 	}
 	else
@@ -568,9 +575,10 @@ static int irctl_open(struct inode *inode, struct file *file)
 		retval = -ENODEV;
 	}
 
-	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, SUCCESS);
+	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, retval);
+	up(&plugin_lock);
 
-	return SUCCESS;
+	return retval;
 }
 
 /*
@@ -586,7 +594,10 @@ static int irctl_close(struct inode *inode, struct file *file)
 	if(ir->p.fops && ir->p.fops->release)
 		return ir->p.fops->release(inode, file);
 
-	down_interruptible(&plugin_lock);
+	if (down_interruptible(&plugin_lock))
+	{
+		return -ERESTARTSYS;
+	}
 
 	--ir->open;
 	if(ir->attached)
