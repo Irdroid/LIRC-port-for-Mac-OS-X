@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.8 2005/07/04 08:36:05 tjdavies Exp $      */
+/*      $Id: lirc_sasem.c,v 1.9 2005/07/15 11:24:55 tjdavies Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -83,7 +83,7 @@
 #define DEVFS_MODE	S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
 #define DEVFS_NAME	"usb/lcd%d"
 
-#define BUF_CHUNK_SIZE	4
+#define BUF_CHUNK_SIZE	8
 #define BUF_SIZE	128
 
 #define SUCCESS		0
@@ -886,7 +886,7 @@ static void * sasem_probe (struct usb_device * dev, unsigned int intf,
 
 		strcpy (plugin ->name, MOD_NAME);
 		plugin ->minor = -1;
-		plugin ->code_length = 32;
+		plugin ->code_length = 64;
 		plugin ->sample_rate = 0;
 		plugin ->features = LIRC_CAN_REC_LIRCCODE;
 		plugin ->data = context;

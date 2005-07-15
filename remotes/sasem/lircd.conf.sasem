@@ -1,9 +1,8 @@
 #
 # this config file was automatically generated
-# using lirc-0.7.1(sasem) on Thu Jun 23 10:00:47 2005
+# using lirc-0.7.0pre4(sasem) on Mon May 24 03:11:34 2004
 #
 # contributed by Oliver Stabel (oliver.stabel@gmx.de)
-#                Tim Davies (tim@opensystems.net.au)
 #
 # brand: Sasem OnAir
 # model no. of remote control: n/a
@@ -19,61 +18,64 @@
 begin remote
 
   name  lirc_sasem
-  flags	CONST_LENGTH
-  bits           8
+  bits           16
   eps            30
   aeps          100
 
-  one             6125     0
-  zero            0     6125
-  pre_data_bits  24
-  pre_data       0xC807F
-  gap          196000
+  one             0     0
+  zero            0     0
+  pre_data_bits   24
+  pre_data        0x0C807F
+  post_data_bits  24
+  post_data       0x000000
+  gap             196000
   toggle_bit      0
 
 
       begin codes
-          power                    0x00
-          eject                    0x02
-          1                        0x08
-          2                        0x09
-          3                        0x0A
-          4                        0x10
-          5                        0x11
-          6                        0x12
-          7                        0x18
-          8                        0x19
-          9                        0x1A
-          start                    0x40
-          0                        0x41
-          full_down                0x06
-          vol-                     0x0F
-          vol+                     0x0E
-          esc                      0x05
-          up                       0x0B
-          close                    0x07
-          left                     0x03
-          enter                    0x13
-          right                    0x1B
-          prev                     0x0C
-          down                     0x43
-          next                     0x01
-          mute                     0x0D
-          step                     0x04
-          play_pause               0x49
-          stop                     0x48
-          winamp                   0x1E
-          media_player             0x15
-          hdtv                     0x17
-          cd_player                0x16
-          win_dvd                  0x44
-          power_dvd                0x14
-          internet                 0x46
-          email                    0x47
-          a                        0x45
-          b                        0x1D
-          c                        0x1C
-          d                        0x1F
+          1                        0x08F7
+          2                        0x09F6
+          3                        0x0AF5
+          4                        0x10EF
+          5                        0x11EE
+          6                        0x12ED
+          7                        0x18E7
+          8                        0x19E6
+          9                        0x1AE5
+          start                    0x40BF
+          0                        0x41BE
+          full_down                0x06F9
+          vol-                     0x0FF0
+          vol+                     0x0EF1
+          esc                      0x05FA
+          up                       0x0BF4
+          close                    0x07F8
+          left                     0x03FC
+          enter                    0x13EC
+          right                    0x1BE4
+          prev                     0x0CF3
+          down                     0x43BC
+          next                     0x01FE
+          mute                     0x0DF2
+          step                     0x04FB
+          play_pause               0x49B6
+          stop                     0x48B7
+          winamp                   0x1EE1
+          media_player             0x15EA
+          hdtv                     0x17E8
+          cd_player                0x16E9
+          win_dvd                  0x44BB
+          power_dvd                0x14EB
+          internet                 0x46B9
+          email                    0x47B8
+          a                        0x45BA
+          b                        0x1DE2
+          c                        0x1CE3
+          d                        0x1FE0
+          eject                    0x02FD
+          power                    0x00FF
       end codes
 
 end remote
+
+
