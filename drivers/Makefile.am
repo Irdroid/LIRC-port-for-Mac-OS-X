@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.26 2005/02/12 14:20:23 lirc Exp $
+## $Id: Makefile.am,v 5.27 2005/07/18 11:18:22 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -7,9 +7,21 @@
 
 EXTRA_DIST = lirc.h kcompat.h Makefile.kernel Makefile.common
 
-DIST_SUBDIRS = lirc_atiusb lirc_bt829 lirc_dev lirc_gpio lirc_i2c \
-	lirc_igorplugusb lirc_imon lirc_it87 lirc_mceusb lirc_parallel \
-	lirc_sasem lirc_serial lirc_sir lirc_streamzap
+DIST_SUBDIRS = lirc_atiusb \
+	lirc_bt829 \
+	lirc_dev \
+	lirc_gpio \
+	lirc_i2c \
+	lirc_igorplugusb \
+	lirc_imon \
+	lirc_it87 \
+	lirc_mceusb \
+	lirc_mceusb2 \
+	lirc_parallel \
+	lirc_sasem \
+	lirc_serial \
+	lirc_sir \
+	lirc_streamzap
 
 SUBDIRS = @lirc_driver@
 

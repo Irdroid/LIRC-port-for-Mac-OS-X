@@ -119,7 +119,8 @@ hw_menu_entry: @hw-usb
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
 	streamzap: "Streamzap PC Remote"
-	mceusb: "Windows Media Center Remotes"
+	mceusb: "Windows Media Center Remotes (old version, MicroSoft USB ID)"
+	mceusb2: "Windows Media Center Remotes (new version, Philips et al.)"
 
 param_type: \
 	act200l \
@@ -201,6 +202,7 @@ param_type: \
 	livedrive_midi \
 	livedrive_seq \
 	mceusb \
+	mceusb2 \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
@@ -259,6 +261,7 @@ default_param: \
 	livedrive_midi \
 	livedrive_seq \
 	mceusb \
+	mceusb2 \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \

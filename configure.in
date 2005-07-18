@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.150 2005/07/10 08:34:04 lirc Exp $
+dnl $Id: configure.in,v 5.151 2005/07/18 11:18:22 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -175,6 +175,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_imon) \
 	(lirc_dev lirc_it87) \
 	(lirc_dev lirc_mceusb) \
+	(lirc_dev lirc_mceusb2) \
 	(lirc_dev lirc_parallel) \
 	(lirc_dev lirc_sasem) \
 	(lirc_dev lirc_serial) \
@@ -267,10 +268,10 @@ AC_ARG_WITH(driver,
                           irman, irreal, it87, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
-                          lptX, mceusb, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere, packard_bell,
-                          parallel, pcmak, pcmak_usb, pctv,
-                          pixelview_bt878, pixelview_pak,
+                          lptX, mceusb, mceusb2, mediafocusI,
+                          mouseremote,mouseremote_ps2, mp3anywhere,
+                          packard_bell, parallel, pcmak, pcmak_usb,
+                          pctv, pixelview_bt878, pixelview_pak,
                           pixelview_pro, provideo, realmagic,
                           remotemaster, sa1100, sasem, serial,
                           silitek, sir, slinke, streamzap, tekram,
@@ -388,6 +389,8 @@ if test "$driver" = "any"; then
 	lirc_dev-lirc_it87)
 		;;
 	lirc_dev-lirc_mceusb)
+		;;
+	lirc_dev-lirc_mceusb2)
 		;;
 	lirc_dev-lirc_parallel)
 		;;
@@ -828,6 +831,11 @@ if test "$driver" = "mceusb"; then
   lircd_conf="mceusb/lircd.conf.mceusb"
 fi
 
+if test "$driver" = "mceusb2"; then
+  lirc_driver="lirc_dev lirc_mceusb2"
+  lircd_conf="mceusb/lircd.conf.mceusb"
+fi
+
 if test "$driver" = "mediafocusI"; then
   lirc_driver="none"
   lircd_conf="technisat/lircd.conf.mediafocusI"
@@ -1088,6 +1096,7 @@ elif test "$lirc_driver" = "any"; then
 	lirc_imon \
 	lirc_it87 \
 	lirc_mceusb \
+	lirc_mceusb2 \
 	lirc_parallel \
 	lirc_sasem \
 	lirc_serial \
@@ -1294,6 +1303,7 @@ AC_OUTPUT([
   drivers/lirc_imon/Makefile
   drivers/lirc_it87/Makefile
   drivers/lirc_mceusb/Makefile
+  drivers/lirc_mceusb2/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile
