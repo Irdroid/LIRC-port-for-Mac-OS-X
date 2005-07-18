@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.8 2005/05/29 10:45:22 lirc Exp $
+## $Id: acinclude.m4,v 1.9 2005/07/18 10:38:35 lirc Exp $
 ##
 ## additional m4 macros
 ##
@@ -17,7 +17,7 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
   if test `uname` != "Linux"; then
     kerneldir="not running Linux"
   else
-    for dir in /usr/src/kernel-source-`uname -r` /usr/src/linux-`uname -r` /usr/src/linux ${ac_kerneldir}; do
+    for dir in /usr/src/kernel-source-`uname -r` /usr/src/linux-`uname -r` /usr/src/linux /lib/modules/`uname -r`/build ${ac_kerneldir}; do
       if test -d $dir; then
         kerneldir=`dirname $dir/Makefile`/
         no_kernel=no
