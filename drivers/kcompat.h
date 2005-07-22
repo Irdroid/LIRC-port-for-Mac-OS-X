@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.11 2005/02/19 15:12:58 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.12 2005/07/22 15:53:58 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -9,6 +9,30 @@
 #define LIRC_HAVE_DEVFS
 #define LIRC_HAVE_DEVFS_26
 #define LIRC_HAVE_SYSFS
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)
+typedef struct class_simple lirc_class_t;
+
+static inline lirc_class_t *class_create(struct module *owner, char *name)
+{
+	return class_simple_create(owner, name);
+}
+
+static inline void class_destroy(lirc_class_t *cls)
+{
+	class_simple_destroy(cls);
+}
+
+#define class_device_create class_simple_device_add
+
+static inline void class_device_destroy(lirc_class_t *cls, dev_t devt)
+{
+	class_simple_device_remove(devt);
+}
+#else
+typedef struct class lirc_class_t;
+#endif
+
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
 #define LIRC_HAVE_DEVFS
 #define LIRC_HAVE_DEVFS_24
@@ -69,15 +93,15 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #endif /* DEVFS 2.4 */
 
 #ifndef LIRC_HAVE_SYSFS
-#define class_simple_destroy(x) do { } while(0)
-#define class_simple_create(x,y) NULL
-#define class_simple_device_remove(x) do { } while(0)
-#define class_simple_device_add(x, y, z, xx, yy) 0
+#define class_destroy(x) do { } while(0)
+#define class_create(x,y) NULL
+#define class_device_destroy(x,y) do { } while(0)
+#define class_device_create(x, y, z, xx, yy) 0
 #define IS_ERR(x) 0
-struct class_simple 
+typedef struct class_simple 
 {
 	int notused;
-};	
+} lirc_class_t;	
 #endif /* No SYSFS */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
