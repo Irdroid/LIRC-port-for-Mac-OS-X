@@ -64,7 +64,7 @@ struct hardware hw_null=
 struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
-#ifdef HAVE_ALSA_RC_SB
+#ifdef HAVE_ALSA_SB_RC
 	&hw_alsa_usb,
 #endif
 #ifdef HAVE_LIBUSB
