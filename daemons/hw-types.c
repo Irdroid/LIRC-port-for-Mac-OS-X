@@ -124,7 +124,6 @@ struct hardware hw;
 int hw_choose_driver (char *name)
 {
 	int i;
-	char *device = hw.device;
 	
 	if(name==NULL){
 		hw = HW_DEFAULT;
@@ -136,10 +135,6 @@ int hw_choose_driver (char *name)
 	if (!hw_list[i])
 		return -1;
 	hw = *hw_list[i];
-
-	/* just in case the device was already selected by the user */
-	if(device)
-		hw.device = device;
 
 	return 0;
 } 
