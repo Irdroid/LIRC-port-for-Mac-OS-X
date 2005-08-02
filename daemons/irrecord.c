@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.53 2005/04/23 12:08:46 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.54 2005/08/02 06:20:44 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -244,6 +244,7 @@ int main(int argc,char **argv)
 				hw_print_drivers(stderr);
 				exit (EXIT_FAILURE);
 			}
+			break;
 		case 'd':
 			device=optarg;
 			break;
