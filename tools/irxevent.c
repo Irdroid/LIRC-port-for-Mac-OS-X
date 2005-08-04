@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.12 2004/11/20 13:36:28 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.13 2005/08/04 19:56:50 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -105,7 +105,6 @@ void debugprintf(char *format_str, ...)
 {
 }
 #endif
-
 
 struct keymodlist_t {
         char *name;
@@ -347,8 +346,10 @@ void make_button(int button,int x,int y,XButtonEvent *xev)
 
 void make_key(char *keyname,int x, int y,XKeyEvent *xev)
 {
-  char *part, *part2;
+  char *part, *part2, *sep_part;
   struct keymodlist_t *kmlptr;
+  KeySym ks;
+  KeyCode kc;
 
   part2=malloc(128);
 
@@ -382,7 +383,32 @@ void make_key(char *keyname,int x, int y,XKeyEvent *xev)
     } 
   //  debugprintf("*** %s \n",part);
   //  debugprintf("*** %s \n",part2);
-  xev->keycode=XKeysymToKeycode(dpy,XStringToKeysym(part2));
+
+  /*
+   * New code 14-June-2005 by Warren Melnick, C.A.C. Media
+   * Uses the KeySym: and KeyCode: prefixes on the Key lines to allow for
+   * numeric keysym and keycode numbers to be used in place of X keysyms.
+   * Example 1: config = Key KeyCode:127 CurrentWindow
+   * Example 2: config = Key KeySym:0xFFF0 CurrentWindow
+   */
+  ks = 0;
+  kc = 0;
+  if (strncmp(part2, "KeySym:", 7) == 0) {
+    sep_part = part2 + 7;
+    ks = strtoul(sep_part, NULL, 0);
+    kc = XKeysymToKeycode(dpy, ks);
+    debugprintf("KeySym String: %s, KeySym: %ld KeyCode: %d\n", part2, ks, kc);
+  } else if (strncmp(part2, "KeyCode:", 8) == 0) {
+    sep_part = part2 + 8;
+    kc = (KeyCode) strtoul(sep_part, NULL, 0);
+    debugprintf("KeyCode String: %s, KeyCode: %d\n", part2, kc);
+  }
+  if ((ks == 0) && (kc == 0)) {
+    ks = XStringToKeysym(part2);
+    kc = XKeysymToKeycode(dpy, ks);
+    debugprintf("Unmodified String: %s, KeySym: %d KeyCode: %d\n", part2, ks, kc);
+  }
+  xev->keycode=kc;
   debugprintf("state 0x%x, keycode 0x%x\n",xev->state, xev->keycode);
   free(part2);
   return ;

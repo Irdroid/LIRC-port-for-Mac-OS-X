@@ -94,10 +94,11 @@ config = Key shift-Page_Up rxvt
 .nf
 LINE    = "config =" <KEY|BUTTON|XYKEY> <TARGET> |
           "config =" <KEY|BUTTON|XYKEY> "Focus" <TARGET>
-XYKEY   = "xy_Key" <x_position> <y_position> <MOD>Keyname
-KEY     = "Key" <MOD>Keyname
+XYKEY   = "xy_Key" <x_position> <y_position> <MOD><KEYSPEC>
+KEY     = "Key" <MOD><KEYSPEC>
 MOD     = ["shift-"]["numlock-"]["ctrl-"]["alt-"]["meta-"]
           ["numlock-"]["mod3-"]["mod4-"]["scrlock-"]
+KEYSPEC = Keyname | "KeySym:"KeySym | "KeyCode:"KeyCode
 BUTTON  = "Button" <1..5> <x_position> <y_position>
 TARGET  = Windowname | "WindowID" id | "CurrentWindow" | "RootWindow"
 .fi
@@ -108,6 +109,14 @@ is the key symbol that is declared in X windows. E.g. "Up" refers to the
 cursor arrow pointing up. "KP_Add" is the plus sign on the key pad. Just take
 a look at irxevent.keys (in the documentation directory) if you are not sure
 about a symbol's name.
+.RE
+.I KeySym:
+.RS 2
+number as returned by XStringToKeysym(3x).
+.RE
+.I KeyCode:
+.RS 2
+number as returned by XKeysymToKeycode(3x).
 .RE
 .I Windowname:
 .RS 2
