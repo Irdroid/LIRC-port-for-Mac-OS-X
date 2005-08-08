@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.43 2005/07/22 15:54:00 lirc Exp $
+ * $Id: lirc_dev.c,v 1.44 2005/08/08 06:04:48 lirc Exp $
  *
  */
 
@@ -810,7 +810,7 @@ static ssize_t irctl_write(struct file *file, const char *buffer,
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 
-	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "write called\n", ir->p.name, ir->p.minor);
 
 	/* if the plugin has a specific read function use it instead */
 	if(ir->p.fops && ir->p.fops->write)
