@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.6 2005/04/16 18:10:02 venkyr Exp $
+ *   $Id: lirc_imon.c,v 1.7 2005/08/10 19:22:20 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -792,7 +792,7 @@ static void usb_rx_callback (struct urb *urb)
 	}
 
 #ifdef KERNEL_2_5
-	usb_submit_urb (context ->rx_urb, GFP_KERNEL);
+	usb_submit_urb (context ->rx_urb, GFP_ATOMIC);
 #endif
 	return;
 }

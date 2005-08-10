@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.9 2005/07/15 11:24:55 tjdavies Exp $      */
+/*      $Id: lirc_sasem.c,v 1.10 2005/08/10 19:22:20 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -719,7 +719,7 @@ static void usb_rx_callback (struct urb *urb)
 	}
 
 #ifdef KERNEL_2_5
-	usb_submit_urb (context ->rx_urb, GFP_KERNEL);
+	usb_submit_urb (context ->rx_urb, GFP_ATOMIC);
 #endif
 	return;
 }
