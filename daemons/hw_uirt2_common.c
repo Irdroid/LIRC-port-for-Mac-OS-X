@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.3 2005/08/11 18:46:22 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -112,6 +112,20 @@ static int mywaitfordata(uirt2_t *dev, long usec) {
 	}
 }
 
+static int uirt2_readflush(uirt2_t *dev)
+{
+	int res;
+	char c;
+
+	while(mywaitfordata(dev, (long) 200000) > 0) {
+		res = read(dev->fd, &c, 1);
+		if (res < 1) { 
+			return -1;
+		}
+	}
+	return 0;
+}
+
 
 static byte_t checksum(byte_t *data, int len)
 {
@@ -137,7 +151,7 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 
 	tmp[len + 1] = checksum(tmp, len + 1) & 0xff;
 
-	if (dev->pre_delay.tv_sec >= 0 && dev->pre_delay.tv_usec > 0) {
+	if (dev->pre_delay.tv_sec > 0 || dev->pre_delay.tv_usec > 0) {
 		struct timeval cur;
 		struct timeval diff;
 		struct timeval delay;
@@ -149,7 +163,7 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 		timersub(&dev->pre_delay, &diff, &delay);
 		PRINT_TIME(&delay);
 
-		if (delay.tv_sec >= 0 && delay.tv_usec > 0) {
+		if (delay.tv_sec > 0 || delay.tv_usec > 0) {
 			LOGPRINTF(1, "udelay %lu %lu", 
 				  delay.tv_sec, delay.tv_usec);
 			sleep(delay.tv_sec);
@@ -289,6 +303,8 @@ uirt2_t *uirt2_init(int fd)
 	dev->flags = UIRT2_MODE_UIR;
 	dev->fd = fd;
 
+	uirt2_readflush(dev);
+
 	if(uirt2_getversion(dev, &version) < 0) {
 		free(dev);
 		return NULL;
@@ -383,12 +399,28 @@ int uirt2_getversion(uirt2_t *dev, int *version)
 	in[1] = UIRT2_GETVERSION;
 	out[0] = 3;
 	
-	if (command_ext(dev, in, out) < 0) {
-		return -1;
+	if (command_ext(dev, in, out) >= 0) {
+	        *version = out[2] + (out[1] << 8);
+		return 0;
 	}
 
-	*version = out[2] + (out[1] << 8);
-	return 0;
+	/* 
+	 * Ok, that command didn't work.  Maybe we're 
+	 * dealing with a newer version of the UIRT2 
+	 * protocol, which sends extended information when 
+	 * the version is requested.
+	 */
+	logprintf(LOG_WARNING, "uirt2: detection of uirt2 failed");
+	logprintf(LOG_WARNING, "uirt2: trying to detect newer uirt firmware");
+	uirt2_readflush(dev);
+
+	out[0] = 8;
+	if (command_ext(dev, in, out) >= 0) {
+	       *version = out[2] + (out[1] << 8);
+	       return 0;
+	}
+
+	return -1;
 }
 
 
