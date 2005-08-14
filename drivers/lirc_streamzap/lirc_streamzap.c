@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.12 2005/06/05 14:59:07 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.13 2005/08/14 11:09:29 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.12 $"
+#define DRIVER_VERSION	"$Revision: 1.13 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -206,20 +206,17 @@ static void flush_timeout(unsigned long arg)
 }
 static void delay_timeout(unsigned long arg)
 {
+	/* deliver data every 10 ms */
+	static unsigned long timer_inc = 
+		(10000/(1000000/HZ)) == 0 ? 1:(10000/(1000000/HZ));
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
-	lirc_t sum=10000;
 	lirc_t data;
 	
 	spin_lock(&sz->timer_lock);
-	while(!lirc_buffer_empty(&sz->delay_buf))
+	if(!lirc_buffer_empty(&sz->delay_buf))
 	{
 		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
 		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
-		sum += (data&PULSE_MASK)+STREAMZAP_RESOLUTION/2;
-		if(sum > 1000000/HZ)
-		{
-			break;
-		}
 	}
 	if(!lirc_buffer_empty(&sz->delay_buf))
 	{
@@ -233,7 +230,7 @@ static void delay_timeout(unsigned long arg)
 		}
 		if(sz->timer_running)
 		{
-			sz->delay_timer.expires++;
+			sz->delay_timer.expires += timer_inc;
 			add_timer(&sz->delay_timer);
 		}
 	}
