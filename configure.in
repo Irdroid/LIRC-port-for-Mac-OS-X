@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.154 2005/08/14 15:22:00 lirc Exp $
+dnl $Id: configure.in,v 5.155 2005/08/14 15:29:06 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1039,7 +1039,7 @@ else
     AC_MSG_ERROR([*** you need to first install the caraca package
 	before you can use this driver])
     ;;
-  lirc_*)
+  any|lirc_*)
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
