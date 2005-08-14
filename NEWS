@@ -1,4 +1,4 @@
-0.7.2-CVS: future
+0.7.2: 08/14/05
   * added support for new version of Windows Media Center Remotes
    (Martin Blatter, Eric Moors)
   * added support for InnovationOne's COMMANDIR USB Transceiver (Evelyn Yeung,
