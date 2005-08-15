@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.14 2004/10/23 18:41:43 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.15 2005/08/15 13:48:28 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -89,7 +89,7 @@ void initscreen(void)
   w0 = DefaultRootWindow(d1);
   winatt1.background_pixel = BlackPixel(d1,0);
   winatt1.backing_store = WhenMapped;
-  winatt1.event_mask = KeyPressMask|StructureNotifyMask;
+  winatt1.event_mask = KeyPressMask|StructureNotifyMask|ExposureMask;
   w1 = XCreateWindow(d1,w0,w1_x,w1_y,w1_w,w1_h,w1_border,CopyFromParent,InputOutput, CopyFromParent,CWBackPixel|CWBackingStore|CWEventMask,&winatt1);
 
   XStoreName(d1,w1,w1_wname);
@@ -122,8 +122,8 @@ void closescreen(void)
 int main(int argc, char **argv)
 {
   fd_set rfds;
-  struct timeval tv;
   int retval;
+  int xfd, maxfd;
       
   int fd;
   unsigned long mode;
@@ -211,7 +211,8 @@ int main(int argc, char **argv)
 	}
 	
   initscreen();
-	
+  xfd=XConnectionNumber(d1);
+  maxfd = fd>xfd ? fd:xfd;
   y1=20;
   x1=x2=0;
   sprintf(textbuffer,"%d ms/unit",div);
@@ -220,8 +221,9 @@ int main(int argc, char **argv)
   XFlush(d1);
   while(1)
     {
-      if (XCheckWindowEvent(d1, w1, KeyPressMask|StructureNotifyMask, &event_return1))
+      while (XPending(d1)>0)
 	{
+          XNextEvent(d1,  &event_return1);
 	  switch(event_return1.type)
 	    {
 	    case KeyPress:
@@ -231,12 +233,28 @@ int main(int argc, char **argv)
 		  exit(1);
 		}
 	      break;
+	    case Expose:
 	    case ConfigureNotify:
-	      w1_w=event_return1.xconfigure.width;
-	      w1_h=event_return1.xconfigure.height;
+	      switch(event_return1.type)
+	      {
+	      case Expose:
+		      break;
+	      case ConfigureNotify:
+		      if(w1_w==event_return1.xconfigure.width &&
+			 w1_h==event_return1.xconfigure.height)
+		      {
+			      continue;
+		      }
+
+		      w1_w=event_return1.xconfigure.width;
+		      w1_h=event_return1.xconfigure.height;
+		      break;
+	      }
+	      XClearWindow(d1,w1);
 	      for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
 	      XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
 
+	      XFlush(d1);
 	      //	      printf("resize \n");
 	      break;
 	    default:
@@ -244,15 +262,11 @@ int main(int argc, char **argv)
 	    }
 	} 
       
-      
-      /* Watch stdin (fd 0) to see when it has input. */
       FD_ZERO(&rfds);
       FD_SET(fd, &rfds);
-      /* Wait up to one second. */
-      tv.tv_sec = 1;
-      tv.tv_usec = 0;
+      FD_SET(xfd, &rfds);
       
-      retval = select(fd+1, &rfds, NULL, NULL, &tv);
+      retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
   
       if (FD_ISSET(fd,&rfds)) {
 	result=read(fd,&data,sizeof(data));
@@ -300,9 +314,8 @@ int main(int argc, char **argv)
 		XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
 	      }
 	  }
+	XFlush(d1);
       }
-      //	       	gl_copyscreen(physicalscreen);
-      //      XFlush(d1);
     };
   exit(EXIT_SUCCESS);
 }
