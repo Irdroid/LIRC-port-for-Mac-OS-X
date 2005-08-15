@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.57 2005/07/10 08:34:12 lirc Exp $      */
+/*      $Id: lircd.c,v 5.58 2005/08/15 09:02:03 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1974,7 +1974,7 @@ int main(int argc,char **argv)
 			"no peers are specified\n",progname);
 		return(EXIT_FAILURE);
 	}
-	if(strcmp(hw.device, lircdfile)==0)
+	if(hw.device!=NULL && strcmp(hw.device, lircdfile)==0)
 	{
 		fprintf(stderr, "%s: refusing to connect to myself\n",
 			progname);
