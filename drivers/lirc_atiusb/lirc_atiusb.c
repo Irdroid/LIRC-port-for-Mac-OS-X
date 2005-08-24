@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.49 2005/03/12 11:32:14 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.50 2005/08/24 04:22:28 pmiller9 Exp $
  */
 
 /*
@@ -59,7 +59,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"0.4"
+#define DRIVER_VERSION		"0.5"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -298,6 +298,7 @@ static int set_use_inc(void *data)
 	struct irctl *ir = data;
 	struct list_head *pos, *n;
 	struct in_endpt *iep;
+	int rtn;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
@@ -307,31 +308,35 @@ static int set_use_inc(void *data)
 
 	MOD_INC_USE_COUNT;
 
+	IRLOCK;
 	if (!ir->connected) {
-		if (!ir->usbdev)
+		if (!ir->usbdev) {
+			IRUNLOCK;
+			dprintk(DRIVER_NAME "[%d]: !ir->usbdev\n", ir->devnum);
 			return -ENOENT;
+		}
 
-		IRLOCK;
 		/* Iterate through the inbound endpoints */
 		list_for_each_safe(pos, n, &ir->iep_listhead) {
 			/* extract the current in_endpt */
 			iep = get_iep_from_link(pos);
 			iep->urb->dev = ir->usbdev;
+			dprintk(DRIVER_NAME "[%d]: linking iep 0x%02x (%p)\n", ir->devnum, iep->ep->bEndpointAddress, iep);
 #ifdef KERNEL_2_5
-			if (usb_submit_urb(iep->urb, SLAB_ATOMIC)) {
+			if ((rtn = usb_submit_urb(iep->urb, SLAB_ATOMIC)) < 0) {
 #else
-			if (usb_submit_urb(iep->urb)) {
+			if ((rtn = usb_submit_urb(iep->urb)) < 0) {
 #endif
-				printk(DRIVER_NAME "[%d]: open result = -EIO error "
-					"submitting urb\n", ir->devnum);
+				printk(DRIVER_NAME "[%d]: open result = %d error "
+					"submitting urb\n", ir->devnum, rtn);
 				IRUNLOCK;
 				MOD_DEC_USE_COUNT;
 				return -EIO;
 			}
 		}
 		ir->connected = 1;
-		IRUNLOCK;
 	}
+	IRUNLOCK;
 
 	return SUCCESS;
 }
@@ -348,19 +353,17 @@ static void set_use_dec(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
+	IRLOCK;
 	if (ir->connected) {
-		IRLOCK;
 		/* Free inbound usb urbs */
 		list_for_each_safe(pos, n, &ir->iep_listhead) {
 			iep = get_iep_from_link(pos);
-#ifdef KERNEL_2_5
-			iep->urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
+			dprintk(DRIVER_NAME "[%d]: unlinking iep 0x%02x (%p)\n", ir->devnum, iep->ep->bEndpointAddress, iep);
 			usb_unlink_urb(iep->urb);
 		}
 		ir->connected = 0;
-		IRUNLOCK;
 	}
+	IRUNLOCK;
 	MOD_DEC_USE_COUNT;
 }
 
@@ -1192,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.49 2005/03/12 11:32:14 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.50 2005/08/24 04:22:28 pmiller9 Exp $\n");
 
 	request_module("lirc_dev");
 
