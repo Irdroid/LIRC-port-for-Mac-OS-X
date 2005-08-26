@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.54 2005/08/02 06:20:44 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.55 2005/08/26 20:01:00 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -791,8 +791,8 @@ void flushhw(void)
 	switch(hw.rec_mode)
 	{
 	case LIRC_MODE_MODE2:
-		size=sizeof(lirc_t);
-		break;
+		while(availabledata()) hw.readdata(0);
+		return;
 	case LIRC_MODE_CODE:
 		size=sizeof(unsigned char);
 		break;
