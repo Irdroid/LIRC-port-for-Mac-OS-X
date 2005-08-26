@@ -945,3 +945,85 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was automatically generated
+# using lirc-0.7.0(atiusb) on Mon Aug 22 22:40:10 2005
+#
+# contributed by 
+#
+# brand:  Medion
+# model no. of remote control: MD1 NBC remote 
+# devices being controlled by this remote: Medion MD95700 usb dvb/analog tuner with atiusb 
+#
+
+begin remote
+
+  name  Medion_MD1
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          219994
+  min_repeat      27
+  toggle_bit      0
+
+
+      begin codes
+          Power                    0x000000000000D702
+          TV                       0x000000000000012C
+          Video                    0x00000000000082AD
+          CD/DVD                   0x000000000000D904
+          Teletext                 0x0000000000006B96
+          Audio                    0x000000000000DB06
+          Radio                    0x00000000000083AE
+          Page                     0x0000000000000631
+          Photo                    0x0000000000005B86
+          Info                     0x000000000000042F
+          Menu                     0x0000000000006E99
+          Back                     0x000000000000F520
+          Wheel_Up                 0x000000000000CDF8
+          Wheel_Down               0x000000000000C7F2
+          Wheel_Left               0x000000000000F21D
+          Wheel_Right              0x000000000000749F
+          Wheel_Click              0x00000014F31E0000
+          Vol+                     0x000000000000DE09
+          Vol-                     0x0000000000005D88
+          Mute                     0x000000000000D500
+          Program+                 0x000000000000608B
+          Program-                 0x000000000000E10C
+          Prog_Switch              0x000000000000719C
+          Select                   0x000000000000F01B
+          Red                      0x00000000000087B2
+          Green                    0x0000000000000833
+          Yellow                   0x00000000000089B4
+          Blue                     0x0000000000000A35
+          Stop                     0x0000000000007DA8
+          Pause                    0x000000000000FE29
+          Play                     0x0000000000007AA5
+          Skip_Left                0x000000000000F621
+          Camera                   0x0000000000006D98
+          Skip_Right               0x000000000000F823
+          Fast_Reverse             0x00000000000079A4
+          Fast_Forward             0x000000000000FB26
+          1                        0x000000000000628D
+          2                        0x000000000000E30E
+          3                        0x000000000000648F
+          4                        0x000000000000E510
+          5                        0x0000000000006691
+          6                        0x000000000000E712
+          7                        0x0000000000006893
+          8                        0x000000000000E914
+          9                        0x0000000000006A95
+          0                        0x000000000000EC17
+      end codes
+
+end remote
+
+
+
