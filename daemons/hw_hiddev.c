@@ -42,7 +42,7 @@ struct hardware hw_dvico=
 	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
-	32,			/* code_length */
+	64,			/* code_length */
 	hiddev_init,		/* init_func */
 	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
@@ -72,7 +72,7 @@ struct hardware hw_bw6130=
 	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
-	32,			/* code_length */
+	64,			/* code_length */
 	hiddev_init,		/* init_func */
 	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
