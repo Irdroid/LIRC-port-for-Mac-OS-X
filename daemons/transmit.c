@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.18 2005/05/28 13:00:51 lirc Exp $      */
+/*      $Id: transmit.c,v 5.19 2005/09/03 06:42:33 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -300,19 +300,19 @@ inline void send_repeat(struct ir_remote *remote)
 	send_trail(remote);
 }
 
-inline void send_code(struct ir_remote *remote,ir_code code)
+inline void send_code(struct ir_remote *remote,ir_code code, int repeat)
 {
-	if(repeat_remote==NULL || !(remote->flags&NO_HEAD_REP))
+	if(!repeat || !(remote->flags&NO_HEAD_REP))
 		send_header(remote);
 	send_lead(remote);
 	send_pre(remote);
 	send_data(remote,code,remote->bits,remote->pre_data_bits);
 	send_post(remote);
 	send_trail(remote);
-	if(repeat_remote==NULL || !(remote->flags&NO_FOOT_REP))
+	if(!repeat || !(remote->flags&NO_FOOT_REP))
 		send_foot(remote);
 	
-	if(repeat_remote==NULL &&
+	if(!repeat &&
 	   remote->flags&NO_HEAD_REP &&
 	   remote->flags&CONST_LENGTH)
 	{
@@ -349,9 +349,13 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		remote->repeat_countdown=remote->min_repeat;
 	}
+	else
+	{
+		repeat = 1;
+	}
 	
  init_send_loop:
-	if((repeat || repeat_remote!=NULL) && has_repeat(remote))
+	if(repeat && has_repeat(remote))
 	{
 		if(remote->flags&REPEAT_HEADER && has_header(remote))
 		{
@@ -367,12 +371,13 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			{
 				if(remote->toggle_mask_state%2)
 				{
-					send_code(remote,code->code^
-						  remote->toggle_mask);
+					send_code(remote, code->code^
+						  remote->toggle_mask,
+						  repeat);
 				}
 				else
 				{
-					send_code(remote,code->code);
+					send_code(remote, code->code, repeat);
 				}
 				remote->toggle_mask_state++;
 				if(remote->toggle_mask_state==4)
@@ -382,7 +387,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			}
 			else
 			{
-				send_code(remote,code->code);
+				send_code(remote, code->code, repeat);
 			}
 			send_buffer.data=send_buffer._data;
 		}
@@ -414,9 +419,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		logprintf(LOG_ERR,"buffer too small");
 		return(0);
 	}
-	if(has_repeat_gap(remote) &&
-	   (repeat || repeat_remote!=NULL) &&
-	   has_repeat(remote))
+	if(has_repeat_gap(remote) && repeat && has_repeat(remote))
 	{
 		remote->remaining_gap=remote->repeat_gap;
 	}
@@ -459,7 +462,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		add_send_buffer(remote->remaining_gap);
 		send_buffer.sum=0;
 		
-		repeat=1;
+		repeat = 1;
 		goto init_send_loop;
 	}
 	LOGPRINTF(3, "transmit buffer ready");
