@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.13 2005/08/04 19:56:50 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.14 2005/09/10 15:28:28 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -630,6 +630,11 @@ int main(int argc, char *argv[])
 			4==sscanf(c,"xy_Key %d %d %s %s\n",&pointer_x,&pointer_y,keyname,windowname)) {
 		debugprintf("name: %s\n",windowname);
 		WindowID=find_window(root,windowname);
+		if(WindowID == 0)
+		{
+		  debugprintf("target window '%s' not found\n", windowname);
+		  continue;
+		}
 	      }
 	      
 	      switch(c[0])
