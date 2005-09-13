@@ -13,6 +13,12 @@
 #
 # Dan Conti  dconti|acm.wwu.edu
 #
+# Updated with codes for MCE 2005 Remote additional buttons
+# *, #, Teletext, Red, Green, Yellow & Blue Buttons
+# Note: TV power button transmits no code until programmed.
+# Updated 12th September 2005
+# Graham Auld - mce|graham.auld.me.uk
+#
 # Radio, Print, RecTV are only available on the HP Media Center remote control
 #
 
@@ -36,6 +42,12 @@ begin remote
 
       begin codes
 
+	Blue	0x00007ba1
+	Yellow	0x00007ba2
+	Green	0x00007ba3
+	Red	0x00007ba4
+	Teletext	0x00007ba5
+
 # starts at af
         Radio    0x00007baf
         Print    0x00007bb1
@@ -45,6 +57,7 @@ begin remote
         Music    0x00007bb8
         TV       0x00007bb9
 # no ba - d8
+
         Guide    0x00007bd9
         LiveTV   0x00007bda
         DVD      0x00007bdb
@@ -54,7 +67,10 @@ begin remote
         Left     0x00007bdf
         Down     0x00007be0
         Up       0x00007be1
-# no e2,e3
+
+        Star       0x00007be2
+        Hash       0x00007be3
+
         Replay   0x00007be4
         Skip     0x00007be5
         Stop     0x00007be6
