@@ -314,14 +314,13 @@ static ssize_t lirc_read(struct file * file, char * buf, size_t count,
 	{
 		if(rx_head!=rx_tail)
 		{
-			retval=verify_area(VERIFY_WRITE,
-					   (void *) buf+n,sizeof(lirc_t));
-			if (retval)
+			if(copy_to_user((void *) buf+n,
+					(void *) (rx_buf+rx_head),
+					sizeof(lirc_t)))
 			{
-				return retval;
+				retval=-EFAULT;
+				break;
 			}
-			copy_to_user((void *) buf+n,(void *) (rx_buf+rx_head),
-				     sizeof(lirc_t));
 			rx_head=(rx_head+1)&(RBUF_LEN-1);
 			n+=sizeof(lirc_t);
 		}
@@ -352,14 +351,10 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 	return(-EBADF);
 #else
 	int i;
-	int retval;
 
         if(n%sizeof(lirc_t) || (n/sizeof(lirc_t)) > WBUF_LEN)
 		return(-EINVAL);
-	retval = verify_area(VERIFY_READ, buf, n);
-	if (retval)
-		return retval;
-	copy_from_user(tx_buf, buf, n);
+	if(copy_from_user(tx_buf, buf, n)) return -EFAULT;
 	i = 0;
 	n/=sizeof(lirc_t);
 #ifdef LIRC_ON_SA1100

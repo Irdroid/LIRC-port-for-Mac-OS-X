@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.32 2005/04/23 11:40:01 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.33 2005/09/22 20:10:37 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -394,14 +394,11 @@ static loff_t lirc_lseek(struct file *filep,loff_t offset,int orig)
 
 static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 {
-	int result;
+	int result=0;
 	int count=0;
 	DECLARE_WAITQUEUE(wait, current);
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
-	
-	result=verify_area(VERIFY_WRITE,buf,n);
-	if(result) return(result);
 	
 	add_wait_queue(&lirc_wait,&wait);
 	set_current_state(TASK_INTERRUPTIBLE);
@@ -409,8 +406,12 @@ static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 	{
 		if(rptr!=wptr)
 		{
-			copy_to_user(buf+count,(char *) &rbuf[rptr],
-				     sizeof(lirc_t));
+			if(copy_to_user(buf+count,(char *) &rbuf[rptr],
+					sizeof(lirc_t)))
+			{
+				result = -EFAULT;
+				break;
+			}
 			rptr=(rptr+1)&(RBUF_SIZE-1);
 			count+=sizeof(lirc_t);
 		}
@@ -438,7 +439,7 @@ static ssize_t lirc_read(struct file *filep,char *buf,size_t n,loff_t *ppos)
 static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 			  loff_t *ppos)
 {
-	int result,count;
+	int count;
 	unsigned int i;
 	unsigned int level,newlevel;
 	unsigned long flags;
@@ -449,14 +450,12 @@ static ssize_t lirc_write(struct file *filep,const char *buf,size_t n,
 		return(-EBUSY);
 	}
 	if(n%sizeof(lirc_t)) return(-EINVAL);
-	result=verify_area(VERIFY_READ,buf,n);
-	if(result) return(result);
 	
 	count=n/sizeof(lirc_t);
 	
 	if(count>WBUF_SIZE || count%2==0) return(-EINVAL);
 	
-	copy_from_user(wbuf,buf,n);
+	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 	
 #ifdef LIRC_TIMER
 	if(timer==0) /* try again if device is ready */

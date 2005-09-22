@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.66 2005/04/23 11:40:01 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.67 2005/09/22 20:10:37 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -913,7 +913,7 @@ static void set_use_dec(void* data)
 static ssize_t lirc_write(struct file *file, const char *buf,
 			 size_t n, loff_t * ppos)
 {
-	int retval,i,count;
+	int i,count;
 	unsigned long flags;
 	long delta=0;
 	
@@ -923,11 +923,9 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	}
 	
 	if(n%sizeof(lirc_t)) return(-EINVAL);
-	retval=verify_area(VERIFY_READ,buf,n);
-	if(retval) return(retval);
 	count=n/sizeof(lirc_t);
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
-	copy_from_user(wbuf,buf,n);
+	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 	local_irq_save(flags);
 	if(hardware[type].type==LIRC_IRDEO)
 	{

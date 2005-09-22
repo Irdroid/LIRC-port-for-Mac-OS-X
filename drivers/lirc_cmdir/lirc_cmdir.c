@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.1 2005/07/10 08:34:13 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.2 2005/09/22 20:10:37 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -341,7 +341,7 @@ int add_to_buf (void* data, struct lirc_buffer* buf)
 static ssize_t lirc_write(struct file *file, const char *buf,
 			 size_t n, loff_t * ppos)
 {
-	int retval,i,count;
+	int i,count;
 	int num_bytes_to_send;
 	unsigned int prev_length_waited=0;
 	unsigned int mod_signal_length=0;
@@ -352,12 +352,10 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	int cmdir_cnt =0;
 		
 	if(n%sizeof(lirc_t)) return(-EINVAL);
-	retval=verify_area(VERIFY_READ,buf,n);
-	if(retval) return(retval);
 	
 	count=n/sizeof(lirc_t);
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);	
-	copy_from_user(wbuf,buf,n);
+	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 	
 	cmdir_char[0] = TX_HEADER;
 	signal_num++;
