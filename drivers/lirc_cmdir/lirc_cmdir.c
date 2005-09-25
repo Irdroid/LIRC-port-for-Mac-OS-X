@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.2 2005/09/22 20:10:37 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.3 2005/09/25 12:03:39 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -163,11 +163,11 @@ static void usb_error_handle(int retval)
 	}
 }
 
-static int write_to_usb(unsigned char *buffer, int count)
+static int write_to_usb(unsigned char *buffer, int count, int time_elapsed)
 {
 	int write_return;
 	
-	write_return = cmdir_write(buffer, count, NULL);
+	write_return = cmdir_write(buffer, count, NULL, time_elapsed);
 	if (write_return != count)
 	{
 		usb_error_handle(write_return);
@@ -198,9 +198,10 @@ static void set_freq(void)
 	write_control[0]=FREQ_HEADER;
 	write_control[1]=timerval;
 	write_control[2]=0;
-	write_return = write_to_usb(write_control, MCU_CTRL_SIZE);
+	write_return = write_to_usb(write_control, MCU_CTRL_SIZE, 0);
 	if (write_return == MCU_CTRL_SIZE) printk(LIRC_DRIVER_NAME ": freq set to %dHz\n", freq);
 	else printk(LIRC_DRIVER_NAME ": freq unchanged\n");
+
 }
 
 static int cmdir_convert_RX(unsigned char *orig_rxbuffer)
@@ -343,13 +344,22 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 {
 	int i,count;
 	int num_bytes_to_send;
-	unsigned int prev_length_waited=0;
 	unsigned int mod_signal_length=0;
-	/* double wbuf_mod=0.0;			//no floating point in 2.6 kernel  */
+	unsigned int time_elapse=0;
+	unsigned int total_time_elapsed=0;
+	/* double wbuf_mod=0.0;	//no floating point in 2.6 kernel  */
 	unsigned int num_bytes_already_sent=0;
 	unsigned int hibyte=0;
 	unsigned int lobyte=0;
 	int cmdir_cnt =0;
+	unsigned int wait_this = 0;
+	struct timeval start_time; 
+	struct timeval end_time; 
+	unsigned int real_time_elapsed = 0; 
+	// int first_signal = 0;
+	
+	// save the time we started the write:
+	do_gettimeofday(&start_time);
 		
 	if(n%sizeof(lirc_t)) return(-EINVAL);
 	
@@ -357,23 +367,24 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);	
 	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 	
-	cmdir_char[0] = TX_HEADER;
+	/* the first time we have to flag that this is the start of a
+	   new signal otherwise COMMANDIR may receive 2 back-to-back
+	   pulses & invert the signal */
+	cmdir_char[0] = TX_HEADER_NEW;
 	signal_num++;
 	cmdir_char[1] = signal_num;
 	cmdir_cnt = 2;
 	for(i=0;i<count;i++)
 	{
-		safe_udelay(wbuf[i]);
-		prev_length_waited += wbuf[i];
-	
-		/*conversion to number of modulation frequency pulse edges*/
-		/*  wbuf_mod = 2*freq*wbuf[i]/1000000.0;  //this was to properly round with FP	
-		 mod_signal_length = (int)(wbuf_mod+0.5);	*/
+		/* conversion to number of modulation frequency pulse edges */
 		mod_signal_length = 2*freq*wbuf[i]/1000000;
 		if (mod_signal_length%2 == 0) mod_signal_length++;  //need odd number
 		if (i%2==0) mod_signal_length-=5;
 		else mod_signal_length+=5;	
-				
+		
+		// account for minor rounding errors - calculate length from this:
+		time_elapse += mod_signal_length * 1000000 / (2*freq);
+
 		hibyte = mod_signal_length/256;
 		lobyte = mod_signal_length%256;
 		cmdir_char[cmdir_cnt+1] = hibyte;
@@ -383,9 +394,13 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 		/* write data to usb if full packet is collected */
 		if (cmdir_cnt%MAX_PACKET == 0)
 		{
-			write_to_usb(cmdir_char+num_bytes_already_sent, MAX_PACKET);
+			//write_to_usb(cmdir_char+num_bytes_already_sent, MAX_PACKET,  (first_signal++ < 1) ? 0 : time_elapse);
+			write_to_usb(cmdir_char+num_bytes_already_sent, MAX_PACKET,  time_elapse);
+			
+			total_time_elapsed += time_elapse;
+			
 			num_bytes_already_sent+= MAX_PACKET;
-			prev_length_waited = 0;
+			time_elapse = 0;
 			
 			if ((i+1)<count) 
 			{
@@ -396,15 +411,35 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 		}
 	}
 	
-	/* add extra delay in case there are 2 usb writes too close to each other (2.4) */
-	if (prev_length_waited < 2000) safe_udelay(2000-prev_length_waited);
-	
 	/* send last chunk of data */
 	if (cmdir_cnt > num_bytes_already_sent)
 	{
 		num_bytes_to_send = cmdir_cnt - num_bytes_already_sent;
-		write_to_usb(cmdir_char+num_bytes_already_sent, num_bytes_to_send);
+		// time_elapse
+		total_time_elapsed += time_elapse; //time_elapse;
+		write_to_usb(cmdir_char+num_bytes_already_sent, num_bytes_to_send, time_elapse);
 	}
+	/* ---------------------------------------------------------------
+	 we need to _manually delay ourselves_ to remain backwards
+	 compatible with LIRC and prevent our queue buffer from
+	 overflowing.  Queuing in this driver is about instant, and
+	 send_start for example will fill it up quickly and prevent
+	 send_stop from taking immediate effect.
+	 ----------------------------------------------------------------- */
+	// printk("Total elapsed time is: %d. \n", total_time_elapsed);
+	do_gettimeofday(&end_time);
+	// udelay for the difference between endtime and start+total_time_elapsed
+	if(start_time.tv_usec < end_time.tv_usec){
+		real_time_elapsed = (end_time.tv_usec - start_time.tv_usec);
+	} else {
+		real_time_elapsed = ((end_time.tv_usec +  1000000) - start_time.tv_usec);
+	}
+	// printk("Real time elapsed was %u.\n", real_time_elapsed);
+	if(real_time_elapsed < (total_time_elapsed-1000)){
+		wait_this = total_time_elapsed - real_time_elapsed - 1000;
+	}
+	//  safe_udelay(wait_this); // enable this for backwards compatibility
+	
 	return(n);
 }
 
@@ -519,7 +554,7 @@ static struct lirc_plugin plugin = {
 	name:		LIRC_DRIVER_NAME,
 	minor:		-1,
 	code_length:	1,
-	sample_rate:	28,
+	sample_rate:	20,
 	data:		NULL,
 	add_to_buf:	add_to_buf,
 	get_queue:	NULL,
