@@ -930,6 +930,7 @@ static int init_port(void)
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": IRQ %d already in use.\n",
 		       irq);
+		release_region(io, 8);
 		return retval;
 	}
 
