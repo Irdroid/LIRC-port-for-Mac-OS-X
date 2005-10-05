@@ -197,3 +197,78 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was automatically generated
+# using lirc-0.7.0pre4(serial) on Sun Oct  2 00:24:32 2005
+#
+# contributed by anton|ganthaler.at and juergen.wilhelm|aon.at
+# members of linux user group Vorarlberg www.lugv.at
+# 
+# for ir remote controler from Hauppauge WinTV Nexus-S
+# most of the keys are supported
+#
+# brand:                       Hauppauge
+# model no. of remote control: WinTV Nexus-S
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  Hauppauge_WinTV_Nexus-S
+  bits           13
+  flags RC5|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  one           944   828
+  zero          944   828
+  plead         980
+  gap          113932
+  min_repeat      1
+  toggle_bit      2
+
+
+      begin codes
+          Up                       0x0000000000001794
+          Down                     0x0000000000001795
+          Left                     0x0000000000001796
+          Right                    0x0000000000001797
+          Power                    0x00000000000017BD
+          Ok                       0x00000000000017A5
+          Menu                     0x000000000000178D
+          Back                     0x000000000000179F
+          Red                      0x000000000000178B
+          Green                    0x00000000000017AE
+          Yellow                   0x00000000000017B8
+          Blue                     0x00000000000017A9
+          0                        0x0000000000001780
+          1                        0x0000000000001781
+          2                        0x0000000000001782
+          3                        0x0000000000001783
+          4                        0x0000000000001784
+          5                        0x0000000000001785
+          6                        0x0000000000001786
+          7                        0x0000000000001787
+          8                        0x0000000000001788
+          9                        0x0000000000001789
+          Play                     0x00000000000017B5
+          Pause                    0x00000000000017B0
+          Stop                     0x00000000000017B6
+          Record                   0x00000000000017B7
+          FastFwd                  0x00000000000017B4
+          FastRwd                  0x00000000000017B2
+          Channel+                 0x00000000000017A0
+          Channel-                 0x00000000000017A1
+          Volume+                  0x0000000000001790
+          Volume-                  0x0000000000001791
+          Mute                     0x000000000000178F
+          Timers                   0x000000000000178A
+          Recordings               0x000000000000178E
+          Back                     0x000000000000179F
+          Record                   0x00000000000017B7
+          Pause                    0x00000000000017B0
+      end codes
+
+end remote
+
+
