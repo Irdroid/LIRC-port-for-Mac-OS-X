@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.19 2005/09/03 06:42:33 lirc Exp $      */
+/*      $Id: transmit.c,v 5.20 2005/10/15 08:22:49 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -114,6 +114,20 @@ static inline int bad_send_buffer(void)
 		return(1);
 	}
 	return(0);
+}
+
+static inline void flush_send_buffer(void)
+{
+	if(send_buffer.pendingp>0)
+	{
+		add_send_buffer(send_buffer.pendingp);
+		send_buffer.pendingp=0;
+	}
+	if(send_buffer.pendings>0)
+	{
+		add_send_buffer(send_buffer.pendings);
+		send_buffer.pendings=0;
+	}
 }
 
 static inline void sync_send_buffer(void)
@@ -459,7 +473,8 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 		LOGPRINTF(1, "concatenating low gap signals");
 		remote->repeat_countdown--;
-		add_send_buffer(remote->remaining_gap);
+		send_space(remote->remaining_gap);
+		flush_send_buffer();
 		send_buffer.sum=0;
 		
 		repeat = 1;
