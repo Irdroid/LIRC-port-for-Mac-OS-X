@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.16 2005/10/16 18:54:45 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.17 2005/10/16 19:00:14 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -76,65 +76,65 @@ XEvent          event_return1;
 
 void initscreen(void)
 {
-  d1=XOpenDisplay(0);
-  if (d1==NULL)
-    {
-      printf("Can't open display.\n");
-      exit(0);
-    }
+	d1=XOpenDisplay(0);
+	if (d1==NULL)
+	{
+		printf("Can't open display.\n");
+		exit(0);
+	}
   
 
 
-  /*Aufbau der XWindowsAttribStr*/
-  w0 = DefaultRootWindow(d1);
-  winatt1.background_pixel = BlackPixel(d1,0);
-  winatt1.backing_store = WhenMapped;
-  winatt1.event_mask = KeyPressMask|StructureNotifyMask|ExposureMask;
-  w1 = XCreateWindow(d1,w0,w1_x,w1_y,w1_w,w1_h,w1_border,CopyFromParent,InputOutput, CopyFromParent,CWBackPixel|CWBackingStore|CWEventMask,&winatt1);
+	/*Aufbau der XWindowsAttribStr*/
+	w0 = DefaultRootWindow(d1);
+	winatt1.background_pixel = BlackPixel(d1,0);
+	winatt1.backing_store = WhenMapped;
+	winatt1.event_mask = KeyPressMask|StructureNotifyMask|ExposureMask;
+	w1 = XCreateWindow(d1,w0,w1_x,w1_y,w1_w,w1_h,w1_border,CopyFromParent,InputOutput, CopyFromParent,CWBackPixel|CWBackingStore|CWEventMask,&winatt1);
 
-  XStoreName(d1,w1,w1_wname);
-  XSetIconName(d1,w1,w1_iname);
-  XMapWindow(d1,w1);
+	XStoreName(d1,w1,w1_wname);
+	XSetIconName(d1,w1,w1_iname);
+	XMapWindow(d1,w1);
 
-  cm1=DefaultColormap(d1,0);
-  if (!XAllocNamedColor(d1,cm1,"blue",&xc1,&xc2)) printf("coudn't allocate blue color\n");
-  f1_str=XLoadQueryFont(d1,font1_name);
-  if (f1_str==NULL)
-  {
-	  printf("could't load font\n");
-	  exit(EXIT_FAILURE);
-  }
+	cm1=DefaultColormap(d1,0);
+	if (!XAllocNamedColor(d1,cm1,"blue",&xc1,&xc2)) printf("coudn't allocate blue color\n");
+	f1_str=XLoadQueryFont(d1,font1_name);
+	if (f1_str==NULL)
+	{
+		printf("could't load font\n");
+		exit(EXIT_FAILURE);
+	}
 
-  gcval1.foreground = xc1.pixel;
-  gcval1.font = f1_str -> fid;
-  gcval1.line_style = LineSolid;
-  gc1 = XCreateGC(d1,w1, GCForeground|GCLineStyle, &gcval1);
-  gcval1.foreground = WhitePixel(d1,0);
-  gc2 = XCreateGC(d1,w1, GCForeground|GCLineStyle|GCFont, &gcval1);
+	gcval1.foreground = xc1.pixel;
+	gcval1.font = f1_str -> fid;
+	gcval1.line_style = LineSolid;
+	gc1 = XCreateGC(d1,w1, GCForeground|GCLineStyle, &gcval1);
+	gcval1.foreground = WhitePixel(d1,0);
+	gc2 = XCreateGC(d1,w1, GCForeground|GCLineStyle|GCFont, &gcval1);
 }
 
 void closescreen(void)
 {
-  XUnmapWindow(d1,w1);
-  XCloseDisplay(d1);
+	XUnmapWindow(d1,w1);
+	XCloseDisplay(d1);
 }
 
 int main(int argc, char **argv)
 {
-  fd_set rfds;
-  int retval;
-  int xfd, maxfd;
+	fd_set rfds;
+	int retval;
+	int xfd, maxfd;
       
-  int fd;
-  unsigned long mode;
-  lirc_t data;
-  lirc_t x1,y1,x2,y2;
-  int result;
-  char textbuffer[80];
-  int div=5;
-  int dmode=0;
-  struct stat s;
-  int use_stdin = 0;
+	int fd;
+	unsigned long mode;
+	lirc_t data;
+	lirc_t x1,y1,x2,y2;
+	int result;
+	char textbuffer[80];
+	int div=5;
+	int dmode=0;
+	struct stat s;
+	int use_stdin = 0;
   
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
@@ -143,8 +143,7 @@ int main(int argc, char **argv)
 	while(1)
 	{
 		int c;
-		static struct option long_options[] =
-		{
+		static struct option long_options[] = {
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"device",required_argument,NULL,'d'},
@@ -224,139 +223,139 @@ int main(int argc, char **argv)
 		}
 	}
 	
-  initscreen();
-  xfd=XConnectionNumber(d1);
-  maxfd = fd>xfd ? fd:xfd;
-  y1=20;
-  x1=x2=0;
-  sprintf(textbuffer,"%d ms/unit",div);
-  for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
-  XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
-  XFlush(d1);
-  while(1)
-    {
-      while (XPending(d1)>0)
-	{
-          XNextEvent(d1,  &event_return1);
-	  switch(event_return1.type)
-	    {
-	    case KeyPress:
-	      if (event_return1.xkey.keycode==XKeysymToKeycode(d1,XStringToKeysym("q")))
-		{
-		  closescreen();
-		  exit(1);
-		}
-	      break;
-	    case Expose:
-	    case ConfigureNotify:
-	      switch(event_return1.type)
-	      {
-	      case Expose:
-		      break;
-	      case ConfigureNotify:
-		      if(w1_w==event_return1.xconfigure.width &&
-			 w1_h==event_return1.xconfigure.height)
-		      {
-			      continue;
-		      }
-
-		      w1_w=event_return1.xconfigure.width;
-		      w1_h=event_return1.xconfigure.height;
-		      break;
-	      }
-	      XClearWindow(d1,w1);
-	      for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
-	      XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
-
-	      XFlush(d1);
-	      //	      printf("resize \n");
-	      break;
-	    default:
-	      ;
-	    }
-	} 
-      
-      FD_ZERO(&rfds);
-      FD_SET(fd, &rfds);
-      FD_SET(xfd, &rfds);
-      
-      retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
-  
-      if (FD_ISSET(fd,&rfds)) {
-	      if(use_stdin)
-	      {
-		      static int space=1;
-		      unsigned long scan;
-
-		      if(space)
-		      {
-			      result = fscanf(stdin,"space %ld\n",&scan);
-		      }
-		      else
-		      {
-			      result = fscanf(stdin,"pulse %ld\n",&scan);
-		      }
-		      if(result == 1)
-		      {
-			      data=(lirc_t) scan;
-			      if(!space) data|=PULSE_BIT;
-		      }
-		      else
-		      {
-			      fd = STDOUT_FILENO;
-		      }
-		      space = !space;
-	      }
-	      else
-	      {
-		      result=read(fd,&data,sizeof(data));
-	      }
-	if (result!=0)
-	  {
-	    //		    printf("%.8x\t",data);
-	    x2=(data&PULSE_MASK)/(div*50);
-	    if(x2>400)
-	      {
-                if(!dmode) { y1+=15; } else { y1++; }
-		x1=0;
-	      }
-	    else
-	      {
-		if (x1==0)
-		  {
-		    if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1+10, y1+10);
-		    x1+=10;
-		    if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1, y1);
-		  }
-		if (x1<w1_w) 
-		  {
-		    if(dmode)
-		      {
-			if(data&PULSE_BIT) XDrawLine(d1,w1,gc2,x1,y1,x1+x2,y1);
-			x1+=x2;
-		      }
-		    else
-		      {
-			XDrawLine(d1,w1,gc2,x1,
-				  ((data&PULSE_BIT) ? y1:y1+10),x1+x2,
-				  ((data&PULSE_BIT) ? y1:y1+10));
-			x1+=x2;
-			XDrawLine(d1,w1,gc2,x1,
-				  ((data&PULSE_BIT) ? y1:y1+10),x1,
-				  ((data&PULSE_BIT) ? y1+10:y1));
-		      }
-		  }
-	      }
-	    if (y1>w1_h) 
-	      {
-		y1=20;
-		XClearWindow(d1,w1);
-		for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
-		XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
-	      }
-	  }
+	initscreen();
+	xfd=XConnectionNumber(d1);
+	maxfd = fd>xfd ? fd:xfd;
+	y1=20;
+	x1=x2=0;
+	sprintf(textbuffer,"%d ms/unit",div);
+	for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
+	XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
 	XFlush(d1);
-      }
-    };
-  exit(EXIT_SUCCESS);
+	while(1)
+	{
+		while (XPending(d1)>0)
+		{
+			XNextEvent(d1,  &event_return1);
+			switch(event_return1.type)
+			{
+			case KeyPress:
+				if (event_return1.xkey.keycode==XKeysymToKeycode(d1,XStringToKeysym("q")))
+				{
+					closescreen();
+					exit(1);
+				}
+				break;
+			case Expose:
+			case ConfigureNotify:
+				switch(event_return1.type)
+				{
+				case Expose:
+					break;
+				case ConfigureNotify:
+					if(w1_w==event_return1.xconfigure.width &&
+					   w1_h==event_return1.xconfigure.height)
+					{
+						continue;
+					}
+
+					w1_w=event_return1.xconfigure.width;
+					w1_h=event_return1.xconfigure.height;
+					break;
+				}
+				XClearWindow(d1,w1);
+				for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
+				XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
+
+				XFlush(d1);
+				//	      printf("resize \n");
+				break;
+			default:
+				;
+			}
+		} 
+      
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
+		FD_SET(xfd, &rfds);
+      
+		retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
+  
+		if (FD_ISSET(fd,&rfds)) {
+			if(use_stdin)
+			{
+				static int space=1;
+				unsigned long scan;
+
+				if(space)
+				{
+					result = fscanf(stdin,"space %ld\n",&scan);
+				}
+				else
+				{
+					result = fscanf(stdin,"pulse %ld\n",&scan);
+				}
+				if(result == 1)
+				{
+					data=(lirc_t) scan;
+					if(!space) data|=PULSE_BIT;
+				}
+				else
+				{
+					fd = STDOUT_FILENO;
+				}
+				space = !space;
+			}
+			else
+			{
+				result=read(fd,&data,sizeof(data));
+			}
+			if (result!=0)
+			{
+				//		    printf("%.8x\t",data);
+				x2=(data&PULSE_MASK)/(div*50);
+				if(x2>400)
+				{
+					if(!dmode) { y1+=15; } else { y1++; }
+					x1=0;
+				}
+				else
+				{
+					if (x1==0)
+					{
+						if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1+10, y1+10);
+						x1+=10;
+						if(!dmode) XDrawLine(d1,w1,gc2,x1, y1+10, x1, y1);
+					}
+					if (x1<w1_w) 
+					{
+						if(dmode)
+						{
+							if(data&PULSE_BIT) XDrawLine(d1,w1,gc2,x1,y1,x1+x2,y1);
+							x1+=x2;
+						}
+						else
+						{
+							XDrawLine(d1,w1,gc2,x1,
+								  ((data&PULSE_BIT) ? y1:y1+10),x1+x2,
+								  ((data&PULSE_BIT) ? y1:y1+10));
+							x1+=x2;
+							XDrawLine(d1,w1,gc2,x1,
+								  ((data&PULSE_BIT) ? y1:y1+10),x1,
+								  ((data&PULSE_BIT) ? y1+10:y1));
+						}
+					}
+				}
+				if (y1>w1_h) 
+				{
+					y1=20;
+					XClearWindow(d1,w1);
+					for (y2=0;y2<w1_w;y2+=10) XDrawLine(d1,w1,gc1,y2,0,y2,w1_h);
+					XDrawString(d1,w1,gc2,w1_w-100,10,textbuffer,strlen(textbuffer));
+				}
+			}
+			XFlush(d1);
+		}
+	}
+	exit(EXIT_SUCCESS);
 }
