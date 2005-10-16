@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.15 2005/08/15 13:48:28 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.16 2005/10/16 18:54:45 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -134,6 +134,7 @@ int main(int argc, char **argv)
   int div=5;
   int dmode=0;
   struct stat s;
+  int use_stdin = 0;
   
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
@@ -181,33 +182,46 @@ int main(int argc, char **argv)
 			return(EXIT_FAILURE);
 		}
 	}
-	if (optind < argc-1)
+	if(optind < argc)
 	{
 		fprintf(stderr,"%s: too many arguments\n",progname);
 		return(EXIT_FAILURE);
 	}
 	
-	fd=open(device,O_RDONLY);
-	if(fd==-1)  {
-		perror(progname);
-		fprintf(stderr,"%s: error opening %s\n",progname,device);
-		exit(EXIT_FAILURE);
-	};
-	if ( (fstat(fd,&s)!=-1) && (S_ISFIFO(s.st_mode)) )
+	if(!isatty(STDIN_FILENO))
 	{
-		/* can't do ioctls on a pipe */
+		use_stdin = 1;
+		fd = STDIN_FILENO;
 	}
-	else if(ioctl(fd,LIRC_GET_REC_MODE,&mode)==-1 || mode!=LIRC_MODE_MODE2)
+	else
 	{
-		printf("This program is only intended for receivers "
-		       "supporting the pulse/space layer.\n");
-		printf("Note that this is no error, but this program simply "
-		       "makes no sense for your\nreceiver.\n");
-		printf("In order to test your setup run lircd with the "
-		       "--nodaemon option and \n"
-		       "then check if the remote works with the irw tool.\n");
-		close(fd);
-		exit(EXIT_FAILURE);
+		fd = open(device, O_RDONLY);
+		if(fd == -1)
+		{
+			perror(progname);
+			fprintf(stderr, "%s: error opening %s\n",
+				progname, device);
+			exit(EXIT_FAILURE);
+		}
+		if((fstat(fd,&s)!=-1) && (S_ISFIFO(s.st_mode)))
+		{
+			/* can't do ioctls on a pipe */
+		}
+		else if(ioctl(fd, LIRC_GET_REC_MODE, &mode) == -1 ||
+			mode != LIRC_MODE_MODE2)
+		{
+			printf("This program is only intended for receivers "
+			       "supporting the pulse/space layer.\n");
+			printf("Note that this is no error, but this "
+			       "program simply makes no sense for your\n"
+			       "receiver.\n");
+			printf("In order to test your setup run lircd "
+			       "with the --nodaemon option and \n"
+			       "then check if the remote works with the irw "
+			       "tool.\n");
+			close(fd);
+			exit(EXIT_FAILURE);
+		}
 	}
 	
   initscreen();
@@ -269,7 +283,34 @@ int main(int argc, char **argv)
       retval = select(maxfd+1, &rfds, NULL, NULL, NULL);
   
       if (FD_ISSET(fd,&rfds)) {
-	result=read(fd,&data,sizeof(data));
+	      if(use_stdin)
+	      {
+		      static int space=1;
+		      unsigned long scan;
+
+		      if(space)
+		      {
+			      result = fscanf(stdin,"space %ld\n",&scan);
+		      }
+		      else
+		      {
+			      result = fscanf(stdin,"pulse %ld\n",&scan);
+		      }
+		      if(result == 1)
+		      {
+			      data=(lirc_t) scan;
+			      if(!space) data|=PULSE_BIT;
+		      }
+		      else
+		      {
+			      fd = STDOUT_FILENO;
+		      }
+		      space = !space;
+	      }
+	      else
+	      {
+		      result=read(fd,&data,sizeof(data));
+	      }
 	if (result!=0)
 	  {
 	    //		    printf("%.8x\t",data);
