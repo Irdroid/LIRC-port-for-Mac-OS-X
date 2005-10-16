@@ -1,4 +1,4 @@
-/*      $Id: xmode2.c,v 5.17 2005/10/16 19:00:14 lirc Exp $      */
+/*      $Id: xmode2.c,v 5.18 2005/10/16 19:17:13 lirc Exp $      */
 
 /****************************************************************************
  ** xmode2.c ****************************************************************
@@ -74,7 +74,7 @@ XSetWindowAttributes  winatt1;
 long            event_mask1; 
 XEvent          event_return1; 
 
-void initscreen(void)
+void initscreen(char *geometry)
 {
 	d1=XOpenDisplay(0);
 	if (d1==NULL)
@@ -83,7 +83,10 @@ void initscreen(void)
 		exit(0);
 	}
   
-
+	if(geometry != NULL)
+	{
+		XParseGeometry(geometry, &w1_x, &w1_y, &w1_w, &w1_h);
+	}
 
 	/*Aufbau der XWindowsAttribStr*/
 	w0 = DefaultRootWindow(d1);
@@ -138,6 +141,7 @@ int main(int argc, char **argv)
   
 	char *device=LIRC_DRIVER_DEVICE;
 	char *progname;
+	char *geometry = NULL;
 
 	progname="xmode2";
 	while(1)
@@ -147,11 +151,12 @@ int main(int argc, char **argv)
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"device",required_argument,NULL,'d'},
+			{"geometry",required_argument,NULL,'g'},
 			{"timediv",required_argument,NULL,'t'},
 			{"mode",required_argument,NULL,'m'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvd:t:m",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:g:t:m",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
@@ -161,6 +166,7 @@ int main(int argc, char **argv)
 			printf("\t -h --help\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -d --device=device\tread from given device\n");
+			printf("\t -g --geometry=geometry\twindow geometry\n");
 			printf("\t -t --timediv=value\tms per unit\n");
 			printf("\t -m --mode\t\tenable alternative display mode\n");
 			return(EXIT_SUCCESS);
@@ -169,6 +175,9 @@ int main(int argc, char **argv)
 			return(EXIT_SUCCESS);
 		case 'd':
 			device=optarg;
+			break;
+		case 'g':
+			geometry = optarg;
 			break;
 		case 't': /* timediv */
 			div = strtol(optarg,NULL,10);
@@ -223,7 +232,7 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	initscreen();
+	initscreen(geometry);
 	xfd=XConnectionNumber(d1);
 	maxfd = fd>xfd ? fd:xfd;
 	y1=20;
