@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.28 2005/06/18 20:39:45 lirc Exp $      */
+/*      $Id: receive.c,v 5.29 2005/10/20 18:43:36 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -32,11 +32,13 @@ inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
 
 inline void set_pending_pulse(lirc_t deltap)
 {
+	LOGPRINTF(5, "pending pulse: %lu", deltap);
 	rec_buffer.pendingp=deltap;
 }
 
 inline void set_pending_space(lirc_t deltas)
 {
+	LOGPRINTF(5, "pending space: %lu", deltas);
 	rec_buffer.pendings=deltas;
 }
 
@@ -168,6 +170,7 @@ int clear_rec_buffer(void)
 
 inline void unget_rec_buffer(int count)
 {
+	LOGPRINTF(5, "unget: %d", count);
 	if(count==1 || count==2)
 	{
 		rec_buffer.rptr-=count;
@@ -248,6 +251,7 @@ int expectpulse(struct ir_remote *remote,int exdelta)
 	lirc_t deltap;
 	int retval;
 	
+	LOGPRINTF(5, "expecting pulse: %lu", exdelta);
 	if(!sync_pending_space(remote)) return 0;
 	
 	deltap=get_next_pulse(rec_buffer.pendingp+exdelta);
@@ -271,6 +275,7 @@ int expectspace(struct ir_remote *remote,int exdelta)
 	lirc_t deltas;
 	int retval;
 
+	LOGPRINTF(5, "expecting space: %lu", exdelta);
 	if(!sync_pending_pulse(remote)) return 0;
 	
 	deltas=get_next_space(rec_buffer.pendings+exdelta);
