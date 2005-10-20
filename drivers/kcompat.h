@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.13 2005/08/01 20:34:27 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.14 2005/10/20 18:17:20 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -224,6 +224,11 @@ typedef void irqreturn_t;
 } while (0)
 
 
+#endif
+
+/* removed in 2.6.14 */
+#ifndef I2C_ALGO_BIT
+#   define I2C_ALGO_BIT 0
 #endif
 
 #endif /* _KCOMPAT_H */
