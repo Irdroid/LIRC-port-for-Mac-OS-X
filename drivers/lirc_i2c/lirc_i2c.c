@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.34 2005/03/28 09:25:36 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.35 2005/10/20 18:25:58 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -326,11 +326,11 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer* buf)
 static int set_use_inc(void* data)
 {
 	struct IR *ir = data;
+	int ret;
 
 	/* lock bttv in memory while /dev/lirc is in use  */
-	/* this is completely broken code. lirc_unregister_plugin()
-	   must be possible even when the device is open */
-	i2c_use_client(&ir->c);
+	ret = i2c_use_client(&ir->c);
+	if(ret != 0) return ret;
 
 	MOD_INC_USE_COUNT;
 	return 0;
@@ -459,7 +459,6 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	/* register device */
 	i2c_attach_client(&ir->c);
 	ir->l.minor = lirc_register_plugin(&ir->l);
-	i2c_use_client(&ir->c);
 	
 	return 0;
 }
@@ -469,7 +468,6 @@ static int ir_detach(struct i2c_client *client)
 	struct IR *ir = i2c_get_clientdata(client);
 	
 	/* unregister device */
-	i2c_release_client(&ir->c);
 	lirc_unregister_plugin(ir->l.minor);
 	i2c_detach_client(&ir->c);
 
