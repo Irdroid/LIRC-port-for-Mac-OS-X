@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.14 2005/10/20 18:17:20 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.15 2005/10/20 18:19:50 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -162,6 +162,7 @@ static inline void module_put(struct module *module)
 #define MODULE_DEVICE_TABLE(x,y)
 #endif
 
+#include <linux/interrupt.h>
 #ifndef IRQ_RETVAL
 typedef void irqreturn_t;
 #define IRQ_NONE
