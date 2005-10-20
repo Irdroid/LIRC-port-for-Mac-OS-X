@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.15 2005/10/20 18:19:50 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.16 2005/10/20 18:41:36 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -202,18 +202,6 @@ typedef void irqreturn_t;
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 0)
-
-#undef i2c_use_client
-#define i2c_use_client(client_ptr) do { \
-	if ((client_ptr)->adapter->inc_use) \
-		(client_ptr)->adapter->inc_use((client_ptr)->adapter); \
-} while (0)
-
-#undef i2c_release_client
-#define i2c_release_client(client_ptr) do { \
-	if ((client_ptr)->adapter->dec_use) \
-		(client_ptr)->adapter->dec_use((client_ptr)->adapter); \
-} while (0)
 
 #undef i2c_get_clientdata
 #define i2c_get_clientdata(client) ((client)->data)
