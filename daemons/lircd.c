@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.58 2005/08/15 09:02:03 lirc Exp $      */
+/*      $Id: lircd.c,v 5.59 2005/10/20 19:13:42 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -202,7 +202,14 @@ inline int write_socket(int fd, char *buf, int len)
 
 	while(todo)
 	{
+#ifdef SIM_REC
+		do{
+			done=write(fd,buf,todo);
+		}
+		while(done<0 && errno == EAGAIN);
+#else
 		done=write(fd,buf,todo);
+#endif
 		if(done<=0) return(done);
 		buf+=done;
 		todo-=done;
