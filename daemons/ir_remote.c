@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.23 2003/09/21 10:15:02 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.24 2005/10/25 19:05:35 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -412,14 +412,14 @@ char *decode_all(struct ir_remote *remotes)
 				     remote->last_code->name,
 				     remote->name);
 #else
-			len=snprintf(message,PACKET_SIZE,"%016llx %02x %s %s\n",
+			len=snprintf(message,PACKET_SIZE+1,"%016llx %02x %s %s\n",
 				     code,
 				     remote->reps-(ncode->next ? 1:0),
 				     remote->last_code->name,
 				     remote->name);
 #endif
 			decoding=NULL;
-			if(len==PACKET_SIZE+1)
+			if(len>=PACKET_SIZE+1)
 			{
 				logprintf(LOG_ERR,"message buffer overflow");
 				return(NULL);

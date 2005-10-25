@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.59 2005/10/20 19:13:42 lirc Exp $      */
+/*      $Id: lircd.c,v 5.60 2005/10/25 19:05:36 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1109,7 +1109,7 @@ int send_remote_list(int fd,char *message)
 	while(all)
 	{
 		len=snprintf(buffer,PACKET_SIZE+1,"%s\n",all->name);
-		if(len==PACKET_SIZE+1)
+		if(len>=PACKET_SIZE+1)
 		{
 			len=sprintf(buffer,"name_too_long\n");
 		}
@@ -1162,7 +1162,7 @@ int send_remote(int fd,char *message,struct ir_remote *remote)
 			     codes->code,
 			     codes->name);
 #endif
-		if(len==PACKET_SIZE+1)
+		if(len>=PACKET_SIZE+1)
 		{
 			len=sprintf(buffer,"code_too_long\n");
 		}
@@ -1193,7 +1193,7 @@ int send_name(int fd,char *message,struct ir_ncode *code)
 		     code->code,
 		     code->name);
 #endif
-	if(len==PACKET_SIZE+1)
+	if(len>=PACKET_SIZE+1)
 	{
 		len=sprintf(buffer,"1\ncode_too_long\n");
 	}
