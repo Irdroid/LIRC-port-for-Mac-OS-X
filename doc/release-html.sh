@@ -34,3 +34,6 @@ for FILE in $FILES2; do
     }
 done
 echo
+
+echo "Generating driver overview table"
+./table.sh >${DEST_DIR}/table.html
