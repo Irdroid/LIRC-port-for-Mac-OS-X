@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.7 2005/08/10 19:22:20 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.8 2005/10/29 14:18:53 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -616,7 +616,7 @@ static void ir_close (void *data)
 
 	LOCK_CONTEXT;
 
-	usb_unlink_urb (context ->rx_urb);
+	usb_kill_urb(context->rx_urb);
 	context ->ir_isopen = FALSE;
 	MOD_DEC_USE_COUNT;
 	info ("IR port closed");
@@ -1125,12 +1125,12 @@ static void imon_disconnect (struct usb_device *dev, void *data)
 	context ->dev_present = FALSE;
 
 	/* Stop reception */
-	usb_unlink_urb (context ->rx_urb);
+	usb_kill_urb(context->rx_urb);
 
 	/* Abort ongoing write */
 	if (atomic_read (&context ->tx.busy)) {
 
-		usb_unlink_urb (context ->tx_urb);
+		usb_kill_urb(context->tx_urb);
 		wait_for_completion (&context ->tx.finished);
 	}
 

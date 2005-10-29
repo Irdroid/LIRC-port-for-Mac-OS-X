@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.16 2005/10/20 18:41:36 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.17 2005/10/29 14:18:53 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -218,6 +218,21 @@ typedef void irqreturn_t;
 /* removed in 2.6.14 */
 #ifndef I2C_ALGO_BIT
 #   define I2C_ALGO_BIT 0
+#endif
+
+/*************************** USB specific *****************************/
+#include <linux/usb.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 8)
+static inline int usb_kill_urb(struct urb *urb)
+{
+	return usb_unlink_urb(urb);
+}
+#endif
+
+/* removed in 2.6.14 */
+#ifndef URB_ASYNC_UNLINK
+#define URB_ASYNC_UNLINK 0  
 #endif
 
 #endif /* _KCOMPAT_H */

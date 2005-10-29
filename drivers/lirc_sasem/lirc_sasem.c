@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.10 2005/08/10 19:22:20 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.11 2005/10/29 14:18:53 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -600,7 +600,7 @@ static void ir_close (void *data)
 
 	LOCK_CONTEXT;
 
-	usb_unlink_urb (context ->rx_urb);
+	usb_kill_urb(context->rx_urb);
 	context ->ir_isopen = FALSE;
 	MOD_DEC_USE_COUNT;
 	info ("IR port closed");
@@ -1009,12 +1009,12 @@ static void sasem_disconnect (struct usb_device *dev, void *data)
 	context ->dev_present = FALSE;
 
 	/* Stop reception */
-	usb_unlink_urb (context ->rx_urb);
+	usb_kill_urb(context->rx_urb);
 
 	/* Abort ongoing write */
 	if (atomic_read (&context ->tx.busy)) {
 
-		usb_unlink_urb (context ->tx_urb);
+		usb_kill_urb(context->tx_urb);
 		wait_for_completion (&context ->tx.finished);
 	}
 

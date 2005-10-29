@@ -576,7 +576,7 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 	wake_up_all(&ir->wait_out);
 
 	IRLOCK;
-	usb_unlink_urb(ir->urb_in);
+	usb_kill_urb(ir->urb_in);
 	usb_free_urb(ir->urb_in);
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
 	IRUNLOCK;

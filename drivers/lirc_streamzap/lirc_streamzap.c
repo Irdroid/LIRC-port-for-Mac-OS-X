@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.13 2005/08/14 11:09:29 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.14 2005/10/29 14:18:53 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.13 $"
+#define DRIVER_VERSION	"$Revision: 1.14 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -737,7 +737,7 @@ static void streamzap_use_dec(void *data)
 	
 	stop_timer(sz);
 	
-	usb_unlink_urb(sz->urb_in);
+	usb_kill_urb(sz->urb_in);
 	
         MOD_DEC_USE_COUNT;
 }

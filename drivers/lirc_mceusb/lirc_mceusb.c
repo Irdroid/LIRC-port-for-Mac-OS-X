@@ -953,7 +953,7 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 #ifdef KERNEL_2_5
 	/* terminate an ongoing write */
 	if (atomic_read (&dev->write_busy)) {
-		usb_unlink_urb (dev->write_urb);
+		usb_kill_urb (dev->write_urb);
 		wait_for_completion (&dev->write_finished);
 	}
 

@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.50 2005/08/24 04:22:28 pmiller9 Exp $
+ * $Id: lirc_atiusb.c,v 1.51 2005/10/29 14:18:53 lirc Exp $
  */
 
 /*
@@ -359,7 +359,7 @@ static void set_use_dec(void *data)
 		list_for_each_safe(pos, n, &ir->iep_listhead) {
 			iep = get_iep_from_link(pos);
 			dprintk(DRIVER_NAME "[%d]: unlinking iep 0x%02x (%p)\n", ir->devnum, iep->ep->bEndpointAddress, iep);
-			usb_unlink_urb(iep->urb);
+			usb_kill_urb(iep->urb);
 		}
 		ir->connected = 0;
 	}
@@ -1195,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.50 2005/08/24 04:22:28 pmiller9 Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.51 2005/10/29 14:18:53 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
