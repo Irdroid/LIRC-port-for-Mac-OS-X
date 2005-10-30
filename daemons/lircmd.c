@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.17 2005/03/11 18:39:24 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.18 2005/10/30 11:11:46 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -135,7 +135,7 @@ struct state_mouse new_ms,ms=
 	{button_up,button_up,button_up}
 };
 
-char *progname="lircmd "VERSION;
+char *progname="lircmd";
 static const char *syslogident = "lircmd-" VERSION;
 char *configfile=LIRCMDCFGFILE;
 
@@ -739,7 +739,7 @@ int main(int argc,char **argv)
 			printf("\t -n --nodaemon\t\tdon't fork to background\n");
 			return(EXIT_SUCCESS);
 		case 'v':
-			printf("%s\n",progname);
+			printf("%s %s\n",progname,VERSION);
 			return(EXIT_SUCCESS);
 		case 'n':
 			nodaemon=1;

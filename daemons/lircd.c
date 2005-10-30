@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.60 2005/10/25 19:05:36 lirc Exp $      */
+/*      $Id: lircd.c,v 5.61 2005/10/30 11:11:46 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -87,7 +87,7 @@ static char *repeat_message=NULL;
 
 extern struct hardware hw;
 
-char *progname="lircd " VERSION;
+char *progname="lircd";
 char *configfile=LIRCDCFGFILE;
 #ifndef USE_SYSLOG
 char *logfile=LOGFILE;
@@ -1885,7 +1885,7 @@ int main(int argc,char **argv)
 #                       endif
 			return(EXIT_SUCCESS);
 		case 'v':
-			printf("%s\n",progname);
+			printf("%s %s\n",progname,VERSION);
 			return(EXIT_SUCCESS);
 		case 'n':
 			nodaemon=1;
