@@ -991,7 +991,7 @@ begin remote
           Wheel_Down               0x000000000000C7F2
           Wheel_Left               0x000000000000F21D
           Wheel_Right              0x000000000000749F
-          Wheel_Click              0x00000014F31E0000
+          Wheel_Click              0x000000000000F31E
           Vol+                     0x000000000000DE09
           Vol-                     0x0000000000005D88
           Mute                     0x000000000000D500
