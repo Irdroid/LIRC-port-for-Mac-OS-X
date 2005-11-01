@@ -1,9 +1,11 @@
-## $Id: Makefile.am,v 5.11 2004/11/28 19:47:03 lirc Exp $
+## $Id: Makefile.am,v 5.12 2005/11/01 19:12:16 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
-bin_PROGRAMS = irw irpty irexec ircat mode2 irsend @vga_progs@ @x_progs@
+bin_PROGRAMS = irw irpty irexec ircat mode2 irsend \
+	lirc_clientd \
+	@vga_progs@ @x_progs@
 
 AM_CPPFLAGS = @X_CFLAGS@
 
@@ -32,12 +34,18 @@ irxevent_DEPENDENCIES = liblirc_client.la
 xmode2_SOURCES = xmode2.c
 xmode2_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@
 
+## lirc_clientd
+
+lirc_clientd_SOURCES = lirc_clientd.c
+lirc_clientd_DEPENDENCIES = liblirc_client.la
+lirc_clientd_LDADD = liblirc_client.la
+
 ## libraries
 lircincludedir = $(includedir)/lirc
 
 lib_LTLIBRARIES = liblirc_client.la
 liblirc_client_la_SOURCES = lirc_client.c lirc_client.h
-liblirc_client_la_LDFLAGS = -version-info 0:0:0
+liblirc_client_la_LDFLAGS = -version-info 1:0:1
 
 lircinclude_HEADERS = lirc_client.h
 
