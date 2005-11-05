@@ -1,4 +1,4 @@
-0.7.3-CVS: future
+0.8.0-CVS: future
   * bug fixes when transmitting codes with small gap values:
     NO_HEAD_REP and RC5 work correctly again 
 
