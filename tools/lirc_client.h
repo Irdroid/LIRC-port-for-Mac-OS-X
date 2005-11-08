@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.6 2005/11/01 19:12:16 lirc Exp $      */
+/*      $Id: lirc_client.h,v 5.7 2005/11/08 07:08:28 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -13,6 +13,8 @@
  
 #ifndef LIRC_CLIENT_H
 #define LIRC_CLIENT_H
+
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
