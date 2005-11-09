@@ -1,4 +1,4 @@
-/*      $Id: lirc_clientd.c,v 5.1 2005/11/01 19:12:16 lirc Exp $      */
+/*      $Id: lirc_clientd.c,v 5.2 2005/11/09 07:21:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_clientd.c ***********************************************************
@@ -114,7 +114,7 @@ static int debug;
   do {} while(0)
 #endif
 
-const char *progname="lirc_clientd " VERSION;
+const char *progname="lirc_clientd";
 
 static sig_atomic_t term=0;
 static int termsig;
@@ -938,7 +938,7 @@ int main(int argc, char **argv)
                         printf("\t -o --output=socket\t\toutput socket filename\n");
 			return(EXIT_SUCCESS);
 		case 'v':
-			printf("%s\n",progname);
+			printf("%s %s\n",progname,VERSION);
 			return(EXIT_SUCCESS);
 		case 'p':
 			if(oatoi(optarg)==-1)
