@@ -58,7 +58,22 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read; do
 	if ! echo "${lirc_driver}"|grep lirc_dev>/dev/null; then
 	    lirc_driver="none"
 	fi
-	echo "<tr><td>${desc}</td><td align=\"center\">${driver}</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT:3}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
+	echo -n "<tr><td>${desc}</td><td align=\"center\">"
+	
+	if test -f html-source/${driver}.html; then
+	    driver_doc=${driver}
+	elif test -f `echo html-source/${driver}.html|sed --expression="s/_/-/"`; then
+	    driver_doc=`echo $driver|sed --expression="s/_/-/"`
+	else
+	    driver_doc=""
+	fi
+
+	if test "$driver_doc" != ""; then
+	    echo -n "<A HREF=\"${driver_doc}.html\">${driver}</A>"
+	else
+	    echo -n "${driver}"
+	fi
+	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT:3}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
     fi
 done
 echo "</table>"
