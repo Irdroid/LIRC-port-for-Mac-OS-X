@@ -1,4 +1,6 @@
 0.8.0-CVS: future
+  * the special driver option "any" has been replaced by two new
+    options: "all" and "userspace"
   * bug fixes when transmitting codes with small gap values:
     NO_HEAD_REP and RC5 work correctly again 
 

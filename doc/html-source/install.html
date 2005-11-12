@@ -26,7 +26,7 @@
       <B>Irman (=UIR) :</B> To use your Irman with LIRC you need the
       latest <A HREF="http://www.lirc.org/software/snapshots/">
       <em>libirman</em></A> library. At the time this has been written
-      the current libirman version was 0.4.2. Former versions won't
+      the current libirman version was 0.4.3. Former versions won't
       work. Please also read <A HREF="#updating">Updating from
       lirc-0.5.4</A>.
     </P>
@@ -121,9 +121,9 @@
     </P>
     
     <P>
-      <B>TV cards:</B> To use any TV card remote controls you will
-      need either at least kernel version 2.4.0 or you use Gerd
-      Knorr's current <A
+      <B>TV cards:</B> To use any bttv based TV card remote controls
+      you will need either at least kernel version 2.4.0 or you use
+      Gerd Knorr's current <A
       HREF="http://www.strusel007.de/linux/bttv/index.html">bttv</A>
       package together with a kernel version of 2.2.4 or higher. In
       any case bttv version 0.7.45 or higher is required. As LIRC
@@ -179,6 +179,11 @@
       in the future. If you are a programmer who wants to maintain
       such a driver you are welcome to join the project.
     </P>
+    <P>
+      You should locate your device in this <A HREF="table.html">list
+      of supported devices</A> and see if there is additional
+      information available regarding the setup of your device.
+    </P>
     
     <!-- Compiling +++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     
@@ -203,25 +208,43 @@
       option.
     </P>
 
-    <P>There are two special drivers:</P>
+    <P>There are three special drivers:</P>
     <DL>
+      <DT>all</DT>
+      <DD>
+	will build multiple drivers into lircd and runtime selection
+	will be possible using the <em>--driver</em> option.  However,
+	not all drivers are included, so in some cases you will have
+	to select the appropriate driver and not <em>all</em>. This
+	option will also compile all available kernel modules. Some
+	kernel modules are only supported with recent kernel
+	versions. That means that compilation of these drivers might
+	fail with older kernel versions. If this happens for you, you
+	should consider using the <em>userspace</em> driver described
+	below and only compile the kernel modules that you need
+	separately.
+      </DD>
+
       <DT>none</DT>
       <DD>
 	will only let lircd talk to other lircd's though the network and
 	not to any local hardware.
       </DD>
-      <DT>any</DT>
+
+      <DT>userspace</DT>
       <DD>
-	will build multiple drivers into lircd and runtime selection
-	will be possible.
-	However, not all drivers are included, so in some cases you
-	will have to select the appropriate driver and not <em>any</em>.
+        behaves like the <em>all</em> driver option except that no
+        kernel modules will be built.
       </DD>
     </DL>
     
     <P>
-      After having configured the package just type <em>make</em> and
-      lean back.
+      When running the configure script, please pay attention at its
+      output. At the end of the configuration checks, it will tell you
+      which kernel module (if any) will be required for your
+      hardware. You can also look up this information in the <A
+      HREF="table.html">device table</A>. After having configured the
+      package just type <em>make</em> and lean back.
     </P>
     
     <P>
