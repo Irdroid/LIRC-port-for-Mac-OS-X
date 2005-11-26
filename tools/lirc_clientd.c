@@ -1,4 +1,4 @@
-/*      $Id: lirc_clientd.c,v 5.2 2005/11/09 07:21:27 lirc Exp $      */
+/*      $Id: lirc_clientd.c,v 5.3 2005/11/26 11:53:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_clientd.c ***********************************************************
@@ -67,6 +67,7 @@ struct protocol_directive
 
 static int code_func(int fd,char *message,char *arguments);
 static int ident_func(int fd,char *message,char *arguments);
+static int getmode_func(int fd,char *message,char *arguments);
 static int send_result(int fd, char *message, const char *result);
 static int send_success(int fd,char *message);
 
@@ -74,6 +75,7 @@ struct protocol_directive directives[] =
 {
 	{"CODE",code_func},
 	{"IDENT",ident_func},
+	{"GETMODE",getmode_func},
 	{NULL,NULL}
 	/*
 	{"DEBUG",debug},
@@ -551,6 +553,16 @@ static int ident_func(int fd,char *message,char *arguments)
 	}
 	
 	LOGPRINTF(1, "%s connected", clis[index].ident_string);
+	return(send_success(fd,message));
+}
+
+static int getmode_func(int fd,char *message,char *arguments)
+{
+	LOGPRINTF(2, "GETMODE %s", arguments);
+	if(lirc_getmode(config))
+	{
+		return send_result(fd, message, lirc_getmode(config));
+	}
 	return(send_success(fd,message));
 }
 

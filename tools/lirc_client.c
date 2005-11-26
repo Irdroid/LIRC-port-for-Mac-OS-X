@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.18 2005/11/01 19:12:16 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.19 2005/11/26 11:53:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1765,6 +1765,33 @@ size_t lirc_getsocketname(const char *filename, char *buf, size_t size)
 		strcat(buf, "d");
 	}
 	return strlen(filename)+2;
+}
+
+const char *lirc_getmode(struct lirc_config *config)
+{
+	if(config->sockfd!=-1)
+	{
+		static char buf[LIRC_PACKET_SIZE];
+		size_t buf_len = LIRC_PACKET_SIZE;
+		int success;
+		int ret;
+		
+		ret = lirc_send_command(config->sockfd, "GETMODE\n",
+					buf, &buf_len, &success);
+		if(success == LIRC_RET_SUCCESS)
+		{
+			if(ret > 0)
+			{
+				return buf;
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+		return NULL;
+	}
+	return config->current_mode;
 }
 
 static const char *lirc_read_string(int fd)
