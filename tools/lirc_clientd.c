@@ -1,4 +1,4 @@
-/*      $Id: lirc_clientd.c,v 5.3 2005/11/26 11:53:01 lirc Exp $      */
+/*      $Id: lirc_clientd.c,v 5.4 2005/11/27 11:49:26 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_clientd.c ***********************************************************
@@ -116,6 +116,9 @@ static int debug;
   do {} while(0)
 #endif
 
+#define logprintf syslog
+#define logperror(prio,s) if((s)!=NULL) syslog(prio,"%s: %m\n",(char *) s); else syslog(prio,"%m\n")
+
 const char *progname="lirc_clientd";
 
 static sig_atomic_t term=0;
@@ -124,52 +127,11 @@ static int clin=0;
 static struct client_data clis[MAX_CLIENTS];
 
 static int daemonized=0;
-static FILE *lf=NULL;
-static const char *hostname="";
 
 static struct lirc_config *config;
 
 static int send_error(int fd,char *message,char *format_str, ...);
 static int handle_input();
-
-void logprintf(int prio,char *format_str, ...)
-{
-	time_t current;
-	char *currents;
-	va_list ap;  
-	
-	current=time(&current);
-	currents=ctime(&current);
-	
-	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
-	if(!daemonized) fprintf(stderr,"%s: ",progname);
-	va_start(ap,format_str);
-	if(lf)
-	{
-		if(prio==LOG_WARNING) fprintf(lf,"WARNING: ");
-		vfprintf(lf,format_str,ap);
-		fputc('\n',lf);fflush(lf);
-	}
-	if(!daemonized)
-	{
-		if(prio==LOG_WARNING) fprintf(stderr,"WARNING: ");
-		vfprintf(stderr,format_str,ap);
-		fputc('\n',stderr);fflush(stderr);
-	}
-	va_end(ap);
-}
-
-void logperror(int prio,const char *s)
-{
-	if(s!=NULL)
-	{
-		logprintf(prio,"%s: %s",s,strerror(errno));
-	}
-	else
-	{
-		logprintf(prio,"%s",strerror(errno));
-	}
-}
 
 static inline int max(int a,int b)
 {
@@ -1000,7 +962,6 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	LOGPRINTF(3, "fork");
 	/* fork */
 	if(daemon(0,0)==-1)
 	{
@@ -1013,8 +974,7 @@ int main(int argc, char **argv)
 	}
 	daemonized=1;
 
-	lf = fopen("/tmp/lirc_clientd.log", "a");
-
+	openlog(progname, LOG_CONS|LOG_PID, LOG_USER);
 	umask(0);
 	signal(SIGPIPE,SIG_IGN);
 	
@@ -1025,8 +985,10 @@ int main(int argc, char **argv)
 	sigaction(SIGINT,&act,NULL);
 	sigaction(SIGHUP,&act,NULL);
 	
+	logprintf(LOG_NOTICE, "%s started", progname);
 	loop(socket, lircdfd);
 	
+	closelog();
 	shutdown(socket, 2);
 	close(socket);
 	lirc_freeconfig(config);
