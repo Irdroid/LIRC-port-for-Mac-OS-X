@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.18 2005/11/08 21:39:24 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.19 2005/11/27 11:03:01 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -187,13 +187,12 @@ typedef void irqreturn_t;
 #define local_irq_restore(flags) do{ restore_flags(flags); } while(0)
 #endif
 
-#if !defined(pci_pretty_name)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#define pci_pretty_name(dev) pci_name(dev)
-#else
-#define pci_pretty_name(dev) ((dev)->name)
-#endif
-#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,22)
+static inline char *pci_name(struct pci_dev *pdev)
+{
+	return pdev->slot_name;
+}
+#endif//Kernel<2.4.22
 
 /*************************** I2C specific *****************************/
 #include <linux/i2c.h>

@@ -82,7 +82,7 @@ static int do_pci_probe(void)
 	my_dev = (struct pci_dev *)pci_find_device(PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_264VT,NULL);
 	if ( my_dev ) {
 		printk(KERN_ERR "ATIR: Using device: %s\n",
-		       pci_pretty_name(my_dev));
+		       pci_name(my_dev));
 		pci_addr_phys = 0;
 		if ( my_dev->resource[0].flags & IORESOURCE_MEM ) {
 			pci_addr_phys = my_dev->resource[0].start;
