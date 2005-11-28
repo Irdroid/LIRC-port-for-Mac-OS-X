@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.19 2005/11/26 11:53:01 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.20 2005/11/28 18:55:47 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1723,7 +1723,7 @@ int lirc_nextcode(char **code)
 			char *new_buffer;
 
 			packet_size+=PACKET_SIZE;
-			new_buffer=(char *) realloc(lirc_buffer,packet_size);
+			new_buffer=(char *) realloc(lirc_buffer,packet_size+1);
 			if(new_buffer==NULL)
 			{
 				return(-1);
