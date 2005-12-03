@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.11 2005/10/29 14:18:53 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.12 2005/12/03 15:18:07 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -81,7 +81,7 @@
 
 #define VFD_MINOR_BASE	144	/* Same as LCD */
 #define DEVFS_MODE	S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
-#define DEVFS_NAME	"usb/lcd%d"
+#define DEVFS_NAME	LIRC_DEVFS_PREFIX "lcd%d"
 
 #define BUF_CHUNK_SIZE	8
 #define BUF_SIZE	128
@@ -204,7 +204,9 @@ static struct usb_driver sasem_driver = {
 static struct usb_class_driver sasem_class = {
 	.name 		= DEVFS_NAME,
 	.fops		= &vfd_fops,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 	.mode		= DEVFS_MODE,
+#endif
 	.minor_base	= VFD_MINOR_BASE,
 };
 #endif

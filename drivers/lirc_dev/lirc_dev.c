@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.44 2005/08/08 06:04:48 lirc Exp $
+ * $Id: lirc_dev.c,v 1.45 2005/12/03 15:18:07 lirc Exp $
  *
  */
 
@@ -382,8 +382,9 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			S_IFCHR|S_IRUSR|S_IWUSR,
 			DEV_LIRC "/%u", ir->p.minor);
 #endif
-	(void) class_device_create(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
-				       NULL, "lirc%u", ir->p.minor);
+	(void) lirc_class_device_create(lirc_class, NULL, 
+					MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+					NULL, "lirc%u", ir->p.minor);
 
 	if(p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
