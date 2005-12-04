@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.20 2005/12/03 15:18:07 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.21 2005/12/04 16:11:18 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -37,7 +37,7 @@ static inline void class_device_destroy(lirc_class_t *cls, dev_t devt)
 
 #else /* >= 2.6.13 */
 
-if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,15)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,15)
 
 #define lirc_class_device_create(cs, parent, dev, device, fmt, args...) \
 	class_device_create(cs, dev, device, fmt, ## args)
