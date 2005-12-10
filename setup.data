@@ -73,6 +73,7 @@ hw_menu_entry: @hw-tv-card
 	pixelview_pak: "Lenco MXTV-9578 CP (card=50)"
 	pctv: "Miro PCTV serial port receiver"
 	cph06x: "Phoebe Tv Master + FM (card=22)"
+	pixelview_pro: "Pixelview PlayTV MPEG2"
 	pixelview_pak: "PixelView PlayTV PAK (card=50)"
 	pixelview_pro: "Pixelview PlayTV pro (card=37)"
 	pixelview_bt878: "Pixelview PlayTV (bt878) \
