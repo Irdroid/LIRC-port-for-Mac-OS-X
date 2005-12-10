@@ -719,3 +719,18 @@
     </P>
     
 
+    <A NAME="updating07x"></A><HR>
+    <H1 ALIGN="CENTER">Updating from lirc-0.7.x</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      There is a new program that you probably want to use: <A
+      HREF="lircrcd.html">lircrcd</a> reads the .lircrc config file
+      and synchronises the mode that the LIRC clients using this
+      config file (irexec, irxevent, etc.) are in. Using lircrcd has
+      to be explicitly enabled in the config file by adding the
+      following line at the beginning of the file:
+<pre>
+#! lircrcd
+</pre>
+    </P>

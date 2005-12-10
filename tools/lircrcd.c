@@ -1,10 +1,10 @@
-/*      $Id: lirc_clientd.c,v 5.4 2005/11/27 11:49:26 lirc Exp $      */
+/*      $Id: lircrcd.c,v 5.1 2005/12/10 22:12:02 lirc Exp $      */
 
 /****************************************************************************
- ** lirc_clientd.c ***********************************************************
+ ** lircrcd.c ***************************************************************
  ****************************************************************************
  *
- * lirc_clientd - daemon that manages current mode for all applications
+ * lircrcd - daemon that manages current mode for all applications
  *
  * Copyright (C) 2004 Christoph Bartelmus <lirc@bartelmus.de>
  *
@@ -119,7 +119,7 @@ static int debug;
 #define logprintf syslog
 #define logperror(prio,s) if((s)!=NULL) syslog(prio,"%s: %m\n",(char *) s); else syslog(prio,"%m\n")
 
-const char *progname="lirc_clientd";
+const char *progname="lircrcd";
 
 static sig_atomic_t term=0;
 static int termsig;
@@ -882,7 +882,7 @@ int main(int argc, char **argv)
 {
 	char *configfile;
 	const char *socketfile = NULL;
-	mode_t permission=S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
+	mode_t permission=S_IRUSR|S_IWUSR;
 	int socket;
 	int lircdfd;
 	struct sigaction act;
@@ -905,7 +905,7 @@ int main(int argc, char **argv)
 		switch (c)
 		{
 		case 'h':
-			printf("Usage: %s [options] [config-file]\n",progname);
+			printf("Usage: %s [options] config-file\n",progname);
 			printf("\t -h --help\t\t\tdisplay this message\n");
 			printf("\t -v --version\t\t\tdisplay version\n");
 			printf("\t -p --permission=mode\t\tfile permissions for socket\n");
@@ -940,7 +940,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	lircdfd=lirc_init("lirc_clientd", 0);
+	lircdfd=lirc_init("lircrcd", 0);
 	if(lircdfd == -1)
 	{
 		return EXIT_FAILURE;

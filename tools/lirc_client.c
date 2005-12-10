@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.20 2005/11/28 18:55:47 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.21 2005/12/10 22:12:02 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -814,7 +814,7 @@ int lirc_readconfig(char *file,
 		goto lirc_readconfig_compat;
 	}
 	
-	/* connect to lirc_clientd */
+	/* connect to lircrcd */
 
 	addr.sun_family=AF_UNIX;
 	if(lirc_getsocketname(filename, addr.sun_path, sizeof(addr.sun_path))>sizeof(addr.sun_path))
@@ -848,8 +848,8 @@ int lirc_readconfig(char *file,
 	close(sockfd);
 	sockfd = -1;
 	
-	/* launch lirc_clientd */
-	sha_bang2=sha_bang!=NULL ? sha_bang:"lirc_clientd";
+	/* launch lircrcd */
+	sha_bang2=sha_bang!=NULL ? sha_bang:"lircrcd";
 	
 	command=malloc(strlen(sha_bang2)+1+strlen(filename)+1);
 	if(command==NULL)

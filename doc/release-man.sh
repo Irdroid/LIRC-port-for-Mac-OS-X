@@ -28,6 +28,10 @@ select_vars ()
 		DIR=$TOPDIR/tools/
 		PROG_PRE_PARAMS="--include man-source/mode2-common.inc"
 	;;
+	lircrcd)
+		MANPAGE=$PROG.1
+		DIR=$TOPDIR/tools/
+	;;
 	smode2)
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
@@ -79,7 +83,7 @@ install -d man-html
 HELP2MAN=help2man
 MAN2HTML=./man2html
 
-for PROG in irpty irexec ircat irw mode2 smode2 xmode2 irsend irrecord lircd lircmd irxevent
+for PROG in irpty irexec ircat irw mode2 smode2 xmode2 irsend irrecord lircd lircmd lircrcd irxevent
 do
 	PROG_PARAMS=""
 	PROG_PRE_PARAMS=""

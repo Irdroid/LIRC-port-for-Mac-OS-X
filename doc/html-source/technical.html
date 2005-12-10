@@ -307,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.25 2005/06/07 22:35:16 lirc Exp $      */
+/*      $Id: technical.html,v 1.26 2005/12/10 22:12:02 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -540,6 +540,43 @@ fi</PRE>
       yourself.
     </P>
 
+    <A NAME="lircrcd"></A><HR>
+    <H1 ALIGN="CENTER">lircrcd protocol</H1>
+    <HR WIDTH="70%">
+
+    <P>
+      lircrcd syntactically uses the same protocol as lircd described
+      in the last section. It supports the following commands:
+    </P>
+    <DL>
+      <DT>IDENT <em>ident</em></DT>
+      <DD>
+	<P>
+	  Each program connecting to lircrcd identifies itself using
+	  this program. <em>ident</em> is the string that is used in
+	  the prog token inside the .lircrc file.
+        </P>
+      </DD>
+      <DT>CODE <em>code</em></DT>
+      <DD>
+	<P>
+	  When the client receives the <em>code</em> string from lircd
+	  it will send it to lircrcd and will receive back the
+	  applicable config string from the .lircrc config file. It
+	  should resend the CODE command until nothing is returned
+	  back which means that nothing (more) should happen in
+	  response to <em>code</em>. This command is used each time
+	  the lirc_code2char() function is called by a client.
+        </P>
+      </DD>
+      <DT>GETMODE</DT>
+      <DD>
+	<P>
+	  lircrcd will return the current mode string.
+        </P>
+      </DD>
+    </DL>
+
     <A NAME="packagers"></A><HR>
     <H1 ALIGN="CENTER">Note for packagers</H1>
     <HR WIDTH="70%">
@@ -548,12 +585,15 @@ fi</PRE>
       If you want to make a binary package for lirc (.deb, .rpm, ...),
       there are a couple of goodies you can take advantage of:
       <dl>
-      <dt>--with-driver=any 
+      <dt>--with-driver=all
       <dd>
-	Builds support for as many devices as possible on a single lircd
-	binary. Note that for some devices kernel support is required, and
-	when using <em>any</em> driver, no kernel modules will be built
-	automatically, so you will have to build them explicitly.
+	Builds support for as many devices as possible into a single
+	lircd binary.
+      </dd>
+      <dt>--with-driver=userspace
+      <dd>
+        The same as the all driver, but no kernel modules will be
+        built.
       </dd>
       <dt>--enable-sandboxed
       <dd>

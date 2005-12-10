@@ -607,6 +607,15 @@ include ~/.lirc/xawtv</PRE>
       of the mode concept. If you don't start all client programs at a
       time the mode they have to maintain may differ between
       applications. Also key sequences might not be recognized equally
-      because all programs then don't have the same starting point.
+      because all programs then don't have the same starting point. In
+      order to solve this problem there is the new <A
+      HREF="lircrcd.html">lircrcd</A> program since version
+      0.8.0. lircrcd's purpose is to synchronise all clients and
+      maintain the current mode. In order to use the lircrcd feature
+      you have to explicitly enable it by adding the following line at
+      the beginning of the file:
+<pre>
+#! lircrcd
+</pre>
     </P>
     

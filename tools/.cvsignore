@@ -9,7 +9,7 @@ irxevent
 xmode2
 .libs
 lirc_client.lo
-lirc_clientd
+lircrcd
 liblirc_client.la
 smode2
 ircat
