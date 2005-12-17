@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.68 2005/12/17 13:44:00 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.69 2005/12/17 13:56:57 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -131,7 +131,6 @@
 
 struct lirc_serial
 {
-	int type;
 	int signal_pin;
 	int signal_pin_change;
 	int on;
@@ -218,7 +217,6 @@ static struct lirc_serial hardware[]=
 {
 	/* home-brew receiver/transmitter */
 	{
-		LIRC_HOMEBREW,
 		UART_MSR_DCD,
 		UART_MSR_DDCD,
 		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
@@ -236,7 +234,6 @@ static struct lirc_serial hardware[]=
 	
 	/* IRdeo classic */
 	{
-		LIRC_IRDEO,
 		UART_MSR_DSR,
 		UART_MSR_DDSR,
 		UART_MCR_OUT2,
@@ -250,7 +247,6 @@ static struct lirc_serial hardware[]=
 	
 	/* IRdeo remote */
 	{
-		LIRC_IRDEO_REMOTE,
 		UART_MSR_DSR,
 		UART_MSR_DDSR,
 		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
@@ -264,7 +260,6 @@ static struct lirc_serial hardware[]=
 	
 	/* AnimaX */
 	{
-		LIRC_ANIMAX,
 		UART_MSR_DCD,
 		UART_MSR_DDCD,
 		0,
@@ -276,7 +271,6 @@ static struct lirc_serial hardware[]=
 	
 	/* home-brew receiver/transmitter (Igor Cesko's variation) */
 	{
-		LIRC_HOMEBREW,
 		UART_MSR_DSR,
 		UART_MSR_DDSR,
 		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
@@ -290,7 +284,7 @@ static struct lirc_serial hardware[]=
 		 LIRC_CAN_SEND_PULSE|
 #endif
 		 LIRC_CAN_REC_MODE2)
-	}
+	},
 	
 #if defined(LIRC_SERIAL_NSLU2)
 	/* Modified Linksys Network Storage Link USB 2.0 (NSLU2):
@@ -298,8 +292,7 @@ static struct lirc_serial hardware[]=
 	   transmit with a IR diode between GPIO[1] (green status LED),
 	   and ground (Matthias Goebl <matthias.goebl@goebl.net>).
 	   See also http://www.nslu2-linux.org for this device */
-	,{
-		LIRC_HOMEBREW,
+	{
 		UART_MSR_CTS,
 		UART_MSR_DCTS,
 		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
@@ -313,7 +306,7 @@ static struct lirc_serial hardware[]=
 		 LIRC_CAN_SEND_PULSE|
 #endif
 		 LIRC_CAN_REC_MODE2)
-	}
+	},
 #endif
 	
 };
@@ -919,7 +912,7 @@ static int init_port(void)
 	sinp(UART_IIR);
 	sinp(UART_MSR);
 
-	switch(hardware[type].type)
+	switch(type)
 	{
 	case LIRC_IRDEO:
 	case LIRC_IRDEO_REMOTE:
@@ -1048,7 +1041,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
 	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 	local_irq_save(flags);
-	if(hardware[type].type==LIRC_IRDEO)
+	if(type == LIRC_IRDEO)
 	{
 		/* DTR, RTS down */
 		on();
@@ -1173,13 +1166,23 @@ int init_module(void)
 	default:
 		return -EINVAL;
 	}
-	if(!softcarrier && hardware[type].type==LIRC_HOMEBREW)
+	if(!softcarrier)
 	{
-		hardware[type].features&=~(LIRC_CAN_SET_SEND_DUTY_CYCLE|
-					   LIRC_CAN_SET_SEND_CARRIER);
+		switch(type)
+		{
+		case LIRC_HOMEBREW:
+		case LIRC_IGOR:
+		case LIRC_NSLU2:
+			hardware[type].features&=
+				~(LIRC_CAN_SET_SEND_DUTY_CYCLE|
+				  LIRC_CAN_SET_SEND_CARRIER);
+			break;
+		}
 	}
-	if ((result = init_port()) < 0)
+	if((result = init_port()) < 0)
+	{
 		return result;
+	}
 	plugin.features = hardware[type].features;
 	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
@@ -1213,12 +1216,16 @@ MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
 MODULE_LICENSE("GPL");
 
 module_param(type, int, 0444);
+#if defined(LIRC_SERIAL_NSLU2)
+MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
+		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug,"
+		 " 5 = NSLU2 RX:CTS2/TX:GreenLED"
+		 );
+#else
 MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
 		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug"
-#if defined(LIRC_SERIAL_NSLU2)
-		 ", 5 = NSLU2 RX:CTS2/TX:GreenLED"
-#endif
 		 );
+#endif
 
 module_param(io, int, 0444);
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
