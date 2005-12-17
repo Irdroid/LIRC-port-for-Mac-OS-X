@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.67 2005/09/22 20:10:37 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.68 2005/12/17 13:44:00 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -96,6 +96,14 @@
 #include <asm/irq.h>
 #include <asm/fcntl.h>
 
+#if defined(LIRC_SERIAL_NSLU2)
+#include <asm/hardware.h>
+/* From Intel IXP42X Developer's Manual (#252480-005): */
+/* ftp://download.intel.com/design/network/manuals/25248005.pdf */
+#define UART_IE_IXP42X_UUE   0x40 /* IXP42X UART Unit enable */
+#define UART_IE_IXP42X_RTOIE 0x10 /* IXP42X Receiver Data Timeout int.enable */
+#endif
+
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
@@ -138,6 +146,7 @@ struct lirc_serial
 #define LIRC_IRDEO_REMOTE    2
 #define LIRC_ANIMAX          3
 #define LIRC_IGOR            4
+#define LIRC_NSLU2           5
 
 #ifdef LIRC_SERIAL_IRDEO
 static int type=LIRC_IRDEO;
@@ -147,8 +156,40 @@ static int type=LIRC_IRDEO_REMOTE;
 static int type=LIRC_ANIMAX;
 #elif defined(LIRC_SERIAL_IGOR)
 static int type=LIRC_IGOR;
+#elif defined(LIRC_SERIAL_NSLU2)
+static int type=LIRC_NSLU2;
 #else
 static int type=LIRC_HOMEBREW;
+#endif
+
+/* Set defaults for NSLU2 */
+#if defined(LIRC_SERIAL_NSLU2)
+#ifndef LIRC_IRQ
+#define LIRC_IRQ IRQ_IXP4XX_UART2
+#endif
+#ifndef LIRC_PORT
+#define LIRC_PORT (IXP4XX_UART2_BASE_VIRT + REG_OFFSET)
+#endif
+#ifndef LIRC_IOMMAP
+#define LIRC_IOMMAP IXP4XX_UART2_BASE_PHYS
+#endif
+#ifndef LIRC_IOSHIFT
+#define LIRC_IOSHIFT 2
+#endif
+#ifndef LIRC_ALLOW_MMAPPED_IO
+#define LIRC_ALLOW_MMAPPED_IO
+#endif
+#endif
+
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+#ifndef LIRC_IOMMAP
+#define LIRC_IOMMAP 0
+#endif
+#ifndef LIRC_IOSHIFT
+#define LIRC_IOSHIFT 0
+#endif
+static int iommap = LIRC_IOMMAP;
+static int ioshift = LIRC_IOSHIFT;
 #endif
 
 #ifdef LIRC_SERIAL_SOFTCARRIER
@@ -251,6 +292,30 @@ static struct lirc_serial hardware[]=
 		 LIRC_CAN_REC_MODE2)
 	}
 	
+#if defined(LIRC_SERIAL_NSLU2)
+	/* Modified Linksys Network Storage Link USB 2.0 (NSLU2):
+	   We receive on CTS of the 2nd serial port (R142,LHS), we
+	   transmit with a IR diode between GPIO[1] (green status LED),
+	   and ground (Matthias Goebl <matthias.goebl@goebl.net>).
+	   See also http://www.nslu2-linux.org for this device */
+	,{
+		LIRC_HOMEBREW,
+		UART_MSR_CTS,
+		UART_MSR_DCTS,
+		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
+		UART_MCR_RTS|UART_MCR_OUT2,
+		send_pulse_homebrew,
+		send_space_homebrew,
+		(
+#ifdef LIRC_SERIAL_TRANSMITTER
+		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
+		 LIRC_CAN_SET_SEND_CARRIER|
+		 LIRC_CAN_SEND_PULSE|
+#endif
+		 LIRC_CAN_REC_MODE2)
+	}
+#endif
+	
 };
 
 #define RS_ISR_PASS_LIMIT 256
@@ -330,16 +395,40 @@ static unsigned long space_width = 0;
 
 static inline unsigned int sinp(int offset)
 {
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+	if(iommap != 0) /* the register is memory-mapped */
+	{
+		offset <<= ioshift;
+		return readb(io + offset);
+	} 
+#endif
 	return inb(io + offset);
 }
 
 static inline void soutp(int offset, int value)
 {
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+	if(iommap != 0) /* the register is memory-mapped */
+	{
+		offset <<= ioshift;
+		writeb(value, io + offset);
+	}
+#endif
 	outb(value, io + offset);
 }
 
 static inline void on(void)
 {
+#if defined(LIRC_SERIAL_NSLU2)
+	/* On NSLU2, we put the transmit diode between the output of the green
+	   status LED and ground */
+	if(type == LIRC_NSLU2)
+	{
+		writel(readl(IXP4XX_GPIO_GPOUTR) & ~(1<<NSLU2_LED_GRN),
+		       IXP4XX_GPIO_GPOUTR);
+		return;
+	}
+#endif
 	if (txsense)
 	{
 		soutp(UART_MCR,hardware[type].off);
@@ -352,6 +441,14 @@ static inline void on(void)
   
 static inline void off(void)
 {
+#if defined(LIRC_SERIAL_NSLU2)
+	if(type == LIRC_NSLU2)
+	{
+		writel(readl(IXP4XX_GPIO_GPOUTR) | (1<<NSLU2_LED_GRN),
+		       IXP4XX_GPIO_GPOUTR);
+		return;
+	}
+#endif
 	if (txsense)
 	{
 		soutp(UART_MCR,hardware[type].on);
@@ -761,7 +858,18 @@ static int init_port(void)
 
 	
 	/* Reserve io region. */
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+	/* Future MMAP-Developers: Attention!
+	   For memory mapped I/O you *might* need to use ioremap() first,
+	   for the NSLU2 it's done in boot code. */
+	if(((iommap != 0)
+	    && (request_mem_region(iommap, 8<<ioshift,
+				   LIRC_DRIVER_NAME) == NULL))
+	   || ((iommap == 0)
+	       && (request_region(io, 8, LIRC_DRIVER_NAME) == NULL)))
+#else
 	if(request_region(io, 8, LIRC_DRIVER_NAME)==NULL)
+#endif
 	{
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": port %04x already in use\n", io);
@@ -789,6 +897,19 @@ static int init_port(void)
 	sinp(UART_IIR);
 	sinp(UART_MSR);
 	
+#if defined(LIRC_SERIAL_NSLU2)
+	if(type == LIRC_NSLU2) /* Setup NSLU2 UART */
+	{
+		/* Enable UART */
+		soutp(UART_IER, sinp(UART_IER) | UART_IE_IXP42X_UUE);
+		/* Disable Receiver data Time out interrupt */
+		soutp(UART_IER, sinp(UART_IER) & ~UART_IE_IXP42X_RTOIE);
+		/* set out2 = interupt unmask; off() doesn't set MCR
+		   on NSLU2 */
+		soutp(UART_MCR,UART_MCR_RTS|UART_MCR_OUT2);
+	}
+#endif
+
 	/* Set line for power source */
 	off();
 	
@@ -1045,9 +1166,12 @@ int init_module(void)
 	case LIRC_IRDEO_REMOTE:
 	case LIRC_ANIMAX:
 	case LIRC_IGOR:
+#if defined(LIRC_SERIAL_NSLU2)
+	case LIRC_NSLU2:
+#endif
 		break;
 	default:
-		return(-EINVAL);
+		return -EINVAL;
 	}
 	if(!softcarrier && hardware[type].type==LIRC_HOMEBREW)
 	{
@@ -1068,7 +1192,18 @@ int init_module(void)
 
 void cleanup_module(void)
 {
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+	if(iommap != 0)
+	{
+		release_mem_region(iommap, 8<<ioshift);
+	}
+	else
+	{
+		release_region(io, 8);
+	}
+#else
 	release_region(io, 8);
+#endif
 	lirc_unregister_plugin(plugin.minor);
 	dprintk("cleaned up module\n");
 }
@@ -1079,10 +1214,27 @@ MODULE_LICENSE("GPL");
 
 module_param(type, int, 0444);
 MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
-		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug");
+		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug"
+#if defined(LIRC_SERIAL_NSLU2)
+		 ", 5 = NSLU2 RX:CTS2/TX:GreenLED"
+#endif
+		 );
 
 module_param(io, int, 0444);
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
+
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+/* some architectures (e.g. intel xscale) have memory mapped registers */
+module_param(iommap, bool, 0444);
+MODULE_PARM_DESC(iommap, "physical base for memory mapped I/O"
+		" (0 = no memory mapped io)");
+
+/* some architectures (e.g. intel xscale) align the 8bit serial registers
+   on 32bit word boundaries.
+   See linux-kernel/drivers/serial/8250.c serial_in()/out() */
+module_param(ioshift, int, 0444);
+MODULE_PARM_DESC(ioshift, "shift I/O register offset (0 = no shift)");
+#endif
 
 module_param(irq, int, 0444);
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");

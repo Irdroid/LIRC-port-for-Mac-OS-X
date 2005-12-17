@@ -53,5 +53,8 @@ Winfast TV2000:
 ITE IT8712/IT8705 CIR port:
   Hans-Günter Lütke Uphues <hg_lu@web.de>
 
+Linksys NSLU2 Support and memory mapped I/O in serial driver:
+  Matthias Goebl <matthias.goebl@goebl.net>
+
 I have only pieced this together by grepping the source for @ signs
 and then guessing the contribution.
