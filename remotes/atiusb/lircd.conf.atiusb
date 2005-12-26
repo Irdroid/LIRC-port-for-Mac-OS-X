@@ -1114,3 +1114,69 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.2(atiusb) on Wed Dec 21 18:36:45 2005
+#
+# contributed by: Peter J. Weyers <lirc(a)usr-local.de>
+#
+# brand:                       MEDION / ATI
+# model no. of remote control: 40005927
+# devices being controlled by this remote:
+#
+# This is an USB attached reciever wich works by radio, not by IR. It is
+# most probably a relabeled ATI X10 device and sold together with the
+# Medion Notebook MD41300. It works with the lirc_atiusb driver while the
+# ati_remote module is NOT(!) loaded
+
+begin remote
+
+  name  MEDION_40005927
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          227972
+  toggle_bit      0
+
+
+      begin codes
+          TV_DVD                   0x1481AC0000
+          VIDEO                    0x1482AD0000
+          PHOTO                    0x1459840000
+          MUSIC                    0x145B860000
+          PC                       0x1483AE0000
+          MUTE                     0x1455800000
+          OK                       0x14739E0000
+          UP                       0x146F9A0000
+          DOWN                     0x1477A20000
+          LEFT                     0x14729D0000
+          RIGHT                    0x14749F0000
+          CH+                      0x145E890000
+          CH-                      0x145D880000
+          VOL+                     0x14608B0000
+          VOL-                     0x14618C0000
+          PLAY_PAUSE               0x147AA50000
+          RECORD                   0x147CA70000
+          STOP                     0x147DA80000
+          FRWND                    0x1479A40000
+          FFWD                     0x147BA60000
+          PREV                     0x1476A10000
+          NEXT                     0x1478A30000
+          1                        0x14628D0000
+          2                        0x14638E0000
+          3                        0x14648F0000
+          4                        0x1465900000
+          5                        0x1466910000
+          6                        0x1467920000
+          7                        0x1468930000
+          8                        0x1469940000
+          9                        0x146A950000
+          0                        0x146C970000
+          RC                       0x1484AF0000
+          Screen_Symbol            0x146B960000
+      end codes
+
+end remote
