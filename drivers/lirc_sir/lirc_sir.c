@@ -115,6 +115,8 @@
 
 #ifdef LIRC_SIR_ACTISYS_ACT200L
 static void init_act200(void);
+#elif defined(LIRC_SIR_ACTISYS_ACT220L)
+static void init_act220(void);
 #endif
 
 /******************************* SA1100 ********************************/
@@ -1012,6 +1014,8 @@ static int init_hardware(void)
 	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, io + UART_MCR);
 #ifdef LIRC_SIR_ACTISYS_ACT200L
 	init_act200();
+#elif defined(LIRC_SIR_ACTISYS_ACT220L)
+	init_act220();
 #endif
 #endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
@@ -1067,6 +1071,9 @@ static int init_port(void)
 	retval = request_irq(irq, sir_interrupt, SA_INTERRUPT,
 			     LIRC_DRIVER_NAME, NULL);
 	if (retval < 0) {
+#               ifndef LIRC_ON_SA1100
+		release_region(io, 8);
+#               endif
 		printk(KERN_ERR LIRC_DRIVER_NAME
 			": IRQ %d already in use.\n",
 			irq);
@@ -1240,6 +1247,62 @@ static void init_act200(void)
 }
 #endif
 
+#ifdef LIRC_SIR_ACTISYS_ACT220L
+/* Derived from linux IrDA driver (drivers/net/irda/actisys.c) 
+ * Drop me a mail for any kind of comment: maxx@spaceboyz.net */
+
+void init_act220(void) {
+	int i;
+
+	/* DLAB 1 */
+	soutp(UART_LCR, UART_LCR_DLAB|UART_LCR_WLEN7);
+
+	/* 9600 baud */
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 12);
+
+	/* DLAB 0 */
+	soutp(UART_LCR, UART_LCR_WLEN7);
+
+	/* reset the dongle, set DTR low for 10us */
+	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
+	udelay(10);
+
+	/* back to normal (still 9600) */
+	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2);
+
+	/* send RTS pulses until we reach 115200
+	 * i hope this is really the same for act220l/act220l+ */
+	for(i = 0; i < 3; i++)
+	{
+		udelay(10);
+		/* set RTS low for 10 us */
+		soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
+		udelay(10);
+		/* set RTS high for 10 us */
+		soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
+	}
+	
+	/* back to normal operation */
+	udelay(1500); /* better safe than sorry ;) */
+
+	/* Set DLAB 1. */
+	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN7);
+
+	/* Set divisor to 1 => 115200 Baud */
+	soutp(UART_DLM,0);
+	soutp(UART_DLL,1);
+
+	/* Set DLAB 0, 7 Bit */
+	/* The dongle doesn't seem to have any problems with operation
+	   at 7N1 */
+	soutp(UART_LCR, UART_LCR_WLEN7);
+
+	/* enable interrupts */
+	soutp(UART_IER, UART_IER_RDI);
+}
+#endif
+
 static int init_lirc_sir(void)
 {
 	int retval;
@@ -1288,6 +1351,9 @@ MODULE_AUTHOR("Christoph Bartelmus");
 #elif defined(LIRC_SIR_ACTISYS_ACT200L)
 MODULE_DESCRIPTION("LIRC driver for Actisys Act200L");
 MODULE_AUTHOR("Karl Bongers");
+#elif defined(LIRC_SIR_ACTISYS_ACT220L)
+MODULE_DESCRIPTION("LIRC driver for Actisys Act220L(+)");
+MODULE_AUTHOR("Jan Roemisch");
 #else
 MODULE_DESCRIPTION("Infrared receiver driver for SIR type serial ports");
 MODULE_AUTHOR("Milan Pikula");

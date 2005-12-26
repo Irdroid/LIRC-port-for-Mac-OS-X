@@ -99,6 +99,7 @@ hw_menu_entry: @hw-irda
 	it87: "ITE IT8712/IT8705 CIR port"
 	digimatrix: "Asus Digimatrix IT87xx CIR port"
 	act200l: "Actisys Act200L SIR driver support"
+	act220l: "Actisys Act220L(+) SIR driver support"
 
 hw_menu_entry: @hw-pda
 	sa1100: "HP iPAQ"
@@ -126,6 +127,7 @@ hw_menu_entry: @hw-usb
 
 param_type: \
 	act200l \
+	act220l \
 	animax \
 	irdeo \
 	irdeo_remote \
@@ -308,6 +310,7 @@ default_param: parallel
 
 default_param: \
 	act200l \
+	act220l \
 	animax \
 	irdeo \
 	irdeo_remote \

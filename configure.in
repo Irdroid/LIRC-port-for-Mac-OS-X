@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.159 2005/12/17 13:44:00 lirc Exp $
+dnl $Id: configure.in,v 5.160 2005/12/26 09:51:57 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -256,14 +256,14 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          all, none, userspace, act200l, adaptec,
-                          alsa_usb, animax, atilibusb, atiusb, audio,
-                          avermedia, avermedia_vdomate, avermedia98,
-                          bestbuy, bestbuy2, breakoutbox, bte, bw6130,
-                          caraca, chronos, cmdir, comX, cph06x,
-                          creative, creative_infracd, devinput,
-                          digimatrix, dsp, dvico, ea65, exaudio,
-                          flyvideo, gvbctv5pci, hauppauge,
+                          all, none, userspace, act200l, act220l,
+                          adaptec, alsa_usb, animax, atilibusb,
+                          atiusb, audio, avermedia, avermedia_vdomate,
+                          avermedia98, bestbuy, bestbuy2, breakoutbox,
+                          bte, bw6130, caraca, chronos, cmdir, comX,
+                          cph06x, creative, creative_infracd,
+                          devinput, digimatrix, dsp, dvico, ea65,
+                          exaudio, flyvideo, gvbctv5pci, hauppauge,
                           hauppauge_dvb, hercules_smarttv_stereo,
                           igorplugusb, imon, imon_pad, imon_rsc,
                           irdeo, irdeo_remote, irman, irreal, it87,
@@ -477,6 +477,11 @@ if test "$driver" = "act200l"; then
   AC_DEFINE(LIRC_SIR_ACTISYS_ACT200L)
 fi
 
+if test "$driver" = "act220l"; then
+  lirc_driver="lirc_dev lirc_sir"
+  AC_DEFINE(LIRC_SIR_ACTISYS_ACT220L)
+fi
+    
 if test "$driver" = "adaptec"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="adaptec/lircd.conf.AVC-2410"

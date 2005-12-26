@@ -1,4 +1,5 @@
 0.8.0-CVS: future
+  * added support for Actisys Act220L(+) (Jan Roemisch)
   * added support for Linksys NSLU2 (Matthias Goebl)
   * added new program lircrcd:
     lircrcd reads the .lircrc config file and synchronises the mode

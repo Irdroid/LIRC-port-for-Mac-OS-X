@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.34 2005/12/17 13:44:00 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.35 2005/12/26 09:51:57 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -149,6 +149,9 @@
 
 /* Define if you want to use a Actisys Act200L */
 #undef LIRC_SIR_ACTISYS_ACT200L
+
+/* Define if you want to use a Actisys Act220L */
+#undef LIRC_SIR_ACTISYS_ACT220L
 
 /* Define if devfs support is present in current kernel */
 #undef LIRC_HAVE_DEVFS
