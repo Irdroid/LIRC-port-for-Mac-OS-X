@@ -8,6 +8,7 @@ xmode2.1
 irrecord.1
 lircd.8
 lircmd.8
+lircrcd.1
 Makefile.in
 irxevent.1
 ircat.1
