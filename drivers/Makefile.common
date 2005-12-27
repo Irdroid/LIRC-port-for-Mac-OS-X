@@ -1,4 +1,4 @@
-# $Id: Makefile.common,v 5.1 2004/04/27 16:55:24 lirc Exp $
+# $Id: Makefile.common,v 5.2 2005/12/27 12:59:01 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
@@ -9,8 +9,8 @@ LIRC_DEVDIR = $(shell pwd)
 # when compiling module(s)
 KBUILD_VERBOSE = 1
 LIRC_EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS) \
-		$(DEFAULT_INCLUDES) -I $(LIRC_DEVDIR)/../.. \
-		-I $(KERNEL_LOCATION)/include/
+		$(DEFAULT_INCLUDES) -I$(LIRC_DEVDIR)/../.. \
+		-I$(KERNEL_LOCATION)/include/
 export LIRC_EXTRA_CFLAGS KERNEL_LOCATION module_DATA
 
 $(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
