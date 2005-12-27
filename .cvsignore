@@ -5,6 +5,7 @@ config.log
 config.h
 Makefile
 stamp-h
+stamp-h1
 .setup.config
 configure.sh
 config.cache
