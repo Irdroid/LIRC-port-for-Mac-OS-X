@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.21 2005/12/10 22:12:02 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.22 2005/12/27 12:05:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -99,6 +99,8 @@ static int lirc_code2char_internal(struct lirc_config *config,char *code,
 				   char **string, char **prog);
 static const char *lirc_read_string(int fd);
 static int lirc_identify(int sockfd);
+
+static int lirc_send_command(int sockfd, const char *command, char *buf, size_t *buf_len, int *ret_status);
 
 static int lirc_lircd;
 static int lirc_verbose=0;

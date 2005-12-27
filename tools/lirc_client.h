@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.8 2005/11/26 11:53:01 lirc Exp $      */
+/*      $Id: lirc_client.h,v 5.9 2005/12/27 12:05:27 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -94,9 +94,6 @@ int lirc_code2charprog(struct lirc_config *config,char *code,char **string,
 		       char **prog);
 size_t lirc_getsocketname(const char *filename, char *buf, size_t size);
 const char *lirc_getmode(struct lirc_config *config);
-
-/* new interface for transmit */
-int lirc_send_command(int sockfd, const char *command, char *buf, size_t *buf_len, int *ret_status);
 
 #ifdef __cplusplus
 }
