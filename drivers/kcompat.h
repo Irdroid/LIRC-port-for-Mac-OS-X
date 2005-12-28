@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.21 2005/12/04 16:11:18 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.22 2005/12/28 15:38:03 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -208,12 +208,12 @@ typedef void irqreturn_t;
 #define local_irq_restore(flags) do{ restore_flags(flags); } while(0)
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,22)
+#if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE && LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
 static inline char *pci_name(struct pci_dev *pdev)
 {
 	return pdev->slot_name;
 }
-#endif//Kernel<2.4.22
+#endif // 2.4.0 <= kernel < 2.4.22
 
 /*************************** I2C specific *****************************/
 #include <linux/i2c.h>
@@ -245,6 +245,7 @@ static inline char *pci_name(struct pci_dev *pdev)
 #endif
 
 /*************************** USB specific *****************************/
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #include <linux/usb.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 8)
@@ -257,6 +258,7 @@ static inline int usb_kill_urb(struct urb *urb)
 /* removed in 2.6.14 */
 #ifndef URB_ASYNC_UNLINK
 #define URB_ASYNC_UNLINK 0  
+#endif
 #endif
 
 #endif /* _KCOMPAT_H */
