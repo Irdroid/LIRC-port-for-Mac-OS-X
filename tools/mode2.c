@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.13 2005/02/27 15:02:20 lirc Exp $      */
+/*      $Id: mode2.c,v 5.14 2006/01/02 19:33:52 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -80,7 +80,7 @@ int main(int argc,char **argv)
 			return(EXIT_FAILURE);
 		}
 	}
-	if (optind < argc-1)
+	if (optind < argc)
 	{
 		fprintf(stderr,"%s: too many arguments\n",progname);
 		return(EXIT_FAILURE);
