@@ -27,4 +27,4 @@
 
 * add 'debian/' directory. (ranty)
 
-* write a daemon to keep track of state.
+* SEND_RELAY command?
