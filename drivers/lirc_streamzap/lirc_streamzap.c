@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.14 2005/10/29 14:18:53 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.15 2006/01/06 07:18:03 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.14 $"
+#define DRIVER_VERSION	"$Revision: 1.15 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -206,13 +206,14 @@ static void flush_timeout(unsigned long arg)
 }
 static void delay_timeout(unsigned long arg)
 {
+	unsigned long flags;
 	/* deliver data every 10 ms */
 	static unsigned long timer_inc = 
 		(10000/(1000000/HZ)) == 0 ? 1:(10000/(1000000/HZ));
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
 	lirc_t data;
 	
-	spin_lock(&sz->timer_lock);
+	spin_lock_irqsave(&sz->timer_lock, flags);
 	if(!lirc_buffer_empty(&sz->delay_buf))
 	{
 		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
@@ -242,7 +243,7 @@ static void delay_timeout(unsigned long arg)
 	{
 		wake_up(&sz->lirc_buf.wait_poll);
 	}
-	spin_unlock(&sz->timer_lock);
+	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
 static inline void flush_delay_buffer(struct usb_streamzap *sz)
