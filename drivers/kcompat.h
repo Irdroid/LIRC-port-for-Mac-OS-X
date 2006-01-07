@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.23 2006/01/01 13:43:46 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.24 2006/01/07 20:51:31 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -209,6 +209,7 @@ typedef void irqreturn_t;
 #endif
 
 #if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE && LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
+#include <linux/pci.h>
 static inline char *pci_name(struct pci_dev *pdev)
 {
 	return pdev->slot_name;
