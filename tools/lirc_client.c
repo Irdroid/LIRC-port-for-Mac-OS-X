@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.22 2005/12/27 12:05:27 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.23 2006/01/08 18:32:58 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -87,6 +87,7 @@ static void stack_free(struct filestack_t *entry);
 static int lirc_readconfig_only_internal(char *file,
 					 struct lirc_config **config,
 					 int (check)(char *s),
+					 char **full_name,
 					 char **sha_bang);
 static char *lirc_startupmode(struct lirc_config_entry *first);
 static void lirc_freeconfigentries(struct lirc_config_entry *first);
@@ -798,16 +799,10 @@ int lirc_readconfig(char *file,
 	char *command;
 	int ret;
 	
-	filename=lirc_getfilename(file, NULL);
-	if(filename==NULL)
-	{
-		return -1;
-	}
-
+	filename = NULL;
 	sha_bang = NULL;
-	if(lirc_readconfig_only_internal(filename,config,check,&sha_bang)==-1)
+	if(lirc_readconfig_only_internal(file,config,check,&filename,&sha_bang)==-1)
 	{
-		free(filename);
 		return -1;
 	}
 	
@@ -903,12 +898,13 @@ int lirc_readconfig_only(char *file,
 			 struct lirc_config **config,
 			 int (check)(char *s))
 {
-	return lirc_readconfig_only_internal(file, config, check, NULL);
+	return lirc_readconfig_only_internal(file, config, check, NULL, NULL);
 }
 
 static int lirc_readconfig_only_internal(char *file,
 					 struct lirc_config **config,
 					 int (check)(char *s),
+					 char **full_name,
 					 char **sha_bang)
 {
 	char *string,*eq,*token,*token2,*token3;
@@ -918,6 +914,7 @@ static int lirc_readconfig_only_internal(char *file,
 	char *mode,*remote;
 	int ret=0;
 	int firstline=1;
+	char *save_full_name = NULL;
 	
 	filestack = stack_push(NULL);
 	if (filestack == NULL)
@@ -942,6 +939,11 @@ static int lirc_readconfig_only_internal(char *file,
 		   string==NULL)
 		{
 			fclose(filestack->file);
+			if(open_files == 1 && full_name != NULL)
+			{
+				save_full_name = filestack->name;
+				filestack->name = NULL;
+			}
 			filestack = stack_pop(filestack);
 			open_files--;
 			continue;
@@ -1276,6 +1278,11 @@ static int lirc_readconfig_only_internal(char *file,
 		(*config)->next=first;
 		(*config)->current_mode=lirc_startupmode((*config)->first);
 		(*config)->sockfd=-1;
+		if(full_name != NULL)
+		{
+			*full_name = save_full_name;
+			save_full_name = NULL;
+		}
 	}
 	else
 	{
@@ -1290,6 +1297,10 @@ static int lirc_readconfig_only_internal(char *file,
 	if(filestack)
 	{
 		stack_free(filestack);
+	}
+	if(save_full_name)
+	{
+		free(save_full_name);
 	}
 	return(ret);
 }
