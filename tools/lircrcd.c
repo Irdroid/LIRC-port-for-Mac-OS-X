@@ -1,4 +1,4 @@
-/*      $Id: lircrcd.c,v 5.1 2005/12/10 22:12:02 lirc Exp $      */
+/*      $Id: lircrcd.c,v 5.2 2006/01/08 18:29:32 lirc Exp $      */
 
 /****************************************************************************
  ** lircrcd.c ***************************************************************
@@ -346,10 +346,9 @@ void add_client(int sock)
 }
 
 static int opensocket(const char *configfile, const char *socketname,
-		      mode_t permission)
+		      mode_t permission, struct sockaddr_un *addr)
 {
 	int sockfd;
-	struct sockaddr_un addr;
 	struct stat s;
 	int new=1;
 	int ret;
@@ -357,17 +356,17 @@ static int opensocket(const char *configfile, const char *socketname,
 	/* get socket name */
 	if((socketname==NULL &&
 	    lirc_getsocketname(configfile,
-			       addr.sun_path, sizeof(addr.sun_path)) > 
-	    sizeof(addr.sun_path)) ||
+			       addr->sun_path, sizeof(addr->sun_path)) > 
+	    sizeof(addr->sun_path)) ||
 	   (socketname!=NULL &&
-	    strlen(socketname)>=sizeof(addr.sun_path)))
+	    strlen(socketname)>=sizeof(addr->sun_path)))
 	{
 		fprintf(stderr, "%s: filename too long", progname);
 		return -1;
 	}
 	if(socketname!=NULL)
 	{
-		strcpy(addr.sun_path, socketname);
+		strcpy(addr->sun_path, socketname);
 	}
 	
 	/* create socket*/
@@ -384,11 +383,11 @@ static int opensocket(const char *configfile, const char *socketname,
 	   so new socket can be the same since we
 	   have to delete the old socket.  
 	*/
-	ret=stat(addr.sun_path, &s);
+	ret=stat(addr->sun_path, &s);
 	if(ret==-1 && errno!=ENOENT)
 	{
 		fprintf(stderr,"%s: could not get file information for %s\n",
-			progname, addr.sun_path);
+			progname, addr->sun_path);
 		perror(progname);
 		goto opensocket_failed;
 	}
@@ -396,18 +395,18 @@ static int opensocket(const char *configfile, const char *socketname,
 	if(ret!=-1)
 	{
 		new=0;
-		ret=unlink(addr.sun_path);
+		ret=unlink(addr->sun_path);
 		if(ret==-1)
 		{
 			fprintf(stderr,"%s: could not delete %s\n",
-				progname, addr.sun_path);
+				progname, addr->sun_path);
 			perror(progname);
 			goto opensocket_failed;
 		}
 	}
 	   
-	addr.sun_family=AF_UNIX;
-	if(bind(sockfd, (struct sockaddr *) &addr, sizeof(addr))==-1)
+	addr->sun_family=AF_UNIX;
+	if(bind(sockfd, (struct sockaddr *) addr, sizeof(*addr))==-1)
 	{
 		fprintf(stderr,"%s: could not assign address to socket\n",
 			progname);
@@ -416,9 +415,9 @@ static int opensocket(const char *configfile, const char *socketname,
 	}
 	
 	if(new ?
-	   chmod(addr.sun_path, permission):
-	   (chmod(addr.sun_path, s.st_mode)==-1 ||
-	    chown(addr.sun_path, s.st_uid, s.st_gid)==-1)
+	   chmod(addr->sun_path, permission):
+	   (chmod(addr->sun_path, s.st_mode)==-1 ||
+	    chown(addr->sun_path, s.st_uid, s.st_gid)==-1)
 	   )
 	{
 		fprintf(stderr,"%s: could not set file permissions\n",
@@ -886,6 +885,8 @@ int main(int argc, char **argv)
 	int socket;
 	int lircdfd;
 	struct sigaction act;
+	struct sockaddr_un addr;
+	char dir[FILENAME_MAX+1] = { 0 };
 	
 	debug = 0;
 	while(1)
@@ -954,7 +955,7 @@ int main(int argc, char **argv)
 	}
 	
 	/* open socket */
-	socket=opensocket(configfile, socketfile, permission);
+	socket=opensocket(configfile, socketfile, permission, &addr);
 	if(socket==-1)
 	{
 		lirc_freeconfig(config);
@@ -963,6 +964,7 @@ int main(int argc, char **argv)
 	}
 	
 	/* fork */
+	getcwd(dir, sizeof(dir));
 	if(daemon(0,0)==-1)
 	{
 		fprintf(stderr, "%s: daemon() failed\n", progname);
@@ -991,6 +993,7 @@ int main(int argc, char **argv)
 	closelog();
 	shutdown(socket, 2);
 	close(socket);
+	if(chdir(dir) == 0) unlink(addr.sun_path);
 	lirc_freeconfig(config);
 	lirc_deinit();
 	return EXIT_SUCCESS;
