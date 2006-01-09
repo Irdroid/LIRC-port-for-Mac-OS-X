@@ -983,7 +983,7 @@ begin remote
           Audio                    0x000000000000DB06
           Radio                    0x00000000000083AE
           Page                     0x0000000000000631
-          Photo                    0x0000000000005B86
+          Photo                    0x0000000000005A85
           Info                     0x000000000000042F
           Menu                     0x0000000000006E99
           Back                     0x000000000000F520
@@ -1021,6 +1021,7 @@ begin remote
           8                        0x000000000000E914
           9                        0x0000000000006A95
           0                        0x000000000000EC17
+          Record                   0x000000000000FC27
       end codes
 
 end remote
