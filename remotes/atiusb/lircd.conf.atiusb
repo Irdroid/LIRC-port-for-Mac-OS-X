@@ -1181,3 +1181,79 @@ begin remote
       end codes
 
 end remote
+
+
+#
+# this config file was automatically generated
+# using lirc-0.7.2(any) on Mon Jan 16 13:13:31 2006
+#
+# contributed by 
+#
+# brand: Medion USB Remote Control X10
+# model no. of remote control: 40009936
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  Medion_X10
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          219969
+  toggle_bit      0
+
+
+      begin codes
+          off                      0x14D7020000
+          tv                       0x14012C0000
+          video                    0x1482AD0000
+          dvd                      0x14D9040000
+          vt                       0x146B960000
+          audio                    0x14DB060000
+          radio                    0x1483AE0000
+          book                     0x1406310000
+          photo                    0x145A850000
+          info                     0x14042F0000
+          0                        0x146C970000
+          1                        0x14E20D0000
+          2                        0x14638E0000
+          3                        0x14E40F0000
+          4                        0x1465900000
+          5                        0x14E6110000
+          6                        0x1467920000
+          7                        0x1468930000
+          8                        0x14E9140000
+          9                        0x146A950000
+          ok                       0x14F31E0000
+          up                       0x14CDF80000
+          down                     0x1446710000
+          left                     0x14F21D0000
+          right                    0x14749F0000
+          menu                     0x14EE190000
+          back                     0x1475A00000
+          red                      0x1407320000
+          green                    0x1488B30000
+          yellow                   0x1409340000
+          blue                     0x148AB50000
+          mute                     0x14D5000000
+          ch+                      0x14608B0000
+          ch-                      0x14E10C0000
+          vol+                     0x145E890000
+          vol-                     0x14DD080000
+          switch                   0x14719C0000
+          stop                     0x14FD280000
+          pause                    0x147EA90000
+          play                     0x14FA250000
+          reward                   0x1476A10000
+          forward                  0x14F8230000
+          skipr                    0x1479A40000
+          skipf                    0x14FB260000
+          rec                      0x147CA70000
+      end codes
+
+end remote
+
