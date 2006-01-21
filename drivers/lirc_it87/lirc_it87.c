@@ -58,7 +58,7 @@
 #include <linux/delay.h>
 #include <linux/poll.h>
 #include <asm/system.h>
-#include <asm/segment.h>
+#include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>

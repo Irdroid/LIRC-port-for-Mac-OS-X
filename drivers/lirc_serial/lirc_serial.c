@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.69 2005/12/17 13:56:57 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.70 2006/01/21 17:43:36 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -91,7 +91,7 @@
 #include <linux/poll.h>
 
 #include <asm/system.h>
-#include <asm/segment.h>
+#include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>
