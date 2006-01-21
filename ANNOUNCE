@@ -1,7 +1,7 @@
-LIRC - Linux Infrared Remote Control, Version: 0.8.0
+LIRC - Linux Infrared Remote Control, Version: 0.8.1-CVS
 
 Copyright (C) 1996 Ralph Metzler <rjkm@thp.uni-koeln.de>
-Copyright (C) 1998-2005 Christoph Bartelmus <lirc@bartelmus.de>
+Copyright (C) 1998-2006 Christoph Bartelmus <lirc@bartelmus.de>
 (according to GNU General Public Licence 2.0 or later)
 
 LIRC is a package that allows you to decode and send infra-red signals

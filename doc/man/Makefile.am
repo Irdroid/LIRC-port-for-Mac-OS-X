@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.6 2005/12/10 22:12:02 lirc Exp $
+## $Id: Makefile.am,v 1.7 2006/01/21 17:17:30 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -7,12 +7,10 @@ man_MANS= irexec.1 ircat.1 irpty.1 irrecord.1 irw.1 irxevent.1 \
 
 EXTRA_DIST = $(man_MANS)
 
-##noinst_PROGRAMS = man2html
-
-all: $(man_MANS)
-
 %.1 %.8:
-	(cd .. && make release)
+	(cd .. && make release-man)
+
+dist-hook: $(man_MANS)
 
 maintainer-clean-local:
 	rm -f $(man_MANS)

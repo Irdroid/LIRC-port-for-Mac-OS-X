@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.5 2002/01/06 13:39:40 lirc Exp $
+## $Id: Makefile.am,v 1.6 2006/01/21 17:17:29 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -8,9 +8,13 @@ SUBDIRS = man
 
 noinst_PROGRAMS = man2html
 
-release: man2html
+release-man: man2html
 	./release-man.sh
+
+release-html:
 	./release-html.sh
+
+release: release-man release-html
 
 dist-hook: release
 	cp -a html images $(distdir)
