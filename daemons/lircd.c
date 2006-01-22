@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.61 2005/10/30 11:11:46 lirc Exp $      */
+/*      $Id: lircd.c,v 5.62 2006/01/22 12:34:38 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -55,6 +55,10 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <sys/file.h>
+
+#if defined __APPLE__
+#include <sys/ioccom.h>
+#endif
 
 #ifndef timersub
 #define timersub(a, b, result)                                            \
