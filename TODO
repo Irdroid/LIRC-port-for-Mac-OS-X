@@ -28,3 +28,5 @@
 * add 'debian/' directory. (ranty)
 
 * SEND_RELAY command?
+
+* consider min_code_repeat on transmit

@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.20 2005/06/18 20:39:45 lirc Exp $      */
+/*      $Id: config_file.c,v 5.21 2006/01/22 12:58:50 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -420,6 +420,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("min_repeat",key)==0){
 		rem->min_repeat=s_strtoi(val);
+		return(1);
+	}
+	else if (strcasecmp("min_code_repeat",key)==0){
+		rem->min_code_repeat=s_strtoi(val);
 		return(1);
 	}
 	else if (strcasecmp("frequency",key)==0){
@@ -908,6 +912,16 @@ struct ir_remote * read_config(FILE *f)
 			if(rem->bits_in_byte==0)
 			{
 				rem->bits_in_byte=8;
+			}
+		}
+		if(rem->min_code_repeat>0)
+		{
+			if(!has_repeat(rem) ||
+			   rem->min_code_repeat>rem->min_repeat)
+			{
+				logprintf(LOG_WARNING,
+					  "invalid min_code_repeat value");
+				rem->min_code_repeat = 0;
 			}
 		}
 		rem=rem->next;

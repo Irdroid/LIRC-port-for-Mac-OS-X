@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.4 2005/06/18 20:39:45 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.5 2006/01/22 12:58:50 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -138,6 +138,12 @@ struct ir_remote
 	int toggle_bit;             /* 1..bits */
 	int min_repeat;             /* code is repeated at least x times
 				       code sent once -> min_repeat=0 */
+	unsigned int min_code_repeat;/*meaningful only if remote sends
+				       a repeat code: in this case
+				       this value indicates how often
+				       the real code is repeated
+				       before the repeat code is being
+				       sent */
 	unsigned int freq;          /* modulation frequency */
 	unsigned int duty_cycle;    /* 0<duty cycle<=100 */
 	ir_code toggle_mask;        /* Sharp (?) error detection scheme */

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.29 2005/10/20 18:43:36 lirc Exp $      */
+/*      $Id: receive.c,v 5.30 2006/01/22 12:58:50 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -1258,7 +1258,7 @@ int receive_decode(struct ir_remote *remote,
 		} /* end of mode specific code */
 	}
 	*prep=pre;*codep=code;*postp=post;
-	if(!has_repeat(remote) &&
+	if((!has_repeat(remote) || remote->reps<remote->min_code_repeat) &&
 	   expect_at_most(remote, sync, remote->remaining_gap))
 		*repeat_flagp=1;
 	else
