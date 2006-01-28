@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.20 2005/10/15 08:22:49 lirc Exp $      */
+/*      $Id: transmit.c,v 5.21 2006/01/28 18:36:44 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -349,7 +349,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	int i, repeat=0;
 	
 	if(is_grundig(remote) || 
-	   is_goldstar(remote) || is_serial(remote))
+	   is_goldstar(remote) || is_serial(remote) || is_bo(remote))
 	{
 		logprintf(LOG_ERR,"sorry, can't send this protocol yet");
 		return(0);

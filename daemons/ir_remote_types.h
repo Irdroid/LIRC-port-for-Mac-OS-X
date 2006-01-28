@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.5 2006/01/22 12:58:50 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.6 2006/01/28 18:36:44 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -53,7 +53,7 @@ struct ir_ncode {
 
 /* definitions for flags */
 
-#define IR_PROTOCOL_MASK 0x01ff
+#define IR_PROTOCOL_MASK 0x03ff
 
 /* protocols: must not be combined */
 /* Don't forget to take a look at config_file.h when adding new flags */
@@ -71,7 +71,8 @@ struct ir_ncode {
 #define SPACE_FIRST     0x0020    /* bits are encoded as space+pulse */
 #define GOLDSTAR        0x0040    /* encoding found on Goldstar remote */
 #define GRUNDIG         0x0080    /* encoding found on Grundig remote */
-#define SERIAL          0x0100    /* serial protocol */
+#define BO              0x0100    /* encoding found on Bang & Olufsen remote */
+#define SERIAL          0x0200    /* serial protocol */
 
 /* additinal flags: can be orred together with protocol flag */
 #define REVERSE		0x0400

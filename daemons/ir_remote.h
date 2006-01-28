@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.32 2005/04/23 12:08:46 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.33 2006/01/28 18:36:44 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -116,6 +116,12 @@ static inline int is_goldstar(struct ir_remote *remote)
 static inline int is_grundig(struct ir_remote *remote)
 {
 	if((remote->flags&IR_PROTOCOL_MASK) == GRUNDIG) return(1);
+	else return(0);
+}
+
+static inline int is_bo(struct ir_remote *remote)
+{
+	if((remote->flags&IR_PROTOCOL_MASK) == BO) return(1);
 	else return(0);
 }
 

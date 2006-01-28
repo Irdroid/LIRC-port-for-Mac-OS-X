@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.9 2005/04/23 12:08:46 lirc Exp $      */
+/*      $Id: config_file.h,v 5.10 2006/01/28 18:36:44 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -34,6 +34,7 @@ static struct flaglist all_flags[]=
 	{"SPACE_FIRST",     SPACE_FIRST},
         {"GOLDSTAR",        GOLDSTAR},
 	{"GRUNDIG",         GRUNDIG},
+	{"BO",              BO},
 	{"SERIAL",          SERIAL},
 	
 	{"REVERSE",         REVERSE},
