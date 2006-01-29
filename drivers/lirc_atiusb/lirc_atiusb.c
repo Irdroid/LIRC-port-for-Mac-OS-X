@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.51 2005/10/29 14:18:53 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.52 2006/01/29 18:25:57 lirc Exp $
  */
 
 /*
@@ -408,13 +408,13 @@ static int code_check_ati1(struct in_endpt *iep, int len)
 	dprintk(DRIVER_NAME "[%d]: accept channel %d\n", ir->devnum, chan+1);
 
 	if (ir->remote_type == ATI1_COMPATIBLE) {
+		for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
 		/* check for repeats */
 		if (memcmp(iep->old, iep->buf, len) == 0) {
 			if (iep->old_jiffies + repeat_jiffies > jiffies) {
 				return -1;
 			}
 		} else {
-			for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
 			memcpy(iep->old, iep->buf, CODE_LENGTH);
 		}
 		iep->old_jiffies = jiffies;
@@ -1195,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.51 2005/10/29 14:18:53 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.52 2006/01/29 18:25:57 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
