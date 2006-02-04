@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.24 2005/10/25 19:05:35 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.25 2006/02/04 21:01:37 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -119,35 +119,35 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		if(remote->toggle_bit<=remote->pre_data_bits)
 		{
 			repeat_state=
-			pre&(1<<(remote->pre_data_bits
-				 -remote->toggle_bit)) ? 1:0;
-			pre_mask=1<<(remote->pre_data_bits
-				     -remote->toggle_bit);
+			pre&(((ir_code) 1)<<(remote->pre_data_bits
+					     -remote->toggle_bit)) ? 1:0;
+			pre_mask=((ir_code) 1)<<(remote->pre_data_bits
+						 -remote->toggle_bit);
 		}
 		else if(remote->toggle_bit<=remote->pre_data_bits
 			+remote->bits)
 		{
 			repeat_state=
-			code&(1<<(remote->pre_data_bits
-				  +remote->bits
-				  -remote->toggle_bit)) ? 1:0;
-			code_mask=1<<(remote->pre_data_bits
-				      +remote->bits
-				      -remote->toggle_bit);
+			code&(((ir_code) 1)<<(remote->pre_data_bits
+					      +remote->bits
+					      -remote->toggle_bit)) ? 1:0;
+			code_mask=((ir_code) 1)<<(remote->pre_data_bits
+						  +remote->bits
+						  -remote->toggle_bit);
 		}
 		else if(remote->toggle_bit<=remote->pre_data_bits
 			+remote->bits
 			+remote->post_data_bits)
 		{
 			repeat_state=
-			post&(1<<(remote->pre_data_bits
-				  +remote->bits
-				  +remote->post_data_bits
-				  -remote->toggle_bit)) ? 1:0;
-			post_mask=1<<(remote->pre_data_bits
-				      +remote->bits
-				      +remote->post_data_bits
-				      -remote->toggle_bit);
+			post&(((ir_code) 1)<<(remote->pre_data_bits
+					      +remote->bits
+					      +remote->post_data_bits
+					      -remote->toggle_bit)) ? 1:0;
+			post_mask=((ir_code) 1)<<(remote->pre_data_bits
+						  +remote->bits
+						  +remote->post_data_bits
+						  -remote->toggle_bit);
 		}
 		else
 		{
