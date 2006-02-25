@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.17 2006/01/22 12:58:50 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.18 2006/02/25 17:02:23 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -45,7 +45,7 @@ void fprint_comment(FILE *f,struct ir_remote *rem)
 		"# brand:                       %s\n"
 		"# model no. of remote control: \n"
 		"# devices being controlled by this remote:\n"
-		"#\n\n",VERSION,LIRC_DRIVER,asctime(tmp),
+		"#\n\n",VERSION,hw.name,asctime(tmp),
 		rem->name);
 }
 
