@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.25 2006/03/04 22:36:37 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.26 2006/03/04 23:16:02 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -249,6 +249,11 @@ static inline char *pci_name(struct pci_dev *pdev)
 /* removed in 2.6.14 */
 #ifndef I2C_ALGO_BIT
 #   define I2C_ALGO_BIT 0
+#endif
+
+/* removed in 2.6.16 */
+#ifndef I2C_DRIVERID_EXP3
+#  define I2C_DRIVERID_EXP3 0xf003
 #endif
 
 /*************************** USB specific *****************************/
