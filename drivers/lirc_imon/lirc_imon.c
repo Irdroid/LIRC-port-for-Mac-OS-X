@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.9 2005/12/03 15:18:07 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.10 2006/03/04 22:36:38 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -201,7 +201,7 @@ static unsigned short ir_onboard_decode_product_list [] = {
 
 /* USB Device data */
 static struct usb_driver imon_driver = {
-	.owner 		= THIS_MODULE,
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name 		= MOD_NAME,
 	.probe 		= imon_probe,
 	.disconnect 	= imon_disconnect,

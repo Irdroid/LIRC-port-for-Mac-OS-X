@@ -222,7 +222,7 @@ static void mceusb_setup( struct usb_device *udev );
 
 /* usb specific object needed to register this driver with the usb subsystem */
 static struct usb_driver mceusb_driver = {
-	.owner =	THIS_MODULE,
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
 	.probe =	mceusb_probe,
 	.disconnect =	mceusb_disconnect,

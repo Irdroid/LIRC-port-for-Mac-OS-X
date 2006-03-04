@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.12 2005/12/03 15:18:07 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.13 2006/03/04 22:36:39 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -189,7 +189,7 @@ static struct usb_device_id sasem_usb_id_table [] = {
 
 /* USB Device data */
 static struct usb_driver sasem_driver = {
-	.owner 		= THIS_MODULE,
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name 		= MOD_NAME,
 	.probe 		= sasem_probe,
 	.disconnect 	= sasem_disconnect,

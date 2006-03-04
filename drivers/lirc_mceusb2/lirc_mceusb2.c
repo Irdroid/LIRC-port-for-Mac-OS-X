@@ -585,7 +585,7 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 }
 
 static struct usb_driver usb_remote_driver = {
-	.owner =	THIS_MODULE,
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
 	.probe =	usb_remote_probe,
 	.disconnect =	usb_remote_disconnect,

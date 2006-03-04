@@ -1,9 +1,15 @@
-/*      $Id: kcompat.h,v 5.24 2006/01/07 20:51:31 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.25 2006/03/04 22:36:37 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
 
 #include <linux/version.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
+#define LIRC_THIS_MODULE(x) x,
+#else /* >= 2.6.16 */
+#define LIRC_THIS_MODULE(x)
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.15 2006/01/06 07:18:03 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.16 2006/03/04 22:36:39 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.15 $"
+#define DRIVER_VERSION	"$Revision: 1.16 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -177,7 +177,7 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 /* usb specific object needed to register this driver with the usb subsystem */
 
 static struct usb_driver streamzap_driver = {
-	.owner =	THIS_MODULE,
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
 	.probe =	streamzap_probe,
 	.disconnect =	streamzap_disconnect,
