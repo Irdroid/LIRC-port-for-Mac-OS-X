@@ -94,6 +94,18 @@ begin remote
 
           REPEAT                   0x000000000000884B
           TELETEXT                 0x000000000000F807
+          TV                       0x0000000000006A95
+          FM                       0x000000000000EA15
+          DVD                      0x0000000000001AE5
+          CLEAR(C)                 0x0000000000000AF5
+          MENU                     0x000000000000F20D
+          CH_SURF                  0x0000000000008A75
+          ENTER                    0x000000000000C837
+          AUDIO                    0x000000000000D827
+          CC                       0x0000000000004AB5
+          REW                      0x0000000000002AD5
+          STOP                     0x000000000000629D
+          FFW                      0x000000000000AA55
       end codes
 
 end remote
