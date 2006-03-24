@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.11 2005/03/07 09:33:48 lirc Exp $      */
+/*      $Id: serial.c,v 5.12 2006/03/24 20:24:38 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -55,24 +55,22 @@ int tty_setrtscts(int fd,int enable)
 
 	if(tcgetattr(fd,&options)==-1)
 	{
-		LOGPRINTF(1,"tty_reset(): tcgetattr() failed");
-		LOGPERROR(1,"tty_reset()");
+		LOGPRINTF(1,"%s: tcgetattr() failed", __FUNCTION__);
+		LOGPERROR(1, __FUNCTION__);
 		return(0);
 	}
 	if(enable)
 	{
 		options.c_cflag|=CRTSCTS;
-		options.c_cflag|=CSTOPB;
 	}
 	else
 	{
 		options.c_cflag&=~CRTSCTS;
-		options.c_cflag&=~CSTOPB;
 	}
 	if(tcsetattr(fd,TCSAFLUSH,&options)==-1)
 	{
-		LOGPRINTF(1,"tty_reset(): tcsetattr() failed");
-		LOGPERROR(1,"tty_reset()");
+		LOGPRINTF(1,"%s: tcsetattr() failed", __FUNCTION__);
+		LOGPERROR(1, __FUNCTION__);
 		return(0);
 	}
 	return(1);
