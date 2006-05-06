@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.9 2005/12/27 12:05:27 lirc Exp $      */
+/*      $Id: lirc_client.h,v 5.10 2006/05/06 09:40:07 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -94,6 +94,7 @@ int lirc_code2charprog(struct lirc_config *config,char *code,char **string,
 		       char **prog);
 size_t lirc_getsocketname(const char *filename, char *buf, size_t size);
 const char *lirc_getmode(struct lirc_config *config);
+const char *lirc_setmode(struct lirc_config *config, const char *mode);
 
 #ifdef __cplusplus
 }

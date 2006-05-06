@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.23 2006/01/08 18:32:58 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.24 2006/05/06 09:40:07 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1276,7 +1276,8 @@ static int lirc_readconfig_only_internal(char *file,
 		}
 		(*config)->first=first;
 		(*config)->next=first;
-		(*config)->current_mode=lirc_startupmode((*config)->first);
+		free((*config)->current_mode);
+		(*config)->current_mode=strdup(lirc_startupmode((*config)->first));
 		(*config)->sockfd=-1;
 		if(full_name != NULL)
 		{
@@ -1368,6 +1369,7 @@ void lirc_freeconfig(struct lirc_config *config)
 			config->sockfd=-1;
 		}
 		lirc_freeconfigentries(config->first);
+		free(config->current_mode);
 		free(config);
 	}
 }
@@ -1431,6 +1433,7 @@ static void lirc_clearmode(struct lirc_config *config)
 		}
 		scan=scan->next;
 	}
+	free(config->current_mode);
 	config->current_mode=NULL;
 }
 
@@ -1446,7 +1449,8 @@ static char *lirc_execute(struct lirc_config *config,
 	}
 	if(scan->change_mode!=NULL)
 	{
-		config->current_mode=scan->change_mode;
+		free(config->current_mode);
+		config->current_mode=strdup(scan->change_mode);
 		if(scan->flags&once)
 		{
 			if(scan->flags&ecno)
@@ -1804,6 +1808,42 @@ const char *lirc_getmode(struct lirc_config *config)
 		}
 		return NULL;
 	}
+	return config->current_mode;
+}
+
+const char *lirc_setmode(struct lirc_config *config, const char *mode)
+{
+	if(config->sockfd!=-1)
+	{
+		static char buf[LIRC_PACKET_SIZE];
+		size_t buf_len = LIRC_PACKET_SIZE;
+		int success;
+		int ret;
+		char cmd[LIRC_PACKET_SIZE];
+		if(snprintf(cmd, LIRC_PACKET_SIZE, "SETMODE %s\n", mode)
+		   >= LIRC_PACKET_SIZE)
+		{
+			return NULL;
+		}
+		
+		ret = lirc_send_command(config->sockfd, cmd,
+					buf, &buf_len, &success);
+		if(success == LIRC_RET_SUCCESS)
+		{
+			if(ret > 0)
+			{
+				return buf;
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+		return NULL;
+	}
+	
+	free(config->current_mode);
+	config->current_mode = strdup(mode);
 	return config->current_mode;
 }
 

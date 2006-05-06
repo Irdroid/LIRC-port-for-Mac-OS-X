@@ -1,4 +1,4 @@
-/*      $Id: lircrcd.c,v 5.2 2006/01/08 18:29:32 lirc Exp $      */
+/*      $Id: lircrcd.c,v 5.3 2006/05/06 09:40:07 lirc Exp $      */
 
 /****************************************************************************
  ** lircrcd.c ***************************************************************
@@ -68,6 +68,7 @@ struct protocol_directive
 static int code_func(int fd,char *message,char *arguments);
 static int ident_func(int fd,char *message,char *arguments);
 static int getmode_func(int fd,char *message,char *arguments);
+static int setmode_func(int fd,char *message,char *arguments);
 static int send_result(int fd, char *message, const char *result);
 static int send_success(int fd,char *message);
 
@@ -76,6 +77,7 @@ struct protocol_directive directives[] =
 	{"CODE",code_func},
 	{"IDENT",ident_func},
 	{"GETMODE",getmode_func},
+	{"SETMODE",setmode_func},
 	{NULL,NULL}
 	/*
 	{"DEBUG",debug},
@@ -501,6 +503,10 @@ static int ident_func(int fd,char *message,char *arguments)
 {
 	int index;
 	
+	if(arguments == NULL)
+	{
+		return send_error(fd, message, "protocol error\n");
+	}
 	LOGPRINTF(2, "IDENT %s", arguments);
 	index = get_client_index(fd);
 	if(clis[index].ident_string != NULL)
@@ -519,12 +525,30 @@ static int ident_func(int fd,char *message,char *arguments)
 
 static int getmode_func(int fd,char *message,char *arguments)
 {
-	LOGPRINTF(2, "GETMODE %s", arguments);
+	if(arguments != NULL)
+	{
+		return send_error(fd, message, "protocol error\n");
+	}
+	LOGPRINTF(2, "GETMODE");
 	if(lirc_getmode(config))
 	{
 		return send_result(fd, message, lirc_getmode(config));
 	}
 	return(send_success(fd,message));
+}
+
+static int setmode_func(int fd,char *message,char *arguments)
+{
+	const char *mode = NULL;
+	
+	LOGPRINTF(2, arguments!=NULL ? "SETMODE %s":"SETMODE", arguments);
+	if((mode = lirc_setmode(config, arguments)))
+	{
+		return send_result(fd, message, mode);
+	}
+	return arguments==NULL ?
+		send_success(fd,message):
+		send_error(fd, message, "out of memory\n");
 }
 
 static int send_result(int fd, char *message, const char *result)
