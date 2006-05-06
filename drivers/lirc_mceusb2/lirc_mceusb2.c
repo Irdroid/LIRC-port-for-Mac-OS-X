@@ -355,10 +355,6 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 		if ((ir->buf_in[0]==MCE_PACKET_HEADER)) {
 
 		    int i,keycode,pulse;
-			
-			/* buffer exhausted? */
-			if (ir->lirccnt>(LIRCBUF_SIZE-MCE_CODE_LENGTH))
-				send_packet_to_lirc(ir);
 
 		    for(i=0;i<MCE_PACKET_SIZE;i++) {
 			pulse = 0;
@@ -386,6 +382,7 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 			    ir->last_space += keycode;
 			}
 		    }
+		    send_packet_to_lirc(ir);
 		}
 	    }
 	    else {
