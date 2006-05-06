@@ -219,3 +219,86 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.7.2(any) on Thu Mar 30 23:54:35 2006
+#
+# contributed by 
+#
+# brand:                       DViCO
+# model no. of remote control: Utraview MCP
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  DViCO_Utraview
+  bits           16
+  flags SPACE_ENC
+  eps            30
+  aeps          120
+
+  header       9000  4500
+  one           500  1500
+  zero          500   500
+  ptrail        500
+  repeat       9000  2000
+  pre_data_bits   16
+  pre_data       0x807F
+  gap          40000
+  repeat_gap   93500
+  min_repeat      6
+  toggle_bit      0
+
+
+      begin codes
+          1                        0xD02F
+          2                        0xE817
+          3                        0xD827
+          4                        0xE01F
+          5                        0x0AF5
+          6                        0x2AD5
+          7                        0x12ED
+          8                        0x32CD
+          9                        0x1AE5
+          0                        0xC03F
+          aspect                   0xC837
+          fullscreen               0xF807
+          rev                      0xC23D
+          ff                       0xF20D
+          play                     0xE21D
+          mute                     0xEA15
+          stop                     0xB04F
+          rec                      0x807F
+          power                    0x728D
+          live                     0x5AA5
+          picture                  0x4AB5
+          folder                   0x9867
+          vol+                     0xA857
+          vol-                     0xA05F
+          ch+                      0x8877
+          ch-                      0x906F
+          replay                   0xF00F
+          skip                     0x48B7
+          start                    0x42BD
+          dvd-menu                 0xB24D
+          back                     0x926D
+          alt-tab                  0xAA55
+          more-i                   0x9A65
+          setup                    0x6897
+          tv                       0x629D
+          guide                    0x50AF
+          ok                       0x7A85
+          left                     0xDA25
+          right                    0xFA05
+          up                       0x8A75
+          down                     0xCA35
+          dtv                      0x40BF
+          mp3                      0x708F
+          dvd                      0x58A7
+          cpf                      0x7887
+      end codes
+
+end remote
+
+
