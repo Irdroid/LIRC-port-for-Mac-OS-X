@@ -175,6 +175,24 @@ char *hiddev_rec(struct ir_remote *remotes)
 		repeat_flag = (main_code & dvico_repeat_mask);
 		main_code = (main_code & ~dvico_repeat_mask);
 		return decode_all(remotes);
+#if 0
+		/* the following code could be used to recreate the
+		   real codes of the remote control (currently
+		   verified for the MCE remote only) */
+		ir_code pre, main;
+		
+		pre_code_length = 16;
+		main_code_length = 16;
+		
+		pre = event.value&0xff;
+		pre_code = reverse(~pre, 8)<<8 | reverse(pre, 8);
+		
+		repeat_flag = (event.value & dvico_repeat_mask);
+		
+		main = (event.value&0x7f00) >> 8;
+		main_code = reverse(main, 8)<<8 | reverse(~main, 8);
+		return decode_all(remotes);
+#endif
 	}
 	/* Remotec Mediamaster specific code */
 	/* Y-Coordinate,
