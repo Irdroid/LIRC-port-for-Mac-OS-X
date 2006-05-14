@@ -24,6 +24,9 @@
 #endif
 
 #include <stdio.h>
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
 #include <sys/fcntl.h>
 
 #include <linux/input.h>
@@ -124,6 +127,7 @@ char *devinput_rec(struct ir_remote *remotes)
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
+		if(rd <= 0 && errno != EINTR) raise(SIGTERM);
 		return 0;
 	}
 
