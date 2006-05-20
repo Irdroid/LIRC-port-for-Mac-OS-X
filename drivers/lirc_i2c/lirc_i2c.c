@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.36 2006/03/04 23:16:03 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.37 2006/05/20 04:38:58 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -430,12 +430,19 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		break;
 	case 0x18:
 	case 0x1a:
-		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
+#ifdef I2C_HW_B_CX2341X
+		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848) ||
+		    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X))
+#else
+		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
+#endif
+		{
 			strcpy(ir->c.name,"Hauppauge IR");
 			ir->l.code_length = 13;
 			ir->l.add_to_buf=add_to_buf_haup;
 		}
-		else {
+		else /* I2C_HW_B_CX2388x */
+		{
 			strcpy(ir->c.name,"Leadtek IR");
 			ir->l.code_length = 8;
 			ir->l.add_to_buf=add_to_buf_pvr2000;
