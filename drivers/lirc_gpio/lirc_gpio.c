@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.44 2006/01/01 13:43:46 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.45 2006/05/20 07:43:18 lirc Exp $
  *
  */
 
@@ -99,6 +99,9 @@ static struct rcv_info rcv_infos[] = {
 	{BTTV_BOARD_PXELVWPLTVPRO,          0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
 	{BTTV_BOARD_PV_BT878P_9B,           0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
 	{BTTV_BOARD_PV_BT878P_PLUS,         0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
+#ifdef BTTV_BOARD_PV_M4900
+	{BTTV_BOARD_PV_M4900,               0, 0x00001f00,          0, 0x0008000,          0, 500, 12, 32},
+#endif
 	{BTTV_BOARD_AVERMEDIA,              0, 0x00f88000,          0, 0x0010000, 0x00010000,   0, 10, 32},
 	{BTTV_BOARD_AVPHONE98,     0x00011461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
 	{BTTV_BOARD_AVERMEDIA98,   0x00021461, 0x003b8000, 0x00004000, 0x0800000, 0x00800000,   0, 10,  0}, /*mapped to Capture98*/
@@ -269,6 +272,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_BOARD_PXELVWPLTVPRO:
 	case BTTV_BOARD_PV_BT878P_9B:
 	case BTTV_BOARD_PV_BT878P_PLUS:
+	case BTTV_BOARD_PV_M4900:
 #ifdef BTTV_BOARD_KWORLD
 	case BTTV_BOARD_KWORLD:
 #endif
