@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.24 2006/05/06 09:40:07 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.25 2006/05/23 13:09:45 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1266,6 +1266,8 @@ static int lirc_readconfig_only_internal(char *file,
 	}
 	if(ret==0)
 	{
+		char *startupmode;
+		
 		*config=(struct lirc_config *)
 			malloc(sizeof(struct lirc_config));
 		if(*config==NULL)
@@ -1276,8 +1278,8 @@ static int lirc_readconfig_only_internal(char *file,
 		}
 		(*config)->first=first;
 		(*config)->next=first;
-		free((*config)->current_mode);
-		(*config)->current_mode=strdup(lirc_startupmode((*config)->first));
+		startupmode = lirc_startupmode((*config)->first);
+		(*config)->current_mode=startupmode ? strdup(startupmode):NULL;
 		(*config)->sockfd=-1;
 		if(full_name != NULL)
 		{
