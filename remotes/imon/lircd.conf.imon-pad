@@ -1,5 +1,3 @@
-# Please make this file available to others
-# by sending it to <lirc@bartelmus.de>
 #
 # this config file was automatically generated
 # using lirc-0.7.1pre2(imon) on Tue Mar  1 23:15:44 2005
@@ -79,6 +77,13 @@ begin remote
           MouseLeftClick           0x688301B7
           WindowsKey               0x2B8195B7
           Backspace                0x28A115B7
+# Corrin added
+	  Space                    0x2B9B15F7
+          Up                       0xEB53F9B7
+          Left                     0x6ABAFFBF
+          Down                     0x6F9ECBB7
+          Right                    0x69A281B7
+
       end codes
 
 end remote 
