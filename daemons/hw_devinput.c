@@ -140,9 +140,11 @@ static int locate_dev (const char *pattern, enum locate_type type)
 		case locate_by_name:
 			request = EVIOCGNAME (sizeof (ioname));
 			break;
+#ifdef EVIOCGPHYS			
 		case locate_by_phys:
 			request = EVIOCGPHYS (sizeof (ioname));
 			break;
+#endif
 		default:
 			closedir (dir);
 			return 1;
