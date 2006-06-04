@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.56 2006/04/05 12:43:15 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.57 2006/06/04 02:42:00 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1923,7 +1923,7 @@ int get_lead_length(struct ir_remote *remote)
 {
 	unsigned int sum,max_count;
 	struct lengths *first_lead,*max_length,*max2_length;
-	lirc_t a,b;
+	lirc_t a,b,swap;
 	
 	if(!is_biphase(remote)) return(1);
 	if(is_rc6(remote)) return(1);
@@ -1947,7 +1947,10 @@ int get_lead_length(struct ir_remote *remote)
 
 	a=calc_signal(max_length);
 	b=calc_signal(max2_length);
-	if(a>b)	b^=a^=b^=a;
+	if(a>b)
+	{
+		swap=a; a=b; b=swap;
+	}
 	if(abs(2*a-b)<b*EPS/100 || abs(2*a-b)<AEPS)
 	{
 		printf("Found hidden lead pulse: %lu\n",
