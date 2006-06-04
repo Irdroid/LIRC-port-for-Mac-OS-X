@@ -21,6 +21,12 @@ With the --device option you can select the character device which lircd
 should read from. The default currently is /dev/lirc but it probably
 will change in future.
 
+If you're using the dev/input driver, you can use \fIname=STRING\fR or
+\fIphys=STRING\fR to select the device; lircd will look in /dev/input
+to find a device with a matching description. This is useful in case
+the device name isn't fixed. \fISTRING\fR may contain the '*' and '?' 
+wildcards and '\\' to mark them as literal.
+
 With the --listen option you can let lircd listen for network
 connections on the given port. The default port is 8765. No security
 checks are currently implemented.
