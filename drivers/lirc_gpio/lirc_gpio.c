@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.45 2006/05/20 07:43:18 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.46 2006/06/05 09:46:53 lirc Exp $
  *
  */
 
@@ -117,6 +117,9 @@ static struct rcv_info rcv_infos[] = {
 	/* MIRO was just a work-around */
 	{BTTV_BOARD_MIRO,                   0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
 	{BTTV_BOARD_DYNALINK,               0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+#ifdef BTTV_BOARD_ASKEY_CPH03X
+	{BTTV_BOARD_ASKEY_CPH03X,           0, 0x00001f00,          0, 0x0004000,          0,   0, 10, 32},
+#endif
 	{BTTV_BOARD_WINVIEW_601,            0, 0x00001f00,          0, 0x0004000,          0,   0,  0, 32},
 #ifdef BTTV_BOARD_KWORLD
 	{BTTV_BOARD_KWORLD,                 0, 0x00007f00,          0, 0x0004000,          0,   0, 12, 32},
@@ -268,6 +271,9 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		/* FALLTHROUGH */
 	case BTTV_BOARD_MIRO:
 	case BTTV_BOARD_DYNALINK:
+#ifdef BTTV_BOARD_ASKEY_CPH03X
+	case BTTV_BOARD_ASKEY_CPH03X:
+#endif
 	case BTTV_BOARD_PXELVWPLTVPAK:
 	case BTTV_BOARD_PXELVWPLTVPRO:
 	case BTTV_BOARD_PV_BT878P_9B:
