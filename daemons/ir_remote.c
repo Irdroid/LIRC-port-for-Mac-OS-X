@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.25 2006/02/04 21:01:37 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.26 2006/06/07 23:12:06 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -109,7 +109,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			  int *repeat_statep)
 {
 	ir_code pre_mask,code_mask,post_mask;
-	int repeat_state, found_code;
+	int repeat_state, found_code, have_code;
 	struct ir_ncode *codes,*found;
 	
 	pre_mask=code_mask=post_mask=0;
@@ -211,6 +211,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	}
 	found=NULL;
 	found_code=0;
+	have_code=0;
 	codes=remote->codes;
 	if(codes!=NULL)
 	{
@@ -241,10 +242,13 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 							codes->next->next;
 					}
 				}
-				found=codes;
-				if(codes->current==NULL)
+				if(!have_code)
 				{
-					break;
+					found=codes;
+					if(codes->current==NULL)
+					{
+						have_code=1;
+					}
 				}
 			}
 			else
