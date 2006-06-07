@@ -1,4 +1,4 @@
-/*      $Id: slinke.c,v 5.2 2005/04/23 12:08:46 lirc Exp $      */
+/*      $Id: slinke.c,v 5.3 2006/06/07 23:10:58 lirc Exp $      */
 
 /****************************************************************************
  ** slinke.c ****************************************************************
@@ -31,6 +31,25 @@
 
 const char *usage="Usage: %s --help | --version | [options] file\n";
 char *progname;
+struct hardware hw=
+{
+	        "/dev/null",        /* default device */
+	        -1,                 /* fd */
+	        0,                  /* features */
+	        0,                  /* send_mode */
+	        0,                  /* rec_mode */
+	        0,                  /* code_length */
+	        NULL,               /* init_func */
+	        NULL,               /* config_func */
+	        NULL,               /* deinit_func */
+	        NULL,               /* send_func */
+	        NULL,               /* rec_func */
+	        NULL,               /* decode_func */
+	        NULL,               /* ioctl_func */
+	        NULL,               /* readdata */
+	        "slinke",           /* name */
+};
+
 
 #define MAX_LINE_WIDTH 300
 #define MAX_CODES 100
