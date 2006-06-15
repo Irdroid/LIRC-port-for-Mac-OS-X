@@ -1257,3 +1257,132 @@ begin remote
 
 end remote
 
+#
+# this config file was hand crafted for
+# lirc-0.8.0(atiusb) on Sun June 11 22:49:23 2006
+#
+# contributed by Ted Schipper <t.schipper@tsux.org>
+#
+# brand:                       Medion 8802
+# Remote P/N:                  20029724
+# Receiver P/N:                20024123
+# model no. of remote control: Medion RF remote
+# devices being controlled by this remote: Medion 8802 Multimedia Home Entertainment Design Center
+#
+
+begin remote
+
+  name  Medion_8802
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          227999
+  min_repeat      5
+  toggle_bit      0
+
+
+      begin codes
+          Line_TV                  0x719C
+          Line_TV                  0xF11C
+          Rec_TV                   0x6D98
+          Rec_TV                   0xED18
+          On/Standby               0xD702
+          Photo                    0x5A85
+          Photo                    0xDA05
+          Music                    0x5B86
+          Music                    0xDB06
+          Guide                    0x0631
+          Guide                    0x86B1
+          DVD_Menu                 0x5984
+          DVD_Menu                 0xD904
+          Video                    0x022D
+          Video                    0x82AD
+          Text                     0x6B96
+          Text                     0xEB16
+          RED/Audio                0x0732
+          RED/Audio                0x87B2
+          YELLOW/Angle             0x0934
+          YELLOW/Angle             0x89B4
+          BLUE/Title               0x0A35
+          BLUE/Title               0x8AB5
+          GREEN/Subtitle           0x0833
+          GREEN/Subtitle           0x88B3
+          Vol+                     0x5E89
+          Vol+                     0xDE09
+          Vol-                     0x5D88
+          Vol-                     0xDD08
+          Up                       0x6F9A
+          Up                       0xEF1A
+          Down                     0x77A2
+          Down                     0xF722
+          Left                     0x729D
+          Left                     0xF21D
+          Right                    0x749F
+          Right                    0xF41F
+          Ok                       0x739E
+          Ok                       0xF31E
+          Mute                     0x5580
+          Mute                     0xD500
+          Ch+                      0x608B
+          Ch+                      0xE00B
+          Ch-                      0x618C
+          Ch-                      0xE10C
+          1                        0x628D
+          1                        0xE20D
+          2                        0x638E
+          2                        0xE30E
+          3                        0x648F
+          3                        0xE40F
+          4                        0x6590
+          4                        0xE510
+          5                        0x6691
+          5                        0xE611
+          6                        0x6792
+          6                        0xE712
+          7                        0x6893
+          7                        0xE813
+          8                        0x6994
+          8                        0xE994
+          9                        0x6A95
+          9                        0xEA15
+          *                        0x0C37
+          *                        0x8CB7
+          0                        0x6C97
+          0                        0xEC17
+          #                        0x0D38
+          #                        0x8DB8
+          Back                     0x75A0
+          Back                     0xF520
+          Info                     0x042F
+          Info                     0x84AF
+          Select                   0x709B
+          Select                   0xF01B
+          Rewind                   0x79A4
+          Rewind                   0xF924
+          Play                     0x7AA5
+          Play                     0xFA25
+          Fast_Forward             0x7BA6
+          Fast_Forward             0xFB26
+          Pause                    0x7EA9
+          Pause                    0xFE29
+          Start                    0x76A1
+          Start                    0xF621
+          End                      0x78A3
+          End                      0xF823
+          Stop                     0x7DA8
+          Stop                     0xFD28
+          Record                   0x7CA7
+          Record                   0xFC27
+      end codes
+
+end remote
+
+
+
