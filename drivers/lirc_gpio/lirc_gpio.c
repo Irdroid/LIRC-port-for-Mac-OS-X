@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.46 2006/06/05 09:46:53 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.47 2006/06/20 01:50:12 lirc Exp $
  *
  */
 
@@ -48,9 +48,12 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,0)
 #include "../drivers/char/bttv.h"
 #include "../drivers/char/bttvp.h"
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17)
 #include "../drivers/media/video/bttv.h"
 #include "../drivers/media/video/bttvp.h"
+#else
+#include "../drivers/media/video/bt8xx/bttv.h"
+#include "../drivers/media/video/bt8xx/bttvp.h"
 #endif
 
 #if BTTV_VERSION_CODE < KERNEL_VERSION(0,7,45)
@@ -278,7 +281,9 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 	case BTTV_BOARD_PXELVWPLTVPRO:
 	case BTTV_BOARD_PV_BT878P_9B:
 	case BTTV_BOARD_PV_BT878P_PLUS:
+#ifdef BTTV_BOARD_PV_M4900
 	case BTTV_BOARD_PV_M4900:
+#endif
 #ifdef BTTV_BOARD_KWORLD
 	case BTTV_BOARD_KWORLD:
 #endif
