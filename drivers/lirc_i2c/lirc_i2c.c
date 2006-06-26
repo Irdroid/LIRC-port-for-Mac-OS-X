@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.37 2006/05/20 04:38:58 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.38 2006/06/26 23:21:34 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -515,7 +515,13 @@ static int ir_probe(struct i2c_adapter *adap) {
 		-1};
 	struct i2c_client c; char buf; int i,rc;
 
-	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
+#ifdef I2C_HW_B_CX2341X
+	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848) ||
+	    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X))
+#else
+	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
+#endif
+	{
 		memset(&c,0,sizeof(c));
 		c.adapter = adap;
 		for (i = 0; -1 != probe[i]; i++) {
