@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.47 2006/06/20 01:50:12 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.48 2006/07/06 06:42:44 lirc Exp $
  *
  */
 
@@ -150,6 +150,7 @@ static struct rcv_info rcv_infos[] = {
 	 * based on the card id: */
 	{BTTV_BOARD_WINFAST2000,   0x6606107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
 	{BTTV_BOARD_WINFAST2000,   0x6609107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
+	{BTTV_BOARD_WINFAST2000,   0xff06107d, 0x000008f8,          0, 0x0000100,          0,   0,  0, 32},
 	/* default: */
 	{BTTV_BOARD_WINFAST2000,            0, 0x000000f8,          0, 0x0000100,          0,   0,  0, 32},
 #ifdef BTTV_BOARD_GVBCTV5PCI
