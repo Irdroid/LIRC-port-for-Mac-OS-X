@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.31 2006/01/28 18:36:44 lirc Exp $      */
+/*      $Id: receive.c,v 5.32 2006/07/16 08:31:14 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -571,7 +571,7 @@ inline int get_gap(struct ir_remote *remote,lirc_t gap)
 	lirc_t data;
 	
 	LOGPRINTF(2,"sum: %d",rec_buffer.sum);
-	data=get_next_rec_buffer(gap*(100-remote->eps)/100);
+	data=get_next_rec_buffer(gap-gap*remote->eps/100);
 	if(data==0) return(1);
 	if(!is_space(data))
 	{
