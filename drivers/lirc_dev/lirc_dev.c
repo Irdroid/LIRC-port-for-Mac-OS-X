@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.45 2005/12/03 15:18:07 lirc Exp $
+ * $Id: lirc_dev.c,v 1.46 2006/07/16 08:10:45 lirc Exp $
  *
  */
 
@@ -81,7 +81,6 @@ struct irctl
 
 	struct semaphore buffer_sem;
 	struct lirc_buffer *buf;
-	unsigned int chunk_size;
 
 	int tpid;
 	struct semaphore *t_notify;
@@ -362,7 +361,6 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			goto out_lock;
 		}
 	}
-	ir->chunk_size = ir->buf->chunk_size;
 
 	if (p->features==0)
 		p->features = (p->code_length > 8) ?
@@ -729,7 +727,7 @@ static ssize_t irctl_read(struct file *file,
 			  loff_t *ppos)     
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
-	unsigned char buf[ir->chunk_size];
+	unsigned char buf[ir->buf->chunk_size];
 	int ret=0, written=0;
 	DECLARE_WAITQUEUE(wait, current);
 
