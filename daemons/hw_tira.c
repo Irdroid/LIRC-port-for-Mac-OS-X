@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.c,v 5.4 2005/07/10 08:34:12 lirc Exp $  */
+/*   $Id: hw_tira.c,v 5.5 2006/07/16 08:37:17 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.c ****************************************************************
  *****************************************************************************
@@ -110,7 +110,7 @@ int tira_decode (struct ir_remote *remote, ir_code *prep, ir_code *codep,
 
 int tira_setup(void)
 {
-	char response[6];
+	char response[64+1];
 	int  i;
 	int ptr;
 	
@@ -127,7 +127,6 @@ int tira_setup(void)
 		logprintf(LOG_ERR, "failed writing to device");
 		return 0;
 	}
-	memset (&response, '\0', 6);
 	/* Wait till the chars are written, should use tcdrain but
 	   that don't seem to work... *shrug*
 	*/
@@ -145,7 +144,8 @@ int tira_setup(void)
 			/* Lets get the firmware version */
 			write (hw.fd, "IV", 2);
 			usleep (2 * (100 * 1000));
-			i = read (hw.fd, response, 6);
+			memset (response, 0, sizeof(response));
+			i = read (hw.fd, response, sizeof(response)-1);
 			logprintf(LOG_INFO, "firmware version %s", response);
 		}
 		else
