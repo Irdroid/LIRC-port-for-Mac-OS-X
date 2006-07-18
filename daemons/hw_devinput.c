@@ -235,7 +235,7 @@ int devinput_decode(struct ir_remote *remote,
 		    ir_code *prep, ir_code *codep, ir_code *postp,
 		    int *repeat_flagp, lirc_t *remaining_gapp)
 {
-	logprintf(LOG_DEBUG, "devinput_decode");
+	LOGPRINTF(1, "devinput_decode");
 
         if(!map_code(remote,prep,codep,postp,
                      0,0,hw_devinput.code_length,code,0,0))
@@ -256,7 +256,7 @@ char *devinput_rec(struct ir_remote *remotes)
 	int rd;
 
 
-	logprintf(LOG_DEBUG, "devinput_rec");
+	LOGPRINTF(1, "devinput_rec");
 	
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
@@ -265,17 +265,17 @@ char *devinput_rec(struct ir_remote *remotes)
 		return 0;
 	}
 
-	logprintf(LOG_DEBUG, "time %ld.%06ld  type %d  code %d  value %d",
-		event.time.tv_sec, event.time.tv_usec,
-		event.type, event.code, event.value);
-
+	LOGPRINTF(1, "time %ld.%06ld  type %d  code %d  value %d",
+		  event.time.tv_sec, event.time.tv_usec,
+		  event.type, event.code, event.value);
+	
 	code = event.value ? 0x80000000 : 0;
 	code |= ((event.type & 0x7fff) << 16);
 	code |= event.code;
 
 	repeat_flag = (event.value == 2) ? 1:0;
 
-	logprintf(LOG_DEBUG, "code %.8llx", code);
+	LOGPRINTF(1, "code %.8llx", code);
 
 	return decode_all(remotes);
 }
