@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.46 2006/07/16 08:10:45 lirc Exp $
+ * $Id: lirc_dev.c,v 1.47 2006/07/23 23:24:35 lirc Exp $
  *
  */
 
@@ -49,16 +49,18 @@
 #endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
+
+#include "drivers/kcompat.h"
+
 /* DevFS header */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#if defined(LIRC_HAVE_DEVFS)
 #include <linux/devfs_fs_kernel.h>
 #endif
 /* SysFS header */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(LIRC_HAVE_SYSFS)
 #include <linux/device.h>
 #endif
 
-#include "drivers/kcompat.h"
 #include "drivers/lirc.h"
 #include "lirc_dev.h"
 

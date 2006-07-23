@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.26 2006/03/04 23:16:02 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.27 2006/07/23 23:24:35 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -15,8 +15,11 @@
 
 #include <linux/device.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
 #define LIRC_HAVE_DEVFS
 #define LIRC_HAVE_DEVFS_26
+#endif
+
 #define LIRC_HAVE_SYSFS
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)
