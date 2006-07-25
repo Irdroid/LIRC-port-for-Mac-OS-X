@@ -100,6 +100,7 @@
 #define VENDOR_TATUNG		0x1460
 #define VENDOR_GATEWAY		0x107b
 #define VENDOR_SHUTTLE		0x1308
+#define VENDOR_MITSUMI          0x03ee
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },	/* Philips eHome Infrared Transciever */
@@ -107,6 +108,7 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_TATUNG, 0x9150) },  /* Tatung eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_SHUTTLE, 0xc001) },  /* Shuttle eHome Infrared Transceiver */
         { USB_DEVICE(VENDOR_GATEWAY, 0x3009) },  /* Gateway eHome Infrared Transceiver */
+        { USB_DEVICE(VENDOR_MITSUMI, 0x2501) },  /* Mitsumi */
 	{ }					/* Terminating entry */
 };
 
