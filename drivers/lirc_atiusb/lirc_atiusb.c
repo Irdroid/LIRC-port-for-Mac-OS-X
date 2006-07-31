@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.53 2006/03/04 22:36:38 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.54 2006/07/31 01:19:57 lirc Exp $
  */
 
 /*
@@ -939,7 +939,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	devnum = dev->devnum;
 
 	/* determine remote type */
-	switch (dev->descriptor.idVendor) {
+	switch (cpu_to_le16(dev->descriptor.idVendor)) {
 	case VENDOR_ATI1:
 		type = ATI1_COMPATIBLE;
 		break;
@@ -1195,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.53 2006/03/04 22:36:38 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.54 2006/07/31 01:19:57 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

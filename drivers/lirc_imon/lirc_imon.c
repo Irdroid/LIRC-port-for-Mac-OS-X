@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.11 2006/07/23 23:24:35 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.12 2006/07/31 01:19:57 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -925,7 +925,7 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		unsigned short product_id;
 		unsigned short *id_list_item;
 
-		product_id = dev ->descriptor.idProduct;
+		product_id = cpu_to_le16(dev ->descriptor.idProduct);
 		id_list_item = ir_onboard_decode_product_list;
 		while (*id_list_item) {
 			if (*id_list_item++ == product_id) {
@@ -943,7 +943,7 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		unsigned short vendor_id;
 		unsigned short *id_list_item;
 
-		vendor_id = dev ->descriptor.idVendor;
+		vendor_id = cpu_to_le16(dev ->descriptor.idVendor);
 		id_list_item = vfd_proto_6p_vendor_list;
 		while (*id_list_item) {
 			if (*id_list_item++ == vendor_id) {

@@ -704,8 +704,8 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	int retval = -ENOMEM;
 	
 	/* See if the device offered us matches what we can accept */
-	if ((udev->descriptor.idVendor != USB_MCEUSB_VENDOR_ID) ||
-	    (udev->descriptor.idProduct != USB_MCEUSB_PRODUCT_ID)) {
+	if ((cpu_to_le16(udev->descriptor.idVendor) != USB_MCEUSB_VENDOR_ID) ||
+	    (cpu_to_le16(udev->descriptor.idProduct) != USB_MCEUSB_PRODUCT_ID)) {
 	    	dprintk("Wrong Vendor/Product IDs");
 #ifdef KERNEL_2_5
 		return -ENODEV;
