@@ -1,1 +1,1 @@
-KERNEL="lirc[0-9]*",	NAME="lirc/%n"
+KERNEL=="lirc[0-9]*",	NAME="lirc/%n"
