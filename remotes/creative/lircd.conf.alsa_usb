@@ -128,3 +128,66 @@ begin remote
 	end codes
 
 end remote
+
+
+#
+# this config file was automatically generated
+# using lirc-0.8.0(userspace) on Sun Aug 13 19:42:12 2006
+#
+# contributed by 
+#
+# brand:                       Creative
+# model no. of remote control: 
+# devices being controlled by this remote: Sound Blaster Live! External USB
+#
+
+begin remote
+
+  name  Creative_SBL
+  bits            8
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          315937
+  toggle_bit      0
+
+
+      begin codes
+          touche1                  0x74
+          touche2                  0x70
+          touche3                  0x6F
+          touche4                  0x75
+          touche5                  0x7B
+          touche6                  0x87
+          touche7                  0x76
+          touche8                  0x7C
+          touche9                  0x88
+          touche0                  0x7F
+          CMSS                     0x8E
+          EAX                      0x73
+          vol-                     0x9C
+          vol+                     0x9D
+          up                       0x84
+          down                     0x72
+          left                     0x78
+          right                    0x8A
+          ok                       0x7E
+          return                   0x71
+          start                    0x77
+          cancel                   0x83
+          record                   0x8C
+          options                  0x7D
+          display                  0x89
+          previous                 0x80
+          playpause                0x86
+          next                     0x85
+          slow                     0x82
+          stop                    0x7A
+          step                     0x81
+      end codes
+
+end remote
+
+
