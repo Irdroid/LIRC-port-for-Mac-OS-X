@@ -1185,13 +1185,13 @@ end remote
 
 #
 # this config file was automatically generated
-# using lirc-0.7.2(any) on Mon Jan 16 13:13:31 2006
+# using lirc-0.7.1pre2(any) on Tue Aug 22 20:53:57 2006
 #
-# contributed by 
+# contributed by Patrick-Thomas Chmielewski (www.ptch.de)
 #
-# brand: Medion USB Remote Control X10
-# model no. of remote control: 40009936
-# devices being controlled by this remote:
+# brand: Medion X10
+# model no. of remote control: P/N 40009936
+# devices being controlled by this remote: P/N 40009937
 #
 
 begin remote
@@ -1203,56 +1203,104 @@ begin remote
 
   one             0     0
   zero            0     0
-  gap          219969
+  gap          227969
+  min_repeat      2
   toggle_bit      0
 
 
       begin codes
-          off                      0x14D7020000
+          ok                       0x14F31E0000
+	  ok                       0x14739E0000
+          power                    0x14D7020000
+          power                    0x14D7020000
+          tv                       0x1481AC0000
           tv                       0x14012C0000
           video                    0x1482AD0000
-          dvd                      0x14D9040000
-          vt                       0x146B960000
+          video                    0x14022D0000
+          cd                       0x1459840000
+          cd                       0x14D9040000
+          txt                      0x146B960000
+          txt                      0x14EB160000
+          audio                    0x145B860000
           audio                    0x14DB060000
           radio                    0x1483AE0000
+          radio                    0x14032E0000
+          book                     0x1486B10000
           book                     0x1406310000
           photo                    0x145A850000
+          photo                    0x14DA050000
+          info                     0x1484AF0000
           info                     0x14042F0000
-          0                        0x146C970000
-          1                        0x14E20D0000
-          2                        0x14638E0000
-          3                        0x14E40F0000
-          4                        0x1465900000
-          5                        0x14E6110000
-          6                        0x1467920000
-          7                        0x1468930000
-          8                        0x14E9140000
-          9                        0x146A950000
-          ok                       0x14F31E0000
+          menu                     0x146E990000
+          menu                     0x14EE190000
           up                       0x14CDF80000
-          down                     0x1446710000
+          up                       0x144D780000
+          down                     0x14C5F00000
+          down                     0x1445700000
+          left                     0x14729D0000
           left                     0x14F21D0000
           right                    0x14749F0000
-          menu                     0x14EE190000
-          back                     0x1475A00000
-          red                      0x1407320000
-          green                    0x1488B30000
-          yellow                   0x1409340000
-          blue                     0x148AB50000
+          right                    0x14F41F0000
+          return                   0x1475A00000
+          return                   0x14F5200000
+          vol+                     0x145E890000
+          vol+                     0x14DE090000
+          vol-                     0x145D880000
+          vol-                     0x14DD080000
+          mute                     0x1455800000
           mute                     0x14D5000000
           ch+                      0x14608B0000
+          ch+                      0x14E00B0000
+          ch-                      0x14618C0000
           ch-                      0x14E10C0000
-          vol+                     0x145E890000
-          vol-                     0x14DD080000
-          switch                   0x14719C0000
+          last                     0x14719C0000
+          last                     0x14F11C0000
+          red                      0x1487B20000
+          red                      0x1407320000
+          green                    0x1488B30000
+          green                    0x1408330000
+          yellow                   0x1409340000
+          yellow                   0x1489B40000
+          blue                     0x140A350000
+          blue                     0x148AB50000
+          stop                     0x147DA80000
           stop                     0x14FD280000
+          pause                    0x14FE290000
           pause                    0x147EA90000
           play                     0x14FA250000
-          reward                   0x1476A10000
-          forward                  0x14F8230000
-          skipr                    0x1479A40000
-          skipf                    0x14FB260000
+          play                     0x147AA50000
+          back                     0x14F6210000
+          back                     0x1476A10000
+          time                     0x146D980000
+          time                     0x14ED180000
+          next                     0x14F8230000
+          next                     0x1478A30000
+          rew                      0x14F9240000
+          rew                      0x1479A40000
           rec                      0x147CA70000
+          rec                      0x14FC270000
+          ff                       0x14FB260000
+          ff                       0x147BA60000
+          1                        0x14E20D0000
+          1                        0x14628D0000
+          2                        0x14E30E0000
+          2                        0x14638E0000
+          3                        0x14E40F0000
+          3                        0x14648F0000
+          4                        0x14E5100000
+          4                        0x1465900000
+          5                        0x14E6110000
+          5                        0x1466910000
+          6                        0x14E7120000
+          6                        0x1467920000
+          7                        0x14E8130000
+          7                        0x1468930000
+          8                        0x14E9140000
+          8                        0x1469940000
+          9                        0x14EA150000
+          9                        0x146A950000
+          0                        0x14EC170000
+          0                        0x146C970000
       end codes
 
 end remote
