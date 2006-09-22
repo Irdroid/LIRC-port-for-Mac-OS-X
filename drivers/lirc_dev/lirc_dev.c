@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.47 2006/07/23 23:24:35 lirc Exp $
+ * $Id: lirc_dev.c,v 1.48 2006/09/22 03:18:22 lirc Exp $
  *
  */
 
@@ -806,6 +806,22 @@ static ssize_t irctl_read(struct file *file,
 	return ret ? ret : written;
 }
 
+
+void *lirc_get_pdata(struct file *file)
+{
+	void *data=NULL;
+
+	if (file && file->f_dentry && file->f_dentry->d_inode &&
+	    file->f_dentry->d_inode->i_rdev )
+	{
+		struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+		data=ir->p.data;
+	}
+
+	return data;
+}
+
+
 static ssize_t irctl_write(struct file *file, const char *buffer,
 			   size_t length, loff_t * ppos)
 {
@@ -836,7 +852,7 @@ static struct file_operations fops = {
 };
 
 
-
+EXPORT_SYMBOL(lirc_get_pdata);
 EXPORT_SYMBOL(lirc_register_plugin);
 EXPORT_SYMBOL(lirc_unregister_plugin);
 

@@ -1,4 +1,6 @@
 0.8.1: future
+  * added transmitter support for new version of Windows Media Center
+    transceiver (Daniel Melander)
 
 0.8.0: 01/21/06
   * added support for Actisys Act220L(+) (Jan Roemisch)

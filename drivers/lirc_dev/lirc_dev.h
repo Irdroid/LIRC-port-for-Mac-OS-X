@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.16 2005/02/19 15:30:20 lirc Exp $
+ * $Id: lirc_dev.h,v 1.17 2006/09/22 03:18:22 lirc Exp $
  *
  */
 
@@ -239,5 +239,9 @@ extern int lirc_register_plugin(struct lirc_plugin *p);
 */
 extern int lirc_unregister_plugin(int minor);
 
+/* Returns the private data stored in the lirc_plugin
+ * associated with the given device file pointer.
+ */
+void *lirc_get_pdata(struct file *file);
 
 #endif

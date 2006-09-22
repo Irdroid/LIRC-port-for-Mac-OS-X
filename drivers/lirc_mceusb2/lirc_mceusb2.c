@@ -4,6 +4,9 @@
  * 
  * (C) by Martin A. Blatter <martin_a_blatter@yahoo.com>
  *
+ * Transmitter support
+ * (C) by Daniel Melander <lirc@rajidae.se>
+ *
  * Derived from ATI USB driver by Paul Miller and the original
  * MCE USB driver by Dan Corti
  *
@@ -56,8 +59,8 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"0.22"
-#define DRIVER_AUTHOR		"Martin Blatter <martin_a_blatter@yahoo.com>"
+#define DRIVER_VERSION          "0.23"
+#define DRIVER_AUTHOR           "Martin Blatter <martin_a_blatter@yahoo.com>, Daniel Melander <lirc@rajidae.se>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
 
@@ -67,7 +70,7 @@
 #define MCE_CODE_LENGTH		5
 #define MCE_TIME_UNIT           50
 #define MCE_PACKET_SIZE 	4
-#define MCE_PACKET_HEADER 	0x84
+#define MCE_PACKET_HEADER       0x84  /* Actual format is 0x80 + num_bytes */
 
 /* module parameters */
 #ifdef CONFIG_USB_DEBUG
@@ -121,6 +124,8 @@ struct irctl {
 	struct usb_device *usbdev;
 	struct urb *urb_in;
 	int devnum;
+        struct usb_endpoint_descriptor *usb_ep_in;
+        struct usb_endpoint_descriptor *usb_ep_out;
 
 	/* buffers and dma */
 	unsigned char *buf_in;
@@ -134,6 +139,7 @@ struct irctl {
 	int lirccnt;
 	int connected;
 	int last_space;
+        unsigned int transmitter_mask;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -146,6 +152,15 @@ struct irctl {
 static char init1[] = {0x00, 0xff, 0xaa, 0xff, 0x0b};
 static char init2[] = {0xff, 0x18};
 
+/* Transmitter constants */
+#define CMDBUF_LEN 384                         /* MCE Command buffer length */
+#define WBUF_LEN   256                         /* Work buffer length */
+#define MCE_PULSE_MASK 0x80                    /* Pulse mask, MSB set == PULSE else SPACE */
+#define MCE_TX_RESOLUTION 50                   /* Approx 50us resolution, could use MCE_TIME_UNIT */
+#define MCE_MAX_CHANNELS 2                     /* Only 2 transmitters, hardware dependent? */
+#define MCE_MAX_PULSE_LENGTH 0x7F              /* Longest transmittable pulse symbol */
+#define MCE_TX_HEADER_LENGTH 3                 /* Number of bytes in the initializing tx header */
+#define DEFAULT_TX_MASK 0x06                   /* Supported values are TX1=0x04, TX2=0x02, ALL=0x06 */
 
 static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
 {
@@ -413,6 +428,136 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 	usb_submit_urb(urb, SLAB_ATOMIC);
 }
 
+
+static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
+	       		  loff_t * ppos)
+{
+	int i, count=0, cmdcount=0;
+	lirc_t wbuf[WBUF_LEN];                  /* Workbuffer with values from lirc */
+	unsigned char cmdbuf[CMDBUF_LEN];       /* MCE command buffer */
+
+	/* Retrieve lirc_plugin data for the device */
+	struct irctl *ir = lirc_get_pdata(file);
+	if (!ir && !ir->usb_ep_out) return -EFAULT;
+
+	if(n%sizeof(lirc_t)) return(-EINVAL);
+	count=n/sizeof(lirc_t);
+
+	/* Check if command is within limits */
+	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
+	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
+
+	/* MCE tx init header */
+	cmdbuf[cmdcount++]=0x9F;
+	cmdbuf[cmdcount++]=0x08;
+	cmdbuf[cmdcount++]=ir->transmitter_mask;
+
+	/* Generate mce packet data */
+	for(i=0;(i<count) && (cmdcount < CMDBUF_LEN);i++)
+	{
+		wbuf[i]=wbuf[i]/MCE_TX_RESOLUTION;
+
+		do { /* loop to support long pulses > 127*50us=6.35ms */
+
+			/* Insert mce packet header every 4th entry */
+			if ((cmdcount<CMDBUF_LEN) &&
+			    (cmdcount-MCE_TX_HEADER_LENGTH)%MCE_CODE_LENGTH==0)
+			{
+				cmdbuf[cmdcount++] = MCE_PACKET_HEADER;
+			}
+
+			/* Insert mce packet data */
+			if (cmdcount<CMDBUF_LEN)
+			{
+				cmdbuf[cmdcount++] = (wbuf[i]<MCE_PULSE_MASK?wbuf[i]:MCE_MAX_PULSE_LENGTH) | (i & 1?0x00:MCE_PULSE_MASK);
+			}
+			else
+		       	{
+				return -EINVAL;
+			}
+		} while ((wbuf[i] > MCE_MAX_PULSE_LENGTH) &&
+			 (wbuf[i]-=MCE_MAX_PULSE_LENGTH));
+	}
+
+	/* Fix packet length in last header */
+	cmdbuf[cmdcount-(cmdcount-MCE_TX_HEADER_LENGTH)%MCE_CODE_LENGTH] =
+		0x80+(cmdcount-MCE_TX_HEADER_LENGTH)%MCE_CODE_LENGTH-1;
+
+	/* Check if we have room for the empty packet at the end */
+	if (cmdcount>=CMDBUF_LEN) return -EINVAL;
+
+	/* All mce commands end with an empty packet (0x80) */
+	cmdbuf[cmdcount++]=0x80;
+
+	/* Transmit the command to the mce device */
+	request_packet_async(ir, ir->usb_ep_out, cmdbuf, cmdcount, PHILUSB_OUTBOUND);
+
+	return n;
+}
+
+
+static int lirc_ioctl(struct inode *node, struct file *filep,
+	       	      unsigned int cmd, unsigned long arg)
+{
+	int result;
+	unsigned int ivalue;
+	unsigned long lvalue;
+	struct irctl *ir = NULL;
+
+	switch(cmd)
+	{
+	case LIRC_SET_TRANSMITTER_MASK:
+
+		/* Retrieve lirc_plugin data for the device */
+		ir=lirc_get_pdata(filep);
+		if (!ir && !ir->usb_ep_out) return -EFAULT;
+
+		result=get_user(ivalue,(unsigned int *) arg);
+		if(result) return(result);
+
+		switch(ivalue)
+		{
+		case 0x01: /* Transmitter 1     => 0x04 */
+		case 0x02: /* Transmitter 2     => 0x02 */
+		case 0x03: /* Transmitter 1 & 2 => 0x06 */
+			ir->transmitter_mask = (ivalue!=0x03?ivalue ^ 0x03:ivalue) << 1; /* The mask begins at 0x02 and has an inverted numbering scheme */
+			break;
+
+		default: /* Unsupported transmitter mask */
+			return MCE_MAX_CHANNELS;
+		}
+
+		dprintk(DRIVER_NAME ": SET_TRANSMITTERS mask=%d\n", ivalue);
+		break;
+
+	case LIRC_GET_SEND_MODE:
+
+		result=put_user(LIRC_SEND2MODE (LIRC_CAN_SEND_PULSE&LIRC_CAN_SEND_MASK), (unsigned long *) arg);
+
+		if(result) return(result);
+		break;
+
+	case LIRC_SET_SEND_MODE:
+
+		result=get_user(lvalue,(unsigned long *) arg);
+
+		if(result) return(result);
+		if(lvalue!=(LIRC_MODE_PULSE&LIRC_CAN_SEND_MASK)) return -EINVAL;
+		break;
+
+	default:
+		return -ENOIOCTLCMD;
+	}
+
+	return 0;
+}
+
+static struct file_operations lirc_fops =
+{
+	write:	lirc_write,
+};
+
+
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
@@ -495,13 +640,16 @@ static int usb_remote_probe(struct usb_interface *intf,
 
 			strcpy(plugin->name, DRIVER_NAME " ");
 			plugin->minor = -1;
-			plugin->features = LIRC_CAN_REC_MODE2;
+			plugin->features = LIRC_CAN_SEND_PULSE |
+					   LIRC_CAN_SET_TRANSMITTER_MASK |
+					   LIRC_CAN_REC_MODE2;
 			plugin->data = ir;
 			plugin->rbuf = rbuf;
 			plugin->set_use_inc = &set_use_inc;
 			plugin->set_use_dec = &set_use_dec;
 			plugin->code_length = sizeof(lirc_t) * 8;
-			plugin->ioctl = NULL;
+			plugin->ioctl = lirc_ioctl;
+			plugin->fops  = &lirc_fops;
 			plugin->owner = THIS_MODULE;
 
 			init_MUTEX(&ir->lock);
@@ -541,6 +689,11 @@ static int usb_remote_probe(struct usb_interface *intf,
 	ir->last_space = PULSE_MASK;
 	ir->connected = 0;
 
+	ir->transmitter_mask=DEFAULT_TX_MASK;
+	/* Saving usb interface data for use by the transmitter routine */
+	ir->usb_ep_in=ep_in;
+	ir->usb_ep_out=ep_out;
+
 	if (dev->descriptor.iManufacturer
 		&& usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
 		strncpy(name, buf, 128);
@@ -563,6 +716,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	request_packet_async( ir, ep_in, NULL, maxp, 0);
 
 	usb_set_intfdata(intf, ir);
+
 	return SUCCESS;
 }
 
