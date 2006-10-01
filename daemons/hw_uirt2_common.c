@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.3 2005/08/11 18:46:22 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.4 2006/10/01 11:59:01 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "serial.h"
 #include "lircd.h"
 #include "hw_uirt2_common.h"
@@ -63,6 +64,48 @@ struct tag_uirt2_t {
 const int unit = UIRT2_UNIT;
 //static int debug = 3;
 
+static ssize_t readagain(int fd, void *buf, size_t count)
+{
+	ssize_t rc;
+	size_t pos=0;
+	struct timeval timeout = { .tv_sec = 0, .tv_usec = 200000 };
+	fd_set fds;
+
+	rc=read(fd, buf, count);
+
+	if(rc > 0)
+	{
+		pos+=rc;
+	}
+
+	while( (rc == -1 && errno == EAGAIN) || (rc >= 0 && pos < count) )
+	{
+		FD_ZERO(&fds);
+		FD_SET(fd,&fds);
+
+		rc=select(fd + 1, &fds, NULL, NULL, &timeout);
+
+		if(rc == 0)
+		{
+			/* timeout */
+			break;
+		}
+		else if(rc == -1)
+		{
+			/* continue for EAGAIN case */
+			continue;
+		}
+
+		rc=read(fd, ((char *)buf) + pos, count-pos);
+
+		if(rc > 0)
+		{
+			pos+=rc;
+		}
+
+	}
+	return (pos == 0) ? -1 : pos;
+}
 
 #ifdef DEBUG
 static void hexdump(byte_t *buf, int len)
@@ -118,7 +161,7 @@ static int uirt2_readflush(uirt2_t *dev)
 	char c;
 
 	while(mywaitfordata(dev, (long) 200000) > 0) {
-		res = read(dev->fd, &c, 1);
+		res = readagain(dev->fd, &c, 1);
 		if (res < 1) { 
 			return -1;
 		}
@@ -190,7 +233,7 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 		return -1;
 	}
 
-	res = read(dev->fd, out + 1, out[0]);
+	res = readagain(dev->fd, out + 1, out[0]);
 
 	if (res < out[0]) {
 		logprintf(LOG_ERR, "uirt2_raw: couldn't read command result");
@@ -541,7 +584,7 @@ int uirt2_read_uir(uirt2_t *dev, byte_t *buf, int length)
 	}
 
 	while (1) {
-		res = read(dev->fd, buf + pos, 1);
+		res = readagain(dev->fd, buf + pos, 1);
 
 		if (res == -1) {
 			return pos;
@@ -575,7 +618,7 @@ lirc_t uirt2_read_raw(uirt2_t *dev, lirc_t timeout)
 		if (!waitfordata(timeout))
 			return 0;
 
-		res = read(dev->fd, &b, 1);
+		res = readagain(dev->fd, &b, 1);
 
 		if (res == -1) {
 			return 0;
@@ -594,7 +637,7 @@ lirc_t uirt2_read_raw(uirt2_t *dev, lirc_t timeout)
 			isdly[0] = b;
 			LOGPRINTF(1, "dev->new_signal");
 
-			res = read(dev->fd, &isdly[1], 1);
+			res = readagain(dev->fd, &isdly[1], 1);
 
 			if (res == -1) {
 				return 0;
