@@ -8,3 +8,4 @@ lirc_it87.ko
 lirc_it87.mod.c
 Makefile.in
 Makefile
+Modules.symvers

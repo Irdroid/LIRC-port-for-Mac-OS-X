@@ -8,3 +8,4 @@ lirc_imon.ko
 lirc_imon.mod.c
 Makefile.in
 Makefile
+Modules.symvers

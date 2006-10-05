@@ -8,3 +8,4 @@ lirc_sasem.ko
 lirc_sasem.mod.c
 Makefile.in
 Makefile
+Modules.symvers

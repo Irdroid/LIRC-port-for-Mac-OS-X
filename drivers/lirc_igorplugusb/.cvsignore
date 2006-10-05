@@ -8,3 +8,4 @@ lirc_igorplugusb.ko
 lirc_igorplugusb.mod.c
 Makefile.in
 Makefile
+Modules.symvers

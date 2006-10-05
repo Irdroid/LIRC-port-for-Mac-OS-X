@@ -8,3 +8,4 @@ lirc_i2c.ko
 lirc_i2c.mod.c
 Makefile.in
 Makefile
+Modules.symvers
