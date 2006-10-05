@@ -1,6 +1,7 @@
 0.8.1: future
   * added transmitter support for new version of Windows Media Center
     transceiver (Daniel Melander)
+  * added support for Iguanaworks USB IR Transceiver (Joseph Dunn)
 
 0.8.0: 01/21/06
   * added support for Actisys Act220L(+) (Jan Roemisch)

@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.35 2005/12/26 09:51:57 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.36 2006/10/05 02:59:18 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -65,6 +65,9 @@
 
 /* Define if the caraca library is installed */
 #undef HAVE_LIBCARACA
+
+/* Define if the iguanaIR library is installed */
+#undef HAVE_IGUANAIR
 
 /* Define if the libirman library is installed */
 #undef HAVE_LIBIRMAN

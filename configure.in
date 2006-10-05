@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.166 2006/08/04 12:32:45 lirc Exp $
+dnl $Id: configure.in,v 5.167 2006/10/05 02:59:18 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -192,6 +192,10 @@ AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
   possible_drivers="${possible_drivers} (caraca)"
 )
+AC_CHECK_HEADER(iguanaIR.h,
+  AC_DEFINE(HAVE_IGUANAIR)
+  possible_drivers="${possible_drivers} (iguanaIR)"
+)
 AC_CHECK_LIB(irman, ir_strerror,
   AC_DEFINE(HAVE_LIBIRMAN)
   possible_drivers="${possible_drivers} (irman)"
@@ -265,20 +269,20 @@ AC_ARG_WITH(driver,
                           devinput, digimatrix, dsp, dvico, ea65,
                           exaudio, flyvideo, gvbctv5pci, hauppauge,
                           hauppauge_dvb, hercules_smarttv_stereo,
-                          igorplugusb, imon, imon_knob, imon_pad, imon_rsc,
-                          irdeo, irdeo_remote, irman, irreal, it87,
-                          knc_one, kworld, leadtek_0007, leadtek_0010,
-                          leadtek_pvr2000, livedrive_midi,
-                          livedrive_seq, logitech, lptX, mceusb,
-                          mceusb2, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere, nslu2,
-                          packard_bell, parallel, pcmak, pcmak_usb,
-                          pctv, pixelview_bt878, pixelview_pak,
-                          pixelview_pro, provideo, realmagic,
-                          remotemaster, sa1100, sasem, serial,
-                          silitek, sir, slinke, streamzap, tekram,
-                          tekram_bt829, tira, tvbox, udp, uirt2,
-                          uirt2_raw],
+                          igorplugusb, iguanaIR, imon, imon_knob,
+                          imon_pad, imon_rsc, irdeo, irdeo_remote,
+                          irman, irreal, it87, knc_one, kworld,
+                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, mceusb, mceusb2, mediafocusI,
+                          mouseremote, mouseremote_ps2, mp3anywhere,
+                          nslu2,packard_bell, parallel, pcmak,
+                          pcmak_usb, pctv, pixelview_bt878,
+                          pixelview_pak, pixelview_pro, provideo,
+                          realmagic, remotemaster, sa1100, sasem,
+                          serial, silitek, sir, slinke, streamzap,
+                          tekram, tekram_bt829, tira, tvbox, udp,
+                          uirt2, uirt2_raw],
 driver=${withval},
 driver="unset"
 )
@@ -288,6 +292,7 @@ driver="unset"
 lirc_driver="$driver"
 lircd_conf=""
 lircmd_conf=""
+iguanaIR_lib=""
 irman_lib=""
 caraca_lib=""
 portaudio_lib=""
@@ -358,6 +363,10 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		hw_module="${hw_module} hw_ea65.o serial.o"
 		;;
 	exaudio)
+		;;
+	iguanaIR)
+		hw_module="${hw_module} hw_iguanaIR.o transmit.o receive.o"
+		iguanaIR_lib=-liguanaIR
 		;;
 	irman)
 		hw_module="${hw_module} hw_irman.o serial.o"
@@ -716,6 +725,13 @@ fi
 
 if test "$driver" = "igorplugusb"; then
   lirc_driver="lirc_dev lirc_igorplugusb"
+fi
+
+if test "$driver" = "iguanaIR"; then
+  lirc_driver="iguanaIR"
+  hw_module="hw_iguanaIR.o transmit.o receive.o"
+  HW_DEFAULT="hw_iguanaIR"
+  iguanaIR_lib=-liguanaIR
 fi
 
 if test "$driver" = "imon"; then
@@ -1084,6 +1100,10 @@ in its directory.
     AC_MSG_ERROR([*** you need to have the ALSA libraries and drivers
 	from at least version 1.0.9 for this driver])
     ;;
+  iguanaIR)
+    AC_MSG_ERROR([*** you need to have the iguanaIR headers and
+        libraries for this driver])
+    ;;
   *)
     AC_MSG_ERROR([*** it is not possible to install the specified driver
 	on this system])
@@ -1100,6 +1120,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "audio" || \
 	test "$lirc_driver" = "audio_alsa" || \
 	test "$lirc_driver" = "caraca" || \
+	test "$lirc_driver" = "iguanaIR" || \
 	test "$lirc_driver" = "irman" || \
 	test "$lirc_driver" = "irman_sw"; then
   lirc_driver=
@@ -1277,6 +1298,7 @@ AC_SUBST(caraca_lib)
 AC_SUBST(portaudio_lib)
 AC_SUBST(alsa_lib)
 AC_SUBST(atilibusb_lib)
+AC_SUBST(iguanaIR_lib)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)

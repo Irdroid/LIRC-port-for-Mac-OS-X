@@ -113,6 +113,7 @@ hw_menu_entry: @hw-usb
 	dvico: "DViCO USB Remote"
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
+	iguanaIR: "Iguanaworks USB IR Transceiver"
 	pcmak_usb: "PCMAK USB receiver"
 	bw6130: "Remotec Multimedia PC Remote BW6130"
 	sasem: "Sasem OnAir Remocon-V"
@@ -195,6 +196,7 @@ param_type: \
 	hauppauge_dvb \
 	hercules_smarttv_stereo \
 	igorplugusb \
+	iguanaIR \
 	imon \
 	imon_knob \
 	imon_pad \
@@ -255,6 +257,7 @@ default_param: \
 	hauppauge_dvb \
 	hercules_smarttv_stereo \
 	igorplugusb \
+	iguanaIR \
 	imon \
 	imon_knob \
 	imon_pad \
