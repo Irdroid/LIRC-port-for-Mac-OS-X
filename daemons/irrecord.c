@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.57 2006/06/04 02:42:00 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.58 2006/10/08 10:42:05 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -136,17 +136,17 @@ int daemonized=0;
 
 void logprintf(int prio,char *format_str, ...)
 {
-	time_t current;
-	char *currents;
 	va_list ap;  
 	
-	current=time(&current);
-	currents=ctime(&current);
-	
-	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
-	if(!daemonized) fprintf(stderr,"%s: ",progname);
 	if(lf)
 	{
+		time_t current;
+		char *currents;
+		
+		current=time(&current);
+		currents=ctime(&current);
+		
+		fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
 		va_start(ap,format_str);
 		if(prio==LOG_WARNING) fprintf(lf,"WARNING: ");
 		vfprintf(lf,format_str,ap);
@@ -155,6 +155,7 @@ void logprintf(int prio,char *format_str, ...)
 	}
 	if(!daemonized)
 	{
+		fprintf(stderr,"%s: ",progname);
 		va_start(ap,format_str);
 		if(prio==LOG_WARNING) fprintf(stderr,"WARNING: ");
 		vfprintf(stderr,format_str,ap);

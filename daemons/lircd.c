@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.64 2006/04/05 12:43:15 lirc Exp $      */
+/*      $Id: lircd.c,v 5.65 2006/10/08 10:42:05 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -864,17 +864,17 @@ void start_server(mode_t permission,int nodaemon)
 #ifndef USE_SYSLOG
 void logprintf(int prio,char *format_str, ...)
 {
-	time_t current;
-	char *currents;
 	va_list ap;  
 	
-	current=time(&current);
-	currents=ctime(&current);
-	
-	if(lf) fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
-	if(!daemonized) fprintf(stderr,"%s: ",progname);
 	if(lf)
 	{
+		time_t current;
+		char *currents;
+		
+		current=time(&current);
+		currents=ctime(&current);
+		
+		fprintf(lf,"%15.15s %s %s: ",currents+4,hostname,progname);
 		va_start(ap,format_str);
 		if(prio==LOG_WARNING) fprintf(lf,"WARNING: ");
 		vfprintf(lf,format_str,ap);
@@ -883,6 +883,7 @@ void logprintf(int prio,char *format_str, ...)
 	}
 	if(!daemonized)
 	{
+		fprintf(stderr,"%s: ",progname);
 		va_start(ap,format_str);
 		if(prio==LOG_WARNING) fprintf(stderr,"WARNING: ");
 		vfprintf(stderr,format_str,ap);
