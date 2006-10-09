@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.18 2005/10/30 11:11:46 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.19 2006/10/09 07:22:14 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -460,7 +460,7 @@ void mouse_conv(int rep,char *button,char *remote)
 #endif
 							mouse_button(0,up,rep);
 						}
-						else if(down || up);
+						else if(down || up)
 						{
 							mouse_button(down,up,rep);
 						}
