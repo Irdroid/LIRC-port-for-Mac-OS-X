@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.54 2006/07/31 01:19:57 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.55 2006/10/20 05:03:38 lirc Exp $
  */
 
 /*
@@ -39,7 +39,7 @@
 #error "*******************************************************"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -1195,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.54 2006/07/31 01:19:57 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.55 2006/10/20 05:03:38 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

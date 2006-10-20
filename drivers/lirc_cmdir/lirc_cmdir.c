@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.4 2006/08/10 00:53:21 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.5 2006/10/20 05:03:38 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -35,7 +35,7 @@
 #error "**********************************************************"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/signal.h>

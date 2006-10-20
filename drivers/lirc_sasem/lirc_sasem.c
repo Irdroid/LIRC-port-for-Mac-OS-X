@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.14 2006/07/23 23:24:35 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.15 2006/10/20 05:03:39 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -58,7 +58,7 @@
 #error "*** Sorry, this driver requires kernel version 2.4.22 or higher"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 #include <linux/errno.h>
 #include <linux/init.h>

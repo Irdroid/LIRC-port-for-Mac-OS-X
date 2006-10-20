@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.12 2006/07/31 01:19:57 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.13 2006/10/20 05:03:38 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -49,7 +49,7 @@
 #error "*** Sorry, this driver requires kernel version 2.4.22 or higher"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 #include <linux/errno.h>
 #include <linux/init.h>

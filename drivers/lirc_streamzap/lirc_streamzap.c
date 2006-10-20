@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.16 2006/03/04 22:36:39 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.17 2006/10/20 05:03:39 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -38,7 +38,7 @@
 #error "*******************************************************"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.16 $"
+#define DRIVER_VERSION	"$Revision: 1.17 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 

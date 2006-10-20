@@ -38,7 +38,7 @@
 # include <config.h>
 #endif
  
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 
 #include <linux/sched.h>

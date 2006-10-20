@@ -46,7 +46,7 @@
 # include <config.h>
 #endif
  
-#include <linux/config.h>
+#include <linux/autoconf.h>
 
 #if !defined(LIRC_ON_SA1100) && !defined(CONFIG_SERIAL_MODULE)
 #warning "******************************************"

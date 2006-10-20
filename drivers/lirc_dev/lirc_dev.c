@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.48 2006/09/22 03:18:22 lirc Exp $
+ * $Id: lirc_dev.c,v 1.49 2006/10/20 05:03:38 lirc Exp $
  *
  */
 
@@ -32,7 +32,7 @@
 #error "**********************************************************"
 #endif
 
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
