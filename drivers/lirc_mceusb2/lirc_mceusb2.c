@@ -54,12 +54,13 @@
 #include <linux/usb.h>
 #include <linux/poll.h>
 #include <linux/wait.h>
+#include <linux/time.h>
 
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "0.23"
+#define DRIVER_VERSION          "0.24"
 #define DRIVER_AUTHOR           "Martin Blatter <martin_a_blatter@yahoo.com>, Daniel Melander <lirc@rajidae.se>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -429,15 +430,19 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 }
 
 
-static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
-	       		  loff_t * ppos)
-{
+static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t * ppos) {
+
 	int i, count=0, cmdcount=0;
 	lirc_t wbuf[WBUF_LEN];                  /* Workbuffer with values from lirc */
 	unsigned char cmdbuf[CMDBUF_LEN];       /* MCE command buffer */
-
+	struct irctl *ir=NULL;
+	unsigned long signal_duration=0;
+	struct timeval start_time, end_time;
+	
+	do_gettimeofday(&start_time);
+	
 	/* Retrieve lirc_plugin data for the device */
-	struct irctl *ir = lirc_get_pdata(file);
+	ir = lirc_get_pdata(file);
 	if (!ir && !ir->usb_ep_out) return -EFAULT;
 
 	if(n%sizeof(lirc_t)) return(-EINVAL);
@@ -455,6 +460,7 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 	/* Generate mce packet data */
 	for(i=0;(i<count) && (cmdcount < CMDBUF_LEN);i++)
 	{
+		signal_duration+=wbuf[i];
 		wbuf[i]=wbuf[i]/MCE_TX_RESOLUTION;
 
 		do { /* loop to support long pulses > 127*50us=6.35ms */
@@ -492,6 +498,16 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 	/* Transmit the command to the mce device */
 	request_packet_async(ir, ir->usb_ep_out, cmdbuf, cmdcount, PHILUSB_OUTBOUND);
 
+	/* The lircd gap calculation expects the write function to
+	  wait the time it takes for the ircommand to be sent before
+	  it returns. */
+	do_gettimeofday(&end_time);
+	signal_duration-=(end_time.tv_usec-start_time.tv_usec)+(end_time.tv_sec-start_time.tv_sec)*1000000;
+	
+	/* delay with the closest number of ticks */
+	set_current_state(TASK_INTERRUPTIBLE);
+	schedule_timeout (usecs_to_jiffies(signal_duration));
+	
 	return n;
 }
 
