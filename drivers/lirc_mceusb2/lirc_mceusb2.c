@@ -4,7 +4,7 @@
  * 
  * (C) by Martin A. Blatter <martin_a_blatter@yahoo.com>
  *
- * Transmitter support
+ * Transmitter support and reception code cleanup.
  * (C) by Daniel Melander <lirc@rajidae.se>
  *
  * Derived from ATI USB driver by Paul Miller and the original
@@ -60,18 +60,28 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "0.24"
-#define DRIVER_AUTHOR           "Martin Blatter <martin_a_blatter@yahoo.com>, Daniel Melander <lirc@rajidae.se>"
-#define DRIVER_DESC		"USB remote driver for LIRC"
+#define DRIVER_VERSION          "0.25"
+#define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
+#define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
 
-#define USB_BUFLEN		16
-#define LIRCBUF_SIZE            256
+#define USB_BUFLEN              16             /* USB reception buffer length */
+#define LIRCBUF_SIZE            256            /* LIRC work buffer length */
 
-#define MCE_CODE_LENGTH		5
-#define MCE_TIME_UNIT           50
-#define MCE_PACKET_SIZE 	4
-#define MCE_PACKET_HEADER       0x84  /* Actual format is 0x80 + num_bytes */
+/* MCE constants */
+#define MCE_CMDBUF_SIZE         384            /* MCE Command buffer length */
+#define MCE_TIME_UNIT           50             /* Approx 50us resolution */
+#define MCE_CODE_LENGTH         5              /* Normal length of one mce packet (header included) */
+#define MCE_PACKET_SIZE         4              /* Normal length of one mce packet (header not included) */
+#define MCE_PACKET_HEADER       0x84           /* Actual header format is 0x80 + num_bytes */
+#define MCE_CONTROL_HEADER      0x9F           /* MCE status header */
+#define MCE_TX_HEADER_LENGTH    3              /* Number of bytes in the initializing tx header */
+#define MCE_MAX_CHANNELS        2              /* Two transmitters, hardware dependent? */
+#define MCE_DEFAULT_TX_MASK     0x06           /* Supported values are TX1=0x04, TX2=0x02, ALL=0x06 */
+#define MCE_PULSE_BIT           0x80           /* Pulse bit, MSB set == PULSE else SPACE */
+#define MCE_PULSE_MASK          0x7F           /* Pulse mask */
+#define MCE_MAX_PULSE_LENGTH    0x7F           /* Longest transmittable pulse symbol */
+
 
 /* module parameters */
 #ifdef CONFIG_USB_DEBUG
@@ -136,11 +146,11 @@ struct irctl {
 
 	/* lirc */
 	struct lirc_plugin *p;
-	lirc_t lircdata[LIRCBUF_SIZE];
-	int lirccnt;
+	lirc_t lircdata;
+	unsigned char is_pulse;
 	int connected;
-	int last_space;
-        unsigned int transmitter_mask;
+	
+	unsigned char transmitter_mask;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -153,15 +163,7 @@ struct irctl {
 static char init1[] = {0x00, 0xff, 0xaa, 0xff, 0x0b};
 static char init2[] = {0xff, 0x18};
 
-/* Transmitter constants */
-#define CMDBUF_LEN 384                         /* MCE Command buffer length */
-#define WBUF_LEN   256                         /* Work buffer length */
-#define MCE_PULSE_MASK 0x80                    /* Pulse mask, MSB set == PULSE else SPACE */
-#define MCE_TX_RESOLUTION 50                   /* Approx 50us resolution, could use MCE_TIME_UNIT */
-#define MCE_MAX_CHANNELS 2                     /* Only 2 transmitters, hardware dependent? */
-#define MCE_MAX_PULSE_LENGTH 0x7F              /* Longest transmittable pulse symbol */
-#define MCE_TX_HEADER_LENGTH 3                 /* Number of bytes in the initializing tx header */
-#define DEFAULT_TX_MASK 0x06                   /* Supported values are TX1=0x04, TX2=0x02, ALL=0x06 */
+
 
 static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
 {
@@ -195,9 +197,6 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 			usb_remote_printdata(ir,urb->transfer_buffer,len);
 	}
 
-//	usb_unlink_urb(urb);
-//	usb_free_urb(urb);
-//	kfree(urb->transfer_buffer);
 }
 
 
@@ -226,7 +225,6 @@ static void request_packet_async(struct irctl *ir, struct usb_endpoint_descripto
 					size, usb_async_callback, ir, ep->bInterval);
 
 					async_urb->transfer_flags=URB_ASYNC_UNLINK;
-//					async_urb->transfer_flags=URB_SHORT_NOT_OK;
 				}
 			}
 			else {
@@ -334,85 +332,96 @@ static void set_use_dec(void *data)
 
 static void send_packet_to_lirc(struct irctl *ir)
 {
-    if ( ir->lirccnt ) {
-	lirc_buffer_write_n(ir->p->rbuf,(unsigned char *) ir->lircdata,ir->lirccnt);
-
-	wake_up(&ir->p->rbuf->wait_poll);
-	ir->lirccnt=0;
-    }
+	if (ir->lircdata!=0)
+	{
+		lirc_buffer_write_1(ir->p->rbuf, (unsigned char*) &ir->lircdata);
+		wake_up(&ir->p->rbuf->wait_poll);
+		ir->lircdata=0;
+	}
 }
 
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 {
 	struct irctl *ir;
-	int len;
+	int buf_len, packet_len;
+	int i, j;
 
 	if (!urb)
 		return;
 
-	if (!(ir = urb->context)) {
+	if (!(ir = urb->context))
+	{
 		urb->transfer_flags |= URB_ASYNC_UNLINK;
 		usb_unlink_urb(urb);
 		return;
 	}
 
-	len = urb->actual_length;
+	buf_len = urb->actual_length;
+	packet_len=0;
+	
 	if (debug)
-		usb_remote_printdata(ir,urb->transfer_buffer,len);
+		usb_remote_printdata(ir,urb->transfer_buffer,buf_len);
 
-	if (ir->send_flags==RECV_FLAG_IN_PROGRESS) {
+	if (ir->send_flags==RECV_FLAG_IN_PROGRESS)
+	{
 	  	ir->send_flags = SEND_FLAG_COMPLETE;
-		dprintk(DRIVER_NAME "[%d]: setup answer received %d bytes\n",ir->devnum,len);
+		dprintk(DRIVER_NAME "[%d]: setup answer received %d bytes\n", ir->devnum, buf_len);
 	}
 
-	switch (urb->status) {
-
-	/* success */
+	switch (urb->status)
+	{
+		/* success */
 	case SUCCESS:
+		for (i=0; i < buf_len; i++)
+		{
+			/* decode mce packets on the form (84),AA,BB,CC,DD */
+			switch(ir->buf_in[i])
+			{
+				/* data headers */
+			case 0x84:
+			case 0x83:
+			case 0x82:
+			case 0x81:
+			case 0x80:
+				/* decode packet data */
+				packet_len=ir->buf_in[i] & MCE_PULSE_MASK;
+				for (j=1; j<=packet_len && (i+j < buf_len); j++)
+				{
 
-	    if ((len==MCE_CODE_LENGTH)) {
-
-		if ((ir->buf_in[0]==MCE_PACKET_HEADER)) {
-
-		    int i,keycode,pulse;
-
-		    for(i=0;i<MCE_PACKET_SIZE;i++) {
-			pulse = 0;
-			keycode=(signed char)ir->buf_in[i+1];
-			if ( keycode < 0 ) {
-			    pulse = 1;
-			    keycode += 128;
+					/* rising/falling flank */
+					if (ir->is_pulse!=(ir->buf_in[i+j]&MCE_PULSE_BIT))
+					{
+						send_packet_to_lirc(ir);
+						ir->is_pulse=ir->buf_in[i+j]&MCE_PULSE_BIT;
+					}
+					
+					/* accumulate mce pulse/space values */
+					ir->lircdata+=(ir->buf_in[i+j]&MCE_PULSE_MASK)*MCE_TIME_UNIT | (ir->is_pulse?PULSE_BIT:0);
+				}
+				
+				i+=packet_len;
+				break;
+	          
+				/* status header */
+			case MCE_CONTROL_HEADER:
+				/* A transmission always ends with a
+				   GAP of 100000us followed by the
+				   sequence 0x9F 0x01 0x01 0x9F 0x15
+				   0x00 0x00 0x80 */
+				if (++i < buf_len && ir->buf_in[i]==0x01)
+					send_packet_to_lirc(ir);
+				
+				/* end decode loop */
+				i=buf_len;
+				break;
+			default:
+				break;
 			}
-			keycode *= MCE_TIME_UNIT;
-
-			if ( pulse ) {
-			    if ( ir->last_space ) {
-				ir->lircdata[ir->lirccnt++] = ir->last_space;
-				ir->last_space = 0;
-				ir->lircdata[ir->lirccnt] = 0;
-			    }
-			    ir->lircdata[ir->lirccnt] += keycode;
-			    ir->lircdata[ir->lirccnt] |= PULSE_BIT;
-			}
-			else {
-			    if ( ir->lircdata[ir->lirccnt] &&
-				!ir->last_space ) {
-				ir->lirccnt++;
-			    }
-			    ir->last_space += keycode;
-			}
-		    }
-		    send_packet_to_lirc(ir);
 		}
-	    }
-	    else {
-		/* transmission finished (long packet) */
-		send_packet_to_lirc(ir);
-	    }
 	    
-	    break;
+		break;
 
-	/* unlink */
+		/* unlink */
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
@@ -433,10 +442,10 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t * ppos) {
 
 	int i, count=0, cmdcount=0;
-	lirc_t wbuf[WBUF_LEN];                  /* Workbuffer with values from lirc */
-	unsigned char cmdbuf[CMDBUF_LEN];       /* MCE command buffer */
 	struct irctl *ir=NULL;
-	unsigned long signal_duration=0;
+	lirc_t wbuf[LIRCBUF_SIZE];                  /* Workbuffer with values from lirc */
+	unsigned char cmdbuf[MCE_CMDBUF_SIZE];      /* MCE command buffer */
+	unsigned long signal_duration=0;            /* Singnal length in us */
 	struct timeval start_time, end_time;
 	
 	do_gettimeofday(&start_time);
@@ -449,33 +458,33 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 	count=n/sizeof(lirc_t);
 
 	/* Check if command is within limits */
-	if(count>WBUF_LEN || count%2==0) return(-EINVAL);
+	if(count>LIRCBUF_SIZE || count%2==0) return(-EINVAL);
 	if(copy_from_user(wbuf,buf,n)) return -EFAULT;
 
 	/* MCE tx init header */
-	cmdbuf[cmdcount++]=0x9F;
+	cmdbuf[cmdcount++]=MCE_CONTROL_HEADER;
 	cmdbuf[cmdcount++]=0x08;
 	cmdbuf[cmdcount++]=ir->transmitter_mask;
 
 	/* Generate mce packet data */
-	for(i=0;(i<count) && (cmdcount < CMDBUF_LEN);i++)
+	for(i=0;(i<count) && (cmdcount < MCE_CMDBUF_SIZE);i++)
 	{
 		signal_duration+=wbuf[i];
-		wbuf[i]=wbuf[i]/MCE_TX_RESOLUTION;
+		wbuf[i]=wbuf[i]/MCE_TIME_UNIT;
 
 		do { /* loop to support long pulses > 127*50us=6.35ms */
 
 			/* Insert mce packet header every 4th entry */
-			if ((cmdcount<CMDBUF_LEN) &&
+			if ((cmdcount<MCE_CMDBUF_SIZE) &&
 			    (cmdcount-MCE_TX_HEADER_LENGTH)%MCE_CODE_LENGTH==0)
 			{
 				cmdbuf[cmdcount++] = MCE_PACKET_HEADER;
 			}
 
 			/* Insert mce packet data */
-			if (cmdcount<CMDBUF_LEN)
+			if (cmdcount<MCE_CMDBUF_SIZE)
 			{
-				cmdbuf[cmdcount++] = (wbuf[i]<MCE_PULSE_MASK?wbuf[i]:MCE_MAX_PULSE_LENGTH) | (i & 1?0x00:MCE_PULSE_MASK);
+				cmdbuf[cmdcount++] = (wbuf[i]<MCE_PULSE_BIT?wbuf[i]:MCE_MAX_PULSE_LENGTH) | (i & 1?0x00:MCE_PULSE_BIT);
 			}
 			else
 		       	{
@@ -490,7 +499,7 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 		0x80+(cmdcount-MCE_TX_HEADER_LENGTH)%MCE_CODE_LENGTH-1;
 
 	/* Check if we have room for the empty packet at the end */
-	if (cmdcount>=CMDBUF_LEN) return -EINVAL;
+	if (cmdcount>=MCE_CMDBUF_SIZE) return -EINVAL;
 
 	/* All mce commands end with an empty packet (0x80) */
 	cmdbuf[cmdcount++]=0x80;
@@ -499,8 +508,8 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 	request_packet_async(ir, ir->usb_ep_out, cmdbuf, cmdcount, PHILUSB_OUTBOUND);
 
 	/* The lircd gap calculation expects the write function to
-	  wait the time it takes for the ircommand to be sent before
-	  it returns. */
+	   wait the time it takes for the ircommand to be sent before
+	   it returns. */
 	do_gettimeofday(&end_time);
 	signal_duration-=(end_time.tv_usec-start_time.tv_usec)+(end_time.tv_sec-start_time.tv_sec)*1000000;
 	
@@ -702,10 +711,9 @@ static int usb_remote_probe(struct usb_interface *intf,
 	ir->devnum = devnum;
 	ir->usbdev = dev;
 	ir->len_in = maxp;
-	ir->last_space = PULSE_MASK;
 	ir->connected = 0;
 
-	ir->transmitter_mask=DEFAULT_TX_MASK;
+	ir->transmitter_mask=MCE_DEFAULT_TX_MASK;
 	/* Saving usb interface data for use by the transmitter routine */
 	ir->usb_ep_in=ep_in;
 	ir->usb_ep_out=ep_out;
