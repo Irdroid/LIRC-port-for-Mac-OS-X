@@ -767,11 +767,36 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 	unregister_from_lirc(ir);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static int usb_remote_suspend(struct usb_interface *intf, pm_message_t message)
+{
+	struct irctl *ir = usb_get_intfdata(intf);
+	printk(DRIVER_NAME "[%d]: suspend\n", ir->devnum);
+	usb_kill_urb(ir->urb_in);
+	return 0;
+}
+
+static int usb_remote_resume(struct usb_interface *intf)
+{
+	struct irctl *ir = usb_get_intfdata(intf);
+	printk(DRIVER_NAME "[%d]: resume\n", ir->devnum);
+	if (usb_submit_urb(ir->urb_in, GFP_ATOMIC))
+	{
+		return -EIO;
+	}
+	return 0;
+}
+#endif
+
 static struct usb_driver usb_remote_driver = {
 	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
 	.probe =	usb_remote_probe,
 	.disconnect =	usb_remote_disconnect,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	.suspend =	usb_remote_suspend,
+	.resume =	usb_remote_resume,
+#endif
 	.id_table =	usb_remote_table
 };
 
