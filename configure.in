@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.170 2006/10/27 02:57:21 lirc Exp $
+dnl $Id: configure.in,v 5.171 2006/11/09 20:27:28 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1380,7 +1380,12 @@ elif test "$driver" = "hauppauge_dvb"; then
   echo "You will have to use the DVB driver from:"
   echo "http://www.linuxtv.org"
 elif test "$kernel_module" = ""; then
-  echo "Your hardware does not require a kernel module."
+  echo "Your hardware does not require a special LIRC kernel module."
+  if test "${irtty}" != ""; then
+    echo
+    echo "You will have to use the standard kernel serial port driver to access"
+    echo "${irtty}."
+  fi
 else
   echo "You will have to use the $kernel_module kernel module."
 fi

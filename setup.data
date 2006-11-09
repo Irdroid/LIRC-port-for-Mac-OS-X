@@ -13,8 +13,8 @@ hw_menu_entry: @any
 
 hw_menu_entry: @hw-soundcard
 	dsp: "Simple IR diode (EXPERIMENTAL)"
-	audio: "IR receiver IC connected to auido input (EXPERIMENTAL)"
-	audio_alsa: "IR receiver IC connected to auido input using ALSA (EXPERIMENTAL)"
+	audio: "IR receiver IC connected to audio input (EXPERIMENTAL)"
+	audio_alsa: "IR receiver IC connected to audio input using ALSA (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other
 	ea65: "AOpen XC Cube EA65, EA65-II"
@@ -37,6 +37,7 @@ hw_menu_entry: @hw-other-serial
 	pctv: "Miro PCTV receiver"
 	packard_bell: "Packard Bell receiver"
 	pctv: "Pinnacle Systems PCTV (pro) receiver"
+	pctv: "Pinnacle Systems PCTV Sat receiver"
 	remotemaster: "PixelView RemoteMaster RC2000/RC3000"
 	realmagic: "REALmagic (bundled with Hollywood Plus DVD card)"
 	slinke: "Slink-e (receive only)"
@@ -74,6 +75,7 @@ hw_menu_entry: @hw-tv-card
 	pixelview_pak: "Lenco MXTV-9578 CP (card=50)"
 	pctv: "Miro PCTV serial port receiver"
 	cph06x: "Phoebe Tv Master + FM (card=22)"
+	pctv: "Pinnacle Systems PCTV Sat receiver"
 	pixelview_pro: "Pixelview PlayTV MPEG2"
 	pixelview_pak: "PixelView PlayTV PAK (card=50)"
 	pixelview_pro: "Pixelview PlayTV pro (card=37)"

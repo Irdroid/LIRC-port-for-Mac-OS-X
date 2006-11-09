@@ -121,9 +121,9 @@
     </P>
     
     <P>
-      <B>TV cards:</B> To use any bttv based TV card remote controls
-      you will need either at least kernel version 2.4.0 or you use
-      Gerd Knorr's current <A
+      <B>TV cards:</B> To use any remote control receivers connected
+      directly to a bttv based TV card you will need either at least
+      kernel version 2.4.0 or you use Gerd Knorr's current <A
       HREF="http://www.strusel007.de/linux/bttv/index.html">bttv</A>
       package together with a kernel version of 2.2.4 or higher. In
       any case bttv version 0.7.45 or higher is required. As LIRC
@@ -131,7 +131,9 @@
       copy the current bttv files into your kernel sources. The I2C
       driver also requires the new I2C stack that was introduced in
       2.3.x. <A HREF="http://www2.lm-sensors.nu/~lm78/">Patches</A>
-      for 2.2.x kernels are also available.
+      for 2.2.x kernels are also available. If you are using a recent
+      2.4 or 2.6 kernel, you don't have to care about this as the bttv
+      version and I2C stack will be just right.
     </P>
     <P>
       For most TV cards we rely on bttv autodetection. That way you
