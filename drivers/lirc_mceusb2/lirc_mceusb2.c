@@ -396,7 +396,8 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 					}
 					
 					/* accumulate mce pulse/space values */
-					ir->lircdata+=(ir->buf_in[i+j]&MCE_PULSE_MASK)*MCE_TIME_UNIT | (ir->is_pulse?PULSE_BIT:0);
+					ir->lircdata += (ir->buf_in[i+j]&MCE_PULSE_MASK)*MCE_TIME_UNIT;
+					ir->lircdata |= (ir->is_pulse?PULSE_BIT:0);
 				}
 				
 				i+=packet_len;
