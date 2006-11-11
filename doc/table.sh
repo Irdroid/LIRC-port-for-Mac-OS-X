@@ -73,7 +73,7 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read; do
 	else
 	    echo -n "${driver}"
 	fi
-	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT:3}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
+	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT#???}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
     fi
 done
 echo "</table>"
