@@ -77,7 +77,7 @@
 #define MCE_CONTROL_HEADER      0x9F           /* MCE status header */
 #define MCE_TX_HEADER_LENGTH    3              /* Number of bytes in the initializing tx header */
 #define MCE_MAX_CHANNELS        2              /* Two transmitters, hardware dependent? */
-#define MCE_DEFAULT_TX_MASK     0x06           /* Supported values are TX1=0x04, TX2=0x02, ALL=0x06 */
+#define MCE_DEFAULT_TX_MASK     0x03           /* Supported values are TX1=0x01, TX2=0x02, ALL=0x03 */
 #define MCE_PULSE_BIT           0x80           /* Pulse bit, MSB set == PULSE else SPACE */
 #define MCE_PULSE_MASK          0x7F           /* Pulse mask */
 #define MCE_MAX_PULSE_LENGTH    0x7F           /* Longest transmittable pulse symbol */
@@ -523,6 +523,22 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 	return n;
 }
 
+static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
+{
+
+	/* SMK Transceiver does not use the inverted scheme */
+	if (ir->usbdev->descriptor.idVendor == VENDOR_SMK &&
+	    ir->usbdev->descriptor.idProduct == 0x031d)
+	{
+		ir->transmitter_mask = mask;
+	}
+	else
+	{
+		/* The mask begins at 0x02 and has an inverted
+		   numbering scheme */
+		ir->transmitter_mask = (mask!=0x03?mask ^ 0x03:mask) << 1;
+	}
+}
 
 static int lirc_ioctl(struct inode *node, struct file *filep,
 	       	      unsigned int cmd, unsigned long arg)
@@ -548,7 +564,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 		case 0x01: /* Transmitter 1     => 0x04 */
 		case 0x02: /* Transmitter 2     => 0x02 */
 		case 0x03: /* Transmitter 1 & 2 => 0x06 */
-			ir->transmitter_mask = (ivalue!=0x03?ivalue ^ 0x03:ivalue) << 1; /* The mask begins at 0x02 and has an inverted numbering scheme */
+			set_transmitter_mask(ir, ivalue);
 			break;
 
 		default: /* Unsupported transmitter mask */
@@ -716,7 +732,8 @@ static int usb_remote_probe(struct usb_interface *intf,
 	ir->len_in = maxp;
 	ir->connected = 0;
 
-	ir->transmitter_mask=MCE_DEFAULT_TX_MASK;
+	/* ir->usbdev must be set */
+	set_transmitter_mask(ir, MCE_DEFAULT_TX_MASK);
 	/* Saving usb interface data for use by the transmitter routine */
 	ir->usb_ep_in=ep_in;
 	ir->usb_ep_out=ep_out;
