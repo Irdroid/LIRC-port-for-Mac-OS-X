@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "0.25"
+#define DRIVER_VERSION          "0.26"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -731,7 +731,10 @@ static int usb_remote_probe(struct usb_interface *intf,
 	ir->usbdev = dev;
 	ir->len_in = maxp;
 	ir->connected = 0;
-
+	
+        ir->lircdata=PULSE_MASK;
+        ir->is_pulse=0;
+	
 	/* ir->usbdev must be set */
 	set_transmitter_mask(ir, MCE_DEFAULT_TX_MASK);
 	/* Saving usb interface data for use by the transmitter routine */
