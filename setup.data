@@ -126,6 +126,7 @@ hw_menu_entry: @hw-usb
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
 	streamzap: "Streamzap PC Remote"
+	usb_uirt_raw: "USB-UIRT"
 	mceusb: "Windows Media Center Remotes (old version, MicroSoft USB ID)"
 	mceusb2: "Windows Media Center Remotes (new version, Philips et al.)"
 
@@ -164,7 +165,8 @@ param_type: \
 
 param_type: \
 	pcmak_usb \
-	tira
+	tira \
+	usb_uirt_raw
         ttyUSB:
 
 param_type: \
@@ -335,5 +337,6 @@ default_param: bte
 
 default_param: \
 	pcmak_usb \
-	tira
+	tira \
+	usb_uirt_raw
 	ttyUSB1:

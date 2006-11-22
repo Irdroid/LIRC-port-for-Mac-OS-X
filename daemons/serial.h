@@ -1,4 +1,4 @@
-/*      $Id: serial.h,v 5.3 2005/01/22 10:40:42 lirc Exp $      */
+/*      $Id: serial.h,v 5.4 2006/11/22 21:28:39 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -15,6 +15,7 @@
 
 int tty_reset(int fd);
 int tty_setrtscts(int fd,int enable);
+int tty_setdtr(int fd, int enable);
 int tty_setbaud(int fd,int baud);
 int tty_setcsize(int fd,int csize);
 int tty_create_lock(char *name);

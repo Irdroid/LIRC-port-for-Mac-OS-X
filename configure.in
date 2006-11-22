@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.171 2006/11/09 20:27:28 lirc Exp $
+dnl $Id: configure.in,v 5.172 2006/11/22 21:28:39 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -161,6 +161,7 @@ possible_drivers="(none) \
 	(tira) \
 	(uirt2) \
 	(uirt2_raw) \
+	(usb_uirt_raw) \
 	(udp)"
 
 if test x${no_kernel} != xyes; then
@@ -282,7 +283,7 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, sasem,
                           serial, silitek, sir, slinke, streamzap,
                           tekram, tekram_bt829, tira, tvbox, udp,
-                          uirt2, uirt2_raw],
+                          uirt2, uirt2_raw, usb_uirt_raw],
 driver=${withval},
 driver="unset"
 )
@@ -459,7 +460,7 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	uirt2)
 		hw_module="${hw_module} hw_uirt2.o serial.o"
 		;;
-	uirt2_raw)
+	uirt2_raw|usb_uirt_raw)
 		hw_module="${hw_module} hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
 		;;
   esac
@@ -1051,6 +1052,11 @@ if test "$driver" = "uirt2_raw"; then
   hw_module="hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
   HW_DEFAULT="hw_uirt2_raw"
 fi
+if test "$driver" = "usb_uirt_raw"; then
+  lirc_driver="none"
+  hw_module="hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
+  HW_DEFAULT="hw_usb_uirt_raw"
+fi
 
 #END HARDWARE HEURISTIC
 
@@ -1383,8 +1389,7 @@ elif test "$kernel_module" = ""; then
   echo "Your hardware does not require a special LIRC kernel module."
   if test "${irtty}" != ""; then
     echo
-    echo "You will have to use the standard kernel serial port driver to access"
-    echo "${irtty}."
+    echo "You will have to use the suitable kernel driver to access ${irtty}."
   fi
 else
   echo "You will have to use the $kernel_module kernel module."

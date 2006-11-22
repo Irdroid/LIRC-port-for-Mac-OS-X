@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.4 2006/10/01 11:59:01 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.5 2006/11/22 21:28:39 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -55,6 +55,7 @@ LOGPRINTF(1, "time: %s %li %li", #a, (a)->tv_sec, (a)->tv_usec)
 struct tag_uirt2_t {
 	int fd;
 	int flags;
+	int version;
 
 	struct timeval pre_delay;
 	struct timeval pre_time;
@@ -194,7 +195,8 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 
 	tmp[len + 1] = checksum(tmp, len + 1) & 0xff;
 
-	if (dev->pre_delay.tv_sec > 0 || dev->pre_delay.tv_usec > 0) {
+	if (timerisset(&dev->pre_delay))
+	{
 		struct timeval cur;
 		struct timeval diff;
 		struct timeval delay;
@@ -203,19 +205,22 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 		timersub(&cur, &dev->pre_time, &diff);
 		PRINT_TIME(&diff);
 
-		timersub(&dev->pre_delay, &diff, &delay);
-		PRINT_TIME(&delay);
-
-		if (delay.tv_sec > 0 || delay.tv_usec > 0) {
+		if(timercmp(&dev->pre_delay, &diff, >))
+		{
+			timersub(&dev->pre_delay, &diff, &delay);
+			PRINT_TIME(&delay);
+			
 			LOGPRINTF(1, "udelay %lu %lu", 
 				  delay.tv_sec, delay.tv_usec);
 			sleep(delay.tv_sec);
 			usleep(delay.tv_usec);
 		}
 	
-		dev->pre_delay.tv_sec = -1;
+		timerclear(&dev->pre_delay);
 	}
 
+	uirt2_readflush(dev);
+	
 	LOGPRINTF(1, "writing command %02x", buf[0]);
 
 	HEXDUMP(tmp, len + 2);
@@ -274,7 +279,7 @@ static int command(uirt2_t *dev, const byte_t *buf, int len)
 }
 
 
-static unsigned long calc_bits_length(remstruct1_t *buf)
+static unsigned long calc_bits_length(remstruct1_data_t *buf)
 {
 	int i;
 	byte_t b = 0;
@@ -311,9 +316,8 @@ static unsigned long calc_bits_length(remstruct1_t *buf)
 }
 
 
-static unsigned long calc_struct1_length(remstruct1_t *buf)
+static unsigned long calc_struct1_length(int repeat, remstruct1_data_t *buf)
 {
-	int repeat = buf->bCmd & 0x1f;
 	int bISDly = unit * (buf->bISDlyLo + 256 * buf->bISDlyHi);
 	int bHdr = unit * (buf->bHdr1 + buf->bHdr0);
 	unsigned long bBitLength = calc_bits_length(buf);
@@ -332,7 +336,6 @@ static unsigned long calc_struct1_length(remstruct1_t *buf)
 uirt2_t *uirt2_init(int fd)
 {
 	uirt2_t *dev = (uirt2_t *)malloc(sizeof(uirt2_t));
-	int version = 0;
 
 	if(dev == NULL)
 	{
@@ -342,22 +345,23 @@ uirt2_t *uirt2_init(int fd)
 	
         memset(dev, 0, sizeof(uirt2_t));
 
+	timerclear(&dev->pre_time);
 	dev->new_signal = 1;
 	dev->flags = UIRT2_MODE_UIR;
 	dev->fd = fd;
 
 	uirt2_readflush(dev);
 
-	if(uirt2_getversion(dev, &version) < 0) {
+	if(uirt2_getversion(dev, &dev->version) < 0) {
 		free(dev);
 		return NULL;
 	}
 
-	if(version < 0x0104) {
+	if(dev->version < 0x0104) {
 		logprintf(LOG_WARNING, "uirt2_raw: Old UIRT hardware");
 	} else {
 		logprintf(LOG_INFO, "uirt2_raw: UIRT version %04x ok", 
-			  version);
+			  dev->version);
 	}
 
 	return dev;
@@ -438,6 +442,12 @@ int uirt2_getversion(uirt2_t *dev, int *version)
 	byte_t out[20];
 	byte_t in[20];
 
+	if(dev->version != 0)
+	{
+		*version = dev->version;
+		return 0;
+	}
+	
 	in[0] = 0;
 	in[1] = UIRT2_GETVERSION;
 	out[0] = 3;
@@ -453,8 +463,8 @@ int uirt2_getversion(uirt2_t *dev, int *version)
 	 * protocol, which sends extended information when 
 	 * the version is requested.
 	 */
-	logprintf(LOG_WARNING, "uirt2: detection of uirt2 failed");
-	logprintf(LOG_WARNING, "uirt2: trying to detect newer uirt firmware");
+	LOGPRINTF(0, "uirt2: detection of uirt2 failed");
+	LOGPRINTF(0, "uirt2: trying to detect newer uirt firmware");
 	uirt2_readflush(dev);
 
 	out[0] = 8;
@@ -674,13 +684,50 @@ int uirt2_send_raw(uirt2_t *dev, byte_t *buf, int length)
 }
 
 
-int uirt2_send_struct1(uirt2_t *dev, remstruct1_t *buf)
+int uirt2_send_struct1(uirt2_t *dev, int freq, int bRepeatCount,
+		       remstruct1_data_t *buf)
 {
 	int res;
 	unsigned long delay;
-
-	res = command(dev, (byte_t *)buf, sizeof(remstruct1_t) - 2);
-	delay = calc_struct1_length(buf);
+        remstruct1_t rem;
+        remstruct1_ext_t rem_ext;
+	
+	if(dev->version >= 0x0905)
+	{
+		byte_t tmp[2+sizeof(remstruct1_ext_t)];
+		
+		if(freq == 0 || ((5000000 / freq) + 1)/2 >= 0x80)
+		{
+			rem_ext.bFrequency = 0x80;
+	}
+		else
+		{
+			rem_ext.bFrequency = ((5000000 / freq) + 1)/2;
+		}
+		rem_ext.bRepeatCount = bRepeatCount;
+		memcpy(&rem_ext.data, buf, sizeof(*buf));
+		
+		tmp[0] = 0x37;
+		tmp[1] = sizeof(rem_ext) + 1;
+		
+		memcpy(tmp + 2, &rem_ext, sizeof(rem_ext));
+		res = command(dev, tmp, sizeof(rem_ext) + 1);
+	}
+	else
+	{
+		if(bRepeatCount > 0x1f)
+		{
+			rem.bCmd = uirt2_calc_freq(freq) + 0x1f;
+		}
+		else
+		{
+			rem.bCmd = uirt2_calc_freq(freq) + bRepeatCount;
+		}
+		memcpy(&rem.data, buf, sizeof(*buf));
+		
+		res = command(dev, (byte_t *) &rem, sizeof(rem) - 2);
+	}
+	delay = calc_struct1_length(bRepeatCount, buf);
 	gettimeofday(&dev->pre_time, NULL);
 	dev->pre_delay.tv_sec = delay / 1000000;
 	dev->pre_delay.tv_usec = delay % 1000000;

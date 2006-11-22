@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.12 2006/03/24 20:24:38 lirc Exp $      */
+/*      $Id: serial.c,v 5.13 2006/11/22 21:28:39 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -74,6 +74,42 @@ int tty_setrtscts(int fd,int enable)
 		return(0);
 	}
 	return(1);
+}
+
+int tty_setdtr(int fd, int enable)
+{
+        int cmd, sts;
+
+        if (ioctl(fd, TIOCMGET, &sts) < 0)
+        {
+                LOGPRINTF(1,"%s: ioctl(TIOCMGET) failed", __FUNCTION__);
+                LOGPERROR(1,__FUNCTION__);
+                return(0);
+        }
+        if (((sts & TIOCM_DTR) == 0) && enable)
+        {
+                LOGPRINTF(1, "%s: 0->1", __FUNCTION__);
+        }
+	else if ((!enable) && (sts & TIOCM_DTR))
+        {
+                LOGPRINTF(1, "%s: 1->0", __FUNCTION__);
+        }
+        if (enable)
+        {
+                cmd = TIOCMBIS;
+        }
+	else
+	{
+                cmd = TIOCMBIC;
+        }
+        sts = TIOCM_DTR;
+        if (ioctl(fd, cmd, &sts) < 0)
+	{
+                LOGPRINTF(1, "%s: ioctl(TIOCMBI(S|C)) failed", __FUNCTION__);
+                LOGPERROR(1, __FUNCTION__);
+                return(0);
+        }
+        return(1);
 }
 
 int tty_setbaud(int fd,int baud)

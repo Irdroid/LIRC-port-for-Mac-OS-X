@@ -1,4 +1,5 @@
 0.8.1: future
+  * added support for USB-UIRT
   * added transmitter support for new version of Windows Media Center
     transceiver (Daniel Melander)
   * added support for Iguanaworks USB IR Transceiver (Joseph Dunn)

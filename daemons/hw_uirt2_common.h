@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.h,v 5.2 2003/10/26 14:52:45 lirc Exp $   */
+/*      $Id: hw_uirt2_common.h,v 5.3 2006/11/22 21:28:39 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.h *******************************************************
@@ -42,6 +42,7 @@
 #define UIRT2_SETGPIO      0x34
 #define UIRT2_REFRESHGPIO  0x35
 #define UIRT2_DOTXRAW      0x36
+#define UIRT2_DOTXSTRUCT   0x37
 
 /* UIRT2 Responses */
 #define UIRT2_TRANSMITTING 0x20
@@ -82,15 +83,24 @@
 typedef unsigned char byte_t;
 
 typedef struct {
-	byte_t bCmd;
 	byte_t bISDlyHi,bISDlyLo;
 	byte_t bBits,bHdr1,bHdr0;
 	byte_t bOff0,bOff1,bOn0,bOn1;
 	byte_t bDatBits [UIRT2_MAX_BITS / 8];
 	byte_t bCheck;
-} remstruct1_t; 
+} __attribute__ ((packed)) remstruct1_data_t; 
 
-/* struct tag_uirt2_t; */
+typedef struct {
+	byte_t bCmd;
+	remstruct1_data_t data;
+} __attribute__ ((packed)) remstruct1_t; 
+
+typedef struct {
+	byte_t bFrequency;
+	byte_t bRepeatCount;
+	remstruct1_data_t data;
+} __attribute__ ((packed)) remstruct1_ext_t; 
+
 typedef struct tag_uirt2_t uirt2_t;
 
 typedef byte_t uirt2_code_t[UIRT2_CODE_SIZE];
@@ -110,7 +120,8 @@ int uirt2_setgpio(uirt2_t *dev, int action, int duration);
 int uirt2_read_uir(uirt2_t *dev, byte_t *buf, int length);
 lirc_t uirt2_read_raw(uirt2_t *dev, lirc_t timeout);
 int uirt2_send_raw(uirt2_t *dev, byte_t *buf, int length);
-int uirt2_send_struct1(uirt2_t *dev, remstruct1_t *buf);
+int uirt2_send_struct1(uirt2_t *dev, int freq, int bRepeatCount,
+		       remstruct1_data_t *buf);
 int uirt2_calc_freq(int freq);
 
 #endif /* HW_UIRT2_H */
