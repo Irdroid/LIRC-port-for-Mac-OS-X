@@ -117,6 +117,7 @@
 #define VENDOR_MITSUMI          0x03ee
 #define VENDOR_TOPSEED          0x1784 
 #define VENDOR_RICAVISION       0x179d
+#define VENDOR_ITRON            0x195d
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },	/* Philips eHome Infrared Transciever */
@@ -127,6 +128,7 @@ static struct usb_device_id usb_remote_table [] = {
         { USB_DEVICE(VENDOR_MITSUMI, 0x2501) },  /* Mitsumi */
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0001) },  /* Topseed eHome Infrared Transceiver */ 
 	{ USB_DEVICE(VENDOR_RICAVISION, 0x0010) }, /* Ricavision internal Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_ITRON, 0x7002) },   /* Itron ione Libra Q-11 */
 	{ }					/* Terminating entry */
 };
 
