@@ -87,6 +87,7 @@ begin remote
       end codes
 
 end remote 
+
 #
 # this config file was automatically generated
 # using lirc-0.8.0(userspace) on Tue Oct 17 22:45:11 2006
@@ -100,7 +101,7 @@ end remote
 
 begin remote
 
-  name  Antec Fusion Wheel
+  name  Antec_Fusion_Wheel
   bits           16
   eps            30
   aeps          100
