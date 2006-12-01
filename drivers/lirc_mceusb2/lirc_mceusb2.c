@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "0.26"
+#define DRIVER_VERSION          "$Revision: 1.20 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -409,15 +409,25 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 				i+=packet_len;
 				break;
 	          
-				/* status header */
+				/* status header (0x9F) */
 			case MCE_CONTROL_HEADER:
-				/* A transmission always ends with a
-				   GAP of 100000us followed by the
+				/* A transmission containing one or 
+                                   more consecutive ir commands always
+                                   ends with a GAP of 100ms followed by the
 				   sequence 0x9F 0x01 0x01 0x9F 0x15
 				   0x00 0x00 0x80 */
+				
+                /* 
+                Uncomment this if the last 100ms
+                "infinity"-space should be transmitted
+                to lirc directly instead of at the beginning
+                of the next transmission. Changes pulse/space order.
+          
 				if (++i < buf_len && ir->buf_in[i]==0x01)
 					send_packet_to_lirc(ir);
 				
+                */ 
+                                                               
 				/* end decode loop */
 				i=buf_len;
 				break;
@@ -479,7 +489,7 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 		signal_duration+=wbuf[i];
 		wbuf[i]=wbuf[i]/MCE_TIME_UNIT;
 
-		do { /* loop to support long pulses > 127*50us=6.35ms */
+		do { /* loop to support long pulses/spaces > 127*50us=6.35ms */
 
 			/* Insert mce packet header every 4th entry */
 			if ((cmdcount<MCE_CMDBUF_SIZE) &&
@@ -831,7 +841,7 @@ static int __init usb_remote_init(void)
 {
 	int i;
 
-	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
+	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled\n");
 
