@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.27 2006/07/23 23:24:35 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.28 2006/12/01 04:11:52 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -312,5 +312,16 @@ static inline int usb_kill_urb(struct urb *urb)
 #define BTTV_BOARD_GVBCTV5PCI      BTTV_GVBCTV5PCI
 #endif
 #endif  /* end BTTV_* -> BTTV_BOARD_* */
+
+
+/******************************* pm.h *********************************/
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+typedef u32 __bitwise pm_message_t;
+#endif
+
+#endif
 
 #endif /* _KCOMPAT_H */

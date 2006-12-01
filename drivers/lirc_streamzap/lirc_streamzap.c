@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.17 2006/10/20 05:03:39 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.18 2006/12/01 04:11:52 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.17 $"
+#define DRIVER_VERSION	"$Revision: 1.18 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -154,6 +154,7 @@ struct usb_streamzap {
 	enum StreamzapDecoderState decoder_state;
 	struct timer_list	flush_timer;
 	int                     flush;
+	int                     in_use;
 };
 
 
@@ -173,6 +174,10 @@ static int streamzap_use_inc( void *data );
 static void streamzap_use_dec( void *data );
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static int streamzap_suspend(struct usb_interface *intf, pm_message_t message);
+static int streamzap_resume(struct usb_interface *intf);
+#endif
 
 /* usb specific object needed to register this driver with the usb subsystem */
 
@@ -181,6 +186,10 @@ static struct usb_driver streamzap_driver = {
 	.name =		DRIVER_NAME,
 	.probe =	streamzap_probe,
 	.disconnect =	streamzap_disconnect,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	.suspend =	streamzap_suspend,
+	.resume =	streamzap_resume,
+#endif
 	.id_table =	streamzap_table,
 };
 
@@ -716,6 +725,7 @@ static int streamzap_use_inc(void *data)
 		MOD_DEC_USE_COUNT;
 		return -EIO;
 	}
+	sz->in_use++;
 	
 	return 0;
 }
@@ -741,6 +751,7 @@ static void streamzap_use_dec(void *data)
 	usb_kill_urb(sz->urb_in);
 	
         MOD_DEC_USE_COUNT;
+	sz->in_use--;
 }
 
 static int streamzap_ioctl(struct inode *node, struct file *filep,
@@ -816,6 +827,59 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 
         printk(KERN_INFO DRIVER_NAME "[%d]: disconnected\n", minor);
 }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+static int streamzap_suspend(struct usb_interface *intf, pm_message_t message)
+{
+	struct usb_streamzap *sz = usb_get_intfdata(intf);
+	
+	printk(DRIVER_NAME "[%d]: suspend\n", sz->plugin.minor);
+	if(sz->in_use)
+	{
+		if(sz->flush)
+		{
+			sz->flush = 0;
+			del_timer_sync(&sz->flush_timer);
+		}
+		
+		stop_timer(sz);
+		
+		usb_kill_urb(sz->urb_in);
+	}
+	return 0;
+}
+
+static int streamzap_resume(struct usb_interface *intf)
+{
+	struct usb_streamzap *sz = usb_get_intfdata(intf);
+	
+	while(!lirc_buffer_empty(&sz->lirc_buf))
+		lirc_buffer_remove_1(&sz->lirc_buf);
+	while(!lirc_buffer_empty(&sz->delay_buf))
+		lirc_buffer_remove_1(&sz->delay_buf);
+		
+	if(sz->in_use)
+	{
+		sz->flush_timer.expires = jiffies + HZ;
+		sz->flush = 1;
+		add_timer(&sz->flush_timer);
+
+		sz->urb_in->dev = sz->udev;
+#ifdef KERNEL_2_5
+		if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
+#else
+		if (usb_submit_urb(sz->urb_in))
+#endif
+		{
+			dprintk("open result = -EIO error submitting urb",
+				sz->plugin.minor);
+			MOD_DEC_USE_COUNT;
+			return -EIO;
+		}
+	}
+	return 0;
+}
+#endif
 
 #ifdef MODULE
 
