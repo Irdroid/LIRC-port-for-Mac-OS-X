@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.6 2006/11/22 21:28:39 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.7 2006/12/01 03:01:41 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -364,7 +364,7 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 	int i;
 	int ir_length = 0;
 	int res;
-	int repeat = 7;
+	int repeats = 1;
 
 	if (length > 48) {
 		logprintf(LOG_ERR, 
@@ -384,7 +384,7 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 		ir_length += buf[i];
 	}
 
-	tmp[2 + length] = uirt2_calc_freq(remote->freq) + (repeat & 0x1f);
+	tmp[2 + length] = uirt2_calc_freq(remote->freq) + (repeats & 0x1f);
 
 	res = uirt2_send_raw(dev, tmp, length + 3);
 
@@ -453,10 +453,11 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	int res;
         int table[2][TABLE_LEN];
 	int bits = 0;
-        int i;
+        int i, j;
 	int tUnit;
 	int bFrequency;
 	int version;
+	int repeats = 1;
 
         if (length - 2 > UIRT2_MAX_BITS)
                 return 0;
@@ -507,7 +508,31 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 
                 if (bit < 0)
                 {
-                        return 0;
+        		int part_length = i+1;
+        		
+                	/* is this a repeated signal sequence? */
+                	if(!(i%2 /* space */ && buf[i] == remote->remaining_gap))
+                	{                		
+                		return 0;
+                	}
+        		
+        		if((length+1)%part_length != 0)
+        		{
+        			return 0;
+        		}
+        		
+			repeats = (length+1)/part_length;
+			
+			for(j=1; j<repeats; j++)
+			{
+				if(j+1 == repeats) part_length--;
+				
+				if(memcmp(&buf[0], &buf[j*part_length], part_length*sizeof(*buf)) != 0)
+				{
+					return 0;
+				}
+			}
+                	break;
                 }
 
                 set_data_bit(rem.bDatBits, i - 2, bit);
@@ -516,15 +541,15 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 
 	LOGPRINTF(2, "bits %d", bits);
 	
-	rem.bISDlyHi = remote->gap / tUnit / 256;
-	rem.bISDlyLo = (remote->gap / tUnit) & 255;
+	rem.bISDlyHi = remote->remaining_gap / tUnit / 256;
+	rem.bISDlyLo = (remote->remaining_gap / tUnit) & 255;
 	rem.bBits = bits;
 	rem.bOff0 = table[1][0];
 	rem.bOff1 = table[1][1];
 	rem.bOn0 = table[0][0];
 	rem.bOn1 = table[0][1];
 	
-	res = uirt2_send_struct1(dev, remote->freq, 2, &rem);
+	res = uirt2_send_struct1(dev, remote->freq, repeats, &rem);
 
 	return res;
 }
