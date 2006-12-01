@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.20 $"
+#define DRIVER_VERSION          "$Revision: 1.21 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -169,6 +169,20 @@ struct irctl {
 static char init1[] = {0x00, 0xff, 0xaa, 0xff, 0x0b};
 static char init2[] = {0xff, 0x18};
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+static inline unsigned long usecs_to_jiffies(const unsigned int u)
+{
+	if (u > jiffies_to_usecs(MAX_JIFFY_OFFSET))
+		return MAX_JIFFY_OFFSET;
+#if HZ <= USEC_PER_SEC && !(USEC_PER_SEC % HZ)
+	return (u + (USEC_PER_SEC / HZ) - 1) / (USEC_PER_SEC / HZ);
+#elif HZ > USEC_PER_SEC && !(HZ % USEC_PER_SEC)
+	return u * (HZ / USEC_PER_SEC);
+#else
+	return (u * HZ + USEC_PER_SEC - 1) / USEC_PER_SEC;
+#endif
+}
+#endif
 
 
 static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
