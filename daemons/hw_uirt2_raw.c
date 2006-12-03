@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.8 2006/12/03 04:39:27 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.9 2006/12/03 04:44:50 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -461,7 +461,12 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	int repeats = 1;
 
         if (length - 2 > UIRT2_MAX_BITS)
+	{
+		logprintf(LOG_ERR, "uirt2_raw: UIRT tried to send %d bits, "
+			  "max is %d", length-2, UIRT2_MAX_BITS );
+
                 return 0;
+	}
 
 	memset(&rem, 0, sizeof(rem));
 
