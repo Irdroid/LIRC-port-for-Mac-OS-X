@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.7 2006/12/01 03:01:41 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.8 2006/12/03 04:39:27 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -455,6 +455,7 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	int bits = 0;
         int i, j;
 	int tUnit;
+	int freq;
 	int bFrequency;
 	int version;
 	int repeats = 1;
@@ -473,15 +474,17 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	}
 	logprintf(LOG_INFO, "uirt2_raw: UIRT version %04x", 
 		  version);
+	freq = remote->freq;
+	if(freq == 0) freq = DEFAULT_FREQ;
 	if(version >= 0x0905)
 	{
-		if(remote->freq == 0 || ((5000000 / remote->freq) + 1)/2 >= 0x80)
+		if(((5000000 / freq) + 1)/2 >= 0x80)
 		{
 			bFrequency = 0x80;
 		}
 		else
 		{
-			bFrequency = ((5000000 / remote->freq) + 1)/2;
+			bFrequency = ((5000000 / freq) + 1)/2;
 		}
 		tUnit = (bFrequency * 100)/125;
 	}
@@ -549,7 +552,7 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	rem.bOn0 = table[0][0];
 	rem.bOn1 = table[0][1];
 	
-	res = uirt2_send_struct1(dev, remote->freq, repeats, &rem);
+	res = uirt2_send_struct1(dev, freq, repeats, &rem);
 
 	return res;
 }
