@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.9 2006/12/03 04:44:50 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.10 2006/12/07 01:05:55 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -460,14 +460,6 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 	int version;
 	int repeats = 1;
 
-        if (length - 2 > UIRT2_MAX_BITS)
-	{
-		logprintf(LOG_ERR, "uirt2_raw: UIRT tried to send %d bits, "
-			  "max is %d", length-2, UIRT2_MAX_BITS );
-
-                return 0;
-	}
-
 	memset(&rem, 0, sizeof(rem));
 
         memset(table[0], 0, sizeof(table[0]));
@@ -533,9 +525,7 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 			
 			for(j=1; j<repeats; j++)
 			{
-				if(j+1 == repeats) part_length--;
-				
-				if(memcmp(&buf[0], &buf[j*part_length], part_length*sizeof(*buf)) != 0)
+				if(memcmp(&buf[0], &buf[j*part_length], (j+1 == repeats ? part_length-1:part_length)*sizeof(*buf)) != 0)
 				{
 					return 0;
 				}
@@ -543,6 +533,14 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
                 	break;
                 }
 
+	        if (i - 2 > UIRT2_MAX_BITS)
+		{
+			logprintf(LOG_ERR, "uirt2_raw: UIRT tried to send %d bits, "
+				  "max is %d", length-2, UIRT2_MAX_BITS );
+	
+	                return 0;
+		}
+	
                 set_data_bit(rem.bDatBits, i - 2, bit);
                 bits++;
 	}
