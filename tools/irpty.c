@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.10 2006/05/20 07:12:41 lirc Exp $      */
+/*      $Id: irpty.c,v 5.11 2006/12/11 08:32:55 lirc Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -51,7 +51,7 @@
 
 #define	BUFFSIZE 512
 
-char *progname;
+const char *progname="irpty";
 
 struct lirc_config *lconfig;
 
@@ -319,8 +319,6 @@ int main(int argc, char *argv[])
 	struct termios orig_termios;
 	struct winsize size;
 	int flags;
-
-	progname=argv[0];
 
 	interactive = isatty(STDIN_FILENO);
 	ignoreeof = 0;

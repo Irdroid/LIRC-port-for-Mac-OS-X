@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.14 2005/09/10 15:28:28 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.15 2006/12/11 08:32:55 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -128,7 +128,7 @@ const char *active_window_name ="CurrentWindow";
 const char *root_window_name ="RootWindow";
 
 
-char *progname;
+const char *progname="irxevent";
 Display *dpy;
 Window root;
 XEvent xev;
@@ -542,8 +542,6 @@ int main(int argc, char *argv[])
   char *config_file=NULL;
   int c;
   int WindowID;
-
-  progname=argv[0];
 
   while ((c = getopt_long(argc, argv, "hV", long_options, NULL)) != EOF) {
     switch (c) {
