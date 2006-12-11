@@ -277,5 +277,8 @@ char *devinput_rec(struct ir_remote *remotes)
 
 	LOGPRINTF(1, "code %.8llx", code);
 
+	/* ignore EV_SYN */
+	if(event.type == EV_SYN) return NULL;
+
 	return decode_all(remotes);
 }
