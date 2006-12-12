@@ -1534,3 +1534,83 @@ end remote
 
 
 
+
+# this config file was automatically generated
+# using lirc-0.8.0(atiusb) on Mon Dec 11 20:45:22 2006
+#
+# contributed by Wim Lemmers 
+#
+# brand:                       Medion
+# model no. of remote control: OR24E RF MCE Remote Control
+# devices being controlled by this remote: Mythtv Linux
+#
+
+begin remote
+
+  name  Medion_OR24E
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          228011
+  min_repeat      3
+  toggle_bit      0
+
+
+      begin codes
+          on_off                   0xD702
+          teletext                 0xEB16
+          yellow                   0x89B4
+          red                      0x0732
+          green                    0x88B3
+          blue                     0x0A35
+          tv_rec                   0x6D98
+          dvd                      0xD904
+          epg                      0x86B1
+          tv                       0xF11C
+          back                     0x75A0
+          info                     0x042F
+          vol+                     0x5E89
+          vol-                     0xDD08
+          mute                     0x5580
+          prog+                    0xE00B
+          prog-                    0x618C
+          up                       0xEF1A
+          down                     0x77A2
+          left                     0xF21D
+          right                    0x749F
+          ok                       0xF31E
+          windows                  0x709B
+          previous                 0xF621
+          next                     0x78A3
+          backward                 0xF924
+          forward                  0x7BA6
+          play                     0xFA25
+          stop                     0x7DA8
+          still                    0xFE29
+          record                   0x7CA7
+          1                        0xE20D
+          2                        0x638E
+          3                        0xE40F
+          4                        0x6590
+          5                        0xE611
+          6                        0x6792
+          7                        0xE813
+          8                        0x6994
+          9                        0xEA15
+          0                        0x6C97
+          *                        0x0C37
+          #                        0x8DB8
+          clear                    0x0530
+          enter                    0x8BB6
+      end codes
+
+end remote
+
+
