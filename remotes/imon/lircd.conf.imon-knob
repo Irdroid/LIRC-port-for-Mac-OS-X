@@ -28,7 +28,7 @@ begin remote
           Record                   0x298115B7
           Play                     0x2A8115B7
           Open                     0x29B195B7
-          KnobVolUp                0x010000FF
+          KnobVolUp                0x000100FF
           KnobVolDown              0x010000FF
           KnobMute                 0x000008FF
           Rewind                   0x2A8195B7
