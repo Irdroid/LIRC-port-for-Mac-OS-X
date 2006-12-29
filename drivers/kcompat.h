@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.28 2006/12/01 04:11:52 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.29 2006/12/29 10:00:07 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -113,6 +113,11 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #else
 #include <linux/moduleparam.h>
 #endif /* Linux < 2.6.0 */
+
+/* DevFS header */
+#if defined(LIRC_HAVE_DEVFS)
+#include <linux/devfs_fs_kernel.h>
+#endif
 
 #ifdef LIRC_HAVE_DEVFS_24
 #ifdef register_chrdev

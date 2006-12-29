@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.49 2006/10/20 05:03:38 lirc Exp $
+ * $Id: lirc_dev.c,v 1.50 2006/12/29 10:00:07 lirc Exp $
  *
  */
 
@@ -52,10 +52,6 @@
 
 #include "drivers/kcompat.h"
 
-/* DevFS header */
-#if defined(LIRC_HAVE_DEVFS)
-#include <linux/devfs_fs_kernel.h>
-#endif
 /* SysFS header */
 #if defined(LIRC_HAVE_SYSFS)
 #include <linux/device.h>

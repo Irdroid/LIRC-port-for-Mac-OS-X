@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.15 2006/10/20 05:03:39 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.16 2006/12/29 10:00:07 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -69,10 +69,6 @@
 #include <linux/usb.h>
 
 #include "drivers/kcompat.h"
-#if defined(LIRC_HAVE_DEVFS)
-#include <linux/devfs_fs_kernel.h>
-#endif
-
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
