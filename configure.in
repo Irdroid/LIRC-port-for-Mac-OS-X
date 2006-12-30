@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.172 2006/11/22 21:28:39 lirc Exp $
+dnl $Id: configure.in,v 5.173 2006/12/30 18:53:23 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1375,7 +1375,7 @@ if test "$driver" = "all"; then
   echo "All kernel modules will be built."
 elif test "$driver" = "mediafocusI"; then
   echo "You will have to use the MediaFocus driver from:"
-  echo "http://people.freenet.de/mediafocus/"
+  echo "http://freenet-homepage.de/mediafocus/"
 elif test "$driver" = "exaudio"; then
   echo "You will have to use the Exaudio driver from:"
   echo "http://exaudio.sourceforge.net/"
