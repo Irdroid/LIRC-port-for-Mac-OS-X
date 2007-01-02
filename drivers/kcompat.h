@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.29 2006/12/29 10:00:07 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.30 2007/01/02 21:45:08 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -324,7 +324,7 @@ static inline int usb_kill_urb(struct urb *urb)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
-typedef u32 __bitwise pm_message_t;
+typedef u32 pm_message_t;
 #endif
 
 #endif
