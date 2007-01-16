@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.58 2006/10/08 10:42:05 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.59 2007/01/16 05:09:09 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -302,6 +302,15 @@ int main(int argc,char **argv)
 	{
 		char *filename_new;
 		
+		if(force)
+		{
+			fprintf(stderr,
+				"%s: file \"%s\" already exists\n"
+				"%s: you cannot use the --force option "
+				"together with a template file\n",
+				progname, filename, progname);
+			exit(EXIT_FAILURE);
+		}
 		remotes=read_config(fin);
 		fclose(fin);
 		if(remotes==(void *) -1 || remotes==NULL)
