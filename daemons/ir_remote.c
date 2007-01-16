@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.26 2006/06/07 23:12:06 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.27 2007/01/16 05:48:47 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -304,8 +304,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 
 	gettimeofday(&current,NULL);
 	if(remote==last_remote &&
-	   ((found->next==NULL && found==remote->last_code) || 
-	    (found->next!=NULL)) &&
+	   (found==remote->last_code || (found->next!=NULL && found->current!=NULL)) &&
 	   repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
 	   (!(remote->toggle_bit>0) || repeat_state==remote->repeat_state))
@@ -345,7 +344,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		}
 	}
 	last_remote=remote;
-	remote->last_code=found;
+	if(found->current==NULL) remote->last_code=found;
 	remote->last_send=current;
 	remote->remaining_gap=remaining_gap;
 	
@@ -355,7 +354,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		code|=remote->pre_data;
 		code=code<<remote->bits;
 	}
-	code|=remote->last_code->code;
+	code|=found->code;
 	if(has_post(remote))
 	{
 		code=code<<remote->post_data_bits;
@@ -381,6 +380,8 @@ char *decode_all(struct ir_remote *remotes)
 	struct ir_ncode *ncode;
 	int repeat_flag,repeat_state;
 	lirc_t remaining_gap;
+	struct ir_remote *scan;
+	struct ir_ncode *scan_code;
 	
 	/* use remotes carefully, it may be changed on SIGHUP */
 	decoding=remote=remotes;
@@ -404,6 +405,14 @@ char *decode_all(struct ir_remote *remotes)
 				return(NULL);
 			}
 
+			for(scan = decoding; scan != NULL; scan = scan->next)
+			{
+				for(scan_code = scan->codes; scan_code != NULL; scan_code = scan_code->next)
+				{
+					scan_code->current = NULL;
+				}
+			}
+						
 #ifdef __GLIBC__
 			/* It seems you can't print 64-bit longs on glibc */
 			

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.6 2006/01/28 18:36:44 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.7 2007/01/16 05:48:47 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -44,6 +44,7 @@ struct ir_ncode {
         lirc_t *signals;
 	struct ir_code_node *next;
 	struct ir_code_node *current;
+	struct ir_code_node *transmit_state;
 };
 
 /*

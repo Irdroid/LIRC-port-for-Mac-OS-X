@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.21 2006/01/28 18:36:44 lirc Exp $      */
+/*      $Id: transmit.c,v 5.22 2007/01/16 05:48:47 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -381,17 +381,27 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		if(!is_raw(remote))
 		{
+			ir_code next_code;
+			
+			if(code->transmit_state == NULL)
+			{
+				next_code = code->code;
+			}
+			else
+			{
+				next_code = code->transmit_state->code;
+			}
 			if(has_toggle_mask(remote))
 			{
 				if(remote->toggle_mask_state%2)
 				{
-					send_code(remote, code->code^
+					send_code(remote, next_code^
 						  remote->toggle_mask,
 						  repeat);
 				}
 				else
 				{
-					send_code(remote, code->code, repeat);
+					send_code(remote, next_code, repeat);
 				}
 				remote->toggle_mask_state++;
 				if(remote->toggle_mask_state==4)
@@ -401,7 +411,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			}
 			else
 			{
-				send_code(remote, code->code, repeat);
+				send_code(remote, next_code, repeat);
 			}
 			send_buffer.data=send_buffer._data;
 		}
@@ -455,7 +465,19 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		remote->remaining_gap=remote->gap;
 	}
-	if(remote->repeat_countdown>0 &&
+	/* update transmit state */
+	if(code->next != NULL)
+	{
+		if(code->transmit_state == NULL)
+		{
+			code->transmit_state = code->next;
+		}
+		else
+		{
+			code->transmit_state = code->transmit_state->next;
+		}
+	}
+	if((remote->repeat_countdown>0 || code->transmit_state != NULL) &&
 	   remote->remaining_gap<LIRCD_EXACT_GAP_THRESHOLD)
 	{
 		if(send_buffer.data!=send_buffer._data)
@@ -472,7 +494,10 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			send_signals(signals, n);
 		}
 		LOGPRINTF(1, "concatenating low gap signals");
-		remote->repeat_countdown--;
+		if(code->next == NULL || code->transmit_state == NULL)
+		{
+			remote->repeat_countdown--;
+		}
 		send_space(remote->remaining_gap);
 		flush_send_buffer();
 		send_buffer.sum=0;

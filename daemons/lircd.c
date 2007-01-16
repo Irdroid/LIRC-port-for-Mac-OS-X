@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.65 2006/10/08 10:42:05 lirc Exp $      */
+/*      $Id: lircd.c,v 5.66 2007/01/16 05:48:47 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -953,7 +953,10 @@ void dosigalrm(int sig)
 		}
 		return;
 	}
-	repeat_remote->repeat_countdown--;
+	if(repeat_code->next == NULL || (repeat_code->transmit_state != NULL && repeat_code->transmit_state->next == NULL))
+	{
+		repeat_remote->repeat_countdown--;
+	}
 	if(hw.send_func(repeat_remote,repeat_code) &&
 	   repeat_remote->repeat_countdown>0)
 	{
@@ -1329,6 +1332,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 	if(remote->toggle_bit>0)
 		remote->repeat_state=
 		!remote->repeat_state;
+	code->transmit_state = NULL;
 	if(!hw.send_func(remote,code))
 	{
 		return(send_error(fd,message,"transmission failed\n"));
@@ -1342,7 +1346,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 		/* you've been warned, now we have a limit */
 		remote->repeat_countdown=REPEAT_MAX;
 	}
-	if(remote->repeat_countdown>0)
+	if(remote->repeat_countdown>0 || code->next != NULL)
 	{
 		repeat_remote=remote;
 		repeat_code=code;
@@ -2046,6 +2050,7 @@ int main(int argc,char **argv)
 			{
 				repeat_remote=NULL;
 				repeat_code=NULL;
+				c->transmit_state = NULL;
 				hw.send_func(r,c);
 				repeat_remote=r;
 				repeat_code=c;

@@ -1,3 +1,7 @@
+* RC-5X support
+
+* implement toggle_bit_mask for atiusb
+
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes
@@ -10,9 +14,7 @@
 * button_down & button_up codes.
 
 * Pioneer protocol:
-  add irrecord support,
-  reset button state,
-  implement transmitting & config file dump
+  add irrecord support
 
 * Grundig/Motorola (context?) protocol (maybe?)
 
