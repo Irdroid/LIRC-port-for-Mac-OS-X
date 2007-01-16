@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.9 2005/07/18 10:38:35 lirc Exp $
+## $Id: acinclude.m4,v 1.10 2007/01/16 10:26:21 lirc Exp $
 ##
 ## additional m4 macros
 ##
@@ -36,14 +36,14 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
       echo "lirc_tell_me_what_cc_is:" >>${ac_pkss_makefile}
       echo "	echo \$(CC)" >>${ac_pkss_makefile}
 
-      kernelcc=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_cc_is`
+      kernelcc=$(make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_cc_is M=$(pwd))
 
       echo "lirc_tell_me_what_version_is:" >>${ac_pkss_makefile}
       echo "	echo \$(VERSION)" >>${ac_pkss_makefile}
       echo "lirc_tell_me_what_patchlevel_is:" >>${ac_pkss_makefile}
       echo "	echo \$(PATCHLEVEL)" >>${ac_pkss_makefile}
-      version=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_version_is`
-      patchlevel=`make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_patchlevel_is`
+      version=$(make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_version_is M=$(pwd))
+      patchlevel=$(make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_patchlevel_is M=$(pwd))
       if test ${version} -eq 2; then
         if test ${patchlevel} -lt 5; then
           kernelext=o
