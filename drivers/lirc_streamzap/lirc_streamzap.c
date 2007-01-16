@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.18 2006/12/01 04:11:52 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.19 2007/01/16 08:45:04 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.18 $"
+#define DRIVER_VERSION	"$Revision: 1.19 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -458,7 +458,7 @@ static void usb_streamzap_irq(struct urb *urb)
 
 #ifdef KERNEL_2_5
 	/* resubmit only for 2.6 */
-	usb_submit_urb( urb, SLAB_ATOMIC );
+	usb_submit_urb( urb, GFP_ATOMIC );
 #endif
 
 	return;
@@ -556,7 +556,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->buf_in_len = sz->endpoint->wMaxPacketSize;
 #ifdef KERNEL_2_5
         if((sz->buf_in = usb_buffer_alloc(sz->udev, sz->buf_in_len,
-					  SLAB_ATOMIC, &sz->dma_in)) == NULL )
+					  GFP_ATOMIC, &sz->dma_in)) == NULL )
 	{
                 goto error;
 	}
@@ -715,7 +715,7 @@ static int streamzap_use_inc(void *data)
 
 	sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
-	if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
+	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC))
 #else
 	if (usb_submit_urb(sz->urb_in))
 #endif
@@ -866,7 +866,7 @@ static int streamzap_resume(struct usb_interface *intf)
 
 		sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
-		if (usb_submit_urb(sz->urb_in, SLAB_ATOMIC))
+		if (usb_submit_urb(sz->urb_in, GFP_ATOMIC))
 #else
 		if (usb_submit_urb(sz->urb_in))
 #endif

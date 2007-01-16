@@ -484,7 +484,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #if defined(KERNEL_2_5)
 		} else if (!(ir->buf_in = usb_buffer_alloc(dev, 
 				DEVICE_BUFLEN+DEVICE_HEADERLEN, 
-                                SLAB_ATOMIC, &ir->dma_in))) {
+                                GFP_ATOMIC, &ir->dma_in))) {
 			mem_failure = 5;
 #else
 		} else if (!(ir->buf_in = kmalloc(

@@ -12,7 +12,7 @@
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
  *
- * $Id: lirc_atiusb.c,v 1.55 2006/10/20 05:03:38 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.56 2007/01/16 08:45:04 lirc Exp $
  */
 
 /*
@@ -251,7 +251,7 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 	add_wait_queue(&oep->wait, &wait);
 
 #ifdef KERNEL_2_5
-	if (usb_submit_urb(oep->urb, SLAB_ATOMIC)) {
+	if (usb_submit_urb(oep->urb, GFP_ATOMIC)) {
 #else
 	if (usb_submit_urb(oep->urb)) {
 #endif
@@ -323,7 +323,7 @@ static int set_use_inc(void *data)
 			iep->urb->dev = ir->usbdev;
 			dprintk(DRIVER_NAME "[%d]: linking iep 0x%02x (%p)\n", ir->devnum, iep->ep->bEndpointAddress, iep);
 #ifdef KERNEL_2_5
-			if ((rtn = usb_submit_urb(iep->urb, SLAB_ATOMIC)) < 0) {
+			if ((rtn = usb_submit_urb(iep->urb, GFP_ATOMIC)) < 0) {
 #else
 			if ((rtn = usb_submit_urb(iep->urb)) < 0) {
 #endif
@@ -659,7 +659,7 @@ static void usb_remote_recv(struct urb *urb)
 
 	/* resubmit urb */
 #ifdef KERNEL_2_5
-	usb_submit_urb(urb, SLAB_ATOMIC);
+	usb_submit_urb(urb, GFP_ATOMIC);
 #endif
 }
 
@@ -775,7 +775,7 @@ static struct in_endpt *new_in_endpt(struct irctl *ir, struct usb_endpoint_descr
 		iep->len = len;
 
 #ifdef KERNEL_2_5
-		if ( !(iep->buf = usb_buffer_alloc(dev, len, SLAB_ATOMIC, &iep->dma)) ) {
+		if ( !(iep->buf = usb_buffer_alloc(dev, len, GFP_ATOMIC, &iep->dma)) ) {
 			mem_failure = 2;
 		} else if ( !(iep->urb = usb_alloc_urb(0, GFP_KERNEL)) ) {
 			mem_failure = 3;
@@ -856,7 +856,7 @@ static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_des
 		init_waitqueue_head(&oep->wait);
 
 #ifdef KERNEL_2_5
-		if ( !(oep->buf = usb_buffer_alloc(dev, USB_OUTLEN, SLAB_ATOMIC, &oep->dma)) ) {
+		if ( !(oep->buf = usb_buffer_alloc(dev, USB_OUTLEN, GFP_ATOMIC, &oep->dma)) ) {
 			mem_failure = 2;
 		} else if ( !(oep->urb = usb_alloc_urb(0, GFP_KERNEL)) ) {
 			mem_failure = 3;
@@ -1195,7 +1195,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.55 2006/10/20 05:03:38 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.56 2007/01/16 08:45:04 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

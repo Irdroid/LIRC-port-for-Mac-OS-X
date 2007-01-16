@@ -768,7 +768,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			dev->bulk_in_endpointAddr = endpoint->bEndpointAddress;
 #ifdef KERNEL_2_5
 			dev->bulk_in_buffer = usb_buffer_alloc
-				(udev, buffer_size, SLAB_ATOMIC, &dev->dma_in);
+				(udev, buffer_size, GFP_ATOMIC, &dev->dma_in);
 #else
 			dev->bulk_in_buffer = kmalloc(buffer_size, GFP_KERNEL);
 #endif
@@ -795,7 +795,7 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			dev->bulk_out_size = buffer_size;
 			dev->bulk_out_endpointAddr = endpoint->bEndpointAddress;
 #ifdef KERNEL_2_5
-			dev->bulk_out_buffer = usb_buffer_alloc(udev, buffer_size, SLAB_ATOMIC, &dev->dma_out);
+			dev->bulk_out_buffer = usb_buffer_alloc(udev, buffer_size, GFP_ATOMIC, &dev->dma_out);
 #else
 			dev->bulk_out_buffer = kmalloc (buffer_size, GFP_KERNEL);
 #endif

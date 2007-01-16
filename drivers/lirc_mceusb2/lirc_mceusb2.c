@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.22 $"
+#define DRIVER_VERSION          "$Revision: 1.23 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -264,7 +264,7 @@ static void request_packet_async(struct irctl *ir, struct usb_endpoint_descripto
 	async_urb->transfer_buffer_length = size;
 	async_urb->dev = ir->usbdev;
 
-	if ((res=usb_submit_urb(async_urb, SLAB_ATOMIC))) {
+	if ((res=usb_submit_urb(async_urb, GFP_ATOMIC))) {
 	    dprintk(DRIVER_NAME "[%d]: receive request FAILED! (res=%d)\n", ir->devnum, res);
 	    return;
 	}
@@ -467,7 +467,7 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 	}
 
 	/* resubmit urb */
-	usb_submit_urb(urb, SLAB_ATOMIC);
+	usb_submit_urb(urb, GFP_ATOMIC);
 }
 
 
@@ -703,7 +703,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 			mem_failure = 3;
 		} else if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE)) {
 			mem_failure = 4;
-		} else if (!(ir->buf_in = usb_buffer_alloc(dev, maxp, SLAB_ATOMIC, &ir->dma_in))) {
+		} else if (!(ir->buf_in = usb_buffer_alloc(dev, maxp, GFP_ATOMIC, &ir->dma_in))) {
 			mem_failure = 5;
 		} else if (!(ir->urb_in = usb_alloc_urb(0, GFP_KERNEL))) {
 			mem_failure = 7;
