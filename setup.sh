@@ -332,7 +332,7 @@ SaveConfig ()
     echo "DYNCODES=$DYNCODES" >>$CONFIG
     chmod 666 $CONFIG
 
-    echo '#!/bin/bash' >$START
+    echo '#! /bin/sh' >$START
     echo >>$START
     echo "./configure \\" >>$START
     echo "--with-moduledir=/lib/modules/`uname -r`/misc \\" >>$START
