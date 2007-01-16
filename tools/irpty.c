@@ -1,4 +1,4 @@
-/*      $Id: irpty.c,v 5.11 2006/12/11 08:32:55 lirc Exp $      */
+/*      $Id: irpty.c,v 5.12 2007/01/16 05:11:11 lirc Exp $      */
 
 /****************************************************************************
  ** irpty.c *****************************************************************
@@ -36,7 +36,7 @@
 #include <unistd.h>
 
 #ifdef HAVE_FORKPTY
-#ifdef __APPLE__
+#if defined (__APPLE__) || defined (__NetBSD__)
 #include <util.h>
 #else
 #if defined (__FreeBSD__)
