@@ -44,6 +44,14 @@ extern struct ir_remote *repeat_remote,*last_remote;
 
 */
 
+#define PINSYS_THREEBYTE
+
+#ifdef PINSYS_THREEBYTE
+#define BITS_COUNT 24
+#else
+#define BITS_COUNT 8
+#endif
+
 #define REPEAT_FLAG 0x40
 
 unsigned char b[3], t;
@@ -59,11 +67,7 @@ struct hardware hw_pinsys=
 	0,                        /* send_mode */
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	/* remember to change signal_length if you correct this one */
-#ifdef PINSYS_THREEBYTE
-	24,                       /* code_length */
-#else
-	8,                        /* code_length */
-#endif
+	BITS_COUNT,                       /* code_length */
 	pinsys_init,              /* init_func */
 	NULL,                     /* config_func */
 	pinsys_deinit,            /* deinit_func */
@@ -148,7 +152,7 @@ int pinsys_decode(struct ir_remote *remote,
 		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
-		     0,0,8,code&(~REPEAT_FLAG),0,0))
+		     0,0,BITS_COUNT,code&(~REPEAT_FLAG),0,0))
 	{
 		return(0);
 	}
@@ -191,7 +195,7 @@ int pinsys_decode(struct ir_remote *remote,
 
 int pinsys_init(void)
 {
-	signal_length=(hw.code_length+(hw.code_length/8)*2)*1000000/1200;
+	signal_length=(hw.code_length+(hw.code_length/ BITS_COUNT )*2)*1000000/1200;
 
 	if(!tty_create_lock(hw.device))
 	{
