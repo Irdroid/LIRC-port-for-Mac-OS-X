@@ -1,4 +1,4 @@
-# $Id: Makefile.common,v 5.3 2006/07/07 07:43:29 lirc Exp $
+# $Id: Makefile.common,v 5.4 2007/01/17 08:50:31 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
@@ -44,7 +44,7 @@ uninstall-local: rmdev
 endif
 
 mkdev:
-	test -c $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
+	test -e $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
 
 rmdev:
 	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
