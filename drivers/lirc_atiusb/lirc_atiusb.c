@@ -11,8 +11,12 @@
  *      "USB StreamZap remote driver" (LIRC)
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
+ *   Michael Wojciechowski
+ *      initial xbox support
+ *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
+ *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.56 2007/01/16 08:45:04 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.57 2007/01/22 06:29:30 lirc Exp $
  */
 
 /*
@@ -59,14 +63,14 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"0.5"
+#define DRIVER_VERSION		"$Revision: 1.57 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
 
-#define CODE_LENGTH		5
-#define CODE_LENGTH_ATI2	3
-#define CODE_MIN_LENGTH		3
+#define CODE_LENGTH		code_length[ir->remote_type]
+#define CODE_MIN_LENGTH		code_min_length[ir->remote_type]
+#define DECODE_LENGTH		decode_length[ir->remote_type]
 
 #define RW2_MODENAV_KEYCODE	0x3F
 #define RW2_NULL_MODE		0xFF
@@ -88,6 +92,14 @@
 	do{                                                   \
 		if(debug) printk(KERN_DEBUG fmt, ## args);    \
 	}while(0)
+
+// ATI, ATI2, XBOX
+static const int code_length[] = {5, 3, 6};
+static const int code_min_length[] = {3, 3, 6};
+static const int decode_length[] = {5, 3, 1};
+// USB_BUFF_LEN must be the maximum value of the code_length array.
+// It is used for static arrays.
+#define USB_BUFF_LEN 6
 
 static int mask = 0xFFFF;	// channel acceptance bit mask
 static int unique = 0;		// enable channel-specific codes
@@ -120,6 +132,8 @@ static int mgradient = 375;	// 1000*gradient from cardinal direction
 
 #define VENDOR_ATI1		0x0bc7
 #define VENDOR_ATI2		0x0471
+#define VENDOR_MS1		0x040b
+#define VENDOR_MS2		0x045e
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ATI1, 0x0002) },	/* X10 USB Firecracker Interface */
@@ -140,6 +154,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ATI2, 0x0602) },	/* ATI Remote Wonder 2: Input Device */
 	{ USB_DEVICE(VENDOR_ATI2, 0x0603) },	/* ATI Remote Wonder 2: Controller (???) */
 
+	{ USB_DEVICE(VENDOR_MS1, 0x6521) }, /* Gamester Xbox DVD Movie Playback Kit IR */
+	{ USB_DEVICE(VENDOR_MS2, 0x0284) }, /* Microsoft Xbox DVD Movie Playback Kit IR */
 	{ }					/* Terminating entry */
 };
 
@@ -168,7 +184,7 @@ struct in_endpt {
 #endif
 
 	/* handle repeats */
-	unsigned char old[CODE_LENGTH];
+	unsigned char old[USB_BUFF_LEN];
 	unsigned long old_jiffies;
 };
 
@@ -206,7 +222,8 @@ struct irctl {
 	/* remote type based on usb_device_id tables */
 	enum {
 		ATI1_COMPATIBLE,
-		ATI2_COMPATIBLE
+		ATI2_COMPATIBLE,
+		XBOX_COMPATIBLE
 	} remote_type;
 
 	/* rw2 current mode (mirror's remote's state) */
@@ -369,13 +386,14 @@ static void set_use_dec(void *data)
 
 static void print_data(struct in_endpt *iep, char *buf, int len)
 {
-	char codes[CODE_LENGTH*3 + 1];
+	const int clen = code_length[iep->ir->remote_type];
+	char codes[clen * 3 + 1];
 	int i;
 
 	if (len <= 0)
 		return;
 
-	for (i = 0; i < len && i < CODE_LENGTH; i++) {
+	for (i = 0; i < len && i < clen; i++) {
 		snprintf(codes+i*3, 4, "%02x ", buf[i] & 0xFF);
 	}
 	printk(DRIVER_NAME "[%d]: data received %s (ep=0x%x length=%d)\n",
@@ -506,7 +524,7 @@ static int code_check_ati2(struct in_endpt *iep, int len) {
 	int mode, i;
 	char *buf = iep->buf;
 
-	if (len != CODE_LENGTH_ATI2) {
+	if (len != CODE_LENGTH) {
 		dprintk(DRIVER_NAME
 			"[%d]: Huh?  Abnormal length (%d) buffer recieved.\n",
 			ir->devnum, len);
@@ -598,6 +616,37 @@ static int code_check_ati2(struct in_endpt *iep, int len) {
 	return SUCCESS;
 }
 
+static int code_check_xbox(struct in_endpt *iep, int len)
+{
+	struct irctl *ir = iep->ir;
+	const int clen = CODE_LENGTH;
+
+	if (len != clen)
+	{
+		dprintk(DRIVER_NAME ": We got %d instead of %d bytes from xbox ir.. ?\n", len, clen);
+		return -1;
+	}
+
+	/* check for repeats */
+	if (memcmp(iep->old, iep->buf, len) == 0) 
+	{
+		if (iep->old_jiffies + repeat_jiffies > jiffies) 
+		{
+			return -1;
+		}
+	} 
+	else 
+	{
+		// the third byte of xbox ir packet seems to contain key info
+		// the last two bytes are.. some kind of clock?
+		iep->buf[0] = iep->buf[2];
+		memset(iep->buf + 1, 0, len - 1);
+		memcpy(iep->old, iep->buf, len);
+	}
+	iep->old_jiffies = jiffies;
+
+	return SUCCESS;
+}
 
 #ifdef KERNEL_2_5
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
@@ -606,7 +655,7 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 {
 	struct in_endpt *iep;
-	int len, result;
+	int len, result = -1;
 
 	if (!urb)
 		return;
@@ -630,6 +679,9 @@ static void usb_remote_recv(struct urb *urb)
 	case SUCCESS:
 
 		switch (iep->ir->remote_type) {
+		case XBOX_COMPATIBLE:
+			result = code_check_xbox(iep, len);
+			break;
 		case ATI2_COMPATIBLE:
 			result = code_check_ati2(iep, len);
 			break;
@@ -840,7 +892,6 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 
 static struct out_endpt *new_out_endpt(struct irctl *ir, struct usb_endpoint_descriptor *ep)
 {
-	struct usb_device *dev = ir->usbdev;
 	struct out_endpt *oep;
 	int mem_failure;
 
@@ -946,6 +997,10 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	case VENDOR_ATI2:
 		type = ATI2_COMPATIBLE;
 		break;
+	case VENDOR_MS1:
+	case VENDOR_MS2:
+		type = XBOX_COMPATIBLE;
+		break;
 	default:
 		dprintk(DRIVER_NAME "[%d]: unknown type\n", devnum);
 		return NULL;
@@ -957,6 +1012,8 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	if ( !(ir = kmalloc(sizeof(*ir), GFP_KERNEL)) ) {
 		mem_failure = 1;
 	} else {
+	        // at this stage we cannot use the macro [DE]CODE_LENGTH: ir is not yet setup
+	        const int dclen = decode_length[type];
 		memset(ir, 0, sizeof(*ir));
 		/* add this infrared remote struct to remote_list, keeping track of
 		 * the number of drivers registered. */
@@ -968,13 +1025,13 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			mem_failure = 2;
 		} else if (!(rbuf = kmalloc(sizeof(*rbuf), GFP_KERNEL))) {
 			mem_failure = 3;
-		} else if (lirc_buffer_init(rbuf, CODE_LENGTH, 1)) {
+		} else if (lirc_buffer_init(rbuf, dclen, 1)) {
 			mem_failure = 4;
 		} else {
 			memset(plugin, 0, sizeof(*plugin));
 			strcpy(plugin->name, DRIVER_NAME " ");
 			plugin->minor = -1;
-			plugin->code_length = CODE_LENGTH*8;
+			plugin->code_length = dclen * 8;
 			plugin->features = LIRC_CAN_REC_LIRCCODE;
 			plugin->data = ir;
 			plugin->rbuf = rbuf;
@@ -1193,9 +1250,9 @@ static int __init usb_remote_init(void)
 
 	INIT_LIST_HEAD(&remote_list);
 
-	printk("\n" DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
+	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.56 2007/01/16 08:45:04 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.57 2007/01/22 06:29:30 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
