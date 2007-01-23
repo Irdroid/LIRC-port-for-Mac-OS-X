@@ -66,7 +66,7 @@ hw_menu_entry: @hw-tv-card
 	flyvideo: "FlyVideo 98 (card=30)"
 	flyvideo: "FlyVideo 98/FM /2000S (card=56)"
 	flyvideo: "Flyvideo 98FM (LR50Q) / Typhoon TView TV/FM Tuner (card=36)"
-	hauppauge: "Hauppauge TV card (new I2C layer required)"
+	hauppauge: "Hauppauge TV card"
 	hauppauge_dvb: "Hauppauge DVB-s card (ver. 2.1)"
         hercules_smarttv_stereo: "Hercules Smart TV Stereo (card=100)"
 	gvbctv5pci: "I-O Data Co. GV-BCTV5/PCI (card=81)"
