@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.34 2006/10/20 05:03:38 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.35 2007/01/25 04:32:05 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -115,6 +115,8 @@ struct parport *pport;
 struct pardevice *ppdevice;
 int is_claimed=0;
 
+unsigned int tx_mask = 1;
+
 /***********************************************************************
  *************************   Interne Funktionen  ***********************
  ***********************************************************************/
@@ -162,7 +164,7 @@ static unsigned int __inline__  lirc_get_signal(void)
 
 static void __inline__ lirc_on(void)
 {
-	out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
+	out(LIRC_PORT_DATA, tx_mask);
 }
 
 static void __inline__ lirc_off(void)
@@ -537,7 +539,8 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		      unsigned long arg)
 {
         int result;
-	unsigned long features=LIRC_CAN_SEND_PULSE|LIRC_CAN_REC_MODE2,mode;
+	unsigned long features=LIRC_CAN_SET_TRANSMITTER_MASK|LIRC_CAN_SEND_PULSE|LIRC_CAN_REC_MODE2,mode;
+	unsigned int ivalue;
 	
 	switch(cmd)
 	{
@@ -562,6 +565,12 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		result=get_user(mode,(unsigned long *) arg);
 		if(result) return(result);
 		if(mode!=LIRC_MODE_MODE2) return(-ENOSYS);
+		break;
+	case LIRC_SET_TRANSMITTER_MASK:
+		result=get_user(ivalue,(unsigned int *) arg);
+		if(result) return(result);
+		if((ivalue&LIRC_PARALLEL_TRANSMITTER_MASK) != ivalue) return (LIRC_PARALLEL_MAX_TRANSMITTERS);
+		tx_mask = ivalue;
 		break;
 	default:
 		return(-ENOIOCTLCMD);
@@ -735,7 +744,7 @@ int init_module(void)
 #ifdef LIRC_TIMER
 	if(debug) 
 	{
-		out(LIRC_PORT_DATA,LIRC_PORT_DATA_BIT);
+		out(LIRC_PORT_DATA, tx_mask);
 	}
 	
 	timer=init_lirc_timer();
@@ -784,6 +793,9 @@ MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
 
 module_param(irq, int, 0444);
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
+
+module_param(tx_mask, int, 0444);
+MODULE_PARM_DESC(tx_maxk, "Transmitter mask (default: 0x01)");
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
