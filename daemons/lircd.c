@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.66 2007/01/16 05:48:47 lirc Exp $      */
+/*      $Id: lircd.c,v 5.67 2007/01/30 02:04:04 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1256,7 +1256,7 @@ int set_transmitters(int fd,char *message,char *arguments)
 	{
 		next_tx_int=-1;
 		next_tx_int = strtoul(next_arg,&end_ptr,10);
-		if(*end_ptr || (next_tx_int == ULONG_MAX && errno == ERANGE))
+		if(*end_ptr || next_tx_int == 0 || (next_tx_int == ULONG_MAX && errno == ERANGE))
 		{
 			return(send_error(fd,message, "invalid argument\n"));
 		}
