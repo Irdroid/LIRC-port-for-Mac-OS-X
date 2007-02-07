@@ -17,15 +17,15 @@ of electronic devices such as TV boxes, HiFi sets, etc.
 .RE
 .fi
 
-.TP 
+.PP 
 \fIREMOTE\fR is the name of a remote, as described in the \fBlircd\fR
 configuration file.
 
-.TP
+.PP
 \fICODE\fR is the name of a remote control key of \fIREMOTE\fR, as it
 appears in the \fBlircd\fR configuration file.
 
-.TP
+.PP
 \fINUM\fR is the transmitter number of the hardware device. 
 
 .PP
@@ -54,7 +54,7 @@ irsend SET_TRANSMITTERS 1 3 4
 .fi
 [FILES]
 .TP
-.B /etc/lircd.conf
+.I /etc/lircd.conf
 Default \fBlircd\fR configuration file.  It should contain all the
 remotes, their infra-red codes and the corresponding timing and 
 waveform details.
