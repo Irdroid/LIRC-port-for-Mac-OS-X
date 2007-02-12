@@ -1,4 +1,5 @@
 0.8.2-CVS: future
+  * added support for SoundGraph iMON 2.4G LT (Morten Bogeskov)
 
 0.8.1: 01/07/07
   * added support for USB-UIRT

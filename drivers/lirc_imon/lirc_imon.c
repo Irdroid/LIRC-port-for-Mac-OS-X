@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.14 2006/12/29 10:00:07 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.15 2007/02/12 05:35:22 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -132,6 +132,7 @@ struct imon_context {
 	devfs_handle_t devfs;
 #endif
 	int ir_isopen;			/* IR port has been opened        */
+	int ir_isassociating;		/* IR port has been opened for association */
 	int dev_present;		/* USB device presence            */
 	struct semaphore sem;		/* to lock this object            */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
@@ -251,6 +252,7 @@ extern devfs_handle_t usb_devfs_handle;
 MODULE_AUTHOR (MOD_AUTHOR);
 MODULE_DESCRIPTION (MOD_DESC);
 MODULE_LICENSE ("GPL");
+MODULE_DEVICE_TABLE (usb, imon_usb_id_table);
 module_param (debug, int, 0);
 MODULE_PARM_DESC (debug, "Debug messages: 0=no, 1=yes (default: no)");
 
@@ -441,6 +443,107 @@ static inline int send_packet (struct imon_context *context)
 }
 
 /**
+ * Sends an associate packet to the iMON 2.4G.
+ *
+ * This might not be such a good idea, since it has an id
+ * collition with some versions of the "IR & VFD" combo.
+ * The only way to determine if it is a RF version is to look
+ * at the product description string. (Which we currently do
+ * not fetch).
+ */
+static inline int send_associate_24g (struct imon_context *context)
+{
+	int retval;
+	const unsigned char packet[8] = { 0x01, 0x00, 0x00, 0x00,
+					  0x00, 0x00, 0x00, 0x20 };
+
+	if (!context) {
+		err ("%s: no context for device", __FUNCTION__);
+		return -ENODEV;
+	}
+
+	LOCK_CONTEXT;
+
+	if (!context ->dev_present) {
+		err ("%s: no iMON device present", __FUNCTION__);
+		retval = -ENODEV;
+		goto exit;
+	}
+
+	memcpy (context ->usb_tx_buf, packet, sizeof(packet));
+	retval = send_packet (context);
+
+exit:
+	UNLOCK_CONTEXT;
+
+	return retval;
+}
+
+#ifdef KERNEL_2_5
+/**
+ * This is the sysfs functions to handle the association og the iMON 2.4G LT.
+ *
+ *
+ */
+
+static ssize_t show_associate_remote (struct device *d, struct device_attribute *attr,
+			       char *buf)
+{
+	struct imon_context *context = dev_get_drvdata (d);
+
+	if (!context)
+		return -ENODEV;
+
+	if (context ->ir_isassociating) {
+		strcpy(buf, "The device it associating press some button on the remote.\n");
+	}
+	else if (context ->ir_isopen) {
+		strcpy(buf, "Device is open and ready to associate.\n"
+		            "Echo something into this file to start the process.\n");
+	}
+	else {
+		strcpy(buf, "Device is closed, you need to open it to associate the remote (you can use irw).\n");
+	}
+	return strlen (buf);
+}
+
+static ssize_t store_associate_remote (struct device *d, struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct imon_context *context;
+	
+	context = dev_get_drvdata (d);
+
+	if (!context)
+		return -ENODEV;
+
+	if (! context ->ir_isopen)
+		return -EINVAL;
+
+	if (context ->ir_isopen) {
+		context ->ir_isassociating = TRUE;
+		send_associate_24g (context);
+	}
+
+	return count;
+}
+
+static DEVICE_ATTR(associate_remote, S_IWUSR | S_IRUGO, show_associate_remote, store_associate_remote);
+
+static struct attribute *imon_sysfs_entries[] = {
+	&dev_attr_associate_remote.attr,
+	NULL
+};
+
+static struct attribute_group imon_attribute_group = {
+	.attrs = imon_sysfs_entries
+};
+
+#endif
+
+
+
+/**
  * Writes data to the VFD.  The IMON VFD is 2x16 characters
  * and requires data in 5 consecutive USB interrupt packets,
  * each packet but the last carrying 7 bytes.
@@ -619,6 +722,7 @@ static void ir_close (void *data)
 
 	usb_kill_urb(context->rx_urb);
 	context ->ir_isopen = FALSE;
+	context ->ir_isassociating = FALSE;
 	MOD_DEC_USE_COUNT;
 	info ("IR port closed");
 
@@ -670,6 +774,33 @@ static inline void submit_data (struct imon_context *context)
 }
 
 /**
+ * Process the incoming packet in associating state
+ */
+static inline void incoming_associate_packet (struct imon_context *context, struct urb *urb)
+{
+	int len = urb ->actual_length;
+	unsigned char *buf = urb ->transfer_buffer;
+
+	if (len != 8) {
+		warn ("%s: invalid incoming packet size (%d)", __FUNCTION__, len);
+		return;
+	}
+
+	if (buf [0] == 0x00 &&
+	    /* REFID */
+	    buf [2] == 0xFF &&
+	    buf [3] == 0xFF &&
+	    buf [4] == 0xFF &&
+	    buf [5] == 0xFF &&
+	    buf [6] == 0x4E &&
+	    buf [7] == 0xDF) {
+		warn ("%s: remote associated refid=%02X", __FUNCTION__, buf [1]);
+		context ->ir_isassociating = FALSE;
+	}
+	return;
+}
+
+/**
  * Process the incoming packet
  */
 static inline void incoming_packet (struct imon_context *context, struct urb *urb)
@@ -690,6 +821,11 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 	
 	if (chunk_num == 0xFF)
 		return;		/* filler frame, no data here */
+
+	if (buf [5] == 0xFF &&
+	    buf [6] == 0x4E &&
+	    buf [7] == 0xAF)
+	        return;		/* filler frame, no data here (iMON 2.4G LT)*/
 
 #ifdef DEBUG	
 	{
@@ -782,7 +918,10 @@ static void usb_rx_callback (struct urb *urb)
 			return;
 
 		case SUCCESS:
-			if (context ->ir_isopen)
+			if (context ->ir_isassociating) {
+				incoming_associate_packet (context, urb);
+			}
+			else if (context ->ir_isopen)
 				incoming_packet (context, urb);
 		       	break;
 
@@ -1054,6 +1193,14 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata (interface, context);
+
+	if (cpu_to_le16(dev ->descriptor.idProduct) == 0xffdc) {
+		int err;
+
+		err = sysfs_create_group(&interface ->dev.kobj, &imon_attribute_group);
+		if (err)
+			err ("%s: Could not create sysfs entries (%d)", __FUNCTION__, err);
+	}
 #else
 	minor_table [subminor] = context;
 	context ->subminor = subminor;
@@ -1119,6 +1266,9 @@ static void imon_disconnect (struct usb_device *dev, void *data)
 	info ("%s: iMON device disconnected", __FUNCTION__);
 
 #ifdef KERNEL_2_5
+	/* sysfs_remove_group is safe to call even if sysfs_create_group hasn't been called */
+	sysfs_remove_group(&interface->dev.kobj,
+			   &imon_attribute_group);
 	usb_set_intfdata (interface, NULL);
 #else
 	minor_table [context ->subminor] = NULL;
