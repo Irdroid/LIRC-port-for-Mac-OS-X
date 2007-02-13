@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.18 2007/02/13 06:45:15 lirc Exp $
+ * $Id: lirc_dev.h,v 1.19 2007/02/13 07:28:38 lirc Exp $
  *
  */
 
@@ -22,7 +22,7 @@
 #endif
 #include <linux/slab.h>
 #include <linux/fs.h>
-#include <linux/device.h>
+
 struct lirc_buffer
 {
         wait_queue_head_t wait_poll;

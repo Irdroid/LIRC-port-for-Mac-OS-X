@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.20 2007/02/13 06:45:16 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.21 2007/02/13 07:28:40 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.20 $"
+#define DRIVER_VERSION	"$Revision: 1.21 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -605,7 +605,9 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->plugin.set_use_inc = &streamzap_use_inc;
 	sz->plugin.set_use_dec = &streamzap_use_dec;
 	sz->plugin.ioctl = streamzap_ioctl;
+#ifdef LIRC_HAVE_SYSFS
 	sz->plugin.dev = &udev->dev;
+#endif
 	sz->plugin.owner = THIS_MODULE;
 
 	sz->idle = 1;

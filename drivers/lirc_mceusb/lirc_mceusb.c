@@ -861,7 +861,9 @@ static void * mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	plugin->sample_rate = 80;   // sample at 100hz (10ms)
 	plugin->add_to_buf  = &mceusb_add_to_buf;
 	//    plugin->fops        = &mceusb_fops;
+#ifdef LIRC_HAVE_SYSFS
 	plugin->dev         = &udev->dev;
+#endif
 	plugin->owner       = THIS_MODULE;
 	if( lirc_register_plugin(plugin) < 0 )
 	{

@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.59 2007/02/13 06:45:14 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.60 2007/02/13 07:28:38 lirc Exp $
  */
 
 /*
@@ -63,7 +63,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.59 $"
+#define DRIVER_VERSION		"$Revision: 1.60 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1040,7 +1040,9 @@ static struct irctl *new_irctl(struct usb_device *dev)
 			plugin->rbuf = rbuf;
 			plugin->set_use_inc = &set_use_inc;
 			plugin->set_use_dec = &set_use_dec;
+#ifdef LIRC_HAVE_SYSFS
 			plugin->dev = &dev->dev;
+#endif
 			plugin->owner = THIS_MODULE;
 			ir->usbdev = dev;
 			ir->p = plugin;
@@ -1256,7 +1258,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.59 2007/02/13 06:45:14 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.60 2007/02/13 07:28:38 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
