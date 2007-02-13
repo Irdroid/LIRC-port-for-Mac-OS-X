@@ -31,6 +31,7 @@ hw_menu_entry: @hw-other-serial
 	irdeo: "IRdeo"
 	irdeo_remote: "IRdeo Remote"
 	irman: "Irman / UIR"
+	accent: "Kanam Accent"
 	nslu2: "Linksys NSLU2 (CTS2+GreenLED)"
 	logitech: "Logitech/AST"
 	pcmak: "PCMAK serial receiver"
@@ -147,6 +148,7 @@ param_type: parallel
 	lpt:
 
 param_type: \
+	accent \
 	caraca \
 	creative \
 	ea65 \
@@ -296,6 +298,7 @@ default_param: \
 	none:
 
 default_param: \
+	accent \
 	caraca \
 	creative \
 	irman \

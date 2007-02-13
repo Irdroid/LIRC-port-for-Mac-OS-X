@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.176 2007/02/12 05:35:22 lirc Exp $
+dnl $Id: configure.in,v 5.177 2007/02/13 04:18:53 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -137,7 +137,8 @@ AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
 possible_drivers="(none) \
-	(userspace)
+	(userspace) \
+	(accent) \
 	(bte) \
 	(bw6130) \
 	(creative) \
@@ -261,23 +262,23 @@ dnl here we see what driver the user wants.
 
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
-                          all, none, userspace, act200l, act220l,
-                          adaptec, alsa_usb, animax, atilibusb,
-                          atiusb, audio, avermedia, avermedia_vdomate,
-                          avermedia98, bestbuy, bestbuy2, breakoutbox,
-                          bte, bw6130, caraca, chronos, cmdir, comX,
-                          cph06x, creative, creative_infracd,
-                          devinput, digimatrix, dsp, dvico, ea65,
-                          exaudio, flyvideo, gvbctv5pci, hauppauge,
-                          hauppauge_dvb, hercules_smarttv_stereo,
-                          igorplugusb, iguanaIR, imon, imon_24g_lt,
-                          imon_knob, imon_pad, imon_rsc, irdeo,
-                          irdeo_remote, irman, irreal, it87, knc_one,
-                          kworld, leadtek_0007, leadtek_0010,
-                          leadtek_pvr2000, livedrive_midi,
-                          livedrive_seq, logitech, lptX, mceusb,
-                          mceusb2, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere,
+                          all, none, userspace, accent, act200l,
+                          act220l, adaptec, alsa_usb, animax,
+                          atilibusb, atiusb, audio, avermedia,
+                          avermedia_vdomate, avermedia98, bestbuy,
+                          bestbuy2, breakoutbox, bte, bw6130, caraca,
+                          chronos, cmdir, comX, cph06x, creative,
+                          creative_infracd, devinput, digimatrix, dsp,
+                          dvico, ea65, exaudio, flyvideo, gvbctv5pci,
+                          hauppauge, hauppauge_dvb,
+                          hercules_smarttv_stereo, igorplugusb,
+                          iguanaIR, imon, imon_24g_lt, imon_knob,
+                          imon_pad, imon_rsc, irdeo, irdeo_remote,
+                          irman, irreal, it87, knc_one, kworld,
+                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, mceusb, mceusb2, mediafocusI,
+                          mouseremote, mouseremote_ps2, mp3anywhere,
                           nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
                           pixelview_pak, pixelview_pro, provideo,
@@ -319,6 +320,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 			  -e's/-$//g'`
   for any_driver in ${any_possible_drivers}; do
   case ${any_driver} in
+	accent)
+		hw_module="${hw_module} hw_accent.o serial.o"
+		;;
 	alsa_usb)
 		hw_module="${hw_module} hw_alsa_usb.o"
 		alsa_lib=-lasound
@@ -481,6 +485,13 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
   
   hw_module=$(newline_to_space $(space_to_newline ${hw_module}| sort -u))
 
+fi
+
+if test "$driver" = "accent"; then
+  lirc_driver="none"
+  hw_module="hw_accent.o serial.o"
+  HW_DEFAULT="hw_accent"
+  lircd_conf="kanam_accent/lircd.conf.IR-100"
 fi
 
 if test "$driver" = "act200l"; then

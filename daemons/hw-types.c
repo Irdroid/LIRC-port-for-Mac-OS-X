@@ -6,6 +6,7 @@
 #include "hardware.h"
 #include "hw-types.h"
 /* Hardware types */
+extern struct hardware hw_accent;
 extern struct hardware hw_alsa_usb;
 extern struct hardware hw_atilibusb;
 extern struct hardware hw_audio;
@@ -66,6 +67,7 @@ struct hardware hw_null=
 struct hardware *hw_list[] =
 {
 #ifdef LIRC_DRIVER_ANY
+	&hw_accent,
 #ifdef HAVE_ALSA_SB_RC
 	&hw_alsa_usb,
 #endif
