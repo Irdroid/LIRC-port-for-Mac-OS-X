@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.48 2006/07/06 06:42:44 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.49 2007/02/13 06:45:15 lirc Exp $
  *
  */
 
@@ -377,6 +377,7 @@ static struct lirc_plugin plugin = {
 	.get_queue	= get_queue,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
+	.dev		= NULL,
 	.owner          = THIS_MODULE,
 };
 

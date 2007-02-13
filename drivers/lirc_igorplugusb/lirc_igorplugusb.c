@@ -505,6 +505,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			plugin->set_use_dec = &set_use_dec;
 			plugin->sample_rate = SAMPLE_RATE;    /* per second */
 			plugin->add_to_buf = &usb_remote_poll;
+			plugin->dev = &dev->dev;
 			plugin->owner = THIS_MODULE;
 
 			init_MUTEX(&ir->lock);

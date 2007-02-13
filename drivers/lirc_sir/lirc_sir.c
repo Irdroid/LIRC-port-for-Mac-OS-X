@@ -537,6 +537,7 @@ static struct lirc_plugin plugin = {
        set_use_inc:    set_use_inc,
        set_use_dec:    set_use_dec,
        fops:           &lirc_fops,
+       dev:            NULL,
        owner:          THIS_MODULE,
 };
 

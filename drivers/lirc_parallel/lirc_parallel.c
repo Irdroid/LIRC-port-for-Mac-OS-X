@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.35 2007/01/25 04:32:05 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.36 2007/02/13 06:45:16 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -648,6 +648,7 @@ static struct lirc_plugin plugin = {
        set_use_inc:    set_use_inc,
        set_use_dec:    set_use_dec,
        fops:           &lirc_fops,
+       dev:            NULL,
        owner:          THIS_MODULE,
 };
 

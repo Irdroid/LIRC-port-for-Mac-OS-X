@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.16 2006/12/29 10:00:07 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.17 2007/02/13 06:45:16 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -894,6 +894,7 @@ static void * sasem_probe (struct usb_device * dev, unsigned int intf,
 		plugin ->rbuf = rbuf;
 		plugin ->set_use_inc = ir_open;
 		plugin ->set_use_dec = ir_close;
+		plugin->dev   = &dev->dev;
 		plugin->owner = THIS_MODULE;
 
 		LOCK_CONTEXT;

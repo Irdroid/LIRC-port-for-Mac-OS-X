@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.17 2006/09/22 03:18:22 lirc Exp $
+ * $Id: lirc_dev.h,v 1.18 2007/02/13 06:45:15 lirc Exp $
  *
  */
 
@@ -22,6 +22,7 @@
 #endif
 #include <linux/slab.h>
 #include <linux/fs.h>
+#include <linux/device.h>
 struct lirc_buffer
 {
         wait_queue_head_t wait_poll;
@@ -168,6 +169,7 @@ struct lirc_plugin
 	int (*ioctl) (struct inode *,struct file *,unsigned int,
 		      unsigned long);
 	struct file_operations *fops;
+	struct device *dev;
 	struct module *owner;
 };
 /* name:

@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.38 2006/06/26 23:21:34 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.39 2007/02/13 06:45:15 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -348,6 +348,7 @@ static struct lirc_plugin lirc_template = {
 	name:        "lirc_i2c",
 	set_use_inc: set_use_inc,
 	set_use_dec: set_use_dec,
+	dev:         NULL,
 	owner:       THIS_MODULE
 };
 

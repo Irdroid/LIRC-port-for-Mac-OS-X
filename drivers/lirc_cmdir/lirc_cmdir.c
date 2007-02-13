@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.5 2006/10/20 05:03:38 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.6 2007/02/13 06:45:15 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -572,6 +572,7 @@ static struct lirc_plugin plugin = {
 	set_use_dec:	set_use_dec,
 	ioctl:		lirc_ioctl,
 	fops:		&lirc_fops,
+	dev:		NULL,
 	owner:		THIS_MODULE,
 };
 

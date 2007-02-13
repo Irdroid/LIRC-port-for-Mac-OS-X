@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.15 2007/02/12 05:35:22 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.16 2007/02/13 06:45:15 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -1148,6 +1148,7 @@ static void * imon_probe (struct usb_device * dev, unsigned int intf,
 		plugin ->rbuf = rbuf;
 		plugin ->set_use_inc = ir_open;
 		plugin ->set_use_dec = ir_close;
+		plugin->dev = &dev->dev;
 		plugin->owner = THIS_MODULE;
 
 		LOCK_CONTEXT;

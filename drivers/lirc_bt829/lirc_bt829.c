@@ -70,7 +70,7 @@ static unsigned char *pci_addr_lin;
 
 static struct lirc_plugin atir_plugin;
 
-static int do_pci_probe(void)
+static struct pci_dev *do_pci_probe(void)
 {
 	struct pci_dev *my_dev;
 #ifndef KERNEL_2_5
@@ -90,13 +90,13 @@ static int do_pci_probe(void)
 		}
 		if ( pci_addr_phys == 0 ) {
 			printk(KERN_ERR "ATIR no memory resource ?\n");
-			return 0;
+			return NULL;
 		}
 	} else {
 		printk(KERN_ERR "ATIR: pci_prob failed\n");
-		return 0;
+		return NULL;
 	}
-	return 1;
+	return my_dev;
 }
 
 static int atir_add_to_buf (void* data, struct lirc_buffer* buf)
@@ -129,7 +129,10 @@ static void atir_set_use_dec(void* data)
 
 int init_module(void)
 {
-	if ( !do_pci_probe() ) {
+	struct pci_dev *pdev;
+
+	pdev = do_pci_probe();
+	if ( pdev == NULL ) {
 		return 1;
 	}
 
@@ -145,6 +148,7 @@ int init_module(void)
 	atir_plugin.add_to_buf  = atir_add_to_buf;
 	atir_plugin.set_use_inc = atir_set_use_inc;
 	atir_plugin.set_use_dec = atir_set_use_dec;
+	atir_plugin.dev         = &pdev->dev;
 	atir_plugin.owner       = THIS_MODULE;
 
 	atir_minor = lirc_register_plugin(&atir_plugin);
