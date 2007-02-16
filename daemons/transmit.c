@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.22 2007/01/16 05:48:47 lirc Exp $      */
+/*      $Id: transmit.c,v 5.23 2007/02/16 05:56:42 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -227,7 +227,7 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 	}
 
 	data=reverse(data,bits);
-	mask=1<<(all_bits-1-done);
+	mask=((ir_code) 1)<<(all_bits-1-done);
 	for(i=0;i<bits;i++,mask>>=1)
 	{
 		if(data&1)

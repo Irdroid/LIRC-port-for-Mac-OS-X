@@ -1,4 +1,5 @@
 0.8.2-CVS: future
+  * fixed show-stopper bug in RC-6 transmit code
   * added support for Kanam Accent (Niccolo Rigacci)
   * added support for SoundGraph iMON 2.4G LT (Morten Bogeskov)
 
