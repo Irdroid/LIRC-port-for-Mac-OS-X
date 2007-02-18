@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.23 2007/02/16 05:56:42 lirc Exp $      */
+/*      $Id: transmit.c,v 5.24 2007/02/18 05:00:16 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -230,6 +230,12 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 	mask=((ir_code) 1)<<(all_bits-1-done);
 	for(i=0;i<bits;i++,mask>>=1)
 	{
+		if(has_toggle_mask(remote) &&
+		   mask&remote->toggle_mask &&
+		   remote->toggle_mask_state%2)
+		{
+			data ^= 1;
+		}
 		if(data&1)
 		{
 			if(is_biphase(remote))
@@ -391,27 +397,14 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 			{
 				next_code = code->transmit_state->code;
 			}
+			send_code(remote, next_code, repeat);
 			if(has_toggle_mask(remote))
 			{
-				if(remote->toggle_mask_state%2)
-				{
-					send_code(remote, next_code^
-						  remote->toggle_mask,
-						  repeat);
-				}
-				else
-				{
-					send_code(remote, next_code, repeat);
-				}
 				remote->toggle_mask_state++;
 				if(remote->toggle_mask_state==4)
 				{
 					remote->toggle_mask_state=2;
 				}
-			}
-			else
-			{
-				send_code(remote, next_code, repeat);
 			}
 			send_buffer.data=send_buffer._data;
 		}
