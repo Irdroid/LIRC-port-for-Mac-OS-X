@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.33 2006/01/28 18:36:44 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.34 2007/02/18 08:19:13 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -179,8 +179,8 @@ static inline int expect(struct ir_remote *remote,lirc_t delta,lirc_t exdelta)
 {
 	int aeps = hw.resolution>remote->aeps ? hw.resolution:remote->aeps;
 	
-	if(abs(exdelta-delta)<exdelta*remote->eps/100 ||
-	   abs(exdelta-delta)<aeps)
+	if(abs(exdelta-delta)<=exdelta*remote->eps/100 ||
+	   abs(exdelta-delta)<=aeps)
 		return 1;
 	return 0;
 }
