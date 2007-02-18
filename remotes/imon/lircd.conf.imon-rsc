@@ -86,6 +86,7 @@ begin remote
   one           625  1625
   zero          625   375
   ptrail        625
+  gap          100000
 
       begin codes
           STICK_N            0x0
