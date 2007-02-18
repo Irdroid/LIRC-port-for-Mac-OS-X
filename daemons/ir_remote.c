@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.27 2007/01/16 05:48:47 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.28 2007/02/18 04:24:45 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -381,7 +381,7 @@ char *decode_all(struct ir_remote *remotes)
 	int repeat_flag,repeat_state;
 	lirc_t remaining_gap;
 	struct ir_remote *scan;
-	struct ir_ncode *scan_code;
+	struct ir_ncode *scan_ncode;
 	
 	/* use remotes carefully, it may be changed on SIGHUP */
 	decoding=remote=remotes;
@@ -407,9 +407,9 @@ char *decode_all(struct ir_remote *remotes)
 
 			for(scan = decoding; scan != NULL; scan = scan->next)
 			{
-				for(scan_code = scan->codes; scan_code != NULL; scan_code = scan_code->next)
+				for( scan_ncode = scan->codes; scan_ncode->name != NULL; scan_ncode++)
 				{
-					scan_code->current = NULL;
+					scan_ncode->current = NULL;
 				}
 			}
 						
