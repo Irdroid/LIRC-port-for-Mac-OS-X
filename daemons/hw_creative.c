@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.7 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.8 2007/02/19 03:15:26 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -213,18 +213,21 @@ char *creative_rec(struct ir_remote *remotes)
 
 	/* pre=0x8435; */
 	pre=reverse((((ir_code) b[4])<<8) | ((ir_code) b[5]),16);
-	for(i=0;mapping[i]!=0x00;i++)
+	if(pre == 0x8435)
 	{
-		if(mapping[i]==b[3])
+		for(i=0;mapping[i]!=0x00;i++)
 		{
-			code=(ir_code) (i<<8)|((~i)&0xff);
-			break;
+			if(mapping[i]==b[3])
+			{
+				code=(ir_code) (i<<8)|((~i)&0xff);
+				break;
+			}
 		}
 	}
-	if(mapping[i]==0x00)
+	if(pre != 0x8435 || mapping[i] == 0x00)
 	{
-		logprintf(LOG_ERR,"unknown code");
-		return(NULL);
+		LOGPRINTF(1,"unmatched code");
+		code = reverse((((ir_code) b[2]) << 8)|((ir_code) b[3]), 16);
 	}
 	
 	m=decode_all(remotes);
