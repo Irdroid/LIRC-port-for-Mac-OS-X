@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.22 2007/02/20 01:53:43 lirc Exp $      */
+/*      $Id: config_file.c,v 5.23 2007/02/20 04:27:31 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -537,6 +537,63 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	return(0);
 }
     
+static int sanityChecks(struct ir_remote *rem)
+{
+	struct ir_ncode *codes;
+	struct ir_code_node *node;
+	
+	if (!rem->name)
+	{
+		logprintf(LOG_ERR,"you must specify a remote name");
+		return 0;
+	}
+	if(rem->gap == 0)
+	{
+		logprintf(LOG_WARNING, "you should specify a valid gap value");
+	}
+	if(has_repeat_gap(rem) && is_const(rem))
+	{
+		logprintf(LOG_WARNING, "repeat_gap will be ignored if "
+			  "CONST_LENGTH flag is set");
+	}
+
+	if(is_raw(rem)) return 1;
+
+	if((rem->pre_data&gen_mask(rem->pre_data_bits)) != rem->pre_data)
+	{
+		logprintf(LOG_WARNING, "invalid pre_data found for %s",
+			  rem->name);
+		rem->pre_data &= gen_mask(rem->pre_data_bits);
+	}
+	if((rem->post_data&gen_mask(rem->post_data_bits)) != rem->post_data)
+	{
+		logprintf(LOG_WARNING, "invalid post_data found for %s",
+			  rem->name);
+		rem->post_data &= gen_mask(rem->post_data_bits);
+	}
+	for(codes = rem->codes; codes->name != NULL; codes++)
+	{
+		if((codes->code&gen_mask(rem->bits)) != codes->code)
+		{
+			logprintf(LOG_WARNING, "invalid code found for %s: %s",
+				  rem->name, codes->name);
+			codes->code &= gen_mask(rem->bits);
+		}
+		for(node = codes->next; node != NULL; node = node->next)
+		{
+			if((node->code&gen_mask(rem->bits)) != node->code)
+			{
+				logprintf(LOG_WARNING, "invalid code found "
+					 "for %s: %s",
+					  rem->name, codes->name);
+				node->code &= gen_mask(rem->bits);
+			}
+		}
+	}
+	
+	return 1;
+}
+
 struct ir_remote * read_config(FILE *f)
 {
 	char buf[LINE_LEN+1], *key, *val, *val2;
@@ -690,14 +747,9 @@ struct ir_remote * read_config(FILE *f)
 					/* print_remote(rem); */
                                         if (!checkMode(mode,ID_remote,
                                                   "end remote")) break;
-                                        if (!rem->name){
-                                                logprintf(LOG_ERR,"you must specify a remote name");
+					if(!sanityChecks(rem)) {
                                                 parse_error=1;
                                                 break;
-                                        }
-					if(rem->gap == 0)
-					{
-						logprintf(LOG_WARNING,"you should specify a valid gap value");
 					}
 
 #                                       ifdef DYNCODES
@@ -713,11 +765,6 @@ struct ir_remote * read_config(FILE *f)
                                         rem->next=NULL;
 					rem->last_code=NULL;
                                         mode=ID_none;     /* switch back */
-					if(has_repeat_gap(rem) && 
-					   is_const(rem))
-					{
-						logprintf(LOG_WARNING,"repeat_gap will be ignored if CONST_LENGTH flag is set");
-					}
 				}else if(mode==ID_codes){
 					code=defineCode(key, val, &name_code);
 					while(!parse_error && val2!=NULL)
