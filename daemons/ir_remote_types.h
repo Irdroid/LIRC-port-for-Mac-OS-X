@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.7 2007/01/16 05:48:47 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.8 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -137,7 +137,9 @@ struct ir_remote
 	lirc_t gap;                 /* time between signals in usecs */
 	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
-	int toggle_bit;             /* 1..bits */
+	int toggle_bit;             /* obsolete */
+	ir_code toggle_bit_mask;    /* previously only one bit called
+				       toggle_bit */
 	int min_repeat;             /* code is repeated at least x times
 				       code sent once -> min_repeat=0 */
 	unsigned int min_code_repeat;/*meaningful only if remote sends
@@ -161,7 +163,7 @@ struct ir_remote
 	
 	/* end of user editable values */
 	
-        int repeat_state;
+        int toggle_bit_mask_state;
 	int toggle_mask_state;
 	int repeat_countdown;
 	struct ir_ncode *last_code; /* code received or sent last */

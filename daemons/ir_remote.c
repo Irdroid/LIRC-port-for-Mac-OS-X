@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.28 2007/02/18 04:24:45 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.29 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -106,53 +106,20 @@ struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name)
 
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
-			  int *repeat_statep)
+			  ir_code *toggle_bit_mask_statep)
 {
-	ir_code pre_mask,code_mask,post_mask;
-	int repeat_state, found_code, have_code;
+	ir_code pre_mask,code_mask,post_mask,toggle_bit_mask_state,all;
+	int found_code, have_code;
 	struct ir_ncode *codes,*found;
 	
 	pre_mask=code_mask=post_mask=0;
-	repeat_state=0;
-	if(remote->toggle_bit>0)
+
+	if(has_toggle_bit_mask(remote))
 	{
-		if(remote->toggle_bit<=remote->pre_data_bits)
-		{
-			repeat_state=
-			pre&(((ir_code) 1)<<(remote->pre_data_bits
-					     -remote->toggle_bit)) ? 1:0;
-			pre_mask=((ir_code) 1)<<(remote->pre_data_bits
-						 -remote->toggle_bit);
-		}
-		else if(remote->toggle_bit<=remote->pre_data_bits
-			+remote->bits)
-		{
-			repeat_state=
-			code&(((ir_code) 1)<<(remote->pre_data_bits
-					      +remote->bits
-					      -remote->toggle_bit)) ? 1:0;
-			code_mask=((ir_code) 1)<<(remote->pre_data_bits
-						  +remote->bits
-						  -remote->toggle_bit);
-		}
-		else if(remote->toggle_bit<=remote->pre_data_bits
-			+remote->bits
-			+remote->post_data_bits)
-		{
-			repeat_state=
-			post&(((ir_code) 1)<<(remote->pre_data_bits
-					      +remote->bits
-					      +remote->post_data_bits
-					      -remote->toggle_bit)) ? 1:0;
-			post_mask=((ir_code) 1)<<(remote->pre_data_bits
-						  +remote->bits
-						  +remote->post_data_bits
-						  -remote->toggle_bit);
-		}
-		else
-		{
-			logprintf(LOG_ERR,"bad toggle_bit");
-		}
+		pre_mask = remote->toggle_bit_mask >>
+			   (remote->bits + remote->post_data_bits);
+		post_mask = remote->toggle_bit_mask &
+		            gen_mask(remote->post_data_bits);
 	}
 	if(has_toggle_mask(remote) && remote->toggle_mask_state%2)
 	{
@@ -209,6 +176,15 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		}
 		LOGPRINTF(1,"post");
 	}
+
+	all = pre;
+	all <<= remote->bits;
+	all |= code;
+	all <<= remote->post_data_bits;
+	all |= post;
+	
+	toggle_bit_mask_state = all&remote->toggle_bit_mask;
+
 	found=NULL;
 	found_code=0;
 	have_code=0;
@@ -217,7 +193,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	{
 		while(codes->name!=NULL)
 		{
-			ir_code next_code;
+			ir_code next_code, next_all;
 			
 			if(codes->next!=NULL && codes->current!=NULL)
 			{
@@ -227,7 +203,13 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			{
 				next_code=codes->code;
 			}
-			if((next_code|code_mask)==(code|code_mask))
+			next_all = remote->pre_data;
+			next_all <<= remote->bits;
+			next_all |= next_code;
+			next_all <<= remote->post_data_bits;
+			next_all |= remote->post_data;
+			if(next_all==all ||
+			   next_all==(all^remote->toggle_bit_mask))
 			{
 				found_code=1;
 				if(codes->next!=NULL)
@@ -261,13 +243,12 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 #       ifdef DYNCODES
 	if(!found_code)
 	{
-		if((remote->dyncodes[remote->dyncode].code|code_mask)!=
-		   (code|code_mask))
+		if(remote->dyncodes[remote->dyncode].code!=code)
 		{
 			remote->dyncode++;
 			remote->dyncode%=2;
 		}
-		remote->dyncodes[remote->dyncode].code=code&(~code_mask);
+		remote->dyncodes[remote->dyncode].code=code;
 		found=&(remote->dyncodes[remote->dyncode]);
 		found_code=1;
 	}
@@ -289,12 +270,12 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			remote->toggle_code=NULL;
 		}
 	}
-	*repeat_statep=repeat_state;
+	*toggle_bit_mask_statep=toggle_bit_mask_state;
 	return(found);
 }
 
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
-			    int repeat_state,int repeat_flag,
+			    ir_code toggle_bit_mask_state,int repeat_flag,
 			    lirc_t remaining_gap)
 {
 	unsigned long long code;
@@ -307,7 +288,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	   (found==remote->last_code || (found->next!=NULL && found->current!=NULL)) &&
 	   repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
-	   (!(remote->toggle_bit>0) || repeat_state==remote->repeat_state))
+	   (!has_toggle_bit_mask(remote) || toggle_bit_mask_state==remote->toggle_bit_mask_state))
 	{
 		if(has_toggle_mask(remote))
 		{
@@ -338,9 +319,9 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			remote->toggle_mask_state=1;
 			remote->toggle_code=found;
 		}
-		if(remote->toggle_bit>0)
+		if(has_toggle_bit_mask(remote))
 		{
-			remote->repeat_state=repeat_state;
+			remote->toggle_bit_mask_state=toggle_bit_mask_state;
 		}
 	}
 	last_remote=remote;
@@ -378,7 +359,8 @@ char *decode_all(struct ir_remote *remotes)
 	static char message[PACKET_SIZE+1];
 	ir_code pre,code,post;
 	struct ir_ncode *ncode;
-	int repeat_flag,repeat_state;
+	int repeat_flag;
+	ir_code toggle_bit_mask_state;
 	lirc_t remaining_gap;
 	struct ir_remote *scan;
 	struct ir_ncode *scan_ncode;
@@ -391,12 +373,12 @@ char *decode_all(struct ir_remote *remotes)
 		
 		if(hw.decode_func(remote,&pre,&code,&post,&repeat_flag,
 				   &remaining_gap) &&
-		   (ncode=get_code(remote,pre,code,post,&repeat_state)))
+		   (ncode=get_code(remote,pre,code,post,&toggle_bit_mask_state)))
 		{
 			int len;
 
-			code=set_code(remote,ncode,repeat_state,repeat_flag,
-				      remaining_gap);
+			code=set_code(remote,ncode,toggle_bit_mask_state,
+				      repeat_flag,remaining_gap);
 			if((has_toggle_mask(remote) &&
 			    remote->toggle_mask_state%2) ||
 			   ncode->current!=NULL)

@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.23 2007/02/20 04:27:31 lirc Exp $      */
+/*      $Id: config_file.c,v 5.24 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -401,9 +401,14 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		rem->repeat_gap=s_strtoul(val);
 		return(1);
 	}
+       	/* obsolete: use toggle_bit_mask instead */
 	else if (strcasecmp("toggle_bit",key)==0){
-		rem->toggle_bit=s_strtoi(val);
-		return(1);
+		rem->toggle_bit = s_strtoi(val);
+		return 1;
+	}
+	else if (strcasecmp("toggle_bit_mask",key)==0){
+		rem->toggle_bit_mask = s_strtocode(val);
+		return 1;
 	}
 	else if (strcasecmp("toggle_mask",key)==0){
 		rem->toggle_mask=s_strtocode(val);
@@ -943,6 +948,36 @@ struct ir_remote * read_config(FILE *f)
 				rem->post_data_bits;
 			
 			rem->rc6_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
+		}
+		if(rem->toggle_bit > 0)
+		{
+			int all_bits=rem->pre_data_bits+
+				rem->bits+
+				rem->post_data_bits;
+			
+			if(has_toggle_bit_mask(rem))
+			{
+				logprintf(LOG_WARNING,
+					  "%s uses both toggle_bit and "
+					  "toggle_bit_mask", rem->name);
+			}
+			else
+			{
+				rem->toggle_bit_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
+			}
+			rem->toggle_bit = 0;
+		}
+		if(has_toggle_bit_mask(rem))
+		{
+			if(!is_raw(rem) && rem->codes)
+			{
+				rem->toggle_bit_mask_state = (rem->codes->code & rem->toggle_bit_mask);
+				if(rem->toggle_bit_mask_state)
+				{
+					/* start with state set to 0 for backwards compatibility */
+					rem->toggle_bit_mask_state ^= rem->toggle_bit_mask;
+				}
+			}
 		}
 		if(is_serial(rem))
 		{

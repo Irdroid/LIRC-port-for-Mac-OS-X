@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.24 2007/02/18 05:00:16 lirc Exp $      */
+/*      $Id: transmit.c,v 5.25 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -216,20 +216,20 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 		}
 		return;
 	}
-	if(remote->toggle_bit>0)
-	{
-		if(remote->toggle_bit>done &&
-		   remote->toggle_bit<=done+bits)
-		{
-			set_bit(&data,done+bits-remote->toggle_bit,
-				remote->repeat_state);
-		}
-	}
 
 	data=reverse(data,bits);
 	mask=((ir_code) 1)<<(all_bits-1-done);
 	for(i=0;i<bits;i++,mask>>=1)
 	{
+		if(has_toggle_bit_mask(remote) && mask&remote->toggle_bit_mask)
+		{
+			data &= ~((ir_code) 1);
+			if(remote->toggle_bit_mask_state&mask)
+			{
+				data |= (ir_code) 1;
+			}
+			
+		}
 		if(has_toggle_mask(remote) &&
 		   mask&remote->toggle_mask &&
 		   remote->toggle_mask_state%2)

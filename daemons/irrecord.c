@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.59 2007/01/16 05:09:09 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.60 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -56,8 +56,8 @@ void flushhw(void);
 int resethw(void);
 int waitfordata(unsigned long maxusec);
 int availabledata(void);
-int get_toggle_bit(struct ir_remote *remote);
-void set_toggle_bit(struct ir_remote *remote,ir_code xor);
+int get_toggle_bit_mask(struct ir_remote *remote);
+void set_toggle_bit_mask(struct ir_remote *remote,ir_code xor);
 void get_pre_data(struct ir_remote *remote);
 void get_post_data(struct ir_remote *remote);
 #ifdef DEBUG
@@ -341,6 +341,7 @@ int main(int argc,char **argv)
 		remote.last_code=NULL;
 		remote.next=NULL;
 		remote.toggle_bit=0;
+		remote.toggle_bit_mask=0;
 		if(remote.pre_p==0 && remote.pre_s==0 &&
 		   remote.post_p==0 && remote.post_s==0)
 		{
@@ -513,7 +514,7 @@ int main(int argc,char **argv)
 		{
 			hw.rec_func(NULL);
 		}
-		if(!get_toggle_bit(&remote))
+		if(!get_toggle_bit_mask(&remote))
 		{
 			printf("But I know for sure that RC6 has a toggle bit!\n");
 			fclose(fout);
@@ -765,14 +766,13 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	}
 	
-	if(remotes->toggle_bit==0)
+	if(!has_toggle_bit_mask(remotes))
 	{
-		get_toggle_bit(remotes);
+		get_toggle_bit_mask(remotes);
 	}
 	else
 	{
-		set_toggle_bit(remotes,
-			       1<<(remotes->bits-remotes->toggle_bit));
+		set_toggle_bit_mask(remotes, remotes->toggle_bit_mask);
 	}
 	if(hw.deinit_func) hw.deinit_func();
 	get_pre_data(remotes);
@@ -908,7 +908,7 @@ int availabledata(void)
 	return(0);
 }
 
-int get_toggle_bit(struct ir_remote *remote)
+int get_toggle_bit_mask(struct ir_remote *remote)
 {
 	ir_code pre,code,post;
 	int repeat_flag;
@@ -919,7 +919,7 @@ int get_toggle_bit(struct ir_remote *remote)
 	int seq,repeats;
 	int found;
 	
-	printf("Checking for toggle bit.\n");
+	printf("Checking for toggle bit mask.\n");
 	printf(
 "Please press an arbitrary button repeatedly as fast as possible (don't hold\n"
 "it down!).\n");
@@ -977,12 +977,9 @@ int get_toggle_bit(struct ir_remote *remote)
 			else if(!repeat_flag)
 			{
 				seq++;
-				if(!found && (is_rc6(remote) || first^code))
+				if(!found && first^code)
 				{
-					if(!is_rc6(remote))
-					{
-						set_toggle_bit(remote,first^code);
-					}
+					set_toggle_bit_mask(remote,first^code);
 					found=1;
 				}
 				printf(".");fflush(stdout);
@@ -1000,7 +997,7 @@ int get_toggle_bit(struct ir_remote *remote)
 	}
 	if(!found)
 	{
-		printf("\nNo toggle bit found.\n");
+		printf("\nNo toggle bit mask found.\n");
 	}
 	else
 	{
@@ -1024,10 +1021,9 @@ int get_toggle_bit(struct ir_remote *remote)
 	return(found);
 }
 
-void set_toggle_bit(struct ir_remote *remote,ir_code xor)
+void set_toggle_bit_mask(struct ir_remote *remote,ir_code xor)
 {
 	ir_code mask;
-	int toggle_bit;
 	struct ir_ncode *codes;
 	int bits;
 
@@ -1035,31 +1031,30 @@ void set_toggle_bit(struct ir_remote *remote,ir_code xor)
 
 	bits=remote->bits+remote->pre_data_bits+remote->post_data_bits;
 	mask=((ir_code) 1)<<(bits-1);
-	toggle_bit=1;
 	while(mask)
 	{
 		if(mask==xor) break;
 		mask=mask>>1;
-		toggle_bit++;
 	}
 	if(mask)
 	{
-		remote->toggle_bit=toggle_bit;
+		remote->toggle_bit_mask = xor;
 		
 		codes=remote->codes;
 		while(codes->name!=NULL)
 		{
-			codes->code&=~mask;
+			codes->code&=~xor;
 			codes++;
 		}
 	}
+	/* Sharp, Denon and some others use a toggle_mask */
+	else if(bits==15 && xor==0x3ff)
+	{
+		remote->toggle_mask=xor;
+	}
 	else
 	{
-		/* Sharp, Denon and some others use a toggle_mask */
-		if(bits==15 && xor==0x3ff)
-		{
-			remote->toggle_mask=xor;
-		}
+		remote->toggle_bit_mask = xor;
 	}
 }
 

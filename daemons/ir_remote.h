@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.34 2007/02/18 08:19:13 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.35 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -167,6 +167,12 @@ static inline int has_foot(struct ir_remote *remote)
 	else return(0);
 }
 
+static inline int has_toggle_bit_mask(struct ir_remote *remote)
+{
+	if(remote->toggle_bit_mask>0) return(1);
+	else return(0);
+}
+
 static inline int has_toggle_mask(struct ir_remote *remote)
 {
 	if(remote->toggle_mask>0) return(1);
@@ -271,9 +277,9 @@ struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
-			  int *toggle_bit);
+			  ir_code *toggle_bit_mask_state);
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
-			    int repeat_state,int repeat_flag,
+			    ir_code toggle_bit_mask_state,int repeat_flag,
 			    lirc_t remaining_gap);
 char *decode_all(struct ir_remote *remotes);
 

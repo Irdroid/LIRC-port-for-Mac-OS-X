@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.67 2007/01/30 02:04:04 lirc Exp $      */
+/*      $Id: lircd.c,v 5.68 2007/02/20 07:11:10 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1329,9 +1329,11 @@ int send_core(int fd,char *message,char *arguments,int once)
 	{
 		remote->toggle_mask_state=0;
 	}
-	if(remote->toggle_bit>0)
-		remote->repeat_state=
-		!remote->repeat_state;
+	if(has_toggle_bit_mask(remote))
+	{
+		remote->toggle_bit_mask_state =
+			(remote->toggle_bit_mask_state^remote->toggle_bit_mask);
+	}
 	code->transmit_state = NULL;
 	if(!hw.send_func(remote,code))
 	{
@@ -1545,7 +1547,7 @@ void free_old_remotes()
 					if(code!=NULL)
 					{
 						found->reps=last_remote->reps;
-						found->repeat_state=last_remote->repeat_state;
+						found->toggle_bit_mask_state=last_remote->toggle_bit_mask_state;
 						found->remaining_gap=last_remote->remaining_gap;
 						last_remote=found;
 						last_remote->last_code=code;
@@ -1588,7 +1590,7 @@ void free_old_remotes()
 
 					found->last_code=code;
 					found->last_send=repeat_remote->last_send;
-					found->repeat_state=repeat_remote->repeat_state;
+					found->toggle_bit_mask_state=repeat_remote->toggle_bit_mask_state;
 					found->remaining_gap=repeat_remote->remaining_gap;
 
 					setitimer(ITIMER_REAL,&repeat_timer,&repeat_timer);
