@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.21 2006/01/22 12:58:50 lirc Exp $      */
+/*      $Id: config_file.c,v 5.22 2007/02/20 01:53:43 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -695,6 +695,10 @@ struct ir_remote * read_config(FILE *f)
                                                 parse_error=1;
                                                 break;
                                         }
+					if(rem->gap == 0)
+					{
+						logprintf(LOG_WARNING,"you should specify a valid gap value");
+					}
 
 #                                       ifdef DYNCODES
 					if(rem->dyncodes_name==NULL)
