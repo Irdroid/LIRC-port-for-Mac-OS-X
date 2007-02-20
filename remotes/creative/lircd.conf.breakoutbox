@@ -7,7 +7,7 @@
 
 begin remote
 
-  name		Creative BreakOut-Box IR
+  name		Creative_BreakOut-Box_IR
   bits		8
   eps		30
   aeps		100

@@ -8,7 +8,7 @@
 
 begin remote
 
-  name		Asus TV-Box IR
+  name		Asus_TV-Box_IR
 
   bits		8
   eps		30
