@@ -34,6 +34,11 @@
 
 #include <linux/input.h>
 
+#ifndef EV_SYN
+/* previous name */
+#define EV_SYN EV_RST
+#fi
+
 #include "hardware.h"
 #include "ir_remote.h"
 #include "lircd.h"
