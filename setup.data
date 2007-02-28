@@ -109,6 +109,7 @@ hw_menu_entry: @hw-pda
 	sa1100: "Sharp Zaurus"
 
 hw_menu_entry: @hw-usb
+	asusdh: "Asus DH USB Remote"
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
 	cmdir: "COMMANDIR USB Transceiver"
@@ -175,6 +176,7 @@ param_type: \
 param_type: \
 	adaptec \
 	alsa_usb \
+	asusdh \
 	atilibusb \
 	atiusb \
 	audio \
@@ -238,6 +240,7 @@ param_type: \
 default_param: \
 	adaptec \
 	alsa_usb \
+	asusdh \
 	atilibusb \
 	atiusb \
 	audio \

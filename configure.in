@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.177 2007/02/13 04:18:53 lirc Exp $
+dnl $Id: configure.in,v 5.178 2007/02/28 20:44:52 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -139,6 +139,7 @@ AC_MSG_RESULT()
 possible_drivers="(none) \
 	(userspace) \
 	(accent) \
+	(asusdh) \
 	(bte) \
 	(bw6130) \
 	(creative) \
@@ -263,7 +264,7 @@ dnl here we see what driver the user wants.
 AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           all, none, userspace, accent, act200l,
-                          act220l, adaptec, alsa_usb, animax,
+                          act220l, adaptec, alsa_usb, animax, asusdh,
                           atilibusb, atiusb, audio, avermedia,
                           avermedia_vdomate, avermedia98, bestbuy,
                           bestbuy2, breakoutbox, bte, bw6130, caraca,
@@ -326,6 +327,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	alsa_usb)
 		hw_module="${hw_module} hw_alsa_usb.o"
 		alsa_lib=-lasound
+		;;
+	asusdh)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	atilibusb)
 		hw_module="${hw_module} hw_atilibusb.o receive.o"
@@ -523,6 +527,13 @@ if test "$driver" = "animax"; then
   lircd_conf="animax/lircd.conf.animax"
   lircmd_conf="animax/lircmd.conf.animax"
   AC_DEFINE(LIRC_SERIAL_ANIMAX)
+fi
+
+if test "$driver" = "asusdh"; then
+  lirc_driver="none"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_asusdh"
+  lircd_conf="asus/lircd.conf.asusdh"
 fi
 
 if test "$driver" = "atiusb"; then

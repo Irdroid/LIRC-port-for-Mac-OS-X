@@ -7,6 +7,7 @@
  * Copyright (C) 2002 Oliver Endriss <o.endriss@gmx.de>
  * Copyright (C) 2004 Chris Pascoe <c.pascoe@itee.uq.edu.au>
  * Copyright (C) 2005 William Uther <william.uther@nicta.com.au>
+ * Copyright (C) 2007 Brice DUBOST <ml@braice.net>
  *
  * Distribute under GPL version 2 or later.
  *
@@ -27,6 +28,7 @@
 #include "lircd.h"
 #include "receive.h"
 
+#define TIMEOUT 20000
 
 static int hiddev_init();
 static int hiddev_deinit(void);
@@ -82,6 +84,25 @@ struct hardware hw_bw6130=
 	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"bw6130"
+};
+
+struct hardware hw_asusdh=
+{
+	"/dev/usb/hiddev0",     /* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
+	64,			/* code_length */
+	hiddev_init,		/* init_func */
+	NULL,			/* config_func */
+	hiddev_deinit,          /* deinit_func */
+	NULL,			/* send_func */
+	hiddev_rec,		/* rec_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
+	NULL,			/* readdata */
+	"asusdh"		/* name */
 };
 
 static int old_main_code = 0;
@@ -146,6 +167,7 @@ int hiddev_decode(struct ir_remote *remote,
 char *hiddev_rec(struct ir_remote *remotes)
 {
 	struct hiddev_event event;
+	struct hiddev_event asus_events[8];
 	int rd;
 	/* Remotec Mediamaster specific */
 	static int wheel_count = 0;
@@ -153,6 +175,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 	int y_movement=0;
 	int x_direction=0;
 	int y_direction=0;
+	int i;
 	
 	LOGPRINTF(1, "hiddev_rec");
 	
@@ -170,6 +193,9 @@ char *hiddev_rec(struct ir_remote *remotes)
 	/*
 	 * This stuff is probably dvico specific.
 	 * I don't have any other hid devices to test...
+	 *
+	 * See further for the Asus DH specific code
+	 *
 	 */
 	if (event.hid == 0x10046) {
 		repeat_flag = (main_code & dvico_repeat_mask);
@@ -194,6 +220,40 @@ char *hiddev_rec(struct ir_remote *remotes)
 		return decode_all(remotes);
 #endif
 	}
+	/* Asus DH remote specific code */
+	else if (event.hid == 0xFF000000)
+	{
+		LOGPRINTF(1, "This is an asus P5 DH remote, "
+			  "we read the other events");
+		asus_events[0]=event;
+		for (i=1;i<8;i++)
+		{
+			if(!waitfordata(TIMEOUT))
+			{
+				logprintf(LOG_ERR,"timeout reading byte %d",i);
+				return(NULL);
+			}
+			rd = read(hw.fd, &asus_events[i], sizeof event);
+			if (rd != sizeof event) {
+				logprintf(LOG_ERR, "error reading '%s'",
+					  hw.device);
+				return 0;
+			}
+		}
+		for (i=0;i<8;i++)
+		{
+			LOGPRINTF(1, "Event number %d hid 0x%X  value 0x%X",
+				  i, asus_events[i].hid,
+				  asus_events[i].value);
+		}
+		pre_code = asus_events[1].hid;
+		main_code = asus_events[1].value;
+		if (main_code)
+		{
+			return decode_all(remotes);
+		}
+	}
+
 	/* Remotec Mediamaster specific code */
 	/* Y-Coordinate,
 	   second event field after button code (wheel_count==2) */

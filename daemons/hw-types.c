@@ -8,6 +8,7 @@
 /* Hardware types */
 extern struct hardware hw_accent;
 extern struct hardware hw_alsa_usb;
+extern struct hardware hw_asusdh;
 extern struct hardware hw_atilibusb;
 extern struct hardware hw_audio;
 extern struct hardware hw_audio_alsa;
@@ -71,6 +72,7 @@ struct hardware *hw_list[] =
 #ifdef HAVE_ALSA_SB_RC
 	&hw_alsa_usb,
 #endif
+	&hw_asusdh,
 #ifdef HAVE_LIBUSB
 	&hw_atilibusb,
 #endif
