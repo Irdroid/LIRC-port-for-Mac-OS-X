@@ -1614,3 +1614,76 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.1pre5(default) on Tue Mar  6 19:31:31 2007
+#
+# contributed by Harald Wild - www.wild-technology.de
+#
+# brand: Q-Sonic Master Remote PC / TV 
+# model no. of remote control: Art.Nr. PE-9999
+# frequency: 433.92 MHz
+# distributor Germany: PEARL AGENCY - www.pearl.de
+# devices being controlled by this remote: MythTv
+#
+
+begin remote
+
+  name  Q-Sonic_Master_Remote
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          203972
+  toggle_bit      0
+
+
+      begin codes
+          POWER                    0x20EE11F00F
+          MouseLEFT                0x1449740000
+          MouseRIGHT               0x1446710000
+          MouseUP                  0x1447720000
+          MouseDOWN                0x1448730000
+          MouseButtonLEFT          0x144D780000
+          MouseButtonRIGHT         0x14517C0000
+          Volume+                  0x20EE81600F
+          Volume-                  0x20EE01E00F
+          Channel+                 0x20EE61400F
+          Channel-                 0x20EEE1C00F
+          M                        0x20EEC1A00F
+          1                        0x20EEA1820D
+          2                        0x20EE61420D
+          3                        0x20EEE1C20D
+          4                        0x20EE41220D
+          5                        0x20EEC1A20D
+          6                        0x20EE81620D
+          7                        0x20EE01E20D
+          8                        0x20EE31120D
+          9                        0x20EEB1920D
+          0                        0x20EE21020D
+          -/--                     0x20EE71520D
+          AV                       0x20EED1BA05
+          MENU                     0x20EED1B609
+          EXIT                     0x20EEE1C906
+          VideoTextLO              0x20EED1B609
+          VideoTextRO              0x20EEE1C906
+          VideoTextLU              0x20EE513A05
+          VideoTextRU              0x20EEF1D807
+          UP                       0x20EEF1D50A
+          DOWN                     0x20EEF1D30C
+          LEFT                     0x20EEF1D20D
+          RIGHT                    0x20EEF1D10E
+          OK                       0x20EE71520D
+          PLAY                     0x20EED1B00F
+          <<                       0x20EE513807
+          >>                       0x20EED1B807
+          REC                      0x20EE11FF00
+          STOP                     0x20EE91700F
+          PAUSE                    0x20EE91720D
+      end codes
+
+end remote
+
+
