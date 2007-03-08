@@ -1,7 +1,5 @@
 * RC-5X support
 
-* implement toggle_bit_mask for atiusb
-
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes
