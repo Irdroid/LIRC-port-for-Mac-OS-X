@@ -999,52 +999,31 @@ begin remote
   post_data_bits  16
   post_data      0x0
   gap          139944
-  toggle_bit      0
+  toggle_bit_mask 0x80800000
 
    begin codes
         1               0x628d
-        1               0xe20d
         2               0x638e
-        2               0xe30e
         3               0x648f
-        3               0xe40f
         4               0x6590
-        4               0xe510
         5               0x6691
-        5               0xe611
         6               0x6792
-        6               0xe712
         7               0x6893
-        7               0xe813
         8               0x6994
-        8               0xe914
         9               0x6a95
-        9               0xea15
         0               0x6c97
-        0               0xec17
         Power           0xd702
         TV              0x81ac
-        TV              0x012c
         Video           0x82ad
-        Video           0x022d
         CD/DVD          0x5984
-        CD/DVD          0xd904
         Teletext        0x6b96
-        Teletext        0xeb16
         Audio           0x5b86
-        Audio           0xdb06
         Radio           0x83ae
-        Radio           0x032e
         Guide           0x86b1
-        Guide           0x0631
         Photo           0x5a85
-        Photo           0xda05
         Info            0x84af
-        Info            0x042f
         Menu            0x6e99
-        Menu            0xee19
         left            0x729d
-        left            0xf21d
         up_0            0x4d78  
         up_1            0x4e79
         up_2            0x4f7a
@@ -1053,14 +1032,6 @@ begin remote
         up_5            0x527d
         up_6            0x537e
         up_7            0x547f
-        up_0            0xcdf8
-        up_1            0xcef9
-        up_2            0xcffa
-        up_3            0xd0fb
-        up_4            0xd1fc
-        up_5            0xd2fd
-        up_6            0xd3fe
-        up_7            0xd4ff
         down_0          0x4570
         down_1          0x4671
         down_2          0x4772
@@ -1069,60 +1040,29 @@ begin remote
         down_5          0x4a75
         down_6          0x4b76
         down_7          0x4c77
-        down_0          0xc5f0
-        down_1          0xc6f1
-        down_2          0xc7f2
-        down_3          0xc8f3
-        down_4          0xc9f4
-        down_5          0xcaf5
-        down_6          0xcbf6
-        down_7          0xccf7
         Click           0xf31e
-        Click           0x739e
         right           0x749f
-        right           0xf41f
         Back            0xf520
-        Back            0x75a0
         Vol+            0xde09
-        Vol+            0x5e89
         Vol-            0xdd08
-        Vol-            0x5d88
         Select          0xf01b
-        Select          0x709b
         P+              0xe00b
-        P+              0x608b
         P-              0xe10c
-        P-              0x618c
         Mute            0x5580
-        Mute            0xd500
         Zap             0x719c
-        Zap             0xf11c
         Red/Audio       0x87b2
-        Red/Audio       0x0732
         Green/Subtitle  0x88b3
-        Green/Subtitle  0x0833
         Yellow/Angle    0x89b4
-        Yellow/Angle    0x0934
         Blue/Title      0x8ab5
-        Blue/Title      0x1445
         Stop            0x7da8
-        Stop            0xfd28
         Pause           0x7ea9
-        Pause           0xfe29
         Play            0x7aa5
-        Play            0xfa25
         SkipBack        0x76a1
-        SkipBack        0xf621
         Folder          0x6d98
-        Folder          0xed18
         SkipForward     0x78a3
-        SkipForward     0xf823
         Rewind          0x79a4
-        Rewind          0xf924
         Record          0x7ca7
-        Record          0xfc27
         FastForward     0x7ba6
-        FastForward     0xfb26
 
     end codes  
 end remote
@@ -1305,102 +1245,56 @@ begin remote
   zero            0     0
   gap          227969
   min_repeat      2
-  toggle_bit      0
+  toggle_bit_mask 0x80800000
 
 
       begin codes
           ok                       0x14F31E0000
-	  ok                       0x14739E0000
-          power                    0x14D7020000
           power                    0x14D7020000
           tv                       0x1481AC0000
-          tv                       0x14012C0000
           video                    0x1482AD0000
-          video                    0x14022D0000
           cd                       0x1459840000
-          cd                       0x14D9040000
           txt                      0x146B960000
-          txt                      0x14EB160000
           audio                    0x145B860000
-          audio                    0x14DB060000
           radio                    0x1483AE0000
-          radio                    0x14032E0000
           book                     0x1486B10000
-          book                     0x1406310000
           photo                    0x145A850000
-          photo                    0x14DA050000
           info                     0x1484AF0000
-          info                     0x14042F0000
           menu                     0x146E990000
-          menu                     0x14EE190000
           up                       0x14CDF80000
-          up                       0x144D780000
           down                     0x14C5F00000
-          down                     0x1445700000
           left                     0x14729D0000
-          left                     0x14F21D0000
           right                    0x14749F0000
-          right                    0x14F41F0000
           return                   0x1475A00000
-          return                   0x14F5200000
           vol+                     0x145E890000
-          vol+                     0x14DE090000
           vol-                     0x145D880000
-          vol-                     0x14DD080000
           mute                     0x1455800000
-          mute                     0x14D5000000
           ch+                      0x14608B0000
-          ch+                      0x14E00B0000
           ch-                      0x14618C0000
-          ch-                      0x14E10C0000
           last                     0x14719C0000
-          last                     0x14F11C0000
           red                      0x1487B20000
-          red                      0x1407320000
           green                    0x1488B30000
-          green                    0x1408330000
           yellow                   0x1409340000
-          yellow                   0x1489B40000
           blue                     0x140A350000
-          blue                     0x148AB50000
           stop                     0x147DA80000
-          stop                     0x14FD280000
           pause                    0x14FE290000
-          pause                    0x147EA90000
           play                     0x14FA250000
-          play                     0x147AA50000
           back                     0x14F6210000
-          back                     0x1476A10000
           time                     0x146D980000
-          time                     0x14ED180000
           next                     0x14F8230000
-          next                     0x1478A30000
           rew                      0x14F9240000
-          rew                      0x1479A40000
           rec                      0x147CA70000
-          rec                      0x14FC270000
           ff                       0x14FB260000
-          ff                       0x147BA60000
           1                        0x14E20D0000
-          1                        0x14628D0000
           2                        0x14E30E0000
-          2                        0x14638E0000
           3                        0x14E40F0000
-          3                        0x14648F0000
           4                        0x14E5100000
-          4                        0x1465900000
           5                        0x14E6110000
-          5                        0x1466910000
           6                        0x14E7120000
-          6                        0x1467920000
           7                        0x14E8130000
-          7                        0x1468930000
           8                        0x14E9140000
-          8                        0x1469940000
           9                        0x14EA150000
-          9                        0x146A950000
           0                        0x14EC170000
-          0                        0x146C970000
       end codes
 
 end remote
@@ -1433,101 +1327,56 @@ begin remote
   post_data      0x0
   gap          227999
   min_repeat      5
-  toggle_bit      0
+  toggle_bit_mask 0x80800000
 
 
       begin codes
           Line_TV                  0x719C
-          Line_TV                  0xF11C
           Rec_TV                   0x6D98
-          Rec_TV                   0xED18
           On/Standby               0xD702
           Photo                    0x5A85
-          Photo                    0xDA05
           Music                    0x5B86
-          Music                    0xDB06
           Guide                    0x0631
-          Guide                    0x86B1
           DVD_Menu                 0x5984
-          DVD_Menu                 0xD904
           Video                    0x022D
-          Video                    0x82AD
           Text                     0x6B96
-          Text                     0xEB16
           RED/Audio                0x0732
-          RED/Audio                0x87B2
           YELLOW/Angle             0x0934
-          YELLOW/Angle             0x89B4
           BLUE/Title               0x0A35
-          BLUE/Title               0x8AB5
           GREEN/Subtitle           0x0833
-          GREEN/Subtitle           0x88B3
           Vol+                     0x5E89
-          Vol+                     0xDE09
           Vol-                     0x5D88
-          Vol-                     0xDD08
           Up                       0x6F9A
-          Up                       0xEF1A
           Down                     0x77A2
-          Down                     0xF722
           Left                     0x729D
-          Left                     0xF21D
           Right                    0x749F
-          Right                    0xF41F
           Ok                       0x739E
-          Ok                       0xF31E
           Mute                     0x5580
-          Mute                     0xD500
           Ch+                      0x608B
-          Ch+                      0xE00B
           Ch-                      0x618C
-          Ch-                      0xE10C
           1                        0x628D
-          1                        0xE20D
           2                        0x638E
-          2                        0xE30E
           3                        0x648F
-          3                        0xE40F
           4                        0x6590
-          4                        0xE510
           5                        0x6691
-          5                        0xE611
           6                        0x6792
-          6                        0xE712
           7                        0x6893
-          7                        0xE813
           8                        0x6994
-          8                        0xE994
           9                        0x6A95
-          9                        0xEA15
           *                        0x0C37
-          *                        0x8CB7
           0                        0x6C97
-          0                        0xEC17
           #                        0x0D38
-          #                        0x8DB8
           Back                     0x75A0
-          Back                     0xF520
           Info                     0x042F
-          Info                     0x84AF
           Select                   0x709B
-          Select                   0xF01B
           Rewind                   0x79A4
-          Rewind                   0xF924
           Play                     0x7AA5
-          Play                     0xFA25
           Fast_Forward             0x7BA6
-          Fast_Forward             0xFB26
           Pause                    0x7EA9
-          Pause                    0xFE29
           Start                    0x76A1
-          Start                    0xF621
           End                      0x78A3
-          End                      0xF823
           Stop                     0x7DA8
-          Stop                     0xFD28
           Record                   0x7CA7
-          Record                   0xFC27
       end codes
 
 end remote
@@ -1687,3 +1536,85 @@ begin remote
 end remote
 
 
+# This config file was automatically generated
+# using lirc-0.8.2-CVS(lirc_atiusb) on Wed Feb 10.03.2007
+#
+# contributed by boris64 (me@boris64.net ;)
+#
+# brand:        "AR Remote Control MCE"
+#               "Made in China by X10"
+#               grey/silver colored with "MS-Logo"
+# model no.:    "1040050"
+#
+# devices being controlled by this remote:
+# PCs running "Microsoft MediaCenterEdition(?)"
+#
+# some pictures/infos of this remote can be found here:
+# -> http://www.mce-community.de/forum/index.php?showtopic=11652&hl=x
+# -> http://cgi.ebay.de/MCE-Fernbedienung-WINDOWS-XP-Media-Center-Zertifiziert_W0QQitemZ8810664119QQcategoryZ38861QQrdZ1QQcmdZViewItem
+#
+
+begin remote
+
+  name AR_Remote_Control_MCE
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          227995
+  toggle_bit_mask 0x80800000
+
+      begin codes
+          POWER                    0xD702
+          RED                      0x87B2
+          YELLOW                   0x0934
+          GREEN                    0x88B3
+          BLUE                     0x0A35
+          TELETEXT                 0x6B96
+          BACKSPACE                0xF520
+          INFO                     0x84AF
+          UP                       0xEF1A
+          LEFT                     0x729D
+          RIGHT                    0xF41F
+          DOWN                     0x77A2
+          OK                       0xF31E
+          TIMESHIFT                0x6D98
+          EPG                      0x0631
+          TV/FM                    0x719C
+          CD/DVD                   0xD904
+          M$LOGO                   0x709B
+          VOL+                     0xDE09
+          VOL-                     0x5D88
+          CHAN+                    0xE00B
+          CHAN-                    0x618C
+          MUTE                     0xD500
+          PREV                     0x76A1
+          NEXT                     0xF823
+          REW                      0x79A4
+          PLAY                     0xFA25
+          FFW                      0x7BA6
+          RECORD                   0xFC27
+          STOP                     0x7DA8
+          PAUSE                    0xFE29
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          *                        0x8CB7
+          HASH                     0x0D38
+          CLEAR                    0x85B0
+          ENTER                    0x0B36
+      end codes
+end remote
