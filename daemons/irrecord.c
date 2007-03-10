@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.60 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.61 2007/03/10 11:58:42 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -915,15 +915,17 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 	lirc_t remaining_gap;
 	int retval=EXIT_SUCCESS;
 	int retries,flag,success;
-	ir_code first;
+	ir_code first, last;
 	int seq,repeats;
 	int found;
 	
 	printf("Checking for toggle bit mask.\n");
 	printf(
-"Please press an arbitrary button repeatedly as fast as possible (don't hold\n"
-"it down!).\n");
-	retries=30;flag=success=0;first=0;
+"Please press an arbitrary button repeatedly as fast as possible.\n"
+"Don't hold the button down!.\n"
+"If you can't see any dots appear, then wait a bit between button presses.\n"
+);
+	retries=30;flag=success=0;first=0;last=0;
 	seq=repeats=0;found=0;
 	while(availabledata())
 	{
@@ -974,7 +976,7 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 				flag=1;
 				first=code;
 			}
-			else if(!repeat_flag)
+			else if(!repeat_flag || code!=last)
 			{
 				seq++;
 				if(!found && first^code)
@@ -989,6 +991,7 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 			{
 				repeats++;
 			}
+			last = code;
 		}
 		else
 		{
