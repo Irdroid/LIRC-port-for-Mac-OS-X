@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.8 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.9 2007/03/10 17:29:24 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -163,7 +163,7 @@ struct ir_remote
 	
 	/* end of user editable values */
 	
-        int toggle_bit_mask_state;
+        ir_code toggle_bit_mask_state;
 	int toggle_mask_state;
 	int repeat_countdown;
 	struct ir_ncode *last_code; /* code received or sent last */
