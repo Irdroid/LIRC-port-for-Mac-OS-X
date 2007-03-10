@@ -37,7 +37,7 @@
 #ifndef EV_SYN
 /* previous name */
 #define EV_SYN EV_RST
-#fi
+#endif
 
 #include "hardware.h"
 #include "ir_remote.h"
