@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.62 2007/03/10 12:01:51 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.63 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -345,9 +345,7 @@ int main(int argc,char **argv)
 		if(remote.pre_p==0 && remote.pre_s==0 &&
 		   remote.post_p==0 && remote.post_s==0)
 		{
-			remote.bits=remote.pre_data_bits+
-				remote.bits+
-				remote.post_data_bits;
+			remote.bits=bit_count(&remote);
 			remote.pre_data_bits=0;
 			remote.post_data_bits=0;
 		}
@@ -1033,7 +1031,7 @@ void set_toggle_bit_mask(struct ir_remote *remote,ir_code xor)
 
 	if(!remote->codes) return;
 
-	bits=remote->bits+remote->pre_data_bits+remote->post_data_bits;
+	bits=bit_count(remote);
 	mask=((ir_code) 1)<<(bits-1);
 	while(mask)
 	{

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.29 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.30 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -128,9 +128,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		
 		affected=&post;
 		mask=remote->toggle_mask;
-		for(bit=current_bit=0;bit<remote->pre_data_bits+
-			    remote->bits+
-			    remote->post_data_bits;bit++,current_bit++)
+		for(bit=current_bit=0;bit<bit_count(remote);bit++,current_bit++)
 		{
 			if(bit==remote->post_data_bits)
 			{
@@ -347,8 +345,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		   be rotated separately but we have to stay
 		   compatible with older software
 		 */
-		code=reverse(code,remote->pre_data_bits+
-			     remote->bits+remote->post_data_bits);
+		code=reverse(code,bit_count(remote));
 	}
 	return(code);
 }

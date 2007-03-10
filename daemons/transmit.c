@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.25 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: transmit.c,v 5.26 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -177,9 +177,7 @@ inline void send_trail(struct ir_remote *remote)
 inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 {
 	int i;
-	int all_bits = remote->pre_data_bits+
-		remote->bits+
-		remote->post_data_bits;
+	int all_bits = bit_count(remote);
 	ir_code mask;
 	if(is_rcmm(remote))
 	{

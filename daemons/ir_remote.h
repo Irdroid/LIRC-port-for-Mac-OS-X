@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.35 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.36 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -27,6 +27,13 @@
 #include "ir_remote_types.h"
 
 extern struct hardware hw;
+
+static inline int bit_count(struct ir_remote *remote)
+{
+	return remote->pre_data_bits +
+		remote->bits +
+		remote->post_data_bits;
+}
 
 static inline ir_code reverse(ir_code data,int bits)
 {

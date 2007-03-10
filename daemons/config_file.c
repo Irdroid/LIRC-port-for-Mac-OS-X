@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.24 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: config_file.c,v 5.25 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -943,17 +943,13 @@ struct ir_remote * read_config(FILE *f)
 		}
 		if(rem->flags&RC6 && rem->rc6_mask==0 && rem->toggle_bit>0)
 		{
-			int all_bits=rem->pre_data_bits+
-				rem->bits+
-				rem->post_data_bits;
+			int all_bits=bit_count(rem);
 			
 			rem->rc6_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
 		}
 		if(rem->toggle_bit > 0)
 		{
-			int all_bits=rem->pre_data_bits+
-				rem->bits+
-				rem->post_data_bits;
+			int all_bits=bit_count(rem);
 			
 			if(has_toggle_bit_mask(rem))
 			{

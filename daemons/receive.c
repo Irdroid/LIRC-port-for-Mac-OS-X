@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.32 2006/07/16 08:31:14 lirc Exp $      */
+/*      $Id: receive.c,v 5.33 2007/03/10 21:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -298,9 +298,7 @@ inline int expectone(struct ir_remote *remote,int bit)
 {
 	if(is_biphase(remote))
 	{
-		int all_bits = remote->pre_data_bits+
-			remote->bits+
-			remote->post_data_bits;
+		int all_bits = bit_count(remote);
 		ir_code mask;
 		
 		mask=((ir_code) 1)<<(all_bits-1-bit);
@@ -365,9 +363,7 @@ inline int expectzero(struct ir_remote *remote,int bit)
 {
 	if(is_biphase(remote))
 	{
-		int all_bits = remote->pre_data_bits+
-			remote->bits+
-			remote->post_data_bits;
+		int all_bits = bit_count(remote);
 		ir_code mask;
 		
 		mask=((ir_code) 1)<<(all_bits-1-bit);
@@ -1203,12 +1199,10 @@ int receive_decode(struct ir_remote *remote,
 			LOGPRINTF(1,"decoded: %lx",rec_buffer.decoded);
 #                       endif
 			if((hw.rec_mode==LIRC_MODE_CODE &&
-			    hw.code_length<remote->pre_data_bits
-			    +remote->bits+remote->post_data_bits)
+			    hw.code_length<bit_count(remote))
 			   ||
 			   (hw.rec_mode==LIRC_MODE_LIRCCODE && 
-			    hw.code_length!=remote->pre_data_bits
-			    +remote->bits+remote->post_data_bits))
+			    hw.code_length!=bit_count(remote)))
 			{
 				return(0);
 			}
@@ -1232,9 +1226,7 @@ int receive_decode(struct ir_remote *remote,
 			sum=remote->phead+remote->shead+
 				lirc_t_max(remote->pone+remote->sone,
 					   remote->pzero+remote->szero)*
-				(remote->bits+
-				 remote->pre_data_bits+
-				 remote->post_data_bits)+
+				bit_count(remote)+
 				remote->plead+
 				remote->ptrail+
 				remote->pfoot+remote->sfoot+
