@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.61 2007/03/10 11:58:42 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.62 2007/03/10 12:01:51 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -922,7 +922,8 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 	printf("Checking for toggle bit mask.\n");
 	printf(
 "Please press an arbitrary button repeatedly as fast as possible.\n"
-"Don't hold the button down!.\n"
+"Make sure you keep pressing the SAME button and that you DON'T HOLD\nh"
+"the button down!.\n"
 "If you can't see any dots appear, then wait a bit between button presses.\n"
 );
 	retries=30;flag=success=0;first=0;last=0;
