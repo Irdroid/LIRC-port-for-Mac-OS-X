@@ -1,8 +1,5 @@
 #
-# this config file was automatically generated
-# using lirc-0.6.3 on Sat Jan  6 11:38:33 2001
-#
-# contributed by Stephen White <stephen@earth.li>
+# update version for creative driver as of feb 2007
 #
 # brand:             Creative
 # model:             PC-DVD Remote
@@ -10,7 +7,6 @@
 #
 
 begin remote
-
   name  CREATIVE_INFRA_DVD
   bits           16
   flags SPACE_ENC|CONST_LENGTH
@@ -27,33 +23,30 @@ begin remote
   toggle_bit      0
 
       begin codes
-          play                     0x00000000000005FA
-          stop                     0x00000000000016E9
-          pause                    0x00000000000000FF
-          eject                    0x00000000000002FD
-          last                     0x00000000000017E8
-          rrev                     0x00000000000004FB
-          ffwd                     0x00000000000006F9
-          next                     0x00000000000001FE
-          1                        0x00000000000008F7
-          2                        0x00000000000009F6
-          3                        0x0000000000000AF5
-          shift                    0x00000000000014EB
-          4                        0x0000000000000CF3
-          5                        0x0000000000000DF2
-          6                        0x0000000000000EF1
-          mouse                    0x00000000000007F8
-          7                        0x00000000000010EF
-          8                        0x00000000000011EE
-          9                        0x00000000000012ED
-          vol+                     0x0000000000000FF0
-          start                    0x00000000000003FC
-          0                        0x00000000000015EA
-          mute                     0x0000000000000BF4
-          vol-                     0x00000000000013EC
+          play                     0x19e6
+          stop                     0x1ae5
+          pause                    0x1be4
+          eject                    0x1ce3
+          last                     0x1de2
+          rrev                     0x1ee1
+          ffwd                     0x1fe0
+          next                     0x20df
+          1                        0x21de
+          2                        0x22dd
+          3                        0x23dc
+          shift                    0x24db
+          4                        0x25da
+          5                        0x26d9
+          6                        0x27d8
+          mouse                    0x28d7
+          7                        0x29d6
+          8                        0x2ad5
+          9                        0x2bd4
+          vol+                     0x2cd3
+          start                    0x2dd2
+          0                        0x2ed1
+          mute                     0x2fd0
+          vol-                     0x30cf
       end codes
 
 end remote
-
-
-
