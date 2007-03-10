@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.33 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: receive.c,v 5.34 2007/03/10 21:59:44 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -59,7 +59,7 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 		{
 			lirc_t data;
 			
-			data=hw.readdata(2*maxusec<50000 ? 50000:2*maxusec);
+			data=hw.readdata(2*maxusec<100000 ? 100000:2*maxusec);
 			if(!data)
 			{
 				LOGPRINTF(3,"timeout: %u", maxusec);

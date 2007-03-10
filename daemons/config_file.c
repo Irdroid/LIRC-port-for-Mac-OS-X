@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.25 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: config_file.c,v 5.26 2007/03/10 21:59:44 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -599,6 +599,46 @@ static int sanityChecks(struct ir_remote *rem)
 	return 1;
 }
 
+struct ir_remote *sort_by_bit_count(struct ir_remote *remotes)
+{
+	struct ir_remote *top, *rem, *next, *prev, *scan;
+	
+	rem = remotes;
+	top = NULL;
+	while(rem!=NULL)
+	{
+		next = rem->next;
+		
+		scan = top;
+		prev = NULL;
+		while(scan && bit_count(scan)<=bit_count(rem))
+		{
+			prev = scan;
+			scan = scan->next;
+		}
+		if(prev)
+		{
+			prev->next = rem;
+		}
+		else
+		{
+			top = rem;
+		}
+		if(scan)
+		{
+			rem->next = scan;
+		}
+		else
+		{
+			rem->next = NULL;
+		}
+		
+		rem = next;
+	}
+	
+	return top;
+}
+
 struct ir_remote * read_config(FILE *f)
 {
 	char buf[LINE_LEN+1], *key, *val, *val2;
@@ -1009,6 +1049,7 @@ struct ir_remote * read_config(FILE *f)
 		rem=rem->next;
 	}
 
+	top_rem = sort_by_bit_count(top_rem);
 #       if defined(DEBUG) && !defined(DAEMONIZE)
         /*fprint_remotes(stderr, top_rem);*/
 #       endif
