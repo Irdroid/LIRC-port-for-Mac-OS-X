@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.15 2006/12/11 08:32:55 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.16 2007/03/11 09:59:30 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -93,7 +93,7 @@
 #include "lirc_client.h"
 
 #ifdef DEBUG
-void debugprintf(char *format_str, ...)
+static void debugprintf(char *format_str, ...)
 {
         va_list ap;
         va_start(ap,format_str);
@@ -101,7 +101,7 @@ void debugprintf(char *format_str, ...)
         va_end(ap);
 }
 #else
-void debugprintf(char *format_str, ...)
+static void debugprintf(char *format_str, ...)
 {
 }
 #endif
@@ -123,18 +123,18 @@ static struct keymodlist_t keymodlist[]=
   {NULL,0},
 };
 
-const char *key_delimiter ="-";
-const char *active_window_name ="CurrentWindow";
-const char *root_window_name ="RootWindow";
+static const char *key_delimiter ="-";
+static const char *active_window_name ="CurrentWindow";
+static const char *root_window_name ="RootWindow";
 
 
-const char *progname="irxevent";
-Display *dpy;
-Window root;
-XEvent xev;
-Window w,subw;
+static const char *progname="irxevent";
+static Display *dpy;
+static Window root;
+static XEvent xev;
+static Window w,subw;
 
-Time fake_timestamp()
+static Time fake_timestamp()
      /*seems that xfree86 computes the timestamps like this     */
      /*strange but it relies on the *1000-32bit-wrap-around     */
      /*if anybody knows exactly how to do it, please contact me */
@@ -149,7 +149,7 @@ Time fake_timestamp()
   return (Time)tint;
 }
 
-Window find_window(Window top,char *name)
+static Window find_window(Window top,char *name)
 {
   char *wname,*iname;
   XClassHint xch;
@@ -208,7 +208,7 @@ Window find_window(Window top,char *name)
   return(top);
 }
 
-Window find_sub_sub_window(Window top,int *x, int *y)
+static Window find_sub_sub_window(Window top,int *x, int *y)
 {
   Window base;
   Window *children,foo,target=0;
@@ -252,7 +252,7 @@ Window find_sub_sub_window(Window top,int *x, int *y)
 
 
 
-Window find_sub_window(Window top,char *name,int *x, int *y)
+static Window find_sub_window(Window top,char *name,int *x, int *y)
 {
   Window base;
   Window *children,foo,target=0;
@@ -295,7 +295,7 @@ Window find_sub_window(Window top,char *name,int *x, int *y)
 }
 
 
-Window find_window_focused(Window top,char *name) 
+static Window find_window_focused(Window top,char *name) 
 {
   int tmp;
   Window w, cur, *children, foo;
@@ -328,7 +328,7 @@ Window find_window_focused(Window top,char *name)
   return(0);
 }
 
-void make_button(int button,int x,int y,XButtonEvent *xev)
+static void make_button(int button,int x,int y,XButtonEvent *xev)
 {
   xev->type = ButtonPress;
   xev->display=dpy;
@@ -344,7 +344,7 @@ void make_button(int button,int x,int y,XButtonEvent *xev)
   return;
 }
 
-void make_key(char *keyname,int x, int y,XKeyEvent *xev)
+static void make_key(char *keyname,int x, int y,XKeyEvent *xev)
 {
   char *part, *part2, *sep_part;
   struct keymodlist_t *kmlptr;
@@ -414,7 +414,7 @@ void make_key(char *keyname,int x, int y,XKeyEvent *xev)
   return ;
 }
 
-void sendfocus(Window w,int in_out)
+static void sendfocus(Window w,int in_out)
 {
   XFocusChangeEvent focev;
 
@@ -429,7 +429,7 @@ void sendfocus(Window w,int in_out)
   return;
 }
 
-void sendpointer_enter_or_leave(Window w,int in_out)
+static void sendpointer_enter_or_leave(Window w,int in_out)
 {
   XCrossingEvent crossev;
   crossev.type=in_out;
@@ -452,7 +452,7 @@ void sendpointer_enter_or_leave(Window w,int in_out)
   return;
 }
 
-void sendkey(char *keyname,int x,int y,Window w,Window s)
+static void sendkey(char *keyname,int x,int y,Window w,Window s)
 {
   make_key(keyname ,x,y,(XKeyEvent*)&xev);
   xev.xkey.window=w;
@@ -470,7 +470,7 @@ void sendkey(char *keyname,int x,int y,Window w,Window s)
   return;
 }
 
-void sendbutton(int button, int x, int y, Window w,Window s)
+static void sendbutton(int button, int x, int y, Window w,Window s)
 {
   make_button(button,x,y,(XButtonEvent*)&xev);
   xev.xbutton.window=w;
@@ -491,7 +491,6 @@ void sendbutton(int button, int x, int y, Window w,Window s)
 
   return;
 }
-
 
 int check(char *s)
 {
@@ -588,7 +587,7 @@ int main(int argc, char *argv[])
 	  if(ir==NULL) continue;
 	  while((ret=lirc_code2char(config,ir,&c))==0 && c!=NULL)
 	    {
-	      debugprintf("Recieved code: %s Sending event: \n",ir);
+	      debugprintf("Received code: %s Sending event: \n",ir);
 	      
 	      *windowname=0;
 	      if(2==sscanf(c,"Key %s Focus WindowID %i",keyname,&WindowID) ||
