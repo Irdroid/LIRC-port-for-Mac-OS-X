@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.16 2007/03/11 09:59:30 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.17 2007/03/11 10:06:32 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -91,6 +91,8 @@
 #include <unistd.h>
 
 #include "lirc_client.h"
+
+static int bInError = 0;
 
 #ifdef DEBUG
 static void debugprintf(char *format_str, ...)
@@ -492,6 +494,18 @@ static void sendbutton(int button, int x, int y, Window w,Window s)
   return;
 }
 
+int errorHandler(Display* di, XErrorEvent* ev)
+{
+  if(bInError || ev==NULL || di==NULL) return 1;      // only 1 msg per key
+  char buff[512]; buff[0] = 0;
+  XGetErrorText(di, ev->error_code, buff, sizeof(buff)-1);
+  if(buff[0]) {
+     fprintf(stderr, "X11 error: %s\n", buff);
+     bInError = 1;
+  }
+  return 1;
+}
+
 int check(char *s)
 {
   int d;
@@ -574,6 +588,9 @@ int main(int argc, char *argv[])
   }
   root=RootWindow(dpy,DefaultScreen(dpy));
 
+  // windows may get closed at wrong time. Override default error handler...
+  XSetErrorHandler(errorHandler);
+  
   if(lirc_init("irxevent",1)==-1) exit(EXIT_FAILURE);
 
   if(lirc_readconfig(config_file,&config,check)==0)
@@ -588,6 +605,7 @@ int main(int argc, char *argv[])
 	  while((ret=lirc_code2char(config,ir,&c))==0 && c!=NULL)
 	    {
 	      debugprintf("Received code: %s Sending event: \n",ir);
+	      bInError = 0;   // reset error state, want to see error msg
 	      
 	      *windowname=0;
 	      if(2==sscanf(c,"Key %s Focus WindowID %i",keyname,&WindowID) ||
