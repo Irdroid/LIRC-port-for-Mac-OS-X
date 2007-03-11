@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.17 2007/03/11 10:06:32 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.18 2007/03/11 16:30:19 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -92,6 +92,7 @@
 
 #include "lirc_client.h"
 
+static int bDaemon = 0;
 static int bInError = 0;
 
 #ifdef DEBUG
@@ -99,7 +100,8 @@ static void debugprintf(char *format_str, ...)
 {
         va_list ap;
         va_start(ap,format_str);
-        vfprintf(stderr,format_str,ap);
+        if(!bDaemon)
+		vfprintf(stderr,format_str,ap);
         va_end(ap);
 }
 #else
@@ -500,7 +502,7 @@ int errorHandler(Display* di, XErrorEvent* ev)
   char buff[512]; buff[0] = 0;
   XGetErrorText(di, ev->error_code, buff, sizeof(buff)-1);
   if(buff[0]) {
-     fprintf(stderr, "X11 error: %s\n", buff);
+     if(!bDaemon) fprintf(stderr, "X11 error: %s\n", buff);
      bInError = 1;
   }
   return 1;
@@ -541,7 +543,8 @@ int check(char *s)
 
 static struct option long_options[] =
 {
-	{"help", no_argument, NULL, 'h'},
+	{"daemon",  no_argument, NULL, 'd'},
+	{"help",    no_argument, NULL, 'h'},
 	{"version", no_argument, NULL, 'V'},
 	{0, 0, 0, 0}
 };
@@ -556,12 +559,15 @@ int main(int argc, char *argv[])
   int c;
   int WindowID;
 
-  while ((c = getopt_long(argc, argv, "hV", long_options, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, "dhV", long_options, NULL)) != EOF) {
     switch (c) {
+    case 'd':
+      bDaemon = 1; continue;
     case 'h':
-      printf("Usage: %s [config file]\n", argv[0]);
-      printf("\t -h --help \t\tdisplay usage summary\n");
-      printf("\t -V --version \t\tdisplay version\n");
+      printf("Usage: %s [option]... [config file]\n"
+             "       -d --daemon     fork and run in background\n"
+             "       -h --help       display usage summary\n"
+             "       -V --version    display version\n", progname);
       return(EXIT_SUCCESS);
     case 'V':
       printf("%s %s\n", progname, VERSION);
@@ -598,6 +604,13 @@ int main(int argc, char *argv[])
       char *ir;
       char *c;
       int ret;
+
+      if(bDaemon) {
+	if(daemon(1, 0) < 0) {
+	  perror("Failed to run as daemon");
+	  exit(EXIT_FAILURE);
+        }
+      }
       
       while(lirc_nextcode(&ir)==0)
 	{
