@@ -3,7 +3,7 @@
   * added support for Asus DH remote (Brice DUBOST, Bernhard Frauendienst)
   * fixed show-stopper bug in RC-6 transmit code
   * added support for Kanam Accent (Niccolo Rigacci)
-  * added support for SoundGraph iMON 2.4G LT (Morten Bogeskov)
+  * added support for SoundGraph iMON 2.4G DT & LT (Morten Bogeskov)
 
 0.8.1: 01/07/07
   * added support for USB-UIRT

@@ -62,8 +62,8 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read; do
 	
 	if test -f html-source/${driver}.html; then
 	    driver_doc=${driver}
-	elif test -f `echo html-source/${driver}.html|sed --expression="s/_/-/"`; then
-	    driver_doc=`echo $driver|sed --expression="s/_/-/"`
+	elif test -f `echo html-source/${driver}.html|sed --expression="s/_/-/g"`; then
+	    driver_doc=`echo $driver|sed --expression="s/_/-/g"`
 	else
 	    driver_doc=""
 	fi

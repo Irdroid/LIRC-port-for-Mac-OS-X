@@ -123,7 +123,7 @@ hw_menu_entry: @hw-usb
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card (exaudio)"
 	alsa_usb: "Sound Blaster Extigy/Audigy 2 NX (ALSA snd-usb-audio)"
-	imon_24g_lt: "Soundgraph iMON 2.4G LT"
+	imon_24g: "Soundgraph iMON 2.4G DT & LT"
 	imon: "Soundgraph iMON MultiMedian IR/VFD"
 	imon_knob: "Soundgraph iMON Knob"
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
@@ -207,7 +207,7 @@ param_type: \
 	igorplugusb \
 	iguanaIR \
 	imon \
-	imon_24g_lt \
+	imon_24g \
 	imon_knob \
 	imon_pad \
 	imon_rsc \
@@ -270,7 +270,7 @@ default_param: \
 	igorplugusb \
 	iguanaIR \
 	imon \
-	imon_24g_lt \
+	imon_24g \
 	imon_knob \
 	imon_pad \
 	imon_rsc \

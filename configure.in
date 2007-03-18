@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.178 2007/02/28 20:44:52 lirc Exp $
+dnl $Id: configure.in,v 5.179 2007/03/18 10:23:32 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -273,7 +273,7 @@ AC_ARG_WITH(driver,
                           dvico, ea65, exaudio, flyvideo, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, igorplugusb,
-                          iguanaIR, imon, imon_24g_lt, imon_knob,
+                          iguanaIR, imon, imon_24g, imon_knob,
                           imon_pad, imon_rsc, irdeo, irdeo_remote,
                           irman, irreal, it87, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
@@ -770,9 +770,9 @@ if test "$driver" = "imon_knob"; then
   lircd_conf="imon/lircd.conf.imon-knob"
 fi
 
-if test "$driver" = "imon_24g_lt"; then
+if test "$driver" = "imon_24g"; then
   lirc_driver="lirc_dev lirc_imon"
-  lircd_conf="imon/lircd.conf.imon-2.4g-lt"
+  lircd_conf="imon/lircd.conf.imon-2.4g"
 fi
 
 if test "$driver" = "imon_pad"; then

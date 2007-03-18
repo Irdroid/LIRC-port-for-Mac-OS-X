@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.17 2007/02/13 07:28:38 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.18 2007/03/18 10:23:34 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -774,33 +774,6 @@ static inline void submit_data (struct imon_context *context)
 }
 
 /**
- * Process the incoming packet in associating state
- */
-static inline void incoming_associate_packet (struct imon_context *context, struct urb *urb)
-{
-	int len = urb ->actual_length;
-	unsigned char *buf = urb ->transfer_buffer;
-
-	if (len != 8) {
-		warn ("%s: invalid incoming packet size (%d)", __FUNCTION__, len);
-		return;
-	}
-
-	if (buf [0] == 0x00 &&
-	    /* REFID */
-	    buf [2] == 0xFF &&
-	    buf [3] == 0xFF &&
-	    buf [4] == 0xFF &&
-	    buf [5] == 0xFF &&
-	    buf [6] == 0x4E &&
-	    buf [7] == 0xDF) {
-		warn ("%s: remote associated refid=%02X", __FUNCTION__, buf [1]);
-		context ->ir_isassociating = FALSE;
-	}
-	return;
-}
-
-/**
  * Process the incoming packet
  */
 static inline void incoming_packet (struct imon_context *context, struct urb *urb)
@@ -817,15 +790,33 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 		return;
 	}
 
+	/* iMON 2.4G associate frame */
+	if (buf [0] == 0x00 &&
+	    /* REFID */
+	    buf [2] == 0xFF &&
+	    buf [3] == 0xFF &&
+	    buf [4] == 0xFF &&
+	    buf [5] == 0xFF &&                       /* iMON 2.4G */
+	    ((buf [6] == 0x4E && buf [7] == 0xDF) || /* LT */
+	     (buf [6] == 0x5E && buf [7] == 0xDF) )) { /* DT */
+		warn ("%s: remote associated refid=%02X", __FUNCTION__, buf [1]);
+		context ->ir_isassociating = FALSE;
+	}
+
 	chunk_num = buf [7];
 	
 	if (chunk_num == 0xFF)
 		return;		/* filler frame, no data here */
 
-	if (buf [5] == 0xFF &&
-	    buf [6] == 0x4E &&
-	    buf [7] == 0xAF)
-	        return;		/* filler frame, no data here (iMON 2.4G LT)*/
+	if (buf [0] == 0xFF &&
+	    buf [1] == 0xFF &&
+	    buf [2] == 0xFF &&
+	    buf [3] == 0xFF &&
+	    buf [4] == 0xFF &&
+	    buf [5] == 0xFF &&                     /* iMON 2.4G */
+	    ((buf [6] == 0x4E && buf [7] == 0xAF) || /* LT */
+	     (buf [6] == 0x5E && buf [7] == 0xAF) )) /* DT */
+	        return;		/* filler frame, no data here */
 
 #ifdef DEBUG	
 	{
@@ -918,10 +909,7 @@ static void usb_rx_callback (struct urb *urb)
 			return;
 
 		case SUCCESS:
-			if (context ->ir_isassociating) {
-				incoming_associate_packet (context, urb);
-			}
-			else if (context ->ir_isopen)
+			if (context ->ir_isopen)
 				incoming_packet (context, urb);
 		       	break;
 
