@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.25 $"
+#define DRIVER_VERSION          "$Revision: 1.26 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -160,6 +160,7 @@ struct irctl {
 	int connected;
 	
 	unsigned char transmitter_mask;
+        unsigned int carrier_freq;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -237,7 +238,7 @@ static void request_packet_async(struct irctl *ir, struct usb_endpoint_descripto
 				if (urb_type==PHILUSB_OUTBOUND) {
 					/* outbound data */
 					usb_fill_int_urb(async_urb, ir->usbdev, usb_sndintpipe(ir->usbdev, ep->bEndpointAddress), async_buf,
-					size, usb_async_callback, ir, ep->bInterval);
+					size, (usb_complete_t) usb_async_callback, ir, ep->bInterval);
 
 					memcpy(async_buf, data, size);
 					async_urb->transfer_flags=URB_ASYNC_UNLINK;
@@ -245,7 +246,7 @@ static void request_packet_async(struct irctl *ir, struct usb_endpoint_descripto
 				else {
 					/* inbound data */
 					usb_fill_int_urb(async_urb, ir->usbdev, usb_rcvintpipe(ir->usbdev, ep->bEndpointAddress), async_buf,
-					size, usb_async_callback, ir, ep->bInterval);
+					size, (usb_complete_t) usb_async_callback, ir, ep->bInterval);
 
 					async_urb->transfer_flags=URB_ASYNC_UNLINK;
 				}
@@ -571,6 +572,54 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 	}
 }
 
+
+/* Sets the send carrier frequency */
+static int set_send_carrier(struct irctl *ir, int carrier)
+{
+	int clk = 10000000;
+	int prescaler = 0, divisor = 0;
+	unsigned char cmdbuf[] = { 0x9F, 0x06, 0x01, 0x80 };
+
+	/* Carrier is changed */
+	if (ir->carrier_freq != carrier) {
+
+		if (carrier <= 0) {
+			ir->carrier_freq = carrier;
+			dprintk(DRIVER_NAME "[%d]: SET_CARRIER disabling "
+				"carrier modulation\n", ir->devnum);
+			request_packet_async(ir, ir->usb_ep_out,
+					     cmdbuf, sizeof(cmdbuf),
+					     PHILUSB_OUTBOUND);
+			return carrier;
+		}
+
+		for (prescaler = 0; prescaler < 4; ++prescaler) {
+			divisor = (clk >> (2 * prescaler)) / carrier;
+			if (divisor <= 0xFF) {
+				ir->carrier_freq = carrier;
+				cmdbuf[2] = prescaler;
+				cmdbuf[3] = divisor;
+				dprintk(DRIVER_NAME "[%d]: SET_CARRIER "
+					"requesting %d Hz\n",
+					ir->devnum, carrier);
+
+				/* Transmit the new carrier to the mce
+				   device */
+				request_packet_async(ir, ir->usb_ep_out,
+						     cmdbuf, sizeof(cmdbuf),
+						     PHILUSB_OUTBOUND);
+				return carrier;
+			}
+		}
+
+		return -EINVAL;
+
+	}
+
+	return carrier;
+}
+
+
 static int lirc_ioctl(struct inode *node, struct file *filep,
 	       	      unsigned int cmd, unsigned long arg)
 {
@@ -579,13 +628,15 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 	unsigned long lvalue;
 	struct irctl *ir = NULL;
 
+	/* Retrieve lirc_plugin data for the device */
+	ir=lirc_get_pdata(filep);
+	if (!ir && !ir->usb_ep_out)
+		return -EFAULT;
+
+
 	switch(cmd)
 	{
 	case LIRC_SET_TRANSMITTER_MASK:
-
-		/* Retrieve lirc_plugin data for the device */
-		ir=lirc_get_pdata(filep);
-		if (!ir && !ir->usb_ep_out) return -EFAULT;
 
 		result=get_user(ivalue,(unsigned int *) arg);
 		if(result) return(result);
@@ -619,6 +670,15 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 		if(result) return(result);
 		if(lvalue!=(LIRC_MODE_PULSE&LIRC_CAN_SEND_MASK)) return -EINVAL;
 		break;
+		
+	case LIRC_SET_SEND_CARRIER:
+
+		result = get_user(ivalue, (unsigned int *) arg);
+                if (result)
+			return (result);
+		
+                set_send_carrier(ir, ivalue);
+                break;
 
 	default:
 		return -ENOIOCTLCMD;
@@ -716,8 +776,9 @@ static int usb_remote_probe(struct usb_interface *intf,
 			strcpy(plugin->name, DRIVER_NAME " ");
 			plugin->minor = -1;
 			plugin->features = LIRC_CAN_SEND_PULSE |
-					   LIRC_CAN_SET_TRANSMITTER_MASK |
-					   LIRC_CAN_REC_MODE2;
+				LIRC_CAN_SET_TRANSMITTER_MASK |
+				LIRC_CAN_REC_MODE2 |
+				LIRC_CAN_SET_SEND_CARRIER;
 			plugin->data = ir;
 			plugin->rbuf = rbuf;
 			plugin->set_use_inc = &set_use_inc;
@@ -784,7 +845,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 
 	/* inbound data */
 	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
-		maxp, usb_remote_recv, ir, ep_in->bInterval);
+		maxp, (usb_complete_t) usb_remote_recv, ir, ep_in->bInterval);
 
 	/* initialize device */
 	request_packet_async( ir, ep_in, NULL, maxp, PHILUSB_INBOUND );

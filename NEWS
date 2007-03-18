@@ -1,4 +1,5 @@
 0.8.2-CVS: future
+  * lirc_mceusb2 supports setting carrier frequency
   * added support for Asus DH remote (Brice DUBOST, Bernhard Frauendienst)
   * fixed show-stopper bug in RC-6 transmit code
   * added support for Kanam Accent (Niccolo Rigacci)
