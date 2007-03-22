@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.26 $"
+#define DRIVER_VERSION          "$Revision: 1.27 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -123,6 +123,7 @@
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },	/* Philips eHome Infrared Transciever */
+	{ USB_DEVICE(VENDOR_PHILIPS, 0x060c) },	/* Philips Infrared Transciever - HP branded */
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },	/* SMK/Toshiba G83C0004D410 */
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },	/* SMK eHome Infrared Transceiver (Sony VAIO) */
 	{ USB_DEVICE(VENDOR_TATUNG, 0x9150) },  /* Tatung eHome Infrared Transceiver */
@@ -402,6 +403,17 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 			switch(ir->buf_in[i])
 			{
 				/* data headers */
+			case 0x8F:
+			case 0x8E:
+			case 0x8D:
+			case 0x8C:
+			case 0x8B:
+			case 0x8A:
+			case 0x89:
+			case 0x88:
+			case 0x87:
+			case 0x86:
+			case 0x85:
 			case 0x84:
 			case 0x83:
 			case 0x82:
