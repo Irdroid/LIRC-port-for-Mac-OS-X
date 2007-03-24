@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.31 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.32 2007/03/24 13:31:18 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -227,7 +227,7 @@ int default_init()
 			  "installation");
 		return(0);
 	}
-	else if(ioctl(hw.fd,LIRC_GET_FEATURES,&hw.features)==-1)
+	else if(default_ioctl(LIRC_GET_FEATURES, &hw.features)==-1)
 	{
 		logprintf(LOG_ERR,"could not get hardware features");
 		logprintf(LOG_ERR,"this device driver does not "
@@ -286,7 +286,7 @@ int default_init()
 				unsigned long mode;
 
 				mode=LIRC_SEND2MODE(supported_send_modes[i]);
-				if(ioctl(hw.fd,LIRC_SET_SEND_MODE,&mode)==-1)
+				if(default_ioctl(LIRC_SET_SEND_MODE, &mode)==-1)
 				{
 					logprintf(LOG_ERR,"could not set "
 						  "send mode");
@@ -315,7 +315,7 @@ int default_init()
 				unsigned long mode;
 
 				mode=LIRC_REC2MODE(supported_rec_modes[i]);
-				if(ioctl(hw.fd,LIRC_SET_REC_MODE,&mode)==-1)
+				if(default_ioctl(LIRC_SET_REC_MODE, &mode)==-1)
 				{
 					logprintf(LOG_ERR,"could not set "
 						  "receive mode");
@@ -337,7 +337,7 @@ int default_init()
 	{
 		/* get resolution */
 		hw.resolution=0;
-		if(ioctl(hw.fd, LIRC_GET_REC_RESOLUTION, &hw.resolution)!=-1)
+		if(default_ioctl(LIRC_GET_REC_RESOLUTION, &hw.resolution)!=-1)
 		{
 			LOGPRINTF(1, "resolution of receiver: %d",
 				  hw.resolution);
@@ -350,7 +350,7 @@ int default_init()
 	}
 	else if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 	{
-		if(ioctl(hw.fd,LIRC_GET_LENGTH,&hw.code_length)==-1)
+		if(default_ioctl(LIRC_GET_LENGTH, &hw.code_length)==-1)
 		{
 			logprintf(LOG_ERR,"could not get code length");
 			logperror(LOG_ERR,"default_init()");
@@ -439,7 +439,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		unsigned int freq;
 		
 		freq=remote->freq==0 ? DEFAULT_FREQ:remote->freq;
-		if(ioctl(hw.fd,LIRC_SET_SEND_CARRIER,&freq)==-1)
+		if(default_ioctl(LIRC_SET_SEND_CARRIER, &freq)==-1)
 		{
 			logprintf(LOG_ERR,"could not set modulation "
 				  "frequency");
@@ -452,7 +452,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		unsigned int duty_cycle;
 		
 		duty_cycle=remote->duty_cycle==0 ? 50:remote->duty_cycle;
-		if(ioctl(hw.fd,LIRC_SET_SEND_DUTY_CYCLE,&duty_cycle)==-1)
+		if(default_ioctl(LIRC_SET_SEND_DUTY_CYCLE, &duty_cycle)==-1)
 		{
 			logprintf(LOG_ERR,"could not set duty cycle");
 			logperror(LOG_ERR,NULL);
@@ -559,7 +559,7 @@ static int default_config_frequency()
 	if(hw.features&LIRC_CAN_SET_REC_CARRIER_RANGE &&
 	   min_freq!=max_freq)
 	{
-		if(ioctl(hw.fd,LIRC_SET_REC_CARRIER_RANGE,&min_freq)==-1)
+		if(default_ioctl(LIRC_SET_REC_CARRIER_RANGE, &min_freq)==-1)
 		{
 			logprintf(LOG_ERR,"could not set receive carrier");
 			logperror(LOG_ERR,"default_init()");
@@ -571,7 +571,7 @@ static int default_config_frequency()
 	{
 		freq=(min_freq+max_freq)/2;
 	}
-	if(ioctl(hw.fd,LIRC_SET_REC_CARRIER,&freq)==-1)
+	if(default_ioctl(LIRC_SET_REC_CARRIER, &freq)==-1)
 	{
 		logprintf(LOG_ERR,"could not set receive carrier");
 		logperror(LOG_ERR,"default_init()");
@@ -580,7 +580,7 @@ static int default_config_frequency()
 	return(1);
 }
 
-int default_ioctl(unsigned int cmd, unsigned long arg)
+int default_ioctl(unsigned int cmd, void *arg)
 {
-	return ioctl(hw.fd, cmd, &arg);
+	return ioctl(hw.fd, cmd, arg);
 }

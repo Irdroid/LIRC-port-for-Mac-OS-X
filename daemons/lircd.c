@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.68 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: lircd.c,v 5.69 2007/03/24 13:31:18 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1270,7 +1270,7 @@ int set_transmitters(int fd,char *message,char *arguments)
 		channels |= next_tx_hex;
 	}while ((next_arg=strtok(NULL,WHITE_SPACE))!=NULL);
 	
-	retval = hw.ioctl_func(LIRC_SET_TRANSMITTER_MASK, channels);
+	retval = hw.ioctl_func(LIRC_SET_TRANSMITTER_MASK, &channels);
 	if(retval<0)
 	{
 		return(send_error(fd, message, "error - could not set "
