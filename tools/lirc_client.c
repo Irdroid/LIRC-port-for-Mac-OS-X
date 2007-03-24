@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.25 2006/05/23 13:09:45 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.26 2007/03/24 12:54:43 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -1822,7 +1822,9 @@ const char *lirc_setmode(struct lirc_config *config, const char *mode)
 		int success;
 		int ret;
 		char cmd[LIRC_PACKET_SIZE];
-		if(snprintf(cmd, LIRC_PACKET_SIZE, "SETMODE %s\n", mode)
+		if(snprintf(cmd, LIRC_PACKET_SIZE, "SETMODE%s%s\n",
+			    mode ? " ":"",
+			    mode ? mode:"")
 		   >= LIRC_PACKET_SIZE)
 		{
 			return NULL;
@@ -1845,7 +1847,7 @@ const char *lirc_setmode(struct lirc_config *config, const char *mode)
 	}
 	
 	free(config->current_mode);
-	config->current_mode = strdup(mode);
+	config->current_mode = mode ? strdup(mode) : NULL;
 	return config->current_mode;
 }
 
