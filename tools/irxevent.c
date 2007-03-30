@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.18 2007/03/11 16:30:19 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.19 2007/03/30 07:13:47 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -498,8 +498,8 @@ static void sendbutton(int button, int x, int y, Window w,Window s)
 
 int errorHandler(Display* di, XErrorEvent* ev)
 {
-  if(bInError || ev==NULL || di==NULL) return 1;      // only 1 msg per key
   char buff[512]; buff[0] = 0;
+  if(bInError || ev==NULL || di==NULL) return 1;      // only 1 msg per key
   XGetErrorText(di, ev->error_code, buff, sizeof(buff)-1);
   if(buff[0]) {
      if(!bDaemon) fprintf(stderr, "X11 error: %s\n", buff);
