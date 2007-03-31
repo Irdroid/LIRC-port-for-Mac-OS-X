@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.63 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.64 2007/03/31 14:53:23 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -920,10 +920,15 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 	printf("Checking for toggle bit mask.\n");
 	printf(
 "Please press an arbitrary button repeatedly as fast as possible.\n"
-"Make sure you keep pressing the SAME button and that you DON'T HOLD\nh"
+"Make sure you keep pressing the SAME button and that you DON'T HOLD\n"
 "the button down!.\n"
 "If you can't see any dots appear, then wait a bit between button presses.\n"
+"\n"
+"Press RETURN to continue."
 );
+	fflush(stdout);
+	getchar();
+
 	retries=30;flag=success=0;first=0;last=0;
 	seq=repeats=0;found=0;
 	while(availabledata())
@@ -1003,17 +1008,14 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 	}
 	else
 	{
-		if(remote->toggle_bit>0)
+		if(remote->toggle_bit_mask>0)
 		{
-			printf("\nToggle bit is %d.\n",remote->toggle_bit);
+			printf("\nToggle bit mask is 0x%llx.\n",
+			       (unsigned long long) remote->toggle_bit_mask);
 		}
 		else if(remote->toggle_mask!=0)
 		{
 			printf("\nToggle mask found.\n");
-		}
-		else
-		{
-			printf("\nInvalid toggle bit.\n");
 		}
 	}
 	if(seq>0) remote->min_repeat=repeats/seq;
