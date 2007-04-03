@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.27 $"
+#define DRIVER_VERSION          "$Revision: 1.28 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -120,6 +120,7 @@
 #define VENDOR_ITRON            0x195d
 #define VENDOR_FIC              0x1509
 #define VENDOR_LG               0x043e
+#define VENDOR_MICROSOFT	0x045e
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },	/* Philips eHome Infrared Transciever */
@@ -135,6 +136,7 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ITRON, 0x7002) },   /* Itron ione Libra Q-11 */
 	{ USB_DEVICE(VENDOR_FIC, 0x9242) },     /* FIC eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_LG, 0x9803) },      /* LG eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_MICROSOFT, 0x00a0) }, /* Microsoft MCE Infrared Transceiver */
 	{ }					/* Terminating entry */
 };
 
