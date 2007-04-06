@@ -90,6 +90,7 @@ begin remote
 
 	name	RM-1500
 	bits	8
+	gap 300000
 
 	begin codes
 		power		0x01
