@@ -1,4 +1,4 @@
-/* 	$Id: irsend.c,v 5.3 2005/07/10 08:34:13 lirc Exp $	 */
+/* 	$Id: irsend.c,v 5.4 2007/04/06 19:31:45 lirc Exp $	 */
 
 /*
   
@@ -26,6 +26,7 @@
 #  include "config.h"
 #endif
 
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -243,12 +244,16 @@ int main(int argc,char **argv)
 	char *remote;
 	char *code;
         char *lircd=NULL;
-	struct sockaddr_un addr;
+	char *address=NULL;
+	unsigned short port = LIRC_INET_PORT;
+	unsigned long count=1;
+	struct sockaddr_un addr_un;
+	struct sockaddr_in addr_in;
 	int fd;
 	char buffer[PACKET_SIZE+1];
 	struct sigaction act;
 	
-	progname=argv[0];
+	progname = "irsend";
 	
 	while(1)
 	{
@@ -258,25 +263,73 @@ int main(int argc,char **argv)
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
                         {"device",required_argument,NULL,'d'},
+                        {"address",required_argument,NULL,'a'},
+                        {"count",required_argument,NULL,'#'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvd:",long_options,NULL);
+		c = getopt_long(argc,argv,"hvd:a:#:",long_options,NULL);
 		if(c==-1)
 			break;
 		switch (c)
 		{
 		case 'h':
 			printf("Usage: %s [options] DIRECTIVE REMOTE CODE [CODE...]\n",progname);
-			printf("\t -h --help\t\tdisplay usage summary\n");
-			printf("\t -v --version\t\tdisplay version\n");
-                        printf("\t -d --device\t\tuse given lircd socket [%s]\n", LIRCD);
+			printf("\t -h --help\t\t\tdisplay usage summary\n");
+			printf("\t -v --version\t\t\tdisplay version\n");
+                        printf("\t -d --device\t\t\tuse given lircd socket [%s]\n", LIRCD);
+                        printf("\t -a --address=host[:port]\tconnect to "
+			       "lircd at this address\n");
+                        printf("\t -# --count=n\t\t\tsend command n times\n");
 			return(EXIT_SUCCESS);
 		case 'v':
-			printf("irsend %s\n",VERSION);
+			printf("%s %s\n", progname, VERSION);
 			return(EXIT_SUCCESS);
                 case 'd':
                         lircd = optarg;
                         break;
+		case 'a':
+		{
+			char *p;
+			char *end;
+			unsigned long val;
+			
+			address = strdup(optarg);
+			if(!address)
+			{
+				fprintf(stderr, "%s: out of memory\n",
+					progname);
+				return(EXIT_FAILURE);
+			}
+			p = strchr(address, ':');
+			if(p != NULL)
+		        {
+				val = strtoul(p+1, &end, 10);
+				if (!(*(p+1)) || *end ||
+				    val<1 || val>USHRT_MAX)
+				{
+					fprintf(stderr,
+						"%s: invalid port number: "
+						"%s\n", progname, p+1);
+					return(EXIT_FAILURE);
+				}
+				port = (unsigned short) val;
+				*p = 0;
+			}
+			break;
+		}
+		case '#':
+		{
+			char *end;
+			
+			count = strtoul(optarg, &end, 10);
+			if(!*optarg || *end)
+			{
+				fprintf(stderr, "%s: invalid count value: "
+					"%s\n", progname, optarg);
+				return(EXIT_FAILURE);
+			}
+			break;
+		}
 		default:
 			return(EXIT_FAILURE);
 		}
@@ -293,7 +346,7 @@ int main(int argc,char **argv)
 	}
         else
 	{
-                if(strlen(lircd)+1 > sizeof(addr.sun_path))
+                if(strlen(lircd)+1 > sizeof(addr_un.sun_path))
 		{
 			/* lircd is longer than sockaddr_un.sun_path field */
 			fprintf(stderr, "%s: socket name is too long\n",
@@ -307,23 +360,48 @@ int main(int argc,char **argv)
 	act.sa_flags=0;           /* we need EINTR */
 	sigaction(SIGALRM,&act,NULL);
 
-	addr.sun_family=AF_UNIX;
-	strcpy(addr.sun_path,lircd);
-	fd=socket(AF_UNIX,SOCK_STREAM,0);
+	if (address == NULL) {
+		addr_un.sun_family=AF_UNIX;
+		strcpy(addr_un.sun_path,lircd);
+		fd=socket(AF_UNIX,SOCK_STREAM,0);
+	}
+	else
+	{
+		struct hostent *hostInfo;
+		
+		hostInfo = gethostbyname(address);
+		if (hostInfo == NULL) {
+			fprintf(stderr,"%s: host %s unknown\n", progname,
+				address);
+	  		return(EXIT_FAILURE);
+		}
+		addr_in.sin_family = hostInfo->h_addrtype;
+		memcpy((char *) &addr_in.sin_addr.s_addr,
+		       hostInfo->h_addr_list[0], hostInfo->h_length);
+		addr_in.sin_port = htons(port);
+		fd=socket(AF_INET,SOCK_STREAM,0);	
+	}
+
 	if(fd==-1)
 	{
 		fprintf(stderr,"%s: could not open socket\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	};
-	if(connect(fd,(struct sockaddr *)&addr,sizeof(addr))==-1)
+	
+	if(connect(fd,
+		   address ? (struct sockaddr *) &addr_in :
+		   (struct sockaddr *) &addr_un,
+		   address ? sizeof(addr_in) : sizeof(addr_un)) == -1)
 	{
 		fprintf(stderr,"%s: could not connect to socket\n",progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	};
-
-
+	
+	if(address) free(address);
+	address = NULL;
+	
 	directive=argv[optind++];
 
 	if(strcasecmp(directive,"set_transmitters")==0)
@@ -372,8 +450,15 @@ int main(int argc,char **argv)
 		
 			if(strlen(directive)+strlen(remote)+strlen(code)+3<PACKET_SIZE)
 			{
-				sprintf(buffer,"%s %s %s\n",directive,remote,code);
-			
+				if(strcasecmp(directive,"SEND_ONCE")==0 && count>1)
+				{
+					sprintf(buffer,"%s %s %s %lu\n",
+						directive,remote,code,count);
+				}
+				else
+				{
+					sprintf(buffer,"%s %s %s\n",directive,remote,code);
+				}
 				if(send_packet(fd,buffer)==-1)
 				{
 					exit(EXIT_FAILURE);
