@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.180 2007/04/08 09:05:12 lirc Exp $
+dnl $Id: configure.in,v 5.181 2007/04/08 09:25:23 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -287,7 +287,8 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, sasem,
                           sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
-                          tvbox, udp, uirt2, uirt2_raw, usb_uirt_raw],
+                          tuxbox, tvbox, udp, uirt2, uirt2_raw,
+                          usb_uirt_raw],
 driver=${withval},
 driver="unset"
 )
@@ -1069,6 +1070,12 @@ if test "$driver" = "tira"; then
   lirc_driver="none"
   hw_module="hw_tira.o serial.o"
   HW_DEFAULT="hw_tira"
+fi
+
+if test "$driver" = "tuxbox"; then
+  lirc_driver="none"
+  hw_module="hw_default.o receive.o transmit.o"
+  HW_DEFAULT="hw_default"
 fi
 
 if test "$driver" = "tvbox"; then
