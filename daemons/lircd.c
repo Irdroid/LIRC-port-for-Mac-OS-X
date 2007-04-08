@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.69 2007/03/24 13:31:18 lirc Exp $      */
+/*      $Id: lircd.c,v 5.70 2007/04/08 19:37:29 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -135,6 +135,9 @@ char *protocol_string[] =
 	"SUCCESS\n",
 	"SIGHUP\n"
 };
+
+static void log_enable(int enabled);
+static int log_enabled = 1;
 
 #ifndef USE_SYSLOG
 #define HOSTNAME_LEN 128
@@ -861,10 +864,36 @@ void start_server(mode_t permission,int nodaemon)
 	exit(EXIT_FAILURE);
 }
 
-#ifndef USE_SYSLOG
+void log_enable(int enabled)
+{
+	log_enabled = enabled;
+}
+
+#ifdef USE_SYSLOG
+void logprintf(int prio,char *format_str, ...)
+{
+	va_list ap;
+	
+	if(!log_enabled) return;
+	
+	va_start(ap,format_str);
+	vsyslog(prio, format_str, ap);
+	va_end(ap);
+}
+
+void logperror(int prio,const char *s)
+{
+	if(!log_enabled) return;
+	
+	if((s)!=NULL) syslog(prio,"%s: %m\n",(char *) s);
+	else syslog(prio,"%m\n");
+}
+#else
 void logprintf(int prio,char *format_str, ...)
 {
 	va_list ap;  
+	
+	if(!log_enabled) return;
 	
 	if(lf)
 	{
@@ -894,6 +923,8 @@ void logprintf(int prio,char *format_str, ...)
 
 void logperror(int prio,const char *s)
 {
+	if(!log_enabled) return;
+	
 	if(s!=NULL)
 	{
 		logprintf(prio,"%s: %s",s,strerror(errno));
@@ -1624,7 +1655,7 @@ int waitfordata(long maxusec)
 {
 	fd_set fds;
 	int maxfd,i,ret,reconnect;
-	struct timeval tv,start,now;
+	struct timeval tv,start,now,timeout;
 
 	while(1)
 	{
@@ -1654,7 +1685,7 @@ int waitfordata(long maxusec)
 				FD_SET(sockinet,&fds);
 				maxfd=max(maxfd,sockinet);
 			}
-			if(clin>0 && hw.rec_mode!=0)
+			if(clin>0 && hw.rec_mode!=0 && hw.fd!=-1)
 			{
 				FD_SET(hw.fd,&fds);
 				maxfd=max(maxfd,hw.fd);
@@ -1714,6 +1745,18 @@ int waitfordata(long maxusec)
 				tv.tv_sec= maxusec / 1000000;
 				tv.tv_usec=maxusec % 1000000;
 			}
+			if(hw.fd == -1)
+			{
+				/* try to reconnect */
+				timerclear(&timeout);
+				timeout.tv_sec = 1;
+				
+				if(timercmp(&tv, &timeout, >) ||
+				   (!reconnect && !timerisset(&tv)))
+				{
+					tv = timeout;
+				}
+			}
 #ifdef SIM_REC
 			ret=select(maxfd+1,&fds,NULL,NULL,NULL);
 #else
@@ -1761,6 +1804,12 @@ int waitfordata(long maxusec)
 		}
 		while(ret==-1 && errno==EINTR);
 		
+		if(hw.fd == -1 && clin > 0 && hw.init_func)
+		{
+			log_enable(0);
+			hw.init_func();
+			log_enable(1);
+		}
 		for(i=0;i<clin;i++)
 		{
 			if(FD_ISSET(clis[i],&fds))
@@ -1800,7 +1849,8 @@ int waitfordata(long maxusec)
 			LOGPRINTF(1,"registering inet client");
 			add_client(sockinet);
 		}
-                if(clin>0 && hw.rec_mode!=0 && FD_ISSET(hw.fd,&fds))
+                if(clin>0 && hw.rec_mode!=0 && hw.fd!=-1 &&
+		   FD_ISSET(hw.fd,&fds))
                 {
                         /* we will read later */
 			return(1);

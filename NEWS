@@ -1,4 +1,6 @@
 0.8.2-CVS: future
+  * periodically try to reopen lirc device if reading fails (probably
+    because USB device has been removed)
   * added support for Creative USB IR Receiver (SB0540) (Benjamin Drung)
   * lirc_mceusb2 supports setting carrier frequency
   * added support for Asus DH remote (Brice DUBOST, Bernhard Frauendienst)

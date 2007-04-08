@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.32 2007/03/24 13:31:18 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.33 2007/04/08 19:37:29 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -133,9 +133,10 @@ lirc_t default_readdata(lirc_t timeout)
 	ret=read(hw.fd,&data,sizeof(data));
 	if(ret!=sizeof(data))
 	{
-		LOGPRINTF(1,"error reading from lirc");
-		LOGPERROR(1,NULL);
-		dosigterm(SIGTERM);
+		logprintf(LOG_ERR, "error reading from %s", hw.device);
+		logperror(LOG_ERR, NULL);
+		default_deinit();
+		return 0;
 	}
 #endif
 	return(data);
@@ -391,8 +392,11 @@ int default_config(struct ir_remote *remotes)
 int default_deinit(void)
 {
 #if (!defined(SIM_SEND) || !defined(SIM_SEND)) || defined(DAEMONIZE)
-	close(hw.fd);
-	hw.fd=-1;
+	if(hw.fd != -1)
+	{
+		close(hw.fd);
+		hw.fd=-1;
+	}
 #endif
 	return(1);
 }

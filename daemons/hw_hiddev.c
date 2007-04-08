@@ -19,7 +19,6 @@
 #endif
 
 #include <stdio.h>
-#include <signal.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 
@@ -159,9 +158,12 @@ int hiddev_init()
 
 int hiddev_deinit(void)
 {
-	logprintf(LOG_INFO, "closing '%s'", hw.device);
-	close(hw.fd);
-	hw.fd=-1;
+	if(hw.fd != -1)
+	{
+		logprintf(LOG_INFO, "closing '%s'", hw.device);
+		close(hw.fd);
+		hw.fd=-1;
+	}
 	return 1;
 }
 
@@ -207,7 +209,8 @@ char *hiddev_rec(struct ir_remote *remotes)
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
-		raise(SIGTERM);
+		logperror(LOG_ERR, NULL);
+		hiddev_deinit();
 		return 0;
 	}
 
@@ -381,7 +384,8 @@ char *sb0540_rec(struct ir_remote *remotes)
 	rd = read(hw.fd, &uref, sizeof(uref));
 	if (rd < 0) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
-		raise(SIGTERM);
+		logperror(LOG_ERR, NULL);
+		hiddev_deinit();
 		return 0;
 	}
 
