@@ -32,6 +32,7 @@ extern struct hardware hw_mp3anywhere;
 extern struct hardware hw_pcmak;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
+extern struct hardware hw_sb0540;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
 extern struct hardware hw_tira;
@@ -113,6 +114,7 @@ struct hardware *hw_list[] =
 	&hw_pcmak,
 	&hw_pinsys,
 	&hw_pixelview,
+	&hw_sb0540,
 	&hw_silitek,
 	/*	&hw_slinke,*/
 	&hw_tira,

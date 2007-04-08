@@ -112,6 +112,7 @@ hw_menu_entry: @hw-usb
 	asusdh: "Asus DH USB Remote"
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
+	sb0540: "Creative USB IR Receiver (SB0540)"
 	cmdir: "COMMANDIR USB Transceiver"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
@@ -231,6 +232,7 @@ param_type: \
 	provideo \
 	sa1100 \
 	sasem \
+	sb0540 \
 	streamzap \
 	tekram_bt829 \
 	tvbox \
@@ -294,6 +296,7 @@ default_param: \
 	provideo \
 	sa1100 \
 	sasem \
+	sb0540 \
 	streamzap \
 	tekram_bt829 \
 	tvbox \

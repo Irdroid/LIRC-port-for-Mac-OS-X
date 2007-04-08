@@ -1,5 +1,5 @@
 /****************************************************************************
- ** hw_hiddev.c ***********************************************************
+ ** hw_hiddev.c *************************************************************
  ****************************************************************************
  *
  * receive keycodes input via /dev/usb/hiddev...
@@ -8,6 +8,7 @@
  * Copyright (C) 2004 Chris Pascoe <c.pascoe@itee.uq.edu.au>
  * Copyright (C) 2005 William Uther <william.uther@nicta.com.au>
  * Copyright (C) 2007 Brice DUBOST <ml@braice.net>
+ * Copyright (C) 2007 Benjamin Drung <benjamin.drung@gmail.com>
  *
  * Distribute under GPL version 2 or later.
  *
@@ -18,7 +19,9 @@
 #endif
 
 #include <stdio.h>
+#include <signal.h>
 #include <sys/fcntl.h>
+#include <sys/ioctl.h>
 
 #include <linux/types.h>
 #include <linux/hiddev.h>
@@ -36,6 +39,8 @@ static int hiddev_decode(struct ir_remote *remote,
 			   ir_code *prep, ir_code *codep, ir_code *postp,
 			   int *repeat_flagp, lirc_t *remaining_gapp);
 static char *hiddev_rec(struct ir_remote *remotes);
+static int sb0540_init();
+static char *sb0540_rec(struct ir_remote *remotes);
 
 struct hardware hw_dvico=
 {
@@ -103,6 +108,26 @@ struct hardware hw_asusdh=
 	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"asusdh"		/* name */
+};
+
+/* Creative USB IR Receiver (SB0540) */
+struct hardware hw_sb0540=
+{
+	"/dev/usb/hiddev0",     /* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
+	32,			/* code_length */
+	sb0540_init,		/* init_func */
+	NULL,			/* config_func */
+	hiddev_deinit,          /* deinit_func */
+	NULL,			/* send_func */
+	sb0540_rec,		/* rec_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
+	NULL,			/* readdata */
+	"sb0540"		/* name */
 };
 
 static int old_main_code = 0;
@@ -182,6 +207,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
+		raise(SIGTERM);
 		return 0;
 	}
 
@@ -306,6 +332,93 @@ char *hiddev_rec(struct ir_remote *remotes)
 	}
 
 	/* insert decoding logic for other hiddev remotes here */
+
+	return 0;
+}
+
+/*
+ * Creative USB IR Receiver specific code
+ *
+ * based on creative_rm1500_usb-0.1 from http://ecto.teftin.net/rm1500.html
+ * which is written by Stan Sawa teftin(at)gmail.com
+ *
+ */
+
+int sb0540_init()
+{
+	int rv = hiddev_init();
+
+	if (rv == 1) {
+		/* we want to get info on each report received from device */
+		int flags = HIDDEV_FLAG_UREF | HIDDEV_FLAG_REPORT;
+		if (ioctl(hw.fd, HIDIOCSFLAG, &flags)) {
+			return 0;
+		}
+	}
+
+	return rv;
+}
+
+char *sb0540_rec(struct ir_remote *remotes)
+{
+	/*
+	 * at this point, each read from opened file/device should return
+	 * hiddev_usage_ref structure
+	 *
+	 */
+
+	ir_code code;
+	ssize_t rd;
+	struct hiddev_usage_ref uref;
+
+	LOGPRINTF(1, "sb0540_rec");
+
+	pre_code_length = 16;
+	main_code_length = 16;
+	pre_code = 0x8322;
+	repeat_flag = 0;
+
+	rd = read(hw.fd, &uref, sizeof(uref));
+	if (rd < 0) {
+		logprintf(LOG_ERR, "error reading '%s'", hw.device);
+		raise(SIGTERM);
+		return 0;
+	}
+
+	if (uref.field_index == HID_FIELD_INDEX_NONE) {
+		/*
+		 * we get this when the new report has been send from
+		 * device at this point we have the uref structure
+		 * prefilled with correct report type and id
+		 *
+		 */
+
+		/* this got guessed by getting the device report
+		   descriptor (function devinfo in source) */
+		uref.field_index = 0; /* which field of report */
+		/* this got guessed by taking all values from device
+		   and checking which ones are changing ;) */
+		uref.usage_index = 3; /* which usage entry of field */
+
+		/* fetch the usage code for given indexes */
+		ioctl(hw.fd, HIDIOCGUCODE, &uref, sizeof(uref));
+		/* fetch the value from report */
+		ioctl(hw.fd, HIDIOCGUSAGE, &uref, sizeof(uref));
+		/* now we have the key */
+
+		code = reverse(uref.value, 8);
+		main_code = (code << 8) + ((~code)&0xff);
+
+		return decode_all(remotes);
+	}
+	/*
+	 * we are not interested in any other events, as they are only
+	 * giving info what changed in report and this not always
+	 * works, is complicated, doesn't output anything sensible on
+	 * repeated key and we already have all the info from real
+	 * report
+	 *
+	 */
 
 	return 0;
 }
