@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.70 2007/04/08 19:37:29 lirc Exp $      */
+/*      $Id: lircd.c,v 5.71 2007/04/14 15:57:21 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1872,6 +1872,12 @@ void loop()
 		
 		if(message!=NULL)
 		{
+			if(hw.ioctl_func &&
+			   (hw.features&LIRC_CAN_NOTIFY_DECODE))
+			{
+				hw.ioctl_func(LIRC_NOTIFY_DECODE, NULL);
+			}
+			
 			len=strlen(message);
 			
 			for (i=0; i<clin; i++)

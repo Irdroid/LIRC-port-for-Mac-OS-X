@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.11 2007/01/16 05:11:11 lirc Exp $      */
+/*      $Id: lirc.h,v 5.12 2007/04/14 15:57:21 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -65,9 +65,10 @@ typedef int lirc_t;
 #define LIRC_CAN_SET_REC_DUTY_CYCLE_RANGE 0x40000000
 #define LIRC_CAN_SET_REC_CARRIER_RANGE    0x80000000
 
-
 #define LIRC_CAN_SEND(x) ((x)&LIRC_CAN_SEND_MASK)
 #define LIRC_CAN_REC(x) ((x)&LIRC_CAN_REC_MASK)
+
+#define LIRC_CAN_NOTIFY_DECODE            0x01000000
 
 /*
  * IOCTL commands for lirc driver
@@ -102,5 +103,7 @@ typedef int lirc_t;
 
 #define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, __u32)
 #define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, __u32)
+
+#define LIRC_NOTIFY_DECODE             _IO('i', 0x00000020)
 
 #endif
