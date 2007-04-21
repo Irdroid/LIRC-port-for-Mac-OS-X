@@ -3,7 +3,7 @@
 HEURISTIC=`mktemp`
 
 write_heuristic="no"
-cat ../configure.in | while read; do
+cat ../configure.in | while read REPLY; do
     if echo $REPLY|grep "START HARDWARE HEURISTIC" >/dev/null; then
 	write_heuristic="yes"
 	continue;
@@ -29,7 +29,7 @@ cat html-source/head.html
 
 echo "<table border=\"1\">"
 echo "<tr><th>Hardware</th><th>configure --with-driver option</th><th>Required LIRC kernel modules</th><th>lircd driver</th><th>default lircd and lircmd config files</th></tr>"
-grep ".*: \(\".*\"\)\|@" ../setup.data | while read; do
+grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
     #echo $REPLY
 
     if echo $REPLY|grep ": @any" >/dev/null; then
