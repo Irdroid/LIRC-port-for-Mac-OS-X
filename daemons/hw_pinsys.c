@@ -52,7 +52,8 @@ extern struct ir_remote *repeat_remote,*last_remote;
 #define BITS_COUNT 8
 #endif
 
-#define REPEAT_FLAG 0x40
+#define REPEAT_FLAG ((ir_code) 0x000040)
+#define REPEAT_MASK ((ir_code) 0x00e840)
 
 unsigned char b[3], t;
 struct timeval start,end,last;
@@ -152,7 +153,9 @@ int pinsys_decode(struct ir_remote *remote,
 		  int *repeat_flagp,lirc_t *remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
-		     0,0,BITS_COUNT,code&(~REPEAT_FLAG),0,0))
+		     0,0,
+		     BITS_COUNT, code&REPEAT_FLAG ? code^REPEAT_MASK : code,
+		     0,0))
 	{
 		return(0);
 	}
