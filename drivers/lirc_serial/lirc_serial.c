@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.73 2007/02/13 06:45:16 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.74 2007/04/22 10:23:05 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -11,7 +11,7 @@
  * Copyright (C) 1998 Trent Piepho <xyzzy@u.washington.edu>
  * Copyright (C) 1998 Ben Pfaff <blp@gnu.org>
  * Copyright (C) 1999 Christoph Bartelmus <lirc@bartelmus.de>
- *
+ * Copyright (C) 2007 Andrei Tanas <andrei@tanas.ca> (suspend/resume support)
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -89,6 +89,9 @@
 #include <linux/mm.h>
 #include <linux/delay.h>
 #include <linux/poll.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+#include <linux/platform_device.h>
+#endif
 
 #include <asm/system.h>
 #include <asm/uaccess.h>
@@ -843,36 +846,9 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
 
-static int init_port(void)
+static void hardware_init_port(void)
 {
 	unsigned long flags;
-
-	
-	/* Reserve io region. */
-#if defined(LIRC_ALLOW_MMAPPED_IO)
-	/* Future MMAP-Developers: Attention!
-	   For memory mapped I/O you *might* need to use ioremap() first,
-	   for the NSLU2 it's done in boot code. */
-	if(((iommap != 0)
-	    && (request_mem_region(iommap, 8<<ioshift,
-				   LIRC_DRIVER_NAME) == NULL))
-	   || ((iommap == 0)
-	       && (request_region(io, 8, LIRC_DRIVER_NAME) == NULL)))
-#else
-	if(request_region(io, 8, LIRC_DRIVER_NAME)==NULL)
-#endif
-	{
-		printk(KERN_ERR  LIRC_DRIVER_NAME  
-		       ": port %04x already in use\n", io);
-		printk(KERN_WARNING LIRC_DRIVER_NAME  
-		       ": use 'setserial /dev/ttySX uart none'\n");
-		printk(KERN_WARNING LIRC_DRIVER_NAME  
-		       ": or compile the serial port driver as module and\n");
-		printk(KERN_WARNING LIRC_DRIVER_NAME  
-		       ": make sure this module is loaded first\n");
-		return(-EBUSY);
-	}
-	
 	local_irq_save(flags);
 	
 	/* Set DLAB 0. */
@@ -931,7 +907,37 @@ static int init_port(void)
 	}
 	
 	local_irq_restore(flags);
+}
 	
+static int init_port(void)
+{	
+	/* Reserve io region. */
+#if defined(LIRC_ALLOW_MMAPPED_IO)
+	/* Future MMAP-Developers: Attention!
+	   For memory mapped I/O you *might* need to use ioremap() first,
+	   for the NSLU2 it's done in boot code. */
+	if(((iommap != 0)
+	    && (request_mem_region(iommap, 8<<ioshift,
+				   LIRC_DRIVER_NAME) == NULL))
+	   || ((iommap == 0)
+	       && (request_region(io, 8, LIRC_DRIVER_NAME) == NULL)))
+#else
+	if(request_region(io, 8, LIRC_DRIVER_NAME)==NULL)
+#endif
+	{
+		printk(KERN_ERR  LIRC_DRIVER_NAME  
+		       ": port %04x already in use\n", io);
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": use 'setserial /dev/ttySX uart none'\n");
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": or compile the serial port driver as module and\n");
+		printk(KERN_WARNING LIRC_DRIVER_NAME  
+		       ": make sure this module is loaded first\n");
+		return(-EBUSY);
+	}
+	
+	hardware_init_port();
+
 	/* Initialize pulse/space widths */
 	init_timing_params(duty_cycle, freq);
 
@@ -1147,10 +1153,91 @@ static struct lirc_plugin plugin = {
 
 #ifdef MODULE
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+static struct platform_device *lirc_serial_dev;
+
+static int __devinit lirc_serial_probe(struct platform_device *dev) {
+	return 0;
+}
+
+static int __devexit lirc_serial_remove(struct platform_device * dev) {
+	return 0;
+}
+
+static int lirc_serial_suspend(struct platform_device *dev, pm_message_t state) {
+	/* Set DLAB 0. */
+	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
+	
+	/* Disable all interrupts */
+	soutp(UART_IER, sinp(UART_IER)&
+	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
+
+	/* Clear registers. */
+	sinp(UART_LSR);
+	sinp(UART_RX);
+	sinp(UART_IIR);
+	sinp(UART_MSR);
+
+	return 0;
+}
+
+static int lirc_serial_resume(struct platform_device *dev) {
+	unsigned long flags;
+
+	hardware_init_port();
+
+	local_irq_save(flags);
+	/* Enable Interrupt */
+	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
+	off();
+
+	lirc_buffer_clear(&rbuf);
+
+	local_irq_restore(flags);
+
+	return 0;
+}
+
+static struct platform_driver lirc_serial_driver = {
+	.probe		= lirc_serial_probe,
+	.remove	= 	__devexit_p(lirc_serial_remove),
+	.suspend	= lirc_serial_suspend,
+	.resume		= lirc_serial_resume,
+	.driver		= {
+		.name	= "lirc_serial",
+		.owner	= THIS_MODULE,
+	},
+};
+
+static int __init lirc_serial_init(void)
+{
+	int result;
+
+	lirc_serial_dev = platform_device_alloc("lirc_serial", 0);
+	if (!lirc_serial_dev)
+		return -ENOMEM;
+	result = platform_device_add(lirc_serial_dev);
+	if (result) {
+		platform_device_put(lirc_serial_dev);
+		return result;
+	}
+	result = platform_driver_register(&lirc_serial_driver);
+	if (result) {
+		printk("lirc register returned %d\n", result);
+		platform_device_del(lirc_serial_dev);
+		platform_device_put(lirc_serial_dev);
+		return result;
+	}
+#endif
+
 int init_module(void)
 {
 	int result;
 	
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+	result = lirc_serial_init();
+	if(result) return result;
+#endif
 	switch(type)
 	{
 	case LIRC_HOMEBREW:
@@ -1192,8 +1279,20 @@ int init_module(void)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+static void __exit lirc_serial_exit(void)
+{
+	struct platform_device *pdev = lirc_serial_dev;
+	lirc_serial_dev = NULL;
+	platform_driver_unregister(&lirc_serial_driver);
+	platform_device_unregister(pdev);
+#endif
+
 void cleanup_module(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+	lirc_serial_exit();
+#endif
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 	if(iommap != 0)
 	{
@@ -1211,7 +1310,7 @@ void cleanup_module(void)
 }
 
 MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
-MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus");
+MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, Christoph Bartelmus, Andrei Tanas");
 MODULE_LICENSE("GPL");
 
 module_param(type, int, 0444);
