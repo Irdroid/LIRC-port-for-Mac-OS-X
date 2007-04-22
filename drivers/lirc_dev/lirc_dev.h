@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.19 2007/02/13 07:28:38 lirc Exp $
+ * $Id: lirc_dev.h,v 1.20 2007/04/22 10:21:37 lirc Exp $
  *
  */
 
@@ -36,6 +36,10 @@ struct lirc_buffer
 	/* Using chunks instead of bytes pretends to simplify boundary checking 
 	 * And should allow for some performance fine tunning later */
 };
+static inline void _lirc_buffer_clear(struct lirc_buffer *buf)
+{
+	buf->head = buf->tail = buf->fill = 0;
+}
 static inline int lirc_buffer_init(struct lirc_buffer *buf,
 				    unsigned int chunk_size,
 				    unsigned int size)
@@ -44,7 +48,7 @@ static inline int lirc_buffer_init(struct lirc_buffer *buf,
 	 * inconditional LIRC_BUFF_POWER_OF_2 optimization */
 	init_waitqueue_head(&buf->wait_poll);
 	spin_lock_init(&buf->lock);
-	buf->head = buf->tail = buf->fill = 0;
+	_lirc_buffer_clear(buf);
 	buf->chunk_size = chunk_size;
 	buf->size = size;
 	buf->data = kmalloc(size*chunk_size, GFP_KERNEL);
@@ -80,6 +84,13 @@ static inline void lirc_buffer_lock(struct lirc_buffer *buf, unsigned long *flag
 static inline void lirc_buffer_unlock(struct lirc_buffer *buf, unsigned long *flags)
 {
 	spin_unlock_irqrestore(&buf->lock, *flags);
+}
+static inline void lirc_buffer_clear(struct lirc_buffer *buf)
+{
+	unsigned long flags;
+	lirc_buffer_lock(buf, &flags);
+	_lirc_buffer_clear(buf);
+	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
 {
