@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.13 2006/11/22 21:28:39 lirc Exp $      */
+/*      $Id: serial.c,v 5.14 2007/04/23 16:25:11 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -26,6 +26,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+
+#if defined (__linux__)
+#include <linux/serial.h> /* for 'struct serial_struct' to set custom
+			     baudrates */
+#endif
 
 #include "lircd.h"
 
@@ -116,6 +121,10 @@ int tty_setbaud(int fd,int baud)
 {
 	struct termios options;
 	int speed;
+#if defined (__linux__)
+	int use_custom_divisor = 0;
+	struct serial_struct serinfo;
+#endif
 
 	switch(baud)
 	{
@@ -146,10 +155,81 @@ int tty_setbaud(int fd,int baud)
 	case 115200:
                 speed=B115200;
                 break;
+#ifdef B230400
+	case 230400:
+		speed=B230400;
+		break;
+#endif
+#ifdef B460800
+	case 460800:
+		speed=B460800;
+		break;
+#endif
+#ifdef B500000
+	case 500000:
+		speed=B500000;
+		break;
+#endif
+#ifdef B576000
+	case 576000:
+		speed=B576000;
+		break;
+#endif
+#ifdef B921600
+	case 921600:
+		speed=B921600;
+		break;
+#endif
+#ifdef B1000000
+	case 1000000:
+		speed=B1000000;
+		break;
+#endif
+#ifdef B1152000
+	case 1152000:
+		speed=B1152000;
+		break;
+#endif
+#ifdef B1500000
+	case 1500000:
+		speed=B1500000;
+		break;
+#endif
+#ifdef B2000000
+	case 2000000:
+		speed=B2000000;
+		break;
+#endif
+#ifdef B2500000
+	case 2500000:
+		speed=B2500000;
+		break;
+#endif
+#ifdef B3000000
+	case 3000000:
+		speed=B3000000;
+		break;
+#endif
+#ifdef B3500000
+	case 3500000:
+		speed=B3500000;
+		break;
+#endif
+#ifdef B4000000
+	case 4000000:
+		speed=B4000000;
+		break;
+#endif
 	default:
+#if defined (__linux__)
+		speed=B38400;
+		use_custom_divisor=1;
+		break;
+#else
 		LOGPRINTF(1,"tty_setbaud(): bad baud rate %d",baud);
 		return(0);
-	}		
+#endif
+	}
 	if(tcgetattr(fd, &options)==-1)
 	{
 		LOGPRINTF(1,"tty_setbaud(): tcgetattr() failed");
@@ -164,6 +244,26 @@ int tty_setbaud(int fd,int baud)
 		LOGPERROR(1,"tty_setbaud()");
 		return(0);
 	}
+#if defined (__linux__)
+	if (use_custom_divisor)
+	{
+		if(ioctl(fd, TIOCGSERIAL, &serinfo) < 0)
+		{
+			LOGPRINTF(1,"tty_setbaud(): TIOCGSERIAL failed");
+			LOGPERROR(1,"tty_setbaud()");
+			return(0);
+		}
+		serinfo.flags &= ~ASYNC_SPD_MASK;
+		serinfo.flags |= ASYNC_SPD_CUST;
+		serinfo.custom_divisor = serinfo.baud_base / baud;
+		if(ioctl(fd, TIOCSSERIAL, &serinfo) < 0)
+		{
+			LOGPRINTF(1,"tty_setbaud(): TIOCSSERIAL failed");
+			LOGPERROR(1,"tty_setbaud()");
+			return(0);
+		}
+	}
+#endif
 	return(1);
 }
 

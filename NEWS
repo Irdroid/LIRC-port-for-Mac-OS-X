@@ -1,4 +1,5 @@
 0.8.2-CVS: future
+  * added support for ADSTech USBX-707 USB IR Blaster (Jelle Foks)
   * periodically try to reopen lirc device if reading fails (probably
     because USB device has been removed)
   * added support for Creative USB IR Receiver (SB0540) (Benjamin Drung)

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.181 2007/04/08 09:25:23 lirc Exp $
+dnl $Id: configure.in,v 5.182 2007/04/23 16:25:11 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -165,6 +165,7 @@ possible_drivers="(none) \
 	(uirt2) \
 	(uirt2_raw) \
 	(usb_uirt_raw) \
+	(usbx) \
 	(udp)"
 
 if test x${no_kernel} != xyes; then
@@ -288,7 +289,7 @@ AC_ARG_WITH(driver,
                           sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
                           tuxbox, tvbox, udp, uirt2, uirt2_raw,
-                          usb_uirt_raw],
+                          usb_uirt_raw, usbx],
 driver=${withval},
 driver="unset"
 )
@@ -476,6 +477,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	uirt2_raw|usb_uirt_raw)
 		hw_module="${hw_module} hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
+		;;
+	usbx)
+		hw_module="${hw_module} hw_usbx.o serial.o"
 		;;
   esac
   done
@@ -1103,6 +1107,12 @@ if test "$driver" = "usb_uirt_raw"; then
   lirc_driver="none"
   hw_module="hw_uirt2_raw.o hw_uirt2_common.o serial.o receive.o transmit.o"
   HW_DEFAULT="hw_usb_uirt_raw"
+fi
+if test "$driver" = "usbx"; then
+  lirc_driver="none"
+  hw_module="hw_usbx.o serial.o"
+  HW_DEFAULT="hw_usbx"
+  lircd_conf="adstech/lircd.conf.usbx-707"
 fi
 
 #END HARDWARE HEURISTIC

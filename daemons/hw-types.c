@@ -40,6 +40,7 @@ extern struct hardware hw_udp;
 extern struct hardware hw_uirt2;
 extern struct hardware hw_uirt2_raw;
 extern struct hardware hw_usb_uirt_raw;
+extern struct hardware hw_usbx;
 
 
 #ifndef HW_DEFAULT
@@ -122,6 +123,7 @@ struct hardware *hw_list[] =
 	&hw_uirt2,
 	&hw_uirt2_raw,
 	&hw_usb_uirt_raw,
+	&hw_usbx,
 #else
 	&HW_DEFAULT,
 #endif

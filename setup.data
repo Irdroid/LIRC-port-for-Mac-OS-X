@@ -109,6 +109,7 @@ hw_menu_entry: @hw-pda
 	sa1100: "Sharp Zaurus"
 
 hw_menu_entry: @hw-usb
+	usbx: "ADSTech USBX-707 USB IR Blaster"
 	asusdh: "Asus DH USB Remote"
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
@@ -171,8 +172,9 @@ param_type: \
 param_type: \
 	pcmak_usb \
 	tira \
-	usb_uirt_raw
-        ttyUSB:
+	usb_uirt_raw \
+	usbx
+	ttyUSB:
 
 param_type: \
 	adaptec \
@@ -349,5 +351,6 @@ default_param: bte
 default_param: \
 	pcmak_usb \
 	tira \
-	usb_uirt_raw
+	usb_uirt_raw \
+	usbx
 	ttyUSB1:
