@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.74 2007/04/22 10:23:05 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.75 2007/04/25 20:26:15 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1228,6 +1228,8 @@ static int __init lirc_serial_init(void)
 		platform_device_put(lirc_serial_dev);
 		return result;
 	}
+	return 0;
+}
 #endif
 
 int init_module(void)
@@ -1286,6 +1288,7 @@ static void __exit lirc_serial_exit(void)
 	lirc_serial_dev = NULL;
 	platform_driver_unregister(&lirc_serial_driver);
 	platform_device_unregister(pdev);
+}
 #endif
 
 void cleanup_module(void)
