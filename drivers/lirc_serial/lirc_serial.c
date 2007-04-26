@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.76 2007/04/26 06:05:23 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.77 2007/04/26 06:06:29 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -750,7 +750,11 @@ static void inline frbwrite(lirc_t l)
 	rbwrite(l);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+static irqreturn_t irq_handler(int i, void *blah)
+#else
 static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
+#endif
 {
 	struct timeval tv;
 	int status,counter,dcd;
