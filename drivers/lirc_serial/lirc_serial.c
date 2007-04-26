@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.75 2007/04/25 20:26:15 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.76 2007/04/26 06:05:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1232,7 +1232,7 @@ static int __init lirc_serial_init(void)
 }
 #endif
 
-int init_module(void)
+int __init init_module(void)
 {
 	int result;
 	
@@ -1291,7 +1291,7 @@ static void __exit lirc_serial_exit(void)
 }
 #endif
 
-void cleanup_module(void)
+void __exit cleanup_module(void)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_serial_exit();
