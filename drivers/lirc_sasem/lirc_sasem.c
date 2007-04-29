@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.18 2007/02/13 07:28:39 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.19 2007/04/29 14:23:04 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5 
@@ -101,8 +101,13 @@
 static int sasem_probe (struct usb_interface *interface,
 			const struct usb_device_id *id);
 static void sasem_disconnect (struct usb_interface *interface);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_rx_callback (struct urb *urb, struct pt_regs *regs);
 static void usb_tx_callback (struct urb *urb, struct pt_regs *regs);
+#else
+static void usb_rx_callback (struct urb *urb);
+static void usb_tx_callback (struct urb *urb);
+#endif
 #else
 static void * sasem_probe (struct usb_device * dev, unsigned int intf,
 				const struct usb_device_id *id);
@@ -517,7 +522,7 @@ exit:
 /**
  * Callback function for USB core API: transmit data
  */
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_tx_callback (struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_tx_callback (struct urb *urb)
@@ -692,7 +697,7 @@ static inline void incoming_packet (struct sasem_context *context, struct urb *u
 /**
  * Callback function for USB core API: receive data
  */
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_rx_callback (struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_rx_callback (struct urb *urb)

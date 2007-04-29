@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.36 2007/02/13 06:45:16 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.37 2007/04/29 14:23:04 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -270,7 +270,11 @@ static inline void rbuf_write(lirc_t signal)
 	wptr=nwptr;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void irq_handler(int i,void *blah,struct pt_regs * regs)
+#else
+static void irq_handler(int i,void *blah)
+#endif
 {
 	struct timeval tv;
 	static struct timeval lasttv;

@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.60 2007/02/13 07:28:38 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.61 2007/04/29 14:23:04 lirc Exp $
  */
 
 /*
@@ -63,7 +63,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.60 $"
+#define DRIVER_VERSION		"$Revision: 1.61 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -648,7 +648,7 @@ static int code_check_xbox(struct in_endpt *iep, int len)
 	return SUCCESS;
 }
 
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_recv(struct urb *urb)
@@ -715,7 +715,7 @@ static void usb_remote_recv(struct urb *urb)
 #endif
 }
 
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_remote_send(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_send(struct urb *urb)
@@ -1258,7 +1258,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.60 2007/02/13 07:28:38 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.61 2007/04/29 14:23:04 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

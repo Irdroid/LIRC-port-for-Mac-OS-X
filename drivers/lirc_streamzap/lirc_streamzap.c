@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.21 2007/02/13 07:28:40 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.22 2007/04/29 14:23:04 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.21 $"
+#define DRIVER_VERSION	"$Revision: 1.22 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC     "Streamzap Remote Control driver"
 
@@ -163,7 +163,11 @@ struct usb_streamzap {
 static int streamzap_probe(struct usb_interface *interface,
 			   const struct usb_device_id *id);
 static void streamzap_disconnect(struct usb_interface *interface);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs);
+#else
+static void usb_streamzap_irq(struct urb *urb);
+#endif
 #else
 static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 			     const struct usb_device_id *id);
@@ -367,7 +371,7 @@ static inline void push_half_space(struct usb_streamzap *sz,
  * This procedure is invoked on reception of data from
  * the usb remote.
  */
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs) 
 #else
 static void usb_streamzap_irq(struct urb *urb) 

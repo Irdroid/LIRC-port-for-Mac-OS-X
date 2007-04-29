@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.18 2007/03/18 10:23:34 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.19 2007/04/29 14:23:04 lirc Exp $
  *
  *   Version 0.3 
  *   		Supports newer iMON models that send decoded IR signals.
@@ -93,8 +93,13 @@
 static int imon_probe (struct usb_interface *interface,
 			const struct usb_device_id *id);
 static void imon_disconnect (struct usb_interface *interface);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_rx_callback (struct urb *urb, struct pt_regs *regs);
 static void usb_tx_callback (struct urb *urb, struct pt_regs *regs);
+#else
+static void usb_rx_callback (struct urb *urb);
+static void usb_tx_callback (struct urb *urb);
+#endif
 #else
 static void * imon_probe (struct usb_device * dev, unsigned int intf,
 				const struct usb_device_id *id);
@@ -631,7 +636,7 @@ exit:
 /**
  * Callback function for USB core API: transmit data
  */
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_tx_callback (struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_tx_callback (struct urb *urb)
@@ -892,7 +897,7 @@ static inline void incoming_packet (struct imon_context *context, struct urb *ur
 /**
  * Callback function for USB core API: receive data
  */
-#ifdef KERNEL_2_5
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_rx_callback (struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_rx_callback (struct urb *urb)

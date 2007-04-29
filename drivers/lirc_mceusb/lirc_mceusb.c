@@ -198,7 +198,11 @@ struct usb_skel {
 #ifdef KERNEL_2_5
 static int mceusb_probe		(struct usb_interface *interface, const struct usb_device_id *id);
 static void mceusb_disconnect	(struct usb_interface *interface);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void mceusb_write_bulk_callback	(struct urb *urb, struct pt_regs *regs);
+#else
+static void mceusb_write_bulk_callback	(struct urb *urb);
+#endif
 #else
 static void * mceusb_probe	(struct usb_device *dev, unsigned int ifnum, const struct usb_device_id *id);
 static void mceusb_disconnect	(struct usb_device *dev, void *ptr);
@@ -654,7 +658,7 @@ static int mceusb_add_to_buf(void* data, struct lirc_buffer* buf )
 /**
  *	mceusb_write_bulk_callback
  */
-#ifdef KERNEL_2_5 
+#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void mceusb_write_bulk_callback (struct urb *urb, struct pt_regs *regs)
 #else
 static void mceusb_write_bulk_callback (struct urb *urb)

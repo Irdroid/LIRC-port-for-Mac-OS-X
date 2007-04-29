@@ -220,8 +220,12 @@ static int init_chrdev(void);
 static void drop_chrdev(void);
 #endif
 	/* Hardware */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static irqreturn_t sir_interrupt(int irq, void * dev_id,
 				 struct pt_regs * regs);
+#else
+static irqreturn_t sir_interrupt(int irq, void * dev_id);
+#endif
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
 static int init_hardware(void);
@@ -602,8 +606,12 @@ static void sir_timeout(unsigned long data)
 	spin_unlock_irqrestore(&timer_lock, flags);		
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static irqreturn_t sir_interrupt(int irq, void * dev_id,
 				 struct pt_regs * regs)
+#else
+static irqreturn_t sir_interrupt(int irq, void * dev_id)
+#endif
 {
 	unsigned char data;
 	struct timeval curr_tv;
