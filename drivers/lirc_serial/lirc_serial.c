@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.78 2007/05/04 18:32:26 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.79 2007/05/04 18:34:48 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1210,6 +1210,7 @@ static int lirc_serial_resume(struct platform_device *dev) {
 
 	local_irq_save(flags);
 	/* Enable Interrupt */
+	do_gettimeofday(&lasttv);
 	soutp(UART_IER, sinp(UART_IER)|UART_IER_MSI);
 	off();
 
