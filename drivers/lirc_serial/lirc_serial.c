@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.77 2007/04/26 06:06:29 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.78 2007/05/04 18:32:26 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -914,7 +914,9 @@ static void hardware_init_port(void)
 }
 	
 static int init_port(void)
-{	
+{
+	int i, nlow, nhigh;
+	
 	/* Reserve io region. */
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 	/* Future MMAP-Developers: Attention!
@@ -948,12 +950,28 @@ static int init_port(void)
 	/* If pin is high, then this must be an active low receiver. */
 	if(sense==-1)
 	{
-		/* wait 1 sec for the power supply */
+		/* wait 1/2 sec for the power supply */
 		
 		set_current_state(TASK_INTERRUPTIBLE);
-		schedule_timeout(HZ);
+		schedule_timeout(HZ/2);
 		
-		sense=(sinp(UART_MSR) & hardware[type].signal_pin) ? 1:0;
+		/* probe 9 times every 0.04s, collect "votes" for
+		   active high/low */
+		nlow = 0;
+		nhigh = 0;
+		for(i = 0; i < 9; i ++)
+		{
+			if (sinp(UART_MSR) & hardware[type].signal_pin)
+			{
+				nlow++;
+			}
+			else
+			{
+				nhigh++;
+			}
+			schedule_timeout(HZ/25);
+		}
+		sense = (nlow >= nhigh ? 1 : 0);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
 		       "%s receiver\n",sense ? "low":"high");
 	}
