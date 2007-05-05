@@ -1,3 +1,13 @@
+* __init, __exit
+
+* uinput
+
+* namespace
+
+* GUI for irrecord
+
+* autotools update
+
 * RC-5X support
 
 * fix tool command line options for config file
