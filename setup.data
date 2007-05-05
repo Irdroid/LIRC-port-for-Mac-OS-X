@@ -110,6 +110,7 @@ hw_menu_entry: @hw-pda
 
 hw_menu_entry: @hw-usb
 	usbx: "ADSTech USBX-707 USB IR Blaster"
+	macmini: "Apple Mac mini USB IR Receiver"
 	asusdh: "Asus DH USB Remote"
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
@@ -222,6 +223,7 @@ param_type: \
 	leadtek_pvr2000 \
 	livedrive_midi \
 	livedrive_seq \
+	macmini \
 	mceusb \
 	mceusb2 \
 	mediafocusI \
@@ -286,6 +288,7 @@ default_param: \
 	leadtek_pvr2000 \
 	livedrive_midi \
 	livedrive_seq \
+	macmini \
 	mceusb \
 	mceusb2 \
 	mediafocusI \

@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.182 2007/04/23 16:25:11 lirc Exp $
+dnl $Id: configure.in,v 5.183 2007/05/05 12:20:03 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -150,6 +150,7 @@ possible_drivers="(none) \
 	(livedrive_midi) \
 	(livedrive_seq) \
 	(logitech) \
+	(macmini) \
 	(mediafocusI) \
 	(mouseremote) \
 	(mouseremote_ps2) \
@@ -280,7 +281,7 @@ AC_ARG_WITH(driver,
                           irman, irreal, it87, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
-                          lptX, mceusb, mceusb2, mediafocusI,
+                          lptX, macmini, mceusb, mceusb2, mediafocusI,
                           mouseremote, mouseremote_ps2, mp3anywhere,
                           nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
@@ -436,6 +437,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	logitech)
 		hw_module="${hw_module} hw_logitech.o serial.o"
+		;;
+	macmini)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	mediafocusI)
 		;;
@@ -892,6 +896,13 @@ if test "$driver" = "lpt2"; then
   lirc_driver="lirc_dev lirc_parallel"
   port=0x278
   irq=5
+fi
+
+if test "$driver" = "macmini"; then
+  lirc_driver="none"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_macmini"
+  lircd_conf="apple/lircd.conf.macmini"
 fi
 
 if test "$driver" = "mceusb"; then

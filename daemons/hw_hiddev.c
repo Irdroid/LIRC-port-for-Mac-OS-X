@@ -9,6 +9,7 @@
  * Copyright (C) 2005 William Uther <william.uther@nicta.com.au>
  * Copyright (C) 2007 Brice DUBOST <ml@braice.net>
  * Copyright (C) 2007 Benjamin Drung <benjamin.drung@gmail.com>
+ * Copyright (C) 2007 Stephen Williams <stephen.gw@gmail.com>
  *
  * Distribute under GPL version 2 or later.
  *
@@ -40,6 +41,7 @@ static int hiddev_decode(struct ir_remote *remote,
 static char *hiddev_rec(struct ir_remote *remotes);
 static int sb0540_init();
 static char *sb0540_rec(struct ir_remote *remotes);
+static char *macmini_rec(struct ir_remote *remotes);
 
 struct hardware hw_dvico=
 {
@@ -127,6 +129,26 @@ struct hardware hw_sb0540=
 	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
 	"sb0540"		/* name */
+};
+
+/* Apple Mac mini USB IR Receiver */
+struct hardware hw_macmini=
+{
+	"/dev/usb/hiddev0",     /* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
+	32,			/* code_length */
+	hiddev_init,		/* init_func */
+	NULL,			/* config_func */
+	hiddev_deinit,          /* deinit_func */
+	NULL,			/* send_func */
+	macmini_rec,		/* rec_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
+	NULL,			/* readdata */
+	"macmini"		/* name */
 };
 
 static int old_main_code = 0;
@@ -425,4 +447,41 @@ char *sb0540_rec(struct ir_remote *remotes)
 	 */
 
 	return 0;
+}
+
+/*
+ * Apple Mac mini USB IR Receiver specific code.
+ *
+ */
+
+char *macmini_rec(struct ir_remote *remotes)
+{
+	struct hiddev_event ev[4];
+	int rd;
+	int i;
+
+	LOGPRINTF(1, "macmini_rec");
+
+	for (i=0;i<4;i++)
+	{
+		if(i>0 && !waitfordata(TIMEOUT))
+		{
+			logprintf(LOG_ERR,"timeout reading byte %d",i);
+			return(NULL);
+		}
+		rd = read(hw.fd, &ev[i], sizeof(ev[i]));
+		if (rd != sizeof(ev[i])) {
+			logprintf(LOG_ERR, "error reading '%s'", hw.device);
+			hiddev_deinit();
+			return 0;
+		}
+	}
+
+	/* Record the code */
+	pre_code_length = 0;
+	pre_code = 0;
+	main_code = (ev[0].value << 24) + (ev[1].value << 16) +
+	            (ev[2].value <<  8) + (ev[3].value <<  0);
+
+	return decode_all(remotes);
 }

@@ -26,6 +26,7 @@ extern struct hardware hw_irman;
 extern struct hardware hw_livedrive_midi;
 extern struct hardware hw_livedrive_seq;
 extern struct hardware hw_logitech;
+extern struct hardware hw_macmini;
 extern struct hardware hw_mouseremote;
 extern struct hardware hw_mouseremote_ps2;
 extern struct hardware hw_mp3anywhere;
