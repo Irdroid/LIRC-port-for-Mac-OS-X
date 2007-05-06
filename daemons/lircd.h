@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.14 2007/04/08 19:37:29 lirc Exp $      */
+/*      $Id: lircd.h,v 5.15 2007/05/06 09:46:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -75,6 +75,7 @@ int send_core(int fd,char *message,char *arguments,int once);
 int version(int fd,char *message,char *arguments);
 int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);
+void broadcast_message(const char *message);
 int waitfordata(long maxusec);
 void loop(void);
 

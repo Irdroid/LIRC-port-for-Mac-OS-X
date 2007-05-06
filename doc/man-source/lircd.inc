@@ -45,6 +45,12 @@ With the --logfile option you can select the lircd daemon log file.
 The default currently is /var/log/lircd. Note that this option will
 only be available if you compiled lircd without syslog support.
 
+The --release option enables automatic generation of release events
+for each button press. lircd will append the given suffix to the button
+name for each release event. If no suffix is given the default suffix
+is '_UP'.
+
+
 [FILES]
 
 The config file for lircd is located in /etc/lircd.conf. lircd

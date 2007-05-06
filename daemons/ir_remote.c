@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.30 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.31 2007/05/06 09:46:59 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -27,6 +27,7 @@
 #include "lircd.h"
 #include "ir_remote.h"
 #include "hardware.h"
+#include "release.h"
 
 struct ir_remote *decoding=NULL;
 
@@ -69,6 +70,20 @@ void get_frequency_range(struct ir_remote *remotes,
 		}
 		scan=scan->next;
 	}
+}
+
+struct ir_remote *is_in_remotes(struct ir_remote *remotes,
+				struct ir_remote *remote)
+{
+	while(remotes != NULL)
+	{
+		if(remotes == remote)
+		{
+			return remote;
+		}
+		remotes = remotes->next;
+	}
+	return NULL;
 }
 
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name)
@@ -350,6 +365,31 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	return(code);
 }
 
+int write_message(char *buffer, size_t size, const char *remote_name,
+		  const char *button_name, const char *button_suffix,
+		  ir_code code, int reps)
+{
+	int len;
+	
+#ifdef __GLIBC__
+	/* It seems you can't print 64-bit longs on glibc */
+			
+	len=snprintf(buffer, size,"%08lx%08lx %02x %s%s %s\n",
+		     (unsigned long) (code>>32),
+		     (unsigned long) (code&0xFFFFFFFF),
+		     reps,
+		     button_name, button_suffix,
+		     remote_name);
+#else
+	len=snprintf(buffer, size, "%016llx %02x %s%s %s\n",
+		     code,
+		     reps,
+		     button_name, button_suffix,
+		     remote_name);
+#endif
+	return len;
+}
+
 char *decode_all(struct ir_remote *remotes)
 {
 	struct ir_remote *remote;
@@ -391,25 +431,14 @@ char *decode_all(struct ir_remote *remotes)
 					scan_ncode->current = NULL;
 				}
 			}
-						
-#ifdef __GLIBC__
-			/* It seems you can't print 64-bit longs on glibc */
+			register_button_press
+				(remote, remote->last_code,
+				 code, remote->reps-(ncode->next ? 1:0));
 			
-			len=snprintf(message,PACKET_SIZE+1,"%08lx%08lx %02x %s %s\n",
-				     (unsigned long)
-				     (code>>32),
-				     (unsigned long)
-				     (code&0xFFFFFFFF),
-				     remote->reps-(ncode->next ? 1:0),
-				     remote->last_code->name,
-				     remote->name);
-#else
-			len=snprintf(message,PACKET_SIZE+1,"%016llx %02x %s %s\n",
-				     code,
-				     remote->reps-(ncode->next ? 1:0),
-				     remote->last_code->name,
-				     remote->name);
-#endif
+			len = write_message(message, PACKET_SIZE+1,
+					    remote->name,
+					    remote->last_code->name, "", code,
+					    remote->reps-(ncode->next ? 1:0));
 			decoding=NULL;
 			if(len>=PACKET_SIZE+1)
 			{

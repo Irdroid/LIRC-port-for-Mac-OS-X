@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.36 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.37 2007/05/06 09:46:59 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -280,6 +280,8 @@ static inline int map_code(struct ir_remote *remote,
 
 void get_frequency_range(struct ir_remote *remotes,
 			 unsigned int *min_freq,unsigned int *max_freq);
+struct ir_remote *is_in_remotes(struct ir_remote *remotes,
+				struct ir_remote *remote);
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
@@ -288,6 +290,9 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    ir_code toggle_bit_mask_state,int repeat_flag,
 			    lirc_t remaining_gap);
+int write_message(char *buffer, size_t size, const char *remote_name,
+		  const char *button_name, const char *button_suffix,
+		  ir_code code, int reps);
 char *decode_all(struct ir_remote *remotes);
 
 #endif

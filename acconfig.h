@@ -1,4 +1,4 @@
-/*      $Id: acconfig.h,v 5.36 2006/10/05 02:59:18 lirc Exp $      */
+/*      $Id: acconfig.h,v 5.37 2007/05/06 09:46:59 lirc Exp $      */
 
 /*
  *  are you editing the correct file?
@@ -212,5 +212,7 @@
 #define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND
 
 #define PIDFILE                 LOCALSTATEDIR "/run/" PID_LIRCD
+
+#define LIRC_RELEASE_SUFFIX     "_UP"
 
 /* end of acconfig.h */

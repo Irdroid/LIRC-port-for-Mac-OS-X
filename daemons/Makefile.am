@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.52 2007/04/23 16:25:11 lirc Exp $
+## $Id: Makefile.am,v 5.53 2007/05/06 09:46:59 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -11,7 +11,8 @@ sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h ir_remote_types.h config_file.h \
-		hw-types.c hw-types.h hardware.h
+		hw-types.c hw-types.h hardware.h \
+		release.c release.h
 lircd_LDADD = @hw_module@ @daemon@ @alsa_lib@ @atilibusb_lib@ @caraca_lib@ @iguanaIR_lib@ @irman_lib@ @portaudio_lib@
 lircd_DEPENDENCIES = @hw_module@
 EXTRA_lircd_SOURCES = \
@@ -56,8 +57,10 @@ lircmd_LDADD = @daemon@
 bin_PROGRAMS = irrecord
 
 irrecord_SOURCES = irrecord.c dump_config.c dump_config.h \
-		config_file.c config_file.h hardware.h \
-		hw-types.c hw-types.h ir_remote.c ir_remote.h ir_remote_types.h
+		config_file.c config_file.h \
+		ir_remote.c ir_remote.h ir_remote_types.h \
+		hw-types.c hw-types.h hardware.h \
+		release.c release.h
 irrecord_LDADD = @hw_module@ @irman_lib@ @caraca_lib@ @portaudio_lib@ @alsa_lib@ @atilibusb_lib@ @iguanaIR_lib@
 irrecord_DEPENDENCIES = @hw_module@
 EXTRA_irrecord_SOURCES = \
@@ -105,6 +108,7 @@ lircd_simsend_SOURCES = lircd.c ir_remote.c config_file.c \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \
+		release.c release.h \
 		transmit.c transmit.h
 lircd_simsend_CFLAGS = -DSIM_SEND
 lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
@@ -112,6 +116,7 @@ lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \
+		release.c release.h \
 		transmit.c transmit.h
 lircd_simrec_CFLAGS = -DSIM_REC
 

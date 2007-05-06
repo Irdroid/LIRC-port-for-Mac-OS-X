@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.71 2007/04/14 15:57:21 lirc Exp $      */
+/*      $Id: lircd.c,v 5.72 2007/05/06 09:46:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -77,6 +77,7 @@
 #include "config_file.h"
 #include "hardware.h"
 #include "hw-types.h"
+#include "release.h"
 
 struct ir_remote *remotes;
 struct ir_remote *free_remotes=NULL;
@@ -205,7 +206,7 @@ oatoi (s)
 /* A safer write(), since sockets might not write all but only some of the
    bytes requested */
 
-inline int write_socket(int fd, char *buf, int len)
+inline int write_socket(int fd, const char *buf, int len)
 {
 	int done,todo=len;
 
@@ -226,7 +227,7 @@ inline int write_socket(int fd, char *buf, int len)
 	return(len);
 }
 
-inline int write_socket_len(int fd, char *buf)
+inline int write_socket_len(int fd, const char *buf)
 {
 	int len;
 
@@ -356,7 +357,7 @@ void dosighup(int sig)
 	if(-1==fchmod(fileno(lf),s.st_mode))
 	{
 		logprintf(LOG_WARNING,"could not set file permissions");
-		logperror(0,NULL);
+		logperror(LOG_WARNING,NULL);
 	}
 #endif
 
@@ -1563,32 +1564,40 @@ void free_old_remotes()
 {
 	struct ir_remote *scan_remotes,*found;
 	struct ir_ncode *code;
-
+	const char *release_event;
+	
+	if(decoding ==free_remotes) return;
+	
+	release_event = release_map_remotes(free_remotes, remotes);
+	if(release_event != NULL)
+	{
+		broadcast_message(release_event);
+	}
 	if(last_remote!=NULL)
 	{
-		scan_remotes=free_remotes;
-		while(scan_remotes!=NULL)
+		if(is_in_remotes(free_remotes, last_remote))
 		{
-			if(last_remote==scan_remotes)
+			logprintf(LOG_INFO, "last_remote found");
+			found=get_ir_remote(remotes,last_remote->name);
+			if(found!=NULL)
 			{
-				found=get_ir_remote(remotes,last_remote->name);
-				if(found!=NULL)
+				code=get_ir_code(found,last_remote->last_code->name);
+				if(code!=NULL)
 				{
-					code=get_ir_code(found,last_remote->last_code->name);
-					if(code!=NULL)
-					{
-						found->reps=last_remote->reps;
-						found->toggle_bit_mask_state=last_remote->toggle_bit_mask_state;
-						found->remaining_gap=last_remote->remaining_gap;
-						last_remote=found;
-						last_remote->last_code=code;
-					}
+					found->reps=last_remote->reps;
+					found->toggle_bit_mask_state=last_remote->toggle_bit_mask_state;
+					found->remaining_gap=last_remote->remaining_gap;
+					found->last_send=last_remote->last_send;
+					last_remote=found;
+					last_remote->last_code=code;
+					logprintf(LOG_INFO, "mapped last_remote");
 				}
-				break;
 			}
-			scan_remotes=scan_remotes->next;
 		}
-		if(scan_remotes==NULL) last_remote=NULL;
+		else
+		{
+			last_remote=NULL;
+		}
 	}
 	/* check if last config is still needed */
 	found=NULL;
@@ -1650,12 +1659,35 @@ void free_old_remotes()
 	}
 }
 
+void broadcast_message(const char *message)
+{
+	int len,i;
+	const char *release_message;
+
+	release_message = check_release_event();
+	if(release_message)
+	{
+		broadcast_message(release_message);
+	}
+
+	len=strlen(message);
+			
+	for (i=0; i<clin; i++)
+	{
+		LOGPRINTF(1,"writing to client %d",i);
+		if(write_socket(clis[i],message,len)<len)
+		{
+			remove_client(clis[i]);
+			i--;
+		}			
+	}
+}
 
 int waitfordata(long maxusec)
 {
 	fd_set fds;
 	int maxfd,i,ret,reconnect;
-	struct timeval tv,start,now,timeout;
+	struct timeval tv,start,now,timeout,release_time;
 
 	while(1)
 	{
@@ -1757,10 +1789,30 @@ int waitfordata(long maxusec)
 					tv = timeout;
 				}
 			}
+			get_release_time(&release_time);
+			if(timerisset(&release_time))
+			{
+				gettimeofday(&now,NULL);
+				if(timercmp(&now,&release_time,>))
+				{
+					timerclear(&tv);
+				}
+				else
+				{
+					struct timeval gap;
+					
+					timersub(&release_time, &now, &gap);
+					if(timercmp(&tv, &gap, >))
+					{
+						tv = gap;
+					}
+				}
+			}
 #ifdef SIM_REC
 			ret=select(maxfd+1,&fds,NULL,NULL,NULL);
 #else
-			if(timerisset(&tv) || reconnect)
+			if(timerisset(&tv) || timerisset(&release_time) ||
+			   reconnect)
 			{
 				ret=select(maxfd+1,&fds,NULL,NULL,&tv);
 			}
@@ -1777,6 +1829,16 @@ int waitfordata(long maxusec)
 				continue;
 			}
 			gettimeofday(&now,NULL);
+			if(timerisset(&release_time) &&
+			   timercmp(&now, &release_time, >))
+			{
+				const char *release_message;
+				release_message = trigger_release_event();
+				if(release_message)
+				{
+					broadcast_message(release_message);
+				}
+			}
 			if(free_remotes!=NULL)
 			{
 				free_old_remotes();
@@ -1852,6 +1914,7 @@ int waitfordata(long maxusec)
                 if(clin>0 && hw.rec_mode!=0 && hw.fd!=-1 &&
 		   FD_ISSET(hw.fd,&fds))
                 {
+			register_input();
                         /* we will read later */
 			return(1);
                 }
@@ -1861,7 +1924,6 @@ int waitfordata(long maxusec)
 void loop()
 {
 	char *message;
-	int len,i;
 	
 	logprintf(LOG_NOTICE,"lircd(%s) ready",LIRC_DRIVER);
 	while(1)
@@ -1878,17 +1940,7 @@ void loop()
 				hw.ioctl_func(LIRC_NOTIFY_DECODE, NULL);
 			}
 			
-			len=strlen(message);
-			
-			for (i=0; i<clin; i++)
-			{
-				LOGPRINTF(1,"writing to client %d",i);
-				if(write_socket(clis[i],message,len)<len)
-				{
-					remove_client(clis[i]);
-					i--;
-				}			
-			}
+			broadcast_message(message);
 		}
 	}
 }
@@ -1922,9 +1974,10 @@ int main(int argc,char **argv)
 #                       ifdef DEBUG
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
+			{"release",optional_argument,NULL,'r'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:"
+		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::"
 #                               ifndef USE_SYSLOG
 				"L:"
 #                               endif
@@ -1954,6 +2007,7 @@ int main(int argc,char **argv)
 #                       ifdef DEBUG
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
+			printf("\t -r --release[=suffix]\t\tauto-generate release events\n");
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s %s\n",progname,VERSION);
@@ -2027,6 +2081,16 @@ int main(int argc,char **argv)
 			}
 			break;
 #               endif
+		case 'r':
+			if(optarg)
+			{
+				set_release_suffix(optarg);
+			}
+			else
+			{
+				set_release_suffix(LIRC_RELEASE_SUFFIX);
+			}
+			break;
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.9 2007/03/10 17:29:24 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.10 2007/05/06 09:46:59 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -20,6 +20,8 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+
+#include "drivers/lirc.h"
 
 #ifdef LONG_IR_CODE
 typedef unsigned long long ir_code;
