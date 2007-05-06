@@ -1,5 +1,6 @@
 #! /bin/sh
 
+HWDB="${1:-/dev/null}"
 HEURISTIC=`mktemp`
 
 write_heuristic="no"
@@ -25,6 +26,20 @@ cat ../configure.in | while read REPLY; do
     fi
 done
 
+cat << HWDB_HEADER > "${HWDB}"
+# LIRC - Hardware DataBase
+#
+# This file lists all the remote controls supported by LIRC
+# in a parseable form.
+#
+# The format is:
+#
+# [remote controls type]
+# description;driver;lirc driver;HW_DEFAULT;lircd_conf;
+#
+#
+HWDB_HEADER
+
 cat html-source/head.html
 
 echo "<table border=\"1\">"
@@ -39,6 +54,8 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
     if echo $REPLY|grep ": @" >/dev/null; then
 	entry=`echo $REPLY|sed --expression="s/.*: \(@.*\)/\1/"`
 	desc=`grep "${entry}:" ../setup.data|sed --expression="s/.*\"\(.*\)\".*/\1/"`
+	echo "" >> "${HWDB}"
+	echo "[$desc]" >> "${HWDB}"
 	echo "<tr><th colspan=\"5\"><a name=\"${entry}\">${desc}</a></th></tr>"
 	continue;
     fi
@@ -74,6 +91,7 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
 	    echo -n "${driver}"
 	fi
 	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT#???}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
+	echo "${desc};${driver};${lirc_driver};${HW_DEFAULT};${lircd_conf};" >> "${HWDB}"
     fi
 done
 echo "</table>"
