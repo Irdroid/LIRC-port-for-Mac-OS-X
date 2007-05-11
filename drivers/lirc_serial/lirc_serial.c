@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.79 2007/05/04 18:34:48 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.80 2007/05/11 16:40:24 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -808,26 +808,6 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			dcd=(status & hardware[type].signal_pin) ? 1:0;
 			
 			deltv=tv.tv_sec-lasttv.tv_sec;
-			if(deltv>15) 
-			{
-				dprintk("AIEEEE: %d %d %lx %lx %lx %lx\n",
-					dcd,sense,
-					tv.tv_sec,lasttv.tv_sec,
-					tv.tv_usec,lasttv.tv_usec);
-				data=PULSE_MASK; /* really long time */
-				if(!(dcd^sense)) /* sanity check */
-				{
-				        /* detecting pulse while this
-					   MUST be a space! */
-				        sense=sense ? 0:1;
-				}
-			}
-			else
-			{
-				data=(lirc_t) (deltv*1000000+
-					       tv.tv_usec-
-					       lasttv.tv_usec);
-			};
 			if(tv.tv_sec<lasttv.tv_sec ||
 			   (tv.tv_sec==lasttv.tv_sec &&
 			    tv.tv_usec<lasttv.tv_usec))
@@ -841,6 +821,27 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 				       tv.tv_sec,lasttv.tv_sec,
 				       tv.tv_usec,lasttv.tv_usec);
 				data=PULSE_MASK;
+			}
+			else if(deltv>15) 
+			{
+				data=PULSE_MASK; /* really long time */
+				if(!(dcd^sense)) /* sanity check */
+				{
+					printk(KERN_WARNING LIRC_DRIVER_NAME
+					       "AIEEEE: %d %d %lx %lx %lx %lx\n",
+					       dcd,sense,
+					       tv.tv_sec,lasttv.tv_sec,
+					       tv.tv_usec,lasttv.tv_usec);
+				        /* detecting pulse while this
+					   MUST be a space! */
+				        sense=sense ? 0:1;
+				}
+			}
+			else
+			{
+				data=(lirc_t) (deltv*1000000+
+					       tv.tv_usec-
+					       lasttv.tv_usec);
 			}
 			frbwrite(dcd^sense ? data : (data|PULSE_BIT));
 			lasttv=tv;
