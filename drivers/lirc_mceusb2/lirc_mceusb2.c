@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.28 $"
+#define DRIVER_VERSION          "$Revision: 1.29 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -572,9 +572,10 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n, loff_t *
 static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 {
 
-	/* SMK Transceiver does not use the inverted scheme */
-	if (ir->usbdev->descriptor.idVendor == VENDOR_SMK &&
-	    (ir->usbdev->descriptor.idProduct == 0x031d || ir->usbdev->descriptor.idProduct == 0x0322))
+	/* SMK Transceiver does not use the inverted scheme, nor does Topseed*/
+	if ((ir->usbdev->descriptor.idVendor == VENDOR_SMK &&
+	     (ir->usbdev->descriptor.idProduct == 0x031d || ir->usbdev->descriptor.idProduct == 0x0322)) ||
+	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED && ir->usbdev->descriptor.idProduct == 0x0001))
 	{
 		ir->transmitter_mask = mask;
 	}
