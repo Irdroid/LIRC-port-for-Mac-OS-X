@@ -307,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.26 2005/12/10 22:12:02 lirc Exp $      */
+/*      $Id: technical.html,v 1.27 2007/05/26 21:00:12 uzuul Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -610,9 +610,32 @@ fi</PRE>
 	into the sandbox, modules will be installed to <em>/lib/</em>
 	otherwise.
       </dd>
+	<br>Finally, you should consider installing the doc/lirc.hwdb file.
+	This one is a parseable list of LIRC supported devices, which
+	is useful for LIRC configuration applications.<br>
+	For more information, refer to the next section.
       </dl>
     </P>
+
+    <A NAME="config"></A><HR>
+    <H1 ALIGN="CENTER">Note for configuration application developers</H1>
+    <HR WIDTH="70%">
     
+    <P>
+      If you want to make a configuration application, lirc provides
+			a parseable list of LIRC supported devices.<br>
+			<br>
+			This file is generated at compilation time, along with its <a href="table.html">HTML
+			equivalent</a> and is available as doc/lirc.hwdb in the source tree.
+			It should also be installed by the binary packages of your prefered
+			distribution (bug report otherwise!).
+			<br><br>
+			The format is:
+			<br>
+			[remote controls type]<br>
+			description;driver;lirc driver;HW_DEFAULT;lircd_conf;<br>
+    </P>
+
     <A NAME="bugs"></A><HR>
     <H1 ALIGN="CENTER">Known bugs</H1>
     <HR WIDTH="70%">
