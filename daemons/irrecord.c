@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.64 2007/03/31 14:53:23 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.65 2007/05/26 13:29:11 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -2304,7 +2304,7 @@ int get_data_length(struct ir_remote *remote)
 int get_gap_length(struct ir_remote *remote)
 {
 	struct lengths *gaps=NULL;
-	struct timeval start,end,last;
+	struct timeval start,end,last={0,0};
 	int count,flag;
 	struct lengths *scan;
 	int maxcount,lastmaxcount;
