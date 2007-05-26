@@ -71,7 +71,7 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
 	echo "<tr><th colspan=\"5\"><a href=\"#${driver}\">${desc}</a></th></tr>"
 	true;
     else
-	source ${HEURISTIC}
+	. ${HEURISTIC}
 	if ! echo "${lirc_driver}"|grep lirc_dev>/dev/null; then
 	    lirc_driver="none"
 	fi
