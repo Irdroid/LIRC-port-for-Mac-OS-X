@@ -132,6 +132,7 @@ hw_menu_entry: @hw-usb
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
 	streamzap: "Streamzap PC Remote"
+	ttusbir: "TechnoTrend USB IR receiver"
 	usb_uirt_raw: "USB-UIRT"
 	mceusb: "Windows Media Center Remotes (old version, MicroSoft USB ID)"
 	mceusb2: "Windows Media Center Remotes (new version, Philips et al.)"
@@ -239,6 +240,7 @@ param_type: \
 	sb0540 \
 	streamzap \
 	tekram_bt829 \
+	ttusbir \
 	tvbox \
 	udp
 	none:
@@ -304,6 +306,7 @@ default_param: \
 	sb0540 \
 	streamzap \
 	tekram_bt829 \
+	ttusbir \
 	tvbox \
 	udp
 	none:

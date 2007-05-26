@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.184 2007/05/05 12:24:00 lirc Exp $
+dnl $Id: configure.in,v 5.185 2007/05/26 13:30:50 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -179,6 +179,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_gpio) \
 	(lirc_dev lirc_i2c) \
 	(lirc_dev lirc_igorplugusb) \
+	(lirc_dev lirc_ttusbir) \
 	(lirc_dev lirc_imon) \
 	(lirc_dev lirc_it87) \
 	(lirc_dev lirc_mceusb) \
@@ -289,8 +290,8 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, sasem,
                           sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
-                          tuxbox, tvbox, udp, uirt2, uirt2_raw,
-                          usb_uirt_raw, usbx],
+                          ttusbir, tuxbox, tvbox, udp, uirt2,
+                          uirt2_raw, usb_uirt_raw, usbx],
 driver=${withval},
 driver="unset"
 )
@@ -408,6 +409,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		#lirc_driver="${lirc_driver} lirc_dev lirc_i2c"
 		;;
 	lirc_dev-lirc_igorplugusb)
+		;;
+	lirc_dev-lirc_ttusbir)
 		;;
 	lirc_dev-lirc_imon)
 		;;
@@ -765,6 +768,10 @@ fi
 
 if test "$driver" = "igorplugusb"; then
   lirc_driver="lirc_dev lirc_igorplugusb"
+fi
+
+if test "$driver" = "ttusbir"; then
+  lirc_driver="lirc_dev lirc_ttusbir"
 fi
 
 if test "$driver" = "iguanaIR"; then
@@ -1214,6 +1221,7 @@ elif test "$lirc_driver" = "all"; then
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
+	lirc_ttusbir \
 	lirc_imon \
 	lirc_it87 \
 	lirc_mceusb \
@@ -1424,6 +1432,7 @@ AC_OUTPUT([
   drivers/lirc_gpio/Makefile
   drivers/lirc_i2c/Makefile
   drivers/lirc_igorplugusb/Makefile
+  drivers/lirc_ttusbir/Makefile
   drivers/lirc_imon/Makefile
   drivers/lirc_it87/Makefile
   drivers/lirc_mceusb/Makefile
