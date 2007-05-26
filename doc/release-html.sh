@@ -35,5 +35,5 @@ for FILE in $FILES2; do
 done
 echo
 
-echo "Generating driver overview table"
-./table.sh >${DEST_DIR}/table.html
+echo "Generating driver overview tables"
+./table.sh lirc.hwdb >${DEST_DIR}/table.html
