@@ -126,6 +126,23 @@ do
       automake --add-missing --gnu $am_opt
       echo "Running autoconf ..."
       autoconf
+      TMPFILE=$(mktemp)
+      
+      cat >$TMPFILE <<EOF
+# !/bin/sh      
+if test "\$#" = "0"; then
+  if ! ./setup.sh; then
+    echo "Please read the documentation!!!"
+    exit 1
+  fi
+  trap - EXIT
+  exit 0
+fi
+
+EOF
+      cat configure >>$TMPFILE
+      mv $TMPFILE configure
+      chmod "u=rwx,g=rx,o=rx" configure
     )
   fi
 done

@@ -1,18 +1,9 @@
-dnl $Id: configure.in,v 5.185 2007/05/26 13:30:50 lirc Exp $
+dnl $Id: configure.in,v 5.186 2007/05/26 13:32:40 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
 AC_INIT(daemons/lircd.c)
-
-if test "$#" = "0"; then
-  if ! ./setup.sh; then
-    echo "Please read the documentation!!!"
-    exit 1
-  fi
-  trap - EXIT
-  exit 0
-fi
 
 AM_INIT_AUTOMAKE(lirc, 0.8.2-CVS)
 AM_CONFIG_HEADER(config.h)
