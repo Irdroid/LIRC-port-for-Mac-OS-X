@@ -1618,3 +1618,81 @@ begin remote
           ENTER                    0x0B36
       end codes
 end remote
+#
+# this config file was automatically generated
+# using lirc-0.8.1(default) on Sun May 27 19:55:56 2007
+#
+# contributed by Revertive
+#
+# brand: Toshiba X10
+# model no. of remote control: PX1246E-1ETC
+# devices being controlled by this remote: PC(Hauppage PVR-500)
+#
+
+begin remote
+
+  name          Toshiba_X10
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          228000
+  min_repeat      11
+  toggle_bit      0
+
+
+      begin codes
+          power                    0xD702
+          red                      0x87B2
+          yellow                   0x0934
+          green                    0x88B3
+          blue                     0x0A35
+          teletext                 0x6B96
+          back                     0xF520
+          info                     0x84AF
+          up                       0xEF1A
+          down                     0x77A2
+          left                     0xF21D
+          right                    0x749F
+          ok                       0xF31E
+          recordings               0x6D98
+          dvds                     0x5984
+          tvguide                  0x0631
+          livetv                   0x719C
+          volume+                  0x5E89
+          volume-                  0xDD08
+          channel+                 0x608B
+          channel-                 0x618C
+          start                    0xF01B
+          mute                     0x5580
+          rewind                   0x76A1
+          forward                  0xF823
+          next                     0x79A4
+          prev                     0xFB26
+          play                     0x7AA5
+          record                   0xFC27
+          stop                     0x7DA8
+          pause                    0xFE29
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+         5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          *                        0x8CB7
+          #                        0x0D38
+          clear                    0x85B0
+          enter                    0x0B36
+      end codes
+
+end remote
