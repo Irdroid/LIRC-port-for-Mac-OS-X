@@ -1696,3 +1696,90 @@ begin remote
       end codes
 
 end remote
+
+# Please make this file available to others
+# by sending it to <lirc@bartelmus.de>
+#
+# this config file was automatically generated
+# using lirc-0.8.2-CVS(atilibusb) on Fri Jun  8 13:19:29 2007
+#
+# contributed by 
+#
+# brand:                       
+# model no. of remote control: ATI/X10 RF USB Remote Control v. 2.2.1
+# devices being controlled by this remote:
+#
+# comes with Packard Bell MC9667
+#
+
+begin remote
+
+  name  ATI_REMOTE_2_2_1
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139999
+  toggle_bit_mask 0x0
+
+      begin codes
+          POWER                    0xD702
+          TV                       0xEB16
+          RED                      0x88B3
+          GREEN                    0x0732
+          YELLOW                   0x89B4
+          BLUE                     0x0A35
+          TV2                      0x81AC
+          CAMCORDER                0x022D
+          MUSIC                    0x5B86
+          CAMERA                   0xDA05
+          TVRECORDER               0x6D98
+          CD                       0xD904
+          EQUALIZER                0x86B1
+          TVPLAYER                 0xF11C
+          BACK                     0x75A0
+          INFORMATION              0x042F
+          TOP                      0x6F9A
+          LEFT                     0xF21D
+          OK                       0x739E
+          RIGHT                    0xF41F
+          DOWN                     0x77A2
+          SOUNDPLUS                0xDE09
+          SOUNDMINUS               0x5D88
+          WINDOB                   0xF01B
+          CHANNELUP                0x608B
+          CHANNELDOWN              0xE10C
+          MUTE                     0x5580
+          RECORD                   0xFC27
+          STOP                     0x7DA8
+          PAUSE                    0xFE29
+          REWIND                   0x79A4
+          PLAY                     0xFA25
+          FORWARD                  0x7BA6
+          BACKREWIND               0xF621
+          BACKFORWARD              0x78A3
+          1                        0xE20D
+          2                        0x638E
+          3                        0xE40F
+          4                        0x6590
+          5                        0xE611
+          6                        0x6792
+          7                        0xE813
+          8                        0x6994
+          9                        0xEA15
+          ASTERISK                 0x8CB7
+          0                        0xEC17
+          DIESE                    0x8DB8
+          CLEAR                    0x0530
+          ENTER                    0x8BB6
+      end codes
+
+end remote
+
+
