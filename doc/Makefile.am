@@ -1,8 +1,8 @@
-## $Id: Makefile.am,v 1.6 2006/01/21 17:17:29 lirc Exp $
+## $Id: Makefile.am,v 1.7 2007/06/08 05:27:36 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
-EXTRA_DIST=lirc.css irxevent.keys
+EXTRA_DIST=lirc.css irxevent.keys lirc.hwdb
 
 SUBDIRS = man
 
