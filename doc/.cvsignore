@@ -3,5 +3,6 @@ Makefile.in
 html
 .libs
 .deps
+lirc.hwdb
 man2html
 man-html
