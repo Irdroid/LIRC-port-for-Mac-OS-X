@@ -285,6 +285,27 @@ int pinsys_deinit(void)
 	return(1);
 }
 
+/* The first byte is always 0xFE, the second one, is a kind of checksum
+   and the third one is the code itself (6 bits). The 7th bit (0x40) is the 
+   repeat flag.
+*/
+
+#if 0
+static char pinsys_codes[8] = {0xD1,0x73,0xE6,0x1D,0x3A,0x74,0xE8,0x00};
+
+static int pinsys_check_code(char key, char crc)
+{
+    int b;
+
+    for (b=0; b<8; b++)
+    {
+        if (key & (1<<b))
+            crc ^= pinsys_codes[b];
+    }
+    return crc==0;
+}
+#endif
+
 char *pinsys_rec(struct ir_remote *remotes)
 {
 	char *m;
