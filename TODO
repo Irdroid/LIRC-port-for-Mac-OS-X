@@ -21,8 +21,6 @@
 
 * irrecord: fancy Kenwood repeat code 78 11243 78: repeat_tail?
 
-* button_down & button_up codes.
-
 * Pioneer protocol:
   add irrecord support
 
