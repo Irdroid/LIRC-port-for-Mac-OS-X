@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.39 2007/02/13 06:45:15 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.40 2007/06/16 17:00:45 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -15,6 +15,8 @@
  *      Jerome Brock <jbrock@users.sourceforge.net>
  * modified for Leadtek Winfast PVR2000 by
  *      Thomas Reitmayr (treitmayr@yahoo.com)
+ * modified for Hauppauge HVR-1300 by
+ *      Jan Frey (jfrey@gmx.de)
  *
  * parts are cut&pasted from the old lirc_haup.c driver
  *
@@ -416,11 +418,22 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		ir->l.add_to_buf=add_to_buf_pv951;
 		break;
 	case 0x71:
-		/* The PVR150 IR receiver uses the same protocol as other 
-		   Hauppauge cards, but the data flow is different, so we need
-		   to deal with it by its own.
-		 */
-		strcpy(ir->c.name,"Hauppauge IR (PVR150)");
+#ifdef I2C_HW_B_CX2341X
+		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848) ||
+		    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X))
+#else
+		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
+#endif
+		{
+			/* The PVR150 IR receiver uses the same protocol as other 
+			   Hauppauge cards, but the data flow is different, so we need
+			   to deal with it by its own.
+		 	*/
+			strcpy(ir->c.name,"Hauppauge IR (PVR150)");
+		}
+		else { /* I2C_HW_B_CX2388x */
+			strcpy(ir->c.name,"Hauppauge IR (HVR1300)");
+		}
 		ir->l.code_length = 13;
 		ir->l.add_to_buf=add_to_buf_haup_pvr150;
 		break;
@@ -469,7 +482,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		kfree(ir);
 		return -1;
 	}
-	printk("lirc_i2c: chip found @ 0x%02x (%s)\n",addr,ir->c.name);
+	printk("lirc_i2c: chip 0x%x found @ 0x%02x (%s)\n",adap->id,addr,ir->c.name);
 	
 	/* register device */
 	i2c_attach_client(&ir->c);
@@ -514,6 +527,14 @@ static int ir_probe(struct i2c_adapter *adap) {
 		0x30, /* KNC ONE IR */
 		0x6b, /* Adaptec IR */
 		-1};
+
+#ifdef I2C_HW_B_CX2388x
+	static const int probe_cx88[] = {
+		0x18, /* Leadtek Winfast PVR2000 */
+		0x71, /* Hauppauge HVR-IR */
+		-1};
+#endif
+
 	struct i2c_client c; char buf; int i,rc;
 
 #ifdef I2C_HW_B_CX2341X
@@ -539,17 +560,19 @@ static int ir_probe(struct i2c_adapter *adap) {
 	}
 
 #ifdef I2C_HW_B_CX2388x
-	/* Leadtek Winfast PVR2000 */
+	/* Leadtek Winfast PVR2000 or Hauppauge HVR-1300 */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2388x)) {
 		memset(&c,0,sizeof(c));
 		c.adapter = adap;
-		c.addr    = 0x18;
-		rc = i2c_master_recv(&c,&buf,1);
-		dprintk("probe 0x%02x @ %s: %s\n",
-			c.addr, adap->name, 
-			(1 == rc) ? "yes" : "no");
-		if (1 == rc) {
-			ir_attach(adap,c.addr,0,0);
+		for (i = 0; -1 != probe_cx88[i]; i++) {
+			c.addr = probe_cx88[i];
+			rc = i2c_master_recv(&c,&buf,1);
+			dprintk("probe 0x%02x @ %s: %s\n",
+				c.addr, adap->name, 
+				(1 == rc) ? "yes" : "no");
+			if (1 == rc) {
+				ir_attach(adap,c.addr,0,0);
+			}
 		}
 	}
 #endif

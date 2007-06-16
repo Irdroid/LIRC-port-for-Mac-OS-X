@@ -1,4 +1,7 @@
-0.8.2-CVS: future
+0.8.3-CVS: future
+  * added support for Hauppauge HVR-1300 (Jan Frey)
+
+0.8.2: 06/09/07
   * added support for TechnoTrend USB IR receiver (Stefan Macher)
   * automatic release event generation in lircd
   * added support for Apple Mac mini USB IR Receiver (Stephen Williams)

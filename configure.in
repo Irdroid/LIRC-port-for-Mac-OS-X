@@ -1,11 +1,11 @@
-dnl $Id: configure.in,v 5.186 2007/05/26 13:32:40 lirc Exp $
+dnl $Id: configure.in,v 5.187 2007/06/16 17:00:44 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
 AC_INIT(daemons/lircd.c)
 
-AM_INIT_AUTOMAKE(lirc, 0.8.2-CVS)
+AM_INIT_AUTOMAKE(lirc, 0.8.3-CVS)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="${CFLAGS--O2 -g -Wall}"
