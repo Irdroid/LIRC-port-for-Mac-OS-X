@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.7 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.8 2007/06/16 07:46:12 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -65,50 +65,14 @@ int irman_decode(struct ir_remote *remote,
 		     ir_code *prep,ir_code *codep,ir_code *postp,
 		     int *repeat_flagp,lirc_t *remaining_gapp)
 {
-	ir_code help,mask;
-	int i;
-
-	if(remote->pre_data_bits+
-	   remote->bits+
-	   remote->post_data_bits!=CODE_LENGTH ||
-	   remote->flags&CONST_LENGTH) return(0);
-
-	help=code;
-
-	if(remote->post_data_bits>0)
+	if(!map_code(remote, prep, codep, postp,
+		     0, 0, CODE_LENGTH, code, 0, 0))
 	{
-		mask=0;
-		for(i=0;i<remote->post_data_bits;i++)
-		{
-			mask=mask<<1;
-			mask=mask|1;
-		}
-		*postp=help&mask;
-		help=help>>remote->post_data_bits;
+		return 0;
 	}
-	if(remote->bits>0)
-	{
-		mask=0;
-		for(i=0;i<remote->bits;i++)
-		{
-			mask=mask<<1;
-			mask=mask|1;
-		}
-		*codep=help&mask;
-		help=help>>remote->bits;
-	}
-	if(remote->pre_data_bits>0)
-	{
-		mask=0;
-		for(i=0;i<remote->pre_data_bits;i++)
-		{
-			mask=mask<<1;
-			mask=mask|1;
-		}
-		*prep=help&mask;
-		help=help>>remote->pre_data_bits;
-	}
-	
+
+	if(remote->flags&CONST_LENGTH) return(0);
+
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
 	{
 		*repeat_flagp=0;

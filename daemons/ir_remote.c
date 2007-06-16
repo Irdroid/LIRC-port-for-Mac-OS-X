@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.31 2007/05/06 09:46:59 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.32 2007/06/16 07:46:12 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -190,11 +190,11 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		LOGPRINTF(1,"post");
 	}
 
-	all = pre;
+	all = (pre&gen_mask(remote->pre_data_bits));
 	all <<= remote->bits;
-	all |= code;
+	all |= is_raw(remote) ? code:(code&gen_mask(remote->bits));
 	all <<= remote->post_data_bits;
-	all |= post;
+	all |= post&gen_mask(remote->post_data_bits);
 	
 	toggle_bit_mask_state = all&remote->toggle_bit_mask;
 
