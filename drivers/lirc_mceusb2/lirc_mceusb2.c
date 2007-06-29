@@ -60,7 +60,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION          "$Revision: 1.29 $"
+#define DRIVER_VERSION          "$Revision: 1.30 $"
 #define DRIVER_AUTHOR           "Daniel Melander <lirc@rajidae.se>, Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC             "Philips eHome USB IR Transciever and Microsoft MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME		"lirc_mceusb2"
@@ -127,6 +127,7 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060c) },	/* Philips Infrared Transciever - HP branded */
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },	/* SMK/Toshiba G83C0004D410 */
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },	/* SMK eHome Infrared Transceiver (Sony VAIO) */
+	{ USB_DEVICE(VENDOR_SMK, 0x0334) },	/* bundled with Hauppauge PVR-150 */
 	{ USB_DEVICE(VENDOR_TATUNG, 0x9150) },  /* Tatung eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_SHUTTLE, 0xc001) },  /* Shuttle eHome Infrared Transceiver */
         { USB_DEVICE(VENDOR_GATEWAY, 0x3009) },  /* Gateway eHome Infrared Transceiver */
@@ -574,7 +575,9 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 
 	/* SMK Transceiver does not use the inverted scheme, nor does Topseed*/
 	if ((ir->usbdev->descriptor.idVendor == VENDOR_SMK &&
-	     (ir->usbdev->descriptor.idProduct == 0x031d || ir->usbdev->descriptor.idProduct == 0x0322)) ||
+	     (ir->usbdev->descriptor.idProduct == 0x031d ||
+	      ir->usbdev->descriptor.idProduct == 0x0322 ||
+	      ir->usbdev->descriptor.idProduct == 0x0334)) ||
 	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED && ir->usbdev->descriptor.idProduct == 0x0001))
 	{
 		ir->transmitter_mask = mask;
