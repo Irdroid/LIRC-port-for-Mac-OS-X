@@ -85,3 +85,83 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was automatically generated
+# using lirc-0.8.2(atilibusb) on Sat Jun 30 23:20:59 2007
+#
+# contributed by 
+#
+# brand:                       Medion
+# model no. of remote control: MD8800
+# devices being controlled by this remote: Medion X10 MD8800
+#
+
+begin remote
+
+  name  Medion_MD8800
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139995
+  min_repeat      2
+  toggle_bit_mask 0x80800000
+
+      begin codes
+          Live_TV                  0xF11C
+          Photo                    0x5A85
+          DVD_Menu                 0xD904
+          Rec_TV                   0x6D98
+          Music                    0xDB06
+          Video                    0x82AD
+          Audio                    0x0732
+          Title                    0x8AB5
+          Angle                    0x0934
+          Subtitle                 0x88B3
+          Power                    0xD702
+          Guide                    0x86B1
+          Text                     0xEB16
+          Up                       0x6F9A
+          Down                     0xF722
+          Left                     0x729D
+          Right                    0xF41F
+          Vol_Up                   0x5E89
+          Vol_Down                 0xDD08
+          OK                       0x739E
+          Mute                     0xD500
+          Prog_Up                  0x608B
+          Prog_Down                0xE10C
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          D*                       0x8CB7
+          D#                       0x0D38
+          World                    0x709B
+          Back                     0xF520
+          Info                     0x84AF
+          Rewind                   0xF924
+          Play                     0x7AA5
+          Forward                  0xFB26
+          Pause                    0x7EA9
+          Prev                     0xF621
+          Next                     0x78A3
+          Stop                     0xFD28
+          Rec                      0x7CA7
+      end codes
+
+end remote
+
+
