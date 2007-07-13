@@ -1423,7 +1423,7 @@ exit:
 	{
 		usb_fill_bulk_urb(urb, dev->udev,
 			  usb_sndbulkpipe(dev->udev, dev->bulk_out_endpointAddr),
-			  buf, count, cmdir_write_bulk_callback, urb->context);
+			  buf, count, (void *) cmdir_write_bulk_callback, dev);
 	} 
 	else
 	{

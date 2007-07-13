@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.6 2007/02/13 06:45:15 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.7 2007/07/13 16:24:04 innovationone Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -351,9 +351,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 			 size_t n, loff_t * ppos)
 {
 	int i,count;
-	int num_bytes_to_send;
 	unsigned int mod_signal_length=0;
-	unsigned int cur_freq=0;
 	unsigned int time_elapse=0;
 	unsigned int total_time_elapsed=0;
 	/* double wbuf_mod=0.0;			//no floating point in 2.6 kernel  */
