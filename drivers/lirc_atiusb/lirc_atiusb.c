@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.61 2007/04/29 14:23:04 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.62 2007/07/14 08:04:29 lirc Exp $
  */
 
 /*
@@ -63,7 +63,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.61 $"
+#define DRIVER_VERSION		"$Revision: 1.62 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -156,6 +156,7 @@ static struct usb_device_id usb_remote_table [] = {
 
 	{ USB_DEVICE(VENDOR_MS1, 0x6521) }, /* Gamester Xbox DVD Movie Playback Kit IR */
 	{ USB_DEVICE(VENDOR_MS2, 0x0284) }, /* Microsoft Xbox DVD Movie Playback Kit IR */
+	{ USB_DEVICE(0xFFFF, 0xFFFF) },		/* Some chinese manufacterer -- conflicts with the joystick from the same manufacterer */
 	{ }					/* Terminating entry */
 };
 
@@ -1258,7 +1259,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.61 2007/04/29 14:23:04 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.62 2007/07/14 08:04:29 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
