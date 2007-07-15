@@ -1,4 +1,4 @@
-/*	$Id: hw_audio_alsa.c,v 5.2 2005/07/10 08:34:11 lirc Exp $	*/
+/*	$Id: hw_audio_alsa.c,v 5.3 2007/07/15 15:51:45 lirc Exp $	*/
 
 /****************************************************************************
  ** hw_audio_alsa.c *********************************************************
@@ -448,7 +448,7 @@ var_reset:	/* Reset variables */
 				/* Consider impossible pulses with length greater than
 				 * 0.02 seconds, thus it is a space (desynchronization).
 				 */
-				if ((x > 020000) && signal_state)
+				if ((x > 20000) && signal_state)
 				{
 					signal_state = 0;
 					LOGPRINTF (1, "Pulse/space desynchronization fixed");
