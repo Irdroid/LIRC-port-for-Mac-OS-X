@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.80 2007/05/11 16:40:24 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.81 2007/07/15 07:34:12 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -760,6 +760,7 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 	int status,counter,dcd;
 	long deltv;
 	lirc_t data;
+	static int last_dcd = -1;
 	
 	if((sinp(UART_IIR) & UART_IIR_NO_INT))
 	{
@@ -807,6 +808,16 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			   microseconds */
 			dcd=(status & hardware[type].signal_pin) ? 1:0;
 			
+			if(dcd == last_dcd) 
+			{
+				printk(KERN_WARNING LIRC_DRIVER_NAME
+				       ": ignoring spike: %d %d %lx %lx %lx %lx\n",
+				       dcd,sense,
+				       tv.tv_sec,lasttv.tv_sec,
+				       tv.tv_usec,lasttv.tv_usec);
+				continue;
+			}
+				
 			deltv=tv.tv_sec-lasttv.tv_sec;
 			if(tv.tv_sec<lasttv.tv_sec ||
 			   (tv.tv_sec==lasttv.tv_sec &&
@@ -828,7 +839,7 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 				if(!(dcd^sense)) /* sanity check */
 				{
 					printk(KERN_WARNING LIRC_DRIVER_NAME
-					       "AIEEEE: %d %d %lx %lx %lx %lx\n",
+					       ": AIEEEE: %d %d %lx %lx %lx %lx\n",
 					       dcd,sense,
 					       tv.tv_sec,lasttv.tv_sec,
 					       tv.tv_usec,lasttv.tv_usec);
@@ -845,6 +856,7 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			}
 			frbwrite(dcd^sense ? data : (data|PULSE_BIT));
 			lasttv=tv;
+			last_dcd = dcd;
 			wake_up_interruptible(&rbuf.wait_poll);
 		}
 	} while(!(sinp(UART_IIR) & UART_IIR_NO_INT)); /* still pending ? */
