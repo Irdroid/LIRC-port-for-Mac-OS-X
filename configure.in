@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.187 2007/06/16 17:00:44 lirc Exp $
+dnl $Id: configure.in,v 5.188 2007/07/15 07:26:39 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -253,6 +253,11 @@ AC_CHECK_HEADERS(sys/soundcard.h,[
   possible_drivers="${possible_drivers} (dsp)"
   ]
 )
+dnl i2cuser driver requires the Linux I2C API
+AC_CHECK_HEADERS(linux/i2c-dev.h,[
+  possible_drivers="${possible_drivers} (i2cuser)"
+  ]
+)
 
 dnl here we see what driver the user wants.
 
@@ -267,14 +272,15 @@ AC_ARG_WITH(driver,
                           creative_infracd, devinput, digimatrix, dsp,
                           dvico, ea65, exaudio, flyvideo, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
-                          hercules_smarttv_stereo, igorplugusb,
-                          iguanaIR, imon, imon_24g, imon_knob,
-                          imon_pad, imon_rsc, irdeo, irdeo_remote,
-                          irman, irreal, it87, knc_one, kworld,
-                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
-                          livedrive_midi, livedrive_seq, logitech,
-                          lptX, macmini, mceusb, mceusb2, mediafocusI,
-                          mouseremote, mouseremote_ps2, mp3anywhere,
+                          hercules_smarttv_stereo, i2cuser,
+                          igorplugusb, iguanaIR, imon, imon_24g,
+                          imon_knob, imon_pad, imon_rsc, irdeo,
+                          irdeo_remote, irman, irreal, it87, knc_one,
+                          kworld, leadtek_0007, leadtek_0010,
+                          leadtek_pvr2000, livedrive_midi,
+                          livedrive_seq, logitech, lptX, macmini,
+                          mceusb, mceusb2, mediafocusI, mouseremote,
+                          mouseremote_ps2, mp3anywhere,
                           nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
                           pixelview_pak, pixelview_pro, provideo,
@@ -369,6 +375,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		hw_module="${hw_module} hw_ea65.o serial.o"
 		;;
 	exaudio)
+		;;
+	i2cuser)
+		hw_module="${hw_module} hw_i2cuser.o receive.o"
 		;;
 	iguanaIR)
 		hw_module="${hw_module} hw_iguanaIR.o transmit.o receive.o"
@@ -755,6 +764,12 @@ fi
 if test "$driver" = "hercules_smarttv_stereo"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="hercules/lircd.conf.smarttv_stereo"
+fi
+
+if test "$driver" = "i2cuser"; then
+  lirc_driver="none"
+  hw_module="hw_i2cuser.o receive.o"
+  HW_DEFAULT="hw_i2cuser"
 fi
 
 if test "$driver" = "igorplugusb"; then

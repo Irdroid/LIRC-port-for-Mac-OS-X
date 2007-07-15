@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.53 2007/05/06 09:46:59 lirc Exp $
+## $Id: Makefile.am,v 5.54 2007/07/15 07:26:39 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -30,6 +30,7 @@ EXTRA_lircd_SOURCES = \
 			hw_dsp.c \
 			hw_ea65.c hw_ea65.h \
 			hw_hiddev.c \
+			hw_i2cuser.c \
 			hw_iguanaIR.c \
 			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \
@@ -78,6 +79,7 @@ EXTRA_irrecord_SOURCES = \
 			hw_dsp.c \
 			hw_ea65.c hw_ea65.h \
 			hw_hiddev.c \
+			hw_i2cuser.c \
 			hw_iguanaIR.c \
 			hw_irman.c hw_irman.h \
 			hw_livedrive_common.c hw_livedrive_common.h \

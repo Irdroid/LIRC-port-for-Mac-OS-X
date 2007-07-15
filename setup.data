@@ -23,6 +23,7 @@ hw_menu_entry: @hw-other
 	creative_infracd: "Creative iNFRA CDROM"
 	bte: "Ericsson mobile phone via Bluetooth"
 	devinput: "Linux input layer (/dev/input/eventX)"
+	i2cuser: "User-space I2C driver"
 
 hw_menu_entry: @hw-other-serial
 	animax: "Anir Multimedia Magic"
@@ -210,6 +211,7 @@ param_type: \
 	hauppauge \
 	hauppauge_dvb \
 	hercules_smarttv_stereo \
+	i2cuser \
 	igorplugusb \
 	iguanaIR \
 	imon \
@@ -276,6 +278,7 @@ default_param: \
 	hauppauge \
 	hauppauge_dvb \
 	hercules_smarttv_stereo \
+	i2cuser \
 	igorplugusb \
 	iguanaIR \
 	imon \
