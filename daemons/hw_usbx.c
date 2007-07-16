@@ -94,7 +94,7 @@ int usbx_decode (struct ir_remote *remote, ir_code *prep, ir_code *codep,
 	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
 	LOGPRINTF(1,"post: %llx",(unsigned long long) *postp);
 	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
+	LOGPRINTF(1,"gap: %lu",(unsigned long) remote->gap);
 	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
 	return 1;
 }
