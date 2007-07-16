@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.188 2007/07/15 07:26:39 lirc Exp $
+dnl $Id: configure.in,v 5.189 2007/07/16 15:26:56 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -265,18 +265,18 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           all, none, userspace, accent, act200l,
                           act220l, adaptec, alsa_usb, animax, asusdh,
-                          atilibusb, atiusb, audio, avermedia,
-                          avermedia_vdomate, avermedia98, bestbuy,
-                          bestbuy2, breakoutbox, bte, bw6130, caraca,
-                          chronos, cmdir, comX, cph06x, creative,
-                          creative_infracd, devinput, digimatrix, dsp,
-                          dvico, ea65, exaudio, flyvideo, gvbctv5pci,
-                          hauppauge, hauppauge_dvb,
-                          hercules_smarttv_stereo, i2cuser,
-                          igorplugusb, iguanaIR, imon, imon_24g,
-                          imon_knob, imon_pad, imon_rsc, irdeo,
-                          irdeo_remote, irman, irreal, it87, knc_one,
-                          kworld, leadtek_0007, leadtek_0010,
+                          atilibusb, atiusb, audio, audio_alsa
+                          avermedia, avermedia_vdomate, avermedia98,
+                          bestbuy, bestbuy2, breakoutbox, bte, bw6130,
+                          caraca, chronos, cmdir, comX, cph06x,
+                          creative, creative_infracd, devinput,
+                          digimatrix, dsp, dvico, ea65, exaudio,
+                          flyvideo, gvbctv5pci, hauppauge,
+                          hauppauge_dvb, hercules_smarttv_stereo,
+                          i2cuser, igorplugusb, iguanaIR, imon,
+                          imon_24g, imon_knob, imon_pad, imon_rsc,
+                          irdeo, irdeo_remote, irman, irreal, it87,
+                          knc_one, kworld, leadtek_0007, leadtek_0010,
                           leadtek_pvr2000, livedrive_midi,
                           livedrive_seq, logitech, lptX, macmini,
                           mceusb, mceusb2, mediafocusI, mouseremote,
@@ -287,8 +287,8 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, sasem,
                           sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
-                          ttusbir, tuxbox, tvbox, udp, uirt2,
-                          uirt2_raw, usb_uirt_raw, usbx],
+                          ttusbir, tuxbox, tvbox, udp, uirt2, 
+                          uirt2_raw, usb_uirt_raw, usbx], 
 driver=${withval},
 driver="unset"
 )
