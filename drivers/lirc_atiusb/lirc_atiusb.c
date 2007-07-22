@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.62 2007/07/14 08:04:29 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.63 2007/07/22 07:37:30 lirc Exp $
  */
 
 /*
@@ -63,7 +63,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.62 $"
+#define DRIVER_VERSION		"$Revision: 1.63 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -134,6 +134,7 @@ static int mgradient = 375;	// 1000*gradient from cardinal direction
 #define VENDOR_ATI2		0x0471
 #define VENDOR_MS1		0x040b
 #define VENDOR_MS2		0x045e
+#define VENDOR_MS3		0xFFFF
 
 static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ATI1, 0x0002) },	/* X10 USB Firecracker Interface */
@@ -154,9 +155,9 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ATI2, 0x0602) },	/* ATI Remote Wonder 2: Input Device */
 	{ USB_DEVICE(VENDOR_ATI2, 0x0603) },	/* ATI Remote Wonder 2: Controller (???) */
 
-	{ USB_DEVICE(VENDOR_MS1, 0x6521) }, /* Gamester Xbox DVD Movie Playback Kit IR */
-	{ USB_DEVICE(VENDOR_MS2, 0x0284) }, /* Microsoft Xbox DVD Movie Playback Kit IR */
-	{ USB_DEVICE(0xFFFF, 0xFFFF) },		/* Some chinese manufacterer -- conflicts with the joystick from the same manufacterer */
+	{ USB_DEVICE(VENDOR_MS1, 0x6521) },	/* Gamester Xbox DVD Movie Playback Kit IR */
+	{ USB_DEVICE(VENDOR_MS2, 0x0284) },	/* Microsoft Xbox DVD Movie Playback Kit IR */
+	{ USB_DEVICE(VENDOR_MS3, 0xFFFF) },	/* Some chinese manufacterer -- conflicts with the joystick from the same manufacterer */
 	{ }					/* Terminating entry */
 };
 
@@ -1003,6 +1004,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 		break;
 	case VENDOR_MS1:
 	case VENDOR_MS2:
+	case VENDOR_MS3:
 		type = XBOX_COMPATIBLE;
 		break;
 	default:
@@ -1259,7 +1261,7 @@ static int __init usb_remote_init(void)
 
 	printk("\n" DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.62 2007/07/14 08:04:29 lirc Exp $\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: $Id: lirc_atiusb.c,v 1.63 2007/07/22 07:37:30 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
