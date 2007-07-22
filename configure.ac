@@ -1,4 +1,4 @@
-dnl $Id: configure.in,v 5.189 2007/07/16 15:26:56 lirc Exp $
+dnl $Id: configure.ac,v 1.1 2007/07/22 07:26:26 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
