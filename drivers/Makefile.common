@@ -1,9 +1,9 @@
-# $Id: Makefile.common,v 5.4 2007/01/17 08:50:31 lirc Exp $
+# $Id: Makefile.common,v 5.5 2007/07/22 07:30:26 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
 
-LIRC_DEVDIR = $(shell pwd)
+LIRC_DEVDIR = $(PWD)
 
 # some magic for using linux kernel settings
 # when compiling module(s)

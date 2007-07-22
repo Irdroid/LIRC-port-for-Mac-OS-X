@@ -1,9 +1,10 @@
-dnl $Id: configure.ac,v 1.1 2007/07/22 07:26:26 lirc Exp $
+dnl $Id: configure.ac,v 1.2 2007/07/22 07:30:25 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
-dnl configure.in, (c)1999 Tom Wheeley <tw104@york.ac.uk>
+dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
-AC_INIT(daemons/lircd.c)
+AC_INIT
+AC_CONFIG_SRCDIR([daemons/lircd.c])
 
 AM_INIT_AUTOMAKE(lirc, 0.8.3-CVS)
 AM_CONFIG_HEADER(config.h)
@@ -12,6 +13,7 @@ CFLAGS="${CFLAGS--O2 -g -Wall}"
 
 dnl Checks for programs.
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 AC_PATH_PROG(mknod, mknod, /bin/mknod)
@@ -19,7 +21,7 @@ AC_PATH_PROG(mkfifo, mkfifo, /usr/bin/mkfifo)
 AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
 AC_PATH_PROG(LIBUSB_CONFIG, libusb-config)
 AC_PROG_LN_S
-AM_PROG_LIBTOOL
+AC_PROG_LIBTOOL
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -182,6 +184,141 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_streamzap)"
 fi
 
+AH_TEMPLATE([DAEMONIZE],
+	[Define to run daemons as daemons])
+
+AH_TEMPLATE([DEBUG],
+	[Define to enable debugging output])
+
+AH_TEMPLATE([DEVDIR],
+	[device files directory])
+
+AH_TEMPLATE([DYNCODES],
+	[Define to use dynamic IR codes])
+
+AH_TEMPLATE([HAVE_ALSA_SB_RC],	
+	[Define if the ALSA library with SB RC support is installed])
+
+AH_TEMPLATE([HAVE_FORKPTY],
+	[Define if forkpty is available])
+
+AH_TEMPLATE([HAVE_IGUANAIR],
+	[Define if the iguanaIR library is installed])
+
+AH_TEMPLATE([HAVE_LIBALSA],
+	[Define if the ALSA library is installed])
+
+AH_TEMPLATE([HAVE_LIBCARACA],
+	[Define if the caraca library is installed])
+
+AH_TEMPLATE([HAVE_LIBIRMAN],
+	[Define if the libirman library is installed])
+
+AH_TEMPLATE([HAVE_LIBIRMAN_SW],
+	[Define if the software only test version of libirman is installed])
+
+AH_TEMPLATE([HAVE_LIBPORTAUDIO],
+	[Define if the portaudio library is installed])
+
+AH_TEMPLATE([HAVE_LIBUSB],
+	[Define if libusb is installed])
+
+AH_TEMPLATE([HAVE_LIBVGA],
+	[Define if the complete vga libraries (vga, vgagl) are installed])
+
+AH_TEMPLATE([HAVE_LINUX_DEVINPUT],
+	[defined if Linux input interface is available])
+
+AH_TEMPLATE([HAVE_SCSI],
+	[defined if SCSI API is available])
+
+AH_TEMPLATE([HAVE_SOUNDCARD],
+	[defined if soundcard API is available])
+
+AH_TEMPLATE([HAVE_VSYSLOG],
+	[define if you have vsyslog( prio, fmt, va_arg )])
+
+AH_TEMPLATE([HW_DEFAULT],
+	[The name of the hw_* structure to use by default])
+
+AH_TEMPLATE([LIRC_DRIVER],
+	[Text string signifying which driver is configured])
+
+AH_TEMPLATE([LIRC_DRIVER_ANY],
+	[Define to include most drivers])
+
+AH_TEMPLATE([LIRC_HAVE_DEVFS],
+	[Define if devfs support is present in current kernel])
+
+AH_TEMPLATE([LIRC_IRQ],
+	[Set the IRQ for the lirc driver])
+
+AH_TEMPLATE([LIRC_IRTTY],
+	[Set the default tty used by the irman/remotemaster driver])
+
+AH_TEMPLATE([LIRC_IT87_DIGIMATRIX],
+	[Define if you want to use lirc_it87 with an Asus Digimatrix])
+
+AH_TEMPLATE([LIRC_MAJOR],
+	[Set the device major for the lirc driver])
+
+AH_TEMPLATE([LIRC_ON_SA1100],
+	[Define if you want to cross-compile for the SA1100])
+
+AH_TEMPLATE([LIRC_PORT],
+	[Set the port address for the lirc driver])
+
+AH_TEMPLATE([LIRC_SERIAL_ANIMAX],
+	[Define if you have an animax serial port receiver])
+
+AH_TEMPLATE([LIRC_SERIAL_IGOR],
+	[Define if you have an Igor Cesko receiver])
+
+AH_TEMPLATE([LIRC_SERIAL_IRDEO],
+	[Define if you have an IRdeo serial port receiver])
+
+AH_TEMPLATE([LIRC_SERIAL_IRDEO_REMOTE],
+	[Define if you have an IRdeo remote transmitter])
+
+AH_TEMPLATE([LIRC_SERIAL_NSLU2],
+	[Define if you have a Linksys NSLU2 and use CTS2+GreenLED])
+
+AH_TEMPLATE([LIRC_SERIAL_SOFTCARRIER],
+	[Define if the software needs to generate the carrier frequency])
+
+AH_TEMPLATE([LIRC_SERIAL_TRANSMITTER],
+	[Define if you have a IR diode connected to the serial port])
+
+AH_TEMPLATE([LIRC_SIR_ACTISYS_ACT200L],
+	[Define if you want to use a Actisys Act200L])
+
+AH_TEMPLATE([LIRC_SIR_ACTISYS_ACT220L],
+	[Define if you want to use a Actisys Act220L])
+
+AH_TEMPLATE([LIRC_SIR_TEKRAM],
+	[Define if you want to use a Tekram Irmate 210])
+
+AH_TEMPLATE([LIRC_SYSLOG],
+	[syslog facility to use])
+
+AH_TEMPLATE([LIRC_TIMER],
+	[Set the timer for the parallel port driver])
+
+AH_TEMPLATE([LOCALSTATEDIR],
+	[modifiable single-machine data])
+
+AH_TEMPLATE([LONG_IR_CODE],
+	[Define to use long long IR codes])
+
+AH_TEMPLATE([MAINTAINER_MODE],
+	[define in maintainer mode])
+
+AH_TEMPLATE([SYSCONFDIR],
+	[system configuration directory])
+
+AH_TEMPLATE([USE_SYSLOG],
+	[define if you want to log to syslog instead of logfile])
+
 if test -n "${LIBUSB_CONFIG}"; then
   AC_DEFINE(HAVE_LIBUSB)
   possible_drivers="${possible_drivers} (atilibusb)"
@@ -223,17 +360,17 @@ AC_CHECK_HEADERS(alsa/asoundlib.h,[
 dnl alsa_usb driver requires an ALSA that knows about our hwdep device
 if test "$have_alsa" = "yes"; then
   AC_MSG_CHECKING(for ALSA SB RC hwdep support)
-  AC_TRY_COMPILE([
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <alsa/asoundlib.h>
-],[
+]], [[
   if (snd_hwdep_info_get_iface(NULL) == SND_HWDEP_IFACE_SB_RC) {}
-],[
+]])],[
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_ALSA_SB_RC)
     possible_drivers="${possible_drivers} (alsa_usb)"
     ],[
-    AC_MSG_RESULT(no)]
-  )
+    AC_MSG_RESULT(no)
+  ])
 fi
 dnl creative_infracd driver requires linux scsi api
 AC_CHECK_HEADERS(scsi/sg.h,[
@@ -1424,11 +1561,61 @@ fi
 AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
 AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
+AH_TOP([
+/* device file names - beneath DEVDIR (default /dev) */
+#define DEV_LIRC	"lirc"
+#define DEV_LIRCD	"lircd"
+#define DEV_LIRCM	"lircm"
+
+/* config file names - beneath SYSCONFDIR (default /etc) */
+#define CFG_LIRCD	"lircd.conf"
+#define CFG_LIRCM	"lircmd.conf"
+
+/* config file names - beneath $HOME or SYSCONFDIR */
+#define CFG_LIRCRC	"lircrc"
+
+/* log files */
+#define LOG_LIRCD	"lircd"
+#define LOG_LIRMAND	"lirmand"
+
+/* pid file */
+#define PID_LIRCD       "lircd.pid"
+
+/* default port number */
+#define	LIRC_INET_PORT	8765
+])
+
+AH_BOTTOM([
+#ifdef LIRC_HAVE_DEVFS
+#define LIRC_DRIVER_DEVICE	DEVDIR "/" DEV_LIRC "/0"
+#else
+#define LIRC_DRIVER_DEVICE      DEVDIR "/" DEV_LIRC
+#endif /* LIRC_HAVE_DEVFS */
+
+#define LIRC_IRTTY		DEVDIR "/" "ttyS0"
+
+#define LIRCD			DEVDIR "/" DEV_LIRCD
+#define LIRCM			DEVDIR "/" DEV_LIRCM
+
+#define LIRCDCFGFILE		SYSCONFDIR "/" CFG_LIRCD
+#define LIRCMDCFGFILE		SYSCONFDIR "/" CFG_LIRCM
+
+#define LIRCRC_USER_FILE	"." CFG_LIRCRC
+#define LIRCRC_ROOT_FILE	SYSCONFDIR "/" CFG_LIRCRC
+
+#define LOGFILE			LOCALSTATEDIR "/log/" LOG_LIRCD
+#define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND
+
+#define PIDFILE                 LOCALSTATEDIR "/run/" PID_LIRCD
+
+#define LIRC_RELEASE_SUFFIX     "_UP"
+])
+
 dnl bug in automake/autoconf?
 dnl SHELL=/bin/sh AC_SUBST(SHELL)
 
 dnl write these decisions out to the Makefiles
-AC_OUTPUT([
+AC_CONFIG_FILES([
   Makefile
   drivers/Makefile
   drivers/lirc_atiusb/Makefile
@@ -1453,6 +1640,7 @@ AC_OUTPUT([
   doc/Makefile
   doc/man/Makefile
 ])
+AC_OUTPUT
 
 echo
 if test "$driver" = "all"; then

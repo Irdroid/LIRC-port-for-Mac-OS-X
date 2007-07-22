@@ -4,7 +4,7 @@ HWDB="${1:-/dev/null}"
 HEURISTIC=`mktemp`
 
 write_heuristic="no"
-cat ../configure.in | while read REPLY; do
+cat ../configure.ac | while read REPLY; do
     if echo $REPLY|grep "START HARDWARE HEURISTIC" >/dev/null; then
 	write_heuristic="yes"
 	continue;

@@ -307,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.27 2007/05/26 21:00:12 uzuul Exp $      */
+/*      $Id: technical.html,v 1.28 2007/07/22 07:30:25 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -509,7 +509,8 @@ int lirc_deinit();</PRE>
     <P>
       I encourage you to use autoconf and automake for your
       projects. To check for the lirc_client library all you have to
-      insert to your <em>configure.in</em> file is the following:
+      insert into your <em>configure.ac</em> (or <em>configure.in</em>) 
+      file is the following:
     </P>
     <PRE>
 dnl Check for LIRC client support
