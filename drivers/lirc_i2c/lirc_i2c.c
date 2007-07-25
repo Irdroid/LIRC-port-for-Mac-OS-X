@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.40 2007/06/16 17:00:45 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.41 2007/07/25 20:16:47 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -429,10 +429,10 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 			   Hauppauge cards, but the data flow is different, so we need
 			   to deal with it by its own.
 		 	*/
-			strcpy(ir->c.name,"Hauppauge IR (PVR150)");
+			strcpy(ir->c.name,"Hauppauge PVR150");
 		}
 		else { /* I2C_HW_B_CX2388x */
-			strcpy(ir->c.name,"Hauppauge IR (HVR1300)");
+			strcpy(ir->c.name,"Hauppauge HVR1300");
 		}
 		ir->l.code_length = 13;
 		ir->l.add_to_buf=add_to_buf_haup_pvr150;
