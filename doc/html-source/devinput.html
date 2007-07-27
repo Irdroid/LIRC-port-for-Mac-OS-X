@@ -1,0 +1,48 @@
+		    <A NAME="overview"></A><HR>
+		    <CENTER><H1>Linux input layer driver</H1></CENTER>
+
+		    <P>
+		      Usually you don't have to create a config file
+		      yourself if you use this driver as this <A
+		      HREF="http://linux.bytesex.org/v4l2/faq.html#lircd">generic
+		      config file</A> should already contain all
+		      existing keys.
+		    </P>
+		    <P>
+		      This driver uses <em>/dev/input/event0</em> as
+		      its input device per default. You should provide
+		      the correct device as --device parameter on the
+		      lircd and irrecord command line.
+		    </P>
+		    
+		    <P>
+		      Sometime the input device mapping changes
+		      between system reboots. In that case you are
+		      also able to specify the correct input device by
+		      its name or physical location by preceding the
+		      desired value with <em>name=</em> or
+		      <em>phys=</em>.  Shell wild-cards can be used
+		      for the given value but must be protected from
+		      the shell with proper quoting.
+      		    </P>
+
+		    <P>
+		      For example you can use:
+      		    </P>
+<PRE>
+--device=name='Budget-CI dvb ir *'
+--device=phys='pci*/ir0'
+</PRE>
+
+		    <P>
+		      With the following script you can list all names
+		      associated with all existing Linux input
+		      devices.
+      		    </P>
+<PRE>
+for i in /sys/class/input/input* ; do echo -n "$(basename "$i"): "; cat "$i/name"; done
+</PRE>
+		    <P>
+      		      This information also can be found in
+      		      <em>/proc/bus/input/devices</em>.
+      		    </P>
