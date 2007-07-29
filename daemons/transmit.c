@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.26 2007/03/10 21:20:07 lirc Exp $      */
+/*      $Id: transmit.c,v 5.27 2007/07/29 18:20:13 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -436,25 +436,28 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	}
 	if(has_repeat_gap(remote) && repeat && has_repeat(remote))
 	{
-		remote->remaining_gap=remote->repeat_gap;
+		remote->min_remaining_gap=remote->repeat_gap;
+		remote->max_remaining_gap=remote->repeat_gap;
 	}
 	else if(is_const(remote))
 	{
-		if(remote->gap>send_buffer.sum)
+		if(min_gap(remote)>send_buffer.sum)
 		{
-			remote->remaining_gap=remote->gap
-			-send_buffer.sum;
+			remote->min_remaining_gap=min_gap(remote)-send_buffer.sum;
+			remote->max_remaining_gap=max_gap(remote)-send_buffer.sum;
 		}
 		else
 		{
 			logprintf(LOG_ERR,"too short gap: %u",remote->gap);
-			remote->remaining_gap=remote->gap;
+			remote->min_remaining_gap=min_gap(remote);
+			remote->max_remaining_gap=max_gap(remote);
 			return(0);
 		}
 	}
 	else
 	{
-		remote->remaining_gap=remote->gap;
+		remote->min_remaining_gap=min_gap(remote);
+		remote->max_remaining_gap=max_gap(remote);
 	}
 	/* update transmit state */
 	if(code->next != NULL)
@@ -469,7 +472,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 	}
 	if((remote->repeat_countdown>0 || code->transmit_state != NULL) &&
-	   remote->remaining_gap<LIRCD_EXACT_GAP_THRESHOLD)
+	   remote->min_remaining_gap<LIRCD_EXACT_GAP_THRESHOLD)
 	{
 		if(send_buffer.data!=send_buffer._data)
 		{
@@ -489,7 +492,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		{
 			remote->repeat_countdown--;
 		}
-		send_space(remote->remaining_gap);
+		send_space(remote->min_remaining_gap);
 		flush_send_buffer();
 		send_buffer.sum=0;
 		

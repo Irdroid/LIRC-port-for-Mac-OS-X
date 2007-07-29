@@ -114,8 +114,6 @@ static unsigned char b[ACCENT_MAX_READ_BYTES];
 // Timestamps of keypress start, keypress end and last pressed key.
 static struct timeval start, end, last; 
 
-// Time gap (us) between a keypress on the remote control and the next one.
-static lirc_t gap;
 // Time (us) of a signal received from the remote control.
 static lirc_t signal_length;
 
@@ -161,76 +159,24 @@ int accent_decode (struct ir_remote *remote,
 		   ir_code *codep,
 		   ir_code *postp,
 		   int *repeat_flagp,
-		   lirc_t *remaining_gapp)
+		   lirc_t *min_remaining_gapp,
+		   lirc_t *max_remaining_gapp)
 {
-	LOGPRINTF(LOG_DEBUG, "Entering accent_decode(), code = %016llx\n",
+	LOGPRINTF(1, "Entering accent_decode(), code = %016llx\n",
 		  code);
 	
-	LOGPRINTF(LOG_DEBUG, "accent_decode() is calling map_code()");
+	LOGPRINTF(1, "accent_decode() is calling map_code()");
 	if (!map_code(remote, prep, codep, postp,
 		      0, 0, ACCENT_CODE_LENGTH, code, 0, 0))
 	{
 		return(0);
 	}
 
-	// Check the time gap between the last keypress and this one.
-	if (start.tv_sec - last.tv_sec >= 2) {
-		// Gap of 2 or more seconds: this is not a repeated keypress.
-		*repeat_flagp = 0;
-		gap = 0;
-	} else {
-		// Calculate the time gap in microseconds.
-		gap = (start.tv_sec - last.tv_sec) * 1000000 +
-			(start.tv_usec - last.tv_usec);
-		if(expect_at_most(remote, gap, remote->remaining_gap))
-		{
-			// The gap is shorter than a standard gap
-			// (with relative or aboslute tolerance): this
-			// is a repeated keypress.
-			*repeat_flagp = 1;
-		}
-		else
-		{
-			// Standard gap: this is a new keypress.
-			*repeat_flagp = 0;
-		}
-	}
+	map_gap(remote, &start, &last, signal_length, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
 	
-	// Calculate extimated time gap remaining for the next code.
-	if (is_const(remote)) {
-		// The sum (signal_length + gap) is always constant
-		// so the gap is shorter when the code is longer.
-		if (remote->gap > signal_length) {
-			*remaining_gapp = remote->gap - signal_length;
-		} else {
-			*remaining_gapp = 0;
-		}
-	} else {
-		// The gap after the signal is always constant.
-		// This is the case of Kanam Accent serial remote.
-		*remaining_gapp = remote->gap;
-	}
-	
-	LOGPRINTF(LOG_DEBUG, "Exiting accent_decode()");
-	LOGPRINTF(LOG_DEBUG, "prep:                   %016llx\n", *prep);
-	LOGPRINTF(LOG_DEBUG, "codep:                  %016llx\n", *codep);
-	LOGPRINTF(LOG_DEBUG, "postp:                  %016llx\n", *postp);
-	LOGPRINTF(LOG_DEBUG, "repeat_flagp:           %d\n",
-		  *repeat_flagp);
-	LOGPRINTF(LOG_DEBUG, "code:                   %016llx\n", code);
-	LOGPRINTF(LOG_DEBUG, "is_const(remote):       %d\n",
-		  is_const(remote));
-	LOGPRINTF(LOG_DEBUG, "remote->gap:            %lu\n",
-		  (unsigned long) remote->gap);
-	LOGPRINTF(LOG_DEBUG, "remote->remaining_gap:  %lu\n",
-		  (unsigned long) remote->remaining_gap);
-	LOGPRINTF(LOG_DEBUG, "signal length:          %lu\n",
-		  (unsigned long) signal_length);
-	LOGPRINTF(LOG_DEBUG, "gap:                    %lu\n",
-		  (unsigned long) gap);
-	LOGPRINTF(LOG_DEBUG, "extim. remaining_gap:   %lu\n",
-		  (unsigned long) *remaining_gapp);
-	
+	LOGPRINTF(1, "Exiting accent_decode()");
+
 	return(1);
 }
 
@@ -243,7 +189,7 @@ int accent_decode (struct ir_remote *remote,
 int accent_init(void)
 {
 	
-	LOGPRINTF(LOG_DEBUG, "Entering accent_init()");
+	LOGPRINTF(1, "Entering accent_init()");
 	
 	// Calculate the time length of a remote signal (in microseconds):
 	// (bits + total_stop_bits) * 1000000 / bitrate
@@ -269,7 +215,7 @@ int accent_init(void)
 //-------------------------------------------------------------------------
 int accent_deinit(void)
 {
-	LOGPRINTF(LOG_DEBUG, "Entering accent_deinit()");
+	LOGPRINTF(1, "Entering accent_deinit()");
 	close(hw.fd);
 	tty_delete_lock();
 	return(1);
@@ -285,7 +231,7 @@ char *accent_rec(struct ir_remote *remotes)
 	char *m;
 	int i, j;
 	
-	LOGPRINTF(LOG_DEBUG, "Entering accent_rec()");
+	LOGPRINTF(1, "Entering accent_rec()");
 	
 	// Timestamp of the last pressed key.
 	last = end;
@@ -425,7 +371,7 @@ int accent_open_serial_port(char *device)
 	int fd;
 	struct termios options;
 	
-	logprintf(LOG_DEBUG, "Entering accent_open_serial_port(), device = %s",
+	logprintf(1, "Entering accent_open_serial_port(), device = %s",
 		  device);
 	
 	// Open the serial device.

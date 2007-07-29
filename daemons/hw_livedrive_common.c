@@ -60,7 +60,9 @@ int livedrive_deinit(void)
 int
 livedrive_decode(struct ir_remote *remote,
 		 ir_code * prep, ir_code * codep, ir_code * postp,
-		 int *repeat_flagp, lirc_t * remaining_gapp)
+		 int *repeat_flagp,
+		 lirc_t * min_remaining_gapp,
+		 lirc_t * max_remaining_gapp)
 {
 	lirc_t gap;
 	
@@ -79,11 +81,8 @@ livedrive_decode(struct ir_remote *remote,
 			*repeat_flagp = 0;
 	}
 
-	LOGPRINTF(1, "pre: %llx", (unsigned long long) *prep);
-	LOGPRINTF(1, "code: %llx", (unsigned long long) *codep);
 	LOGPRINTF(1, "repeat_flag: %d", *repeat_flagp);
 	LOGPRINTF(1, "gap: %lu", (unsigned long) gap);
-	LOGPRINTF(1, "rem: %lu", (unsigned long) remote->remaining_gap);
 
 	return (1);
 }

@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.h,v 1.3 1999/09/06 14:56:04 columbus Exp $      */
+/*      $Id: hw_logitech.h,v 1.4 2007/07/29 18:20:08 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.h **********************************************************
@@ -16,8 +16,10 @@
 #include "drivers/lirc.h"
 
 int logitech_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp);
+		    ir_code *prep,ir_code *codep,ir_code *postp,
+		    int *repeat_flagp,
+		    lirc_t *min_remaining_gapp,
+		    lirc_t *max_remaining_gapp);
 int logitech_init(void);
 int logitech_deinit(void);
 char *logitech_rec(struct ir_remote *remotes);

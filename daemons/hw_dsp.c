@@ -1,4 +1,4 @@
-/*      $Id: hw_dsp.c,v 5.4 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_dsp.c,v 5.5 2007/07/29 18:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dsp.c ****************************************************************
@@ -157,15 +157,6 @@ char *dsp_rec(struct ir_remote *remotes)
 	return(decode_all(remotes));
 }
 
-int dsp_decode(struct ir_remote *remote,
-		   ir_code *prep,ir_code *codep,ir_code *postp,
-		   int *repeat_flagp,lirc_t *remaining_gapp)
-{
-	return(receive_decode(remote,prep,codep,postp,
-			      repeat_flagp,remaining_gapp));
-}
-
-
 struct hardware hw_dsp=
 {
 	"/dev/dsp",	    /* simple device */
@@ -179,7 +170,7 @@ struct hardware hw_dsp=
 	dsp_deinit,         /* deinit_func */
 	NULL,               /* send_func */
 	dsp_rec,            /* rec_func */
-	dsp_decode,         /* decode_func */
+	receive_decode,     /* decode_func */
 	NULL,               /* ioctl_func */
 	dsp_readdata,
 	"dsp"

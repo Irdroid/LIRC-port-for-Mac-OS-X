@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.h,v 5.1 2001/01/05 20:30:27 columbus Exp $      */
+/*      $Id: hw_creative.h,v 5.2 2007/07/29 18:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.h **********************************************************
@@ -16,8 +16,10 @@
 #include "drivers/lirc.h"
 
 int creative_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp);
+		    ir_code *prep,ir_code *codep,ir_code *postp,
+		    int *repeat_flagp,
+		    lirc_t *min_remaining_gapp,
+		    lirc_t *max_remaining_gapp);
 int creative_init(void);
 int creative_deinit(void);
 char *creative_rec(struct ir_remote *remotes);

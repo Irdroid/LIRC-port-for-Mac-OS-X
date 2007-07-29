@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2.c,v 5.3 2005/07/10 08:34:12 lirc Exp $      */
+/*      $Id: hw_uirt2.c,v 5.4 2007/07/29 18:20:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_uirt2.c **************************************************************
@@ -49,15 +49,16 @@
 #define NUMBYTES 6 
 #define TIMEOUT 20000
 
-unsigned char b[NUMBYTES];
-struct timeval start,end,last;
-lirc_t gap,signal_length;
-ir_code code;
+static unsigned char b[NUMBYTES];
+static struct timeval start,end,last;
+static ir_code code;
 
 
 static int uirt2_decode(struct ir_remote *remote,
 			ir_code *prep,ir_code *codep,ir_code *postp,
-			int *repeat_flagp,lirc_t *remaining_gapp);
+			int *repeat_flagp,
+			lirc_t *min_remaining_gapp,
+			lirc_t *max_remaining_gapp);
 static int uirt2_init(void);
 static int uirt2_deinit(void);
 static char *uirt2_rec(struct ir_remote *remotes);
@@ -84,7 +85,9 @@ struct hardware hw_uirt2=
 
 static int uirt2_decode(struct ir_remote *remote,
 			ir_code *prep,ir_code *codep,ir_code *postp,
-			int *repeat_flagp,lirc_t *remaining_gapp)
+			int *repeat_flagp,
+			lirc_t *min_remaining_gapp,
+			lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
 		     0,0,8*NUMBYTES,code,0,0))
@@ -92,34 +95,9 @@ static int uirt2_decode(struct ir_remote *remote,
 		return(0);
 	}
 	
-	gap=0;
-	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
-	{
-		*repeat_flagp=0;
-	}
-	else
-	{
-		gap=(start.tv_sec-last.tv_sec)*1000000+
-			start.tv_usec-last.tv_usec;
-
-		if(gap<remote->remaining_gap*(100+remote->eps)/100
-		   || gap<=remote->remaining_gap+remote->aeps)
-			*repeat_flagp=1;
-		else
-			*repeat_flagp=0;
-	}
+	map_gap(remote, &start, &last, 0, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
 	
-	*remaining_gapp=is_const(remote) ?
-		(remote->gap>signal_length ? remote->gap-signal_length:0):
-		remote->gap;
-
-	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
-	LOGPRINTF(1,"signal length: %lu",(unsigned long) signal_length);
-
 	return(1);
 }
 

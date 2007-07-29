@@ -1,4 +1,4 @@
-/*      $Id: hw_alsa_usb.c,v 5.2 2005/07/10 08:34:11 lirc Exp $   */
+/*      $Id: hw_alsa_usb.c,v 5.3 2007/07/29 18:20:06 lirc Exp $   */
 
 /****************************************************************************
  ** hw_alsa_usb.c ***********************************************************
@@ -24,7 +24,9 @@ static int init(void);
 static int deinit(void);
 static int decode(struct ir_remote *remote,
 		  ir_code *prep, ir_code *codep, ir_code *postp,
-		  int *repeat_flagp, lirc_t *remaining_gapp);
+		  int *repeat_flagp,
+		  lirc_t *min_remaining_gapp,
+		  lirc_t *max_remaining_gapp);
 static char *rec(struct ir_remote *remotes);
 
 static ir_code code, last_code;
@@ -167,13 +169,16 @@ static char *rec(struct ir_remote *remotes)
 
 static int decode(struct ir_remote *remote,
 		  ir_code *prep, ir_code *codep, ir_code *postp,
-		  int *repeat_flagp, lirc_t *remaining_gapp)
+		  int *repeat_flagp,
+		  lirc_t *min_remaining_gapp,
+		  lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,0,0,8,code,0,0))
 	{
 		return(0);
 	}
 	*repeat_flagp = repeat_flag;
-	*remaining_gapp = 0;
+	*min_remaining_gapp = 0;
+	*max_remaining_gapp = 0;
 	return 1;
 }

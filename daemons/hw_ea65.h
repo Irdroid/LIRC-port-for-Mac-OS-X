@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: hw_ea65.h,v 5.1 2004/11/20 13:43:48 lirc Exp $
+ * $Id: hw_ea65.h,v 5.2 2007/07/29 18:20:07 lirc Exp $
  */
 
 #ifndef HW_EA65_H
@@ -26,8 +26,11 @@
 
 #include "drivers/lirc.h"
 
-int   ea65_decode(struct ir_remote *remote, ir_code *pre, ir_code *code,
-		  ir_code *post, int *repeat, lirc_t *gapp);
+int   ea65_decode(struct ir_remote *remote,
+		  ir_code *prep,ir_code *codep,ir_code *postp,
+		  int *repeat_flagp,
+		  lirc_t *min_remaining_gapp,
+		  lirc_t *max_remaining_gapp);
 int   ea65_init(void);
 int   ea65_release(void);
 char *ea65_receive(struct ir_remote *remote);

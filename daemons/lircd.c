@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.72 2007/05/06 09:46:59 lirc Exp $      */
+/*      $Id: lircd.c,v 5.73 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -993,7 +993,7 @@ void dosigalrm(int sig)
 	   repeat_remote->repeat_countdown>0)
 	{
 		repeat_timer.it_value.tv_sec=0;
-		repeat_timer.it_value.tv_usec=repeat_remote->remaining_gap;
+		repeat_timer.it_value.tv_usec=repeat_remote->min_remaining_gap;
 		repeat_timer.it_interval.tv_sec=0;
 		repeat_timer.it_interval.tv_usec=0;
 		
@@ -1386,7 +1386,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 		repeat_code=code;
 		repeat_timer.it_value.tv_sec=0;
 		repeat_timer.it_value.tv_usec=
-			remote->remaining_gap;
+			remote->min_remaining_gap;
 		repeat_timer.it_interval.tv_sec=0;
 		repeat_timer.it_interval.tv_usec=0;
 		if(once)
@@ -1586,7 +1586,8 @@ void free_old_remotes()
 				{
 					found->reps=last_remote->reps;
 					found->toggle_bit_mask_state=last_remote->toggle_bit_mask_state;
-					found->remaining_gap=last_remote->remaining_gap;
+					found->min_remaining_gap=last_remote->min_remaining_gap;
+					found->max_remaining_gap=last_remote->max_remaining_gap;
 					found->last_send=last_remote->last_send;
 					last_remote=found;
 					last_remote->last_code=code;
@@ -1631,7 +1632,8 @@ void free_old_remotes()
 					found->last_code=code;
 					found->last_send=repeat_remote->last_send;
 					found->toggle_bit_mask_state=repeat_remote->toggle_bit_mask_state;
-					found->remaining_gap=repeat_remote->remaining_gap;
+					found->min_remaining_gap=repeat_remote->min_remaining_gap;
+					found->max_remaining_gap=repeat_remote->max_remaining_gap;
 
 					setitimer(ITIMER_REAL,&repeat_timer,&repeat_timer);
 					/* "atomic" (shouldn't be necessary any more) */

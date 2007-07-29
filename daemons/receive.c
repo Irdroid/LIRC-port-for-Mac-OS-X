@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.34 2007/03/10 21:59:44 lirc Exp $      */
+/*      $Id: receive.c,v 5.35 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -434,7 +434,7 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 	if(last_remote!=NULL && !is_rcmm(remote))
 	{
 		while(!expect_at_least(last_remote, deltas,
-				       last_remote->remaining_gap))
+				       last_remote->min_remaining_gap))
 		{
 			deltap=get_next_pulse(1000000);
 			if(deltap==0) return(0);
@@ -450,7 +450,7 @@ inline lirc_t sync_rec_buffer(struct ir_remote *remote)
 		if(has_toggle_mask(remote))
 		{
 			if(!expect_at_most(last_remote, deltas,
-					   last_remote->remaining_gap))
+					   last_remote->max_remaining_gap))
 			{
 				remote->toggle_mask_state=0;
 				remote->toggle_code=NULL;
@@ -599,8 +599,8 @@ inline int get_repeat(struct ir_remote *remote)
 	if(!get_trail(remote)) return(0);
 	if(!get_gap(remote,
 		    is_const(remote) ? 
-		    (remote->gap>rec_buffer.sum ? remote->gap-rec_buffer.sum:0):
-		    (has_repeat_gap(remote) ? remote->repeat_gap:remote->gap)
+		    (min_gap(remote)>rec_buffer.sum ? min_gap(remote)-rec_buffer.sum:0):
+		    (has_repeat_gap(remote) ? remote->repeat_gap:min_gap(remote))
 		    )) return(0);
 	return(1);
 }
@@ -1052,7 +1052,8 @@ ir_code get_post(struct ir_remote *remote)
 
 int receive_decode(struct ir_remote *remote,
 		   ir_code *prep,ir_code *codep,ir_code *postp,
-		   int *repeat_flagp,lirc_t *remaining_gapp)
+		   int *repeat_flagp,
+		   lirc_t *min_remaining_gapp, lirc_t *max_remaining_gapp)
 {
 	ir_code pre,code,post,code_mask=0,post_mask=0;
 	lirc_t sync;
@@ -1106,12 +1107,18 @@ int receive_decode(struct ir_remote *remote,
 				*postp=remote->post_data;
 				*repeat_flagp=1;
 
-				*remaining_gapp=
-				is_const(remote) ? 
-				(remote->gap>rec_buffer.sum ?
-				 remote->gap-rec_buffer.sum:0):
-				(has_repeat_gap(remote) ?
-				 remote->repeat_gap:remote->gap);
+				*min_remaining_gapp=
+					is_const(remote) ? 
+					(min_gap(remote)>rec_buffer.sum ?
+					 min_gap(remote)-rec_buffer.sum:0):
+					(has_repeat_gap(remote) ?
+					 remote->repeat_gap:min_gap(remote));
+				*max_remaining_gapp=
+					is_const(remote) ? 
+					(max_gap(remote)>rec_buffer.sum ?
+					 max_gap(remote)-rec_buffer.sum:0):
+					(has_repeat_gap(remote) ?
+					 remote->repeat_gap:max_gap(remote));
 				return(1);
 			}
 			else
@@ -1130,7 +1137,7 @@ int receive_decode(struct ir_remote *remote,
 			{
 				header=0;
 				if(!(remote->flags&NO_HEAD_REP && 
-				     expect_at_most(remote,sync,remote->gap)))
+				     expect_at_most(remote,sync,max_gap(remote))))
 				{
 					LOGPRINTF(1,"failed on header");
 					return(0);
@@ -1178,8 +1185,8 @@ int receive_decode(struct ir_remote *remote,
 		{
 			if(!get_gap(remote,
 				    is_const(remote) ? 
-				    remote->gap-rec_buffer.sum:
-				    remote->gap)) 
+				    min_gap(remote)-rec_buffer.sum:
+				    min_gap(remote))) 
 				found=NULL;
 		}
 		if(found==NULL) return(0);
@@ -1313,20 +1320,20 @@ int receive_decode(struct ir_remote *remote,
 			else if(is_const(remote))
 			{
 				if(!get_gap(remote,
-					    remote->gap>rec_buffer.sum ?
-					    remote->gap-rec_buffer.sum:0))
+					    min_gap(remote)>rec_buffer.sum ?
+					    min_gap(remote)-rec_buffer.sum:0))
 					return(0);
 			}
 			else
 			{
-				if(!get_gap(remote,remote->gap))
+				if(!get_gap(remote, min_gap(remote)))
 					return(0);
 			}
 		} /* end of mode specific code */
 	}
 	*prep=pre;*codep=code;*postp=post;
 	if((!has_repeat(remote) || remote->reps<remote->min_code_repeat) &&
-	   expect_at_most(remote, sync, remote->remaining_gap))
+	   expect_at_most(remote, sync, remote->max_remaining_gap))
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;
@@ -1343,12 +1350,15 @@ int receive_decode(struct ir_remote *remote,
 	}
 	if(is_const(remote))
 	{
-		*remaining_gapp=remote->gap>rec_buffer.sum ?
-			remote->gap-rec_buffer.sum:0;
+		*min_remaining_gapp=min_gap(remote)>rec_buffer.sum ?
+			min_gap(remote)-rec_buffer.sum:0;
+		*max_remaining_gapp=max_gap(remote)>rec_buffer.sum ?
+			max_gap(remote)-rec_buffer.sum:0;
 	}
 	else
 	{
-		*remaining_gapp=remote->gap;
+		*min_remaining_gapp=min_gap(remote);
+		*max_remaining_gapp=max_gap(remote);
 	}
 	return(1);
 }

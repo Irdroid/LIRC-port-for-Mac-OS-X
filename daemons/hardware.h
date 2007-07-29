@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.10 2007/03/24 13:31:18 lirc Exp $      */
+/*      $Id: hardware.h,v 5.11 2007/07/29 18:20:06 lirc Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -31,7 +31,9 @@ struct hardware
 	char *(*rec_func)(struct ir_remote *remotes);
 	int (*decode_func)(struct ir_remote *remote,
 			   ir_code *prep,ir_code *codep,ir_code *postp,
-			   int *repeat_flag,lirc_t *remaining_gapp);
+			   int *repeat_flag,
+			   lirc_t *min_remaining_gapp,
+			   lirc_t *max_remaining_gapp);
 	int (*ioctl_func)(unsigned int cmd, void *arg);
 	lirc_t (*readdata)(lirc_t timeout);
 	char *name;

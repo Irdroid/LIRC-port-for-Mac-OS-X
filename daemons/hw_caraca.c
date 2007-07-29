@@ -1,4 +1,4 @@
-/*      $Id: hw_caraca.c,v 1.6 2005/07/10 08:34:11 lirc Exp $   */
+/*      $Id: hw_caraca.c,v 1.7 2007/07/29 18:20:06 lirc Exp $   */
 
 /****************************************************************************
  ** hw_caraca.c ***********************************************************
@@ -38,10 +38,10 @@
 
 extern struct ir_remote *repeat_remote,*last_remote;
 
-unsigned char msg[NUMBYTES];
-struct timeval start,end,last;
-lirc_t gap,signal_length;
-ir_code pre,code;
+static unsigned char msg[NUMBYTES];
+static struct timeval start,end,last;
+static lirc_t signal_length;
+static ir_code code;
 
 struct hardware hw_caraca=
 {
@@ -64,12 +64,16 @@ struct hardware hw_caraca=
 
 int caraca_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp)
+		  int *repeat_flagp,
+		  lirc_t *min_remaining_gapp,
+		  lirc_t *max_remaining_gapp)
 {
-	*prep=pre;
-	*codep=code;
-	*postp=0;
-
+	if (!map_code(remote, prep, codep, postp,
+		      0, 0, hw_caraca.code_length, code, 0, 0))
+	{
+		return(0);
+	}
+	
 	gap=0;
 	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
 	{
@@ -86,7 +90,8 @@ int caraca_decode(struct ir_remote *remote,
 			*repeat_flagp=0;
 	}
 	
-	*remaining_gapp=0;
+	*min_remaining_gapp=0;
+	*max_remaining_gapp=0;
 	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
 	return(1);
 }

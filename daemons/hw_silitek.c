@@ -73,23 +73,22 @@ int silitek_read(int fd, unsigned char *data, long timeout) {
 }
 
 int silitek_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp)
+		   ir_code *prep,ir_code *codep,ir_code *postp,
+		   int *repeat_flagp,
+		   lirc_t *min_remaining_gapp,
+		   lirc_t *max_remaining_gapp)
 {
         if(!map_code(remote, prep, codep, postp, 0, 0, 24, code, 0, 0)) {
 		return(0);
 	}
 
-	if((current.tv_sec - last.tv_sec > 0) || (!do_repeat)) {
-		*repeat_flagp = 0;
-	}
-	else {
-		*repeat_flagp = 1;
-	}
-
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
-
+	map_gap(remote, &current, &last, 0, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
+	
+	if(!do_repeat) *repeat_flagp = 0;
+	
+	LOGPRINTF(1, "repeat_flagp:           %d",  *repeat_flagp);
+	
 	return(1);
 }
 

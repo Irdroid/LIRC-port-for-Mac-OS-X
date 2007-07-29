@@ -35,10 +35,10 @@
 
 extern struct ir_remote *repeat_remote,*last_remote;
 
-unsigned char b[NUMBYTES];
-struct timeval start,end,last;
-lirc_t gap,signal_length;
-ir_code pre,code;
+static unsigned char b[NUMBYTES];
+static struct timeval start,end,last;
+static lirc_t signal_length;
+static ir_code pre,code;
 
 struct hardware hw_mp3anywhere=
 {
@@ -60,43 +60,20 @@ struct hardware hw_mp3anywhere=
 };
 
 int mp3anywhere_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp)
+		       ir_code *prep,ir_code *codep,ir_code *postp,
+		       int *repeat_flagp,
+		       lirc_t *min_remaining_gapp,
+		       lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
 		     24,pre,8,code,0,0))
 	{
 		return(0);
 	}
-
-	gap=0;
-	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
-	{
-		*repeat_flagp=0;
-	}
-	else
-	{
-		gap=(start.tv_sec-last.tv_sec)*1000000+
-		start.tv_usec-last.tv_usec;
-		
-		if(gap<remote->remaining_gap*(100+remote->eps)/100
-		   || gap<=remote->remaining_gap+remote->aeps)
-			*repeat_flagp=1;
-		else
-			*repeat_flagp=0;
-	}
 	
-	*remaining_gapp=is_const(remote) ?
-	(remote->gap>signal_length ? remote->gap-signal_length:0):
-	remote->gap;
-
-	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
-	LOGPRINTF(1,"signal length: %lu",(unsigned long) signal_length);
-
+	map_gap(remote, &start, &last, signal_length, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
+	
 	return(1);
 }
 

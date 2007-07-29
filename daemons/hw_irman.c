@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.8 2007/06/16 07:46:12 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.9 2007/07/29 18:20:08 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -62,8 +62,10 @@ struct hardware hw_irman=
 };
 
 int irman_decode(struct ir_remote *remote,
-		     ir_code *prep,ir_code *codep,ir_code *postp,
-		     int *repeat_flagp,lirc_t *remaining_gapp)
+		 ir_code *prep,ir_code *codep,ir_code *postp,
+		 int *repeat_flagp,
+		 lirc_t *min_remaining_gapp,
+		 lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote, prep, codep, postp,
 		     0, 0, CODE_LENGTH, code, 0, 0))
@@ -71,31 +73,9 @@ int irman_decode(struct ir_remote *remote,
 		return 0;
 	}
 
-	if(remote->flags&CONST_LENGTH) return(0);
+	map_gap(remote, &start, &last, 0, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
 
-	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
-	{
-		*repeat_flagp=0;
-	}
-	else
-	{
-		gap=time_elapsed(&last,&start);
-		
-		if(gap<=remote->remaining_gap*(100+remote->eps)/100
-		   || gap<=remote->remaining_gap+remote->aeps)
-			*repeat_flagp=1;
-		else
-			*repeat_flagp=0;
-	}
-	
-	*remaining_gapp=remote->gap;
-
-	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"post: %llx",(unsigned long long) *postp);
-	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
 	return(1);
 }
 

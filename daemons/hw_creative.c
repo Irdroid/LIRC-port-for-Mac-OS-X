@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.9 2007/03/10 20:15:49 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.10 2007/07/29 18:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -60,8 +60,10 @@ struct hardware hw_creative=
 };
 
 int creative_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp)
+		    ir_code *prep,ir_code *codep,ir_code *postp,
+		    int *repeat_flagp,
+		    lirc_t *min_remaining_gapp,
+		    lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
 		     16,pre,16,code,0,0))
@@ -69,33 +71,8 @@ int creative_decode(struct ir_remote *remote,
 		return(0);
 	}
 	
-	gap=0;
-	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
-	{
-		*repeat_flagp=0;
-	}
-	else
-	{
-		gap=(start.tv_sec-last.tv_sec)*1000000+
-		start.tv_usec-last.tv_usec;
-		
-		if(gap<remote->remaining_gap*(100+remote->eps)/100
-		   || gap<=remote->remaining_gap+remote->aeps)
-			*repeat_flagp=1;
-		else
-			*repeat_flagp=0;
-	}
-	
-	*remaining_gapp=is_const(remote) ?
-	(remote->gap>signal_length ? remote->gap-signal_length:0):
-	remote->gap;
-
-	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) gap);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
-	LOGPRINTF(1,"signal length: %lu",(unsigned long) signal_length);
+	map_gap(remote, &start, &last, signal_length, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
 
 	return(1);
 }

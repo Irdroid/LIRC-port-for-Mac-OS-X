@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: hw_ea65.c,v 5.3 2005/07/10 08:34:11 lirc Exp $
+ * $Id: hw_ea65.c,v 5.4 2007/07/29 18:20:07 lirc Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -68,34 +68,36 @@ struct hardware hw_ea65 =
 	"ea65"
 };
 
-int ea65_decode(struct ir_remote *remote, ir_code *ppre, ir_code *pcode,
-		ir_code *ppost, int *repeat, lirc_t *gap)
+int ea65_decode(struct ir_remote *remote,
+		ir_code *prep,ir_code *codep,ir_code *postp,
+		int *repeat_flagp,
+		lirc_t *min_remaining_gapp,
+		lirc_t *max_remaining_gapp)
 {
 	lirc_t d = 0;
 
-	if (!map_code(remote, ppre, pcode, ppost,
+	if (!map_code(remote, prep, codep, postp,
 			0, 0, CODE_LENGTH, code, 0, 0))
 		return 0;
 
 	if (start.tv_sec - last.tv_sec >= 2) {
-		*repeat = 0;
+		*repeat_flagp = 0;
 	} else {
 		d = (start.tv_sec - last.tv_sec) * 1000000 +
 			start.tv_usec - last.tv_usec;
 		if (d < 960000)
 		{
-			*repeat = 1;
+			*repeat_flagp = 1;
 		}
 		else
 		{
-			*repeat = 0;
+			*repeat_flagp = 0;
 		}
 	}
 	
-	*gap = 0;
-
-	LOGPRINTF(1, "EA65: decode code: %llx", (unsigned long long) *pcode);
-
+	*min_remaining_gapp = 0;
+	*max_remaining_gapp = 0;
+	
 	return 1;
 }
 

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.65 2007/05/26 13:29:11 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.66 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -189,7 +189,7 @@ int main(int argc,char **argv)
 	int retval=EXIT_SUCCESS;
 	ir_code pre,code,post;
 	int repeat_flag;
-	lirc_t remaining_gap;
+	lirc_t min_remaining_gap, max_remaining_gap;
 	int force;
 	int retries;
 	struct ir_remote *remotes=NULL;
@@ -676,7 +676,9 @@ int main(int argc,char **argv)
 			{
 				hw.rec_func(NULL);
 				if(hw.decode_func(&remote,&pre,&code,&post,
-						  &repeat_flag,&remaining_gap))
+						  &repeat_flag,
+						  &min_remaining_gap,
+						  &max_remaining_gap))
 				{
 					flag=1;
 					break;
@@ -910,7 +912,7 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 {
 	ir_code pre,code,post;
 	int repeat_flag;
-	lirc_t remaining_gap;
+	lirc_t min_remaining_gap, max_remaining_gap;
 	int retval=EXIT_SUCCESS;
 	int retries,flag,success;
 	ir_code first, last;
@@ -955,10 +957,12 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 				remote->rc6_mask=mask;
 				success=hw.decode_func(remote,&pre,&code,&post,
 						       &repeat_flag,
-						       &remaining_gap);
+						       &min_remaining_gap,
+						       &max_remaining_gap);
 				if(success)
 				{
-					remote->remaining_gap=remaining_gap;
+					remote->min_remaining_gap=min_remaining_gap;
+					remote->max_remaining_gap=max_remaining_gap;
 					break;
 				}
 			}
@@ -967,10 +971,13 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 		else
 		{
 			success=hw.decode_func(remote,&pre,&code,&post,
-					       &repeat_flag,&remaining_gap);
+					       &repeat_flag,
+					       &min_remaining_gap,
+					       &max_remaining_gap);
 			if(success)
 			{
-				remote->remaining_gap=remaining_gap;
+				remote->min_remaining_gap=min_remaining_gap;
+				remote->max_remaining_gap=max_remaining_gap;
 			}
 		}
 		if(success)

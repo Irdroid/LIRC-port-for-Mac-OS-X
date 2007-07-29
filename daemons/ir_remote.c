@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.32 2007/06/16 07:46:12 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.33 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -101,6 +101,115 @@ struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name)
 		all=all->next;
 	}
 	return(NULL);
+}
+
+int map_code(struct ir_remote *remote,
+	     ir_code *prep,ir_code *codep,ir_code *postp,
+	     int pre_bits,ir_code pre,
+	     int bits,ir_code code,
+	     int post_bits,ir_code post)
+{
+	ir_code all;
+	
+	if(pre_bits+bits+post_bits!=
+	   remote->pre_data_bits+remote->bits+remote->post_data_bits)
+	{
+		return(0);
+	}
+	all=(pre&gen_mask(pre_bits));
+	all<<=bits;
+	all|=(code&gen_mask(bits));
+	all<<=post_bits;
+	all|=(post&gen_mask(post_bits));
+	
+	*postp=(all&gen_mask(remote->post_data_bits));
+	all>>=remote->post_data_bits;
+	*codep=(all&gen_mask(remote->bits));
+	all>>=remote->bits;
+	*prep=(all&gen_mask(remote->pre_data_bits));
+	
+	LOGPRINTF(1,"pre: %llx", (unsigned long long) *prep);
+	LOGPRINTF(1,"code: %llx", (unsigned long long) *codep);
+	LOGPRINTF(1,"post: %llx", (unsigned long long) *postp);
+	LOGPRINTF(1, "code:                   %016llx\n", code);
+	
+	return(1);
+}
+
+void map_gap(struct ir_remote *remote,
+	     struct timeval *start, struct timeval *last,
+	     lirc_t signal_length,
+	     int *repeat_flagp,
+	     lirc_t *min_remaining_gapp,
+	     lirc_t *max_remaining_gapp)
+{
+	// Time gap (us) between a keypress on the remote control and
+	// the next one.
+	lirc_t gap;
+	
+	// Check the time gap between the last keypress and this one.
+	if (start->tv_sec - last->tv_sec >= 2) {
+		// Gap of 2 or more seconds: this is not a repeated keypress.
+		*repeat_flagp = 0;
+		gap = 0;
+	} else {
+		// Calculate the time gap in microseconds.
+		gap = time_elapsed(last, start);
+		if(expect_at_most(remote, gap, remote->max_remaining_gap))
+		{
+			// The gap is shorter than a standard gap
+			// (with relative or aboslute tolerance): this
+			// is a repeated keypress.
+			*repeat_flagp = 1;
+		}
+		else
+		{
+			// Standard gap: this is a new keypress.
+			*repeat_flagp = 0;
+		}
+	}
+	
+	// Calculate extimated time gap remaining for the next code.
+	if (is_const(remote)) {
+		// The sum (signal_length + gap) is always constant
+		// so the gap is shorter when the code is longer.
+		if (min_gap(remote) > signal_length) {
+			*min_remaining_gapp = min_gap(remote) - signal_length;
+			*max_remaining_gapp = max_gap(remote) - signal_length;
+		} else {
+			*min_remaining_gapp = 0;
+			if(max_gap(remote) > signal_length)
+			{
+				*max_remaining_gapp = max_gap(remote) - signal_length;
+			}
+			else
+			{
+				*max_remaining_gapp = 0;
+			}
+		}
+	} else {
+		// The gap after the signal is always constant.
+		// This is the case of Kanam Accent serial remote.
+		*min_remaining_gapp = min_gap(remote);
+		*max_remaining_gapp = max_gap(remote);
+	}
+	
+	LOGPRINTF(1, "repeat_flagp:           %d", *repeat_flagp);
+	LOGPRINTF(1, "is_const(remote):       %d", is_const(remote));
+	LOGPRINTF(1, "remote->gap range:      %lu %lu",
+		  (unsigned long) min_gap(remote),
+		  (unsigned long) max_gap(remote));
+	LOGPRINTF(1, "remote->remaining_gap:  %lu %lu",
+		  (unsigned long) remote->min_remaining_gap,
+		  (unsigned long) remote->max_remaining_gap);
+	LOGPRINTF(1, "signal length:          %lu",
+		  (unsigned long) signal_length);
+	LOGPRINTF(1, "gap:                    %lu",
+		  (unsigned long) gap);
+	LOGPRINTF(1, "extim. remaining_gap:   %lu %lu",
+		  (unsigned long) *min_remaining_gapp,
+		  (unsigned long) *max_remaining_gapp);
+	
 }
 
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name)
@@ -289,7 +398,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    ir_code toggle_bit_mask_state,int repeat_flag,
-			    lirc_t remaining_gap)
+			    lirc_t min_remaining_gap, lirc_t max_remaining_gap)
 {
 	unsigned long long code;
 	struct timeval current;
@@ -340,7 +449,8 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	last_remote=remote;
 	if(found->current==NULL) remote->last_code=found;
 	remote->last_send=current;
-	remote->remaining_gap=remaining_gap;
+	remote->min_remaining_gap=min_remaining_gap;
+	remote->max_remaining_gap=max_remaining_gap;
 	
 	code=0;
 	if(has_pre(remote))
@@ -398,7 +508,7 @@ char *decode_all(struct ir_remote *remotes)
 	struct ir_ncode *ncode;
 	int repeat_flag;
 	ir_code toggle_bit_mask_state;
-	lirc_t remaining_gap;
+	lirc_t min_remaining_gap, max_remaining_gap;
 	struct ir_remote *scan;
 	struct ir_ncode *scan_ncode;
 	
@@ -409,13 +519,15 @@ char *decode_all(struct ir_remote *remotes)
 		LOGPRINTF(1,"trying \"%s\" remote",remote->name);
 		
 		if(hw.decode_func(remote,&pre,&code,&post,&repeat_flag,
-				   &remaining_gap) &&
+				  &min_remaining_gap, &max_remaining_gap) &&
 		   (ncode=get_code(remote,pre,code,post,&toggle_bit_mask_state)))
 		{
 			int len;
 
 			code=set_code(remote,ncode,toggle_bit_mask_state,
-				      repeat_flag,remaining_gap);
+				      repeat_flag,
+				      min_remaining_gap,
+				      max_remaining_gap);
 			if((has_toggle_mask(remote) &&
 			    remote->toggle_mask_state%2) ||
 			   ncode->current!=NULL)

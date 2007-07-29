@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.26 2007/03/10 21:59:44 lirc Exp $      */
+/*      $Id: config_file.c,v 5.27 2007/07/29 18:20:06 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -394,8 +394,12 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		return(1);
 	}
 	else if (strcasecmp("gap",key)==0){
+		if(val2 != NULL)
+		{
+			rem->gap2=s_strtoul(val2);
+		}
 		rem->gap=s_strtoul(val);
-		return(1);
+		return(val2 != NULL ? 2:1);
 	}
 	else if (strcasecmp("repeat_gap",key)==0){
 		rem->repeat_gap=s_strtoul(val);

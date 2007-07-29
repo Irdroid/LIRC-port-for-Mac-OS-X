@@ -1,4 +1,4 @@
-/*      $Id: hw_creative_infracd.c,v 5.4 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_creative_infracd.c,v 5.5 2007/07/29 18:20:07 lirc Exp $      */
 
 /*
  * Remote control driver for the Creative iNFRA CDrom
@@ -77,7 +77,7 @@ int is_my_device(int fd,char *name)
 	int k;
 	unsigned char inqCmdBlk [SCSI_INQ_CMD_LEN] = 
 		{INQUIRY, 0, 0, 0, MAX_SCSI_REPLY_LEN, 0};
-	unsigned char Buff[MAX_SCSI_REPLY_LEN];
+	char Buff[MAX_SCSI_REPLY_LEN];
 	unsigned char sense_buffer[32];
 
 	/* Just to be safe, check we have a sg device wigh version > 3 */
@@ -103,13 +103,13 @@ int is_my_device(int fd,char *name)
 	io_hdr.timeout = 2000;
 
 	if (ioctl(fd, SG_IO, &io_hdr) < 0) {
-		LOGPRINTF(LOG_ERR, "INQUIRY SG_IO ioctl error");
+		logprintf(LOG_ERR, "INQUIRY SG_IO ioctl error");
 		return 0;
 	} else {
 		usleep(10);
 	}
 	if ( (io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK) {
-		LOGPRINTF(LOG_ERR,
+		logprintf(LOG_ERR,
 			  "INQUIRY: SCSI status=0x%x host_status=0x%x "
 			  "driver_status=0x%x",io_hdr.status,
 			  io_hdr.host_status,io_hdr.driver_status);
@@ -117,7 +117,7 @@ int is_my_device(int fd,char *name)
 	}
 	/* check INQUIRY returned string */
 	if ( strncmp(Buff+8,"CREATIVE",8) > 0 ) {
-		LOGPRINTF(LOG_ERR, "%s is %s (vendor isn't Creative)",
+		logprintf(LOG_ERR, "%s is %s (vendor isn't Creative)",
 			  name,Buff+8);
 	}
 
@@ -190,7 +190,9 @@ char *creative_infracd_rec(struct ir_remote *remotes)
 
 int creative_infracd_decode(struct ir_remote *remote,
 			    ir_code *prep,ir_code *codep,ir_code *postp,
-			    int *repeat_flagp,lirc_t *remaining_gapp)
+			    int *repeat_flagp,
+			    lirc_t *min_remaining_gapp,
+			    lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,16,0x8435,16,code,0,0))
 	{

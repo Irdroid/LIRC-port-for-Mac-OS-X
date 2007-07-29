@@ -1,4 +1,4 @@
-/*      $Id: receive.h,v 5.3 2000/09/03 14:34:45 columbus Exp $      */
+/*      $Id: receive.h,v 5.4 2007/07/29 18:20:13 lirc Exp $      */
 
 /****************************************************************************
  ** receive.h ***************************************************************
@@ -38,7 +38,9 @@ void init_rec_buffer();
 int clear_rec_buffer(void);
 int receive_decode(struct ir_remote *remote,
 		   ir_code *prep,ir_code *codep,ir_code *postp,
-		   int *repeat_flag,lirc_t *remaining_gapp);
+		   int *repeat_flag,
+		   lirc_t *min_remaining_gapp,
+		   lirc_t *max_remaining_gapp);
 int clear_rec_buffer(void);
 void rewind_rec_buffer(void);
 

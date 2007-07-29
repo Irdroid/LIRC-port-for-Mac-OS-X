@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.19 2007/02/20 07:11:10 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.20 2007/07/29 18:20:06 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -76,6 +76,20 @@ void fprint_remotes(FILE *f, struct ir_remote *all){
                 fprintf(f, "\n\n");
                 all=all->next;
         }
+}
+
+void fprint_remote_gap(FILE *f, struct ir_remote *rem)
+{
+	if(rem->gap2 != 0)
+	{
+		fprintf(f, "  gap          %lu %lu\n",
+			(unsigned long) rem->gap,
+			(unsigned long) rem->gap2);
+	}
+	else
+	{
+		fprintf(f, "  gap          %lu\n", (unsigned long) rem->gap);
+	}
 }
 
 void fprint_remote_head(FILE *f, struct ir_remote *rem)
@@ -159,8 +173,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 				(unsigned long) rem->post_p,
 				(unsigned long) rem->post_s);
 		}
-		fprintf(f, "  gap          %lu\n",
-			(unsigned long) rem->gap);
+		fprint_remote_gap(f, rem);
 		if(has_repeat_gap(rem))
 		{
 			fprintf(f, "  repeat_gap   %lu\n",
@@ -221,7 +234,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  repeat %5lu %5lu\n",
 			(unsigned long) rem->prepeat,
 			(unsigned long) rem->srepeat);
-		fprintf(f, "  gap    %lu\n",(unsigned long) rem->gap);
+		fprint_remote_gap(f, rem);
 	}
 	if(rem->freq!=0)
 	{

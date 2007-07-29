@@ -55,10 +55,10 @@ extern struct ir_remote *repeat_remote,*last_remote;
 #define REPEAT_FLAG ((ir_code) 0x000040)
 #define REPEAT_MASK ((ir_code) 0x00e840)
 
-unsigned char b[3], t;
-struct timeval start,end,last;
-lirc_t gap,signal_length;
-ir_code code;
+static unsigned char b[3];
+static struct timeval start,end,last;
+static lirc_t signal_length;
+static ir_code code;
 
 struct hardware hw_pinsys=
 {
@@ -150,7 +150,9 @@ int autodetect(void)
 
 int pinsys_decode(struct ir_remote *remote,
 		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp)
+		  int *repeat_flagp,
+		  lirc_t *min_remaining_gapp,
+		  lirc_t *max_remaining_gapp)
 {
 	if(!map_code(remote,prep,codep,postp,
 		     0,0,
@@ -160,38 +162,19 @@ int pinsys_decode(struct ir_remote *remote,
 		return(0);
 	}
 	
-	gap=0;
-	if(start.tv_sec-last.tv_sec>=2) /* >1 sec */
+	map_gap(remote, &start, &last, signal_length, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
+	
+	if(start.tv_sec-last.tv_sec < 2)
 	{
-		*repeat_flagp=0;
-	}
-	else
-	{
-		gap=(start.tv_sec-last.tv_sec)*1000000+
-			start.tv_usec-last.tv_usec;
-		
-		if(gap<remote->remaining_gap*(100+remote->eps)/100
-		   || gap<=remote->remaining_gap+remote->aeps)
-			*repeat_flagp=1;
-		else
-			*repeat_flagp=0;
-		
 		/* let's believe the remote */
 		if(code&REPEAT_FLAG)
 		{
 			*repeat_flagp=1;
+			
+			LOGPRINTF(1,"repeat_flag: %d\n",*repeat_flagp);
 		}
 	}
-	
-	*remaining_gapp=is_const(remote) ?
-		(remote->gap>signal_length ? remote->gap-signal_length:0):
-		remote->gap;
-	
-	LOGPRINTF(1,"code: %llx\n",(unsigned long long) *codep);
-	LOGPRINTF(1,"repeat_flag: %d\n",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu\n",(unsigned long) gap);
-	LOGPRINTF(1,"rem: %lu\n",(unsigned long) remote->remaining_gap);
-	LOGPRINTF(1,"signal length: %lu\n",(unsigned long) signal_length);
 	
 	return(1);
 }

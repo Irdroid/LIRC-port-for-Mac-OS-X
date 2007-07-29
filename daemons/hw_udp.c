@@ -100,14 +100,6 @@ char *udp_rec(struct ir_remote *remotes)
 	return(decode_all(remotes));
 }
 
-int udp_decode(struct ir_remote *remote,
-	       ir_code *prep,ir_code *codep,ir_code *postp,
-	       int *repeat_flagp,lirc_t *remaining_gapp)
-{
-	return(receive_decode(remote,prep,codep,postp,
-			      repeat_flagp,remaining_gapp));
-}
-
 lirc_t udp_readdata(lirc_t timeout)
 {
 	static u_int8_t buffer[8192];
@@ -179,7 +171,7 @@ struct hardware hw_udp=
 	udp_deinit,         /* deinit_func */
 	NULL,		    /* send_func */
 	udp_rec,            /* rec_func */
-	udp_decode,         /* decode_func */
+	receive_decode,     /* decode_func */
 	NULL,               /* ioctl_func */
 	udp_readdata,       /* readdata */
 	"udp"

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.33 2007/04/08 19:37:29 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.34 2007/07/29 18:20:07 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -75,7 +75,7 @@ struct hardware hw_default=
 	default_deinit,     /* deinit_func */
 	default_send,       /* send_func */
 	default_rec,        /* rec_func */
-	default_decode,     /* decode_func */
+	receive_decode,     /* decode_func */
 	default_ioctl,      /* ioctl_func */
 	default_readdata,
 	"default"
@@ -464,7 +464,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 	}
 #endif
-	remaining_gap=remote->remaining_gap;
+	remaining_gap=remote->min_remaining_gap;
 	if(!init_send(remote,code)) return(0);
 	
 #if !defined(SIM_SEND) || defined(DAEMONIZE)
@@ -498,7 +498,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		gettimeofday(&remote->last_send,NULL);
 		remote->last_code=code;
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
-		printf("space %lu\n",(unsigned long) remote->remaining_gap);
+		printf("space %lu\n",(unsigned long) remote->min_remaining_gap);
 #endif
 	}
 	return(1);
@@ -542,14 +542,6 @@ char *default_rec(struct ir_remote *remotes)
 		if(!clear_rec_buffer()) return(NULL);
 		return(decode_all(remotes));
 	}
-}
-
-int default_decode(struct ir_remote *remote,
-		   ir_code *prep,ir_code *codep,ir_code *postp,
-		   int *repeat_flagp,lirc_t *remaining_gapp)
-{
-	return(receive_decode(remote,prep,codep,postp,
-			      repeat_flagp,remaining_gapp));
 }
 
 static int default_config_frequency()

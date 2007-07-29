@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.2 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.3 2007/07/29 18:20:06 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -340,15 +340,6 @@ char *audio_rec(struct ir_remote *remotes)
 	return(decode_all(remotes));
 }
 
-int audio_decode(struct ir_remote *remote,
-		   ir_code *prep,ir_code *codep,ir_code *postp,
-		   int *repeat_flagp,lirc_t *remaining_gapp)
-{
-	return(receive_decode(remote,prep,codep,postp,
-			      repeat_flagp,remaining_gapp));
-}
-
-
 struct hardware hw_audio=
 {
 	"pty",	    /* simple device */
@@ -362,7 +353,7 @@ struct hardware hw_audio=
 	audio_deinit,       /* deinit_func */
 	NULL,		    /* send_func */
 	audio_rec,          /* rec_func */
-	audio_decode,       /* decode_func */
+	receive_decode,     /* decode_func */
 	NULL,               /* ioctl_func */
 	audio_readdata,
 	"audio"

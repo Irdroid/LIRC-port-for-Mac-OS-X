@@ -1,4 +1,4 @@
-/*      $Id: hw_slinke.c,v 5.9 2005/07/10 09:28:41 lirc Exp $      */
+/*      $Id: hw_slinke.c,v 5.10 2007/07/29 18:20:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_slinke.c ***********************************************************
@@ -71,7 +71,7 @@ struct port_queue_rec{
     int length,bufsize;
     unsigned char *buf;
 };
-struct port_queue_rec queue[MAX_PORT_COUNT];
+static struct port_queue_rec queue[MAX_PORT_COUNT];
 
 /* values read from Slink-e*/
 
@@ -80,13 +80,13 @@ struct slinke_settings_rec{
    int  timeout_samples; /* number of sample periods */
    char *version;
 };
-struct slinke_settings_rec slinke_settings = {0,0,NULL};
+static struct slinke_settings_rec slinke_settings = {0,0,NULL};
 
 extern struct ir_remote *repeat_remote,*last_remote;
 
-struct timeval start,end,last;
-lirc_t gap,signal_length;
-ir_code pre,code;
+static struct timeval start,end,last;
+static lirc_t signal_length;
+static ir_code pre,code;
 
 struct hardware hw_slinke = {
     LIRC_DRIVER_DEVICE, /* default device */
@@ -744,20 +744,22 @@ char *slinke_rec(struct ir_remote *remotes){
 /*****************************************************************************/
 extern struct rbuf rec_buffer;
 
-int slinke_decode(struct ir_remote *remote
-                 ,ir_code          *prep
-                 ,ir_code          *codep
-                 ,ir_code          *postp
-                 ,int              *repeat_flagp
-                 ,lirc_t           *remaining_gapp){
-
-    rewind_rec_buffer(); 
-    rec_buffer.wptr = 0; 
-    signal_queue_rd_idx = 0; 
-	return receive_decode(remote
-                         ,prep
-                         ,codep
-                         ,postp
-                         ,repeat_flagp
-                         ,remaining_gapp);
+int slinke_decode(struct ir_remote *remote,
+		  ir_code          *prep,
+		  ir_code          *codep,
+		  ir_code          *postp,
+		  int              *repeat_flagp,
+		  lirc_t           *min_remaining_gapp,
+		  lirc_t           *max_remaining_gapp)
+{
+	rewind_rec_buffer(); 
+	rec_buffer.wptr = 0; 
+	signal_queue_rd_idx = 0; 
+	return receive_decode(remote,
+			      prep,
+			      codep,
+			      postp,
+			      repeat_flagp,
+			      min_remaining_gapp,
+			      max_remaining_gapp);
 } /* slinke_decode */

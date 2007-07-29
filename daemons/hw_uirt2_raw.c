@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.10 2006/12/07 01:05:55 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.11 2007/07/29 18:20:12 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -66,7 +66,9 @@ static int uirt2_send(struct ir_remote *remote,struct ir_ncode *code);
 static char *uirt2_raw_rec(struct ir_remote *remotes);
 static int uirt2_raw_decode(struct ir_remote *remote,
 			    ir_code *prep,ir_code *codep,ir_code *postp,
-			    int *repeat_flagp,lirc_t *remaining_gapp);
+			    int *repeat_flagp,
+			    lirc_t *min_remaining_gapp,
+			    lirc_t *max_remaining_gapp);
 static lirc_t uirt2_raw_readdata(lirc_t timeout);
 
 /* forwards */
@@ -160,14 +162,18 @@ static void queue_clear() {
 
 static int uirt2_raw_decode(struct ir_remote *remote,
 			    ir_code *prep,ir_code *codep,ir_code *postp,
-			    int *repeat_flagp,lirc_t *remaining_gapp)
+			    int *repeat_flagp,
+			    lirc_t *min_remaining_gapp,
+			    lirc_t *max_remaining_gapp)
 {
 	int res;
 
 	LOGPRINTF(1, "uirt2_raw_decode: enter");
 
 	res = receive_decode(remote,prep,codep,postp,
-			     repeat_flagp,remaining_gapp);
+			     repeat_flagp,
+			     min_remaining_gapp,
+			     max_remaining_gapp);
 
 	LOGPRINTF(1, "uirt2_raw_decode: %d", res);
 
@@ -511,7 +517,7 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
         		int part_length = i+1;
         		
                 	/* is this a repeated signal sequence? */
-                	if(!(i%2 /* space */ && buf[i] == remote->remaining_gap))
+                	if(!(i%2 /* space */ && buf[i] == remote->min_remaining_gap))
                 	{                		
                 		return 0;
                 	}
@@ -547,8 +553,8 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 
 	LOGPRINTF(2, "bits %d", bits);
 	
-	rem.bISDlyHi = remote->remaining_gap / tUnit / 256;
-	rem.bISDlyLo = (remote->remaining_gap / tUnit) & 255;
+	rem.bISDlyHi = remote->min_remaining_gap / tUnit / 256;
+	rem.bISDlyLo = (remote->min_remaining_gap / tUnit) & 255;
 	rem.bBits = bits;
 	rem.bOff0 = table[1][0];
 	rem.bOff1 = table[1][1];

@@ -1,4 +1,4 @@
-/*      $Id: dump_config.h,v 5.1 1999/09/02 20:03:53 columbus Exp $      */
+/*      $Id: dump_config.h,v 5.2 2007/07/29 18:20:06 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.h ***********************************************************
@@ -22,6 +22,7 @@
 void fprint_comment(FILE *f,struct ir_remote *rem);
 void fprint_flags(FILE *f, int flags);
 void fprint_remotes(FILE *f, struct ir_remote *all);
+void fprint_remote_gap(FILE *f, struct ir_remote *rem);
 void fprint_remote_head(FILE *f, struct ir_remote *rem);
 void fprint_remote_foot(FILE *f, struct ir_remote *rem);
 void fprint_remote_signal_head(FILE *f, struct ir_remote *rem);

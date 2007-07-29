@@ -401,7 +401,9 @@ char *bte_rec(struct ir_remote *remotes)
 
 int bte_decode(struct ir_remote *remote,
 	       ir_code *prep,ir_code *codep,ir_code *postp,
-	       int *repeat_flagp,lirc_t *remaining_gapp)
+	       int *repeat_flagp,
+	       lirc_t *min_remaining_gapp,
+	       lirc_t *max_remaining_gapp)
 {
 	LOGPRINTF(3, "bte_decode called");
 	*prep=pre;

@@ -1,4 +1,4 @@
-/*      $Id: release.c,v 1.1 2007/05/06 11:54:02 lirc Exp $      */
+/*      $Id: release.c,v 1.2 2007/07/29 18:20:13 lirc Exp $      */
 
 /****************************************************************************
  ** release.c ***************************************************************
@@ -63,7 +63,7 @@ void register_button_press(struct ir_remote *remote, struct ir_ncode *ncode,
 	release_remote = remote;
 	release_ncode = ncode;
 	release_code = code;
-	release_gap = remote->remaining_gap;
+	release_gap = remote->max_remaining_gap;
 	
 	register_input();
 }

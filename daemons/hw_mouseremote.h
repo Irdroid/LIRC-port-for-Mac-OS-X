@@ -1,4 +1,4 @@
-/*      $Id: hw_mouseremote.h,v 5.2 2005/01/22 10:42:39 lirc Exp $      */
+/*      $Id: hw_mouseremote.h,v 5.3 2007/07/29 18:20:08 lirc Exp $      */
 
 /****************************************************************************
  ** hw_mouseremote.h ********************************************************
@@ -19,8 +19,10 @@
 #include "drivers/lirc.h"
 
 int mouseremote_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,lirc_t *remaining_gapp);
+		       ir_code *prep,ir_code *codep,ir_code *postp,
+		       int *repeat_flagp,
+		       lirc_t *min_remaining_gapp,
+		       lirc_t *max_remaining_gapp);
 int mouseremote_init(void);
 int mouseremote_ps2_init(void);
 int mouseremote_deinit(void);

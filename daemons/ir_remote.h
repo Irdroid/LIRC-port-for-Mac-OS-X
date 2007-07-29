@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.37 2007/05/06 09:46:59 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.38 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -186,6 +186,30 @@ static inline int has_toggle_mask(struct ir_remote *remote)
 	else return(0);
 }
 
+static inline lirc_t min_gap(struct ir_remote *remote)
+{
+	if(remote->gap2 != 0 && remote->gap2 < remote->gap)
+	{
+		return remote->gap2;
+	}
+	else
+	{
+		return remote->gap;
+	}
+}
+
+static inline lirc_t max_gap(struct ir_remote *remote)
+{
+	if(remote->gap2 > remote->gap)
+	{
+		return remote->gap2;
+	}
+	else
+	{
+		return remote->gap;
+	}
+}
+
 /* check if delta is inside exdelta +/- exdelta*eps/100 */
 
 static inline int expect(struct ir_remote *remote,lirc_t delta,lirc_t exdelta)
@@ -251,45 +275,30 @@ static inline ir_code gen_mask(int bits)
 	return(mask);
 }
 
-static inline int map_code(struct ir_remote *remote,
-			   ir_code *prep,ir_code *codep,ir_code *postp,
-			   int pre_bits,ir_code pre,
-			   int bits,ir_code code,
-			   int post_bits,ir_code post)
-{
-	ir_code all;
-	
-	if(pre_bits+bits+post_bits!=
-	   remote->pre_data_bits+remote->bits+remote->post_data_bits)
-	{
-		return(0);
-	}
-	all=(pre&gen_mask(pre_bits));
-	all<<=bits;
-	all|=(code&gen_mask(bits));
-	all<<=post_bits;
-	all|=(post&gen_mask(post_bits));
-	
-	*postp=(all&gen_mask(remote->post_data_bits));
-	all>>=remote->post_data_bits;
-	*codep=(all&gen_mask(remote->bits));
-	all>>=remote->bits;
-	*prep=(all&gen_mask(remote->pre_data_bits));
-	return(1);
-}
-
 void get_frequency_range(struct ir_remote *remotes,
 			 unsigned int *min_freq,unsigned int *max_freq);
 struct ir_remote *is_in_remotes(struct ir_remote *remotes,
 				struct ir_remote *remote);
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);
+int map_code(struct ir_remote *remote,
+	     ir_code *prep,ir_code *codep,ir_code *postp,
+	     int pre_bits,ir_code pre,
+	     int bits,ir_code code,
+	     int post_bits,ir_code post);
+void map_gap(struct ir_remote *remote,
+	     struct timeval *start, struct timeval *last,
+	     lirc_t signal_length,
+	     int *repeat_flagp,
+	     lirc_t *min_remaining_gapp,
+	     lirc_t *max_remaining_gapp);
 struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
 			  ir_code *toggle_bit_mask_state);
 unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    ir_code toggle_bit_mask_state,int repeat_flag,
-			    lirc_t remaining_gap);
+			    lirc_t min_remaining_gap,
+			    lirc_t max_remaining_gap);
 int write_message(char *buffer, size_t size, const char *remote_name,
 		  const char *button_name, const char *button_suffix,
 		  ir_code code, int reps);

@@ -78,7 +78,8 @@ struct hardware hw_usbx = {
 };
 
 int usbx_decode (struct ir_remote *remote, ir_code *prep, ir_code *codep,
-		 ir_code *postp, int *repeat_flagp, lirc_t *remaining_gapp)
+		 ir_code *postp, int *repeat_flagp,
+		 lirc_t *min_remaining_gapp, lirc_t *max_remaining_gapp)
 {
 	if( remote->flags&CONST_LENGTH ||
 	    !map_code(remote, prep, codep, postp,
@@ -88,14 +89,16 @@ int usbx_decode (struct ir_remote *remote, ir_code *prep, ir_code *codep,
 	}
 	/* the lsb in the code is the repeat flag */
 	*repeat_flagp = code&REPEAT_FLAG ? 1:0;
-	*remaining_gapp=remote->gap;
+	*min_remaining_gapp=min_gap(remote);
+	*max_remaining_gapp=max_gap(remote);
 
-	LOGPRINTF(1,"pre: %llx",(unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
-	LOGPRINTF(1,"post: %llx",(unsigned long long) *postp);
-	LOGPRINTF(1,"repeat_flag: %d",*repeat_flagp);
-	LOGPRINTF(1,"gap: %lu",(unsigned long) remote->gap);
-	LOGPRINTF(1,"rem: %lu",(unsigned long) remote->remaining_gap);
+	LOGPRINTF(1, "repeat_flagp: %d",*repeat_flagp);
+	LOGPRINTF(1, "remote->gap range:      %lu %lu\n",
+		  (unsigned long) min_gap(remote),
+		  (unsigned long) max_gap(remote));
+	LOGPRINTF(1,"rem: %lu %lu",
+		  (unsigned long) remote->min_remaining_gap,
+		  (unsigned long) remote->max_remaining_gap);
 	return 1;
 }
 

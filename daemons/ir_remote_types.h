@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.10 2007/05/06 09:46:59 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.11 2007/07/29 18:20:12 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -137,6 +137,7 @@ struct ir_remote
 	lirc_t post_p, post_s;      /* signal between keycode and post_code */
 
 	lirc_t gap;                 /* time between signals in usecs */
+	lirc_t gap2;                /* time between signals in usecs */
 	lirc_t repeat_gap;          /* time between two repeat codes
 				       if different from gap */
 	int toggle_bit;             /* obsolete */
@@ -172,7 +173,8 @@ struct ir_remote
 	struct ir_ncode *toggle_code; /* toggle code received or sent last */
 	int reps;
 	struct timeval last_send;   /* time last_code was received or sent */
-	lirc_t remaining_gap;       /* remember gap for CONST_LENGTH remotes */
+	lirc_t min_remaining_gap;   /* remember gap for CONST_LENGTH remotes */
+	lirc_t max_remaining_gap;   /* gap range */
         struct ir_remote *next;
 };
 
