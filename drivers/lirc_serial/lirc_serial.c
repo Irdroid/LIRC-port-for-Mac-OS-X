@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.81 2007/07/15 07:34:12 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.82 2007/08/03 19:42:59 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1249,22 +1249,36 @@ static int __init lirc_serial_init(void)
 {
 	int result;
 
-	lirc_serial_dev = platform_device_alloc("lirc_serial", 0);
-	if (!lirc_serial_dev)
-		return -ENOMEM;
-	result = platform_device_add(lirc_serial_dev);
-	if (result) {
-		platform_device_put(lirc_serial_dev);
-		return result;
-	}
 	result = platform_driver_register(&lirc_serial_driver);
 	if (result) {
 		printk("lirc register returned %d\n", result);
-		platform_device_del(lirc_serial_dev);
-		platform_device_put(lirc_serial_dev);
 		return result;
 	}
+
+	lirc_serial_dev = platform_device_alloc("lirc_serial", 0);
+	if (!lirc_serial_dev) {
+		result = -ENOMEM;
+		goto exit_driver_unregister;
+	}
+
+	result = platform_device_add(lirc_serial_dev);
+	if (result) {
+		goto exit_device_put;
+	}
+
 	return 0;
+
+exit_device_put:
+	platform_device_put(lirc_serial_dev);
+exit_driver_unregister:
+	platform_driver_unregister(&lirc_serial_driver);
+	return result;
+}
+
+static void __exit lirc_serial_exit(void)
+{
+	platform_device_unregister(lirc_serial_dev);
+	platform_driver_unregister(&lirc_serial_driver);
 }
 #endif
 
@@ -1274,7 +1288,9 @@ int __init init_module(void)
 	
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	result = lirc_serial_init();
-	if(result) return result;
+	if(result) {
+		return result;
+	}
 #endif
 	switch(type)
 	{
@@ -1288,7 +1304,8 @@ int __init init_module(void)
 #endif
 		break;
 	default:
-		return -EINVAL;
+		result = -EINVAL;
+		goto exit_serial_exit;
 	}
 	if(!softcarrier)
 	{
@@ -1305,27 +1322,25 @@ int __init init_module(void)
 	}
 	if((result = init_port()) < 0)
 	{
-		return result;
+		goto exit_serial_exit;
 	}
 	plugin.features = hardware[type].features;
 	if ((plugin.minor = lirc_register_plugin(&plugin)) < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME  
 		       ": register_chrdev failed!\n");
-		release_region(io, 8);
-		return -EIO;
+		result = -EIO;
+		goto exit_release;
 	}
 	return 0;
-}
 
+exit_release:
+	release_region(io, 8);
+exit_serial_exit:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
-static void __exit lirc_serial_exit(void)
-{
-	struct platform_device *pdev = lirc_serial_dev;
-	lirc_serial_dev = NULL;
-	platform_driver_unregister(&lirc_serial_driver);
-	platform_device_unregister(pdev);
-}
+	lirc_serial_exit();
 #endif
+	return result;
+}
 
 void __exit cleanup_module(void)
 {
