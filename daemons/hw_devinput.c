@@ -75,7 +75,7 @@ struct hardware hw_devinput=
 	devinput_decode,	/* decode_func */
 	NULL,                   /* ioctl_func */
 	NULL,			/* readdata */
-	"dev/input"
+	"devinput"
 };
 
 static ir_code code;

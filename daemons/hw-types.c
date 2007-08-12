@@ -146,6 +146,11 @@ int hw_choose_driver (char *name)
 		hw = HW_DEFAULT;
 		return 0;
 	}
+	if(strcasecmp(name, "dev/input") == 0)
+	{
+		/* backwards compatibility */
+		name = "devinput";
+	}
 	for (i=0; hw_list[i]; i++)
 		if (!strcasecmp (hw_list[i]->name, name))
 			break;
