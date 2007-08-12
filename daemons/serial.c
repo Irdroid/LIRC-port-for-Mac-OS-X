@@ -1,4 +1,4 @@
-/*      $Id: serial.c,v 5.14 2007/04/23 16:25:11 lirc Exp $      */
+/*      $Id: serial.c,v 5.15 2007/08/12 07:46:58 lirc Exp $      */
 
 /****************************************************************************
  ** serial.c ****************************************************************
@@ -85,6 +85,7 @@ int tty_setdtr(int fd, int enable)
 {
         int cmd, sts;
 
+#ifdef DEBUG
         if (ioctl(fd, TIOCMGET, &sts) < 0)
         {
                 LOGPRINTF(1,"%s: ioctl(TIOCMGET) failed", __FUNCTION__);
@@ -99,6 +100,7 @@ int tty_setdtr(int fd, int enable)
         {
                 LOGPRINTF(1, "%s: 1->0", __FUNCTION__);
         }
+#endif
         if (enable)
         {
                 cmd = TIOCMBIS;
