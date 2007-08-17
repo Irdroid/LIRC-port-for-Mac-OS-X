@@ -1,4 +1,4 @@
-/*      $Id: slinke.c,v 5.3 2006/06/07 23:10:58 lirc Exp $      */
+/*      $Id: slinke.c,v 5.4 2007/08/17 18:58:48 lirc Exp $      */
 
 /****************************************************************************
  ** slinke.c ****************************************************************
@@ -748,7 +748,7 @@ int main(int argc,char **argv)
 	{
 		chdir(cwd);
 	}
-	fd=open(remote->name,O_CREAT|O_EXCL|O_RDWR);
+	fd=open(remote->name,O_CREAT|O_EXCL|O_RDWR,0644);
 	if(fd==-1)
 	{
 		fprintf(stderr,"%s: could not open output file\n",progname);
