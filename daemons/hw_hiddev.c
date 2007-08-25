@@ -256,6 +256,8 @@ char *hiddev_rec(struct ir_remote *remotes)
 	if (event.hid == 0x10046) {
 		repeat_flag = (main_code & dvico_repeat_mask);
 		main_code = (main_code & ~dvico_repeat_mask);
+
+		LOGPRINTF(1, "main 0x%X  repeat flag 0x%X", main_code, repeat_flag);
 		return decode_all(remotes);
 #if 0
 		/* the following code could be used to recreate the
@@ -276,6 +278,38 @@ char *hiddev_rec(struct ir_remote *remotes)
 		return decode_all(remotes);
 #endif
 	}
+	
+	else if (event.hid == 0x90001)
+	{
+		LOGPRINTF(1, "This is another type Dvico - sends two codes");
+		if(!waitfordata(TIMEOUT))
+		{
+			logprintf(LOG_ERR,"timeout reading next event");
+			return(NULL);
+		}
+		rd = read(hw.fd, &event, sizeof event);
+		if (rd != sizeof event) {
+			logprintf(LOG_ERR, "error reading '%s'",
+				  hw.device);
+			return 0;
+		}
+		LOGPRINTF(1, "Event number hid 0x%X  value 0x%X",
+				  event.hid,
+				  event.value);
+		pre_code = event.hid;
+		main_code = event.value;
+		
+		/* Now we know this is dvico 0x10046 so strip the repeat flag */
+		
+		repeat_flag = (main_code & dvico_repeat_mask);
+		main_code = (main_code & ~dvico_repeat_mask);
+		if (main_code)
+		{
+			return decode_all(remotes);
+		}
+	}
+
+
 	/* Asus DH remote specific code */
 	else if (event.hid == 0xFF000000)
 	{
