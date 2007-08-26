@@ -111,6 +111,7 @@ struct hardware *hw_list[] =
 	&hw_livedrive_midi,
 	&hw_livedrive_seq,
 	&hw_logitech,
+	&hw_macmini,
 	&hw_mp3anywhere,
 	&hw_mouseremote,
 	&hw_mouseremote_ps2,
