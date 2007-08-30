@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.82 2007/08/03 19:42:59 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.83 2007/08/30 19:35:42 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -105,6 +105,10 @@
 /* ftp://download.intel.com/design/network/manuals/25248005.pdf */
 #define UART_IE_IXP42X_UUE   0x40 /* IXP42X UART Unit enable */
 #define UART_IE_IXP42X_RTOIE 0x10 /* IXP42X Receiver Data Timeout int.enable */
+#ifndef NSLU2_LED_GRN_GPIO
+/* added in 2.6.22 */
+#define NSLU2_LED_GRN_GPIO NSLU2_LED_GRN
+#endif
 #endif
 
 #include "drivers/lirc.h"
@@ -420,7 +424,7 @@ static inline void on(void)
 	   status LED and ground */
 	if(type == LIRC_NSLU2)
 	{
-		gpio_line_set(NSLU2_LED_GRN, IXP4XX_GPIO_LOW);
+		gpio_line_set(NSLU2_LED_GRN_GPIO, IXP4XX_GPIO_LOW);
 		return;
 	}
 #endif
@@ -439,7 +443,7 @@ static inline void off(void)
 #if defined(LIRC_SERIAL_NSLU2)
 	if(type == LIRC_NSLU2)
 	{
-		gpio_line_set(NSLU2_LED_GRN, IXP4XX_GPIO_HIGH);
+		gpio_line_set(NSLU2_LED_GRN_GPIO, IXP4XX_GPIO_HIGH);
 		return;
 	}
 #endif
