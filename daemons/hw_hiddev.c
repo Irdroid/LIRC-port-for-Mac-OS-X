@@ -226,6 +226,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 	/* Remotec Mediamaster specific */
 	static int wheel_count = 0;
 	static int x_movement = 0;
+	static struct timeval time_of_last_code;
 	int y_movement=0;
 	int x_direction=0;
 	int y_direction=0;
@@ -254,9 +255,30 @@ char *hiddev_rec(struct ir_remote *remotes)
 	 *
 	 */
 	if (event.hid == 0x10046) {
+		struct timeval now;
 		repeat_flag = (main_code & dvico_repeat_mask);
 		main_code = (main_code & ~dvico_repeat_mask);
+		
+		gettimeofday (&now, NULL);
 
+		/* The hardware dongle for the dvico remote sends spurious */  
+		/* repeats of the last code received it it gets a false    */
+		/* trigger from some other IR source, or if it misses      */
+		/* receiving the first code of a new button press. To      */
+		/* minimise the impact of this hardware bug, ignore any    */
+		/* repeats that occur more than half a second after the    */
+		/* previous valid code because it is likely that they are  */
+		/* spurious.                                               */
+		
+		if(repeat_flag)
+		{
+			if(time_elapsed(&time_of_last_code, &now) > 500000)
+			{
+				return NULL;
+			}
+		}
+		time_of_last_code = now;
+		
 		LOGPRINTF(1, "main 0x%X  repeat flag 0x%X", main_code, repeat_flag);
 		return decode_all(remotes);
 #if 0
