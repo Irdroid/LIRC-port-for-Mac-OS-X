@@ -1079,7 +1079,8 @@ static ssize_t cmdir_file_write (struct file *file, const char *buffer, size_t c
 		}
 	}
 	
-	if ((changeType!=cNothing)&&(equalsign=0)) err("No device specified");
+	if ((changeType != cNothing) && (equalsign == 0))
+	       err("No device specified");
 	if (changeType==cNothing) err("Unknown command");
 
 exit:
