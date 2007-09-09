@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.41 2007/07/25 20:16:47 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.42 2007/09/09 17:37:13 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -408,12 +408,12 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	switch(addr)
 	{
 	case 0x64:
-		strcpy(ir->c.name,"Pixelview IR");
+		strlcpy(ir->c.name, "Pixelview IR", I2C_NAME_SIZE);
 		ir->l.code_length = 8;
 		ir->l.add_to_buf=add_to_buf_pixelview;
 		break;
 	case 0x4b:
-		strcpy(ir->c.name,"PV951 IR");
+		strlcpy(ir->c.name, "PV951 IR", I2C_NAME_SIZE);
 		ir->l.code_length = 32;
 		ir->l.add_to_buf=add_to_buf_pv951;
 		break;
@@ -429,16 +429,16 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 			   Hauppauge cards, but the data flow is different, so we need
 			   to deal with it by its own.
 		 	*/
-			strcpy(ir->c.name,"Hauppauge PVR150");
+			strlcpy(ir->c.name, "Hauppauge PVR150", I2C_NAME_SIZE);
 		}
 		else { /* I2C_HW_B_CX2388x */
-			strcpy(ir->c.name,"Hauppauge HVR1300");
+			strlcpy(ir->c.name, "Hauppauge HVR1300", I2C_NAME_SIZE);
 		}
 		ir->l.code_length = 13;
 		ir->l.add_to_buf=add_to_buf_haup_pvr150;
 		break;
 	case 0x6b:
-		strcpy(ir->c.name,"Adaptec IR");
+		strlcpy(ir->c.name, "Adaptec IR", I2C_NAME_SIZE);
 		ir->l.code_length = 32;
 		ir->l.add_to_buf=add_to_buf_adap;
 		break;
@@ -451,25 +451,25 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
 #endif
 		{
-			strcpy(ir->c.name,"Hauppauge IR");
+			strlcpy(ir->c.name, "Hauppauge IR", I2C_NAME_SIZE);
 			ir->l.code_length = 13;
 			ir->l.add_to_buf=add_to_buf_haup;
 		}
 		else /* I2C_HW_B_CX2388x */
 		{
-			strcpy(ir->c.name,"Leadtek IR");
+			strlcpy(ir->c.name, "Leadtek IR", I2C_NAME_SIZE);
 			ir->l.code_length = 8;
 			ir->l.add_to_buf=add_to_buf_pvr2000;
 		}
 		break;
 	case 0x30:
-		strcpy(ir->c.name,"KNC ONE IR");
+		strlcpy(ir->c.name, "KNC ONE IR", I2C_NAME_SIZE);
 		ir->l.code_length = 8;
 		ir->l.add_to_buf=add_to_buf_knc1;
 		break;
 	case 0x21:
 	case 0x23:
-		strcpy(ir->c.name,"TV-Box IR");
+		strlcpy(ir->c.name, "TV-Box IR", I2C_NAME_SIZE);
 		ir->l.code_length = 8;
 		ir->l.add_to_buf=add_to_buf_pcf8574;
 		ir->bits = flags & 0xff;
