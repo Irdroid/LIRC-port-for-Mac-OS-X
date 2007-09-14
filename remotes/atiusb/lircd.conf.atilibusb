@@ -165,3 +165,86 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.2(atilibusb) on Tue Aug 28 13:18:03 2007
+#
+# contributed by Michael Haas
+#
+# brand: ATI "RF Remote Control" (first generation)                    
+# model no. of remote control: Part #: 5000023600
+# FCC ID: B4SUR84A
+# picture: http://www.mythtv.org/wiki/index.php/Image:Remotewonder1.jpg
+# receiver: http://www.mythtv.org/wiki/index.php/Image:Remotewonder2.jpg
+#
+# I created this new config file because the one for the ati remote wonder II
+# did not work for me.
+
+begin remote
+
+  name ati_remote_wonder_rf
+  bits           40
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          147991
+  toggle_bit	0
+
+      begin codes
+          0                        0x14DC170000
+          1                        0x14D20D0000
+          2                        0x14D30E0000
+          3                        0x14D40F0000
+          4                        0x14D5100000
+          5                        0x14D6110000
+          6                        0x14D7120000
+          7                        0x14D8130000
+          8                        0x14D9140000
+          9                        0x14DA150000
+          volup                    0x14CD080000
+          voldown                  0x14CE090000
+          mute                     0x14CF0A0000
+          chup                     0x14D00B0000
+          chdown                   0x14D10C0000
+          mouse_up                 0x1437720000
+          mouse_down               0x1438730000
+          mouse_left               0x1435700000
+          mouse_right              0x1436710000
+          mouse_up_right           0x143A750000
+          mouse_down_right         0x143B760000
+          mouse_up_left            0x1439740000
+          mouse_down_left          0x143C770000
+          right_click              0x14417C0000
+          left_click               0x143D780000
+          hand                     0x14CC070000
+          book                     0x14CB060000
+          ?                        0x14CA050000
+          dvd                      0x14C9040000
+          tv                       0x14C8030000
+          a                        0x14C5000000
+          b                        0x14C6010000
+          power                    0x14C7020000
+          stop                     0x14ED280000
+          pause                    0x14EE290000
+          fforward                 0x14EB260000
+          rec                      0x14EC270000
+          rewind                   0x14E9240000
+          play                     0x14EA250000
+          d                        0x14E01B0000
+          c                        0x14DE190000
+          e                        0x14E6210000
+          f                        0x14E8230000
+          right                    0x14E41F0000
+          left                     0x14E21D0000
+          up                       0x14DF1A0000
+          down                     0x14E7220000
+          ok                       0x14E31E0000
+          timer                    0x14E11C0000
+          shrink_resize            0x14E5200000
+          menu                     0x14DB160000
+          check                    0x14DD180000
+      end codes
+
+end remote
