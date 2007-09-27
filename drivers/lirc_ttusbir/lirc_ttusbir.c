@@ -21,6 +21,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+
+/* This LIRC driver provides access to the TechnoTrend USB IR Receiver.
+ * The receiver delivers the IR signal as raw sampled true/false data in
+ * isochronous USB packets each of size 128 byte.
+ * Currently the driver reduces the sampling rate by factor of 8 as this
+ * is still more than enough to decode RC-5 - others should be analyzed.
+ * But the driver does not rely on RC-5 it should be able to decode every
+ * IR signal that is not too fast.
+ */
+
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
@@ -36,9 +46,6 @@
 MODULE_DESCRIPTION("TechnoTrend USB IR device driver for LIRC");
 MODULE_AUTHOR("Stefan Macher (st_maker-lirc@yahoo.de)");
 MODULE_LICENSE("GPL");
-
-/* @TODO Is it enough to have only two, I guess yes */
-#define NUM_URBS 4 /* Number of URBs used in the queue */
 
 /* #define DEBUG */
 #ifdef DEBUG
@@ -57,6 +64,12 @@ static void urb_complete(struct urb *urb);
 #endif
 static int set_use_inc(void *data);
 static void set_use_dec(void *data);
+
+static int num_urbs = 2;
+module_param(num_urbs, int, 0444);
+MODULE_PARM_DESC(num_urbs,
+		 "Number of URBs in queue. Try to increase to 4 in case "
+		 "of problems (default: 2; minimum: 2)");
 
 /* table of devices that work with this driver */
 static struct usb_device_id device_id_table[] = {
@@ -83,8 +96,8 @@ struct ttusbir_device
 	unsigned int ifnum; /* Interface number to use */
 	unsigned int alt_setting; /* alternate setting to use */
 	unsigned int endpoint; /* Endpoint to use */
-	struct urb *urb[NUM_URBS];
-	char buffer[NUM_URBS][128];
+	struct urb **urb; /* num_urb URB pointers*/
+	char **buffer; /* 128 byte buffer for each URB */
 	struct lirc_buffer rbuf; /* Buffer towards LIRC */
 	struct lirc_plugin plugin;
 	int minor;
@@ -102,10 +115,10 @@ static int set_use_inc(void *data)
 	struct ttusbir_device *ttusbir = data;
 
 	DPRINTK("Sending first URBs\n");
-
+	/* @TODO Do I need to check if I am already opened */
 	ttusbir->opened = 1;
 
-	for (i = 0; i < NUM_URBS; i++)
+	for (i = 0; i < num_urbs; i++)
 		usb_submit_urb(ttusbir->urb[i], GFP_KERNEL);
 
 	return 0;
@@ -124,11 +137,12 @@ static void set_use_dec(void *data)
  * USB specific functions
  */
 
-/* This mapping table is used to do a very simple filtering of the input signal
- * For a value with at least 4 bits set it returns 0xFF otherwise 0x00.
- * For faster IR signals this can not be used. But for RC-5 we still have
- * about 14 bytes per pulse/space
- */
+/* This mapping table is used to do a very simple filtering of the
+ * input signal 
+ * For a value with at least 4 bits set it returns 0xFF otherwise
+ * 0x00.  For faster IR signals this can not be used. But for RC-5 we
+ * still have about 14 samples per pulse/space, i.e. we sample with 14
+ * times higher frequency than the signal frequency */
 const unsigned char map_table[] =
 {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -184,6 +198,7 @@ static void urb_complete(struct urb *urb)
 	buf = (unsigned char *)urb->transfer_buffer;
 
 	for (i = 0; i < 128; i++) {
+		/* Here we do the filtering and some kind of down sampling */
 		buf[i] = ~map_table[buf[i]];
 		if (ttusbir->last_pulse == buf[i]) {
 			if (ttusbir->last_num < PULSE_MASK/63)
@@ -213,6 +228,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	int alt_set, endp;
 	int found = 0;
 	int i, j;
+	int struct_size;
 	struct usb_host_interface *host_interf;
 	struct usb_interface_descriptor *interf_desc;
 	struct usb_host_endpoint *host_endpoint;
@@ -220,12 +236,27 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 
 	DPRINTK("Module ttusbir probe\n");
 
-	ttusbir = (struct ttusbir_device *)
-		  kzalloc(sizeof(struct ttusbir_device), GFP_KERNEL);
+	/* To reduce memory fragmentation we use only one allocation */
+	struct_size =  sizeof(struct ttusbir_device) +
+		(sizeof(struct urb *) * num_urbs) +
+		(sizeof(char *) * num_urbs) +
+		(num_urbs * 128);
+	ttusbir = (struct ttusbir_device *) kmalloc(struct_size, GFP_KERNEL);
 	if (!ttusbir)
 		return -ENOMEM;
+	memset(ttusbir, 0, struct_size);
+
+	ttusbir->urb = (struct urb **)((char *)ttusbir +
+				      sizeof(struct ttusbir_device));
+	ttusbir->buffer = (char **)((char *)ttusbir->urb +
+				   (sizeof(struct urb *) * num_urbs));
+	for (i = 0; i < num_urbs; i++)
+		ttusbir->buffer[i] = (char *)ttusbir->buffer +
+			(sizeof(char *)*num_urbs) + (i * 128);
+
 	ttusbir->driver = &driver;
 	ttusbir->alt_setting = -1;
+	/* @TODO check if error can be returned */
 	ttusbir->udev = usb_get_dev(interface_to_usbdev(intf));
 	ttusbir->interf = intf;
 	ttusbir->last_pulse = 0x00;
@@ -294,7 +325,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	}
 
 	/* Allocate and setup the URB that we will use to talk to the device */
-	for (i = 0; i < NUM_URBS; i++) {
+	for (i = 0; i < num_urbs; i++) {
 		ttusbir->urb[i] = usb_alloc_urb(8, GFP_KERNEL);
 		if (!ttusbir->urb[i]) {
 			err("Could not allocate memory for the URB\n");
@@ -337,10 +368,14 @@ static void disconnect(struct usb_interface *intf)
 	ttusbir = (struct ttusbir_device *) usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
 	lirc_unregister_plugin(ttusbir->minor);
+	DPRINTK("unregistered\n");
 	unlock_kernel();
 
-	for (i = 0; i < NUM_URBS; i++)
+	for (i = 0; i < num_urbs; i++) {
+		usb_kill_urb(ttusbir->urb[i]);
 		usb_free_urb(ttusbir->urb[i]);
+	}
+	DPRINTK("URBs killed\n");
 	lirc_buffer_free(&ttusbir->rbuf);
 	kfree(ttusbir);
 }
