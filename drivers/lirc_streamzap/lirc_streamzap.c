@@ -1,10 +1,10 @@
-/*      $Id: lirc_streamzap.c,v 1.22 2007/04/29 14:23:04 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.23 2007/09/27 19:47:23 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
  *
  * Copyright (c) 2005 Christoph Bartelmus <lirc@bartelmus.de>
- * 
+ *
  * This driver was based on the work of Greg Wickham and Adrian
  * Dewhurst. It was substantially rewritten to support correct signal
  * gaps and now maintains a delay buffer, which is used to present
@@ -31,7 +31,7 @@
  *
  */
 
-#include	<linux/version.h>
+#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #error "*******************************************************"
 #error "Sorry, this driver needs kernel version 2.4.0 or higher"
@@ -46,31 +46,31 @@
 #include <linux/module.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/usb.h>
 
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.22 $"
+#define DRIVER_VERSION	"$Revision: 1.23 $"
 #define DRIVER_NAME	"lirc_streamzap"
-#define DRIVER_DESC     "Streamzap Remote Control driver"
+#define DRIVER_DESC	"Streamzap Remote Control driver"
 
 /* ------------------------------------------------------------------ */
 
-static int debug = 0;
+static int debug;
 
 #define USB_STREAMZAP_VENDOR_ID		0x0e9c
 #define USB_STREAMZAP_PRODUCT_ID	0x0000
 
 /* Use our own dbg macro */
-#define dprintk(fmt, args...)                                   \
-	do{                                                     \
-		if(debug)                                       \
-	                printk(KERN_DEBUG DRIVER_NAME "[%d]: "  \
-                               fmt "\n", ## args);              \
-	}while(0)
+#define dprintk(fmt, args...)					\
+	do {							\
+		if (debug)					\
+			printk(KERN_DEBUG DRIVER_NAME "[%d]: "	\
+			       fmt "\n", ## args);		\
+	} while (0)
 
 /*
  * table of devices that work with this driver
@@ -80,7 +80,7 @@ static struct usb_device_id streamzap_table [] = {
 	{ }	/* Terminating entry */
 };
 
-MODULE_DEVICE_TABLE (usb, streamzap_table);
+MODULE_DEVICE_TABLE(usb, streamzap_table);
 
 #define STREAMZAP_PULSE_MASK 0xf0
 #define STREAMZAP_SPACE_MASK 0x0f
@@ -100,18 +100,18 @@ enum StreamzapDecoderState
 /* Structure to hold all of our device specific stuff */
 /* some remarks regarding locking:
    theoretically this struct can be accessed from three threads:
-   
+
    - from lirc_dev through set_use_inc/set_use_dec
-   
+
    - from the USB layer throuh probe/disconnect/irq
-   
+
      Careful placement of lirc_register_plugin/lirc_unregister_plugin
      calls will prevent conflicts. lirc_dev makes sure that
      set_use_inc/set_use_dec are not being executed and will not be
      called after lirc_unregister_plugin returns.
 
    - by the timer callback
-   
+
      The timer is only running when the device is connected and the
      LIRC device is open. Making sure the timer is deleted by
      set_use_dec will make conflicts impossible.
@@ -120,12 +120,12 @@ struct usb_streamzap {
 
 	/* usb */
 	/* save off the usb device pointer */
-	struct usb_device *	udev;
+	struct usb_device	*udev;
 	/* the interface for this device */
-	struct usb_interface *	interface;
+	struct usb_interface	*interface;
 
 	/* buffer & dma */
-	unsigned char *		buf_in;
+	unsigned char		*buf_in;
 	dma_addr_t		dma_in;
 	unsigned int		buf_in_len;
 
@@ -135,26 +135,26 @@ struct usb_streamzap {
 	struct urb		*urb_in;
 
 	/* lirc */
-	struct lirc_plugin	plugin;	
-	struct lirc_buffer      delay_buf;
-	struct lirc_buffer      lirc_buf;
-	
+	struct lirc_plugin	plugin;
+	struct lirc_buffer	delay_buf;
+	struct lirc_buffer	lirc_buf;
+
 	/* timer used to support delay buffering */
 	struct timer_list	delay_timer;
-	int                     timer_running;
-	spinlock_t              timer_lock;
-	
+	int			timer_running;
+	spinlock_t		timer_lock;
+
 	/* tracks whether we are currently receiving some signal */
-	int                     idle;
+	int			idle;
 	/* sum of signal lengths received since signal start */
-	unsigned long           sum;
+	unsigned long		sum;
 	/* start time of signal; necessary for gap tracking */
-	struct timeval          signal_last;
-	struct timeval          signal_start;
+	struct timeval		signal_last;
+	struct timeval		signal_start;
 	enum StreamzapDecoderState decoder_state;
 	struct timer_list	flush_timer;
-	int                     flush;
-	int                     in_use;
+	int			flush;
+	int			in_use;
 };
 
 
@@ -174,8 +174,8 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 static void streamzap_disconnect(struct usb_device *dev, void *ptr);
 static void usb_streamzap_irq(struct urb *urb);
 #endif
-static int streamzap_use_inc( void *data );
-static void streamzap_use_dec( void *data );
+static int streamzap_use_inc(void *data);
+static void streamzap_use_dec(void *data);
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -200,10 +200,9 @@ static struct usb_driver streamzap_driver = {
 static void stop_timer(struct usb_streamzap *sz)
 {
 	unsigned long flags;
-	
+
 	spin_lock_irqsave(&sz->timer_lock, flags);
-	if(sz->timer_running)
-	{
+	if (sz->timer_running) {
 		sz->timer_running = 0;
 		del_timer_sync(&sz->delay_timer);
 	}
@@ -213,7 +212,7 @@ static void stop_timer(struct usb_streamzap *sz)
 static void flush_timeout(unsigned long arg)
 {
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
-	
+
 	/* finally start accepting data */
 	sz->flush = 0;
 }
@@ -221,41 +220,37 @@ static void delay_timeout(unsigned long arg)
 {
 	unsigned long flags;
 	/* deliver data every 10 ms */
-	static unsigned long timer_inc = 
+	static unsigned long timer_inc =
 		(10000/(1000000/HZ)) == 0 ? 1:(10000/(1000000/HZ));
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
 	lirc_t data;
-	
+
 	spin_lock_irqsave(&sz->timer_lock, flags);
-	if(!lirc_buffer_empty(&sz->delay_buf))
-	{
-		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
+
+	if (!lirc_buffer_empty(&sz->delay_buf)) {
+		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
 		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
 	}
-	if(!lirc_buffer_empty(&sz->delay_buf))
-	{
-		while(lirc_buffer_available(&sz->delay_buf) < 
-		      STREAMZAP_BUFFER_SIZE/2)
-		{
-			lirc_buffer_read_1( &sz->delay_buf,
+
+	if (!lirc_buffer_empty(&sz->delay_buf)) {
+		while (lirc_buffer_available(&sz->delay_buf) <
+		       STREAMZAP_BUFFER_SIZE/2) {
+			lirc_buffer_read_1(&sz->delay_buf,
 					    (unsigned char *) &data);
 			lirc_buffer_write_1(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		}
-		if(sz->timer_running)
-		{
+		if (sz->timer_running) {
 			sz->delay_timer.expires += timer_inc;
 			add_timer(&sz->delay_timer);
 		}
-	}
-	else
-	{
+	} else {
 		sz->timer_running = 0;
 	}
-	if(!lirc_buffer_empty(&sz->lirc_buf))
-	{
+
+	if (!lirc_buffer_empty(&sz->lirc_buf))
 		wake_up(&sz->lirc_buf.wait_poll);
-	}
+
 	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
@@ -263,35 +258,32 @@ static inline void flush_delay_buffer(struct usb_streamzap *sz)
 {
 	lirc_t data;
 	int empty = 1;
-	
-	while(!lirc_buffer_empty(&sz->delay_buf))
-	{
+
+	while (!lirc_buffer_empty(&sz->delay_buf)) {
 		empty = 0;
-		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
+		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
 		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
 	}
-	if(!empty) wake_up( &sz->lirc_buf.wait_poll );
+	if (!empty) wake_up(&sz->lirc_buf.wait_poll);
 }
 
 static inline void push(struct usb_streamzap *sz, unsigned char *data)
 {
 	unsigned long flags;
-	
+
 	spin_lock_irqsave(&sz->timer_lock, flags);
-	if(lirc_buffer_full(&sz->delay_buf))
-	{
+	if (lirc_buffer_full(&sz->delay_buf)) {
 		lirc_t data;
-		
-		lirc_buffer_read_1( &sz->delay_buf, (unsigned char *) &data);
+
+		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
 		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
-		
+
 		dprintk("buffer overflow", sz->plugin.minor);
 	}
-	
+
 	lirc_buffer_write_1(&sz->delay_buf, data);
-	
-	if(!sz->timer_running)
-	{
+
+	if (!sz->timer_running) {
 		sz->delay_timer.expires = jiffies + HZ/10;
 		add_timer(&sz->delay_timer);
 		sz->timer_running = 1;
@@ -304,39 +296,35 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	lirc_t pulse;
-	
-	if(sz->idle)
-	{
+
+	if (sz->idle) {
 		long deltv;
 		lirc_t tmp;
-			
+
 		sz->signal_last = sz->signal_start;
 		do_gettimeofday(&sz->signal_start);
-		
-		deltv=sz->signal_start.tv_sec-sz->signal_last.tv_sec;
-		if(deltv>15) 
-		{
-			tmp=PULSE_MASK; /* really long time */
-		}
-		else
-		{
-			tmp=(lirc_t) (deltv*1000000+
-				      sz->signal_start.tv_usec-
-				      sz->signal_last.tv_usec);
-			tmp-=sz->sum;
+
+		deltv = sz->signal_start.tv_sec-sz->signal_last.tv_sec;
+		if (deltv > 15) {
+			tmp = PULSE_MASK; /* really long time */
+		} else {
+			tmp = (lirc_t) (deltv*1000000+
+					sz->signal_start.tv_usec -
+					sz->signal_last.tv_usec);
+			tmp -= sz->sum;
 		}
 		dprintk("ls %u", sz->plugin.minor, tmp);
 		push(sz, (char *)&tmp);
-		
+
 		sz->idle = 0;
 		sz->sum = 0;
 	}
-	
+
 	pulse = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	pulse += STREAMZAP_RESOLUTION/2;
 	sz->sum += pulse;
 	pulse |= PULSE_BIT;
-	
+
 	dprintk("p %u", sz->plugin.minor, pulse&PULSE_MASK);
 	push(sz, (char *)&pulse);
 }
@@ -351,7 +339,7 @@ static inline void push_full_space(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	lirc_t space;
-	
+
 	space = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	space += STREAMZAP_RESOLUTION/2;
 	sz->sum += space;
@@ -372,23 +360,22 @@ static inline void push_half_space(struct usb_streamzap *sz,
  * the usb remote.
  */
 #if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs) 
+static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs)
 #else
-static void usb_streamzap_irq(struct urb *urb) 
+static void usb_streamzap_irq(struct urb *urb)
 #endif
 {
 	struct usb_streamzap *sz;
 	int		len;
 	unsigned int	i = 0;
 
-	if ( ! urb )
+	if (!urb)
 		return;
 
 	sz = urb->context;
 	len = urb->actual_length;
 
-	switch (urb->status)
-	{
+	switch (urb->status) {
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
@@ -401,68 +388,55 @@ static void usb_streamzap_irq(struct urb *urb)
 	}
 
 	dprintk("received %d", sz->plugin.minor, urb->actual_length);
-	if(!sz->flush) for (i=0; i < urb->actual_length; i++)
-	{
-		dprintk("%d: %x", sz->plugin.minor,
-			i, (unsigned char) sz->buf_in[i]);
-		switch(sz->decoder_state)
-		{
-		case PulseSpace:
-			if( (sz->buf_in[i]&STREAMZAP_PULSE_MASK) ==
-			    STREAMZAP_PULSE_MASK)
-			{
-				sz->decoder_state = FullPulse;
-				continue;
-			}
-			else if( (sz->buf_in[i]&STREAMZAP_SPACE_MASK) ==
-				 STREAMZAP_SPACE_MASK)
-			{
-				push_half_pulse(sz, sz->buf_in[i]);
-				sz->decoder_state = FullSpace;
-				continue;
-			}
-			else
-			{
-				push_half_pulse(sz, sz->buf_in[i]);
+	if (!sz->flush) {
+		for (i = 0; i < urb->actual_length; i++) {
+			dprintk("%d: %x", sz->plugin.minor,
+				i, (unsigned char) sz->buf_in[i]);
+			switch (sz->decoder_state) {
+			case PulseSpace:
+				if ((sz->buf_in[i]&STREAMZAP_PULSE_MASK) ==
+				    STREAMZAP_PULSE_MASK) {
+					sz->decoder_state = FullPulse;
+					continue;
+				} else if ((sz->buf_in[i]&STREAMZAP_SPACE_MASK)
+					   == STREAMZAP_SPACE_MASK) {
+					push_half_pulse(sz, sz->buf_in[i]);
+					sz->decoder_state = FullSpace;
+					continue;
+				} else {
+					push_half_pulse(sz, sz->buf_in[i]);
+					push_half_space(sz, sz->buf_in[i]);
+				}
+				break;
+			case FullPulse:
+				push_full_pulse(sz, sz->buf_in[i]);
+				sz->decoder_state = IgnorePulse;
+				break;
+			case FullSpace:
+				if (sz->buf_in[i] == 0xff) {
+					sz->idle = 1;
+					stop_timer(sz);
+					flush_delay_buffer(sz);
+				} else
+					push_full_space(sz, sz->buf_in[i]);
+				sz->decoder_state = PulseSpace;
+				break;
+			case IgnorePulse:
+				if ((sz->buf_in[i]&STREAMZAP_SPACE_MASK) ==
+				    STREAMZAP_SPACE_MASK) {
+					sz->decoder_state = FullSpace;
+					continue;
+				}
 				push_half_space(sz, sz->buf_in[i]);
+				sz->decoder_state = PulseSpace;
+				break;
 			}
-			break;
-		
-		case FullPulse:
-			push_full_pulse(sz, sz->buf_in[i]);
-			sz->decoder_state = IgnorePulse;
-			break;
-		
-		case FullSpace:
-			if(sz->buf_in[i] == 0xff)
-			{
-				sz->idle=1;
-				stop_timer(sz);
-				flush_delay_buffer(sz);
-			}
-			else
-			{
-				push_full_space(sz, sz->buf_in[i]);
-			}
-			sz->decoder_state = PulseSpace;
-			break;
-		
-		case IgnorePulse:
-			if( (sz->buf_in[i]&STREAMZAP_SPACE_MASK) == 
-			    STREAMZAP_SPACE_MASK)
-			{
-				sz->decoder_state = FullSpace;
-				continue;
-			}
-			push_half_space(sz, sz->buf_in[i]);
-			sz->decoder_state = PulseSpace;
-			break;
 		}
 	}
 
 #ifdef KERNEL_2_5
 	/* resubmit only for 2.6 */
-	usb_submit_urb( urb, GFP_ATOMIC );
+	usb_submit_urb(urb, GFP_ATOMIC);
 #endif
 
 	return;
@@ -476,7 +450,8 @@ static void usb_streamzap_irq(struct urb *urb)
  *	On success return 0
  */
 #ifdef KERNEL_2_5
-static int streamzap_probe( struct usb_interface *interface, const struct usb_device_id *id )
+static int streamzap_probe(struct usb_interface *interface,
+			   const struct usb_device_id *id)
 {
 	struct usb_device *udev = interface_to_usbdev(interface);
 	struct usb_host_interface *iface_host;
@@ -494,101 +469,99 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	/***************************************************
 	 * Allocate space for device driver specific data
 	 */
-	if (( sz = kmalloc (sizeof(struct usb_streamzap), GFP_KERNEL)) == NULL )
+	sz = kmalloc(sizeof(struct usb_streamzap), GFP_KERNEL);
+	if (sz == NULL)
 		goto error;
 
 	memset(sz, 0, sizeof(*sz));
-        sz->udev = udev;
-        sz->interface = interface;
-	
+	sz->udev = udev;
+	sz->interface = interface;
+
 	/***************************************************
 	 * Check to ensure endpoint information matches requirements
 	 */
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,4)
-	iface_host = interface->cur_altsetting;
-#else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
 	iface_host = &interface->altsetting[interface->act_altsetting];
+#else
+	iface_host = interface->cur_altsetting;
 #endif
 
 #ifdef KERNEL_2_5
-        if (iface_host->desc.bNumEndpoints != 1) {
+	if (iface_host->desc.bNumEndpoints != 1) {
 #else
-	if(iface_host->bNumEndpoints != 1) {
+	if (iface_host->bNumEndpoints != 1) {
 #endif
 #ifdef KERNEL_2_5
-                err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
+		err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
 		    iface_host->desc.bNumEndpoints);
 #else
-                err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
+		err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
 		    iface_host->bNumEndpoints);
 #endif
 		retval = -ENODEV;
-                goto error;
-        }
+		goto error;
+	}
 
 #ifdef KERNEL_2_5
 	sz->endpoint = &(iface_host->endpoint[0].desc);
 #else
 	sz->endpoint = &(iface_host->endpoint[0]);
 #endif
-        if (( sz->endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
+	if ((sz->endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
 	    != USB_DIR_IN) {
-                err("%s: endpoint doesn't match input device 02%02x",
-		    __FUNCTION__, sz->endpoint->bEndpointAddress );
-                retval = -ENODEV;
-                goto error;
-        }
+		err("%s: endpoint doesn't match input device 02%02x",
+		    __FUNCTION__, sz->endpoint->bEndpointAddress);
+		retval = -ENODEV;
+		goto error;
+	}
 
-        if (( sz->endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
+	if ((sz->endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 	    != USB_ENDPOINT_XFER_INT) {
-                err("%s: endpoint attributes don't match xfer 02%02x",
-		    __FUNCTION__, sz->endpoint->bmAttributes );
-                retval = -ENODEV;
-                goto error;
-        }
+		err("%s: endpoint attributes don't match xfer 02%02x",
+		    __FUNCTION__, sz->endpoint->bmAttributes);
+		retval = -ENODEV;
+		goto error;
+	}
 
-        if ( sz->endpoint->wMaxPacketSize == 0 ) {
-                err("%s: endpoint message size==0? ", __FUNCTION__);
-                retval = -ENODEV;
-                goto error;
-        }
+	if (sz->endpoint->wMaxPacketSize == 0) {
+		err("%s: endpoint message size==0? ", __FUNCTION__);
+		retval = -ENODEV;
+		goto error;
+	}
 
 	/***************************************************
-	 * Allocate the USB buffer and IRQ URB 
+	 * Allocate the USB buffer and IRQ URB
 	 */
 
 	sz->buf_in_len = sz->endpoint->wMaxPacketSize;
 #ifdef KERNEL_2_5
-        if((sz->buf_in = usb_buffer_alloc(sz->udev, sz->buf_in_len,
-					  GFP_ATOMIC, &sz->dma_in)) == NULL )
-	{
-                goto error;
-	}
-	if (!( sz->urb_in = usb_alloc_urb(0, GFP_KERNEL)))
-		goto error;
+	sz->buf_in = usb_buffer_alloc(sz->udev, sz->buf_in_len,
+				      GFP_ATOMIC, &sz->dma_in);
 #else
-	if( (sz->buf_in = kmalloc(sz->buf_in_len, GFP_KERNEL))
-	    == NULL)
-	{
-		goto error;
-	}
-	if( (sz->urb_in = usb_alloc_urb(0)) == NULL)
-	{
-		goto error;
-	}
+	sz->buf_in = kmalloc(sz->buf_in_len, GFP_KERNEL);
 #endif
+	if (sz->buf_in == NULL)
+		goto error;
+
+#ifdef KERNEL_2_5
+	sz->urb_in = usb_alloc_urb(0, GFP_KERNEL);
+#else
+
+	sz->urb_in = usb_alloc_urb(0);
+#endif
+	if (sz->urb_in == NULL)
+		goto error;
+
 	/***************************************************
 	 * Connect this device to the LIRC sub-system
 	 */
 
-	if(lirc_buffer_init(&sz->lirc_buf, sizeof(lirc_t),
-			    STREAMZAP_BUFFER_SIZE))
-	{
+	if (lirc_buffer_init(&sz->lirc_buf, sizeof(lirc_t),
+			     STREAMZAP_BUFFER_SIZE))
 		goto error;
-	}
-	if(lirc_buffer_init(&sz->delay_buf, sizeof(lirc_t),
-			    STREAMZAP_BUFFER_SIZE))
-	{
+
+	if (lirc_buffer_init(&sz->delay_buf, sizeof(lirc_t),
+			     STREAMZAP_BUFFER_SIZE)) {
 		lirc_buffer_free(&sz->lirc_buf);
 		goto error;
 	}
@@ -630,28 +603,27 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	 */
 
 	usb_fill_int_urb(sz->urb_in, udev,
-		usb_rcvintpipe( udev, sz->endpoint->bEndpointAddress ),
+		usb_rcvintpipe(udev, sz->endpoint->bEndpointAddress),
 		sz->buf_in, sz->buf_in_len, usb_streamzap_irq, sz,
 		sz->endpoint->bInterval);
 
-        if ( udev->descriptor.iManufacturer
-                && usb_string( udev,  udev->descriptor.iManufacturer, buf, 63) > 0)
-                strncpy(name, buf, 128);
+	if (udev->descriptor.iManufacturer
+	    && usb_string(udev, udev->descriptor.iManufacturer, buf, 63) > 0)
+		strncpy(name, buf, 128);
 
-        if ( udev->descriptor.iProduct
-                && usb_string( udev,  udev->descriptor.iProduct, buf, 63) > 0)
-                snprintf(name, 128, "%s %s", name, buf);
+	if (udev->descriptor.iProduct
+	    && usb_string(udev,  udev->descriptor.iProduct, buf, 63) > 0)
+		snprintf(name, 128, "%s %s", name, buf);
 
-        printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d attached\n",
+	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d attached\n",
 	       sz->plugin.minor, name,
 	       udev->bus->busnum, sz->udev->devnum);
 
 #ifdef KERNEL_2_5
-	usb_set_intfdata( interface , sz );
+	usb_set_intfdata(interface, sz);
 #endif
 
-	if(lirc_register_plugin(&sz->plugin) < 0)
-	{
+	if (lirc_register_plugin(&sz->plugin) < 0) {
 		lirc_buffer_free(&sz->delay_buf);
 		lirc_buffer_free(&sz->lirc_buf);
 		goto error;
@@ -671,16 +643,15 @@ error:
 	 * including freeing any necessary memory blocks
 	 */
 
-	if ( retval == -ENOMEM )
-		err ("Out of memory");
+	if (retval == -ENOMEM)
+		err("Out of memory");
 
-	if ( sz ) {
+	if (sz) {
 
-		if ( sz->urb_in )
-			usb_free_urb( sz->urb_in );
+		if (sz->urb_in)
+			usb_free_urb(sz->urb_in);
 
-		if ( sz->buf_in )
-		{
+		if (sz->buf_in) {
 #ifdef KERNEL_2_5
 			usb_buffer_free(udev, sz->buf_in_len,
 					sz->buf_in, sz->dma_in);
@@ -688,7 +659,7 @@ error:
 			kfree(sz->buf_in);
 #endif
 		}
-		kfree( sz );
+		kfree(sz);
 	}
 
 #ifdef KERNEL_2_5
@@ -702,80 +673,77 @@ static int streamzap_use_inc(void *data)
 {
 	struct usb_streamzap *sz = data;
 
-	if(!sz)
-	{
+	if (!sz) {
 		dprintk("%s called with no context", -1, __FUNCTION__);
 		return -EINVAL;
 	}
 	dprintk("set use inc", sz->plugin.minor);
 
 	MOD_INC_USE_COUNT;
-	
-	while(!lirc_buffer_empty(&sz->lirc_buf))
+
+	while (!lirc_buffer_empty(&sz->lirc_buf))
 		lirc_buffer_remove_1(&sz->lirc_buf);
-	while(!lirc_buffer_empty(&sz->delay_buf))
+	while (!lirc_buffer_empty(&sz->delay_buf))
 		lirc_buffer_remove_1(&sz->delay_buf);
-		
+
 	sz->flush_timer.expires = jiffies + HZ;
 	sz->flush = 1;
 	add_timer(&sz->flush_timer);
 
 	sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
-	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC))
+	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC)) {
 #else
-	if (usb_submit_urb(sz->urb_in))
+	if (usb_submit_urb(sz->urb_in)) {
 #endif
-	{
 		dprintk("open result = -EIO error submitting urb",
 			sz->plugin.minor);
 		MOD_DEC_USE_COUNT;
 		return -EIO;
 	}
 	sz->in_use++;
-	
+
 	return 0;
 }
 
 static void streamzap_use_dec(void *data)
 {
-        struct usb_streamzap *sz = data;
+	struct usb_streamzap *sz = data;
 
-        if (!sz) {
-                dprintk("%s called with no context", -1, __FUNCTION__);
-                return;
-        }
-        dprintk("set use dec", sz->plugin.minor);
-	
-	if(sz->flush)
-	{
+	if (!sz) {
+		dprintk("%s called with no context", -1, __FUNCTION__);
+		return;
+	}
+	dprintk("set use dec", sz->plugin.minor);
+
+	if (sz->flush) {
 		sz->flush = 0;
 		del_timer_sync(&sz->flush_timer);
 	}
-	
+
 	stop_timer(sz);
-	
+
 	usb_kill_urb(sz->urb_in);
-	
-        MOD_DEC_USE_COUNT;
+
+	MOD_DEC_USE_COUNT;
 	sz->in_use--;
 }
 
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg)
 {
-        int result;
-	
-	switch(cmd)
-	{
+	int result;
+
+	switch (cmd) {
 	case LIRC_GET_REC_RESOLUTION:
-		result=put_user(STREAMZAP_RESOLUTION, (unsigned long *) arg);
-		if(result) return(result); 
+		result = put_user(STREAMZAP_RESOLUTION, (unsigned long *) arg);
+		if (result)
+			return(result);
 		break;
 	default:
-		return(-ENOIOCTLCMD);
+		return -ENOIOCTLCMD;
 	}
-	return(0);
+	return 0;
 }
 
 /**
@@ -785,11 +753,11 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
  *
  *	This routine guarantees that the driver will not submit any more urbs
  *	by clearing dev->udev.  It is also supposed to terminate any currently
- *	active urbs.  Unfortunately, usb_bulk_msg(), used in streamzap_read(), does
- *	not provide any way to do this.
+ *	active urbs.  Unfortunately, usb_bulk_msg(), used in streamzap_read(),
+ *	does not provide any way to do this.
  */
 #ifdef KERNEL_2_5
-static void streamzap_disconnect( struct usb_interface *interface )
+static void streamzap_disconnect(struct usb_interface *interface)
 #else
 static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 #endif
@@ -799,7 +767,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	int minor;
 
 #ifdef KERNEL_2_5
-	sz = usb_get_intfdata( interface );
+	sz = usb_get_intfdata(interface);
 #else
 	sz = ptr;
 #endif
@@ -808,11 +776,10 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	 * unregister from the LIRC sub-system
 	 */
 
-        if (( errnum = lirc_unregister_plugin( sz->plugin.minor )) != 0) {
-
-                dprintk("error in lirc_unregister: (returned %d)",
-			sz->plugin.minor, errnum );
-        }
+	errnum = lirc_unregister_plugin(sz->plugin.minor);
+	if (errnum != 0)
+		dprintk("error in lirc_unregister: (returned %d)",
+			sz->plugin.minor, errnum);
 
 	lirc_buffer_free(&sz->delay_buf);
 	lirc_buffer_free(&sz->lirc_buf);
@@ -821,36 +788,34 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	 * unregister from the USB sub-system
 	 */
 
-	usb_free_urb( sz->urb_in );
+	usb_free_urb(sz->urb_in);
 
 #ifdef KERNEL_2_5
-        usb_buffer_free( sz->udev , sz->buf_in_len, sz->buf_in, sz->dma_in );
+	usb_buffer_free(sz->udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
 #else
 	kfree(sz->buf_in);
 #endif
 
 	minor = sz->plugin.minor;
-	kfree( sz );
+	kfree(sz);
 
-        printk(KERN_INFO DRIVER_NAME "[%d]: disconnected\n", minor);
+	printk(KERN_INFO DRIVER_NAME "[%d]: disconnected\n", minor);
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int streamzap_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
-	
+
 	printk(DRIVER_NAME "[%d]: suspend\n", sz->plugin.minor);
-	if(sz->in_use)
-	{
-		if(sz->flush)
-		{
+	if (sz->in_use) {
+		if (sz->flush) {
 			sz->flush = 0;
 			del_timer_sync(&sz->flush_timer);
 		}
-		
+
 		stop_timer(sz);
-		
+
 		usb_kill_urb(sz->urb_in);
 	}
 	return 0;
@@ -859,25 +824,23 @@ static int streamzap_suspend(struct usb_interface *intf, pm_message_t message)
 static int streamzap_resume(struct usb_interface *intf)
 {
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
-	
-	while(!lirc_buffer_empty(&sz->lirc_buf))
+
+	while (!lirc_buffer_empty(&sz->lirc_buf))
 		lirc_buffer_remove_1(&sz->lirc_buf);
-	while(!lirc_buffer_empty(&sz->delay_buf))
+	while (!lirc_buffer_empty(&sz->delay_buf))
 		lirc_buffer_remove_1(&sz->delay_buf);
-		
-	if(sz->in_use)
-	{
+
+	if (sz->in_use) {
 		sz->flush_timer.expires = jiffies + HZ;
 		sz->flush = 1;
 		add_timer(&sz->flush_timer);
 
 		sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
-		if (usb_submit_urb(sz->urb_in, GFP_ATOMIC))
+		if (usb_submit_urb(sz->urb_in, GFP_ATOMIC)) {
 #else
-		if (usb_submit_urb(sz->urb_in))
+		if (usb_submit_urb(sz->urb_in)) {
 #endif
-		{
 			dprintk("open result = -EIO error submitting urb",
 				sz->plugin.minor);
 			MOD_DEC_USE_COUNT;
@@ -899,7 +862,7 @@ static int __init usb_streamzap_init(void)
 
 	/* register this driver with the USB subsystem */
 
-	result = usb_register( &streamzap_driver );
+	result = usb_register(&streamzap_driver);
 
 	if (result) {
 		err("usb_register failed. Error number %d",
@@ -921,8 +884,8 @@ static void __exit usb_streamzap_exit(void)
 }
 
 
-module_init (usb_streamzap_init);
-module_exit (usb_streamzap_exit);
+module_init(usb_streamzap_init);
+module_exit(usb_streamzap_exit);
 
 MODULE_AUTHOR("Christoph Bartelmus, Greg Wickham, Adrian Dewhurst");
 MODULE_DESCRIPTION(DRIVER_DESC);

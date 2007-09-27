@@ -38,7 +38,7 @@
 static int poll_main(void);
 static int atir_init_start(void);
 
-static void write_index(unsigned char index,unsigned int value);
+static void write_index(unsigned char index, unsigned int value);
 static unsigned int read_index(unsigned char index);
 
 static void do_i2c_start(void);
@@ -48,7 +48,7 @@ static void seems_wr_byte(unsigned char al);
 static unsigned char seems_rd_byte(void);
 
 static unsigned int read_index(unsigned char al);
-static void write_index(unsigned char ah,unsigned int edx);
+static void write_index(unsigned char ah, unsigned int edx);
 
 static void cycle_delay(int cycle);
 
@@ -58,11 +58,11 @@ static unsigned char do_get_bits(void);
 #define DATA_PCI_OFF 0x7FFC00
 #define WAIT_CYCLE   20
 
-static int debug = 0;
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG fmt, ## args);    \
-	}while(0)
+static int debug;
+#define dprintk(fmt, args...)					\
+	do {							\
+		if (debug) printk(KERN_DEBUG fmt, ## args);	\
+	} while (0)
 
 static int atir_minor;
 static unsigned long pci_addr_phys;
@@ -75,20 +75,21 @@ static struct pci_dev *do_pci_probe(void)
 	struct pci_dev *my_dev;
 #ifndef KERNEL_2_5
 	/* unnecessary with recent kernels */
-	if ( !pci_present() ) {
+	if (!pci_present())
 		printk(KERN_ERR "ATIR: no pci in this kernel\n");
-	}
 #endif
-	my_dev = (struct pci_dev *)pci_find_device(PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_264VT,NULL);
-	if ( my_dev ) {
+	my_dev = pci_get_device(PCI_VENDOR_ID_ATI,
+				PCI_DEVICE_ID_ATI_264VT, NULL);
+	if (my_dev) {
 		printk(KERN_ERR "ATIR: Using device: %s\n",
 		       pci_name(my_dev));
 		pci_addr_phys = 0;
-		if ( my_dev->resource[0].flags & IORESOURCE_MEM ) {
+		if (my_dev->resource[0].flags & IORESOURCE_MEM) {
 			pci_addr_phys = my_dev->resource[0].start;
-			printk(KERN_INFO "ATIR memory at 0x%08X \n",(unsigned int)pci_addr_phys);
+			printk(KERN_INFO "ATIR memory at 0x%08X \n",
+			       (unsigned int)pci_addr_phys);
 		}
-		if ( pci_addr_phys == 0 ) {
+		if (pci_addr_phys == 0) {
 			printk(KERN_ERR "ATIR no memory resource ?\n");
 			return NULL;
 		}
@@ -99,29 +100,28 @@ static struct pci_dev *do_pci_probe(void)
 	return my_dev;
 }
 
-static int atir_add_to_buf (void* data, struct lirc_buffer* buf)
+static int atir_add_to_buf(void *data, struct lirc_buffer *buf)
 {
 	unsigned char key;
 	int status;
 	status = poll_main();
 	key = (status >> 8) & 0xFF;
-	if( status & 0xFF )
-	{
-	//    printk(KERN_INFO "ATIR reading key %02X\n",*key);
-		lirc_buffer_write_1( buf, &key );
+	if (status & 0xFF) {
+		dprintk("ATIR reading key %02X\n", key);
+		lirc_buffer_write_1(buf, &key);
 		return 0;
 	}
 	return -ENODATA;
 }
 
-static int atir_set_use_inc(void* data)
+static int atir_set_use_inc(void *data)
 {
 	MOD_INC_USE_COUNT;
 	dprintk("ATIR driver is opened\n");
 	return 0;
 }
 
-static void atir_set_use_dec(void* data)
+static void atir_set_use_dec(void *data)
 {
 	MOD_DEC_USE_COUNT;
 	dprintk("ATIR driver is closed\n");
@@ -132,15 +132,13 @@ int init_module(void)
 	struct pci_dev *pdev;
 
 	pdev = do_pci_probe();
-	if ( pdev == NULL ) {
+	if (pdev == NULL)
 		return 1;
-	}
 
-	if ( !atir_init_start() ) {
+	if (!atir_init_start())
 		return 1;
-	}
 
-	strcpy(atir_plugin.name,"ATIR");
+	strcpy(atir_plugin.name, "ATIR");
 	atir_plugin.minor       = -1;
 	atir_plugin.code_length = 8;
 	atir_plugin.sample_rate = 10;
@@ -154,7 +152,7 @@ int init_module(void)
 	atir_plugin.owner       = THIS_MODULE;
 
 	atir_minor = lirc_register_plugin(&atir_plugin);
-	dprintk("ATIR driver is registered on minor %d\n",atir_minor);
+	dprintk("ATIR driver is registered on minor %d\n", atir_minor);
 
 	return 0;
 }
@@ -168,8 +166,8 @@ void cleanup_module(void)
 
 static int atir_init_start(void)
 {
-	pci_addr_lin = ioremap(pci_addr_phys + DATA_PCI_OFF,0x400);
-	if ( pci_addr_lin == 0 ) {
+	pci_addr_lin = ioremap(pci_addr_phys + DATA_PCI_OFF, 0x400);
+	if (pci_addr_lin == 0) {
 		printk(KERN_INFO "atir: pci mem must be mapped\n");
 		return 0;
 	}
@@ -185,7 +183,7 @@ static void cycle_delay(int cycle)
 static int poll_main()
 {
 	unsigned char status_high, status_low;
-	
+
 	do_i2c_start();
 
 	seems_wr_byte(0xAA);
@@ -237,14 +235,14 @@ static void seems_wr_byte(unsigned char value)
 {
 	int i;
 	unsigned char reg;
-    
+
 	reg = do_get_bits();
-	for(i = 0;i < 8;i++) {
-		if ( value & 0x80 ) {
+	for (i = 0; i < 8; i++) {
+		if (value & 0x80)
 			reg |= 0x02;
-		} else {
+		else
 			reg &= 0xFD;
-		}
+
 		do_set_bits(reg);
 		cycle_delay(1);
 
@@ -283,7 +281,7 @@ static unsigned char seems_rd_byte(void)
 	do_set_bits(bits_1);
 
 	rd_byte = 0;
-	for(i = 0;i < 8;i++) {
+	for (i = 0; i < 8; i++) {
 		bits_1 &= 0xFE;
 		do_set_bits(bits_1);
 		cycle_delay(2);
@@ -292,16 +290,17 @@ static unsigned char seems_rd_byte(void)
 		do_set_bits(bits_1);
 		cycle_delay(1);
 
-		if ( (bits_2 = do_get_bits()) & 2 ) {
+		bits_2 = do_get_bits();
+		if (bits_2 & 2)
 			rd_byte |= 1;
-		}
+
 		rd_byte <<= 1;
 	}
 
 	bits_1 = 0;
-	if ( bits_2 == 0 ) {
+	if (bits_2 == 0)
 		bits_1 |= 2;
-	}
+
 	do_set_bits(bits_1);
 	cycle_delay(2);
 
@@ -322,7 +321,7 @@ static void do_set_bits(unsigned char new_bits)
 {
 	int reg_val;
 	reg_val = read_index(0x34);
-	if ( new_bits & 2 ) {
+	if (new_bits & 2) {
 		reg_val &= 0xFFFFFFDF;
 		reg_val |= 1;
 	} else {
@@ -330,16 +329,16 @@ static void do_set_bits(unsigned char new_bits)
 		reg_val |= 0x20;
 	}
 	reg_val |= 0x10;
-	write_index(0x34,reg_val);
+	write_index(0x34, reg_val);
 
 	reg_val = read_index(0x31);
-	if ( new_bits & 1 ) {
+	if (new_bits & 1) {
 		reg_val |= 0x1000000;
 	} else {
 		reg_val &= 0xFEFFFFFF;
 	}
 	reg_val |= 0x8000000;
-	write_index(0x31,reg_val);
+	write_index(0x31, reg_val);
 }
 
 static unsigned char do_get_bits(void)
@@ -350,18 +349,18 @@ static unsigned char do_get_bits(void)
 	reg_val = read_index(0x34);
 	reg_val |= 0x10;
 	reg_val &= 0xFFFFFFDF;
-	write_index(0x34,reg_val);
+	write_index(0x34, reg_val);
 
 	reg_val = read_index(0x34);
 	bits = 0;
-	if ( reg_val & 8 ) {
+	if (reg_val & 8) {
 		bits |= 2;
 	} else {
 		bits &= 0xFD;
 	}
 	reg_val = read_index(0x31);
-	if ( reg_val & 0x1000000 ) {
-		bits |= 1;	
+	if (reg_val & 0x1000000) {
+		bits |= 1;
 	} else {
 		bits &= 0xFE;
 	}
@@ -372,17 +371,17 @@ static unsigned int read_index(unsigned char index)
 {
 	unsigned char *addr;
 	unsigned int value;
-	//  addr = pci_addr_lin + DATA_PCI_OFF + ((index & 0xFF) << 2);
+	/*  addr = pci_addr_lin + DATA_PCI_OFF + ((index & 0xFF) << 2); */
 	addr = pci_addr_lin + ((index & 0xFF) << 2);
 	value = readl(addr);
 	return value;
 }
 
-static void write_index(unsigned char index,unsigned int reg_val)
+static void write_index(unsigned char index, unsigned int reg_val)
 {
 	unsigned char *addr;
 	addr = pci_addr_lin + ((index & 0xFF) << 2);
-	writel(reg_val,addr);
+	writel(reg_val, addr);
 }
 
 MODULE_AUTHOR("Froenchenko Leonid");

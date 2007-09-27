@@ -21,12 +21,12 @@
  * ITE IT8705 and IT8712(not tested) CIR-port support for lirc based
  * via cut and paste from lirc_sir.c (C) 2000 Milan Pikula
  *
- * Attention: Sendmode only tested with debugging logs 
+ * Attention: Sendmode only tested with debugging logs
  *
  * 2001/02/27 Christoph Bartelmus <lirc@bartelmus.de> :
  *   reimplemented read function
  * 2005/06/05 Andrew Calkin implemented support for Asus Digimatrix,
- *   based on work of the following member of the Outertrack Digimatrix 
+ *   based on work of the following member of the Outertrack Digimatrix
  *   Forum: Art103 <r_tay@hotmail.com>
  */
 
@@ -35,9 +35,9 @@
 #include <linux/module.h>
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
- 
+
 #include <linux/autoconf.h>
 
 
@@ -58,10 +58,17 @@
 #include <linux/delay.h>
 #include <linux/poll.h>
 #include <asm/system.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 #include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>
+#else
+#include <linux/uaccess.h>
+#include <linux/io.h>
+#include <linux/irq.h>
+#include <linux/fcntl.h>
+#endif
 
 #include <linux/timer.h>
 
@@ -76,13 +83,13 @@ static int digimatrix = 1;
 static int it87_freq = 36; /* kHz */
 static int irq = 9;
 #else
-static int digimatrix = 0;
+static int digimatrix;
 static int it87_freq = 38; /* kHz */
 static int irq = IT87_CIR_DEFAULT_IRQ;
 #endif
 
-static unsigned long it87_bits_in_byte_out = 0;
-static unsigned long it87_send_counter = 0;
+static unsigned long it87_bits_in_byte_out;
+static unsigned long it87_send_counter;
 static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 
 #define RBUF_LEN 1024
@@ -95,67 +102,59 @@ static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 #define IT87_TIMEOUT	(HZ*5/100)
 
 /* insmod parameters */
-static int debug = 0;
-#define dprintk(fmt, args...)                                     \
-	do{                                                       \
-		if(debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": " \
-                                 fmt, ## args);                   \
-	}while(0)
+static int debug;
+#define dprintk(fmt, args...)					\
+	do {							\
+		if (debug)					\
+			printk(KERN_DEBUG LIRC_DRIVER_NAME ": "	\
+			       fmt, ## args);			\
+	} while (0)
 
 static int io = IT87_CIR_DEFAULT_IOBASE;
 /* receiver demodulator default: off */
-static int it87_enable_demodulator = 0;
+static int it87_enable_demodulator;
 
-static int timer_enabled = 0;
+static int timer_enabled;
 static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
 static struct timer_list timerlist;
 /* time of last signal change detected */
 static struct timeval last_tv = {0, 0};
 /* time of last UART data ready interrupt */
 static struct timeval last_intr_tv = {0, 0};
-static int last_value = 0;
+static int last_value;
 
 static DECLARE_WAIT_QUEUE_HEAD(lirc_read_queue);
 
 static spinlock_t hardware_lock = SPIN_LOCK_UNLOCKED;
 static spinlock_t dev_lock = SPIN_LOCK_UNLOCKED;
 
-static lirc_t rx_buf[RBUF_LEN]; unsigned int rx_tail = 0, rx_head = 0;
+static lirc_t rx_buf[RBUF_LEN];
+unsigned int rx_tail, rx_head;
 static lirc_t tx_buf[WBUF_LEN];
 
 /* SECTION: Prototypes */
 
 /* Communication with user-space */
-static int lirc_open(struct inode * inode,
-		     struct file * file);
-static int lirc_close(struct inode * inode,
-		      struct file *file);
-static unsigned int lirc_poll(struct file * file,
-			      poll_table * wait);
-static ssize_t lirc_read(struct file * file,
-			 char * buf,
-			 size_t count,
-			 loff_t * ppos);
-static ssize_t lirc_write(struct file * file,
-			  const char * buf,
-			  size_t n,
-			  loff_t * pos);
-static int lirc_ioctl(struct inode *node,
-		      struct file *filep,
-		      unsigned int cmd,
-		      unsigned long arg);
-static void add_read_queue(int flag,
-			   unsigned long val);
+static int lirc_open(struct inode *inode, struct file *file);
+static int lirc_close(struct inode *inode, struct file *file);
+static unsigned int lirc_poll(struct file *file, poll_table *wait);
+static ssize_t lirc_read(struct file *file, char *buf,
+			 size_t count, loff_t *ppos);
+static ssize_t lirc_write(struct file *file, const char *buf,
+			  size_t n, loff_t *pos);
+static int lirc_ioctl(struct inode *node, struct file *filep,
+		      unsigned int cmd, unsigned long arg);
+static void add_read_queue(int flag, unsigned long val);
 #ifdef MODULE
 static int init_chrdev(void);
 static void drop_chrdev(void);
 #endif
 	/* Hardware */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static irqreturn_t it87_interrupt(int irq, void * dev_id,
-				 struct pt_regs * regs);
+static irqreturn_t it87_interrupt(int irq, void *dev_id,
+				  struct pt_regs *regs);
 #else
-static irqreturn_t it87_interrupt(int irq, void * dev_id);
+static irqreturn_t it87_interrupt(int irq, void *dev_id);
 #endif
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
@@ -172,8 +171,7 @@ void cleanup_module(void);
 
 /* SECTION: Communication with user-space */
 
-static int lirc_open(struct inode * inode,
-		     struct file * file)
+static int lirc_open(struct inode *inode, struct file *file)
 {
 	spin_lock(&dev_lock);
 	if (MOD_IN_USE) {
@@ -186,16 +184,14 @@ static int lirc_open(struct inode * inode,
 }
 
 
-static int lirc_close(struct inode * inode,
-		      struct file *file)
+static int lirc_close(struct inode *inode, struct file *file)
 {
 	MOD_DEC_USE_COUNT;
 	return 0;
 }
 
 
-static unsigned int lirc_poll(struct file * file,
-			      poll_table * wait)
+static unsigned int lirc_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &lirc_read_queue, wait);
 	if (rx_head != rx_tail)
@@ -204,58 +200,46 @@ static unsigned int lirc_poll(struct file * file,
 }
 
 
-static ssize_t lirc_read(struct file * file,
-			 char * buf,
-			 size_t count,
-			 loff_t * ppos)
+static ssize_t lirc_read(struct file *file, char *buf,
+			 size_t count, loff_t *ppos)
 {
-	int n=0;
-	int retval=0;
-	
-	while(n<count)
-	{
-		if(file->f_flags & O_NONBLOCK &&
-		   rx_head==rx_tail)
-		{
+	int n = 0;
+	int retval = 0;
+
+	while (n < count) {
+		if (file->f_flags & O_NONBLOCK && rx_head == rx_tail) {
 			retval = -EAGAIN;
 			break;
 		}
-		retval=wait_event_interruptible(lirc_read_queue,
-						rx_head!=rx_tail);
-		if(retval)
-		{
+		retval = wait_event_interruptible(lirc_read_queue,
+						  rx_head != rx_tail);
+		if (retval)
 			break;
-		}
-		
-		if(copy_to_user((void *) buf+n,(void *) (rx_buf+rx_head),
-				sizeof(lirc_t)))
-		{
+
+		if (copy_to_user((void *) buf + n, (void *) (rx_buf + rx_head),
+				 sizeof(lirc_t))) {
 			retval = -EFAULT;
 			break;
 		}
-		rx_head=(rx_head+1)&(RBUF_LEN-1);
-		n+=sizeof(lirc_t);
+		rx_head = (rx_head + 1) & (RBUF_LEN - 1);
+		n += sizeof(lirc_t);
 	}
-	if(n)
-	{
+	if (n)
 		return n;
-	}
 	return retval;
 }
 
 
-static ssize_t lirc_write(struct file * file,
-			  const char * buf,
-			  size_t n,
-			  loff_t * pos)
+static ssize_t lirc_write(struct file *file, const char *buf,
+			  size_t n, loff_t *pos)
 {
-	int i;
+	int i = 0;
 
-        if(n%sizeof(lirc_t) || (n/sizeof(lirc_t)) > WBUF_LEN)
-		return(-EINVAL);
-	if(copy_from_user(tx_buf, buf, n)) return -EFAULT;
-	i = 0;
-	n/=sizeof(lirc_t);
+	if (n % sizeof(lirc_t) || (n / sizeof(lirc_t)) > WBUF_LEN)
+		return -EINVAL;
+	if (copy_from_user(tx_buf, buf, n))
+		return -EFAULT;
+	n /= sizeof(lirc_t);
 	init_send();
 	while (1) {
 		if (i >= n)
@@ -269,20 +253,19 @@ static ssize_t lirc_write(struct file * file,
 			send_space(tx_buf[i]);
 		i++;
 	}
-	terminate_send(tx_buf[i-1]);
+	terminate_send(tx_buf[i - 1]);
 	return n;
 }
 
 
-static int lirc_ioctl(struct inode *node,
-		      struct file *filep,
-		      unsigned int cmd,
-		      unsigned long arg)
+static int lirc_ioctl(struct inode *node, struct file *filep,
+		      unsigned int cmd, unsigned long arg)
 {
 	int retval = 0;
 	unsigned long value = 0;
 	unsigned int ivalue;
-
+	unsigned long hw_flags;
+	
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_SEND_PULSE |
 			LIRC_CAN_SET_SEND_CARRIER |
@@ -291,7 +274,7 @@ static int lirc_ioctl(struct inode *node,
 		value = LIRC_MODE_PULSE;
 	else if (cmd == LIRC_GET_REC_MODE)
 		value = LIRC_MODE_MODE2;
-	
+
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
 	case LIRC_GET_SEND_MODE:
@@ -305,34 +288,32 @@ static int lirc_ioctl(struct inode *node,
 		break;
 
 	case LIRC_SET_SEND_CARRIER:
-		retval=get_user(ivalue,(unsigned int *) arg);
-		if(retval) return(retval);
+		retval = get_user(ivalue, (unsigned int *) arg);
+		if (retval)
+			return retval;
 		ivalue /= 1000;
 		if (ivalue > IT87_CIR_FREQ_MAX ||
-		    ivalue < IT87_CIR_FREQ_MIN) return(-EINVAL);
+		    ivalue < IT87_CIR_FREQ_MIN)
+			return -EINVAL;
 
 		it87_freq = ivalue;
-		{
-			unsigned long hw_flags;
 
-			spin_lock_irqsave(&hardware_lock, hw_flags);
-			outb(((inb(io + IT87_CIR_TCR2) & IT87_CIR_TCR2_TXMPW) |
-			      (it87_freq - IT87_CIR_FREQ_MIN) << 3),
-			     io + IT87_CIR_TCR2);
-			spin_unlock_irqrestore(&hardware_lock, hw_flags);
-			dprintk("demodulation frequency: %d kHz\n",
-				it87_freq);
-		}
+		spin_lock_irqsave(&hardware_lock, hw_flags);
+		outb(((inb(io + IT87_CIR_TCR2) & IT87_CIR_TCR2_TXMPW) |
+		      (it87_freq - IT87_CIR_FREQ_MIN) << 3),
+		      io + IT87_CIR_TCR2);
+		spin_unlock_irqrestore(&hardware_lock, hw_flags);
+		dprintk("demodulation frequency: %d kHz\n", it87_freq);
 
 		break;
 
 	default:
 		retval = -ENOIOCTLCMD;
 	}
-	
+
 	if (retval)
 		return retval;
-	
+
 	if (cmd == LIRC_SET_REC_MODE) {
 		if (value != LIRC_MODE_MODE2)
 			retval = -ENOSYS;
@@ -348,24 +329,20 @@ static void add_read_queue(int flag, unsigned long val)
 	unsigned int new_rx_tail;
 	lirc_t newval;
 
-	dprintk("add flag %d with val %lu\n", flag,val);
-	
+	dprintk("add flag %d with val %lu\n", flag, val);
+
 	newval = val & PULSE_MASK;
 
 	/* statistically pulses are ~TIME_CONST/2 too long: we could
 	   maybe make this more exactly but this is good enough */
-	if(flag) /* pulse */ {
-		if(newval>TIME_CONST/2) {
-			newval-=TIME_CONST/2;
-		}
-		else /* should not ever happen */ {
-			newval=1;
-		}
-		newval|=PULSE_BIT;
-	}
-	else {
-		newval+=TIME_CONST/2;
-	}
+	if (flag) /* pulse */ {
+		if (newval > TIME_CONST / 2)
+			newval -= TIME_CONST / 2;
+		else /* should not ever happen */
+			newval = 1;
+		newval |= PULSE_BIT;
+	} else
+		newval += TIME_CONST / 2;
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
 		dprintk("Buffer overrun.\n");
@@ -378,15 +355,15 @@ static void add_read_queue(int flag, unsigned long val)
 
 
 static struct file_operations lirc_fops = {
-	read:    lirc_read,
-	write:   lirc_write,
-	poll:    lirc_poll,
-	ioctl:   lirc_ioctl,
-	open:    lirc_open,
-	release: lirc_close,
+	.read		= lirc_read,
+	.write		= lirc_write,
+	.poll		= lirc_poll,
+	.ioctl		= lirc_ioctl,
+	.open		= lirc_open,
+	.release	= lirc_close,
 };
 
-static int set_use_inc(void* data)
+static int set_use_inc(void *data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
 	MOD_INC_USE_COUNT;
@@ -394,25 +371,25 @@ static int set_use_inc(void* data)
        return 0;
 }
 
-static void set_use_dec(void* data)
+static void set_use_dec(void *data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
 	MOD_DEC_USE_COUNT;
 #endif
 }
 static struct lirc_plugin plugin = {
-       name:           LIRC_DRIVER_NAME,
-       minor:          -1,
-       code_length:    1,
-       sample_rate:    0,
-       data:           NULL,
-       add_to_buf:     NULL,
-       get_queue:      NULL,
-       set_use_inc:    set_use_inc,
-       set_use_dec:    set_use_dec,
-       fops:           &lirc_fops,
-       dev:            NULL,
-       owner:	       THIS_MODULE,
+       .name		= LIRC_DRIVER_NAME,
+       .minor		= -1,
+       .code_length	= 1,
+       .sample_rate	= 0,
+       .data		= NULL,
+       .add_to_buf	= NULL,
+       .get_queue	= NULL,
+       .set_use_inc	= set_use_inc,
+       .set_use_dec	= set_use_dec,
+       .fops		= &lirc_fops,
+       .dev		= NULL,
+       .owner		= THIS_MODULE,
 };
 
 
@@ -420,7 +397,7 @@ static struct lirc_plugin plugin = {
 static int init_chrdev(void)
 {
 	plugin.minor = lirc_register_plugin(&plugin);
-	
+
 	if (plugin.minor < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME ": init_chrdev() failed.\n");
 		return -EIO;
@@ -437,39 +414,35 @@ static void drop_chrdev(void)
 
 
 /* SECTION: Hardware */
-static long delta(struct timeval * tv1,
-		  struct timeval * tv2)
+static long delta(struct timeval *tv1, struct timeval *tv2)
 {
 	unsigned long deltv;
-	
+
 	deltv = tv2->tv_sec - tv1->tv_sec;
 	if (deltv > 15)
 		deltv = 0xFFFFFF;
 	else
-		deltv = deltv*1000000 +
-			tv2->tv_usec -
-			tv1->tv_usec;
+		deltv = deltv*1000000 + tv2->tv_usec - tv1->tv_usec;
 	return deltv;
 }
 
-static void it87_timeout(unsigned long data) 
+static void it87_timeout(unsigned long data)
 {
 	unsigned long flags;
-	
+
 	/* avoid interference with interrupt */
- 	spin_lock_irqsave(&timer_lock, flags);
-	
- 	if (digimatrix) {
+	spin_lock_irqsave(&timer_lock, flags);
+
+	if (digimatrix) {
 		/* We have timed out.
 		   Disable the RX mechanism.
 		*/
-		
+
 		outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
 		     IT87_CIR_RCR_RXACT, io + IT87_CIR_RCR);
-		if (it87_RXEN_mask) {
+		if (it87_RXEN_mask)
 			outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN,
 			     io + IT87_CIR_RCR);
-		}
 		dprintk(" TIMEOUT\n");
 		timer_enabled = 0;
 
@@ -477,36 +450,32 @@ static void it87_timeout(unsigned long data)
 		outb(inb(io + IT87_CIR_TCR1) | IT87_CIR_TCR1_FIFOCLR,
 		     io+IT87_CIR_TCR1);
 
-	}
-	else {
+	} else {
 		/* if last received signal was a pulse, but receiving
 		   stopped within the 9 bit frame, we need to finish
 		   this pulse and simulate a signal change to from
 		   pulse to space. Otherwise upper layers will receive
 		   two sequences next time. */
-	
+
 		if (last_value) {
 			unsigned long pulse_end;
-			
+
 			/* determine 'virtual' pulse end: */
-	 		pulse_end = delta(&last_tv, &last_intr_tv);
-			dprintk("timeout add %d for %lu usec\n", 
+			pulse_end = delta(&last_tv, &last_intr_tv);
+			dprintk("timeout add %d for %lu usec\n",
 				last_value, pulse_end);
 			add_read_queue(last_value, pulse_end);
 			last_value = 0;
-			last_tv=last_intr_tv;
+			last_tv = last_intr_tv;
 		}
 	}
-	spin_unlock_irqrestore(&timer_lock, flags);		
+	spin_unlock_irqrestore(&timer_lock, flags);
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static irqreturn_t it87_interrupt(int irq,
-				 void * dev_id,
-				 struct pt_regs * regs)
+static irqreturn_t it87_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 #else
-static irqreturn_t it87_interrupt(int irq,
-				  void * dev_id)
+static irqreturn_t it87_interrupt(int irq, void *dev_id)
 #endif
 {
 	unsigned char data;
@@ -516,11 +485,11 @@ static irqreturn_t it87_interrupt(int irq,
 	unsigned long flags, hw_flags;
 	int iir, lsr;
 	int fifo = 0;
-	static char lastbit = 0;
+	static char lastbit;
 	char bit;
 
 	/* Bit duration in microseconds */
-	const unsigned long bit_duration = 1000000ul / 
+	const unsigned long bit_duration = 1000000ul /
 		(115200 / IT87_CIR_BAUDRATE_DIVISOR);
 
 
@@ -533,45 +502,44 @@ static irqreturn_t it87_interrupt(int irq,
 						IT87_CIR_RSR_RXFBC);
 		fifo = lsr & IT87_CIR_RSR_RXFBC;
 		dprintk("iir: 0x%x fifo: 0x%x\n", iir, lsr);
-	
+
 		/* avoid interference with timer */
 		spin_lock_irqsave(&timer_lock, flags);
 		spin_lock_irqsave(&hardware_lock, hw_flags);
-		if (digimatrix) { 
-			static unsigned long acc_pulse = 0;
-			static unsigned long acc_space = 0;
-			
+		if (digimatrix) {
+			static unsigned long acc_pulse;
+			static unsigned long acc_space;
+
 			do {
 				data = inb(io + IT87_CIR_DR);
-				data =~ data;
+				data = ~data;
 				fifo--;
 				if (data != 0x00) {
-					if (timer_enabled) {
+					if (timer_enabled)
 						del_timer(&timerlist);
-					}
-					/* start timer for end of sequence detection */
-					timerlist.expires = jiffies + IT87_TIMEOUT;
+					/* start timer for end of
+					 * sequence detection */
+					timerlist.expires = jiffies +
+							    IT87_TIMEOUT;
 					add_timer(&timerlist);
 					timer_enabled = 1;
 				}
 				/* Loop through */
-				for(bit = 0; bit < 8; ++bit)
-				{
-					if((data >> bit) & 1)
-					{
+				for (bit = 0; bit < 8; ++bit) {
+					if ((data >> bit) & 1) {
 						++acc_pulse;
-						if(lastbit == 0)
-						{
-							add_read_queue(0, acc_space * bit_duration);
+						if (lastbit == 0) {
+							add_read_queue(0,
+								acc_space *
+								 bit_duration);
 							acc_space = 0;
 						}
-        				}
-					else
-					{
+					} else {
 						++acc_space;
-						if(lastbit == 1)
-						{
-							add_read_queue(1, acc_pulse * bit_duration);
+						if (lastbit == 1) {
+							add_read_queue(1,
+								acc_pulse *
+								 bit_duration);
 							acc_pulse = 0;
 						}
 					}
@@ -579,8 +547,7 @@ static irqreturn_t it87_interrupt(int irq,
 				}
 
 			} while (fifo != 0);
-	 	}
-		else {/* Normal Operation */
+		} else { /* Normal Operation */
 			do {
 				del_timer(&timerlist);
 				data = inb(io + IT87_CIR_DR);
@@ -590,8 +557,9 @@ static irqreturn_t it87_interrupt(int irq,
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
 
-				dprintk("t %lu , d %d\n", deltintrtv, (int)data);
-			
+				dprintk("t %lu , d %d\n",
+					deltintrtv, (int)data);
+
 				/* if nothing came in last 2 cycles,
 				   it was gap */
 				if (deltintrtv > TIME_CONST * 2) {
@@ -600,11 +568,13 @@ static irqreturn_t it87_interrupt(int irq,
 
 						/* simulate signal change */
 						add_read_queue(last_value,
-							       deltv-
+							       deltv -
 							       deltintrtv);
 						last_value = 0;
-						last_tv.tv_sec = last_intr_tv.tv_sec;
-						last_tv.tv_usec = last_intr_tv.tv_usec;
+						last_tv.tv_sec =
+							last_intr_tv.tv_sec;
+						last_tv.tv_usec =
+							last_intr_tv.tv_usec;
 						deltv = deltintrtv;
 					}
 				}
@@ -617,35 +587,36 @@ static irqreturn_t it87_interrupt(int irq,
 						       deltv-TIME_CONST);
 					last_value = data;
 					last_tv = curr_tv;
-					if(last_tv.tv_usec>=TIME_CONST) {
-						last_tv.tv_usec-=TIME_CONST;
-					}
+					if (last_tv.tv_usec >= TIME_CONST)
+						last_tv.tv_usec -= TIME_CONST;
 					else {
 						last_tv.tv_sec--;
-						last_tv.tv_usec+=1000000-
+						last_tv.tv_usec += 1000000 -
 							TIME_CONST;
 					}
 				}
 				last_intr_tv = curr_tv;
 				if (data) {
-					/* start timer for end of sequence detection */
-					timerlist.expires = jiffies + IT87_TIMEOUT;
+					/* start timer for end of
+					 * sequence detection */
+					timerlist.expires =
+						jiffies + IT87_TIMEOUT;
 					add_timer(&timerlist);
 				}
-				outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
+				outb((inb(io + IT87_CIR_RCR) &
+				     ~IT87_CIR_RCR_RXEN) |
 				     IT87_CIR_RCR_RXACT,
 				     io + IT87_CIR_RCR);
-				if (it87_RXEN_mask) {
-					outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN, 
+				if (it87_RXEN_mask)
+					outb(inb(io + IT87_CIR_RCR) |
+					     IT87_CIR_RCR_RXEN,
 					     io + IT87_CIR_RCR);
-				}
 				fifo--;
-			}
-			while (fifo != 0);
+			} while (fifo != 0);
 		}
 		spin_unlock_irqrestore(&hardware_lock, hw_flags);
 		spin_unlock_irqrestore(&timer_lock, flags);
-		
+
 		return IRQ_RETVAL(IRQ_HANDLED);
 
 	default:
@@ -656,22 +627,21 @@ static irqreturn_t it87_interrupt(int irq,
 }
 
 
-static void send_it87(unsigned long len,
-		      unsigned long stime,
-		      unsigned char send_byte,
-		      unsigned int count_bits)
+static void send_it87(unsigned long len, unsigned long stime,
+		      unsigned char send_byte, unsigned int count_bits)
 {
-        long count = len / stime;
+	long count = len / stime;
 	long time_left = 0;
-	static unsigned char byte_out = 0;
+	static unsigned char byte_out;
+	unsigned long hw_flags;
 
 	dprintk("%s: len=%ld, sb=%d\n", __FUNCTION__, len, send_byte);
 
 	time_left = (long)len - (long)count * (long)stime;
 	count += ((2 * time_left) / stime);
 	while (count) {
-		long i=0;
-		for (i=0; i<count_bits; i++) {
+		long i = 0;
+		for (i = 0; i < count_bits; i++) {
 			byte_out = (byte_out << 1) | (send_byte & 1);
 			it87_bits_in_byte_out++;
 		}
@@ -682,14 +652,13 @@ static void send_it87(unsigned long len,
 				IT87_CIR_TSR_TXFBC);
 
 			while ((inb(io + IT87_CIR_TSR) &
-				IT87_CIR_TSR_TXFBC) >= IT87_CIR_FIFO_SIZE);
-			{
-				unsigned long hw_flags;
+				IT87_CIR_TSR_TXFBC) >= IT87_CIR_FIFO_SIZE)
+				;
+			
+			spin_lock_irqsave(&hardware_lock, hw_flags);
+			outb(byte_out, io + IT87_CIR_DR);
+			spin_unlock_irqrestore(&hardware_lock, hw_flags);
 
-				spin_lock_irqsave(&hardware_lock, hw_flags);
-				outb(byte_out, io + IT87_CIR_DR);
-				spin_unlock_irqrestore(&hardware_lock, hw_flags);
-			}
 			it87_bits_in_byte_out = 0;
 			it87_send_counter++;
 			byte_out = 0;
@@ -707,18 +676,12 @@ it8705 only modulates 0-bits
 
 static void send_space(unsigned long len)
 {
-	send_it87(len,
-		  TIME_CONST,
-		  IT87_CIR_SPACE,
-		  IT87_CIR_BAUDRATE_DIVISOR);
+	send_it87(len, TIME_CONST, IT87_CIR_SPACE, IT87_CIR_BAUDRATE_DIVISOR);
 }
 
 static void send_pulse(unsigned long len)
 {
-	send_it87(len,
-		  TIME_CONST,
-		  IT87_CIR_PULSE,
-		  IT87_CIR_BAUDRATE_DIVISOR);
+	send_it87(len, TIME_CONST, IT87_CIR_PULSE, IT87_CIR_BAUDRATE_DIVISOR);
 }
 
 
@@ -761,7 +724,7 @@ static int init_hardware(void)
 {
 	unsigned long flags;
 	unsigned char it87_rcr = 0;
-	
+
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* init cir-port */
 	/* enable r/w-access to Baudrate-Register */
@@ -772,8 +735,7 @@ static int init_hardware(void)
 	if (digimatrix) {
 		outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RFOIE, io + IT87_CIR_IER);
 		/* RX: HCFS=0, RXDCR = 001b (33,75..38,25 kHz), RXEN=1 */
-	}
-	else {
+	} else {
 		outb(IT87_CIR_IER_IEC | IT87_CIR_IER_RDAIE, io + IT87_CIR_IER);
 		/* RX: HCFS=0, RXDCR = 001b (35,6..40,3 kHz), RXEN=1 */
 	}
@@ -786,12 +748,11 @@ static int init_hardware(void)
 		outb(inb(io + IT87_CIR_TCR1) |  0x00,
 		     io + IT87_CIR_TCR1);
 
-		/* TX: it87_freq (36kHz), 
+		/* TX: it87_freq (36kHz),
 		   'reserved' sensitivity setting (0x00) */
 		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x00,
 		     io + IT87_CIR_TCR2);
-	}
-	else {
+	} else {
 		/* TX: 38kHz, 13,3us (pulse-width */
 		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x06,
 		     io + IT87_CIR_TCR2);
@@ -804,7 +765,7 @@ static int init_hardware(void)
 static void drop_hardware(void)
 {
 	unsigned long flags;
-	
+
 	spin_lock_irqsave(&hardware_lock, flags);
 	disable_irq(irq);
 	/* receiver disable */
@@ -813,9 +774,9 @@ static void drop_hardware(void)
 	/* turn off irqs */
 	outb(0, io + IT87_CIR_IER);
 	/* fifo clear */
-        outb(IT87_CIR_TCR1_FIFOCLR, io+IT87_CIR_TCR1);
-        /* reset */
-        outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
+	outb(IT87_CIR_TCR1_FIFOCLR, io+IT87_CIR_TCR1);
+	/* reset */
+	outb(IT87_CIR_IER_RESET, io+IT87_CIR_IER);
 	enable_irq(irq);
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
@@ -828,8 +789,7 @@ static unsigned char it87_read(unsigned char port)
 }
 
 
-static void it87_write(unsigned char port,
-		       unsigned char data)
+static void it87_write(unsigned char port, unsigned char data)
 {
 	outb(port, IT87_ADRPORT);
 	outb(data, IT87_DATAPORT);
@@ -842,19 +802,19 @@ static int init_port(void)
 {
 	unsigned long hw_flags;
 	int retval = 0;
-	
+
 	unsigned char init_bytes[4] = {IT87_INIT};
 	unsigned char it87_chipid = 0;
 	unsigned char ldn = 0;
 	unsigned int  it87_io = 0;
 	unsigned int  it87_irq = 0;
-	
+
 	/* Enter MB PnP Mode */
 	outb(init_bytes[0], IT87_ADRPORT);
 	outb(init_bytes[1], IT87_ADRPORT);
 	outb(init_bytes[2], IT87_ADRPORT);
 	outb(init_bytes[3], IT87_ADRPORT);
-	
+
 	/* 8712 or 8705 ? */
 	it87_chipid = it87_read(IT87_CHIP_ID1);
 	if (it87_chipid != 0x87) {
@@ -878,9 +838,9 @@ static int init_port(void)
 	else
 		ldn = IT8705_CIR_LDN;
 	it87_write(IT87_LDN, ldn);
-	
+
 	it87_io = it87_read(IT87_CIR_BASE_MSB) * 256 +
-		it87_read(IT87_CIR_BASE_LSB);
+		  it87_read(IT87_CIR_BASE_LSB);
 	if (it87_io == 0) {
 		if (io == 0)
 			io = IT87_CIR_DEFAULT_IOBASE;
@@ -889,10 +849,9 @@ static int init_port(void)
 		       io);
 		it87_write(IT87_CIR_BASE_MSB, io / 0x100);
 		it87_write(IT87_CIR_BASE_LSB, io % 0x100);
-	}
-	else
+	} else
 		io = it87_io;
-	
+
 	it87_irq = it87_read(IT87_CIR_IRQ);
 	if (digimatrix || it87_irq == 0) {
 		if (irq == 0)
@@ -901,11 +860,8 @@ static int init_port(void)
 		       ": set default irq 0x%x\n",
 		       irq);
 		it87_write(IT87_CIR_IRQ, irq);
-	}
-	else
-	{
+	} else
 		irq = it87_irq;
-	}
 
 	spin_lock_irqsave(&hardware_lock, hw_flags);
 	/* reset */
@@ -916,13 +872,11 @@ static int init_port(void)
 	     IT87_CIR_TCR1_TXRLE |
 	     IT87_CIR_TCR1_TXENDF, io+IT87_CIR_TCR1);
 	spin_unlock_irqrestore(&hardware_lock, hw_flags);
-	
+
 	/* get I/O port access and IRQ line */
-	if (request_region(io, 8, LIRC_DRIVER_NAME) == NULL)
-	{
+	if (request_region(io, 8, LIRC_DRIVER_NAME) == NULL) {
 		printk(KERN_ERR LIRC_DRIVER_NAME
-		       ": i/o port 0x%.4x already in use.\n",
-		       io);
+		       ": i/o port 0x%.4x already in use.\n", io);
 		/* Leaving MB PnP Mode */
 		it87_write(IT87_CFGCTRL, 0x2);
 		return -EBUSY;
@@ -945,14 +899,12 @@ static int init_port(void)
 	}
 
 	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": I/O port 0x%.4x, IRQ %d.\n",
-	       io,
-	       irq);
+	       ": I/O port 0x%.4x, IRQ %d.\n", io, irq);
 
 	init_timer(&timerlist);
 	timerlist.function = it87_timeout;
 	timerlist.data = 0xabadcafe;
-	
+
 	return 0;
 }
 
@@ -960,19 +912,19 @@ static int init_port(void)
 static void drop_port(void)
 {
 /*
-        unsigned char init_bytes[4] = {IT87_INIT};
- 
-        / * Enter MB PnP Mode * /
-        outb(init_bytes[0], IT87_ADRPORT);
-        outb(init_bytes[1], IT87_ADRPORT);
-        outb(init_bytes[2], IT87_ADRPORT);
-        outb(init_bytes[3], IT87_ADRPORT);
+	unsigned char init_bytes[4] = {IT87_INIT};
 
-        / * deactivate CIR-Device * /
-        it87_write(IT87_CIR_ACT, 0x0);
+	/ * Enter MB PnP Mode * /
+	outb(init_bytes[0], IT87_ADRPORT);
+	outb(init_bytes[1], IT87_ADRPORT);
+	outb(init_bytes[2], IT87_ADRPORT);
+	outb(init_bytes[3], IT87_ADRPORT);
 
-        / * Leaving MB PnP Mode * /
-        it87_write(IT87_CFGCTRL, 0x2);
+	/ * deactivate CIR-Device * /
+	it87_write(IT87_CIR_ACT, 0x0);
+
+	/ * Leaving MB PnP Mode * /
+	it87_write(IT87_CFGCTRL, 0x2);
 */
 
 	del_timer_sync(&timerlist);
@@ -984,14 +936,13 @@ static void drop_port(void)
 static int init_lirc_it87(void)
 {
 	int retval;
-	
+
 	init_waitqueue_head(&lirc_read_queue);
 	retval = init_port();
 	if (retval < 0)
 		return retval;
 	init_hardware();
-	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": Installed.\n");
+	printk(KERN_INFO LIRC_DRIVER_NAME ": Installed.\n");
 	return 0;
 }
 
@@ -1001,9 +952,9 @@ static int init_lirc_it87(void)
 int init_module(void)
 {
 	int retval;
-	
-	retval=init_chrdev();
-	if(retval < 0)
+
+	retval = init_chrdev();
+	if (retval < 0)
 		return retval;
 	retval = init_lirc_it87();
 	if (retval) {
@@ -1037,7 +988,7 @@ MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
 #endif
 
 module_param(it87_enable_demodulator, bool, 0444);
-MODULE_PARM_DESC(it87_enable_demodulator, 
+MODULE_PARM_DESC(it87_enable_demodulator,
 		 "Receiver demodulator enable/disable (1/0), default: 0");
 
 module_param(debug, bool, 0644);
@@ -1045,10 +996,10 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_param(digimatrix, bool, 0644);
 #ifdef LIRC_IT87_DIGIMATRIX
-MODULE_PARM_DESC(digimatrix, 
+MODULE_PARM_DESC(digimatrix,
 	"Asus Digimatrix it87 compat. enable/disable (1/0), default: 1");
 #else
-MODULE_PARM_DESC(digimatrix, 
+MODULE_PARM_DESC(digimatrix,
 	"Asus Digimatrix it87 compat. enable/disable (1/0), default: 0");
 #endif
 

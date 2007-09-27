@@ -1,10 +1,10 @@
 /*
  * LIRC base driver
- * 
+ *
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.20 2007/04/22 10:21:37 lirc Exp $
+ * $Id: lirc_dev.h,v 1.21 2007/09/27 19:47:20 lirc Exp $
  *
  */
 
@@ -14,7 +14,7 @@
 #define MAX_IRCTL_DEVICES 4
 #define BUFLEN            16
 
-//#define LIRC_BUFF_POWER_OF_2
+/* #define LIRC_BUFF_POWER_OF_2 */
 #ifdef LIRC_BUFF_POWER_OF_2
 #define mod(n, div) ((n) & ((div) -1))
 #else
@@ -25,7 +25,7 @@
 
 struct lirc_buffer
 {
-        wait_queue_head_t wait_poll;
+	wait_queue_head_t wait_poll;
 	spinlock_t lock;
 
 	unsigned char *data;
@@ -33,12 +33,14 @@ struct lirc_buffer
 	unsigned int size; /* in chunks */
 	unsigned int fill; /* in chunks */
 	int head, tail;    /* in chunks */
-	/* Using chunks instead of bytes pretends to simplify boundary checking 
+	/* Using chunks instead of bytes pretends to simplify boundary checking
 	 * And should allow for some performance fine tunning later */
 };
 static inline void _lirc_buffer_clear(struct lirc_buffer *buf)
 {
-	buf->head = buf->tail = buf->fill = 0;
+	buf->head = 0;
+	buf->tail = 0;
+	buf->fill = 0;
 }
 static inline int lirc_buffer_init(struct lirc_buffer *buf,
 				    unsigned int chunk_size,
@@ -61,7 +63,9 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 {
 	kfree(buf->data);
 	buf->data = NULL;
-	buf->head = buf->tail = buf->fill = 0;
+	buf->head = 0;
+	buf->tail = 0;
+	buf->fill = 0;
 	buf->chunk_size = 0;
 	buf->size = 0;
 }
@@ -77,11 +81,13 @@ static inline int  lirc_buffer_available(struct lirc_buffer *buf)
 {
     return (buf->size - buf->fill);
 }
-static inline void lirc_buffer_lock(struct lirc_buffer *buf, unsigned long *flags)
+static inline void lirc_buffer_lock(struct lirc_buffer *buf,
+				    unsigned long *flags)
 {
 	spin_lock_irqsave(&buf->lock, *flags);
 }
-static inline void lirc_buffer_unlock(struct lirc_buffer *buf, unsigned long *flags)
+static inline void lirc_buffer_unlock(struct lirc_buffer *buf,
+				      unsigned long *flags)
 {
 	spin_unlock_irqrestore(&buf->lock, *flags);
 }
@@ -135,30 +141,30 @@ static inline void lirc_buffer_write_1(struct lirc_buffer *buf,
 	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
-					unsigned char* orig, int count)
+					unsigned char *orig, int count)
 {
-	memcpy(&buf->data[buf->tail*buf->chunk_size], orig,
-	       count*buf->chunk_size);
-	buf->tail = mod(buf->tail+count, buf->size);
+	memcpy(&buf->data[buf->tail * buf->chunk_size], orig,
+	       count * buf->chunk_size);
+	buf->tail = mod(buf->tail + count, buf->size);
 	buf->fill += count;
 }
 static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
-				       unsigned char* orig, int count)
+				       unsigned char *orig, int count)
 {
 	unsigned long flags;
 	int space1;
-	lirc_buffer_lock(buf,&flags);
-	if( buf->head > buf->tail ) space1 = buf->head - buf->tail;
-	else space1 = buf->size - buf->tail;
-	
-	if( count > space1 )
-	{
+
+	lirc_buffer_lock(buf, &flags);
+	if (buf->head > buf->tail)
+		space1 = buf->head - buf->tail;
+	else
+		space1 = buf->size - buf->tail;
+
+	if (count > space1) {
 		_lirc_buffer_write_n(buf, orig, space1);
 		_lirc_buffer_write_n(buf, orig+(space1*buf->chunk_size),
 				     count-space1);
-	}
-	else
-	{
+	} else {
 		_lirc_buffer_write_n(buf, orig, count);
 	}
 	lirc_buffer_unlock(buf, &flags);
@@ -171,13 +177,13 @@ struct lirc_plugin
 	int code_length;
 	int sample_rate;
 	unsigned long features;
-	void* data;
-	int (*add_to_buf) (void* data, struct lirc_buffer* buf);
-	wait_queue_head_t* (*get_queue) (void* data);
+	void *data;
+	int (*add_to_buf) (void *data, struct lirc_buffer *buf);
+	wait_queue_head_t* (*get_queue) (void *data);
 	struct lirc_buffer *rbuf;
-	int (*set_use_inc) (void* data);
-	void (*set_use_dec) (void* data);
-	int (*ioctl) (struct inode *,struct file *,unsigned int,
+	int (*set_use_inc) (void *data);
+	void (*set_use_dec) (void *data);
+	int (*ioctl) (struct inode *, struct file *, unsigned int,
 		      unsigned long);
 	struct file_operations *fops;
 	struct device *dev;
@@ -188,7 +194,7 @@ struct lirc_plugin
  *
  * minor:
  * indicates minor device (/dev/lirc) number for registered plugin
- * if caller fills it with negative value, then the first free minor 
+ * if caller fills it with negative value, then the first free minor
  * number will be used (if available)
  *
  * code_length:
@@ -233,7 +239,7 @@ struct lirc_plugin
  *
  * fops:
  * file_operations for drivers which don't fit the current plugin model.
- * 
+ *
  * owner:
  * the module owning this struct
  *
@@ -242,7 +248,7 @@ struct lirc_plugin
 
 /* following functions can be called ONLY from user context
  *
- * returns negative value on error or minor number 
+ * returns negative value on error or minor number
  * of the registered device if success
  * contens of the structure pointed by p is copied
  */

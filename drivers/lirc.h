@@ -1,14 +1,14 @@
-/*      $Id: lirc.h,v 5.12 2007/04/14 15:57:21 lirc Exp $      */
+/*      $Id: lirc.h,v 5.13 2007/09/27 19:47:18 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
 
-#if defined (__linux__)
+#if defined(__linux__)
 #include <asm/types.h>
 #include <linux/ioctl.h>
 #else
 #include <sys/types.h>
-#if defined (__NetBSD__)
+#if defined(__NetBSD__)
 #include <sys/ioctl.h>
 #endif
 typedef u_int32_t __u32;

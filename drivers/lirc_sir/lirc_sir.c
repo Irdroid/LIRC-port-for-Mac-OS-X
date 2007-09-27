@@ -22,13 +22,13 @@
  * 2000/09/16 Frank Przybylski <mail@frankprzybylski.de> :
  *  added timeout and relaxed pulse detection, removed gap bug
  *
- * 2000/12/15 Christoph Bartelmus <lirc@bartelmus.de> : 
+ * 2000/12/15 Christoph Bartelmus <lirc@bartelmus.de> :
  *   added support for Tekram Irmate 210 (sending does not work yet,
  *   kind of disappointing that nobody was able to implement that
  *   before),
  *   major clean-up
  *
- * 2001/02/27 Christoph Bartelmus <lirc@bartelmus.de> : 
+ * 2001/02/27 Christoph Bartelmus <lirc@bartelmus.de> :
  *   added support for StrongARM SA1100 embedded microprocessor
  *   parts cut'n'pasted from sa1100_ir.c (C) 2000 Russell King
  */
@@ -45,7 +45,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
- 
+
 #include <linux/autoconf.h>
 
 #if !defined(LIRC_ON_SA1100) && !defined(CONFIG_SERIAL_MODULE)
@@ -136,7 +136,7 @@ struct sa1100_ser2_registers
 	unsigned char utsr1;
 } sr;
 
-static int irq=IRQ_Ser2ICP;
+static int irq = IRQ_Ser2ICP;
 
 #define LIRC_ON_SA1100_TRANSMITTER_LATENCY 0
 
@@ -185,34 +185,35 @@ static struct timer_list timerlist;
 static struct timeval last_tv = {0, 0};
 /* time of last UART data ready interrupt */
 static struct timeval last_intr_tv = {0, 0};
-static int last_value = 0;
+static int last_value;
 
 static DECLARE_WAIT_QUEUE_HEAD(lirc_read_queue);
 
 static spinlock_t hardware_lock = SPIN_LOCK_UNLOCKED;
 static spinlock_t dev_lock = SPIN_LOCK_UNLOCKED;
 
-static lirc_t rx_buf[RBUF_LEN]; 
-static unsigned int rx_tail = 0, rx_head = 0;
+static lirc_t rx_buf[RBUF_LEN];
+static unsigned int rx_tail, rx_head;
 static lirc_t tx_buf[WBUF_LEN];
 
-static int debug = 0;
-#define dprintk(fmt, args...)                                     \
-	do{                                                       \
-		if(debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": " \
-                                 fmt, ## args);                   \
-	}while(0)
+static int debug;
+#define dprintk(fmt, args...)						\
+	do {								\
+		if (debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": "	\
+				fmt, ## args);				\
+	} while (0)
 
 /* SECTION: Prototypes */
 
 /* Communication with user-space */
-static int lirc_open(struct inode * inode, struct file * file);
-static int lirc_close(struct inode * inode, struct file *file);
-static unsigned int lirc_poll(struct file * file, poll_table * wait);
-static ssize_t lirc_read(struct file * file, char * buf, size_t count,
-		loff_t * ppos);
-static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos);
-static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
+static int lirc_open(struct inode *inode, struct file *file);
+static int lirc_close(struct inode *inode, struct file *file);
+static unsigned int lirc_poll(struct file *file, poll_table *wait);
+static ssize_t lirc_read(struct file *file, char *buf, size_t count,
+		loff_t *ppos);
+static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
+		loff_t *pos);
+static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		unsigned long arg);
 static void add_read_queue(int flag, unsigned long val);
 #ifdef MODULE
@@ -221,10 +222,10 @@ static void drop_chrdev(void);
 #endif
 	/* Hardware */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static irqreturn_t sir_interrupt(int irq, void * dev_id,
-				 struct pt_regs * regs);
+static irqreturn_t sir_interrupt(int irq, void *dev_id,
+				 struct pt_regs *regs);
 #else
-static irqreturn_t sir_interrupt(int irq, void * dev_id);
+static irqreturn_t sir_interrupt(int irq, void *dev_id);
 #endif
 static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
@@ -237,14 +238,14 @@ int init_module(void);
 void cleanup_module(void);
 
 #ifdef LIRC_ON_SA1100
-static void inline on(void)
+static inline void on(void)
 {
-	PPSR|=PPC_TXD2;
+	PPSR |= PPC_TXD2;
 }
-  
-static void inline off(void)
+
+static inline void off(void)
 {
-	PPSR&=~PPC_TXD2;
+	PPSR &= ~PPC_TXD2;
 }
 #else
 static inline unsigned int sinp(int offset)
@@ -266,17 +267,16 @@ static inline void soutp(int offset, int value)
 
 static inline void safe_udelay(unsigned long usecs)
 {
-	while(usecs>MAX_UDELAY_US)
-	{
+	while (usecs > MAX_UDELAY_US) {
 		udelay(MAX_UDELAY_US);
-		usecs-=MAX_UDELAY_US;
+		usecs -= MAX_UDELAY_US;
 	}
 	udelay(usecs);
 }
 
 /* SECTION: Communication with user-space */
 
-static int lirc_open(struct inode * inode, struct file * file)
+static int lirc_open(struct inode *inode, struct file *file)
 {
 	spin_lock(&dev_lock);
 	if (MOD_IN_USE) {
@@ -288,13 +288,13 @@ static int lirc_open(struct inode * inode, struct file * file)
 	return 0;
 }
 
-static int lirc_close(struct inode * inode, struct file *file)
+static int lirc_close(struct inode *inode, struct file *file)
 {
 	MOD_DEC_USE_COUNT;
 	return 0;
 }
 
-static unsigned int lirc_poll(struct file * file, poll_table * wait)
+static unsigned int lirc_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &lirc_read_queue, wait);
 	if (rx_head != rx_tail)
@@ -302,64 +302,60 @@ static unsigned int lirc_poll(struct file * file, poll_table * wait)
 	return 0;
 }
 
-static ssize_t lirc_read(struct file * file, char * buf, size_t count,
-		loff_t * ppos)
+static ssize_t lirc_read(struct file *file, char *buf, size_t count,
+		loff_t *ppos)
 {
-	int n=0;
+	int n = 0;
 	int retval = 0;
-	DECLARE_WAITQUEUE(wait,current);
-	
-	if(n%sizeof(lirc_t)) return(-EINVAL);
-	
-	add_wait_queue(&lirc_read_queue,&wait);
+	DECLARE_WAITQUEUE(wait, current);
+
+	if (n % sizeof(lirc_t))
+		return -EINVAL;
+
+	add_wait_queue(&lirc_read_queue, &wait);
 	set_current_state(TASK_INTERRUPTIBLE);
-	while(n<count)
-	{
-		if(rx_head!=rx_tail)
-		{
-			if(copy_to_user((void *) buf+n,
-					(void *) (rx_buf+rx_head),
-					sizeof(lirc_t)))
-			{
-				retval=-EFAULT;
+	while (n < count) {
+		if (rx_head != rx_tail) {
+			if (copy_to_user((void *) buf + n,
+					(void *) (rx_buf + rx_head),
+					sizeof(lirc_t))) {
+				retval = -EFAULT;
 				break;
 			}
-			rx_head=(rx_head+1)&(RBUF_LEN-1);
-			n+=sizeof(lirc_t);
-		}
-		else
-		{
-			if(file->f_flags & O_NONBLOCK)
-			{
-				retval=-EAGAIN;
+			rx_head = (rx_head + 1) & (RBUF_LEN - 1);
+			n += sizeof(lirc_t);
+		} else {
+			if (file->f_flags & O_NONBLOCK) {
+				retval = -EAGAIN;
 				break;
 			}
-			if(signal_pending(current))
-			{
-				retval=-ERESTARTSYS;
+			if (signal_pending(current)) {
+				retval = -ERESTARTSYS;
 				break;
 			}
 			schedule();
 			set_current_state(TASK_INTERRUPTIBLE);
 		}
 	}
-	remove_wait_queue(&lirc_read_queue,&wait);
+	remove_wait_queue(&lirc_read_queue, &wait);
 	set_current_state(TASK_RUNNING);
 	return (n ? n : retval);
 }
-static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t * pos)
+static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
+				loff_t *pos)
 {
 	unsigned long flags;
 	int i;
 
-        if(n%sizeof(lirc_t) || (n/sizeof(lirc_t)) > WBUF_LEN)
-		return(-EINVAL);
-	if(copy_from_user(tx_buf, buf, n)) return -EFAULT;
+	if (n % sizeof(lirc_t) || (n/sizeof(lirc_t)) > WBUF_LEN)
+		return -EINVAL;
+	if (copy_from_user(tx_buf, buf, n))
+		return -EFAULT;
 	i = 0;
-	n/=sizeof(lirc_t);
+	n /= sizeof(lirc_t);
 #ifdef LIRC_ON_SA1100
 	/* disable receiver */
-	Ser2UTCR3=0;
+	Ser2UTCR3 = 0;
 #endif
 	local_irq_save(flags);
 	while (1) {
@@ -378,16 +374,16 @@ static ssize_t lirc_write(struct file * file, const char * buf, size_t n, loff_t
 #ifdef LIRC_ON_SA1100
 	off();
 	udelay(1000); /* wait 1ms for IR diode to recover */
-	Ser2UTCR3=0;
+	Ser2UTCR3 = 0;
 	/* clear status register to prevent unwanted interrupts */
 	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
 	/* enable receiver */
-	Ser2UTCR3=UTCR3_RXE|UTCR3_RIE;
+	Ser2UTCR3 = UTCR3_RXE|UTCR3_RIE;
 #endif
 	return n;
 }
 
-static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
+static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		unsigned long arg)
 {
 	int retval = 0;
@@ -426,36 +422,40 @@ static int lirc_ioctl(struct inode *node,struct file *filep,unsigned int cmd,
 		break;
 #ifdef LIRC_ON_SA1100
 	case LIRC_SET_SEND_DUTY_CYCLE:
-		retval=get_user(ivalue,(unsigned int *) arg);
-		if(retval) return(retval);
-		if(ivalue<=0 || ivalue>100) return(-EINVAL);
+		retval = get_user(ivalue, (unsigned int *) arg);
+		if (retval)
+			return reetval;
+		if (ivalue <= 0 || ivalue > 100)
+			return -EINVAL;
 		/* (ivalue/100)*(1000000/freq) */
-		duty_cycle=ivalue;
-		pulse_width=(unsigned long) duty_cycle*10000/freq;
-		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
-			space_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		duty_cycle = ivalue;
+		pulse_width = (unsigned long) duty_cycle*10000/freq;
+		space_width = (unsigned long) 1000000L/freq-pulse_width;
+		if (pulse_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			pulse_width -= LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		if (space_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			space_width -= LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 	case LIRC_SET_SEND_CARRIER:
-		retval=get_user(ivalue,(unsigned int *) arg);
-		if(retval) return(retval);
-		if(ivalue>500000 || ivalue<20000) return(-EINVAL);
-		freq=ivalue;
-		pulse_width=(unsigned long) duty_cycle*10000/freq;
-		space_width=(unsigned long) 1000000L/freq-pulse_width;
-		if(pulse_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
-			pulse_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
-		if(space_width>=LIRC_ON_SA1100_TRANSMITTER_LATENCY)
-			space_width-=LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		retval = get_user(ivalue, (unsigned int *) arg);
+		if (retval)
+			return retval;
+		if (ivalue > 500000 || ivalue < 20000)
+			return -EINVAL;
+		freq = ivalue;
+		pulse_width = (unsigned long) duty_cycle*10000/freq;
+		space_width = (unsigned long) 1000000L/freq-pulse_width;
+		if (pulse_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			pulse_width -= LIRC_ON_SA1100_TRANSMITTER_LATENCY;
+		if (space_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
+			space_width -= LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 #endif
 	default:
 		retval = -ENOIOCTLCMD;
 
 	}
-	
+
 	if (retval)
 		return retval;
 	if (cmd == LIRC_SET_REC_MODE) {
@@ -480,21 +480,14 @@ static void add_read_queue(int flag, unsigned long val)
 
 	/* statistically pulses are ~TIME_CONST/2 too long: we could
 	   maybe make this more exactly but this is good enough */
-	if(flag) /* pulse */
-	{
-		if(newval>TIME_CONST/2)
-		{
-			newval-=TIME_CONST/2;
-		}
+	if (flag) { /* pulse */
+		if (newval > TIME_CONST/2)
+			newval -= TIME_CONST/2;
 		else /* should not ever happen */
-		{
-			newval=1;
-		}
-		newval|=PULSE_BIT;
-	}
-	else
-	{
-		newval+=TIME_CONST/2;
+			newval = 1;
+		newval |= PULSE_BIT;
+	} else {
+		newval += TIME_CONST/2;
 	}
 	new_rx_tail = (rx_tail + 1) & (RBUF_LEN - 1);
 	if (new_rx_tail == rx_head) {
@@ -506,17 +499,16 @@ static void add_read_queue(int flag, unsigned long val)
 	wake_up_interruptible(&lirc_read_queue);
 }
 
-static struct file_operations lirc_fops =
-{
-	read:    lirc_read,
-	write:   lirc_write,
-	poll:    lirc_poll,
-	ioctl:   lirc_ioctl,
-	open:    lirc_open,
-	release: lirc_close,
+static struct file_operations lirc_fops = {
+	.read		= lirc_read,
+	.write		= lirc_write,
+	.poll		= lirc_poll,
+	.ioctl		= lirc_ioctl,
+	.open		= lirc_open,
+	.release	= lirc_close,
 };
 
-static int set_use_inc(void* data)
+static int set_use_inc(void *data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
 	MOD_INC_USE_COUNT;
@@ -524,25 +516,25 @@ static int set_use_inc(void* data)
        return 0;
 }
 
-static void set_use_dec(void* data)
+static void set_use_dec(void *data)
 {
 #if WE_DONT_USE_LOCAL_OPEN_CLOSE
 	MOD_DEC_USE_COUNT;
 #endif
 }
 static struct lirc_plugin plugin = {
-       name:           LIRC_DRIVER_NAME,
-       minor:          -1,
-       code_length:    1,
-       sample_rate:    0,
-       data:           NULL,
-       add_to_buf:     NULL,
-       get_queue:      NULL,
-       set_use_inc:    set_use_inc,
-       set_use_dec:    set_use_dec,
-       fops:           &lirc_fops,
-       dev:            NULL,
-       owner:          THIS_MODULE,
+       .name		= LIRC_DRIVER_NAME,
+       .minor		= -1,
+       .code_length	= 1,
+       .sample_rate	= 0,
+       .data		= NULL,
+       .add_to_buf	= NULL,
+       .get_queue	= NULL,
+       .set_use_inc	= set_use_inc,
+       .set_use_dec	= set_use_dec,
+       .fops		= &lirc_fops,
+       .dev		= NULL,
+       .owner		= THIS_MODULE,
 };
 
 
@@ -564,10 +556,10 @@ static void drop_chrdev(void)
 #endif
 
 /* SECTION: Hardware */
-static long delta(struct timeval * tv1, struct timeval * tv2)
+static long delta(struct timeval *tv1, struct timeval *tv2)
 {
 	unsigned long deltv;
-	
+
 	deltv = tv2->tv_sec - tv1->tv_sec;
 	if (deltv > 15)
 		deltv = 0xFFFFFF;
@@ -578,39 +570,38 @@ static long delta(struct timeval * tv1, struct timeval * tv2)
 	return deltv;
 }
 
-static void sir_timeout(unsigned long data) 
+static void sir_timeout(unsigned long data)
 {
 	/* if last received signal was a pulse, but receiving stopped
 	   within the 9 bit frame, we need to finish this pulse and
 	   simulate a signal change to from pulse to space. Otherwise
 	   upper layers will receive two sequences next time. */
-	
+
 	unsigned long flags;
 	unsigned long pulse_end;
-	
+
 	/* avoid interference with interrupt */
- 	spin_lock_irqsave(&timer_lock, flags);
-	if (last_value)
-	{
+	spin_lock_irqsave(&timer_lock, flags);
+	if (last_value) {
 #ifndef LIRC_ON_SA1100
 		/* clear unread bits in UART and restart */
 		outb(UART_FCR_CLEAR_RCVR, io + UART_FCR);
 #endif
 		/* determine 'virtual' pulse end: */
-	 	pulse_end = delta(&last_tv, &last_intr_tv);
-		dprintk("timeout add %d for %lu usec\n",last_value,pulse_end);
-		add_read_queue(last_value,pulse_end);
+		pulse_end = delta(&last_tv, &last_intr_tv);
+		dprintk("timeout add %d for %lu usec\n", last_value, pulse_end);
+		add_read_queue(last_value, pulse_end);
 		last_value = 0;
-		last_tv=last_intr_tv;
+		last_tv = last_intr_tv;
 	}
-	spin_unlock_irqrestore(&timer_lock, flags);		
+	spin_unlock_irqrestore(&timer_lock, flags);
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static irqreturn_t sir_interrupt(int irq, void * dev_id,
-				 struct pt_regs * regs)
+static irqreturn_t sir_interrupt(int irq, void *dev_id,
+				 struct pt_regs *regs)
 #else
-static irqreturn_t sir_interrupt(int irq, void * dev_id)
+static irqreturn_t sir_interrupt(int irq, void *dev_id)
 #endif
 {
 	unsigned char data;
@@ -618,22 +609,20 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id)
 	static unsigned long deltv;
 #ifdef LIRC_ON_SA1100
 	int status;
-	static int n=0;
-	
-	//printk("interrupt\n");
+	static int n;
+
 	status = Ser2UTSR0;
 	/*
 	 * Deal with any receive errors first.  The bytes in error may be
 	 * the only bytes in the receive FIFO, so we do this first.
 	 */
-	while (status & UTSR0_EIF)
-	{
+	while (status & UTSR0_EIF) {
 		int bstat;
 
-		if(debug) {
+		if (debug) {
 			dprintk("EIF\n");
 			bstat = Ser2UTSR1;
-		
+
 			if (bstat & UTSR1_FRE)
 				dprintk("frame error\n");
 			if (bstat & UTSR1_ROR)
@@ -641,41 +630,34 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id)
 			if (bstat & UTSR1_PRE)
 				dprintk("parity error\n");
 		}
-		
+
 		bstat = Ser2UTDR;
 		n++;
 		status = Ser2UTSR0;
 	}
 
-	if (status & (UTSR0_RFS | UTSR0_RID))
-	{
+	if (status & (UTSR0_RFS | UTSR0_RID)) {
 		do_gettimeofday(&curr_tv);
 		deltv = delta(&last_tv, &curr_tv);
-		do
-		{
-			data=Ser2UTDR;
+		do {
+			data = Ser2UTDR;
 			dprintk("%d data: %u\n", n, (unsigned int) data);
 			n++;
-		}
-		while(status&UTSR0_RID && /* do not empty fifo in
-                                             order to get UTSR0_RID in
-                                             any case */
+		} while (status & UTSR0_RID && /* do not empty fifo in
+						order to get UTSR0_RID in
+						any case */
 		      Ser2UTSR1 & UTSR1_RNE); /* data ready */
-		
-		if(status&UTSR0_RID)
-		{
-			//printk("add\n");
-			add_read_queue(0,deltv-n*TIME_CONST); /*space*/
-			add_read_queue(1,n*TIME_CONST); /*pulse*/
-			n=0;
-			last_tv=curr_tv;
+
+		if (status&UTSR0_RID) {
+			add_read_queue(0 , deltv - n * TIME_CONST); /*space*/
+			add_read_queue(1, n * TIME_CONST); /*pulse*/
+			n = 0;
+			last_tv = curr_tv;
 		}
 	}
 
-	if (status & UTSR0_TFS) {
-
-		printk("transmit fifo not full, shouldn't ever happen\n");
-	}
+	if (status & UTSR0_TFS)
+		printk(KERN_ERR "transmit fifo not full, shouldn't happen\n");
 
 	/*
 	 * We must clear certain bits.
@@ -704,15 +686,14 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id)
 			break;
 		case UART_IIR_RDI:
 			/* avoid interference with timer */
-		 	spin_lock_irqsave(&timer_lock, flags);
-			do
-			{
+			spin_lock_irqsave(&timer_lock, flags);
+			do {
 				del_timer(&timerlist);
 				data = inb(io + UART_RX);
 				do_gettimeofday(&curr_tv);
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
-				dprintk("t %lu , d %d\n", deltintrtv, (int)data);
+				dprintk("t %lu, d %d\n", deltintrtv, (int)data);
 				/* if nothing came in last X cycles,
 				   it was gap */
 				if (deltintrtv > TIME_CONST * threshold) {
@@ -720,39 +701,39 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id)
 						dprintk("GAP\n");
 						/* simulate signal change */
 						add_read_queue(last_value,
-							       deltv-
+							       deltv -
 							       deltintrtv);
 						last_value = 0;
-						last_tv.tv_sec = last_intr_tv.tv_sec;
-						last_tv.tv_usec = last_intr_tv.tv_usec;
+						last_tv.tv_sec =
+							last_intr_tv.tv_sec;
+						last_tv.tv_usec =
+							last_intr_tv.tv_usec;
 						deltv = deltintrtv;
 					}
 				}
 				data = 1;
 				if (data ^ last_value) {
 					/* deltintrtv > 2*TIME_CONST,
-                                           remember ? */
+						remember ? */
 					/* the other case is timeout */
 					add_read_queue(last_value,
 						       deltv-TIME_CONST);
 					last_value = data;
 					last_tv = curr_tv;
-					if(last_tv.tv_usec>=TIME_CONST)
-					{
-						last_tv.tv_usec-=TIME_CONST;
-					}
-					else
-					{
+					if (last_tv.tv_usec >= TIME_CONST) {
+						last_tv.tv_usec -= TIME_CONST;
+					} else {
 						last_tv.tv_sec--;
-						last_tv.tv_usec+=1000000-
+						last_tv.tv_usec += 1000000 -
 							TIME_CONST;
 					}
 				}
 				last_intr_tv = curr_tv;
-				if (data)
-				{
-					/* start timer for end of sequence detection */
-					timerlist.expires = jiffies + SIR_TIMEOUT;
+				if (data) {
+					/* start timer for end of
+					 * sequence detection */
+					timerlist.expires = jiffies +
+								SIR_TIMEOUT;
 					add_timer(&timerlist);
 				}
 			}
@@ -771,24 +752,21 @@ static irqreturn_t sir_interrupt(int irq, void * dev_id)
 #ifdef LIRC_ON_SA1100
 static void send_pulse(unsigned long length)
 {
-	unsigned long k,delay;
+	unsigned long k, delay;
 	int flag;
 
-	if(length==0) return;
+	if (length == 0)
+		return;
 	/* this won't give us the carrier frequency we really want
 	   due to integer arithmetic, but we can accept this inaccuracy */
 
-	for(k=flag=0;k<length;k+=delay,flag=!flag)
-	{
-		if(flag)
-		{
+	for (k = flag = 0; k < length; k += delay, flag = !flag) {
+		if (flag) {
 			off();
-			delay=space_width;
-		}
-		else
-		{
+			delay = space_width;
+		} else {
 			on();
-			delay=pulse_width;
+			delay = pulse_width;
 		}
 		safe_udelay(delay);
 	}
@@ -797,7 +775,8 @@ static void send_pulse(unsigned long length)
 
 static void send_space(unsigned long length)
 {
-	if(length==0) return;
+	if (length == 0)
+		return;
 	off();
 	safe_udelay(length);
 }
@@ -813,13 +792,11 @@ static void send_pulse(unsigned long len)
 	long time_left;
 
 	time_left = (long)len - (long)bytes_out * (long)TIME_CONST;
-	if (bytes_out == 0)
-	{
+	if (bytes_out == 0) {
 		bytes_out++;
 		time_left = 0;
 	}
-	while (bytes_out--)
-       	{
+	while (bytes_out--) {
 		outb(PULSE, io + UART_TX);
 		/* FIXME treba seriozne cakanie z drivers/char/serial.c */
 		while (!(inb(io + UART_LSR) & UART_LSR_THRE));
@@ -845,8 +822,7 @@ static inline int sa1100_irda_set_power_collie(int state)
 					 TC35143_IODIR_OUTPUT);
 		ucb1200_set_io(TC35143_GPIO_IR_ON, TC35143_IODAT_LOW);
 		udelay(100);
-	}
-	else {
+	} else {
 		/* OFF */
 		ucb1200_set_io_direction(TC35143_GPIO_IR_ON,
 					 TC35143_IODIR_OUTPUT);
@@ -859,121 +835,121 @@ static inline int sa1100_irda_set_power_collie(int state)
 static int init_hardware(void)
 {
 	unsigned long flags;
-	
+
 	spin_lock_irqsave(&hardware_lock, flags);
 	/* reset UART */
 #ifdef LIRC_ON_SA1100
 #ifdef CONFIG_SA1100_BITSY
 	if (machine_is_bitsy()) {
-		printk("Power on IR module\n");
+		printk(KERN_INFO "Power on IR module\n");
 		set_bitsy_egpio(EGPIO_BITSY_IR_ON);
 	}
 #endif
 #ifdef CONFIG_SA1100_COLLIE
 	sa1100_irda_set_power_collie(3);	/* power on */
 #endif
-	sr.hscr0=Ser2HSCR0;
+	sr.hscr0 = Ser2HSCR0;
 
-	sr.utcr0=Ser2UTCR0;
-	sr.utcr1=Ser2UTCR1;
-	sr.utcr2=Ser2UTCR2;
-	sr.utcr3=Ser2UTCR3;
-	sr.utcr4=Ser2UTCR4;
+	sr.utcr0 = Ser2UTCR0;
+	sr.utcr1 = Ser2UTCR1;
+	sr.utcr2 = Ser2UTCR2;
+	sr.utcr3 = Ser2UTCR3;
+	sr.utcr4 = Ser2UTCR4;
 
-	sr.utdr=Ser2UTDR;
-	sr.utsr0=Ser2UTSR0;
-	sr.utsr1=Ser2UTSR1;
+	sr.utdr = Ser2UTDR;
+	sr.utsr0 = Ser2UTSR0;
+	sr.utsr1 = Ser2UTSR1;
 
 	/* configure GPIO */
 	/* output */
-	PPDR|=PPC_TXD2;
-	PSDR|=PPC_TXD2;
+	PPDR |= PPC_TXD2;
+	PSDR |= PPC_TXD2;
 	/* set output to 0 */
 	off();
-	
+
 	/*
 	 * Enable HP-SIR modulation, and ensure that the port is disabled.
 	 */
-	Ser2UTCR3=0;
-	Ser2HSCR0=sr.hscr0 & (~HSCR0_HSSP);
-	
+	Ser2UTCR3 = 0;
+	Ser2HSCR0 = sr.hscr0 & (~HSCR0_HSSP);
+
 	/* clear status register to prevent unwanted interrupts */
 	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
-	
+
 	/* 7N1 */
-	Ser2UTCR0=UTCR0_1StpBit|UTCR0_7BitData;
+	Ser2UTCR0 = UTCR0_1StpBit|UTCR0_7BitData;
 	/* 115200 */
-	Ser2UTCR1=0;
-	Ser2UTCR2=1;
+	Ser2UTCR1 = 0;
+	Ser2UTCR2 = 1;
 	/* use HPSIR, 1.6 usec pulses */
-	Ser2UTCR4=UTCR4_HPSIR|UTCR4_Z1_6us;
-	
+	Ser2UTCR4 = UTCR4_HPSIR|UTCR4_Z1_6us;
+
 	/* enable receiver, receive fifo interrupt */
-	Ser2UTCR3=UTCR3_RXE|UTCR3_RIE;
-	
+	Ser2UTCR3 = UTCR3_RXE|UTCR3_RIE;
+
 	/* clear status register to prevent unwanted interrupts */
 	Ser2UTSR0 &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
-	
+
 #elif defined(LIRC_SIR_TEKRAM)
-	/* disable FIFO */ 
+	/* disable FIFO */
 	soutp(UART_FCR,
 	      UART_FCR_CLEAR_RCVR|
 	      UART_FCR_CLEAR_XMIT|
 	      UART_FCR_TRIGGER_1);
-	
+
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
-	
+
 	/* First of all, disable all interrupts */
-	soutp(UART_IER, sinp(UART_IER)&
+	soutp(UART_IER, sinp(UART_IER) &
 	      (~(UART_IER_MSI|UART_IER_RLSI|UART_IER_THRI|UART_IER_RDI)));
-	
+
 	/* Set DLAB 1. */
 	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
-	
+
 	/* Set divisor to 12 => 9600 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,12);
-	
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 12);
+
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
-	
+
 	/* power supply */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
 	safe_udelay(50*1000);
-	
+
 	/* -DTR low -> reset PIC */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
 	udelay(1*1000);
-	
+
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
 	udelay(100);
 
 
-        /* -RTS low -> send control byte */
+	/* -RTS low -> send control byte */
 	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
 	udelay(7);
 	soutp(UART_TX, TEKRAM_115200|TEKRAM_PW);
-	
+
 	/* one byte takes ~1042 usec to transmit at 9600,8N1 */
 	udelay(1500);
-	
+
 	/* back to normal operation */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
 	udelay(50);
 
 	udelay(1500);
-	
+
 	/* read previous control byte */
 	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": 0x%02x\n",sinp(UART_RX));
-	
+	       ": 0x%02x\n", sinp(UART_RX));
+
 	/* Set DLAB 1. */
 	soutp(UART_LCR, sinp(UART_LCR) | UART_LCR_DLAB);
-	
+
 	/* Set divisor to 1 => 115200 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,1);
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 1);
 
 	/* Set DLAB 0, 8 Bit */
 	soutp(UART_LCR, UART_LCR_WLEN8);
@@ -991,8 +967,8 @@ static int init_hardware(void)
 		/* FIFO operation */
 	outb(UART_FCR_ENABLE_FIFO, io + UART_FCR);
 		/* interrupts */
-	// outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, io + UART_IER);
-	outb(UART_IER_RDI, io + UART_IER);	
+	/* outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, io + UART_IER); */
+	outb(UART_IER_RDI, io + UART_IER);
 	/* turn on UART */
 	outb(UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2, io + UART_MCR);
 #ifdef LIRC_SIR_ACTISYS_ACT200L
@@ -1012,26 +988,25 @@ static void drop_hardware(void)
 	spin_lock_irqsave(&hardware_lock, flags);
 
 #ifdef LIRC_ON_SA1100
-	Ser2UTCR3=0;
-	
-	Ser2UTCR0=sr.utcr0;
-	Ser2UTCR1=sr.utcr1;
-	Ser2UTCR2=sr.utcr2;
-	Ser2UTCR4=sr.utcr4;
-	Ser2UTCR3=sr.utcr3;
-	
-	Ser2HSCR0=sr.hscr0;
+	Ser2UTCR3 = 0;
+
+	Ser2UTCR0 = sr.utcr0;
+	Ser2UTCR1 = sr.utcr1;
+	Ser2UTCR2 = sr.utcr2;
+	Ser2UTCR4 = sr.utcr4;
+	Ser2UTCR3 = sr.utcr3;
+
+	Ser2HSCR0 = sr.hscr0;
 #ifdef CONFIG_SA1100_BITSY
-	if (machine_is_bitsy()) {
+	if (machine_is_bitsy())
 		clr_bitsy_egpio(EGPIO_BITSY_IR_ON);
-	}
 #endif
 #ifdef CONFIG_SA1100_COLLIE
 	sa1100_irda_set_power_collie(0);	/* power off */
 #endif
 #else
 	/* turn off interrupts */
-	outb(0, io + UART_IER);	
+	outb(0, io + UART_IER);
 #endif
 	spin_unlock_irqrestore(&hardware_lock, flags);
 }
@@ -1041,11 +1016,10 @@ static void drop_hardware(void)
 static int init_port(void)
 {
 	int retval;
-	
+
 	/* get I/O port access and IRQ line */
 #ifndef LIRC_ON_SA1100
-	if(request_region(io, 8, LIRC_DRIVER_NAME) == NULL)
-	{
+	if (request_region(io, 8, LIRC_DRIVER_NAME) == NULL) {
 		printk(KERN_ERR LIRC_DRIVER_NAME
 		       ": i/o port 0x%.4x already in use.\n", io);
 		return -EBUSY;
@@ -1170,26 +1144,24 @@ static void init_act200(void)
 
 	/* Set DLAB 1. */
 	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN8);
-	
+
 	/* Set divisor to 12 => 9600 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,12);
-	
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 12);
+
 	/* Set DLAB 0. */
 	soutp(UART_LCR, UART_LCR_WLEN8);
 	/* Set divisor to 12 => 9600 Baud */
 
 	/* power supply */
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
-	for (i=0; i<50; i++) {
+	for (i = 0; i < 50; i++)
 		safe_udelay(1000);
-	}
 
 		/* Reset the dongle : set RTS low for 25 ms */
 	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
-	for (i=0; i<25; i++) {
+	for (i = 0; i < 25; i++)
 		udelay(1000);
-	}
 
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
 	udelay(100);
@@ -1199,7 +1171,7 @@ static void init_act200(void)
 	udelay(7);
 
 /* send out the control register settings for 115K 7N1 SIR operation */
-	for (i=0; i<sizeof(control); i++) {
+	for (i = 0; i < sizeof(control); i++) {
 		soutp(UART_TX, control[i]);
 		/* one byte takes ~1042 usec to transmit at 9600,8N1 */
 		udelay(1500);
@@ -1216,8 +1188,8 @@ static void init_act200(void)
 	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN7);
 
 	/* Set divisor to 1 => 115200 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,1);
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 1);
 
 	/* Set DLAB 0. */
 	soutp(UART_LCR, sinp(UART_LCR) & (~UART_LCR_DLAB));
@@ -1231,10 +1203,11 @@ static void init_act200(void)
 #endif
 
 #ifdef LIRC_SIR_ACTISYS_ACT220L
-/* Derived from linux IrDA driver (drivers/net/irda/actisys.c) 
+/* Derived from linux IrDA driver (drivers/net/irda/actisys.c)
  * Drop me a mail for any kind of comment: maxx@spaceboyz.net */
 
-void init_act220(void) {
+void init_act220(void)
+{
 	int i;
 
 	/* DLAB 1 */
@@ -1256,8 +1229,7 @@ void init_act220(void) {
 
 	/* send RTS pulses until we reach 115200
 	 * i hope this is really the same for act220l/act220l+ */
-	for(i = 0; i < 3; i++)
-	{
+	for (i = 0; i < 3; i++) {
 		udelay(10);
 		/* set RTS low for 10 us */
 		soutp(UART_MCR, UART_MCR_DTR|UART_MCR_OUT2);
@@ -1265,7 +1237,7 @@ void init_act220(void) {
 		/* set RTS high for 10 us */
 		soutp(UART_MCR, UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2);
 	}
-	
+
 	/* back to normal operation */
 	udelay(1500); /* better safe than sorry ;) */
 
@@ -1273,8 +1245,8 @@ void init_act220(void) {
 	soutp(UART_LCR, UART_LCR_DLAB | UART_LCR_WLEN7);
 
 	/* Set divisor to 1 => 115200 Baud */
-	soutp(UART_DLM,0);
-	soutp(UART_DLL,1);
+	soutp(UART_DLM, 0);
+	soutp(UART_DLL, 1);
 
 	/* Set DLAB 0, 7 Bit */
 	/* The dongle doesn't seem to have any problems with operation
@@ -1305,9 +1277,9 @@ static int init_lirc_sir(void)
 int init_module(void)
 {
 	int retval;
-	
-	retval=init_chrdev();
-	if(retval < 0)
+
+	retval = init_chrdev();
+	if (retval < 0)
 		return retval;
 	retval = init_lirc_sir();
 	if (retval) {

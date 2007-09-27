@@ -1,28 +1,28 @@
-/*      $Id: kcompat.h,v 5.30 2007/01/02 21:45:08 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.31 2007/09/27 19:47:18 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 #define LIRC_THIS_MODULE(x) x,
 #else /* >= 2.6.16 */
 #define LIRC_THIS_MODULE(x)
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 #include <linux/device.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,18)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 #define LIRC_HAVE_DEVFS
 #define LIRC_HAVE_DEVFS_26
 #endif
 
 #define LIRC_HAVE_SYSFS
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 13)
 
 typedef struct class_simple lirc_class_t;
 
@@ -46,7 +46,7 @@ static inline void class_device_destroy(lirc_class_t *cls, dev_t devt)
 
 #else /* >= 2.6.13 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,15)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 
 #define lirc_class_device_create(cs, parent, dev, device, fmt, args...) \
 	class_device_create(cs, dev, device, fmt, ## args)
@@ -62,7 +62,7 @@ typedef struct class lirc_class_t;
 
 #endif
 
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,0)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #define LIRC_HAVE_DEVFS
 #define LIRC_HAVE_DEVFS_24
 #endif
@@ -74,7 +74,7 @@ typedef struct class lirc_class_t;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 3, 0)
 #include <linux/timer.h>
 #include <linux/interrupt.h>
-static inline void del_timer_sync(struct timer_list * timerlist)
+static inline void del_timer_sync(struct timer_list *timerlist)
 {
 	start_bh_atomic();
 	del_timer(timerlist);
@@ -86,30 +86,30 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #ifdef daemonize
 #undef daemonize
 #endif
-#define daemonize(name) do {                                           \
-                                                                       \
-	lock_kernel();                                                 \
-	                                                               \
-	exit_mm(current);                                              \
-	exit_files(current);                                           \
-	exit_fs(current);                                              \
-	current->session = 1;                                          \
-	current->pgrp = 1;                                             \
-	current->euid = 0;                                             \
-	current->tty = NULL;                                           \
-	sigfillset(&current->blocked);                                 \
-	                                                               \
-	strcpy(current->comm, name);                                   \
-	                                                               \
-	unlock_kernel();                                               \
-                                                                       \
+#define daemonize(name) do {		\
+					\
+	lock_kernel();			\
+					\
+	exit_mm(current);		\
+	exit_files(current);		\
+	exit_fs(current);		\
+	current->session = 1;		\
+	current->pgrp = 1;		\
+	current->euid = 0;		\
+	current->tty = NULL;		\
+	sigfillset(&current->blocked);	\
+					\
+	strcpy(current->comm, name);	\
+					\
+	unlock_kernel();		\
+					\
 } while (0)
 
 /* Not sure when this was introduced, sometime during 2.5.X */
 #define MODULE_PARM_int(x) MODULE_PARM(x, "i")
 #define MODULE_PARM_bool(x) MODULE_PARM(x, "i")
 #define MODULE_PARM_long(x) MODULE_PARM(x, "l")
-#define module_param(x,y,z) MODULE_PARM_##y(x)
+#define module_param(x, y, z) MODULE_PARM_##y(x)
 #else
 #include <linux/moduleparam.h>
 #endif /* Linux < 2.6.0 */
@@ -131,27 +131,27 @@ static inline void del_timer_sync(struct timer_list * timerlist)
 #endif /* DEVFS 2.4 */
 
 #ifndef LIRC_HAVE_SYSFS
-#define class_destroy(x) do { } while(0)
-#define class_create(x,y) NULL
-#define class_device_destroy(x,y) do { } while(0)
+#define class_destroy(x) do { } while (0)
+#define class_create(x, y) NULL
+#define class_device_destroy(x, y) do { } while (0)
 #define lirc_class_device_create(x, y, z, xx, yy, zz) 0
 #define IS_ERR(x) 0
-typedef struct class_simple 
+typedef struct class_simple
 {
 	int notused;
-} lirc_class_t;	
+} lirc_class_t;
 #endif /* No SYSFS */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 0)
 #define KERNEL_2_5
 
 /*
- * We still are using MOD_INC_USE_COUNT/MOD_DEC_USE_COUNT in the set_use_inc 
+ * We still are using MOD_INC_USE_COUNT/MOD_DEC_USE_COUNT in the set_use_inc
  * function of all modules for 2.4 kernel compatibility.
- * 
- * For 2.6 kernels reference counting is done in lirc_dev by 
+ *
+ * For 2.6 kernels reference counting is done in lirc_dev by
  * try_module_get()/module_put() because the old approach is racy.
- * 
+ *
  */
 #ifdef MOD_INC_USE_COUNT
 #undef MOD_INC_USE_COUNT
@@ -186,7 +186,7 @@ static inline void module_put(struct module *module)
 #endif
 
 #ifndef MODULE_PARM_DESC
-#define MODULE_PARM_DESC(x,y)
+#define MODULE_PARM_DESC(x, y)
 #endif
 
 #ifndef MODULE_ALIAS_CHARDEV_MAJOR
@@ -194,7 +194,7 @@ static inline void module_put(struct module *module)
 #endif
 
 #ifndef MODULE_DEVICE_TABLE
-#define MODULE_DEVICE_TABLE(x,y)
+#define MODULE_DEVICE_TABLE(x, y)
 #endif
 
 #include <linux/interrupt.h>
@@ -215,20 +215,23 @@ typedef void irqreturn_t;
 #endif
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 #if !defined(local_irq_save)
-#define local_irq_save(flags) do{ save_flags(flags);cli(); } while(0)
+#define local_irq_save(flags) do { save_flags(flags); cli(); } while (0)
 #endif
 #if !defined(local_irq_restore)
-#define local_irq_restore(flags) do{ restore_flags(flags); } while(0)
+#define local_irq_restore(flags) do { restore_flags(flags); } while (0)
+#endif
 #endif
 
-#if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE && LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
+#if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE \
+	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
 #include <linux/pci.h>
 static inline char *pci_name(struct pci_dev *pdev)
 {
 	return pdev->slot_name;
 }
-#endif // 2.4.0 <= kernel < 2.4.22
+#endif /* 2.4.0 <= kernel < 2.4.22 */
 
 /*************************** I2C specific *****************************/
 #include <linux/i2c.h>
@@ -277,7 +280,7 @@ static inline int usb_kill_urb(struct urb *urb)
 
 /* removed in 2.6.14 */
 #ifndef URB_ASYNC_UNLINK
-#define URB_ASYNC_UNLINK 0  
+#define URB_ASYNC_UNLINK 0
 #endif
 #endif
 
@@ -321,12 +324,9 @@ static inline int usb_kill_urb(struct urb *urb)
 
 /******************************* pm.h *********************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && \
+	LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 typedef u32 pm_message_t;
-#endif
-
 #endif
 
 #endif /* _KCOMPAT_H */
