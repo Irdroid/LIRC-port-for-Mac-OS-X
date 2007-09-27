@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.23 2007/09/27 19:47:23 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.24 2007/09/27 20:48:55 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -53,7 +53,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.23 $"
+#define DRIVER_VERSION	"$Revision: 1.24 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -87,7 +87,7 @@ MODULE_DEVICE_TABLE(usb, streamzap_table);
 #define STREAMZAP_RESOLUTION 256
 
 /* number of samples buffered */
-#define STREAMZAP_BUFFER_SIZE 64
+#define STREAMZAP_BUFFER_SIZE 128
 
 enum StreamzapDecoderState
 {
@@ -227,16 +227,17 @@ static void delay_timeout(unsigned long arg)
 
 	spin_lock_irqsave(&sz->timer_lock, flags);
 
-	if (!lirc_buffer_empty(&sz->delay_buf)) {
+	if (!lirc_buffer_empty(&sz->delay_buf) &&
+	    !lirc_buffer_full(&sz->lirc_buf)) {
 		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
 		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
 	}
-
 	if (!lirc_buffer_empty(&sz->delay_buf)) {
 		while (lirc_buffer_available(&sz->delay_buf) <
-		       STREAMZAP_BUFFER_SIZE/2) {
+		      STREAMZAP_BUFFER_SIZE/2 &&
+		      !lirc_buffer_full(&sz->lirc_buf)) {
 			lirc_buffer_read_1(&sz->delay_buf,
-					    (unsigned char *) &data);
+					   (unsigned char *) &data);
 			lirc_buffer_write_1(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		}
@@ -262,7 +263,12 @@ static inline void flush_delay_buffer(struct usb_streamzap *sz)
 	while (!lirc_buffer_empty(&sz->delay_buf)) {
 		empty = 0;
 		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
-		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
+		if (!lirc_buffer_full(&sz->lirc_buf)) {
+			lirc_buffer_write_1(&sz->lirc_buf,
+					    (unsigned char *) &data);
+		} else {
+			dprintk("buffer overflow\n", sz->plugin.minor);
+		}
 	}
 	if (!empty) wake_up(&sz->lirc_buf.wait_poll);
 }
@@ -276,9 +282,12 @@ static inline void push(struct usb_streamzap *sz, unsigned char *data)
 		lirc_t data;
 
 		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
-		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
-
-		dprintk("buffer overflow", sz->plugin.minor);
+		if (!lirc_buffer_full(&sz->lirc_buf)) {
+			lirc_buffer_write_1(&sz->lirc_buf,
+					    (unsigned char *) &data);
+		} else {
+			dprintk("buffer overflow", sz->plugin.minor);
+		}
 	}
 
 	lirc_buffer_write_1(&sz->delay_buf, data);
