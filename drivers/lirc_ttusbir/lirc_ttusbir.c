@@ -364,12 +364,10 @@ static void disconnect(struct usb_interface *intf)
 
 	DPRINTK("Module ttusbir disconnect\n");
 
-	lock_kernel();
 	ttusbir = (struct ttusbir_device *) usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
 	lirc_unregister_plugin(ttusbir->minor);
 	DPRINTK("unregistered\n");
-	unlock_kernel();
 
 	for (i = 0; i < num_urbs; i++) {
 		usb_kill_urb(ttusbir->urb[i]);
