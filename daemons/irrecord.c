@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.67 2007/09/29 11:43:57 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.68 2007/09/29 11:46:23 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1511,7 +1511,7 @@ int get_lengths(struct ir_remote *remote,int force)
 				/(count_spaces+1);
 				count_spaces++;
 			}
-			if(count>SAMPLES*MAX_SIGNALS)
+			if(count>SAMPLES*MAX_SIGNALS*2)
 			{
 				fprintf(stderr,"\n%s: could not find gap.\n",
 					progname);
