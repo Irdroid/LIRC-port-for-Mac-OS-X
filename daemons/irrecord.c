@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.66 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.67 2007/09/29 11:43:57 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -108,7 +108,7 @@ struct ir_ncode ncode;
 
 lirc_t signals[MAX_SIGNALS];
 
-#define AEPS 100
+#define AEPS (hw.resolution>100 ? hw.resolution:100)
 #define EPS 30
 
 /* some threshold values */
