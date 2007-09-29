@@ -14,6 +14,7 @@ of electronic devices such as TV boxes, HiFi sets, etc.
 \fBSEND_STOP\fR         - stop repeating \fICODE\fR
 \fBLIST\fR              - list configured remote items
 \fBSET_TRANSMITTERS\fR  - set transmitters \fINUM\fR [\fINUM\fR ...]
+\fBSIMULATE\fR          - simulate IR event
 .RE
 .fi
 
@@ -40,6 +41,10 @@ can be empty:
 .RE
 .fi
 
+.PP
+The \fBSIMULATE\fR command only works if it has been explicitly
+enabled in lircd.
+
 [EXAMPLES]
 .nf
 .RS 3
@@ -50,6 +55,7 @@ irsend SEND_START OnkyoAmpli VOL-DOWN ; sleep 3
 irsend SEND_STOP  OnkyoAmpli VOL-DOWN
 irsend SET_TRANSMITTERS 1
 irsend SET_TRANSMITTERS 1 3 4
+irsend SIMULATE "0000000000000476 00 OK TECHNISAT_ST3004S"
 .RE
 .fi
 [FILES]

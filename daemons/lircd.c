@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.73 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: lircd.c,v 5.74 2007/09/29 17:13:14 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
@@ -111,6 +112,7 @@ struct protocol_directive directives[] =
 	{"SEND_STOP",send_stop},
 	{"VERSION",version},
 	{"SET_TRANSMITTERS",set_transmitters},
+	{"SIMULATE",simulate},
 	{NULL,NULL}
 	/*
 	{"DEBUG",debug},
@@ -169,6 +171,7 @@ int	peern = 0;
 
 int debug=0;
 int daemonized=0;
+int allow_simulate=0;
 
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
@@ -1319,6 +1322,68 @@ string_error:
 	return(send_error(fd,message,"no arguments given\n"));
 }
 
+int simulate(int fd,char *message,char *arguments)
+{
+	int i;
+	char *sim, *s, *space;
+	
+	if(!allow_simulate)
+	{
+		return send_error(fd, message,
+				  "SIMULATE command is disabled\n");
+	}
+	if(arguments==NULL)
+	{
+		return send_error(fd, message, "no arguments given\n");
+	}
+	
+	s=arguments;
+	for(i=0; i<16; i++, s++)
+	{
+		if(!isxdigit(*s)) goto simulate_invalid_event;
+	}
+	if(*s != ' ')
+	{
+		goto simulate_invalid_event;
+	}
+	s++;
+	if(*s == ' ')
+	{
+		goto simulate_invalid_event;
+	}
+	for(; *s != ' '; s++)
+	{
+		if(!isxdigit(*s)) goto simulate_invalid_event;
+	}
+	s++;
+	space = strchr(s, ' ');
+	if(space == NULL || space == s)
+	{
+		goto simulate_invalid_event;
+	}
+	s = space + 1;
+	space = strchr(s, ' ');
+	if(strlen(s) == 0 || space != NULL)
+	{
+		goto simulate_invalid_event;
+	}
+	
+	sim = malloc(strlen(arguments) + 1 + 1);
+	if(sim == NULL)
+	{
+		return send_error(fd, message, "out of memory\n");
+	}
+	strcpy(sim, arguments);
+	strcat(sim, "\n");
+	broadcast_message(sim);
+	free(sim);
+	
+	return(send_success(fd,message));
+ simulate_invalid_event:
+	return send_error(fd, message, "invalid event\n");
+	
+}
+
 int send_once(int fd,char *message,char *arguments)
 {
 	return(send_core(fd,message,arguments,1));
@@ -1977,9 +2042,10 @@ int main(int argc,char **argv)
 			{"debug",optional_argument,NULL,'D'},
 #                       endif
 			{"release",optional_argument,NULL,'r'},
+			{"allow-simulate",no_argument,NULL,'a'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::"
+		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::a"
 #                               ifndef USE_SYSLOG
 				"L:"
 #                               endif
@@ -2010,6 +2076,7 @@ int main(int argc,char **argv)
 			printf("\t -D[debug_level] --debug[=debug_level]\n");
 #                       endif
 			printf("\t -r --release[=suffix]\t\tauto-generate release events\n");
+			printf("\t -a --allow-simulate\t\taccept SIMULATE command\n");
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s %s\n",progname,VERSION);
@@ -2092,6 +2159,9 @@ int main(int argc,char **argv)
 			{
 				set_release_suffix(LIRC_RELEASE_SUFFIX);
 			}
+			break;
+		case 'a':
+			allow_simulate=1;
 			break;
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);

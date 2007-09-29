@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.15 2007/05/06 09:46:59 lirc Exp $      */
+/*      $Id: lircd.h,v 5.16 2007/09/29 17:13:14 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -68,6 +68,7 @@ int send_remote(int fd,char *message,struct ir_remote *remote);
 int send_name(int fd,char *message,struct ir_ncode *code);
 int list(int fd,char *message,char *arguments);
 int set_transmitters(int fd, char *message, char *arguments);
+int simulate(int fd, char *message, char *arguments);
 int send_once(int fd,char *message,char *arguments);
 int send_start(int fd,char *message,char *arguments);
 int send_stop(int fd,char *message,char *arguments);

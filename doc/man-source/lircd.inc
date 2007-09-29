@@ -50,6 +50,13 @@ for each button press. lircd will append the given suffix to the button
 name for each release event. If no suffix is given the default suffix
 is '_UP'.
 
+The --allow-simulate option will enable the SIMULATE command which can
+be issued using irsend(1). This will allow simulating arbitrary IR events
+from the command line. Use this option with caution because it will give all
+users with access to the lircd socket wide control over you system.
+E.g. if you have configured your system to shut down by a button press
+on your remote control, everybody will be able to shut down
+your system from the command line.
 
 [FILES]
 

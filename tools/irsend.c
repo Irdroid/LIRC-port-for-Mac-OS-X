@@ -1,4 +1,4 @@
-/* 	$Id: irsend.c,v 5.4 2007/04/06 19:31:45 lirc Exp $	 */
+/* 	$Id: irsend.c,v 5.5 2007/09/29 17:13:14 lirc Exp $	 */
 
 /*
   
@@ -430,6 +430,29 @@ int main(int argc,char **argv)
 			}
 		}
 		strcat(buffer,"\n");
+		if(send_packet(fd,buffer)==-1)
+		{
+			exit(EXIT_FAILURE);
+		}
+	}
+	if(strcasecmp(directive,"simulate")==0)
+	{
+		code=argv[optind++];
+		if(optind != argc)
+		{
+			fprintf(stderr, "%s: invalid argument count\n",
+				progname);
+			exit(EXIT_FAILURE);
+		}
+		if(strlen(directive)+strlen(code)+2<PACKET_SIZE)
+		{
+			sprintf(buffer,"%s %s\n",directive,code);
+		}
+		else
+		{
+			fprintf(stderr,"%s: input too long\n",progname);
+			exit(EXIT_FAILURE);
+		}
 		if(send_packet(fd,buffer)==-1)
 		{
 			exit(EXIT_FAILURE);
