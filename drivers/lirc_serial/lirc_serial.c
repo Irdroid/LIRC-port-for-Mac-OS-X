@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.84 2007/09/27 19:47:23 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.85 2007/09/29 15:09:07 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -119,7 +119,7 @@
 #warning "Software carrier only affects transmitting"
 #endif
 
-#if defined(rdtsc)
+#if defined(rdtscl)
 
 #define USE_RDTSC
 #warning "Note: using rdtsc instruction"
