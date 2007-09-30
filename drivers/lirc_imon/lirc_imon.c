@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.20 2007/09/27 19:47:21 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.21 2007/09/30 09:58:45 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -89,7 +89,7 @@
 
 
 /* ------------------------------------------------------------
- *                     P R O T O T Y P E S
+ *		     P R O T O T Y P E S
  * ------------------------------------------------------------
  */
 
@@ -128,7 +128,7 @@ static int __init imon_init(void);
 static void __exit imon_exit(void);
 
 /* ------------------------------------------------------------
- *                     G L O B A L S
+ *		     G L O B A L S
  * ------------------------------------------------------------
  */
 
@@ -252,7 +252,7 @@ extern devfs_handle_t usb_devfs_handle;
 #endif
 
 /* ------------------------------------------------------------
- *                     M O D U L E   C O D E
+ *		     M O D U L E   C O D E
  * ------------------------------------------------------------
  */
 
@@ -1073,66 +1073,86 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	if (!context) {
 		err("%s: kmalloc failed for context", __FUNCTION__);
 		alloc_status = 1;
-	} else if (!(plugin = kmalloc(sizeof(struct lirc_plugin),
-				      GFP_KERNEL))) {
+		goto alloc_status_switch;
+	}
+	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
+	if (!plugin) {
 		err("%s: kmalloc failed for lirc_plugin", __FUNCTION__);
 		alloc_status = 2;
-	} else if (!(rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL))) {
+		goto alloc_status_switch;
+	}
+	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
+	if (!rbuf) {
 		err("%s: kmalloc failed for lirc_buffer", __FUNCTION__);
 		alloc_status = 3;
-	} else if (lirc_buffer_init(rbuf, BUF_CHUNK_SIZE, BUF_SIZE)) {
+		goto alloc_status_switch;
+	}
+	if (lirc_buffer_init(rbuf, BUF_CHUNK_SIZE, BUF_SIZE)) {
 		err("%s: lirc_buffer_init failed", __FUNCTION__);
 		alloc_status = 4;
+		goto alloc_status_switch;
+	}
 #ifdef KERNEL_2_5
-	} else if (!(rx_urb = usb_alloc_urb(0, GFP_KERNEL))) {
+	rx_urb = usb_alloc_urb(0, GFP_KERNEL);
 #else
-	} else if (!(rx_urb = usb_alloc_urb(0))) {
+	rx_urb = usb_alloc_urb(0);
 #endif
+	if (!rx_urb) {
 		err("%s: usb_alloc_urb failed for IR urb", __FUNCTION__);
 		alloc_status = 5;
-#ifdef KERNEL_2_5
-	} else if (vfd_ep_found && !(tx_urb = usb_alloc_urb(0, GFP_KERNEL))) {
-#else
-	} else if (vfd_ep_found && !(tx_urb = usb_alloc_urb(0))) {
-#endif
-		err("%s: usb_alloc_urb failed for VFD urb", __FUNCTION__);
-		alloc_status = 6;
-	} else {
-		/* clear all members of imon_context and lirc_plugin */
-		memset(context, 0, sizeof(struct imon_context));
-		init_MUTEX(&context->sem);
-		context->vfd_proto_6p = vfd_proto_6p;
-		context->ir_onboard_decode = ir_onboard_decode;
-
-		memset(plugin, 0, sizeof(struct lirc_plugin));
-
-		strcpy(plugin->name, MOD_NAME);
-		plugin->minor = -1;
-		plugin->code_length = (ir_onboard_decode) ?
-			32 : sizeof(lirc_t) * 8;
-		plugin->sample_rate = 0;
-		plugin->features = (ir_onboard_decode) ?
-			LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
-		plugin->data = context;
-		plugin->rbuf = rbuf;
-		plugin->set_use_inc = ir_open;
-		plugin->set_use_dec = ir_close;
-#ifdef LIRC_HAVE_SYSFS
-		plugin->dev = &dev->dev;
-#endif
-		plugin->owner = THIS_MODULE;
-
-		LOCK_CONTEXT;
-
-		lirc_minor = lirc_register_plugin(plugin);
-		if (lirc_minor) {
-			err("%s: lirc_register_plugin failed", __FUNCTION__);
-			alloc_status = 7;
-			UNLOCK_CONTEXT;
-		} else
-			info("%s: Registered iMON plugin(minor:%d)",
-			     __FUNCTION__, lirc_minor);
+		goto alloc_status_switch;
 	}
+	if (vfd_ep_found) {
+#ifdef KERNEL_2_5
+		tx_urb = usb_alloc_urb(0, GFP_KERNEL);
+#else
+		tx_urb = usb_alloc_urb(0);
+#endif
+		if (!tx_urb) {
+			err("%s: usb_alloc_urb failed for VFD urb",
+			    __FUNCTION__);
+			alloc_status = 6;
+			goto alloc_status_switch;
+		}
+	}
+
+	/* clear all members of imon_context and lirc_plugin */
+	memset(context, 0, sizeof(struct imon_context));
+	init_MUTEX(&context->sem);
+	context->vfd_proto_6p = vfd_proto_6p;
+	context->ir_onboard_decode = ir_onboard_decode;
+
+	memset(plugin, 0, sizeof(struct lirc_plugin));
+
+	strcpy(plugin->name, MOD_NAME);
+	plugin->minor = -1;
+	plugin->code_length = (ir_onboard_decode) ?
+		32 : sizeof(lirc_t) * 8;
+	plugin->sample_rate = 0;
+	plugin->features = (ir_onboard_decode) ?
+		LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
+	plugin->data = context;
+	plugin->rbuf = rbuf;
+	plugin->set_use_inc = ir_open;
+	plugin->set_use_dec = ir_close;
+#ifdef LIRC_HAVE_SYSFS
+	plugin->dev = &dev->dev;
+#endif
+	plugin->owner = THIS_MODULE;
+
+	LOCK_CONTEXT;
+
+	lirc_minor = lirc_register_plugin(plugin);
+	if (lirc_minor < 0) {
+		err("%s: lirc_register_plugin failed", __FUNCTION__);
+		alloc_status = 7;
+		UNLOCK_CONTEXT;
+		goto alloc_status_switch;
+	} else
+		info("%s: Registered iMON plugin(minor:%d)",
+		     __FUNCTION__, lirc_minor);
+
+alloc_status_switch:
 
 	switch (alloc_status) {
 	case 7:
@@ -1151,7 +1171,6 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		context = NULL;
 	case 1:
 		retval = -ENOMEM;
-		goto exit;
 	}
 
 	/* Needed while unregistering! */
@@ -1211,7 +1230,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			__FUNCTION__, dev->bus->busnum, dev->devnum);
 
 	UNLOCK_CONTEXT;
-exit:
+
+ exit:
 #ifdef KERNEL_2_5
 	return retval;
 #else

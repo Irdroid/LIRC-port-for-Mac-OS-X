@@ -654,7 +654,7 @@ static void send_it87(unsigned long len, unsigned long stime,
 			while ((inb(io + IT87_CIR_TSR) &
 				IT87_CIR_TSR_TXFBC) >= IT87_CIR_FIFO_SIZE)
 				;
-			
+
 			spin_lock_irqsave(&hardware_lock, hw_flags);
 			outb(byte_out, io + IT87_CIR_DR);
 			spin_unlock_irqrestore(&hardware_lock, hw_flags);

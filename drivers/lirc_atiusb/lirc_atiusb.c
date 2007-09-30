@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.64 2007/09/27 19:47:19 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.65 2007/09/30 09:58:44 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.64 $"
+#define DRIVER_VERSION		"$Revision: 1.65 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -854,31 +854,35 @@ static struct in_endpt *new_in_endpt(struct irctl *ir,
 
 	mem_failure = 0;
 	iep = kmalloc(sizeof(*iep), GFP_KERNEL);
-	if (!iep)
+	if (!iep) {
 		mem_failure = 1;
-	else {
-		memset(iep, 0, sizeof(*iep));
-		iep->ir = ir;
-		iep->ep = ep;
-		iep->len = len;
+		goto new_in_endpt_failure_check;
+	}
+	memset(iep, 0, sizeof(*iep));
+	iep->ir = ir;
+	iep->ep = ep;
+	iep->len = len;
 
 #ifdef KERNEL_2_5
-		iep->buf = usb_buffer_alloc(dev, len, GFP_ATOMIC, &iep->dma);
+	iep->buf = usb_buffer_alloc(dev, len, GFP_ATOMIC, &iep->dma);
 #else
-		iep->buf = kmalloc(len, GFP_KERNEL);
+	iep->buf = kmalloc(len, GFP_KERNEL);
 #endif
-		if (!iep->buf)
-			mem_failure = 2;
-		else {
-#ifdef KERNEL_2_5
-			iep->urb = usb_alloc_urb(0, GFP_KERNEL);
-#else
-			iep->urb = usb_alloc_urb(0);
-#endif
-			if (!iep->urb)
-				mem_failure = 3;
-		}
+	if (!iep->buf) {
+		mem_failure = 2;
+		goto new_in_endpt_failure_check;
 	}
+
+#ifdef KERNEL_2_5
+	iep->urb = usb_alloc_urb(0, GFP_KERNEL);
+#else
+	iep->urb = usb_alloc_urb(0);
+#endif
+	if (!iep->urb)
+		mem_failure = 3;
+
+new_in_endpt_failure_check:
+
 	if (mem_failure) {
 		free_in_endpt(iep, mem_failure);
 		printk(DRIVER_NAME "[%d]: ep=0x%x out of memory (code=%d)\n",
@@ -1071,53 +1075,62 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kmalloc(sizeof(*ir), GFP_KERNEL);
-	if (!ir)
+	if (!ir) {
 		mem_failure = 1;
-	else {
-		/* at this stage we cannot use the macro [DE]CODE_LENGTH: ir
-		 * is not yet setup */
-		const int dclen = decode_length[type];
-		memset(ir, 0, sizeof(*ir));
-		/* add this infrared remote struct to remote_list, keeping track
-		 * of the number of drivers registered. */
-		dprintk(DRIVER_NAME "[%d]: adding remote to list\n", devnum);
-		list_add_tail(&ir->remote_list_link, &remote_list);
-		ir->dev_refcount = 1;
-
-		plugin = kmalloc(sizeof(*plugin), GFP_KERNEL);
-		if (!plugin)
-			mem_failure = 2;
-		else {
-			rbuf = kmalloc(sizeof(*rbuf), GFP_KERNEL);
-			if (!rbuf)
-				mem_failure = 3;
-			else if (lirc_buffer_init(rbuf, dclen, 1))
-				mem_failure = 4;
-			else {
-				memset(plugin, 0, sizeof(*plugin));
-				strcpy(plugin->name, DRIVER_NAME " ");
-				plugin->minor = -1;
-				plugin->code_length = dclen * 8;
-				plugin->features = LIRC_CAN_REC_LIRCCODE;
-				plugin->data = ir;
-				plugin->rbuf = rbuf;
-				plugin->set_use_inc = &set_use_inc;
-				plugin->set_use_dec = &set_use_dec;
-#ifdef LIRC_HAVE_SYSFS
-				plugin->dev = &dev->dev;
-#endif
-				plugin->owner = THIS_MODULE;
-				ir->usbdev = dev;
-				ir->p = plugin;
-				ir->remote_type = type;
-				ir->devnum = devnum;
-				ir->mode = RW2_NULL_MODE;
-				
-				init_MUTEX(&ir->lock);
-				INIT_LIST_HEAD(&ir->iep_listhead);
-			}
-		}
+		goto new_irctl_failure_check;
 	}
+
+	/* at this stage we cannot use the macro [DE]CODE_LENGTH: ir
+	 * is not yet setup */
+	const int dclen = decode_length[type];
+	memset(ir, 0, sizeof(*ir));
+	/* add this infrared remote struct to remote_list, keeping track
+	 * of the number of drivers registered. */
+	dprintk(DRIVER_NAME "[%d]: adding remote to list\n", devnum);
+	list_add_tail(&ir->remote_list_link, &remote_list);
+	ir->dev_refcount = 1;
+
+	plugin = kmalloc(sizeof(*plugin), GFP_KERNEL);
+	if (!plugin) {
+		mem_failure = 2;
+		goto new_irctl_failure_check;
+	}
+	
+	memset(plugin, 0, sizeof(*plugin));
+	ir->p = plugin;
+	plugin->rbuf = kmalloc(sizeof(*(plugin->rbuf)), GFP_KERNEL);
+	if (!plugin->rbuf) {
+		mem_failure = 3;
+		goto new_irctl_failure_check;
+	}
+
+	if (lirc_buffer_init(plugin->rbuf, dclen, 1)) {
+		mem_failure = 4;
+		goto new_irctl_failure_check;
+	}
+
+	strcpy(plugin->name, DRIVER_NAME " ");
+	plugin->minor = -1;
+	plugin->code_length = dclen * 8;
+	plugin->features = LIRC_CAN_REC_LIRCCODE;
+	plugin->data = ir;
+	plugin->rbuf = rbuf;
+	plugin->set_use_inc = &set_use_inc;
+	plugin->set_use_dec = &set_use_dec;
+#ifdef LIRC_HAVE_SYSFS
+	plugin->dev = &dev->dev;
+#endif
+	plugin->owner = THIS_MODULE;
+	ir->usbdev = dev;
+	ir->remote_type = type;
+	ir->devnum = devnum;
+	ir->mode = RW2_NULL_MODE;
+
+	init_MUTEX(&ir->lock);
+	INIT_LIST_HEAD(&ir->iep_listhead);
+
+new_irctl_failure_check:
+
 	if (mem_failure) {
 		free_irctl(ir, mem_failure);
 		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n",
@@ -1342,7 +1355,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.64 2007/09/27 19:47:19 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.65 2007/09/30 09:58:44 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

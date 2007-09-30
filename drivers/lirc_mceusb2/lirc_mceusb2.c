@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.35 $"
+#define DRIVER_VERSION	"$Revision: 1.36 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
@@ -129,7 +129,7 @@ static int debug;
 #define VENDOR_LG		0x043e
 #define VENDOR_MICROSOFT	0x045e
 #define VENDOR_FORMOSA		0x147a
-#define VENDOR_FINTEK           0x1934
+#define VENDOR_FINTEK		0x1934
 
 static struct usb_device_id usb_remote_table [] = {
 	/* Philips eHome Infrared Transciever */
@@ -844,62 +844,77 @@ static int usb_remote_probe(struct usb_interface *intf,
 	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kmalloc(sizeof(struct irctl), GFP_KERNEL);
-	if (!ir)
+	if (!ir) {
 		mem_failure = 1;
-	else {
-		memset(ir, 0, sizeof(struct irctl));
-
-		if (!(plugin = kmalloc(sizeof(struct lirc_plugin),
-				       GFP_KERNEL)))
-			mem_failure = 2;
-		else if (!(rbuf = kmalloc(sizeof(struct lirc_buffer),
-					  GFP_KERNEL)))
-			mem_failure = 3;
-		else if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE))
-			mem_failure = 4;
-		else if (!(ir->buf_in = usb_buffer_alloc(dev, maxp,
-							 GFP_ATOMIC,
-							 &ir->dma_in)))
-			mem_failure = 5;
-		else if (!(ir->urb_in = usb_alloc_urb(0, GFP_KERNEL)))
-			mem_failure = 7;
-		else {
-
-			memset(plugin, 0, sizeof(struct lirc_plugin));
-
-			strcpy(plugin->name, DRIVER_NAME " ");
-			plugin->minor = -1;
-			plugin->features = LIRC_CAN_SEND_PULSE |
-				LIRC_CAN_SET_TRANSMITTER_MASK |
-				LIRC_CAN_REC_MODE2 |
-				LIRC_CAN_SET_SEND_CARRIER;
-			plugin->data = ir;
-			plugin->rbuf = rbuf;
-			plugin->set_use_inc = &set_use_inc;
-			plugin->set_use_dec = &set_use_dec;
-			plugin->code_length = sizeof(lirc_t) * 8;
-			plugin->ioctl = lirc_ioctl;
-			plugin->fops  = &lirc_fops;
-			plugin->dev   = &dev->dev;
-			plugin->owner = THIS_MODULE;
-
-			init_MUTEX(&ir->lock);
-			init_waitqueue_head(&ir->wait_out);
-
-			minor = lirc_register_plugin(plugin);
-			if (minor < 0)
-				mem_failure = 9;
-		}
+		goto mem_failure_switch;
 	}
+
+	memset(ir, 0, sizeof(struct irctl));
+
+	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
+	if (!plugin) {
+		mem_failure = 2;
+		goto mem_failure_switch;
+	}
+
+	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
+	if (!rbuf) {
+		mem_failure = 3;
+		goto mem_failure_switch;
+	}
+
+	if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE)) {
+		mem_failure = 4;
+		goto mem_failure_switch;
+	}
+
+	ir->buf_in = usb_buffer_alloc(dev, maxp, GFP_ATOMIC, &ir->dma_in);
+	if (!ir->buf_in) {
+		mem_failure = 5;
+		goto mem_failure_switch;
+	}
+
+	ir->urb_in = usb_alloc_urb(0, GFP_KERNEL);
+	if (!ir->urb_in) {
+		mem_failure = 7;
+		goto mem_failure_switch;
+	}
+
+	memset(plugin, 0, sizeof(struct lirc_plugin));
+
+	strcpy(plugin->name, DRIVER_NAME " ");
+	plugin->minor = -1;
+	plugin->features = LIRC_CAN_SEND_PULSE |
+		LIRC_CAN_SET_TRANSMITTER_MASK |
+		LIRC_CAN_REC_MODE2 |
+		LIRC_CAN_SET_SEND_CARRIER;
+	plugin->data = ir;
+	plugin->rbuf = rbuf;
+	plugin->set_use_inc = &set_use_inc;
+	plugin->set_use_dec = &set_use_dec;
+	plugin->code_length = sizeof(lirc_t) * 8;
+	plugin->ioctl = lirc_ioctl;
+	plugin->fops  = &lirc_fops;
+	plugin->dev   = &dev->dev;
+	plugin->owner = THIS_MODULE;
+
+	init_MUTEX(&ir->lock);
+	init_waitqueue_head(&ir->wait_out);
+
+	minor = lirc_register_plugin(plugin);
+	if (minor < 0)
+		mem_failure = 9;
+
+mem_failure_switch:
 
 	/* free allocated memory incase of failure */
 	switch (mem_failure) {
 	case 9:
-		lirc_buffer_free(rbuf);
-	case 7:
 		usb_free_urb(ir->urb_in);
-	case 5:
+	case 7:
 		usb_buffer_free(dev, maxp, ir->buf_in, ir->dma_in);
+	case 5:
+		lirc_buffer_free(rbuf);
 	case 4:
 		kfree(rbuf);
 	case 3:

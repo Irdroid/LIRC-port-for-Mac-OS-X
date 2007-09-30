@@ -471,61 +471,69 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kmalloc(sizeof(struct irctl), GFP_KERNEL);
-	if (!ir)
+	if (!ir) {
 		mem_failure = 1;
-	else {
-		memset(ir, 0, sizeof(struct irctl));
-
-		plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
-		if (!plugin)
-			mem_failure = 2;
-		else {
-			rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
-			
-			if (!rbuf)
-				mem_failure = 3;
-			else if (lirc_buffer_init(rbuf, bytes_in_key,
-					DEVICE_BUFLEN+ADDITIONAL_LIRC_BYTES))
-				mem_failure = 4;
-			else {
-#if defined(KERNEL_2_5)
-				ir->buf_in = usb_buffer_alloc(dev,
-							      DEVICE_BUFLEN+DEVICE_HEADERLEN,
-							      GFP_ATOMIC, &ir->dma_in);
-#else
-				ir->buf_in = kmalloc(DEVICE_BUFLEN+DEVICE_HEADERLEN,
-						     GFP_KERNEL);
-#endif
-				if (!ir->buf_in)
-					mem_failure = 5;
-				else {
-					memset(plugin, 0, sizeof(struct lirc_plugin));
-					
-					strcpy(plugin->name, DRIVER_NAME " ");
-					plugin->minor = -1;
-					plugin->code_length = bytes_in_key*8; /* in bits */
-					plugin->features = LIRC_CAN_REC_MODE2;
-					plugin->data = ir;
-					plugin->rbuf = rbuf;
-					plugin->set_use_inc = &set_use_inc;
-					plugin->set_use_dec = &set_use_dec;
-					plugin->sample_rate = SAMPLE_RATE;    /* per second */
-					plugin->add_to_buf = &usb_remote_poll;
-#ifdef LIRC_HAVE_SYSFS
-					plugin->dev = &dev->dev;
-#endif
-					plugin->owner = THIS_MODULE;
-					
-					init_MUTEX(&ir->lock);
-					init_waitqueue_head(&ir->wait_out);
-					
-					minor = lirc_register_plugin(plugin);
-					if (minor < 0)
-						mem_failure = 9;
-				}
-			}
-		}
+		goto mem_failure_switch;
 	}
+
+	memset(ir, 0, sizeof(struct irctl));
+
+	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
+	if (!plugin) {
+		mem_failure = 2;
+		goto mem_failure_switch;
+	}
+
+	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
+	if (!rbuf) {
+		mem_failure = 3;
+		goto mem_failure_switch;
+	}
+
+	if (lirc_buffer_init(rbuf, bytes_in_key,
+			DEVICE_BUFLEN+ADDITIONAL_LIRC_BYTES)) {
+		mem_failure = 4;
+		goto mem_failure_switch;
+	}
+
+#if defined(KERNEL_2_5)
+	ir->buf_in = usb_buffer_alloc(dev,
+			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
+			      GFP_ATOMIC, &ir->dma_in);
+#else
+	ir->buf_in = kmalloc(DEVICE_BUFLEN+DEVICE_HEADERLEN,
+			     GFP_KERNEL);
+#endif
+	if (!ir->buf_in) {
+		mem_failure = 5;
+		goto mem_failure_switch;
+	}
+
+	memset(plugin, 0, sizeof(struct lirc_plugin));
+
+	strcpy(plugin->name, DRIVER_NAME " ");
+	plugin->minor = -1;
+	plugin->code_length = bytes_in_key*8; /* in bits */
+	plugin->features = LIRC_CAN_REC_MODE2;
+	plugin->data = ir; 
+	plugin->rbuf = rbuf;
+	plugin->set_use_inc = &set_use_inc;
+	plugin->set_use_dec = &set_use_dec;
+	plugin->sample_rate = SAMPLE_RATE;    /* per second */
+	plugin->add_to_buf = &usb_remote_poll;
+#ifdef LIRC_HAVE_SYSFS
+	plugin->dev = &dev->dev;
+#endif  
+	plugin->owner = THIS_MODULE;
+
+	init_MUTEX(&ir->lock);
+	init_waitqueue_head(&ir->wait_out);
+
+	minor = lirc_register_plugin(plugin);
+	if (minor < 0)
+		mem_failure = 9;
+
+mem_failure_switch:
 
 	/* free allocated memory in case of failure */
 	switch (mem_failure) {
