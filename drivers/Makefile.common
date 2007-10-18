@@ -1,4 +1,4 @@
-# $Id: Makefile.common,v 5.5 2007/07/22 07:30:26 lirc Exp $
+# $Id: Makefile.common,v 5.6 2007/10/18 19:04:36 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
@@ -14,9 +14,9 @@ LIRC_EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS) \
 		-I$(KERNEL_LOCATION)/drivers/media/video/
 export LIRC_EXTRA_CFLAGS KERNEL_LOCATION module_DATA
 
-$(module_DATA): $(automake_dummy_SOURCES) $(top_srcdir)/config.h ../lirc.h
+$(module_DATA): $(automake_dummy_SOURCES) $(top_builddir)/config.h ../lirc.h
 	mv Makefile Makefile.automake
-	cp ../Makefile.kernel Makefile
+	cp $(srcdir)/../Makefile.kernel Makefile
 	$(MAKE) -C $(KERNEL_LOCATION) SUBDIRS=$(LIRC_DEVDIR) modules \
 		KBUILD_VERBOSE=$(KBUILD_VERBOSE)
 	mv Makefile.automake Makefile
