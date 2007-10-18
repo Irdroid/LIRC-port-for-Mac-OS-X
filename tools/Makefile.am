@@ -1,6 +1,8 @@
-## $Id: Makefile.am,v 5.14 2006/05/06 09:40:07 lirc Exp $
+## $Id: Makefile.am,v 5.15 2007/10/18 18:55:38 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
+
+INCLUDES = -I$(top_srcdir)
 
 EXTRA_PROGRAMS = smode2 xmode2 irxevent
 bin_PROGRAMS = irw irpty irexec ircat mode2 irsend \

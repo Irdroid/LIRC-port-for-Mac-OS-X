@@ -1,9 +1,11 @@
-## $Id: Makefile.am,v 5.54 2007/07/15 07:26:39 lirc Exp $
+## $Id: Makefile.am,v 5.55 2007/10/18 18:55:38 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
 ## these are used by programs in the tools directory, but not by
 ## programs in this directory.  So we must make sure they get distributed
+
+INCLUDES = -I$(top_srcdir)
 
 EXTRA_DIST = dump_config.c dump_config.h
 
