@@ -195,11 +195,13 @@ int iguana_init()
 		}
 		else if (child == 0)
 		{
+			close(recv_pipe[0]);
 			recv_loop(recv_pipe[1]);
-			exit(0);
+			_exit(0);
 		}
 		else
 		{
+			close(recv_pipe[1]);
 			sendConn = iguanaConnect(hw.device);
 			if (sendConn == -1)
 				logprintf(LOG_ERR, "couldn't open connection to iguanaIR daemon: %s", strerror(errno));
@@ -229,6 +231,9 @@ int iguana_deinit()
 		retval = 0;
 		child = 0;
 	}
+
+	/* close hw.fd since otherwise we leak open files */
+	close(hw.fd);
 
 	return retval;
 }
