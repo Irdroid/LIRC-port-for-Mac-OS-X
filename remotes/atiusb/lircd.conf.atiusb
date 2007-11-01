@@ -1697,8 +1697,6 @@ begin remote
 
 end remote
 
-# Please make this file available to others
-# by sending it to <lirc@bartelmus.de>
 #
 # this config file was automatically generated
 # using lirc-0.8.2-CVS(atilibusb) on Fri Jun  8 13:19:29 2007
@@ -1783,8 +1781,6 @@ begin remote
 end remote
 
 
-# Please make this file available to others
-# by sending it to <lirc@bartelmus.de>
 #
 # this config file was automatically generated
 # using lirc-0.8.2(default) on Sun Aug 12 02:13:30 2007
@@ -1936,6 +1932,73 @@ begin remote
           clear                    0x85B0
           enter                    0x0B36
           raute                    0x8DB8
+      end codes
+
+end remote
+
+
+#
+# this config file was automatically generated
+# using lirc-0.8.1(default) on Sun Jun 17 20:19:04 2007
+#
+# contributed by 
+#
+# brand: Jasco
+# model no. of remote control: 97685T
+# devices being controlled by this remote: USB Wireless Reciever Model 97685R  -  (lirc_atiusb)
+# -> Not Infrared <-
+
+begin remote
+
+  name  Jasco_97685T
+  bits           24
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   16
+  pre_data       0x20EE
+  gap          203971
+  toggle_bit      0
+
+
+      begin codes
+          last                     0x11F20D
+          chan+                    0x61400F
+          chan-                    0xE1C00F
+          vol-                     0x01E00F
+          vol+                     0x81600F
+          mute                     0xC1A00F
+          1                        0xA1820D
+          2                        0x61420D
+          3                        0xE1C20D
+          4                        0x41220D
+          5                        0xC1A20D
+          6                        0x81620D
+          7                        0x01E20D
+          8                        0x31120D
+          9                        0xB1920D
+          0                        0x21020D
+          enter                    0x71520D
+          A-B                      0xD1BA05
+          A                        0x513A05
+          B                        0xF1D807
+          C                        0xF1D609
+          D                        0xF1D40B
+          menu                     0xD1B609
+          exit                     0xE1C906
+          up                       0xF1D50A
+          down                     0xF1D30C
+          left                     0xF1D20D
+          right                    0xF1D10E
+          ok                       0x71520D
+          rew                      0x513807
+          play                     0xD1B00F
+          ff                       0xD1B807
+          pause                    0x91720D
+          stop                     0x91700F
+          rec                      0x11FF00
       end codes
 
 end remote
