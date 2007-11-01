@@ -29,6 +29,8 @@ done
 cat << HWDB_HEADER > "${HWDB}"
 # LIRC - Hardware DataBase
 #
+# THIS IS A GENERATED FILE. DO NOT EDIT.
+#
 # This file lists all the remote controls supported by LIRC
 # in a parseable form.
 #

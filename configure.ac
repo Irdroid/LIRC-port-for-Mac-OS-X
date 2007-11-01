@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.3 2007/10/27 15:35:29 lirc Exp $
+dnl $Id: configure.ac,v 1.4 2007/11/01 09:23:58 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -159,7 +159,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev) \
 	(lirc_dev lirc_atiusb) \
 	(lirc_dev lirc_bt829) \
-	(lirc_dev lirc_cmdir) \
+	(lirc_dev commandir lirc_cmdir) \
 	(lirc_dev lirc_gpio) \
 	(lirc_dev lirc_i2c) \
 	(lirc_dev lirc_igorplugusb) \
@@ -528,7 +528,7 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	lirc_dev-lirc_atiusb)
 		;;
-	lirc_dev-lirc_cmdir)
+	lirc_dev-commandir-lirc_cmdir)
 		;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
@@ -777,7 +777,7 @@ if test "$driver" = "chronos"; then
 fi
 
 if test "$driver" = "cmdir"; then
-  lirc_driver="lirc_dev lirc_cmdir"
+  lirc_driver="lirc_dev commandir lirc_cmdir"
 fi
 
 if test "$driver" = "com1"; then
@@ -1355,7 +1355,6 @@ elif test "$lirc_driver" = "all"; then
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
-	lirc_ttusbir \
 	lirc_imon \
 	lirc_it87 \
 	lirc_mceusb \
@@ -1364,7 +1363,8 @@ elif test "$lirc_driver" = "all"; then
 	lirc_sasem \
 	lirc_serial \
 	lirc_sir \
-	lirc_streamzap"
+	lirc_streamzap \
+	lirc_ttusbir"
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
   :
@@ -1540,6 +1540,10 @@ AC_SUBST(irtty)
 AC_SUBST(lircd_conf)
 AC_SUBST(lircmd_conf)
 AC_SUBST(maintmode_daemons_extra)
+
+if test "$lirc_driver" = "lirc_dev commandir lirc_cmdir"; then
+  lirc_driver="lirc_dev lirc_cmdir"
+fi
 
 dnl tell the C code what we decided
 AC_DEFINE_UNQUOTED(DEVDIR, "$devdir")
