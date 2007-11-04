@@ -113,6 +113,7 @@ struct hardware hw_asusdh=
 	"asusdh"		/* name */
 };
 
+#ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
 /* Creative USB IR Receiver (SB0540) */
 struct hardware hw_sb0540=
 {
@@ -132,6 +133,7 @@ struct hardware hw_sb0540=
 	NULL,			/* readdata */
 	"sb0540"		/* name */
 };
+#endif
 
 /* Apple Mac mini USB IR Receiver */
 struct hardware hw_macmini=
@@ -430,6 +432,7 @@ char *hiddev_rec(struct ir_remote *remotes)
  *
  */
 
+#ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
 int sb0540_init()
 {
 	int rv = hiddev_init();
@@ -509,6 +512,7 @@ char *sb0540_rec(struct ir_remote *remotes)
 
 	return 0;
 }
+#endif
 
 /*
  * Apple Mac mini USB IR Receiver specific code.

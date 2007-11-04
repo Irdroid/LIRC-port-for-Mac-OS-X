@@ -76,7 +76,9 @@ struct hardware *hw_list[] =
 #ifdef HAVE_ALSA_SB_RC
 	&hw_alsa_usb,
 #endif
+#ifdef HAVE_LINUX_HIDDEV_H
 	&hw_asusdh,
+#endif
 #ifdef HAVE_LIBUSB
 	&hw_atilibusb,
 #endif
@@ -87,7 +89,9 @@ struct hardware *hw_list[] =
 	&hw_audio_alsa,
 #endif
 	&hw_bte,
+#ifdef HAVE_LINUX_HIDDEV_H
 	&hw_bw6130,
+#endif
 	&hw_creative,
 #ifdef HAVE_SCSI
 	&hw_creative_infracd,
@@ -99,7 +103,9 @@ struct hardware *hw_list[] =
 #ifdef HAVE_SOUNDCARD
 	&hw_dsp,
 #endif
+#ifdef HAVE_LINUX_HIDDEV_H
 	&hw_dvico,
+#endif
 	&hw_ea65,
 	&hw_i2cuser,
 #ifdef HAVE_IGUANAIR
@@ -111,7 +117,9 @@ struct hardware *hw_list[] =
 	&hw_livedrive_midi,
 	&hw_livedrive_seq,
 	&hw_logitech,
+#ifdef HAVE_LINUX_HIDDEV_H
 	&hw_macmini,
+#endif
 	&hw_mp3anywhere,
 	&hw_mouseremote,
 	&hw_mouseremote_ps2,
@@ -119,7 +127,9 @@ struct hardware *hw_list[] =
 	&hw_pcmak,
 	&hw_pinsys,
 	&hw_pixelview,
+#ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
 	&hw_sb0540,
+#endif
 	&hw_silitek,
 	/*	&hw_slinke,*/
 	&hw_tira,

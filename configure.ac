@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.4 2007/11/01 09:23:58 lirc Exp $
+dnl $Id: configure.ac,v 1.5 2007/11/04 19:26:35 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -123,18 +123,14 @@ AC_MSG_RESULT()
 possible_drivers="(none) \
 	(userspace) \
 	(accent) \
-	(asusdh) \
 	(bte) \
-	(bw6130) \
 	(creative) \
-	(dvico) \
 	(ea65) \
 	(exaudio) \
 	(irreal) \
 	(livedrive_midi) \
 	(livedrive_seq) \
 	(logitech) \
-	(macmini) \
 	(mediafocusI) \
 	(mouseremote) \
 	(mouseremote_ps2) \
@@ -143,7 +139,6 @@ possible_drivers="(none) \
 	(pcmak_usb) \
 	(pctv) \
 	(remotemaster) \
-	(sb0540) \
 	(silitek) \
 	(slinke) \
 	(tira) \
@@ -219,6 +214,9 @@ AH_TEMPLATE([HAVE_LIBVGA],
 
 AH_TEMPLATE([HAVE_LINUX_DEVINPUT],
 	[defined if Linux input interface is available])
+
+AH_TEMPLATE([HAVE_LINUX_HIDDEV_FLAG_UREF],
+	[defined if Linux hiddev HIDDEV_FLAG_UREF flag is available])
 
 AH_TEMPLATE([HAVE_SCSI],
 	[defined if SCSI API is available])
@@ -374,6 +372,29 @@ AC_CHECK_HEADERS(linux/input.h,[
   AC_DEFINE(HAVE_LINUX_DEVINPUT)
   possible_drivers="${possible_drivers} (devinput)"
   ]
+)
+dnl check if hiddev is available
+AC_CHECK_HEADERS([linux/types.h])
+AC_CHECK_HEADERS([linux/hiddev.h],[
+  possible_drivers="${possible_drivers} (dvico) (asusdh) (bw6130) (macmini)"
+  AC_MSG_CHECKING(for HIDDEV_FLAG_UREF support)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/types.h>
+#include <linux/hiddev.h>
+    ]], [[
+      int flag = HIDDEV_FLAG_UREF;
+    ]])],[
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_LINUX_HIDDEV_FLAG_UREF)
+    possible_drivers="${possible_drivers} (sb0540)"
+    ],[
+    AC_MSG_RESULT(no)
+    ])
+  ], [],
+[#ifdef HAVE_LINUX_TYPES_H
+#include <linux/types.h>
+#endif
+]
 )
 dnl dsp driver requires linux soundcard api
 AC_CHECK_HEADERS(sys/soundcard.h,[
@@ -674,7 +695,7 @@ if test "$driver" = "animax"; then
 fi
 
 if test "$driver" = "asusdh"; then
-  lirc_driver="none"
+  lirc_driver="$driver"
   hw_module="hw_hiddev.o"
   HW_DEFAULT="hw_asusdh"
   lircd_conf="asus/lircd.conf.asusdh"
@@ -754,7 +775,7 @@ if test "$driver" = "bte"; then
 fi
 
 if test "$driver" = "bw6130"; then
-  lirc_driver="none"
+  lirc_driver="$driver"
   hw_module="hw_hiddev.o"
   HW_DEFAULT="hw_bw6130"
   lircd_conf="remotec/lircd.conf.BW6130"
@@ -846,7 +867,7 @@ if test "$driver" = "dsp"; then
 fi
 
 if test "$driver" = "dvico"; then
-  lirc_driver="none"
+  lirc_driver="$driver"
   hw_module="hw_hiddev.o"
   HW_DEFAULT="hw_dvico"
   lircd_conf="dvico/lircd.conf.fusionHDTV"
@@ -902,10 +923,6 @@ fi
 
 if test "$driver" = "igorplugusb"; then
   lirc_driver="lirc_dev lirc_igorplugusb"
-fi
-
-if test "$driver" = "ttusbir"; then
-  lirc_driver="lirc_dev lirc_ttusbir"
 fi
 
 if test "$driver" = "iguanaIR"; then
@@ -1041,7 +1058,7 @@ if test "$driver" = "lpt2"; then
 fi
 
 if test "$driver" = "macmini"; then
-  lirc_driver="none"
+  lirc_driver="$driver"
   hw_module="hw_hiddev.o"
   HW_DEFAULT="hw_macmini"
   lircd_conf="apple/lircd.conf.macmini"
@@ -1168,7 +1185,7 @@ if test "$driver" = "sasem"; then
 fi
 
 if test "$driver" = "sb0540"; then
-  lirc_driver="none"
+  lirc_driver="$driver"
   hw_module="hw_hiddev.o"
   HW_DEFAULT="hw_sb0540"
 # original RM-1500 is included here
@@ -1227,6 +1244,10 @@ if test "$driver" = "tira"; then
   lirc_driver="none"
   hw_module="hw_tira.o serial.o"
   HW_DEFAULT="hw_tira"
+fi
+
+if test "$driver" = "ttusbir"; then
+  lirc_driver="lirc_dev lirc_ttusbir"
 fi
 
 if test "$driver" = "tuxbox"; then
@@ -1338,14 +1359,19 @@ dnl now we've checked, we can rename things for the drivers/Makefile
 
 if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "alsa_usb" || \
-	test "$lirc_driver" = "userspace" || \
+	test "$lirc_driver" = "asusdh" || \
 	test "$lirc_driver" = "atilibusb" || \
 	test "$lirc_driver" = "audio" || \
 	test "$lirc_driver" = "audio_alsa" || \
+	test "$lirc_driver" = "bw6130" || \
 	test "$lirc_driver" = "caraca" || \
+	test "$lirc_driver" = "dvico" || \
 	test "$lirc_driver" = "iguanaIR" || \
 	test "$lirc_driver" = "irman" || \
-	test "$lirc_driver" = "irman_sw"; then
+	test "$lirc_driver" = "irman_sw" || \
+	test "$lirc_driver" = "macmini" || \
+	test "$lirc_driver" = "sb0540" || \
+	test "$lirc_driver" = "userspace"; then
   lirc_driver=
 elif test "$lirc_driver" = "all"; then
   lirc_driver="lirc_dev \
