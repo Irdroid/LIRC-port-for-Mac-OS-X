@@ -26,7 +26,7 @@ select_vars ()
 	mode2)
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
-		PROG_PRE_PARAMS="--include man-source/mode2-common.inc"
+		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	lircrcd)
 		MANPAGE=$PROG.1
@@ -35,12 +35,12 @@ select_vars ()
 	smode2)
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
-		PROG_PRE_PARAMS="--include man-source/mode2-common.inc"
+		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	xmode2)
 		MANPAGE=$PROG.1
 		DIR=$TOPDIR/tools/
-		PROG_PRE_PARAMS="--include man-source/mode2-common.inc"
+		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	irsend)
 		MANPAGE=$PROG.1
@@ -53,13 +53,13 @@ select_vars ()
 	lircd)
 		MANPAGE=$PROG.8
 		DIR=$TOPDIR/daemons/
-		PROG_PARAMS="--include man-source/daemons.inc"
+		PROG_PARAMS="--include ${SRCDIR}/man-source/daemons.inc"
 
 	;;
 	lircmd)
 		MANPAGE=$PROG.8
 		DIR=$TOPDIR/daemons/
-		PROG_PARAMS="--include man-source/daemons.inc"
+		PROG_PARAMS="--include ${SRCDIR}/man-source/daemons.inc"
 	;;
 	esac
 
@@ -73,7 +73,8 @@ select_vars ()
 
 PATH="$PATH:/usr/local/sbin:/sbin:/usr/sbin"
 
-TOPDIR=../
+TOPDIR=${top_srcdir:-../}
+SRCDIR=${srcdir:-.}
 
 ##########################
 ## Start
@@ -81,7 +82,7 @@ TOPDIR=../
 install -d man-html
 
 HELP2MAN=help2man
-MAN2HTML=./man2html
+MAN2HTML=${srcdir}/man2html
 
 for PROG in irpty irexec ircat irw mode2 smode2 xmode2 irsend irrecord lircd lircmd lircrcd irxevent
 do
@@ -93,8 +94,8 @@ do
 	$HELP2MAN \
 		$PROG_PRE_PARAMS \
 		--no-info \
-		--include man-source/help2man.inc \
-		--opt-include man-source/$PROG.inc \
+		--include ${SRCDIR}/man-source/help2man.inc \
+		--opt-include ${SRCDIR}/man-source/$PROG.inc \
 		$PROG_PARAMS \
 		$DIR$PROG -o man/$MANPAGE
 

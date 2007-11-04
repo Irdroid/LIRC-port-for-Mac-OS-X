@@ -1,7 +1,8 @@
 #! /bin/sh
- 
-SOURCE_DIR=html-source/
-MAN_HTML_DIR=man-html/
+
+SRCDIR=${srcdir:-.}
+SOURCE_DIR="${SRCDIR}/html-source/"
+MAN_HTML_DIR="${SRCDIR}/man-html/"
 DEST_DIR=html/
 
 if test ! -e ${DEST_DIR}; then
@@ -36,4 +37,4 @@ done
 echo
 
 echo "Generating driver overview tables"
-./table.sh lirc.hwdb >${DEST_DIR}/table.html
+${srcdir}/table.sh lirc.hwdb >${DEST_DIR}/table.html

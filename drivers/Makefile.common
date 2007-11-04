@@ -1,4 +1,4 @@
-# $Id: Makefile.common,v 5.7 2007/10/21 17:32:38 lirc Exp $
+# $Id: Makefile.common,v 5.8 2007/11/04 09:29:02 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
@@ -16,8 +16,11 @@ LIRC_EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS) \
 export LIRC_EXTRA_CFLAGS KERNEL_LOCATION module_DATA
 
 $(module_DATA): $(automake_dummy_SOURCES) $(top_builddir)/config.h ../lirc.h
-	test "$(srcdir)" != "$(builddir)" && \
-		for f in $(automake_dummy_SOURCES) ; do [ -e $$f ] || ln -s $(srcdir)/$$f $$f || exit $$? ; done
+	@if test "$(srcdir)" != "$(builddir)" ; then \
+		for f in $(automake_dummy_SOURCES) ; do \
+			[ -e $$f ] || ln -s $(srcdir)/$$f $$f || exit $$? ; \
+		done \
+	fi
 	mv Makefile Makefile.automake
 	cp $(srcdir)/../Makefile.kernel Makefile
 	CPPFLAGS="" CFLAGS="" LDFLAGS="" \

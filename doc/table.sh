@@ -3,8 +3,10 @@
 HWDB="${1:-/dev/null}"
 HEURISTIC=`mktemp`
 
+TOP_SRCDIR=${top_srcdir:-..}
+
 write_heuristic="no"
-cat ../configure.ac | while read REPLY; do
+cat ${TOP_SRCDIR}/configure.ac | while read REPLY; do
     if echo $REPLY|grep "START HARDWARE HEURISTIC" >/dev/null; then
 	write_heuristic="yes"
 	continue;
@@ -46,7 +48,7 @@ cat html-source/head.html
 
 echo "<table border=\"1\">"
 echo "<tr><th>Hardware</th><th>configure --with-driver option</th><th>Required LIRC kernel modules</th><th>lircd driver</th><th>default lircd and lircmd config files</th></tr>"
-grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
+grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
     #echo $REPLY
 
     if echo $REPLY|grep ": @any" >/dev/null; then
@@ -55,7 +57,7 @@ grep ".*: \(\".*\"\)\|@" ../setup.data | while read REPLY; do
     
     if echo $REPLY|grep ": @" >/dev/null; then
 	entry=`echo $REPLY|sed --expression="s/.*: \(@.*\)/\1/"`
-	desc=`grep "${entry}:" ../setup.data|sed --expression="s/.*\"\(.*\)\".*/\1/"`
+	desc=`grep "${entry}:" ${TOP_SRCDIR}/setup.data|sed --expression="s/.*\"\(.*\)\".*/\1/"`
 	echo "" >> "${HWDB}"
 	echo "[$desc]" >> "${HWDB}"
 	echo "<tr><th colspan=\"5\"><a name=\"${entry}\">${desc}</a></th></tr>"

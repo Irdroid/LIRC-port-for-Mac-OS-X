@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.10 2007/06/09 19:34:20 lirc Exp $
+## $Id: Makefile.am,v 1.11 2007/11/04 09:29:02 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,15 +12,15 @@ lirc.hwdb:
 noinst_PROGRAMS = man2html
 
 release-man: man2html
-	./release-man.sh
+	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" $(srcdir)/release-man.sh
 
 release-html:
-	./release-html.sh
+	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" $(srcdir)/release-html.sh
 
 release: release-man release-html
 
 dist-hook: release
-	cp -a html images $(distdir)
+	cp -a html $(srcdir)/images $(distdir)
 
 maintainer-clean-local:
 	rm -rf html man-html
