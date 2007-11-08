@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.66 2007/10/03 15:22:54 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.67 2007/11/08 21:27:28 lirc Exp $
  */
 
 /*
@@ -54,9 +54,9 @@
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <linux/uaccess.h>
-#else
 #include <asm/uaccess.h>
+#else
+#include <linux/uaccess.h>
 #endif
 #include <linux/usb.h>
 #include <linux/poll.h>
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.66 $"
+#define DRIVER_VERSION		"$Revision: 1.67 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1353,7 +1353,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.66 2007/10/03 15:22:54 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.67 2007/11/08 21:27:28 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

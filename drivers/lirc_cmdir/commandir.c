@@ -36,10 +36,10 @@
 #include <linux/devfs_fs_kernel.h>
 #else
 #include <linux/kref.h>
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 18)
-#include <linux/uaccess.h>
-#else
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 #include <asm/uaccess.h>
+#else
+#include <linux/uaccess.h>
 #endif
 #endif
 

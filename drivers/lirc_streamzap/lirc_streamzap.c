@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.24 2007/09/27 20:48:55 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.25 2007/11/08 21:27:30 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -46,14 +46,18 @@
 #include <linux/module.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+#include <asm/uaccess.h>
+#else
 #include <linux/uaccess.h>
+#endif
 #include <linux/usb.h>
 
 #include "drivers/lirc.h"
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.24 $"
+#define DRIVER_VERSION	"$Revision: 1.25 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
