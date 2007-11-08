@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.43 2007/09/27 19:47:20 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.44 2007/11/08 21:07:18 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -388,6 +388,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
 {
 	struct IR *ir;
+	int err;
 
 	client_template.adapter = adap;
 	client_template.addr = addr;
@@ -478,7 +479,11 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	       adap->id, addr, ir->c.name);
 
 	/* register device */
-	i2c_attach_client(&ir->c);
+	err = i2c_attach_client(&ir->c);
+	if(err) {
+		kfree(ir);
+		return err;
+	}
 	ir->l.minor = lirc_register_plugin(&ir->l);
 
 	return 0;
