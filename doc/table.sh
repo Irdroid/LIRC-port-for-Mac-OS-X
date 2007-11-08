@@ -4,6 +4,8 @@ HWDB="${1:-/dev/null}"
 HEURISTIC=`mktemp`
 
 TOP_SRCDIR=${top_srcdir:-..}
+SRCDIR=${srcdir:-.}
+HTML_SOURCE=${SRCDIR}/html-source
 
 write_heuristic="no"
 cat ${TOP_SRCDIR}/configure.ac | while read REPLY; do
@@ -44,7 +46,7 @@ cat << HWDB_HEADER > "${HWDB}"
 #
 HWDB_HEADER
 
-cat html-source/head.html
+cat ${HTML_SOURCE}/head.html
 
 echo "<table border=\"1\">"
 echo "<tr><th>Hardware</th><th>configure --with-driver option</th><th>Required LIRC kernel modules</th><th>lircd driver</th><th>default lircd and lircmd config files</th></tr>"
@@ -81,9 +83,9 @@ grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
 	fi
 	echo -n "<tr><td>${desc}</td><td align=\"center\">"
 	
-	if test -f html-source/${driver}.html; then
+	if test -f ${HTML_SOURCE}/${driver}.html; then
 	    driver_doc=${driver}
-	elif test -f `echo html-source/${driver}.html|sed --expression="s/_/-/g"`; then
+	elif test -f `echo ${HTML_SOURCE}/${driver}.html|sed --expression="s/_/-/g"`; then
 	    driver_doc=`echo $driver|sed --expression="s/_/-/g"`
 	else
 	    driver_doc=""
@@ -100,5 +102,5 @@ grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
 done
 echo "</table>"
 
-cat html-source/foot.html
+cat ${HTML_SOURCE}/foot.html
 rm ${HEURISTIC}

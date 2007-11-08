@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 1.11 2007/11/04 09:29:02 lirc Exp $
+## $Id: Makefile.am,v 1.12 2007/11/08 20:58:56 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -12,10 +12,12 @@ lirc.hwdb:
 noinst_PROGRAMS = man2html
 
 release-man: man2html
-	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" $(srcdir)/release-man.sh
+	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" builddir="$(builddir)" \
+			   top_builddir="$(top_builddir)" $(srcdir)/release-man.sh
 
 release-html:
-	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" $(srcdir)/release-html.sh
+	top_srcdir="$(top_srcdir)" srcdir="$(srcdir)" builddir="$(builddir)" \
+			   top_builddir="$(top_builddir)" $(srcdir)/release-html.sh
 
 release: release-man release-html
 

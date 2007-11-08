@@ -73,8 +73,9 @@ select_vars ()
 
 PATH="$PATH:/usr/local/sbin:/sbin:/usr/sbin"
 
-TOPDIR=${top_srcdir:-../}
+TOPDIR=${top_builddir:-..}
 SRCDIR=${srcdir:-.}
+BUILDDIR=${builddir:-.}
 
 ##########################
 ## Start
@@ -82,7 +83,7 @@ SRCDIR=${srcdir:-.}
 install -d man-html
 
 HELP2MAN=help2man
-MAN2HTML=${srcdir}/man2html
+MAN2HTML=${BUILDDIR}/man2html
 
 for PROG in irpty irexec ircat irw mode2 smode2 xmode2 irsend irrecord lircd lircmd lircrcd irxevent
 do
