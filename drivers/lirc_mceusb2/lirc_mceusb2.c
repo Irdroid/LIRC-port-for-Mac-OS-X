@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.37 $"
+#define DRIVER_VERSION	"$Revision: 1.38 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
@@ -168,6 +168,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_MICROSOFT, 0x00a0) },
 	/* Formosa eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_FORMOSA, 0xe015) },
+	/* Formosa aim / Trust MCE Infrared Receiver */
+	{ USB_DEVICE(VENDOR_FORMOSA, 0xe017) },
 	/* Fintek eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_FINTEK, 0x0602) },
 	/* Terminating entry */
