@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.38 $"
+#define DRIVER_VERSION	"$Revision: 1.39 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
@@ -154,6 +154,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0001) },
 	/* Topseed HP eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0006) },
+	/* Topseed eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0007) },
 	/* Topseed eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
 	/* Ricavision internal Infrared Transceiver */
@@ -643,6 +645,7 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 	      ir->usbdev->descriptor.idProduct == 0x0334)) ||
 	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED &&
 	     (ir->usbdev->descriptor.idProduct == 0x0001 ||
+              ir->usbdev->descriptor.idProduct == 0x0007 ||
 	      ir->usbdev->descriptor.idProduct == 0x0008)))
 		ir->transmitter_mask = mask;
 	else
