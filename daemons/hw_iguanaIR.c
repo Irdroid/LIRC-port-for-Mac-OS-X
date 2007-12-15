@@ -81,13 +81,11 @@ static void recv_loop(int fd)
 				/* read from device */
 				response = iguanaReadResponse(conn, 1000);
 
-				/* this will be the exit condition */
-				if (response == NULL)
-					continue;
-				else if (iguanaResponseIsError(response))
+				if (iguanaResponseIsError(response))
 				{
-					logprintf(LOG_ERR,
-						  "error response: %s\n", strerror(errno));
+					/* be quiet during exit */
+					if (! recvDone)
+						logprintf(LOG_ERR, "error response: %s\n", strerror(errno));
 					break;
 				}
 				else if (iguanaCode(response) == IG_DEV_RECV)
