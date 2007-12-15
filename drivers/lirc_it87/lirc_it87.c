@@ -888,7 +888,7 @@ static int init_port(void)
 	/* Leaving MB PnP Mode */
 	it87_write(IT87_CFGCTRL, 0x2);
 
-	retval = request_irq(irq, it87_interrupt, 0 /*SA_INTERRUPT*/,
+	retval = request_irq(irq, it87_interrupt, 0 /*IRQF_DISABLED*/,
 			     LIRC_DRIVER_NAME, NULL);
 	if (retval < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME

@@ -1025,7 +1025,7 @@ static int init_port(void)
 		return -EBUSY;
 	}
 #endif
-	retval = request_irq(irq, sir_interrupt, SA_INTERRUPT,
+	retval = request_irq(irq, sir_interrupt, IRQF_DISABLED,
 			     LIRC_DRIVER_NAME, NULL);
 	if (retval < 0) {
 #               ifndef LIRC_ON_SA1100

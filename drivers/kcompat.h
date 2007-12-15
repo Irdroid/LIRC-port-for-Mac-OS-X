@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.31 2007/09/27 19:47:18 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.32 2007/12/15 17:28:00 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -327,6 +327,15 @@ static inline int usb_kill_urb(struct urb *urb)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && \
 	LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 typedef u32 pm_message_t;
+#endif
+
+/*************************** interrupt.h ******************************/
+/* added in 2.6.18, old defines removed in 2.6.24 */
+#ifndef IRQF_DISABLED
+#define IRQF_DISABLED SA_INTERRUPT
+#endif
+#ifndef IRQF_SHARED
+#define IRQF_SHARED SA_SHIRQ
 #endif
 
 #endif /* _KCOMPAT_H */

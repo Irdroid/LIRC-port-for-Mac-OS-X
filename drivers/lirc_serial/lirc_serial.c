@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.86 2007/11/08 21:27:30 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.87 2007/12/15 17:28:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -965,7 +965,7 @@ static int set_use_inc(void *data)
 	do_gettimeofday(&lasttv);
 
 	result = request_irq(irq, irq_handler,
-			   SA_INTERRUPT | (share_irq ? SA_SHIRQ:0),
+			   IRQF_DISABLED | (share_irq ? IRQF_SHARED:0),
 			   LIRC_DRIVER_NAME, (void *)&hardware);
 
 	switch (result) {
