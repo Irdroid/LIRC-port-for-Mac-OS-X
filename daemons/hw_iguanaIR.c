@@ -34,24 +34,6 @@ static pid_t child = 0;
 static int recvDone = 0;
 static int currentCarrier = -1;
 
-static lirc_t readdata(lirc_t timeout)
-{
-	lirc_t code = 0;
-	struct timeval tv = {0, timeout};
-	fd_set fds;
-
-	FD_ZERO(&fds);
-	FD_SET(hw.fd, &fds);
-
-	/* attempt a read with a timeout using select */
-	if (select(hw.fd + 1, &fds, NULL, &fds, &tv) > 0)
-		/* if we failed to get data return 0 */
-		if (read(hw.fd, &code, sizeof(lirc_t)) <= 0)
-			code = 0;
-
-	return code;
-}
-
 static void quitHandler(int sig)
 {
 	recvDone = 1;
@@ -209,6 +191,7 @@ static int iguana_deinit()
 
 	/* close hw.fd since otherwise we leak open files */
 	close(hw.fd);
+        hw.fd = -1;
 
 	return retval;
 }
@@ -324,6 +307,24 @@ static int iguana_ioctl(unsigned int code, void *arg)
 	}
 
 	return retcode;
+}
+
+static lirc_t readdata(lirc_t timeout)
+{
+	lirc_t code = 0;
+	struct timeval tv = {0, timeout};
+	fd_set fds;
+
+	FD_ZERO(&fds);
+	FD_SET(hw.fd, &fds);
+
+	/* attempt a read with a timeout using select */
+	if (select(hw.fd + 1, &fds, NULL, &fds, &tv) > 0)
+		/* if we failed to get data return 0 */
+		if (read(hw.fd, &code, sizeof(lirc_t)) <= 0)
+                        iguana_deinit();
+
+	return code;
 }
 
 struct hardware hw_iguanaIR =
