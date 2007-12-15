@@ -29,13 +29,10 @@
 #include "transmit.h"
 #include "receive.h"
 
-static int iguana_init();
-static int iguana_deinit();
-static char *iguana_rec(struct ir_remote *remotes);
-static int iguana_send(struct ir_remote *remote,struct ir_ncode *code);
 static int sendConn = -1;
 static pid_t child = 0;
 static int recvDone = 0;
+static int currentCarrier = -1;
 
 static lirc_t readdata(lirc_t timeout)
 {
@@ -54,26 +51,6 @@ static lirc_t readdata(lirc_t timeout)
 
 	return code;
 }
-
-struct hardware hw_iguanaIR =
-{
-	"0",				/* default device */
-	-1,				/* fd */
-	LIRC_CAN_REC_MODE2 | 
-		LIRC_CAN_SEND_PULSE,	/* features */
-	LIRC_MODE_PULSE,		/* send_mode */
-	LIRC_MODE_MODE2,		/* rec_mode */
-	sizeof(int),			/* code_length */
-	iguana_init,			/* init_func */
-	NULL,				/* config_func */
-	iguana_deinit,			/* deinit_func */
-	iguana_send,			/* send_func */
-	iguana_rec,			/* rec_func */
-	receive_decode,			/* decode_func */
-	NULL,				/* ioctl_func */
-	readdata,			/* readdata */
-	"iguanaIR"
-};
 
 static void quitHandler(int sig)
 {
@@ -123,7 +100,7 @@ static void recv_loop(int fd)
 							   * signals. */
 
 					/* pull the data off the packet */
-					code = iguanaRemoveData(response, &length);
+					code = (uint32_t*)iguanaRemoveData(response, &length);
 					length /= sizeof(uint32_t);
 
 					/* translate the code into lirc_t pulses (and make
@@ -174,7 +151,7 @@ static void recv_loop(int fd)
 	close(fd);
 }
 
-int iguana_init()
+static int iguana_init()
 {
 	int recv_pipe[2], retval = 0;
 
@@ -213,7 +190,7 @@ int iguana_init()
 	return retval;
 }
 
-int iguana_deinit()
+static int iguana_deinit()
 {
 	int retval = 1;
 
@@ -238,7 +215,7 @@ int iguana_deinit()
 	return retval;
 }
 
-char *iguana_rec(struct ir_remote *remotes)
+static char *iguana_rec(struct ir_remote *remotes)
 {
 	char *retval = NULL;
 	if (clear_rec_buffer())
@@ -246,9 +223,44 @@ char *iguana_rec(struct ir_remote *remotes)
 	return retval;
 }
 
-int iguana_send(struct ir_remote *remote, struct ir_ncode *code)
+static bool daemonTransaction(unsigned char code, uint8_t value)
+{
+	uint8_t *data;
+	bool retval = false;
+
+	data = (uint8_t*)malloc(1);
+	if (data != NULL)
+	{
+		iguanaPacket request, response = NULL;
+
+		*data = value;
+		request = iguanaCreateRequest(code, sizeof(uint8_t), data);
+		if (request)
+		{
+			if (iguanaWriteRequest(request, sendConn))
+				response = iguanaReadResponse(sendConn, 10000);
+			iguanaFreePacket(request);
+		}
+		else
+			free(data);
+
+		/* handle success */
+		if (! iguanaResponseIsError(response))
+			retval = true;
+		iguanaFreePacket(response);
+	}
+	return retval;
+}
+
+static int iguana_send(struct ir_remote *remote, struct ir_ncode *code)
 {
 	int retval = 0;
+
+	/* set the carrier frequency if necessary */
+	if (remote->freq != currentCarrier &&
+	    remote->freq >= 25000 && remote->freq <= 100000 &&
+	    daemonTransaction(IG_DEV_SETCARRIER, remote->freq / 1000))
+		currentCarrier = remote->freq;
 
 	if (init_send(remote, code))
 	{
@@ -297,3 +309,43 @@ int iguana_send(struct ir_remote *remote, struct ir_ncode *code)
 
 	return retval;
 }
+
+static int iguana_ioctl(unsigned int code, void *arg)
+{
+	int retcode = -1;
+	uint8_t channels = *(uint8_t*)arg;
+
+	/* set the transmit channels: return 0 on success, 4 if
+	   out-of-range (see ioctl) */
+	if (code == LIRC_SET_TRANSMITTER_MASK)
+	{
+		if (channels > 0x0F)
+			retcode = 4;
+		else if (daemonTransaction(IG_DEV_SETCHANNELS, channels))
+			retcode = 0;
+	}
+
+	return retcode;
+}
+
+struct hardware hw_iguanaIR =
+{
+	"0",				/* default device */
+	-1,				/* fd */
+	LIRC_CAN_REC_MODE2 |            /* features */
+	LIRC_CAN_SEND_PULSE |
+	LIRC_CAN_SET_SEND_CARRIER |
+	LIRC_CAN_SET_TRANSMITTER_MASK,
+	LIRC_MODE_PULSE,		/* send_mode */
+	LIRC_MODE_MODE2,		/* rec_mode */
+	sizeof(int),			/* code_length */
+	iguana_init,			/* init_func */
+	NULL,				/* config_func */
+	iguana_deinit,			/* deinit_func */
+	iguana_send,			/* send_func */
+	iguana_rec,			/* rec_func */
+	receive_decode,			/* decode_func */
+	iguana_ioctl,			/* ioctl_func */
+	readdata,			/* readdata */
+	"iguanaIR"
+};
