@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.38 2007/09/27 19:47:22 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.39 2007/12/17 19:53:52 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -99,6 +99,8 @@
  ***********************************************************************/
 
 static int debug;
+static int check_pselecd;
+
 unsigned int irq = LIRC_IRQ;
 unsigned int io = LIRC_PORT;
 #ifdef LIRC_TIMER
@@ -289,7 +291,7 @@ static void irq_handler(int i, void *blah)
 	  disable_irq(irq);
 	  out(LIRC_PORT_IRQ, in(LIRC_PORT_IRQ) & (~LP_PINTEN));
 	*/
-	if (in(1) & LP_PSELECD)
+	if (check_pselecd && (in(1) & LP_PSELECD))
 		return;
 
 #ifdef LIRC_TIMER
@@ -326,7 +328,7 @@ static void irq_handler(int i, void *blah)
 		level = newlevel;
 
 		/* giving up */
-		if (signal > timeout || (in(1) & LP_PSELECD)) {
+		if (signal > timeout || (check_pselecd && (in(1) & LP_PSELECD))) {
 			signal = 0;
 			printk(KERN_NOTICE "%s: timeout\n", LIRC_DRIVER_NAME);
 			break;
@@ -466,7 +468,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 			if (level == 0 && newlevel != 0)
 				counttimer++;
 			level = newlevel;
-			if (in(1) & LP_PSELECD) {
+			if (check_pselecd && (in(1) & LP_PSELECD)) {
 				lirc_off();
 				local_irq_restore(flags);
 				return -EIO;
@@ -483,7 +485,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 			if (level == 0 && newlevel != 0)
 				counttimer++;
 			level = newlevel;
-			if (in(1) & LP_PSELECD) {
+			if (check_pselecd && (in(1) & LP_PSELECD)) {
 				local_irq_restore(flags);
 				return -EIO;
 			}
@@ -766,6 +768,9 @@ MODULE_PARM_DESC(tx_maxk, "Transmitter mask (default: 0x01)");
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
+
+module_param(check_pselecd, bool, 0644);
+MODULE_PARM_DESC(debug, "Check for printer (default: 0)");
 
 EXPORT_NO_SYMBOLS;
 
