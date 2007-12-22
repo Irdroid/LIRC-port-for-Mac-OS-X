@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.55 2007/10/18 18:55:38 lirc Exp $
+## $Id: Makefile.am,v 5.56 2007/12/22 12:33:16 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -40,6 +40,7 @@ EXTRA_lircd_SOURCES = \
 			hw_logitech.c hw_logitech.h \
 			hw_mouseremote.c hw_mouseremote.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
+			hw_mplay.c hw_mplay.h \
 			hw_pcmak.c hw_pcmak.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_pixelview.c hw_pixelview.h \
@@ -89,6 +90,7 @@ EXTRA_irrecord_SOURCES = \
 			hw_logitech.c hw_logitech.h \
 			hw_mouseremote.c hw_mouseremote.h \
 			hw_mp3anywhere.c hw_mp3anywhere.h \
+			hw_mplay.c hw_mplay.h \
 			hw_pcmak.c hw_pcmak.h \
 			hw_pinsys.c hw_pinsys.h \
 			hw_pixelview.c hw_pixelview.h \

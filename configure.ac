@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.5 2007/11/04 19:26:35 lirc Exp $
+dnl $Id: configure.ac,v 1.6 2007/12/22 12:33:16 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -135,6 +135,7 @@ possible_drivers="(none) \
 	(mouseremote) \
 	(mouseremote_ps2) \
 	(mp3anywhere) \
+	(mplay) \
 	(pcmak) \
 	(pcmak_usb) \
 	(pctv) \
@@ -429,7 +430,7 @@ AC_ARG_WITH(driver,
                           leadtek_pvr2000, livedrive_midi,
                           livedrive_seq, logitech, lptX, macmini,
                           mceusb, mceusb2, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere,
+                          mouseremote_ps2, mp3anywhere, mplay,
                           nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
                           pixelview_pak, pixelview_pro, provideo,
@@ -603,6 +604,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	mp3anywhere)
 		hw_module="${hw_module} hw_mp3anywhere.o serial.o"
+		;;
+	mplay)
+		hw_module="${hw_module} hw_mplay.o serial.o"
 		;;
 	pcmak*)
 		hw_module="${hw_module} hw_pcmak.o serial.o"
@@ -1101,6 +1105,13 @@ if test "$driver" = "mp3anywhere"; then
   hw_module="hw_mp3anywhere.o serial.o"
   HW_DEFAULT="hw_mp3anywhere"
   lircd_conf="x10/lircd.conf.mp3anywhere"
+fi
+
+if test "$driver" = "mplay"; then
+  lirc_driver="none"
+  hw_module="hw_mplay.o serial.o"
+  HW_DEFAULT="hw_mplay"
+  lircd_conf="vlsystem/lircd.conf.mplay"
 fi
 
 if test "$driver" = "nslu2"; then

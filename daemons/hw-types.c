@@ -31,6 +31,7 @@ extern struct hardware hw_macmini;
 extern struct hardware hw_mouseremote;
 extern struct hardware hw_mouseremote_ps2;
 extern struct hardware hw_mp3anywhere;
+extern struct hardware hw_mplay;
 extern struct hardware hw_pcmak;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
@@ -121,6 +122,7 @@ struct hardware *hw_list[] =
 	&hw_macmini,
 #endif
 	&hw_mp3anywhere,
+	&hw_mplay,
 	&hw_mouseremote,
 	&hw_mouseremote_ps2,
 	&hw_null,
