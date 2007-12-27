@@ -156,7 +156,7 @@ CurrentWindow.
 If you have problems finding the coordinates for a button click you can try
 xev -id <window_id>. The window_id can be found using xwininfo. If xev and
 xwininfo are not part of your distribution you can find them at a FTP server
-using the search engine at: http:\/\/ftpsearch.ntnu.no/ . xev also reports the
+using the search engine at: http://ftpsearch.ntnu.no/ . xev also reports the
 names of key symbols like "Control_L" (your left control key) or "KP_Subtract"
 (the 'minus' key on your keypad).
 
