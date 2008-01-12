@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.6 2007/12/22 12:33:16 lirc Exp $
+dnl $Id: configure.ac,v 1.7 2008/01/12 20:55:34 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -127,6 +127,7 @@ possible_drivers="(none) \
 	(creative) \
 	(ea65) \
 	(exaudio) \
+	(irlink) \
 	(irreal) \
 	(livedrive_midi) \
 	(livedrive_seq) \
@@ -425,13 +426,13 @@ AC_ARG_WITH(driver,
                           hauppauge_dvb, hercules_smarttv_stereo,
                           i2cuser, igorplugusb, iguanaIR, imon,
                           imon_24g, imon_knob, imon_pad, imon_rsc,
-                          irdeo, irdeo_remote, irman, irreal, it87,
-                          knc_one, kworld, leadtek_0007, leadtek_0010,
-                          leadtek_pvr2000, livedrive_midi,
-                          livedrive_seq, logitech, lptX, macmini,
-                          mceusb, mceusb2, mediafocusI, mouseremote,
-                          mouseremote_ps2, mp3anywhere, mplay,
-                          nslu2,packard_bell, parallel, pcmak,
+                          irdeo, irdeo_remote, irlink, irman, irreal,
+                          it87, knc_one, kworld, leadtek_0007,
+                          leadtek_0010,leadtek_pvr2000,
+                          livedrive_midi, livedrive_seq, logitech,
+                          lptX, macmini, mceusb, mceusb2, mediafocusI,
+                          mouseremote, mouseremote_ps2, mp3anywhere,
+                          mplay, nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
                           pixelview_pak, pixelview_pro, provideo,
                           realmagic, remotemaster, sa1100, sasem,
@@ -532,6 +533,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	iguanaIR)
 		hw_module="${hw_module} hw_iguanaIR.o transmit.o receive.o"
 		iguanaIR_lib=-liguanaIR
+		;;
+	irlink)
+		hw_module="${hw_module} hw_irlink.o serial.o receive.o"
 		;;
 	irman)
 		hw_module="${hw_module} hw_irman.o serial.o"
@@ -969,6 +973,12 @@ fi
 if test "$driver" = "irdeo_remote"; then
   lirc_driver="lirc_dev lirc_serial"
   AC_DEFINE(LIRC_SERIAL_IRDEO_REMOTE)
+fi
+
+if test "$driver" = "irlink"; then
+  lirc_driver="none"
+  hw_module="hw_irlink.o serial.o receive.o"
+  HW_DEFAULT="hw_irlink"
 fi
 
 if test "$driver" = "irman"; then

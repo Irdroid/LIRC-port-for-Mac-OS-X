@@ -123,6 +123,7 @@ hw_menu_entry: @hw-usb
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
 	iguanaIR: "Iguanaworks USB IR Transceiver"
+	irlink: "IRLink VS USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
 	bw6130: "Remotec Multimedia PC Remote BW6130"
 	sasem: "Sasem OnAir Remocon-V"
@@ -175,6 +176,7 @@ param_type: \
 	tty:
 
 param_type: \
+	irlink \
 	mplay \
 	pcmak_usb \
 	tira \
@@ -361,6 +363,7 @@ default_param: bte
 	btty:
 
 default_param: \
+	irlink \
 	mplay \
 	pcmak_usb \
 	tira \

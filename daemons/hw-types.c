@@ -23,6 +23,7 @@ extern struct hardware hw_dvico;
 extern struct hardware hw_ea65;
 extern struct hardware hw_i2cuser;
 extern struct hardware hw_iguanaIR;
+extern struct hardware hw_irlink;
 extern struct hardware hw_irman;
 extern struct hardware hw_livedrive_midi;
 extern struct hardware hw_livedrive_seq;
@@ -112,6 +113,7 @@ struct hardware *hw_list[] =
 #ifdef HAVE_IGUANAIR
 	&hw_iguanaIR,
 #endif
+	&hw_irlink,
 #ifdef HAVE_LIBIRMAN
 	&hw_irman,
 #endif
