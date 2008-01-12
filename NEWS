@@ -1,4 +1,5 @@
 0.8.3-CVS: future
+  * added support for VLSystem MPlay Blast (Benoit Laurent)
   * implemented SIMULATE command in irsend to simulate IR events
   * added user-space I2C driver (Adam Sampson)
   * added support for Hauppauge HVR-1300 (Jan Frey)
