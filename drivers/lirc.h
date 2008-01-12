@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.13 2007/09/27 19:47:18 lirc Exp $      */
+/*      $Id: lirc.h,v 5.14 2008/01/12 21:57:57 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -64,6 +64,7 @@ typedef int lirc_t;
 
 #define LIRC_CAN_SET_REC_DUTY_CYCLE_RANGE 0x40000000
 #define LIRC_CAN_SET_REC_CARRIER_RANGE    0x80000000
+#define LIRC_CAN_GET_REC_RESOLUTION       0x20000000
 
 #define LIRC_CAN_SEND(x) ((x)&LIRC_CAN_SEND_MASK)
 #define LIRC_CAN_REC(x) ((x)&LIRC_CAN_REC_MASK)

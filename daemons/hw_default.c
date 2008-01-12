@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.34 2007/07/29 18:20:07 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.35 2008/01/12 21:57:56 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -338,7 +338,8 @@ int default_init()
 	{
 		/* get resolution */
 		hw.resolution=0;
-		if(default_ioctl(LIRC_GET_REC_RESOLUTION, &hw.resolution)!=-1)
+		if((hw.features&LIRC_CAN_GET_REC_RESOLUTION) &&
+		   (default_ioctl(LIRC_GET_REC_RESOLUTION, &hw.resolution)!=-1))
 		{
 			LOGPRINTF(1, "resolution of receiver: %d",
 				  hw.resolution);
