@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.33 2008/01/13 10:02:39 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.34 2008/01/13 10:26:28 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -338,6 +338,12 @@ typedef u32 pm_message_t;
 #endif
 #ifndef IRQF_SHARED
 #define IRQF_SHARED SA_SHIRQ
+#endif
+
+/*************************** spinlock.h *******************************/
+/* added in 2.6.11 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+#define DEFINE_SPINLOCK(x) spinlock_t x = SPIN_LOCK_UNLOCKED
 #endif
 
 #endif /* _KCOMPAT_H */

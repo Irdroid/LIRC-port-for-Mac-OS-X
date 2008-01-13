@@ -179,7 +179,7 @@ static int irq = LIRC_IRQ;
 static int threshold = 3;
 #endif
 
-static spinlock_t timer_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(timer_lock);
 static struct timer_list timerlist;
 /* time of last signal change detected */
 static struct timeval last_tv = {0, 0};
@@ -189,8 +189,8 @@ static int last_value;
 
 static DECLARE_WAIT_QUEUE_HEAD(lirc_read_queue);
 
-static spinlock_t hardware_lock = SPIN_LOCK_UNLOCKED;
-static spinlock_t dev_lock = SPIN_LOCK_UNLOCKED;
+static DEFINE_SPINLOCK(hardware_lock);
+static DEFINE_SPINLOCK(dev_lock);
 
 static lirc_t rx_buf[RBUF_LEN];
 static unsigned int rx_tail, rx_head;
