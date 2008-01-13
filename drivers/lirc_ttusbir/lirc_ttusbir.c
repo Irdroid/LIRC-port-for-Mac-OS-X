@@ -87,8 +87,7 @@ static struct usb_driver driver = {
 };
 
 /* USB device definition */
-struct ttusbir_device
-{
+struct ttusbir_device {
 	struct usb_driver *driver;
 	struct usb_device *udev;
 	struct usb_interface *interf;
@@ -138,7 +137,7 @@ static void set_use_dec(void *data)
  */
 
 /* This mapping table is used to do a very simple filtering of the
- * input signal 
+ * input signal.
  * For a value with at least 4 bits set it returns 0xFF otherwise
  * 0x00.  For faster IR signals this can not be used. But for RC-5 we
  * still have about 14 samples per pulse/space, i.e. we sample with 14
@@ -241,7 +240,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 		(sizeof(struct urb *) * num_urbs) +
 		(sizeof(char *) * num_urbs) +
 		(num_urbs * 128);
-	ttusbir = (struct ttusbir_device *) kmalloc(struct_size, GFP_KERNEL);
+	ttusbir = kmalloc(struct_size, GFP_KERNEL);
 	if (!ttusbir)
 		return -ENOMEM;
 	memset(ttusbir, 0, struct_size);

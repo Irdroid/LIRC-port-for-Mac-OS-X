@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.67 2007/11/08 21:27:28 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.68 2008/01/13 11:13:49 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.67 $"
+#define DRIVER_VERSION		"$Revision: 1.68 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -567,7 +567,8 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 	mode = buf[0];
 
 	/* Squash the mode indicator if unique wasn't set non-zero */
-	if (!unique) buf[0] = 0;
+	if (!unique)
+		buf[0] = 0;
 
 	if (iep->ep->bEndpointAddress == EP_KEYS_ADDR) {
 		/* ignore mouse navigation indicator key and
@@ -575,7 +576,8 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 		if (buf[2] == RW2_MODENAV_KEYCODE) {
 			if (emit_modekeys >= 2) /* emit raw */
 				buf[0] = mode;
-			else if (emit_modekeys == 1) { /* translate */
+			else if (emit_modekeys == 1) {
+				/* translate */
 				buf[0] = mode;
 				if (ir->mode != mode) {
 					buf[1] = 0x03;
@@ -791,7 +793,8 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 {
 	struct irctl *ir;
 	dprintk(DRIVER_NAME ": free_in_endpt(%p, %d)\n", iep, mem_failure);
-	if (!iep) return;
+	if (!iep)
+		return;
 
 	ir = iep->ir;
 	if (!ir) {
@@ -1094,7 +1097,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 		mem_failure = 2;
 		goto new_irctl_failure_check;
 	}
-	
+
 	memset(plugin, 0, sizeof(*plugin));
 	ir->p = plugin;
 	plugin->rbuf = kmalloc(sizeof(*(plugin->rbuf)), GFP_KERNEL);
@@ -1353,7 +1356,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.67 2007/11/08 21:27:28 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.68 2008/01/13 11:13:49 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

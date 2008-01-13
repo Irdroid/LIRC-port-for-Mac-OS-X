@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.21 2007/09/30 09:58:45 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.22 2008/01/13 11:13:49 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -273,7 +273,8 @@ static inline void delete_context(struct imon_context *context)
 	kfree(context->plugin);
 	kfree(context);
 
-	if (debug) info("%s: context deleted", __FUNCTION__);
+	if (debug)
+		info("%s: context deleted", __FUNCTION__);
 }
 
 static inline void deregister_from_lirc(struct imon_context *context)
@@ -800,8 +801,7 @@ static inline void incoming_packet(struct imon_context *context,
 
 	/* iMON 2.4G associate frame */
 	if (buf[0] == 0x00 &&
-	    /* REFID */
-	    buf[2] == 0xFF &&
+	    buf[2] == 0xFF &&				/* REFID */
 	    buf[3] == 0xFF &&
 	    buf[4] == 0xFF &&
 	    buf[5] == 0xFF &&				/* iMON 2.4G */
@@ -1286,14 +1286,13 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 	if (!context->ir_isopen)
 		deregister_from_lirc(context);
 
-	if (context->vfd_supported) {
+	if (context->vfd_supported)
 #ifdef KERNEL_2_5
 		usb_deregister_dev(interface, &imon_class);
 #else
 		if (context->devfs)
 			devfs_unregister(context->devfs);
 #endif
-	}
 
 	UNLOCK_CONTEXT;
 

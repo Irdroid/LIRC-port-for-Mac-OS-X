@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.39 2007/12/17 19:53:52 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.40 2008/01/13 11:13:50 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -131,7 +131,7 @@ unsigned int tx_mask = 1;
  *************************   Interne Funktionen  ***********************
  ***********************************************************************/
 
-static unsigned int __inline__ in(int offset)
+static inline unsigned int in(int offset)
 {
 	switch (offset) {
 	case LIRC_LP_BASE:
@@ -144,7 +144,7 @@ static unsigned int __inline__ in(int offset)
 	return 0; /* make compiler happy */
 }
 
-static void __inline__ out(int offset, int value)
+static inline void out(int offset, int value)
 {
 	switch (offset) {
 	case LIRC_LP_BASE:
@@ -160,22 +160,22 @@ static void __inline__ out(int offset, int value)
 	}
 }
 
-static unsigned int __inline__ lirc_get_timer(void)
+static inline unsigned int lirc_get_timer(void)
 {
 	return (in(LIRC_PORT_TIMER)&LIRC_PORT_TIMER_BIT);
 }
 
-static unsigned int __inline__  lirc_get_signal(void)
+static inline  unsigned int lirc_get_signal(void)
 {
 	return (in(LIRC_PORT_SIGNAL)&LIRC_PORT_SIGNAL_BIT);
 }
 
-static void __inline__ lirc_on(void)
+static inline void lirc_on(void)
 {
 	out(LIRC_PORT_DATA, tx_mask);
 }
 
-static void __inline__ lirc_off(void)
+static inline void lirc_off(void)
 {
 	out(LIRC_PORT_DATA, 0);
 }
@@ -257,7 +257,8 @@ static inline void rbuf_write(lirc_t signal)
 	unsigned int nwptr;
 
 	nwptr = (wptr + 1) & (RBUF_SIZE - 1);
-	if (nwptr == rptr) { /* no new signals will be accepted */
+	if (nwptr == rptr) {
+		/* no new signals will be accepted */
 		lost_irqs++;
 		printk(KERN_NOTICE "%s: buffer overrun\n", LIRC_DRIVER_NAME);
 		return;
@@ -299,18 +300,20 @@ static void irq_handler(int i, void *blah)
 		do_gettimeofday(&tv);
 
 		signal = tv.tv_sec - lasttv.tv_sec;
-		if (signal > 15) {
-			data = PULSE_MASK;  /* really long time */
-		} else
+		if (signal > 15)
+			/* really long time */
+			data = PULSE_MASK;
+		else
 			data = (lirc_t) (signal*1000000 +
 					 tv.tv_usec - lasttv.tv_usec +
 					 LIRC_SFH506_DELAY);
 
 		rbuf_write(data); /* space */
 	} else {
-		if (timer == 0) { /* wake up; we'll lose this signal
-				   * but it will be garbage if the device
-				   * is turned on anyway */
+		if (timer == 0) {
+			/* wake up; we'll lose this signal
+			 * but it will be garbage if the device
+			 * is turned on anyway */
 			timer = init_lirc_timer();
 			/* enable_irq(irq); */
 			return;
@@ -328,7 +331,8 @@ static void irq_handler(int i, void *blah)
 		level = newlevel;
 
 		/* giving up */
-		if (signal > timeout || (check_pselecd && (in(1) & LP_PSELECD))) {
+		if (signal > timeout
+		    || (check_pselecd && (in(1) & LP_PSELECD))) {
 			signal = 0;
 			printk(KERN_NOTICE "%s: timeout\n", LIRC_DRIVER_NAME);
 			break;
@@ -438,7 +442,8 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 		return -EFAULT;
 
 #ifdef LIRC_TIMER
-	if (timer == 0) { /* try again if device is ready */
+	if (timer == 0) {
+		/* try again if device is ready */
 		timer = init_lirc_timer();
 		if (timer == 0)
 			return(-EIO);

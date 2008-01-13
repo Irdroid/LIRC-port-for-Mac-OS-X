@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.87 2007/12/15 17:28:01 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.88 2008/01/13 11:13:50 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -140,8 +140,7 @@
 
 #define LIRC_DRIVER_NAME "lirc_serial"
 
-struct lirc_serial
-{
+struct lirc_serial {
 	int signal_pin;
 	int signal_pin_change;
 	int on;
@@ -399,7 +398,8 @@ static unsigned long space_width;
 static inline unsigned int sinp(int offset)
 {
 #if defined(LIRC_ALLOW_MMAPPED_IO)
-	if (iommap != 0) { /* the register is memory-mapped */
+	if (iommap != 0) {
+		/* the register is memory-mapped */
 		offset <<= ioshift;
 		return readb(io + offset);
 	}
@@ -410,7 +410,8 @@ static inline unsigned int sinp(int offset)
 static inline void soutp(int offset, int value)
 {
 #if defined(LIRC_ALLOW_MMAPPED_IO)
-	if (iommap != 0) { /* the register is memory-mapped */
+	if (iommap != 0) {
+		/* the register is memory-mapped */
 		offset <<= ioshift;
 		writeb(value, io + offset);
 	}
@@ -516,10 +517,10 @@ static inline int init_timing_params(unsigned int new_duty_cycle,
  * IE multiplied by 256. */
 	if (256*1000000L/new_freq*new_duty_cycle/100 <=
 	    LIRC_SERIAL_TRANSMITTER_LATENCY)
-		return(-EINVAL);
+		return -EINVAL;
 	if (256*1000000L/new_freq*(100-new_duty_cycle)/100 <=
 	    LIRC_SERIAL_TRANSMITTER_LATENCY)
-		return(-EINVAL);
+		return -EINVAL;
 	duty_cycle = new_duty_cycle;
 	freq = new_freq;
 	period = 256*1000000L/freq;
@@ -677,7 +678,8 @@ static void send_space_homebrew(long length)
 
 static inline void rbwrite(lirc_t l)
 {
-	if (lirc_buffer_full(&rbuf)) { /* no new signals will be accepted */
+	if (lirc_buffer_full(&rbuf)) {
+		/* no new signals will be accepted */
 		dprintk("Buffer overrun\n");
 		return;
 	}
@@ -806,7 +808,8 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 				data = PULSE_MASK;
 			} else if (deltv > 15) {
 				data = PULSE_MASK; /* really long time */
-				if (!(dcd^sense)) { /* sanity check */
+				if (!(dcd^sense)) {
+					/* sanity check */
 					printk(KERN_WARNING LIRC_DRIVER_NAME
 					       ": AIEEEE: "
 					       "%d %d %lx %lx %lx %lx\n",
@@ -849,7 +852,9 @@ static void hardware_init_port(void)
 	sinp(UART_MSR);
 
 #if defined(LIRC_SERIAL_NSLU2)
-	if (type == LIRC_NSLU2) { /* Setup NSLU2 UART */
+	if (type == LIRC_NSLU2) {
+		/* Setup NSLU2 UART */
+
 		/* Enable UART */
 		soutp(UART_IER, sinp(UART_IER) | UART_IE_IXP42X_UUE);
 		/* Disable Receiver data Time out interrupt */
@@ -916,7 +921,7 @@ static int init_port(void)
 		       ": or compile the serial port driver as module and\n");
 		printk(KERN_WARNING LIRC_DRIVER_NAME
 		       ": make sure this module is loaded first\n");
-		return(-EBUSY);
+		return -EBUSY;
 	}
 
 	hardware_init_port();
@@ -1025,12 +1030,15 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	long delta = 0;
 
 	if (!(hardware[type].features&LIRC_CAN_SEND_PULSE))
-		return(-EBADF);
+		return -EBADF;
 
-	if (n%sizeof(lirc_t)) return(-EINVAL);
-	count = n/sizeof(lirc_t);
-	if (count > WBUF_LEN || count%2 == 0) return(-EINVAL);
-	if (copy_from_user(wbuf, buf, n)) return -EFAULT;
+	if (n % sizeof(lirc_t))
+		return -EINVAL;
+	count = n / sizeof(lirc_t);
+	if (count > WBUF_LEN || count % 2 == 0)
+		return -EINVAL;
+	if (copy_from_user(wbuf, buf, n))
+		return -EFAULT;
 	local_irq_save(flags);
 	if (type == LIRC_IRDEO) {
 		/* DTR, RTS down */
@@ -1044,7 +1052,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	}
 	off();
 	local_irq_restore(flags);
-	return(n);
+	return n;
 }
 
 static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
@@ -1057,7 +1065,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 	switch (cmd) {
 	case LIRC_GET_SEND_MODE:
 		if (!(hardware[type].features&LIRC_CAN_SEND_MASK))
-			return(-ENOIOCTLCMD);
+			return -ENOIOCTLCMD;
 
 		result = put_user(LIRC_SEND2MODE
 				  (hardware[type].features&LIRC_CAN_SEND_MASK),
@@ -1068,7 +1076,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 
 	case LIRC_SET_SEND_MODE:
 		if (!(hardware[type].features&LIRC_CAN_SEND_MASK))
-			return(-ENOIOCTLCMD);
+			return -ENOIOCTLCMD;
 
 		result = get_user(value, (unsigned long *) arg);
 		if (result)

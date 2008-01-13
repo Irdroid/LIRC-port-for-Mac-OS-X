@@ -612,7 +612,7 @@ static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 			keys_to_copy = dev->lirccnt;
 
 		lirc_buffer_write_n(buf,
-			(unsigned char *) & (dev->lircdata[dev->lircidx]),
+			(unsigned char *) &(dev->lircdata[dev->lircidx]),
 			keys_to_copy);
 		dev->lircidx += keys_to_copy;
 		dev->lirccnt -= keys_to_copy;
@@ -756,7 +756,8 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			}
 		}
 
-		if (((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == 0x00)
+		if (((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
+		    == 0x00)
 		    && ((endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) ==
 		    USB_ENDPOINT_XFER_BULK)) {
 			dprintk("we found a bulk out endpoint");

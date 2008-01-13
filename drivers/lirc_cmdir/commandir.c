@@ -115,8 +115,7 @@ int debug_commandir;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 
 /* Structure to hold all of our device specific stuff */
-struct usb_skel
-{
+struct usb_skel {
 	struct usb_device *udev; /* save off the usb device pointer */
 	struct usb_interface *interface; /* the interface for this device */
 	devfs_handle_t devfs; /* devfs device node */
@@ -173,8 +172,7 @@ static struct usb_driver cmdir_driver = {
 #else /* kernel >= 2.6 */
 
 /* Structure to hold all of our device specific stuff */
-struct usb_skel
-{
+struct usb_skel {
 	struct usb_device *udev; /* the usb device for this device */
 	struct usb_interface *interface; /* the interface for this device */
 	unsigned char *bulk_in_buffer; /* the buffer to receive data */
@@ -203,7 +201,7 @@ static struct usb_class_driver cmdir_class = {
 	.name =		"usb/commandir%d",
 	.fops =		&cmdir_fops,
 	/* .mode =	S_IFCHR | S_IRUSR | S_IWUSR |
-	 * 		S_IRGRP | S_IWGRP | S_IROTH, */
+	 *		S_IRGRP | S_IWGRP | S_IROTH, */
 	.minor_base =	USB_CMDIR_MINOR_BASE,
 };
 
@@ -526,7 +524,8 @@ static int cmdir_probe(struct usb_interface *interface,
 
 	/* check whether minor already includes base */
 	minor = interface->minor;
-	if (minor >= USB_CMDIR_MINOR_BASE) minor = minor-USB_CMDIR_MINOR_BASE;
+	if (minor >= USB_CMDIR_MINOR_BASE)
+		minor = minor-USB_CMDIR_MINOR_BASE;
 
 	/* let the user know what node this device is now attached to */
 	info("CommandIR USB device now attached to commandir%d", minor);
@@ -636,7 +635,8 @@ static void cmdir_disconnect(struct usb_interface *interface)
 #endif
 
 	/* check whether minor already includes base */
-	if (minor >= USB_CMDIR_MINOR_BASE) minor = minor-USB_CMDIR_MINOR_BASE;
+	if (minor >= USB_CMDIR_MINOR_BASE)
+		minor = minor-USB_CMDIR_MINOR_BASE;
 
 	info("CommandIR #%d now disconnected", minor);
 
@@ -645,7 +645,8 @@ static void cmdir_disconnect(struct usb_interface *interface)
 		/* decrement until find next valid device */
 		while (rx_device > 0) {
 			rx_device--;
-			if (cmdir_check(rx_device) == 0) break;
+			if (cmdir_check(rx_device) == 0)
+				break;
 		}
 		if (minor > 0)
 			info("Active Receiver is on CommandIR #%d", rx_device);
@@ -803,19 +804,22 @@ static void update_cmdir_string(int device_num)
 	}
 	if (transmitters & (multiplier*0x02)) {
 		cmdir_var[next_pos] = '2';
-		if (next_comma > 0) cmdir_var[next_pos-2] = ',';
+		if (next_comma > 0)
+			cmdir_var[next_pos-2] = ',';
 		next_pos += 3;
 		next_comma++;
 	}
 	if (transmitters & (multiplier*0x04)) {
 		cmdir_var[next_pos] = '3';
-		if (next_comma > 0) cmdir_var[next_pos-2] = ',';
+		if (next_comma > 0)
+			cmdir_var[next_pos-2] = ',';
 		next_pos += 3;
 		next_comma++;
 	}
 	if (transmitters & (multiplier*0x08)) {
 		cmdir_var[next_pos] = '4';
-		if (next_comma > 0) cmdir_var[next_pos-2] = ',';
+		if (next_comma > 0)
+			cmdir_var[next_pos-2] = ',';
 		next_pos += 3;
 		next_comma++;
 	}
@@ -1141,7 +1145,8 @@ int send_queue()
 			/* start it up: */
 
 			last_sent = nexttosend - 1;
-			if (last_sent < 0) last_sent = QUEUELENGTH - 1;
+			if (last_sent < 0)
+				last_sent = QUEUELENGTH - 1;
 			/* Final check - is it TIME to send this packet yet? */
 			/* if (wait_to_tx(waitusecs[last_sent]) == 0) { */
 			/* always send if there's room,
@@ -1202,8 +1207,10 @@ int wait_to_tx(int usecs)
 	 * for non-zero last_tx's. */
 	int wait_until_sec = 0, wait_until_usec = 0;
 	int now_sec = 0, now_usec = 0;
-	if (debug_commandir == 1) printk(KERN_INFO "waittotx(%d)\n", usecs);
-	if (usecs == 0) return 0;
+	if (debug_commandir == 1)
+		printk(KERN_INFO "waittotx(%d)\n", usecs);
+	if (usecs == 0)
+		return 0;
 
 	if (!(last_tx_sec == 0 && last_tx_usec == 0)) {
 		/* calculate wait time: */
@@ -1483,7 +1490,8 @@ static void cmdir_write_bulk_callback(struct urb *urb, struct pt_regs *regs)
 	struct usb_skel *dev;
 	dev = (struct usb_skel *)urb->context;
 	send_status = SEND_IDLE;
-	if (debug_commandir == 1) printk(KERN_INFO "callback()\n");
+	if (debug_commandir == 1)
+		printk(KERN_INFO "callback()\n");
 	/* free up our allocated buffer */
 
 	usb_buffer_free(urb->dev, urb->transfer_buffer_length,

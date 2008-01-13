@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.26 2008/01/12 21:57:57 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.27 2008/01/13 11:13:50 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.26 $"
+#define DRIVER_VERSION	"$Revision: 1.27 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -93,8 +93,7 @@ MODULE_DEVICE_TABLE(usb, streamzap_table);
 /* number of samples buffered */
 #define STREAMZAP_BUFFER_SIZE 128
 
-enum StreamzapDecoderState
-{
+enum StreamzapDecoderState {
 	PulseSpace,
 	FullPulse,
 	FullSpace,
@@ -274,7 +273,8 @@ static inline void flush_delay_buffer(struct usb_streamzap *sz)
 			dprintk("buffer overflow\n", sz->plugin.minor);
 		}
 	}
-	if (!empty) wake_up(&sz->lirc_buf.wait_poll);
+	if (!empty)
+		wake_up(&sz->lirc_buf.wait_poll);
 }
 
 static inline void push(struct usb_streamzap *sz, unsigned char *data)

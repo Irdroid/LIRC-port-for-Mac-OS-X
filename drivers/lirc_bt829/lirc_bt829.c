@@ -61,7 +61,8 @@ static unsigned char do_get_bits(void);
 static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
-		if (debug) printk(KERN_DEBUG fmt, ## args);	\
+		if (debug)					\
+			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
 
 static int atir_minor;

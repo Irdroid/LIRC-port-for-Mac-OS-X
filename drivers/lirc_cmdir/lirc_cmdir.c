@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.8 2007/09/27 19:47:20 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.9 2008/01/13 11:13:49 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -53,11 +53,11 @@
 static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
-		if (debug) printk(KERN_DEBUG fmt, ## args);	\
+		if (debug)					\
+			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
 
-struct lirc_cmdir
-{
+struct lirc_cmdir {
 	int features;
 };
 
@@ -243,7 +243,8 @@ static int cmdir_convert_RX(unsigned char *orig_rxbuffer)
 	memcpy((unsigned char *)tmp_int_buffer, tmp_char_buffer,
 						(num_data_values*4));
 
-	if (orig_rxbuffer[5] < 255) { /* space */
+	if (orig_rxbuffer[5] < 255) {
+		/* space */
 		final_data_buffer[0] = get_time_value(last_mc_time,
 						tmp_int_buffer[0],
 						orig_rxbuffer[5]);
@@ -411,7 +412,8 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 			num_bytes_already_sent += MAX_PACKET;
 			time_elapse = 0;
 
-			if ((i + 1) < count) { /* still more to send: */
+			if ((i + 1) < count) {
+				/* still more to send: */
 				cmdir_char[0] =	TX_HEADER;  /* Next Packet */
 				cmdir_char[1] = signal_num;
 				cmdir_cnt = 2; /* reset the count */

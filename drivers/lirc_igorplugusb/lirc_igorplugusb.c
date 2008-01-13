@@ -515,7 +515,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->minor = -1;
 	plugin->code_length = bytes_in_key*8; /* in bits */
 	plugin->features = LIRC_CAN_REC_MODE2;
-	plugin->data = ir; 
+	plugin->data = ir;
 	plugin->rbuf = rbuf;
 	plugin->set_use_inc = &set_use_inc;
 	plugin->set_use_dec = &set_use_dec;
@@ -523,7 +523,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->add_to_buf = &usb_remote_poll;
 #ifdef LIRC_HAVE_SYSFS
 	plugin->dev = &dev->dev;
-#endif  
+#endif
 	plugin->owner = THIS_MODULE;
 
 	init_MUTEX(&ir->lock);

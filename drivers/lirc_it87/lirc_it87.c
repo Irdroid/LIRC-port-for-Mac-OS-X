@@ -265,7 +265,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 	unsigned long value = 0;
 	unsigned int ivalue;
 	unsigned long hw_flags;
-	
+
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_SEND_PULSE |
 			LIRC_CAN_SET_SEND_CARRIER |
@@ -335,7 +335,8 @@ static void add_read_queue(int flag, unsigned long val)
 
 	/* statistically pulses are ~TIME_CONST/2 too long: we could
 	   maybe make this more exactly but this is good enough */
-	if (flag) /* pulse */ {
+	if (flag) {
+		/* pulse */
 		if (newval > TIME_CONST / 2)
 			newval -= TIME_CONST / 2;
 		else /* should not ever happen */

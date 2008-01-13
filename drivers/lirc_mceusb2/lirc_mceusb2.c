@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.39 $"
+#define DRIVER_VERSION	"$Revision: 1.40 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
@@ -123,7 +123,7 @@ static int debug;
 #define VENDOR_SHUTTLE		0x1308
 #define VENDOR_MITSUMI		0x03ee
 #define VENDOR_TOPSEED		0x1784
-#define VENDOR_RICAVISION       0x179d
+#define VENDOR_RICAVISION	0x179d
 #define VENDOR_ITRON		0x195d
 #define VENDOR_FIC		0x1509
 #define VENDOR_LG		0x043e
@@ -645,7 +645,7 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 	      ir->usbdev->descriptor.idProduct == 0x0334)) ||
 	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED &&
 	     (ir->usbdev->descriptor.idProduct == 0x0001 ||
-              ir->usbdev->descriptor.idProduct == 0x0007 ||
+	      ir->usbdev->descriptor.idProduct == 0x0007 ||
 	      ir->usbdev->descriptor.idProduct == 0x0008)))
 		ir->transmitter_mask = mask;
 	else

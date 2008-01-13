@@ -121,8 +121,7 @@ static void init_act220(void);
 
 /******************************* SA1100 ********************************/
 #ifdef LIRC_ON_SA1100
-struct sa1100_ser2_registers
-{
+struct sa1100_ser2_registers {
 	/* HSSP control register */
 	unsigned char hscr0;
 	/* UART registers */
@@ -199,7 +198,8 @@ static lirc_t tx_buf[WBUF_LEN];
 static int debug;
 #define dprintk(fmt, args...)						\
 	do {								\
-		if (debug) printk(KERN_DEBUG LIRC_DRIVER_NAME ": "	\
+		if (debug)						\
+			printk(KERN_DEBUG LIRC_DRIVER_NAME ": "		\
 				fmt, ## args);				\
 	} while (0)
 
@@ -480,7 +480,8 @@ static void add_read_queue(int flag, unsigned long val)
 
 	/* statistically pulses are ~TIME_CONST/2 too long: we could
 	   maybe make this more exactly but this is good enough */
-	if (flag) { /* pulse */
+	if (flag) {
+		/* pulse */
 		if (newval > TIME_CONST/2)
 			newval -= TIME_CONST/2;
 		else /* should not ever happen */
