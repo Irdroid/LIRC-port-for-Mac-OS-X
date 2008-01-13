@@ -148,10 +148,11 @@ static struct usb_skel *minor_table[MAX_DEVICES];
 static DECLARE_MUTEX(minor_table_mutex);
 
 static struct file_operations cmdir_fops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) \
-	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 	.owner		= THIS_MODULE,
-#endif
+#endif /* kernel < 2.6.16 */
+#endif /* kernel >= 2.6.0 */
 	.read		= cmdir_file_read,
 	.write		= cmdir_file_write,
 	.ioctl		= cmdir_ioctl,
@@ -185,10 +186,11 @@ struct usb_skel
 #define to_skel_dev(d) container_of(d, struct usb_skel, kref)
 
 static struct file_operations cmdir_fops = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) \
-	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 	.owner =	THIS_MODULE,
-#endif
+#endif /* kernel < 2.6.16 */
+#endif /* kernel >= 2.6.0 */
 	.read =		cmdir_file_read,
 	.write =	cmdir_file_write,
 	.open =		cmdir_open,
@@ -206,17 +208,18 @@ static struct usb_class_driver cmdir_class = {
 };
 
 static struct usb_driver cmdir_driver = {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) \
-	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 	.owner =	THIS_MODULE,
-#endif
+#endif /* kernel < 2.6.16 */
+#endif /* kernel >= 2.6.0 */
 	.name =		"commandir",
 	.probe =	cmdir_probe,
 	.disconnect =	cmdir_disconnect,
 	.id_table =	cmdir_table,
 };
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) */
+#endif /* kernel < 2.6.0 */
 
 static int lcd_device;
 static int rx_device;

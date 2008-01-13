@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.32 2007/12/15 17:28:00 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.33 2008/01/13 10:02:39 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -224,14 +224,15 @@ typedef void irqreturn_t;
 #endif
 #endif
 
-#if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE \
-	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
+#if KERNEL_VERSION(2, 4, 0) <= LINUX_VERSION_CODE
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
 #include <linux/pci.h>
 static inline char *pci_name(struct pci_dev *pdev)
 {
 	return pdev->slot_name;
 }
-#endif /* 2.4.0 <= kernel < 2.4.22 */
+#endif /* kernel < 2.4.22 */
+#endif /* kernel >= 2.4.0 */
 
 /*************************** I2C specific *****************************/
 #include <linux/i2c.h>
@@ -324,10 +325,11 @@ static inline int usb_kill_urb(struct urb *urb)
 
 /******************************* pm.h *********************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && \
-	LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 typedef u32 pm_message_t;
-#endif
+#endif /* kernel < 2.6.11 */
+#endif /* kernel >= 2.6.0 */
 
 /*************************** interrupt.h ******************************/
 /* added in 2.6.18, old defines removed in 2.6.24 */
