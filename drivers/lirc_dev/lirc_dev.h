@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.21 2007/09/27 19:47:20 lirc Exp $
+ * $Id: lirc_dev.h,v 1.22 2008/01/13 10:45:02 lirc Exp $
  *
  */
 
@@ -16,15 +16,14 @@
 
 /* #define LIRC_BUFF_POWER_OF_2 */
 #ifdef LIRC_BUFF_POWER_OF_2
-#define mod(n, div) ((n) & ((div) -1))
+#define mod(n, div) ((n) & ((div) - 1))
 #else
 #define mod(n, div) ((n) % (div))
 #endif
 #include <linux/slab.h>
 #include <linux/fs.h>
 
-struct lirc_buffer
-{
+struct lirc_buffer {
 	wait_queue_head_t wait_poll;
 	spinlock_t lock;
 
@@ -170,8 +169,7 @@ static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 	lirc_buffer_unlock(buf, &flags);
 }
 
-struct lirc_plugin
-{
+struct lirc_plugin {
 	char name[40];
 	int minor;
 	int code_length;

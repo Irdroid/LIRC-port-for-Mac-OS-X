@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.55 2007/11/08 21:27:29 lirc Exp $
+ * $Id: lirc_dev.c,v 1.56 2008/01/13 10:45:02 lirc Exp $
  *
  */
 
@@ -55,6 +55,9 @@
 #endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+#include <linux/kthread.h>
+#endif
 
 #include "drivers/kcompat.h"
 
@@ -69,7 +72,8 @@
 static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
-		if (debug) printk(KERN_DEBUG fmt, ## args);	\
+		if (debug)					\
+			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
@@ -77,8 +81,7 @@ static int debug;
 #define NOPLUG            -1
 #define LOGHEAD           "lirc_dev (%s[%d]): "
 
-struct irctl
-{
+struct irctl {
 	struct lirc_plugin p;
 	int attached;
 	int open;
@@ -86,10 +89,14 @@ struct irctl
 	struct semaphore buffer_sem;
 	struct lirc_buffer *buf;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	int tpid;
 	struct completion *t_notify;
 	struct completion *t_notify2;
 	int shutdown;
+#else
+	struct task_struct *task;
+#endif
 	long jiffies_to_wait;
 
 #ifdef LIRC_HAVE_DEVFS_24
@@ -114,10 +121,14 @@ static inline void init_irctl(struct irctl *ir)
 	sema_init(&ir->buffer_sem, 1);
 	ir->p.minor = NOPLUG;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	ir->tpid = -1;
 	ir->t_notify = NULL;
 	ir->t_notify2 = NULL;
 	ir->shutdown = 0;
+#else
+	ir->task = NULL;
+#endif
 	ir->jiffies_to_wait = 0;
 
 	ir->open = 0;
@@ -174,7 +185,11 @@ static inline int add_to_buf(struct irctl *ir)
 		}
 
 		if (res == -ENODEV)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 			ir->shutdown = 1;
+#else
+			kthread_stop(ir->task);
+#endif
 
 		return (got_data ? SUCCESS : res);
 	}
@@ -191,10 +206,12 @@ static int lirc_thread(void *irctl)
 	/* This thread doesn't need any user-level access,
 	 * so get rid of all our resources
 	 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	daemonize("lirc_dev");
 
 	if (ir->t_notify != NULL)
 		complete(ir->t_notify);
+#endif
 
 	dprintk(LOGHEAD "poll thread started\n", ir->p.name, ir->p.minor);
 
@@ -207,7 +224,11 @@ static int lirc_thread(void *irctl)
 				interruptible_sleep_on(
 					ir->p.get_queue(ir->p.data));
 			}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 			if (ir->shutdown)
+#else
+			if (kthread_should_stop())
+#endif
 				break;
 			if (!add_to_buf(ir))
 				wake_up_interruptible(&ir->buf->wait_poll);
@@ -216,6 +237,7 @@ static int lirc_thread(void *irctl)
 			set_current_state(TASK_INTERRUPTIBLE);
 			schedule_timeout(HZ/2);
 		}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	} while (!ir->shutdown);
 
 	if (ir->t_notify2 != NULL)
@@ -224,6 +246,9 @@ static int lirc_thread(void *irctl)
 	ir->tpid = -1;
 	if (ir->t_notify != NULL)
 		complete(ir->t_notify);
+#else
+	} while (!kthread_should_stop());
+#endif
 
 	dprintk(LOGHEAD "poll thread ended\n", ir->p.name, ir->p.minor);
 
@@ -381,17 +406,24 @@ int lirc_register_plugin(struct lirc_plugin *p)
 
 	if (p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 		ir->t_notify = &tn;
 		ir->tpid = kernel_thread(lirc_thread, (void *)ir, 0);
 		if (ir->tpid < 0) {
+#else
+		ir->task = kthread_run(lirc_thread, (void *)ir, "lirc_dev");
+		if (IS_ERR(ir->task)) {
+#endif
 			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
 			       "cannot run poll thread for minor = %d\n",
 			       p->minor);
 			err = -ECHILD;
 			goto out_sysfs;
 		}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 		wait_for_completion(&tn);
 		ir->t_notify = NULL;
+#endif
 	}
 	ir->attached = 1;
 	up(&plugin_lock);
@@ -448,6 +480,7 @@ int lirc_unregister_plugin(int minor)
 	}
 
 	/* end up polling thread */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	if (ir->tpid >= 0) {
 		ir->t_notify = &tn;
 		ir->t_notify2 = &tn2;
@@ -468,6 +501,12 @@ int lirc_unregister_plugin(int minor)
 		ir->t_notify = NULL;
 		ir->t_notify2 = NULL;
 	}
+#else /* kernel >= 2.6.23 */
+	if (ir->task) {
+		wake_up_process(ir->task);
+		kthread_stop(ir->task);
+	}
+#endif
 
 	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
 		ir->p.name, ir->p.minor);
@@ -748,7 +787,8 @@ static ssize_t irctl_read(struct file *file,
 			 * returned as less than 'length', instead of blocking
 			 * again, returning -EWOULDBLOCK, or returning
 			 * -ERESTARTSYS */
-			if (written) break;
+			if (written)
+				break;
 			if (file->f_flags & O_NONBLOCK) {
 				ret = -EWOULDBLOCK;
 				break;
