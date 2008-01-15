@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.40 $"
+#define DRIVER_VERSION	"$Revision: 1.41 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
@@ -121,6 +121,7 @@ static int debug;
 #define VENDOR_TATUNG		0x1460
 #define VENDOR_GATEWAY		0x107b
 #define VENDOR_SHUTTLE		0x1308
+#define VENDOR_SHUTTLE2		0x051c
 #define VENDOR_MITSUMI		0x03ee
 #define VENDOR_TOPSEED		0x1784
 #define VENDOR_RICAVISION	0x179d
@@ -146,6 +147,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_TATUNG, 0x9150) },
 	/* Shuttle eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_SHUTTLE, 0xc001) },
+	/* Shuttle eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_SHUTTLE2, 0xc001) },
 	/* Gateway eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_GATEWAY, 0x3009) },
 	/* Mitsumi */
