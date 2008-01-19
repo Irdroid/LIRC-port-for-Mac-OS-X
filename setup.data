@@ -131,6 +131,7 @@ hw_menu_entry: @hw-usb
 	alsa_usb: "Sound Blaster Extigy/Audigy 2 NX (ALSA snd-usb-audio)"
 	imon_24g: "Soundgraph iMON 2.4G DT & LT"
 	imon: "Soundgraph iMON MultiMedian IR/VFD"
+	imon_lcd: "Soundgraph iMON IR/LCD"
 	imon_knob: "Soundgraph iMON Knob"
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
@@ -219,6 +220,7 @@ param_type: \
 	igorplugusb \
 	iguanaIR \
 	imon \
+	imon_lcd \
 	imon_24g \
 	imon_knob \
 	imon_pad \
@@ -286,6 +288,7 @@ default_param: \
 	igorplugusb \
 	iguanaIR \
 	imon \
+	imon_lcd \
 	imon_24g \
 	imon_knob \
 	imon_pad \

@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.7 2008/01/12 20:55:34 lirc Exp $
+dnl $Id: configure.ac,v 1.8 2008/01/19 10:06:45 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -292,6 +292,9 @@ AH_TEMPLATE([LIRC_SIR_TEKRAM],
 AH_TEMPLATE([LIRC_SYSLOG],
 	[syslog facility to use])
 
+AH_TEMPLATE([LIRC_IMON_LCD],
+	[Define if your iMON is an LCD and not a VFD.])
+
 AH_TEMPLATE([LIRC_TIMER],
 	[Set the timer for the parallel port driver])
 
@@ -425,10 +428,10 @@ AC_ARG_WITH(driver,
                           flyvideo, gvbctv5pci, hauppauge,
                           hauppauge_dvb, hercules_smarttv_stereo,
                           i2cuser, igorplugusb, iguanaIR, imon,
-                          imon_24g, imon_knob, imon_pad, imon_rsc,
-                          irdeo, irdeo_remote, irlink, irman, irreal,
-                          it87, knc_one, kworld, leadtek_0007,
-                          leadtek_0010,leadtek_pvr2000,
+                          imon_24g, imon_knob, imon_lcd, imon_pad,
+                          imon_rsc, irdeo, irdeo_remote, irlink,
+                          irman, irreal, it87, knc_one, kworld,
+                          leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
                           lptX, macmini, mceusb, mceusb2, mediafocusI,
                           mouseremote, mouseremote_ps2, mp3anywhere,
@@ -945,14 +948,20 @@ if test "$driver" = "imon"; then
   lircd_conf="imon/lircd.conf.imon"  
 fi
 
+if test "$driver" = "imon_24g"; then
+  lirc_driver="lirc_dev lirc_imon"
+  lircd_conf="imon/lircd.conf.imon-2.4g"
+fi
+
 if test "$driver" = "imon_knob"; then
   lirc_driver="lirc_dev lirc_imon"
   lircd_conf="imon/lircd.conf.imon-knob"
 fi
 
-if test "$driver" = "imon_24g"; then
+if test "$driver" = "imon_lcd"; then
   lirc_driver="lirc_dev lirc_imon"
-  lircd_conf="imon/lircd.conf.imon-2.4g"
+  lircd_conf="imon/lircd.conf.imon"
+  AC_DEFINE(LIRC_IMON_LCD)
 fi
 
 if test "$driver" = "imon_pad"; then

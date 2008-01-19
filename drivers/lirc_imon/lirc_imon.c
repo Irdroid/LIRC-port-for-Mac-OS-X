@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.22 2008/01/13 11:13:49 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.23 2008/01/19 10:06:46 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -44,6 +44,10 @@
  *
  */
 #include <linux/version.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
 #error "*** Sorry, this driver requires kernel version 2.4.22 or higher"
@@ -117,6 +121,10 @@ static void usb_tx_callback(struct urb *urb);
 static int vfd_open(struct inode *inode, struct file *file);
 static int vfd_close(struct inode *inode, struct file *file);
 static ssize_t vfd_write(struct file *file, const char *buf,
+				size_t n_bytes, loff_t *pos);
+
+/* LCD file_operations override function prototypes */
+static ssize_t lcd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos);
 
 /* LIRC plugin function prototypes */
@@ -234,6 +242,11 @@ static struct usb_class_driver imon_class = {
 static DECLARE_MUTEX(disconnect_sem);
 
 static int debug;
+#ifdef LIRC_IMON_LCD
+static int is_lcd = 1;
+#else
+static int is_lcd; /* If LIRC_IMON_LCD not defined, default to non-LCD */
+#endif
 
 #if !defined(KERNEL_2_5)
 
@@ -260,8 +273,19 @@ MODULE_AUTHOR(MOD_AUTHOR);
 MODULE_DESCRIPTION(MOD_DESC);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, imon_usb_id_table);
+
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
+
+#ifdef LIRC_IMON_LCD
+module_param(is_lcd, int, 1);
+MODULE_PARM_DESC(is_lcd, "The device is an LCD: 0=no (it's a VFD), "
+		 "1=yes (default:yes)");
+#else
+module_param(is_lcd, int, 0);
+MODULE_PARM_DESC(is_lcd, "The device is an LCD: 0=no (it's a VFD), "
+		 "1=yes (default:no)");
+#endif
 
 static inline void delete_context(struct imon_context *context)
 {
@@ -589,7 +613,8 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		goto exit;
 	}
 
-	copy_from_user(context->tx.data_buf, buf, n_bytes);
+	if (copy_from_user(context->tx.data_buf, buf, n_bytes))
+		return -EFAULT;
 
 	/* Pad with spaces */
 	for (i = n_bytes; i < 32; ++i)
@@ -631,6 +656,62 @@ exit:
 	UNLOCK_CONTEXT;
 
 	return(retval == SUCCESS) ? n_bytes : retval;
+}
+
+/**
+ * Writes data to the LCD.  The iMON OEM LCD screen excepts 8-byte
+ * packets. We accept data as 16 hexadecimal digits, followed by a
+ * newline (to make it easy to drive the device from a command-line
+ * -- even though the actual binary data is a bit complicated).
+ *
+ * The device itself is not a "traditional" text-mode display. It's
+ * actually a 16x96 pixel bitmap display. That means if you want to
+ * display text, you've got to have your own "font" and translate the
+ * text into bitmaps for display. This is really flexible (you can
+ * display whatever diacritics you need, and so on), but it's also
+ * a lot more complicated than most LCDs...
+ */
+static ssize_t lcd_write(struct file *file, const char *buf,
+			 size_t n_bytes, loff_t *pos)
+{
+	int retval = SUCCESS;
+	struct imon_context *context;
+
+	context = (struct imon_context *) file->private_data;
+	if (!context) {
+		err("%s: no context for device", __FUNCTION__);
+		return -ENODEV;
+	}
+
+	LOCK_CONTEXT;
+
+	if (!context->dev_present) {
+		err("%s: no iMON device present", __FUNCTION__);
+		retval = -ENODEV;
+		goto exit;
+	}
+
+	if (n_bytes != 8) {
+		err("%s: invalid payload size: %d (expecting 8)",
+		  __FUNCTION__, (int) n_bytes);
+		retval = -EINVAL;
+		goto exit;
+	}
+
+	if (copy_from_user(context->usb_tx_buf, buf, 8))
+		return -EFAULT;
+
+	retval = send_packet(context);
+	if (retval != SUCCESS) {
+		err("%s: send packet failed!",
+		  __FUNCTION__);
+		goto exit;
+	} else if (debug) {
+		info("%s: write %d bytes to LCD", __FUNCTION__, (int) n_bytes);
+	}
+exit:
+	UNLOCK_CONTEXT;
+	return (retval == SUCCESS) ? n_bytes : retval;
 }
 
 /**
@@ -959,6 +1040,13 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	int i;
 
 	info("%s: found IMON device", __FUNCTION__);
+
+	/*
+	 * If it's the LCD, as opposed to the VFD, we just need to replace
+	 * the "write" file op.
+	 */
+	if (is_lcd)
+		vfd_fops.write = &lcd_write;
 
 #if !defined(KERNEL_2_5)
 	for (subminor = 0; subminor < MAX_DEVICES; ++subminor) {

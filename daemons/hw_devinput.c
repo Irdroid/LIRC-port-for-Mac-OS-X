@@ -224,7 +224,7 @@ int devinput_init()
 			  hw.device);
 	}
 #endif
-			
+	
 	return 1;
 }
 
