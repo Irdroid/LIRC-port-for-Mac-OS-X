@@ -375,6 +375,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 			/* 1 Igor-tick = 85.333333 us */
 			code = (unsigned int)ir->buf_in[i] * 85
 				+ (unsigned int)ir->buf_in[i] / 3;
+			ir->last_time.tv_usec += code;
 			if (ir->in_space)
 				code |= PULSE_BIT;
 			lirc_buffer_write_n(buf, (unsigned char *)&code, 1);
