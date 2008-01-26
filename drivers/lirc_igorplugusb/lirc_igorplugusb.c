@@ -113,8 +113,9 @@ static int debug;
 #define ADDITIONAL_LIRC_BYTES   2
 
 /* times to poll per second */
-#define SAMPLE_RATE	     10
+#define SAMPLE_RATE	     100
 
+static int sample_rate = SAMPLE_RATE;
 
 /**** Igor's USB Request Codes */
 
@@ -520,7 +521,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	plugin->rbuf = rbuf;
 	plugin->set_use_inc = &set_use_inc;
 	plugin->set_use_dec = &set_use_dec;
-	plugin->sample_rate = SAMPLE_RATE;    /* per second */
+	plugin->sample_rate = sample_rate;    /* per second */
 	plugin->add_to_buf = &usb_remote_poll;
 #ifdef LIRC_HAVE_SYSFS
 	plugin->dev = &dev->dev;
@@ -681,6 +682,9 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
+
+module_param(sample_rate, int, 0644);
+MODULE_PARM_DESC(sample_rate, "Sampling rate in Hz (default: 100)");
 
 EXPORT_NO_SYMBOLS;
 
