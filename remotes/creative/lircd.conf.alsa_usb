@@ -192,3 +192,79 @@ begin remote
 end remote
 
 
+# this config file was automatically generated
+# using lirc-0.8.2(sb0540) on Tue Jan 15 23:36:06 2008
+#
+# contributed by MesseR
+#
+# brand: Creative
+# model no. of remote control: RM-1800
+# devices being controlled by this remote: Soundblaster X-Fi USB Receiver
+#
+
+begin remote
+
+  name  Creative_RM-1800
+  bits           16
+  flags SPACE_ENC|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  header       9078  4671
+  one           663  1607
+  zero          663   497
+  ptrail        662
+  repeat       9078  2216
+  pre_data_bits   16
+  pre_data       0x8322
+  gap          106974 300000
+  toggle_bit_mask 0x0
+
+      begin codes
+          Power                    0x619E
+          24bit                    0x916E
+          24bit_Up                 0x926D
+          24bit_Down               0x936C
+          CMSS                     0x718E
+          CMSS_Up                  0x946B
+          CMSS_Down                0x956A
+          EAX                      0x8C73
+          EAX_Up                   0x9669
+          EAX_Down                 0x9768
+          3dMidi                   0x9867
+          3dMidi_Up                0x9966
+          3dMidi_Down              0x9A65
+          Mute                     0x6E91
+          Vol_Up                   0x629D
+          Vol_Down                 0x639C
+          Up                       0x7B84
+          Left                     0x6B94
+          Right                    0x728D
+          Rew                      0x8778
+          Ok                       0x817E
+          Fwd                      0x758A
+          Down                     0x8D72
+          Return                   0x8E71
+          Start                    0x8877
+          Cancel                   0x7C83
+          Rec                      0x738C
+          Options                  0x827D
+          Display                  0x7689
+          Previous                 0x7F80
+          Play                     0x7986
+          Next                     0x7A85
+          Slow                     0x7D82
+          Stop                     0x857A
+          1                        0x8B74
+          2                        0x8F70
+          3                        0x906F
+          4                        0x8A75
+          5                        0x847B
+          6                        0x7887
+          7                        0x8976
+          8                        0x837C
+          9                        0x7788
+          0                        0x807F
+      end codes
+
+end remote
