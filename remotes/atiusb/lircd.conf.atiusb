@@ -2004,3 +2004,117 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.2(default) on Sun Jan 27 13:32:13 2008
+#
+# contributed by Frank Reimann, Berlin (capital city of Germany)
+#
+# brand:                       	Toshiba
+#
+# model no. of remote control:  Toshiba MCE Remote Control (X10), 
+# 				model no. PX1246E-1ETC, model type OR23E,
+# 				Universal Remote Control
+#
+# devices being controlled by this remote: 
+#                               RF USB receiver: X10 Wireless Technology, Inc.
+#                               Manufacturer: X10 WTI (Made in China by X10)
+#                               USB Vendor Id: 0bc7, 
+#                               USB Product Id: 0006,
+#                               Revision Number:  1.00
+#                               Toshiba MCE Remote Control Receiver,
+#                               model no. PX1246E-1ETC, model type: CM23E
+#
+# Hint:
+# ~~~~~
+# This remote control has two codes per button (see toggle_bit_mask below; XOR).
+# A button toggles between two states like a toggle switch every time it is
+# pressed.
+# The state of a key changes everytime it is pressed and the appropriate code
+# for the new state is send to the receiver.
+# If both codes are assigned to the same button name then this button behaves
+# like a push-button. Both button codes are accepted for the same button name
+# when option toggle_bit_mask is enabled.
+#
+# One more tip:
+# ~~~~~~~~~~~~~
+# You should add a line with "options lirc_atiusb repeat=15" to the distribution
+# specific module parameters file (like /etc/modules.conf 
+# or /etc/modprobe.conf) for an accurate key recognition. Consult the 
+# documentation of your distribution for further information concerning module
+# parameters.
+# Two or more button codes are sent in case default value "repeat=10" is used 
+# and when a button is pressed once. You can try greater values for slower
+# button code repetition. 
+#
+# More driver options (module parameters) and additional information are shown
+# with command "modinfo lirc_atiusb".
+
+begin remote
+
+  name  Toshiba_PX1246E-1ETC
+  bits           16
+  eps            30
+  aeps          100
+
+  one                   0     0
+  zero                  0     0
+  pre_data_bits               8
+  pre_data                 0x14
+  post_data_bits             16
+  post_data                 0x0
+  gap                    235969
+  toggle_bit_mask    0x80800000
+
+
+      begin codes
+
+          STANDBY                  0x5782
+          RED                      0x0732
+          YELLOW                   0x0934
+          GREEN                    0x0833
+          TELETEXT                 0x6B96
+          BLUE                     0x0A35
+          BACKSPACE                0x75A0
+          INFO                     0x042F
+          UP                       0x6F9A
+          LEFT                     0x729D
+          OK                       0x739E
+          RIGHT                    0x749F
+          DOWN                     0x77A2
+          TIMESHIFT                0x6D98
+          GUIDE                    0x0631
+          LIVE                     0x719C
+          DVD	                   0x5984
+          VOLUME+                  0x5E89
+          VOLUME-                  0x5D88
+          SYSTEM-LOGO              0x709B
+          CHANNEL+                 0x608B
+          CHANNEL-                 0x618C
+          MUTE                     0x5580
+          PREVIOUS                 0x76A1
+          NEXT                     0x78A3
+          REWIND                   0x79A4
+          PLAY                     0x7AA5
+          FAST-FORWARD             0x7BA6
+          RECORD                   0x7CA7
+          STOP                     0x7DA8
+          PAUSE                    0x7EA9
+          1                        0x628D
+          2                        0x638E
+          3                        0x648F
+          4                        0x6590
+          5                        0x6691
+          6                        0x6792
+          7                        0x6893
+          8                        0x6994
+          9                        0x6A95
+          ASTERISK                 0x0C37
+          0                        0x6C97
+          HASHMARK                 0x0D38
+          CLEAR                    0x0530
+          ENTER                    0x0B36
+
+      end codes
+
+end remote
