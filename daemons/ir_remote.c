@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.33 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.34 2008/02/04 14:22:11 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -343,7 +343,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 					else
 					{
 						codes->current=
-							codes->next->next;
+							codes->current->next;
 					}
 				}
 				if(!have_code)
