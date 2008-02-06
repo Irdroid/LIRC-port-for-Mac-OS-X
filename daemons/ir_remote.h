@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.38 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.39 2008/02/06 13:43:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -27,6 +27,18 @@
 #include "ir_remote_types.h"
 
 extern struct hardware hw;
+
+static inline ir_code get_ir_code(struct ir_ncode *ncode, struct ir_code_node *node)
+{
+	if(ncode->next && node != NULL) return node->code;
+	return ncode->code;
+}
+
+static inline struct ir_code_node *get_next_ir_code_node(struct ir_ncode *ncode, struct ir_code_node *node)
+{
+	if(node == NULL) return ncode->next;
+	return node->next;
+}
 
 static inline int bit_count(struct ir_remote *remote)
 {
@@ -275,6 +287,19 @@ static inline ir_code gen_mask(int bits)
 	return(mask);
 }
 
+static inline ir_code gen_ir_code(struct ir_remote *remote, ir_code pre, ir_code code, ir_code post)
+{
+	ir_code all;
+	
+	all = (pre&gen_mask(remote->pre_data_bits));
+	all <<= remote->bits;
+	all |= is_raw(remote) ? code:(code&gen_mask(remote->bits));
+	all <<= remote->post_data_bits;
+	all |= post&gen_mask(remote->post_data_bits);
+
+	return all;
+}
+
 void get_frequency_range(struct ir_remote *remotes,
 			 unsigned int *min_freq,unsigned int *max_freq);
 struct ir_remote *is_in_remotes(struct ir_remote *remotes,
@@ -291,7 +316,7 @@ void map_gap(struct ir_remote *remote,
 	     int *repeat_flagp,
 	     lirc_t *min_remaining_gapp,
 	     lirc_t *max_remaining_gapp);
-struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name);
+struct ir_ncode *get_code_by_name(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
 			  ir_code *toggle_bit_mask_state);

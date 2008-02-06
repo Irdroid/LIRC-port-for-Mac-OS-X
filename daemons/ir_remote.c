@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.34 2008/02/04 14:22:11 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.35 2008/02/06 13:43:07 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -212,7 +212,7 @@ void map_gap(struct ir_remote *remote,
 	
 }
 
-struct ir_ncode *get_ir_code(struct ir_remote *remote,char *name)
+struct ir_ncode *get_code_by_name(struct ir_remote *remote,char *name)
 {
 	struct ir_ncode *all;
 
@@ -299,12 +299,8 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		LOGPRINTF(1,"post");
 	}
 
-	all = (pre&gen_mask(remote->pre_data_bits));
-	all <<= remote->bits;
-	all |= is_raw(remote) ? code:(code&gen_mask(remote->bits));
-	all <<= remote->post_data_bits;
-	all |= post&gen_mask(remote->post_data_bits);
-	
+	all = gen_ir_code(remote, pre, code, post);
+
 	toggle_bit_mask_state = all&remote->toggle_bit_mask;
 
 	found=NULL;
@@ -315,21 +311,11 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	{
 		while(codes->name!=NULL)
 		{
-			ir_code next_code, next_all;
-			
-			if(codes->next!=NULL && codes->current!=NULL)
-			{
-				next_code=codes->current->code;
-			}
-			else
-			{
-				next_code=codes->code;
-			}
-			next_all = remote->pre_data;
-			next_all <<= remote->bits;
-			next_all |= next_code;
-			next_all <<= remote->post_data_bits;
-			next_all |= remote->post_data;
+			ir_code next_all;
+
+			next_all = gen_ir_code(remote, remote->pre_data,
+								   get_ir_code(codes, codes->current),
+								   remote->post_data);
 			if(next_all==all ||
 			   next_all==(all^remote->toggle_bit_mask))
 			{
@@ -357,7 +343,53 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			}
 			else
 			{
-				codes->current=NULL;
+				/* find longest matching sequence */
+				struct ir_code_node *search;
+				
+				search = codes->next;
+				if(search == NULL ||
+					(codes->next != NULL && codes->current == NULL))
+				{
+					codes->current=NULL;
+				}
+				else
+				{
+					int sequence_match = 0;
+					
+					while(search != codes->current->next)
+					{
+						struct ir_code_node *prev, *next;
+						int flag = 1;
+						
+						prev = NULL; /* means codes->code */
+						next = search;
+						while(next != codes->current)
+						{
+							if(get_ir_code(codes, prev) != get_ir_code(codes, next))
+							{
+								flag = 0;
+								break;
+							}
+							prev = get_next_ir_code_node(codes, prev);
+							next = get_next_ir_code_node(codes, next);
+						}
+						if(flag == 1)
+						{
+							next_all = gen_ir_code(remote, remote->pre_data,
+												   get_ir_code(codes, prev),
+												   remote->post_data);							
+							if(next_all==all ||
+							   next_all==(all^remote->toggle_bit_mask))
+							{
+								codes->current = get_next_ir_code_node(codes, prev);
+								sequence_match = 1;
+								break;
+							}
+						}
+						search = search->next;
+					}
+					if(!sequence_match) codes->current = NULL;
+				}
 			}
 			codes++;
 		}

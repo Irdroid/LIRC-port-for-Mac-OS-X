@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.74 2007/09/29 17:13:14 lirc Exp $      */
+/*      $Id: lircd.c,v 5.75 2008/02/06 13:43:07 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1037,7 +1037,7 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 	}
 	command=strtok(NULL,WHITE_SPACE);
 	if(command==NULL) return(1);
-	*code=get_ir_code(*remote,command);
+	*code=get_code_by_name(*remote,command);
 	if(*code==NULL)
 	{
 		return(send_error(fd,message,"unknown command: \"%s\"\n",
@@ -1646,7 +1646,7 @@ void free_old_remotes()
 			found=get_ir_remote(remotes,last_remote->name);
 			if(found!=NULL)
 			{
-				code=get_ir_code(found,last_remote->last_code->name);
+				code=get_code_by_name(found,last_remote->last_code->name);
 				if(code!=NULL)
 				{
 					found->reps=last_remote->reps;
@@ -1684,7 +1684,7 @@ void free_old_remotes()
 			found=get_ir_remote(remotes,repeat_remote->name);
 			if(found!=NULL)
 			{
-				code=get_ir_code(found,repeat_code->name);
+				code=get_code_by_name(found,repeat_code->name);
 				if(code!=NULL)
 				{
 					struct itimerval repeat_timer;

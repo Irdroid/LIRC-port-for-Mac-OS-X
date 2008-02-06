@@ -1,4 +1,4 @@
-/*      $Id: release.c,v 1.2 2007/07/29 18:20:13 lirc Exp $      */
+/*      $Id: release.c,v 1.3 2008/02/06 13:43:07 lirc Exp $      */
 
 /****************************************************************************
  ** release.c ***************************************************************
@@ -143,7 +143,7 @@ const char *release_map_remotes(struct ir_remote *old, struct ir_remote *new)
 	if(release_remote && is_in_remotes(old, release_remote))
 	{
 		if((remote = get_ir_remote(new, release_remote->name)) &&
-		   (ncode = get_ir_code(remote, release_ncode->name)))
+		   (ncode = get_code_by_name(remote, release_ncode->name)))
 		{
 			release_remote = remote;
 			release_ncode = ncode;
