@@ -2118,3 +2118,86 @@ begin remote
       end codes
 
 end remote
+
+
+#
+# this config file was automatically generated
+# using lirc-0.8.2(default) on Wed Feb  6 01:32:32 2008
+#
+# contributed by 
+#
+# brand:                       Snapstream Firefly
+# model no. of remote control: R1000
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  Snapstream_Firefly_R1000
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          235978
+  toggle_bit_mask 0x80800000
+
+      begin codes
+          maximize                 0x81AC
+          close                    0xD702
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          back                     0x6B96
+          ent                      0xED18
+          volup                    0x5E89
+          voldown                  0xDD08
+          mute                     0x5F8A
+          chup                     0xE00B
+          chdown                   0x618C
+          firefly                  0xD500
+          info                     0x83AE
+          option                   0x042F
+          up                       0x6F9A
+          down                     0xF722
+          left                     0x729D
+          right                    0xF41F
+          ok                       0x739E
+          menu                     0xF11C
+          exit                     0x75A0
+          rec                      0xFC27
+          play                     0x7AA5
+          stop                     0xFD28
+          rew                      0x79A4
+          prev                     0x002B
+          pause                    0x7EA9
+          ffwd                     0xFB26
+          next                     0x7FAA
+          music                    0xDB06
+          photo                    0x5A85
+          dvd                      0xD904
+          tv                       0x5883
+          video                    0xDC07
+          help                     0x5681
+          mouse                    0x022D
+          a                        0x6E99
+          b                        0xF01B
+          c                        0x76A1
+          d                        0xF823
+      end codes
+
+end remote
+
+
