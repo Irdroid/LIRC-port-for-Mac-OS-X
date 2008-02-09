@@ -256,6 +256,33 @@ char *hiddev_rec(struct ir_remote *remotes)
 	 * See further for the Asus DH specific code
 	 *
 	 */
+
+	if (event.hid == 0x90001)
+	{
+		/* This is the DVICO Remote. It actually sends two hid 
+		 * events, the first of which has 0 as the hid.value and 
+		 * is of no use in decoding the remote code. If we 
+		 * receive this type of event, read the next event 
+		 * (which should be immediately available) and 
+		 * use it to obtain the remote code.
+		 */
+
+		LOGPRINTF(1, "This is another type Dvico - sends two codes");
+		if(!waitfordata(TIMEOUT))
+		{
+			logprintf(LOG_ERR,"timeout reading next event");
+			return(NULL);
+		}
+		rd = read(hw.fd, &event, sizeof event);
+		if (rd != sizeof event) {
+			logprintf(LOG_ERR, "error reading '%s'",
+				  hw.device);
+			return 0;
+		}
+		pre_code = event.hid;
+		main_code = event.value;
+	}
+
 	if (event.hid == 0x10046) {
 		struct timeval now;
 		repeat_flag = (main_code & dvico_repeat_mask);
@@ -271,7 +298,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 		/* repeats that occur more than half a second after the    */
 		/* previous valid code because it is likely that they are  */
 		/* spurious.                                               */
-		
+
 		if(repeat_flag)
 		{
 			if(time_elapsed(&time_of_last_code, &now) > 500000)
@@ -303,37 +330,6 @@ char *hiddev_rec(struct ir_remote *remotes)
 #endif
 	}
 	
-	else if (event.hid == 0x90001)
-	{
-		LOGPRINTF(1, "This is another type Dvico - sends two codes");
-		if(!waitfordata(TIMEOUT))
-		{
-			logprintf(LOG_ERR,"timeout reading next event");
-			return(NULL);
-		}
-		rd = read(hw.fd, &event, sizeof event);
-		if (rd != sizeof event) {
-			logprintf(LOG_ERR, "error reading '%s'",
-				  hw.device);
-			return 0;
-		}
-		LOGPRINTF(1, "Event number hid 0x%X  value 0x%X",
-				  event.hid,
-				  event.value);
-		pre_code = event.hid;
-		main_code = event.value;
-		
-		/* Now we know this is dvico 0x10046 so strip the repeat flag */
-		
-		repeat_flag = (main_code & dvico_repeat_mask);
-		main_code = (main_code & ~dvico_repeat_mask);
-		if (main_code)
-		{
-			return decode_all(remotes);
-		}
-	}
-
-
 	/* Asus DH remote specific code */
 	else if (event.hid == 0xFF000000)
 	{
