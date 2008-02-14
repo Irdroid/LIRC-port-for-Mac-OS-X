@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.68 2007/09/29 11:46:23 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.69 2008/02/14 20:42:56 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -363,8 +363,9 @@ int main(int argc,char **argv)
 				progname);
 			exit(EXIT_FAILURE);
 		}
-		strcpy(filename_new,filename);
-		strcat(filename,".conf");
+		strcpy(filename_new, filename);
+		strcat(filename_new, ".conf");
+		filename = filename_new;
 	}
 	fout=fopen(filename,"w");
 	if(fout==NULL)
