@@ -36,6 +36,7 @@ extern struct hardware hw_mplay;
 extern struct hardware hw_pcmak;
 extern struct hardware hw_pinsys;
 extern struct hardware hw_pixelview;
+extern struct hardware hw_samsung;
 extern struct hardware hw_sb0540;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
@@ -132,6 +133,7 @@ struct hardware *hw_list[] =
 	&hw_pinsys,
 	&hw_pixelview,
 #ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
+	&hw_samsung,
 	&hw_sb0540,
 #endif
 	&hw_silitek,

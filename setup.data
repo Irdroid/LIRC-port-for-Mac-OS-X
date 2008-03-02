@@ -126,6 +126,7 @@ hw_menu_entry: @hw-usb
 	irlink: "IRLink VS USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
 	bw6130: "Remotec Multimedia PC Remote BW6130"
+	samsung: "Samsung USB IR Receiver"
 	sasem: "Sasem OnAir Remocon-V"
 	exaudio: "Sound Blaster Extigy USB sound card (exaudio)"
 	alsa_usb: "Sound Blaster Extigy/Audigy 2 NX (ALSA snd-usb-audio)"
@@ -245,6 +246,7 @@ param_type: \
 	pixelview_pro \
 	provideo \
 	sa1100 \
+	samsung \
 	sasem \
 	sb0540 \
 	streamzap \
@@ -313,6 +315,7 @@ default_param: \
 	pixelview_pro \
 	provideo \
 	sa1100 \
+	samsung \
 	sasem \
 	sb0540 \
 	streamzap \

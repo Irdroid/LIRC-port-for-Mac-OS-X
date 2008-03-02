@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.8 2008/01/19 10:06:45 lirc Exp $
+dnl $Id: configure.ac,v 1.9 2008/03/02 19:18:40 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -391,7 +391,7 @@ AC_CHECK_HEADERS([linux/hiddev.h],[
     ]])],[
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_LINUX_HIDDEV_FLAG_UREF)
-    possible_drivers="${possible_drivers} (sb0540)"
+    possible_drivers="${possible_drivers} (samsung) (sb0540)"
     ],[
     AC_MSG_RESULT(no)
     ])
@@ -438,8 +438,8 @@ AC_ARG_WITH(driver,
                           mplay, nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
                           pixelview_pak, pixelview_pro, provideo,
-                          realmagic, remotemaster, sa1100, sasem,
-                          sb0540, serial, silitek, sir, slinke,
+                          realmagic, remotemaster, sa1100, samsung,
+                          sasem, sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
                           ttusbir, tuxbox, tvbox, udp, uirt2, 
                           uirt2_raw, usb_uirt_raw, usbx], 
@@ -623,6 +623,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	remotemaster)
 		hw_module="${hw_module} hw_pixelview.o serial.o"
+		;;
+	samsung)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	sb0540)
 		hw_module="${hw_module} hw_hiddev.o"
@@ -1214,6 +1217,13 @@ if test "$driver" = "sasem"; then
   lircd_conf="sasem/lircd.conf.sasem"
 fi
 
+if test "$driver" = "samsung"; then
+  lirc_driver="$driver"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_samsung"
+  lircd_conf="samsung/lircd.conf.samsung"
+fi
+
 if test "$driver" = "sb0540"; then
   lirc_driver="$driver"
   hw_module="hw_hiddev.o"
@@ -1400,6 +1410,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "irman" || \
 	test "$lirc_driver" = "irman_sw" || \
 	test "$lirc_driver" = "macmini" || \
+	test "$lirc_driver" = "samsung" || \
 	test "$lirc_driver" = "sb0540" || \
 	test "$lirc_driver" = "userspace"; then
   lirc_driver=

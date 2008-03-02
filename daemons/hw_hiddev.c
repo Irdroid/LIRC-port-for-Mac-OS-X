@@ -44,6 +44,8 @@ static char *hiddev_rec(struct ir_remote *remotes);
 static int sb0540_init();
 static char *sb0540_rec(struct ir_remote *remotes);
 static char *macmini_rec(struct ir_remote *remotes);
+static int samsung_init();
+static char *samsung_rec(struct ir_remote *remotes);
 
 struct hardware hw_dvico=
 {
@@ -154,6 +156,28 @@ struct hardware hw_macmini=
 	NULL,			/* readdata */
 	"macmini"		/* name */
 };
+
+#ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
+/* Samsung USB IR Receiver */
+struct hardware hw_samsung=
+{
+	"/dev/usb/hiddev0",     /* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,     /* rec_mode */
+	32,			/* code_length */
+	samsung_init,		/* init_func */
+	NULL,			/* config_func */
+	hiddev_deinit,          /* deinit_func */
+	NULL,			/* send_func */
+	samsung_rec,		/* rec_func */
+	hiddev_decode,          /* decode_func */
+	NULL,                   /* ioctl_func */
+	NULL,			/* readdata */
+	"samsung"		/* name */
+};
+#endif
 
 static int old_main_code = 0;
 
@@ -556,3 +580,204 @@ char *macmini_rec(struct ir_remote *remotes)
 
 	return decode_all(remotes);
 }
+
+/*
+ * Samsung/Cypress USB IR Receiver specific code
+ * (e.g. used in Satelco EasyWatch remotes)
+ *
+ * Based on sb0540 code.
+ * Written by r.schedel (at)yahoo.de
+ *
+ */
+
+#ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
+int samsung_init()
+{
+	int rv = hiddev_init();
+
+	if (rv == 1) {
+		/* we want to get info on each report received from device */
+		int flags = HIDDEV_FLAG_UREF | HIDDEV_FLAG_REPORT;
+		if (ioctl(hw.fd, HIDIOCSFLAG, &flags)) {
+			return 0;
+		}
+	}
+
+	return rv;
+}
+
+char *samsung_rec(struct ir_remote *remotes)
+{
+	/*
+	 * at this point, each read from opened file/device should return
+	 * hiddev_usage_ref structure
+	 *
+	 */
+
+	ssize_t rd;
+	struct hiddev_usage_ref uref;
+
+	LOGPRINTF(1, "samsung_rec");
+
+	pre_code_length = 0;
+	main_code_length = 32;
+	pre_code = 0;
+	repeat_flag = 0;
+
+	rd = read(hw.fd, &uref, sizeof(uref));
+	if (rd < 0) {
+		logprintf(LOG_ERR, "error reading '%s'", hw.device);
+		logperror(LOG_ERR, NULL);
+		hiddev_deinit();
+		return 0;
+	}
+
+	if (uref.field_index == HID_FIELD_INDEX_NONE) {
+		/*
+		 * we get this when the new report has been send from
+		 * device at this point we have the uref structure
+		 * prefilled with correct report type and id
+		 *
+		 */
+
+		LOGPRINTF(2, "hiddev event: reptype %d, repid %d, field"
+		          " idx %d, usage idx %x, usage code %x, val %d\n",
+		          uref.report_type, uref.report_id, uref.field_index,
+		          uref.usage_index, uref.usage_code, uref.value);
+
+		switch (uref.report_id)
+		{
+			case 1: /* USB standard keyboard usage page */
+			{
+				/* This page reports cursor keys */
+				LOGPRINTF(3, "Keyboard (standard)\n");
+
+				/* populate required field number */
+		        	uref.field_index = 1;
+		        	uref.usage_index = 0;
+
+				/* fetch the usage code for given indexes */
+				ioctl(hw.fd, HIDIOCGUCODE, &uref, sizeof(uref));
+				/* fetch the value from report */
+				ioctl(hw.fd, HIDIOCGUSAGE, &uref, sizeof(uref));
+				/* now we have the key */
+
+				main_code = (uref.usage_code & 0xffff0000)
+				             | uref.value;
+
+				LOGPRINTF(3, "Main code: %x\n", main_code);
+				return decode_all(remotes);
+			}
+			break;
+
+			case 3: /* USB generic desktop usage page */
+			{
+				/* This page reports power key
+				 * (via SystemControl SLEEP)
+				 */
+				LOGPRINTF(3, "Generic desktop (standard)\n");
+
+				/* populate required field number */
+		        	uref.field_index = 0;
+		        	uref.usage_index = 1; /* or 7 */
+
+				/* fetch the usage code for given indexes */
+				ioctl(hw.fd, HIDIOCGUCODE, &uref, sizeof(uref));
+				/* fetch the value from report */
+				ioctl(hw.fd, HIDIOCGUSAGE, &uref, sizeof(uref));
+				/* now we have the key */
+
+				main_code = (uref.usage_code & 0xffff0000)
+				             | uref.value;
+
+				LOGPRINTF(3, "Main code: %x\n", main_code);
+				return decode_all(remotes);
+			}
+			break;
+
+			case 4: /* Samsung proprietary usage page */
+			{
+				/* This page reports all other keys.
+				 * It is the only page with keys we cannot
+				 * receive via HID input layer directly.
+				 * This is why we need to implement all of
+				 * this hiddev stuff here.
+				 */
+				int maxbit, i;
+				LOGPRINTF(3, "Samsung usage (proprietary)\n");
+
+				/* According to tests, at most one of the
+				 * 48 key bits can be set.
+				 * Due to the required kernel patch, the
+				 * 48 bits are received in the report as
+				 * 6 usages a 8 bit.
+				 * We want to avoid using a 64 bit value
+				 * if max. one bit is set anyway.
+				 * Therefore, we use the (highest) set bit
+				 * as final key value.
+				 *
+				 * Now fetch each usage and
+				 * combine to single value.
+				 */
+				for (i=0, maxbit=1; i<6; i++, maxbit += 8)
+				{
+					unsigned int tmpval = 0;
+
+					uref.field_index = 0;
+					uref.usage_index = i;
+
+					/* fetch the usage code for given indexes */
+					ioctl(hw.fd, HIDIOCGUCODE, &uref, sizeof(uref));
+					/* fetch the value from report */
+					ioctl(hw.fd, HIDIOCGUSAGE, &uref, sizeof(uref));
+					/* now we have the key byte */
+					tmpval = uref.value & 0xff;  /* 8 bit */
+
+					if (i == 0)
+					{
+						/* fetch usage code from first usage
+						 * (should be 0xffcc)
+						 */
+						main_code = (uref.usage_code & 0xffff0000);
+					}
+
+					/* find index of highest bit with binary search */
+					if (tmpval > 0)
+					{
+						if ( tmpval & 0xf0 )  { maxbit += 4; tmpval >>= 4; }
+						if ( tmpval & 0x0c )  { maxbit += 2; tmpval >>= 2; }
+						if ( tmpval & 0x02 )  { maxbit += 1; }
+						main_code |= maxbit;
+						/* We found a/the pressed key, so break out */
+						break;
+					}
+				}
+
+				LOGPRINTF(3, "Main code: %x\n", main_code);
+
+				/* decode combined key value */
+				return decode_all(remotes);
+			}
+			break;
+
+			default:
+			/* Unknown/unsupported report id.
+			 * Should not happen because remaining reports
+			 * from report descriptor seem to be unused by remote.
+			 */
+			logprintf(LOG_ERR, "Unexpected report id %d", uref.report_id);
+			break;
+		}
+	}
+	/*
+	 * we are not interested in any other events, as they are only
+	 * giving info what changed in report and this not always
+	 * works, is complicated, doesn't output anything sensible on
+	 * repeated key and we already have all the info from real
+	 * report
+	 *
+	 */
+
+	return 0;
+}
+#endif
