@@ -2201,3 +2201,88 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.2(default) on Thu Oct  4 17:42:33 2007
+#
+# contributed by
+#
+# brand:                       Medion
+# model no. of remote control: MD1 NBC Remote Control P/N:40008282
+# devices being controlled by this remote: X10
+#
+
+begin remote
+
+  name  Medion_MD1_NBC_Remote
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          219976
+  min_repeat      1
+  toggle_bit_mask 0x80800000
+
+      begin codes
+          ONOFF                    0xD702
+          TV                       0x81AC
+          Video                    0x022D
+          CDDVD                    0x5984
+          Txt                      0xEB16
+          Audio                    0x5B86
+          Radio                    0x032E
+          Book                     0x86B1
+          Photo                    0xDA05
+          Info                     0x84AF
+          Menu                     0xEE19
+          Back                     0x75A0
+          Left                     0xF21D
+          Right                    0x749F
+          RollUp1                  0x4D78
+          RollUp2                  0xCEF9
+          RollUp3                  0x4F7A
+          RollUp4                  0xD1FC
+          RollDown1                0x4570
+          RollDown2                0xC5F0
+          RollDown3                0xC7F2
+          RollDown4                0x4A75
+          Enter                    0xF31E
+          VolUp                    0x5E89
+          VolDown                  0xDD08
+          Mute                     0x5580
+          Select                   0xF01B
+          ProgUp                   0x608B
+          ProgDown                 0xE10C
+          Invers                   0x719C
+          MAudio                   0x0732
+          MSubtitle                0x88B3
+          MAngle                   0x0934
+          MTitle                   0x8AB5
+          Stop                     0xFD28
+          Pause                    0x7EA9
+          Play                     0xFA25
+          Previous                 0x76A1
+          Picture                  0xED18
+          Next                     0x78A3
+          FastRewind               0xF924
+          REC                      0x7CA7
+          FastForward              0xFB26
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+      end codes
+
+end remote
