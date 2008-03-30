@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.39 2008/02/06 13:43:07 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.40 2008/03/30 14:53:06 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -328,5 +328,6 @@ int write_message(char *buffer, size_t size, const char *remote_name,
 		  const char *button_name, const char *button_suffix,
 		  ir_code code, int reps);
 char *decode_all(struct ir_remote *remotes);
+int send_ir_ncode(struct ir_remote *remote,struct ir_ncode *code);
 
 #endif

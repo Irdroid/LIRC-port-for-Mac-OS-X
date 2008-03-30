@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.75 2008/02/06 13:43:07 lirc Exp $      */
+/*      $Id: lircd.c,v 5.76 2008/03/30 14:53:06 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -467,7 +467,7 @@ void remove_client(int fd)
 void add_client(int sock)
 {
 	int fd;
-	int clilen;
+	socklen_t clilen;
 	struct sockaddr client_addr;
 	int flags;
 
@@ -974,6 +974,11 @@ void dosigalrm(int sig)
 		/* we received a different code from the original
 		   remote control we could repeat the wrong code so
 		   better stop repeating */
+		if(repeat_fd != -1)
+		{
+			send_error(repeat_fd, repeat_message, "repeating interrupted\n");
+		}
+		
 		repeat_remote=NULL;
 		repeat_code=NULL;
 		repeat_fd=-1;
@@ -992,7 +997,7 @@ void dosigalrm(int sig)
 	{
 		repeat_remote->repeat_countdown--;
 	}
-	if(hw.send_func(repeat_remote,repeat_code) &&
+	if(send_ir_ncode(repeat_remote,repeat_code) &&
 	   repeat_remote->repeat_countdown>0)
 	{
 		repeat_timer.it_value.tv_sec=0;
@@ -1432,10 +1437,12 @@ int send_core(int fd,char *message,char *arguments,int once)
 			(remote->toggle_bit_mask_state^remote->toggle_bit_mask);
 	}
 	code->transmit_state = NULL;
-	if(!hw.send_func(remote,code))
+	if(!send_ir_ncode(remote,code))
 	{
 		return(send_error(fd,message,"transmission failed\n"));
 	}
+	gettimeofday(&remote->last_send,NULL);
+	remote->last_code = code;
 	if(once)
 	{
 		remote->repeat_countdown=max(remote->repeat_countdown,reps);
@@ -2245,13 +2252,13 @@ int main(int argc,char **argv)
 				repeat_remote=NULL;
 				repeat_code=NULL;
 				c->transmit_state = NULL;
-				hw.send_func(r,c);
+				send_ir_ncode(r,c);
 				repeat_remote=r;
 				repeat_code=c;
-				hw.send_func(r,c);
-				hw.send_func(r,c);
-				hw.send_func(r,c);
-				hw.send_func(r,c);
+				send_ir_ncode(r,c);
+				send_ir_ncode(r,c);
+				send_ir_ncode(r,c);
+				send_ir_ncode(r,c);
 				c++;
 			}
 			r=r->next;

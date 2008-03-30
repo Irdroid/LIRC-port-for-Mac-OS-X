@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.35 2008/01/12 21:57:56 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.36 2008/03/30 14:53:06 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -496,8 +496,6 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 	}
 	else
 	{
-		gettimeofday(&remote->last_send,NULL);
-		remote->last_code=code;
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
 		printf("space %lu\n",(unsigned long) remote->min_remaining_gap);
 #endif

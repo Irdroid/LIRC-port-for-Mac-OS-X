@@ -276,7 +276,6 @@ static int iguana_send(struct ir_remote *remote, struct ir_ncode *code)
 				response = iguanaReadResponse(sendConn, 10000);
 				if (! iguanaResponseIsError(response))
 				{
-					remote->last_code = code;
 					retval = 1;
 				}
 

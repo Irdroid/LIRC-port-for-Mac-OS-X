@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.35 2008/02/06 13:43:07 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.36 2008/03/30 14:53:06 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -606,3 +606,18 @@ char *decode_all(struct ir_remote *remotes)
 	LOGPRINTF(1,"decoding failed for all remotes");
 	return(NULL);
 }
+
+int send_ir_ncode(struct ir_remote *remote,struct ir_ncode *code)
+{
+	int ret;
+
+	ret = hw.send_func(remote, code);
+	
+	if(ret)
+	{
+		gettimeofday(&remote->last_send, NULL);
+		remote->last_code = code;
+	}
+	
+	return ret;
+ }
