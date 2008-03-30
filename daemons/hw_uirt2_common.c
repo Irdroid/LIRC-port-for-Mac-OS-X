@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.5 2006/11/22 21:28:39 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.6 2008/03/30 14:52:04 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -156,12 +156,12 @@ static int mywaitfordata(uirt2_t *dev, long usec) {
 	}
 }
 
-static int uirt2_readflush(uirt2_t *dev)
+static int uirt2_readflush(uirt2_t *dev, long timeout)
 {
 	int res;
 	char c;
 
-	while(mywaitfordata(dev, (long) 200000) > 0) {
+	while(mywaitfordata(dev, timeout) > 0) {
 		res = readagain(dev->fd, &c, 1);
 		if (res < 1) { 
 			return -1;
@@ -219,7 +219,7 @@ static int command_ext(uirt2_t *dev, const byte_t *in, byte_t *out)
 		timerclear(&dev->pre_delay);
 	}
 
-	uirt2_readflush(dev);
+	uirt2_readflush(dev, 0);
 	
 	LOGPRINTF(1, "writing command %02x", buf[0]);
 
@@ -350,7 +350,7 @@ uirt2_t *uirt2_init(int fd)
 	dev->flags = UIRT2_MODE_UIR;
 	dev->fd = fd;
 
-	uirt2_readflush(dev);
+	uirt2_readflush(dev, 200000);
 
 	if(uirt2_getversion(dev, &dev->version) < 0) {
 		free(dev);
@@ -465,7 +465,7 @@ int uirt2_getversion(uirt2_t *dev, int *version)
 	 */
 	LOGPRINTF(0, "uirt2: detection of uirt2 failed");
 	LOGPRINTF(0, "uirt2: trying to detect newer uirt firmware");
-	uirt2_readflush(dev);
+	uirt2_readflush(dev, 200000);
 
 	out[0] = 8;
 	if (command_ext(dev, in, out) >= 0) {
