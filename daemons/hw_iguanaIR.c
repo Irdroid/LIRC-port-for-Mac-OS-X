@@ -204,18 +204,18 @@ static char *iguana_rec(struct ir_remote *remotes)
 	return retval;
 }
 
-static bool daemonTransaction(unsigned char code, uint8_t value)
+static bool daemonTransaction(unsigned char code, void *value, size_t size)
 {
 	uint8_t *data;
 	bool retval = false;
 
-	data = (uint8_t*)malloc(1);
+	data = (uint8_t*) malloc(size);
 	if (data != NULL)
 	{
 		iguanaPacket request, response = NULL;
 
-		*data = value;
-		request = iguanaCreateRequest(code, sizeof(uint8_t), data);
+		memcpy(data, value, size);
+		request = iguanaCreateRequest(code, size, data);
 		if (request)
 		{
 			if (iguanaWriteRequest(request, sendConn))
@@ -236,11 +236,13 @@ static bool daemonTransaction(unsigned char code, uint8_t value)
 static int iguana_send(struct ir_remote *remote, struct ir_ncode *code)
 {
 	int retval = 0;
+	uint32_t freq;
 
 	/* set the carrier frequency if necessary */
+	freq = htonl(remote->freq);
 	if (remote->freq != currentCarrier &&
 	    remote->freq >= 25000 && remote->freq <= 100000 &&
-	    daemonTransaction(IG_DEV_SETCARRIER, remote->freq / 1000))
+	    daemonTransaction(IG_DEV_SETCARRIER, &freq, sizeof(freq)))
 		currentCarrier = remote->freq;
 
 	if (init_send(remote, code))
@@ -301,7 +303,8 @@ static int iguana_ioctl(unsigned int code, void *arg)
 	{
 		if (channels > 0x0F)
 			retcode = 4;
-		else if (daemonTransaction(IG_DEV_SETCHANNELS, channels))
+		else if (daemonTransaction(IG_DEV_SETCHANNELS, &channels,
+					   sizeof(channels)))
 			retcode = 0;
 	}
 
