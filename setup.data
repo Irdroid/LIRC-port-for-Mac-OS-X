@@ -309,7 +309,6 @@ default_param: \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
-	nslu2 \
 	pixelview_bt878 \
 	pixelview_pak \
 	pixelview_pro \
@@ -324,6 +323,10 @@ default_param: \
 	tvbox \
 	udp
 	none:
+
+default_param: \
+	nslu2
+	void:
 
 default_param: \
 	accent \

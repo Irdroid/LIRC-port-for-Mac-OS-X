@@ -78,13 +78,14 @@ GetSelectedDriver ()
     elif test "$DRIVER_PARAMETER" = "lpt2"; then LPT2="on"; LIRC_PORT=$LPT2_PORT; LIRC_IRQ=$LPT2_IRQ
     elif test "$DRIVER_PARAMETER" = "lpt3"; then LPT3="on"; LIRC_PORT=$LPT3_PORT; LIRC_IRQ=$LPT3_IRQ
     elif test "$DRIVER_PARAMETER" = "none"; then LIRC_PORT="none"; LIRC_IRQ="none"
+    elif test "$DRIVER_PARAMETER" = "void"; then LIRC_PORT="";LIRC_IRQ=""
     elif test "$DRIVER_PARAMETER" = "user"; then USER="on"
     fi
 
     SELECTED_DRIVER="driver:$LIRC_DRIVER"
-    if test "$LIRC_PORT" != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER io:$LIRC_PORT"; fi
-    if test "$LIRC_IRQ"  != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER irq:$LIRC_IRQ"; fi
-    if test "$IRTTY" != "none"; then SELECTED_DRIVER="$SELECTED_DRIVER tty:$IRTTY"; fi
+    if test "$LIRC_PORT" != "none" -a "$LIRC_PORT" != ""; then SELECTED_DRIVER="$SELECTED_DRIVER io:$LIRC_PORT"; fi
+    if test "$LIRC_IRQ"  != "none" -a "$LIRC_IRQ" != ""; then SELECTED_DRIVER="$SELECTED_DRIVER irq:$LIRC_IRQ"; fi
+    if test "$IRTTY" != "none" -a "$IRTTY" != ""; then SELECTED_DRIVER="$SELECTED_DRIVER tty:$IRTTY"; fi
     }
 
 
