@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.68 2008/01/13 11:13:49 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.69 2008/04/28 06:47:29 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.68 $"
+#define DRIVER_VERSION		"$Revision: 1.69 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1052,6 +1052,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	struct lirc_plugin *plugin;
 	int type, devnum;
 	int mem_failure;
+	int dclen;
 
 	devnum = dev->devnum;
 
@@ -1084,7 +1085,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 
 	/* at this stage we cannot use the macro [DE]CODE_LENGTH: ir
 	 * is not yet setup */
-	const int dclen = decode_length[type];
+	dclen = decode_length[type];
 	memset(ir, 0, sizeof(*ir));
 	/* add this infrared remote struct to remote_list, keeping track
 	 * of the number of drivers registered. */
@@ -1356,7 +1357,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.68 2008/01/13 11:13:49 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.69 2008/04/28 06:47:29 lirc Exp $\n");
 
 	request_module("lirc_dev");
 
