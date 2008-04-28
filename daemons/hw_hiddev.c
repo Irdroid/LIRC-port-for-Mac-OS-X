@@ -541,6 +541,8 @@ char *sb0540_rec(struct ir_remote *remotes)
 
 char *macmini_rec(struct ir_remote *remotes)
 {
+	static struct timeval time_of_last_code;
+	struct timeval now;
 	struct hiddev_event ev[4];
 	int rd;
 	int i;
@@ -562,6 +564,7 @@ char *macmini_rec(struct ir_remote *remotes)
 		}
 	}
 
+	gettimeofday (&now, NULL);
 	/* Record the code */
 	pre_code_length = 0;
 	pre_code = 0;
@@ -570,6 +573,13 @@ char *macmini_rec(struct ir_remote *remotes)
 	if (main_code == 0)
 	{
 		/* some variants seem to send 0 to indicate repeats */
+		if(time_elapsed(&time_of_last_code, &now) > 500000)
+		{
+			/* but some send 0 if they receive codes from
+			   a different remote, so only send repeats if
+			   close to the original code */
+			return NULL;
+		}
 		main_code = old_main_code;
 	}
 	if (old_main_code == main_code)
@@ -577,6 +587,7 @@ char *macmini_rec(struct ir_remote *remotes)
 		repeat_flag = 1;
 	}
 	old_main_code = main_code;
+	time_of_last_code = now;
 
 	return decode_all(remotes);
 }
