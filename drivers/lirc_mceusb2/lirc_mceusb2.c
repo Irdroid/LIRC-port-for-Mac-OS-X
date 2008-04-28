@@ -1,5 +1,5 @@
 /*
- * LIRC driver for Philips eHome USB Infrared Transciever
+ * LIRC driver for Philips eHome USB Infrared Transceiver
  * and the Microsoft MCE 2005 Remote Control
  *
  * (C) by Martin A. Blatter <martin_a_blatter@yahoo.com>
@@ -64,10 +64,10 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.43 $"
+#define DRIVER_VERSION	"$Revision: 1.44 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
-#define DRIVER_DESC	"Philips eHome USB IR Transciever and Microsoft " \
+#define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
 			"MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME	"lirc_mceusb2"
 
@@ -133,9 +133,9 @@ static int debug;
 #define VENDOR_FINTEK		0x1934
 
 static struct usb_device_id usb_remote_table [] = {
-	/* Philips eHome Infrared Transciever */
+	/* Philips eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },
-	/* Philips Infrared Transciever - HP branded */
+	/* Philips Infrared Transceiver - HP branded */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060c) },
 	/* Philips SRM5100 */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060d) },
