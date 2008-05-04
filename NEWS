@@ -1,4 +1,4 @@
-0.8.3-CVS: future
+0.8.3: 05/04/08
   * added support for Samsung USB IR Receiver (Robert Schedel)
   * added support for Soundgraph iMON IR/LCD (Dean Harding)
   * added support for IRLink receiver (Maxim Muratov)
@@ -6,6 +6,7 @@
   * implemented SIMULATE command in irsend to simulate IR events
   * added user-space I2C driver (Adam Sampson)
   * added support for Hauppauge HVR-1300 (Jan Frey)
+  * dropped support for 2.4 kernels
 
 0.8.2: 06/09/07
   * added support for TechnoTrend USB IR receiver (Stefan Macher)
