@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.69 2008/02/14 20:42:56 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.70 2008/05/04 18:30:39 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -192,6 +192,7 @@ int main(int argc,char **argv)
 	lirc_t min_remaining_gap, max_remaining_gap;
 	int force;
 	int retries;
+	int no_data = 0;
 	struct ir_remote *remotes=NULL;
 	char *device=NULL;
 #ifdef DEBUG
@@ -533,6 +534,15 @@ int main(int argc,char **argv)
 		char buffer[BUTTON];
 		char *string;
 
+		if(no_data)
+		{
+			fprintf(stderr,"%s: no data for 10 secs,"
+				" aborting\n",progname);
+			printf("The last button did not seem to generate any signal.\n");
+			printf("Press RETURN to continue.\n\n");
+			getchar();
+			no_data = 0;
+		}
 		printf("\nPlease enter the name for the next button (press <ENTER> to finish recording)\n");
 		string=fgets(buffer,BUTTON,stdin);
 		
@@ -592,9 +602,7 @@ int main(int argc,char **argv)
 				{
 					if(count==0)
 					{
-						fprintf(stderr,"%s: no data for 10 secs,"
-							" aborting\n",progname);
-						retval=EXIT_FAILURE;
+						no_data = 1;
 						break;
 					}
 					data=remote.gap;
@@ -665,9 +673,7 @@ int main(int argc,char **argv)
 
 			if(!waitfordata(10000000))
 			{
-				fprintf(stderr,"%s: no data for 10 secs,"
-					" aborting\n",progname);
-				retval=EXIT_FAILURE;
+				no_data = 1;
 				break;
 			}
 			last_remote=NULL;
