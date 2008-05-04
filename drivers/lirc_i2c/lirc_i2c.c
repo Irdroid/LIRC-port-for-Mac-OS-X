@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.45 2008/01/13 11:13:49 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.46 2008/05/04 13:49:53 lirc Exp $      */
 
 /*
  * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -329,12 +329,17 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer *buf)
 static int set_use_inc(void *data)
 {
 	struct IR *ir = data;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+	i2c_use_client(&ir->c);
+#else
 	int ret;
 
 	/* lock bttv in memory while /dev/lirc is in use  */
 	ret = i2c_use_client(&ir->c);
 	if (ret != 0)
 		return ret;
+#endif
 
 	MOD_INC_USE_COUNT;
 	return 0;
