@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.44 $"
+#define DRIVER_VERSION	"$Revision: 1.45 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -87,6 +87,7 @@
 #define MCE_PULSE_BIT	0x80 /* Pulse bit, MSB set == PULSE else SPACE */
 #define MCE_PULSE_MASK	0x7F /* Pulse mask */
 #define MCE_MAX_PULSE_LENGTH 0x7F /* Longest transmittable pulse symbol */
+#define MCE_PACKET_LENGTH_MASK	0x7F /* Pulse mask */
 
 
 /* module parameters */
@@ -131,6 +132,7 @@ static int debug;
 #define VENDOR_MICROSOFT	0x045e
 #define VENDOR_FORMOSA		0x147a
 #define VENDOR_FINTEK		0x1934
+#define VENDOR_PINNACLE		0x2304
 
 static struct usb_device_id usb_remote_table [] = {
 	/* Philips eHome Infrared Transceiver */
@@ -181,6 +183,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_FORMOSA, 0xe018) },
 	/* Fintek eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_FINTEK, 0x0602) },
+	/* Pinnacle Remote Kit */
+	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
 	/* Terminating entry */
 	{ }
 };
@@ -464,9 +468,11 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 	/* success */
 	case SUCCESS:
 		for (i = 0; i < buf_len; i++) {
-			/* decode mce packets on the form (84),AA,BB,CC,DD */
+			/* decode mce packets of the form (84),AA,BB,CC,DD */
 			switch (ir->buf_in[i]) {
+
 			/* data headers */
+			case 0x90: /* used Pinnacle Remote Kit */
 			case 0x8F:
 			case 0x8E:
 			case 0x8D:
@@ -484,7 +490,8 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 			case 0x81:
 			case 0x80:
 				/* decode packet data */
-				packet_len = ir->buf_in[i] & MCE_PULSE_MASK;
+				packet_len =
+					ir->buf_in[i] & MCE_PACKET_LENGTH_MASK;
 				for (j = 1;
 				     j <= packet_len && (i+j < buf_len);
 				     j++) {
@@ -653,7 +660,9 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED &&
 	     (ir->usbdev->descriptor.idProduct == 0x0001 ||
 	      ir->usbdev->descriptor.idProduct == 0x0007 ||
-	      ir->usbdev->descriptor.idProduct == 0x0008)))
+	      ir->usbdev->descriptor.idProduct == 0x0008)) ||
+	    (ir->usbdev->descriptor.idVendor == VENDOR_PINNACLE &&
+	     (ir->usbdev->descriptor.idProduct == 0x0225)))
 		ir->transmitter_mask = mask;
 	else
 		/* The mask begins at 0x02 and has an inverted
