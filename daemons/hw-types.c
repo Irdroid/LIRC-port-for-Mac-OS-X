@@ -110,7 +110,9 @@ struct hardware *hw_list[] =
 	&hw_dvico,
 #endif
 	&hw_ea65,
+#ifdef HAVE_LINUX_I2C_DEV_H
 	&hw_i2cuser,
+#endif
 #ifdef HAVE_IGUANAIR
 	&hw_iguanaIR,
 #endif
