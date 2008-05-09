@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.27 2007/07/29 18:20:06 lirc Exp $      */
+/*      $Id: config_file.c,v 5.28 2008/05/09 18:40:59 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
@@ -32,9 +33,14 @@
 #include "config_file.h"
 
 #define LINE_LEN 1024
+#define MAX_INCLUDES 10
 
-int line;
-int parse_error;
+const char *whitespace = " \t";
+
+static int line;
+static int parse_error;
+
+static struct ir_remote * read_config_recursive(FILE *f, const char *name, int depth);
 
 void **init_void_array(struct void_array *ar,size_t chunk_size, size_t item_size)
 {
@@ -643,7 +649,84 @@ struct ir_remote *sort_by_bit_count(struct ir_remote *remotes)
 	return top;
 }
 
-struct ir_remote * read_config(FILE *f)
+static const char *lirc_parse_include(char *s)
+{
+	char *last;
+	size_t len;
+	
+	len=strlen(s);
+	if(len<2)
+	{
+		return NULL;
+	}
+	last = s+len-1;
+	while(last >  s && strchr(whitespace, *last) != NULL)
+	{
+		last--;
+	}
+	if(last <= s)
+	{
+		return NULL;
+	}
+	if(*s!='"' && *s!='<')
+	{
+		return NULL;
+	}
+	if(*s=='"' && *last!='"')
+	{
+		return NULL;
+	}
+	else if(*s=='<' && *last!='>')
+	{
+		return NULL;
+	}
+	*last = 0;
+	memmove(s, s+1, len-2+1); /* terminating 0 is copied, and
+				     maybe more, but we don't care */
+	return s;
+}
+
+static const char *lirc_parse_relative(char *dst, size_t dst_size,
+				 const char *child, const char *current)
+{
+	char *dir;
+	size_t dirlen;
+
+	if (!current)
+		return child;
+
+	/* Not a relative path */
+	if (*child == '/')
+		return child;
+
+	if(strlen(current) >= dst_size)
+	{
+		return NULL;
+	}
+	strcpy(dst, current);
+	dir = dirname(dst);
+	dirlen = strlen(dir);
+	if(dir != dst)
+	{
+		memmove(dst, dir, dirlen + 1);
+	}
+
+	if(dirlen + 1 + strlen(child) + 1 > dst_size)
+	{
+		return NULL;
+	}
+	strcat(dst, "/");
+	strcat(dst, child);
+	
+	return dst;
+}
+
+struct ir_remote * read_config(FILE *f, const char *name)
+{
+	return read_config_recursive(f, name, 0);
+}
+
+static struct ir_remote * read_config_recursive(FILE *f, const char *name, int depth)
 {
 	char buf[LINE_LEN+1], *key, *val, *val2;
         int len,argc;
@@ -656,6 +739,7 @@ struct ir_remote * read_config(FILE *f)
 
 	line=0;
 	parse_error=0;
+	LOGPRINTF(2, "parsing '%s'", name);
 
 	while(fgets(buf,LINE_LEN,f)!=NULL)
 	{
@@ -683,14 +767,74 @@ struct ir_remote * read_config(FILE *f)
                 if(buf[0]=='#'){
 			continue;
                 }
-		key=strtok(buf," \t");
+		key=strtok(buf, whitespace);
 		/* ignore empty lines */
 		if(key==NULL) continue;
-		val=strtok(NULL, " \t");
+		val=strtok(NULL, whitespace);
 		if(val!=NULL){
-			val2=strtok(NULL, " \t");
+			val2=strtok(NULL, whitespace);
 			LOGPRINTF(3,"\"%s\" \"%s\"",key,val);
-                        if (strcasecmp("begin",key)==0){
+			if (strcasecmp("include",key)==0){
+                                FILE* childFile;
+				const char *childName;
+				const char *fullPath;
+				char result[FILENAME_MAX+1];
+
+
+				if (depth > MAX_INCLUDES) {
+					logprintf(LOG_ERR,"error opening child file defined at %s:%d",name,line);
+					logprintf(LOG_ERR,"too many files included");
+					parse_error=-1;
+					break;
+				}
+
+				childName = lirc_parse_include(val);
+				if (!childName){
+					logprintf(LOG_ERR,"error parsing child file value defined at line %d:",line);
+					logprintf(LOG_ERR,"invalid quoting");
+					parse_error=-1;
+					break;
+				}
+
+				fullPath = lirc_parse_relative(result, sizeof(result), childName, name);
+				if (!fullPath) {
+					logprintf(LOG_ERR,"error composing relative file path defined at line %d:",line);
+					logprintf(LOG_ERR,"resulting path too long");
+					parse_error=-1;
+					break;
+				}
+
+				childFile = fopen(fullPath, "r");
+				if (childFile == NULL){
+					logprintf(LOG_ERR,"error opening child file '%s' defined at line %d:",fullPath, line);
+					logprintf(LOG_ERR,"ignoring this child file for now.");
+				}
+				else{
+					int save_line = line;
+					
+					if (!top_rem){
+						/* create first remote */
+						LOGPRINTF(2,"creating first remote");
+						rem = read_config_recursive(childFile, fullPath, depth + 1);
+						if(rem != (void *) -1 && rem != NULL) {
+							top_rem = rem;
+						} else {
+							rem = NULL;
+						}
+					}else{
+						/* create new remote */
+						LOGPRINTF(2,"creating next remote");
+						rem->next=read_config_recursive(childFile, fullPath, depth + 1);
+						if(rem->next != (void *) -1 && rem->next != NULL) {
+							rem=rem->next;
+						} else {
+							rem->next = NULL;
+						}
+					}
+					fclose(childFile);
+					line = save_line;
+				}
+			}else if (strcasecmp("begin",key)==0){
 				if (strcasecmp("codes", val)==0){
                                         /* init codes mode */
 					LOGPRINTF(2,"    begin codes");
@@ -744,7 +888,7 @@ struct ir_remote * read_config(FILE *f)
 						
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
-						val2=strtok(NULL, " \t");
+						val2=strtok(NULL, whitespace);
 					}
 					code->current=NULL;
 					add_void_array(&codes_list, code);
@@ -822,7 +966,7 @@ struct ir_remote * read_config(FILE *f)
 						
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
-						val2=strtok(NULL, " \t");
+						val2=strtok(NULL, whitespace);
 					}
 					code->current=NULL;
 					add_void_array(&codes_list, code);
@@ -842,7 +986,7 @@ struct ir_remote * read_config(FILE *f)
 				case ID_remote:
 					argc=defineRemote(key, val, val2, rem);
 					if(!parse_error && ((argc==1 && val2!=NULL) || 
-					   (argc==2 && val2!=NULL && strtok(NULL," \t")!=NULL)))
+					   (argc==2 && val2!=NULL && strtok(NULL, whitespace)!=NULL)))
 					{
 						logprintf(LOG_WARNING,"garbage after '%s'"
 							  " token in line %d ignored",
@@ -857,7 +1001,7 @@ struct ir_remote * read_config(FILE *f)
 						
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
-						val2=strtok(NULL, " \t");
+						val2=strtok(NULL, whitespace);
 					}
 					code->current=NULL;
 					add_void_array(&codes_list, code);
@@ -905,7 +1049,7 @@ struct ir_remote * read_config(FILE *f)
 								break;
 							}
 						}
-						while ((val=strtok(NULL," \t"))){
+						while ((val=strtok(NULL, whitespace))){
 							if (!addSignal(&signals, val)) break;
 						}
 					}
@@ -950,7 +1094,15 @@ struct ir_remote * read_config(FILE *f)
 		}
 	}
         if (parse_error){
+		static int print_error = 1;
+		
+		if(print_error) {
+			logprintf(LOG_ERR, "reading of file '%s' failed",
+				  name);
+			print_error = 0;
+		}
 		free_config(top_rem);
+		if(depth == 0) print_error = 1;
                 return((void *) -1);
         }
 	/* kick reverse flag */

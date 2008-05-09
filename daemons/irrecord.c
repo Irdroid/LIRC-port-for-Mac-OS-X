@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.70 2008/05/04 18:30:39 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.71 2008/05/09 18:40:59 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -312,7 +312,7 @@ int main(int argc,char **argv)
 				progname, filename, progname);
 			exit(EXIT_FAILURE);
 		}
-		remotes=read_config(fin);
+		remotes=read_config(fin, filename);
 		fclose(fin);
 		if(remotes==(void *) -1 || remotes==NULL)
 		{
@@ -754,7 +754,7 @@ int main(int argc,char **argv)
 		if(hw.deinit_func) hw.deinit_func();
 		exit(EXIT_FAILURE);
 	}
-	remotes=read_config(fin);
+	remotes=read_config(fin,filename);
 	fclose(fin);
 	if(remotes==NULL)
 	{

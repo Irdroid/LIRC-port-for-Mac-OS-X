@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.76 2008/03/30 14:53:06 lirc Exp $      */
+/*      $Id: lircd.c,v 5.77 2008/05/09 18:40:59 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -406,7 +406,7 @@ void config(void)
 		logperror(LOG_ERR,NULL);
 		return;
 	}
-	config_remotes=read_config(fd);
+	config_remotes=read_config(fd, configfile);
 	fclose(fd);
 	if(config_remotes==(void *) -1)
 	{

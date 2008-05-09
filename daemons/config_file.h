@@ -1,4 +1,4 @@
-/*      $Id: config_file.h,v 5.10 2006/01/28 18:36:44 lirc Exp $      */
+/*      $Id: config_file.h,v 5.11 2008/05/09 18:40:59 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.h ***********************************************************
@@ -86,7 +86,7 @@ int addSignal(struct void_array *signals, char *val);
 struct ir_ncode * defineCode(char *key, char *val, struct ir_ncode *code);
 struct ir_code_node *defineNode(struct ir_ncode *code, const char *val);
 int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem);
-struct ir_remote *read_config(FILE *f);
+struct ir_remote *read_config(FILE *f, const char *name);
 void free_config(struct ir_remote *remotes);
 
 #endif
