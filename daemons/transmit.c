@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.27 2007/07/29 18:20:13 lirc Exp $      */
+/*      $Id: transmit.c,v 5.28 2008/05/11 13:29:47 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -114,6 +114,34 @@ static inline int bad_send_buffer(void)
 		return(1);
 	}
 	return(0);
+}
+
+static int check_send_buffer(void)
+{
+	int i;
+
+	if (send_buffer.wptr == 0) 
+	{
+		LOGPRINTF(1, "nothing to send");
+		return(0);
+	}
+	for (i = 0; i < send_buffer.wptr; i++)
+	{
+		if(send_buffer.data[i] == 0)
+		{
+			if(i%2)
+			{
+				LOGPRINTF(1, "invalid space: %d", i);
+			}
+			else
+			{
+				LOGPRINTF(1, "invalid pulse: %d", i);
+			}
+			return 0;
+		}
+	}
+	
+	return 1;
 }
 
 static inline void flush_send_buffer(void)
@@ -500,5 +528,13 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		goto init_send_loop;
 	}
 	LOGPRINTF(3, "transmit buffer ready");
-	return(1);
+	if(!check_send_buffer())
+	{
+		logprintf(LOG_ERR, "invalid send buffer");
+		logprintf(LOG_ERR,
+			  "this remote configuration cannot be used "
+			  "to transmit");
+		return 0;
+	}
+	return 1;
 }
