@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.56 2008/01/13 10:45:02 lirc Exp $
+ * $Id: lirc_dev.c,v 1.57 2008/05/13 21:20:18 lirc Exp $
  *
  */
 
@@ -145,7 +145,8 @@ static void cleanup(struct irctl *ir)
 #ifdef LIRC_HAVE_DEVFS_26
 	devfs_remove(DEV_LIRC "/%u", ir->p.minor);
 #endif
-	class_device_destroy(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+	lirc_class_device_destroy(lirc_class,
+				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
 
 	if (ir->buf != ir->p.rbuf) {
 		lirc_buffer_free(ir->buf);
@@ -441,7 +442,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	return minor;
 
 out_sysfs:
-	class_device_destroy(lirc_class, MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+	lirc_class_device_destroy(lirc_class,
+				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
 #ifdef LIRC_HAVE_DEVFS_24
 	devfs_unregister(ir->devfs_handle);
 #endif
