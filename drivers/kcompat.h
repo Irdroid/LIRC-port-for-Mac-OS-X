@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.35 2008/05/13 21:20:17 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.36 2008/05/14 16:37:49 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -36,10 +36,10 @@ static inline void class_destroy(lirc_class_t *cls)
 	class_simple_destroy(cls);
 }
 
-#define lirc_class_device_create(cs, parent, dev, device, fmt, args...) \
-	class_simple_device_add(cs, dev, device, fmt, ## args)
+#define lirc_device_create(cs, parent, dev, fmt, args...) \
+	class_simple_device_add(cs, dev, parent, fmt, ## args)
 
-static inline void lirc_class_device_destroy(lirc_class_t *cls, dev_t devt)
+static inline void lirc_device_destroy(lirc_class_t *cls, dev_t devt)
 {
 	class_simple_device_remove(devt);
 }
@@ -48,18 +48,19 @@ static inline void lirc_class_device_destroy(lirc_class_t *cls, dev_t devt)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 
-#define lirc_class_device_create(cs, parent, dev, device, fmt, args...) \
-	class_device_create(cs, dev, device, fmt, ## args)
+#define lirc_device_create(cs, parent, dev, fmt, args...) \
+	class_device_create(cs, dev, parent, fmt, ## args)
 
 #else /* >= 2.6.15 */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 
-#define lirc_class_device_create class_device_create
+#define lirc_device_create(cs, parent, dev, fmt, args...) \
+	class_device_create(cs, NULL, dev, parent, fmt, ## args)
 
 #else /* >= 2.6.26 */
 
-#define lirc_class_device_create device_create
+#define lirc_device_create device_create
 
 #endif /* >= 2.6.26 */
 
@@ -71,11 +72,11 @@ typedef struct class lirc_class_t;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 
-#define lirc_class_device_destroy class_device_destroy
+#define lirc_device_destroy class_device_destroy
 
 #else
 
-#define lirc_class_device_destroy device_destroy
+#define lirc_device_destroy device_destroy
 
 #endif
 
@@ -152,8 +153,8 @@ static inline void del_timer_sync(struct timer_list *timerlist)
 #ifndef LIRC_HAVE_SYSFS
 #define class_destroy(x) do { } while (0)
 #define class_create(x, y) NULL
-#define lirc_class_device_destroy(x, y) do { } while (0)
-#define lirc_class_device_create(x, y, z, xx, yy, zz) 0
+#define lirc_class_destroy(x, y) do { } while (0)
+#define lirc_class_create(x, y, z, xx, yy, zz) 0
 #define IS_ERR(x) 0
 typedef struct class_simple
 {

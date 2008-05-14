@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.57 2008/05/13 21:20:18 lirc Exp $
+ * $Id: lirc_dev.c,v 1.58 2008/05/14 16:37:49 lirc Exp $
  *
  */
 
@@ -145,8 +145,8 @@ static void cleanup(struct irctl *ir)
 #ifdef LIRC_HAVE_DEVFS_26
 	devfs_remove(DEV_LIRC "/%u", ir->p.minor);
 #endif
-	lirc_class_device_destroy(lirc_class,
-				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+	lirc_device_destroy(lirc_class,
+			    MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
 
 	if (ir->buf != ir->p.rbuf) {
 		lirc_buffer_free(ir->buf);
@@ -401,9 +401,9 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			S_IFCHR|S_IRUSR|S_IWUSR,
 			DEV_LIRC "/%u", ir->p.minor);
 #endif
-	(void) lirc_class_device_create(lirc_class, NULL,
-					MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
-					ir->p.dev, "lirc%u", ir->p.minor);
+	(void) lirc_device_create(lirc_class, ir->p.dev,
+				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+				  "lirc%u", ir->p.minor);
 
 	if (p->sample_rate || p->get_queue) {
 		/* try to fire up polling thread */
@@ -442,8 +442,8 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	return minor;
 
 out_sysfs:
-	lirc_class_device_destroy(lirc_class,
-				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+	lirc_device_destroy(lirc_class,
+			    MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
 #ifdef LIRC_HAVE_DEVFS_24
 	devfs_unregister(ir->devfs_handle);
 #endif
