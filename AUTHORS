@@ -56,5 +56,10 @@ ITE IT8712/IT8705 CIR port:
 Linksys NSLU2 Support and memory mapped I/O in serial driver:
   Matthias Goebl <matthias.goebl@goebl.net>
 
+HAL support:
+Parseable Hardware Database:
+  Arnaud Quette <arnaud.quette@gmail.com>
+  Loic Dardant <loic.dardant@gmail.com>
+
 I have only pieced this together by grepping the source for @ signs
 and then guessing the contribution.
