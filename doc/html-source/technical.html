@@ -307,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.28 2007/07/22 07:30:25 lirc Exp $      */
+/*      $Id: technical.html,v 1.29 2008/05/16 22:02:13 uzuul Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************
@@ -614,8 +614,29 @@ fi</PRE>
 	<br>Finally, you should consider installing the doc/lirc.hwdb file.
 	This one is a parseable list of LIRC supported devices, which
 	is useful for LIRC configuration applications.<br>
+	You should also have a look at the below HAL integration description.<br>
 	For more information, refer to the next section.
       </dl>
+    </P>
+
+    <A NAME="hal"></A><HR>
+    <H1 ALIGN="CENTER">Hardware Abstraction Layer (HAL) integration</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      If your system support the <a href="http://www.freedesktop.org/wiki/Software/hal">FreeDesktop Hardware Abstraction Layer (HAL)</a>,
+      you will want to install the file <em>contrib/hal/20-ircontrol-lirc.fdi</em> in
+      <em>${datarootdir}/hal/fdi/information/20thirdparty</em>
+    </P>
+    <P>
+      This file can be generated at will using contrib/hal/gen-hal-fdi.pl.<br>
+      Installing 20-ircontrol-lirc.fdi allow applications developers to detect
+      USB remotes easily by searching for HAL devices with <em>info.capabilities=input.remote_control</em>
+    </P>
+    <P>
+      This is a work in progress. We will also provide more information in the
+      future, such as the driver/manufacturer/device name(s), and possibly
+      event reporting.
     </P>
 
     <A NAME="config"></A><HR>

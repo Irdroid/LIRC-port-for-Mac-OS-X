@@ -142,8 +142,10 @@ static int debug;
 
 /* table of devices that work with this driver */
 static struct usb_device_id mceusb_table[] = {
+	/* USB Microsoft IR Transceiver */
 	{ USB_DEVICE(USB_MCEUSB_VENDOR_ID, USB_MCEUSB_PRODUCT_ID) },
-	{ }	/* Terminating entry */
+	/* Terminating entry */
+	{ }
 };
 
 /* we can have up to this number of device plugged in at once */

@@ -73,8 +73,10 @@ MODULE_PARM_DESC(num_urbs,
 
 /* table of devices that work with this driver */
 static struct usb_device_id device_id_table[] = {
+	/* TechnoTrend USB IR Receiver */
     { USB_DEVICE(0x0B48, 0x2003) },
-    { } /* Terminating entry */
+    /* Terminating entry */
+    { }
 };
 MODULE_DEVICE_TABLE(usb, device_id_table);
 

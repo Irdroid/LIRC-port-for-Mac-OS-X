@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.27 2008/01/13 11:13:50 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.28 2008/05/16 22:02:13 uzuul Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.27 $"
+#define DRIVER_VERSION	"$Revision: 1.28 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -80,8 +80,10 @@ static int debug;
  * table of devices that work with this driver
  */
 static struct usb_device_id streamzap_table [] = {
+	/* Streamzap Remote Control */
 	{ USB_DEVICE(USB_STREAMZAP_VENDOR_ID, USB_STREAMZAP_PRODUCT_ID) },
-	{ }	/* Terminating entry */
+	/* Terminating entry */
+	{ }
 };
 
 MODULE_DEVICE_TABLE(usb, streamzap_table);

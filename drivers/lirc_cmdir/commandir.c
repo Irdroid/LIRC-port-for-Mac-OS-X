@@ -54,8 +54,10 @@
 /* table of devices that work with this driver */
 static struct usb_device_id cmdir_table [] =
 {
+	/* COMMANDIR USB Transceiver */
 	{ USB_DEVICE(USB_CMDIR_VENDOR_ID, USB_CMDIR_PRODUCT_ID) },
-	{ }			/* Terminating entry */
+	/* Terminating entry */
+	{ }
 };
 MODULE_DEVICE_TABLE(usb, cmdir_table);
 

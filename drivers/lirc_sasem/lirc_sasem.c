@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.21 2007/09/30 09:58:46 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.22 2008/05/16 22:02:13 uzuul Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -194,7 +194,9 @@ static struct file_operations vfd_fops = {
 
 /* USB Device ID for Sasem USB Control Board */
 static struct usb_device_id sasem_usb_id_table [] = {
-	{ USB_DEVICE(0x11ba, 0x0101) },		/* Sasem       */
+	/* Sasem USB Control Board */
+	{ USB_DEVICE(0x11ba, 0x0101) },
+	/* Terminating entry */
 	{}
 };
 

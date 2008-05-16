@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.23 2008/01/19 10:06:46 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.24 2008/05/16 22:02:13 uzuul Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -192,11 +192,16 @@ static struct file_operations vfd_fops = {
 
 /* USB Device ID for IMON USB Control Board */
 static struct usb_device_id imon_usb_id_table[] = {
-	{ USB_DEVICE(0x0aa8, 0xffda) },		/* IR & VFD    */
-	{ USB_DEVICE(0x0aa8, 0x8001) },		/* IR only     */
-	{ USB_DEVICE(0x15c2, 0xffda) },		/* IR & VFD    */
-	{ USB_DEVICE(0x15c2, 0xffdc) },		/* IR & VFD    */
-	{ USB_DEVICE(0x04e8, 0xff30) },		/* ext IR only */
+	/* IMON USB Control Board (IR & VFD) */
+	{ USB_DEVICE(0x0aa8, 0xffda) },
+	/* IMON USB Control Board (IR only) */
+	{ USB_DEVICE(0x0aa8, 0x8001) },
+	/* IMON USB Control Board (IR & VFD) */
+	{ USB_DEVICE(0x15c2, 0xffda) },
+	/* IMON USB Control Board (IR & VFD) */
+	{ USB_DEVICE(0x15c2, 0xffdc) },
+	/* IMON USB Control Board (ext IR only) */
+	{ USB_DEVICE(0x04e8, 0xff30) },
 	{}
 };
 
