@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.10 2003/05/07 16:31:48 ranty Exp $
+## $Id: Makefile.am,v 5.11 2008/05/16 20:15:22 uzuul Exp $
 
 ## Process this file with automake to produce Makefile.in 
 ## Makefile.am, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -15,6 +15,22 @@ SUBDIRS = drivers daemons tools doc
 ## Note that EXTRA_DIST can only handle files in the current
 ## directory; files in other directories will cause make dist runtime
 ## failures.
+
+## ----------------------------------------------------------------------
+## flags to pass to ./configure when calling "make distcheck" and "make
+## distcheck-light". Try to check as many features as possible! Also
+## need to give enable-sandboxed, so that staged install does not fail.
+
+## !!! BIG WARNING: this needs to be tweaked a bit more !!! ##
+
+DISTCHECK_FLAGS = --with-driver=all --enable-sandboxed
+DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}
+DISTCHECK_LIGHT_FLAGS = --with-driver=none --enable-sandboxed
+
+distcheck-light:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
+
+# ----------------------------------------------------------------------
 
 setup-driver.sh: data2setup.sh setup.data
 	./data2setup.sh > setup-driver.sh
