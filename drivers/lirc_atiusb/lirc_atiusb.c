@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.70 2008/05/16 22:02:13 uzuul Exp $
+ * $Id: lirc_atiusb.c,v 1.71 2008/05/19 08:10:35 uzuul Exp $
  */
 
 /*
@@ -53,7 +53,11 @@
 #include <linux/kmod.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 #include <asm/uaccess.h>
+#else
+#include <linux/uaccess.h>
+#endif
 #include <linux/usb.h>
 #include <linux/poll.h>
 #include <linux/wait.h>
@@ -63,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.70 $"
+#define DRIVER_VERSION		"$Revision: 1.71 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -84,26 +88,22 @@
 
 /* module parameters */
 #ifdef CONFIG_USB_DEBUG
-	static int debug = 1;
+static int debug = 1;
 #else
-	static int debug = 0;
+static int debug;
 #endif
-#define dprintk(fmt, args...)                                 \
-	do{                                                   \
-		if(debug) printk(KERN_DEBUG fmt, ## args);    \
-	}while(0)
+#define dprintk(fmt, args...)					\
+	do {							\
+		if (debug)					\
+			printk(KERN_DEBUG fmt, ## args);	\
+	} while (0)
 
-// ATI, ATI2, XBOX
+/* ATI, ATI2, XBOX */
 static const int code_length[] = {5, 3, 6};
 static const int code_min_length[] = {3, 3, 6};
 static const int decode_length[] = {5, 3, 1};
-// USB_BUFF_LEN must be the maximum value of the code_length array.
-// It is used for static arrays.
-#define USB_BUFF_LEN 6
-
-static int mask = 0xFFFF;	// channel acceptance bit mask
-static int unique = 0;		// enable channel-specific codes
-static int repeat = 10;		// repeat time in 1/100 sec
+/* USB_BUFF_LEN must be the maximum value of the code_length array.
+ * It is used for static arrays. */
 #define USB_BUFF_LEN 6
 
 static int mask = 0xFFFF;	/* channel acceptance bit mask */
@@ -1291,6 +1291,106 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		if (ir->p->minor < 0) {
 			free_irctl(ir, FREE_ALL);
 #ifdef KERNEL_2_5
+			return -ENODEV;
+#else
+			return NULL;
+#endif
+		}
+
+		/* Note new driver registration in kernel logs */
+		log_usb_dev_info(dev);
+
+		/* outbound data (initialization) */
+		send_outbound_init(ir);
+	}
+
+#ifdef KERNEL_2_5
+	usb_set_intfdata(intf, ir);
+	return SUCCESS;
+#else
+	return ir;
+#endif
+}
+
+#ifdef KERNEL_2_5
+static void usb_remote_disconnect(struct usb_interface *intf)
+{
+/*	struct usb_device *dev = interface_to_usbdev(intf); */
+	struct irctl *ir = usb_get_intfdata(intf);
+	usb_set_intfdata(intf, NULL);
+#else
+static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
+{
+	struct irctl *ir = ptr;
+#endif
+
+	dprintk(DRIVER_NAME ": disconnecting remote %d:\n",
+		(ir? ir->devnum: -1));
+	if (!ir || !ir->p)
+		return;
+
+	if (ir->usbdev) {
+		/* Only unregister once */
+		ir->usbdev = NULL;
+		unregister_from_lirc(ir);
+	}
+
+	/* This also removes the current remote from remote_list */
+	free_irctl(ir, FREE_ALL);
+}
+
+static struct usb_driver usb_remote_driver = {
+	LIRC_THIS_MODULE(.owner = THIS_MODULE)
+	.name		= DRIVER_NAME,
+	.probe		= usb_remote_probe,
+	.disconnect	= usb_remote_disconnect,
+	.id_table	= usb_remote_table
+};
+
+static int __init usb_remote_init(void)
+{
+	int i;
+
+	INIT_LIST_HEAD(&remote_list);
+
+	printk(KERN_INFO "\n" DRIVER_NAME ": " DRIVER_DESC " "
+	       DRIVER_VERSION "\n");
+	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
+	dprintk(DRIVER_NAME ": debug mode enabled: "
+		"$Id: lirc_atiusb.c,v 1.71 2008/05/19 08:10:35 uzuul Exp $\n");
+
+	request_module("lirc_dev");
+
+	repeat_jiffies = repeat*HZ/100;
+
+	i = usb_register(&usb_remote_driver);
+	if (i) {
+		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
+		return -ENODEV;
+	}
+
+	return SUCCESS;
+}
+
+static void __exit usb_remote_exit(void)
+{
+	usb_deregister(&usb_remote_driver);
+}
+
+module_init(usb_remote_init);
+module_exit(usb_remote_exit);
+
+MODULE_DESCRIPTION(DRIVER_DESC);
+MODULE_AUTHOR(DRIVER_AUTHOR);
+MODULE_LICENSE("GPL");
+MODULE_DEVICE_TABLE(usb, usb_remote_table);
+
+module_param(debug, bool, 0644);
+MODULE_PARM_DESC(debug, "Debug enabled or not (default: 0)");
+
+module_param(mask, int, 0644);
+MODULE_PARM_DESC(mask, "Set channel acceptance bit mask (default: 0xFFFF)");
+
 module_param(unique, bool, 0644);
 MODULE_PARM_DESC(unique, "Enable channel-specific codes (default: 0)");
 
@@ -1304,9 +1404,9 @@ MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
  * Enabling this will cause the built-in Remote Wonder II repeate coding to
  * not be squashed.  The second byte of the keys output will then be:
  *
- * 	1 initial press (button down)
- * 	2 holding (button remains pressed)
- * 	0 release (button up)
+ *	1 initial press (button down)
+ *	2 holding (button remains pressed)
+ *	0 release (button up)
  *
  * By default, the driver emits 2 for both 1 and 2, and emits nothing for 0.
  * This is good for people having trouble getting their rw2 to send a good
@@ -1316,18 +1416,22 @@ MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
  * at random points while you're still holding a button, then you can enable
  * this parameter to get finer grain repeat control out of your remote:
  *
- * 	1 Emit a single (per-channel) virtual code for all up/down events
- * 	2 Emit the actual rw2 output
+ *	1 Emit a single (per-channel) virtual code for all up/down events
+ *	2 Emit the actual rw2 output
  *
  * 1 is easier to write lircd configs for; 2 allows full control.
  */
 module_param(emit_updown, int, 0644);
-MODULE_PARM_DESC(emit_updown, "emit press/release codes (rw2): 0:don't (default), 1:emit 2 codes only, 2:code for each button");
+MODULE_PARM_DESC(emit_updown, "emit press/release codes (rw2): 0:don't "
+		 "(default), 1:emit 2 codes only, 2:code for each button");
 
 module_param(emit_modekeys, int, 0644);
-MODULE_PARM_DESC(emit_modekeys, "emit keycodes for aux1-aux4, pc, and mouse (rw2): 0:don't (default), 1:emit translated codes: one for mode switch, one for same mode, 2:raw codes");
+MODULE_PARM_DESC(emit_modekeys, "emit keycodes for aux1-aux4, pc, and mouse "
+		 "(rw2): 0:don't (default), 1:emit translated codes: one for "
+		 "mode switch, one for same mode, 2:raw codes");
 
 module_param(mgradient, int, 0644);
-MODULE_PARM_DESC(mgradient, "rw2 mouse: 1000*gradient from E to NE (default: 500 => .5 => ~27 degrees)");
+MODULE_PARM_DESC(mgradient, "rw2 mouse: 1000*gradient from E to NE (default: "
+		 "500 => .5 => ~27 degrees)");
 
 EXPORT_NO_SYMBOLS;
