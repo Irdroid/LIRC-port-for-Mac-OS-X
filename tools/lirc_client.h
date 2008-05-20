@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.h,v 5.10 2006/05/06 09:40:07 lirc Exp $      */
+/*      $Id: lirc_client.h,v 5.11 2008/05/20 18:54:37 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.h ***********************************************************
@@ -30,7 +30,8 @@ enum lirc_flags {none=0x00,
 		 quit=0x02,
 		 mode=0x04,
 		 ecno=0x08,
-		 startup_mode=0x10
+		 startup_mode=0x10,
+		 toggle_reset=0x20,
 };
 
 struct lirc_list

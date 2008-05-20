@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.26 2007/03/24 12:54:43 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.27 2008/05/20 18:54:37 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -614,6 +614,10 @@ unsigned int lirc_flags(char *string)
 		else if(strcasecmp(s,"startup_mode")==0)
 		{
 			flags|=startup_mode;
+		}
+		else if(strcasecmp(s,"toggle_reset")==0)
+		{
+			flags|=toggle_reset;
 		}
 		else
 		{
@@ -1484,6 +1488,7 @@ static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
 {
 	struct lirc_code *codes;
 	
+	/* no remote/button specified */
 	if(scan->code==NULL)
 	{
 		return rep==0 ||
@@ -1491,6 +1496,7 @@ static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
 			 ((rep-scan->rep_delay-1)%scan->rep)==0);
 	}
 	
+	/* remote/button match? */
 	if(scan->next_code->remote==LIRC_ALL || 
 	   strcasecmp(scan->next_code->remote,remote)==0)
 	{
@@ -1498,10 +1504,12 @@ static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
 		   strcasecmp(scan->next_code->button,button)==0)
 		{
 			int iscode=0;
+			/* button sequence? */
 			if(scan->code->next==NULL || rep==0)
 			{
 				scan->next_code=scan->next_code->next;
 			}
+			/* sequence completed? */
 			if(scan->next_code==NULL)
 			{
 				scan->next_code=scan->code;
@@ -1512,10 +1520,19 @@ static int lirc_iscode(struct lirc_config_entry *scan, char *remote,
 			return iscode;
 		}
 	}
+	
         if(rep!=0) return(0);
+	
+	/* handle toggle_reset */
+	if(scan->flags & toggle_reset)
+	{
+		scan->next_config = scan->config;
+	}
+	
 	codes=scan->code;
         if(codes==scan->next_code) return(0);
 	codes=codes->next;
+	/* rebase code sequence */
 	while(codes!=scan->next_code->next)
 	{
                 struct lirc_code *prev,*next;

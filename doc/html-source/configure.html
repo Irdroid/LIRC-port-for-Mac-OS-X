@@ -557,6 +557,14 @@ begin
 	mode = browser
 end</PRE>
       </DD>
+      <DT>toggle_reset</DT> <DD>This will only have an effect if you
+      have specified several <em>config</em> lines to implement a
+      toggle button. Usually the toggle state is always saved for the
+      button regardless of other button presses. But with this flag
+      the toggle state will be reset to the first config entry as soon
+      as a different button not matching the specification in the
+      current block is pressed.
+      </DD>
     </DL>
     
     <P>
