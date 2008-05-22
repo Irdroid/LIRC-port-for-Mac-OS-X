@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.71 2008/05/09 18:40:59 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.72 2008/05/22 16:00:52 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -195,6 +195,7 @@ int main(int argc,char **argv)
 	int no_data = 0;
 	struct ir_remote *remotes=NULL;
 	char *device=NULL;
+	int using_template = 0;
 #ifdef DEBUG
 	int get_pre=0,get_post=0,test=0,invert=0,trail=0;
 #endif
@@ -321,6 +322,7 @@ int main(int argc,char **argv)
 				"data\n",progname,filename);
 			exit(EXIT_FAILURE);
 		}
+		using_template = 1;
 #ifdef DEBUG
 		if(test)
 		{
@@ -461,7 +463,7 @@ int main(int argc,char **argv)
 	switch(hw.rec_mode)
 	{
 	case LIRC_MODE_MODE2:
-		if(remotes==NULL && !get_lengths(&remote,force))
+		if(!using_template && !get_lengths(&remote,force))
 		{
 			if(remote.gap==0)
 			{
@@ -495,7 +497,7 @@ int main(int argc,char **argv)
 	case LIRC_MODE_LIRCCODE:
 		if(hw.rec_mode==LIRC_MODE_CODE) remote.bits=CHAR_BIT;
 		else remote.bits=hw.code_length;
-		if(!get_gap_length(&remote))
+		if(!using_template && !get_gap_length(&remote))
 		{
 			fprintf(stderr,"%s: gap not found,"
 				" can't continue\n",progname);
@@ -507,7 +509,7 @@ int main(int argc,char **argv)
 		break;
 	}
 	
-	if(is_rc6(&remote))
+	if(!using_template && is_rc6(&remote))
 	{
 		sleep(1);
 		while(availabledata())
@@ -775,7 +777,7 @@ int main(int argc,char **argv)
 	
 	if(!has_toggle_bit_mask(remotes))
 	{
-		get_toggle_bit_mask(remotes);
+		if(!using_template) get_toggle_bit_mask(remotes);
 	}
 	else
 	{
