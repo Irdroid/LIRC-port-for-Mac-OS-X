@@ -108,3 +108,36 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.3pre1(macmini) on Sun May 25 11:41:30 2008
+#
+# contributed by 
+#
+# brand:                       Apple
+# model no. of remote control: A1156
+# devices being controlled by this remote: MacBook2
+#
+
+begin remote
+
+  name  Apple_MacBook2
+  bits           32
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          211993
+  toggle_bit_mask 0x0
+
+      begin codes
+          menu                     0x87EE0E03
+          plus                     0x87EE0E0A
+          minus                    0x87EE0E0C
+          play                     0x87EE0E05
+          rew                      0x87EE0E09
+          ffwd                     0x87EE0E06
+      end codes
+
+end remote
