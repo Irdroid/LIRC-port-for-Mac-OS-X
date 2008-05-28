@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.89 2008/04/06 19:03:52 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.90 2008/05/28 06:19:25 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -99,7 +99,7 @@
 #else
 #include <linux/uaccess.h>
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 #include <asm/io.h>
 #else
 #include <linux/io.h>
