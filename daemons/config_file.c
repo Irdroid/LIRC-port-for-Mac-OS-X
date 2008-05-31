@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.28 2008/05/09 18:40:59 lirc Exp $      */
+/*      $Id: config_file.c,v 5.29 2008/05/31 21:29:12 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -426,6 +426,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	}
 	else if (strcasecmp("rc6_mask",key)==0){
 		rem->rc6_mask=s_strtocode(val);
+		return(1);
+	}
+	else if (strcasecmp("ignore_mask",key)==0){
+		rem->ignore_mask=s_strtocode(val);
 		return(1);
 	}
 	/* obsolete name */

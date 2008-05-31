@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.36 2008/03/30 14:53:06 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.37 2008/05/31 21:29:12 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -36,6 +36,13 @@ struct ir_remote *repeat_remote=NULL;
 struct ir_ncode *repeat_code;
 
 extern struct hardware hw;
+
+static int match_ir_code(struct ir_remote *remote, ir_code a, ir_code b)
+{
+	return ((remote->ignore_mask|a) == (remote->ignore_mask|b) ||
+		(remote->ignore_mask|a) == 
+		(remote->ignore_mask|(b^remote->toggle_bit_mask)));
+}
 
 void get_frequency_range(struct ir_remote *remotes,
 			 unsigned int *min_freq,unsigned int *max_freq)
@@ -314,10 +321,9 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 			ir_code next_all;
 
 			next_all = gen_ir_code(remote, remote->pre_data,
-								   get_ir_code(codes, codes->current),
-								   remote->post_data);
-			if(next_all==all ||
-			   next_all==(all^remote->toggle_bit_mask))
+					       get_ir_code(codes, codes->current),
+					       remote->post_data);
+			if(match_ir_code(remote, next_all, all))
 			{
 				found_code=1;
 				if(codes->next!=NULL)
@@ -376,10 +382,9 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 						if(flag == 1)
 						{
 							next_all = gen_ir_code(remote, remote->pre_data,
-												   get_ir_code(codes, prev),
-												   remote->post_data);							
-							if(next_all==all ||
-							   next_all==(all^remote->toggle_bit_mask))
+									       get_ir_code(codes, prev),
+									       remote->post_data);
+							if(match_ir_code(remote, next_all, all))
 							{
 								codes->current = get_next_ir_code_node(codes, prev);
 								sequence_match = 1;
