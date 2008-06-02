@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.11 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.12 2008/06/02 20:48:41 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -164,6 +164,9 @@ struct ir_remote
 	unsigned int parity;        /* currently unsupported */
 	unsigned int stop_bits;     /* mapping: 1->2 1.5->3 2->4 */
 	
+	ir_code ignore_mask;        /* mask defines which bits can be
+				       ignored when matching a
+				       code */
 	/* end of user editable values */
 	
         ir_code toggle_bit_mask_state;
