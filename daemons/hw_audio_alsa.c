@@ -1,4 +1,4 @@
-/*	$Id: hw_audio_alsa.c,v 5.3 2007/07/15 15:51:45 lirc Exp $	*/
+/*	$Id: hw_audio_alsa.c,v 5.4 2008/06/02 20:52:55 lirc Exp $	*/
 
 /****************************************************************************
  ** hw_audio_alsa.c *********************************************************
@@ -75,6 +75,10 @@ static struct
 	int fd;
 	/* The asynchronous I/O signal handler object */
 	snd_async_handler_t *sighandler;
+	/* Value indicating number of channels for capture */
+	unsigned char num_channels;
+	/* Value indicating which channel to look for signal 0=right 1=left */
+	unsigned char channel;
 } alsa_hw =
 {
 	NULL,
@@ -89,7 +93,9 @@ static struct
 	 */
 	100000,
 	-1,
-	NULL
+	NULL,
+	1,
+	0  /*Use left channel by default */
 };
 
 /* Return the absolute difference between two unsigned 8-bit samples */
@@ -130,7 +136,7 @@ static int alsa_set_hwparams ()
 	 || alsa_error ("hw_params_set_format",
 			snd_pcm_hw_params_set_format (alsa_hw.handle, hwp, alsa_hw.format))
 	 || alsa_error ("hw_params_set_channels",
-			snd_pcm_hw_params_set_channels (alsa_hw.handle, hwp, 1))
+			snd_pcm_hw_params_set_channels (alsa_hw.handle, hwp, alsa_hw.num_channels))
 	 || alsa_error ("hw_params_set_rate_near",
 			snd_pcm_hw_params_set_rate_near (alsa_hw.handle, hwp, &alsa_hw.rate, &dir))
 	 || alsa_error ("hw_params_set_access",
@@ -214,12 +220,48 @@ error:		unlink (tmp_name);
 	if (pcm_rate)
 	{
 		int rate;
-		/* Remove the sample rate from device name */
+                char* stereo_channel;
+                
+                /* Examine if we need to capture in stereo
+                 * looking for an 'l' or 'r' character to indicate
+                 * which channel to look at.*/
+                stereo_channel = strchr(pcm_rate,',');
+                
+                if(stereo_channel)
+		{
+                
+			/* Syntax in device string indicates we need
+			   to use stereo */
+			alsa_hw.num_channels=2;                    
+			/* As we are requesting stereo now, use the
+			   more common signed 16bit samples*/
+			alsa_hw.format = SND_PCM_FORMAT_S16_LE;
+                    
+			if(stereo_channel[1]=='l')
+			{
+				alsa_hw.channel=0;
+			}
+			else if(stereo_channel[1]=='r')
+			{
+				alsa_hw.channel=1;
+			}
+			else
+			{
+				logperror(LOG_WARNING,
+					  "dont understand which channel "
+					  "to use - defaulting to left\n");                                                                   
+			}
+                }
+     
+		/* Remove the sample rate from device name (and
+		   channel indicator if present) */
 		*pcm_rate++ = 0;
                 /* See if rate is meaningful */
 		rate = atoi (pcm_rate);
 		if (rate > 0)
+		{
 			alsa_hw.rate = rate;
+		}
 	}
 
 	/* Open the audio card in non-blocking mode */
@@ -303,11 +345,15 @@ int audio_alsa_deinit (void)
  * a real level change, and the type of signal is toggled
  * (space <-> pulse).
  */
+
+#define READ_BUFFER_SIZE (2*4096)
+
 static void alsa_sig_io (snd_async_handler_t *h)
 {
 	/* Previous sample */
 	static unsigned char ps = 0x80;
-	/* Count samples with similar level (to detect pule/space length), 24.8 fp */
+	/* Count samples with similar level (to detect pule/space
+	   length), 24.8 fp */
 	static unsigned sample_count = 0;
 	/* Current signal level (dynamically changes) */
 	static unsigned signal_level = 0;
@@ -317,9 +363,13 @@ static void alsa_sig_io (snd_async_handler_t *h)
 	static unsigned char signal_max = 0x80, signal_min = 0x80;
 	/* Non-zero if we're in zero crossing waiting state */
 	static char waiting_zerox = 0;
+        /* Store sample size, as our sample buffer will represent
+	   shorts or chars */
+        unsigned char bytes_per_sample = 
+		(alsa_hw.format == SND_PCM_FORMAT_S16_LE ? 2 : 1);
 
 	int i, err;
-	char buff [4*1024];
+	char buff [READ_BUFFER_SIZE];
 	snd_pcm_sframes_t count;
 
 	/* The value to multiply with number of samples to get microseconds
@@ -360,17 +410,31 @@ var_reset:	/* Reset variables */
 	/* Read all available data */
 	if ((count = snd_pcm_avail_update (alsa_hw.handle)) > 0)
 	{
-		if (count > sizeof (buff))
-			count = sizeof (buff);
-		count = snd_pcm_readi (alsa_hw.handle, buff, count);
+		if (count > (READ_BUFFER_SIZE / (bytes_per_sample*alsa_hw.num_channels)))
+			count = READ_BUFFER_SIZE / (bytes_per_sample*alsa_hw.num_channels);
+		count = snd_pcm_readi(alsa_hw.handle, buff, count);
+                                 
+                /*Loop around samples, if stereo we are
+                 *only interested in one channel*/
 		for (i = 0; i < count; i++)
 		{
 			/* cs == current sample */
-			unsigned char as, sl, sz, xz, cs = buff [i];
+                        unsigned char cs, as, sl, sz, xz;
 
-			/* Convert signed samples to unsigned */
-			if (alsa_hw.format != SND_PCM_FORMAT_U8)
-				cs ^= 0x80;
+                        if(bytes_per_sample == 2){                              
+				cs = ((*(short*)&buff[i*bytes_per_sample*alsa_hw.num_channels +
+						      bytes_per_sample*alsa_hw.channel]) >> 8);
+				cs ^= 0x80;                            
+                        }
+                        else{
+				cs = buff[i];
+                            
+				/* Convert signed samples to unsigned */
+				if(alsa_hw.format == SND_PCM_FORMAT_S8)
+				{
+					cs ^= 0x80;
+				}
+                        }
 
 			/* Track signal middle value (it could differ from 0x80) */
 			sz = (signal_min + signal_max) / 2;
@@ -397,7 +461,7 @@ var_reset:	/* Reset variables */
 				waiting_zerox--;
 
 			/* Detect significant signal level changes */
-			if ((abs (cs - ps) > sl) && xz)
+			if ((abs (cs - ps) > sl/2) && xz)
 				waiting_zerox = 2;
 
 			/* If we have crossed zero with a substantial level change, go */
@@ -451,7 +515,7 @@ var_reset:	/* Reset variables */
 				if ((x > 20000) && signal_state)
 				{
 					signal_state = 0;
-					LOGPRINTF (1, "Pulse/space desynchronization fixed");
+					LOGPRINTF (1, "Pulse/space desynchronization fixed - len %u",x);
 				}
 
 				x |= signal_state;

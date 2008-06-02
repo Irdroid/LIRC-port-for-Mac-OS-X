@@ -147,6 +147,27 @@
       and then you can use this config with lower sampling rates.
     </P>
 
+    <P>
+      Some sound cards do not support capturing in mono which is the
+      default for audio_alsa.  If you come across this you will receive 
+      a message stating an invalid argument when setting the capture format.
+      You can get around this problem by telling audio_alsa to capture in
+      stereo:
+
+    <PRE>
+    irrecord -d hw@44100,l file
+    </PRE>
+
+      or:
+
+    <PRE>
+    irrecord -d hw@44100,r file
+    </PRE>
+
+    <P>
+     The l (left) or r (right) character instructs audio_alsa on which
+     channel it should inspect when reading the samples from the IR receiver. 
+
     <H2 ALIGN=CENTER>Quirks</H2>
 
     <P>
