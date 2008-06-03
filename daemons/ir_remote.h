@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.40 2008/03/30 14:53:06 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.41 2008/06/03 17:21:29 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -189,6 +189,12 @@ static inline int has_foot(struct ir_remote *remote)
 static inline int has_toggle_bit_mask(struct ir_remote *remote)
 {
 	if(remote->toggle_bit_mask>0) return(1);
+	else return(0);
+}
+
+static inline int has_ignore_mask(struct ir_remote *remote)
+{
+	if(remote->ignore_mask>0) return(1);
 	else return(0);
 }
 

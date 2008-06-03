@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.37 2008/05/31 21:29:12 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.38 2008/06/03 17:21:29 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -250,6 +250,13 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		pre_mask = remote->toggle_bit_mask >>
 			   (remote->bits + remote->post_data_bits);
 		post_mask = remote->toggle_bit_mask &
+		            gen_mask(remote->post_data_bits);
+	}
+	if(has_ignore_mask(remote))
+	{
+		pre_mask |= remote->ignore_mask >>
+			   (remote->bits + remote->post_data_bits);
+		post_mask |= remote->ignore_mask &
 		            gen_mask(remote->post_data_bits);
 	}
 	if(has_toggle_mask(remote) && remote->toggle_mask_state%2)
