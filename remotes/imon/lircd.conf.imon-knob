@@ -36,7 +36,7 @@ begin remote
           FastForward              0x2B8115B7
           PrevChapter              0x2B9115B7
           Stop                     0x2B9715B7
-          NextChapter              0x298195BF
+          NextChapter              0x298195B7
           WindowsKey               0x2B8195B7
           Backspace                0x28A115B7
           MouseKeyboard            0x299115B7
@@ -70,20 +70,27 @@ begin remote
           8                        0x2A8515B7
           9                        0x2AA115B7
           ShiftTab                 0x28B515B7
-          0                        0x2BA595BF
+          0                        0x2BA595B7
           Tab                      0x29A115B7
           MyMovie                  0x2B8515B7
           MyMusic                  0x299195B7
           MyPhoto                  0x2BA115B7
           MyTV                     0x28A515B7
           Bookmark                 0x288515B7
-          Thumbnail                0x2AB715BF
+          Thumbnail                0x2AB715B7
           AspectRatio              0x29A595B7
-          FullScreen               0x2AA395BF
+          FullScreen               0x2AA395B7
           MyDVD                    0x29A295B7
           Menu                     0x2BA385B7
           Caption                  0x298595B7
           Language                 0x2B8595B7
+# these codes may be wrong, but they were included in the first version of
+# this config file
+          0                        0x2BA595BF
+          NextChapter              0x298195BF
+          Thumbnail                0x2AB715BF
+          FullScreen               0x2AA395BF
+
       end codes
 
 end remote
