@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.11 2008/05/04 18:30:39 lirc Exp $
+dnl $Id: configure.ac,v 1.12 2008/06/13 19:33:21 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -22,6 +22,8 @@ AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
 AC_PATH_PROG(LIBUSB_CONFIG, libusb-config)
 AC_PROG_LN_S
 AC_PROG_LIBTOOL
+AM_PATH_PYTHON
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
 
 dnl Checks for header files.
 AC_HEADER_STDC

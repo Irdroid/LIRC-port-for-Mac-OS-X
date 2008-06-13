@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.16 2008/05/20 18:54:37 lirc Exp $
+## $Id: Makefile.am,v 5.17 2008/06/13 19:33:21 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -51,4 +51,15 @@ liblirc_client_la_LDFLAGS = -version-info 2:1:2
 
 lircinclude_HEADERS = lirc_client.h
 
-CLEANFILES = *~
+if HAVE_PYTHON
+bin_SCRIPTS = pronto2lirc
+
+pronto2lirc: $(srcdir)/pronto2lirc.py
+	echo "#! ${PYTHON}" >$@
+	cat $< >>$@
+	chmod +x $@
+endif
+
+EXTRA_DIST = pronto2lirc.py
+
+CLEANFILES = *~ pronto2lirc

@@ -30,6 +30,11 @@
       package you can convert it using the <em>irman2lirc</em> script
       that you can find in the contrib directory.
     </P>
+    <P>
+      It's also possible to convert CCF files and Pronto codes to a
+      valid lircd.conf file using the <A
+	HREF="pronto2lirc.html">pronto2lirc</A> script.
+    </P>
     
     <!-- lircd.conf fileformat +++++++++++++++++++++++++++++++++++++++++++ -->
     
@@ -68,17 +73,17 @@
       installed. The further steps depend on which user-space driver
       is used in lircd for your devices. Most devices (actually all
       devices that use a kernel module) use the <em>default</em>
-      driver. You can check which user-space is used for your device
-      by running <em>lircd --driver=?</em>. Remember that this might
-      change each time you compile lircd for a different device. If
-      you want to use devices that use different user-space drivers
-      then you have to compile LIRC once again using <em>./configure
-      --with-driver=any</em>. This will compile almost any user-space
-      driver into lircd that is available (but does not compile any
-      kernel modules, that's why you had to build them individually
-      before). After that you should check if the drivers you want are
-      listed now with <em>lircd --driver=?</em>. You should get
-      something like this:
+      driver. You can check which user-space driver is used for your
+      device by running <em>lircd --driver=?</em>. Remember that this
+      might change each time you compile lircd for a different
+      device. If you want to use devices that use different user-space
+      drivers then you have to compile LIRC once again using
+      <em>./configure --with-driver=any</em>. This will compile almost
+      any user-space driver into lircd that is available (but does not
+      compile any kernel modules, that's why you had to build them
+      individually before). After that you should check if the drivers
+      you want are listed now with <em>lircd --driver=?</em>. You
+      should get something like this:
     </P>
 <pre>
 > lircd --driver=?

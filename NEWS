@@ -1,4 +1,5 @@
 0.8.4-CVS: future
+  * added pronto2lirc converter (Olavi Akerman)
   * support for include directive in lircd.conf
 
 0.8.3: 05/04/08
