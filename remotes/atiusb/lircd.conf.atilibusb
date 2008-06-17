@@ -248,3 +248,99 @@ begin remote
       end codes
 
 end remote
+
+# this config file was automatically generated
+# using lirc-0.8.2(atilibusb) on Sat Jun 30 23:20:59 2007
+#
+# contributed by Nizar Souissi
+#
+# brand:                       nVidia
+# model no. of remote control: UR88A
+# devices being controlled by this remote: CM21A USB RF Receiver
+#
+# This file is based on an already existing file for the Medion MD8800
+
+begin remote
+
+  name  nVidia_UR88A
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139995
+  min_repeat      2
+  toggle_bit_mask 0x80800000
+
+      begin codes
+
+          PLAYLIST                 0xD601
+          CH.SURF                  0xD702
+          Live_TV                  0xF11C
+          Photo                    0x5A85
+          MUSIC                    0xDB06
+          DVD                      0xD904
+          DVR                      0xD803
+          PHOTO                    0xDA05
+          WEB                      0xDC07
+          ZOOM                     0xFF2A
+          Rec_TV                   0x6D98
+          Video                    0x82AD
+          Audio                    0x0732
+          Title                    0x8AB5
+          Angle                    0x0934
+          Subtitle                 0x88B3
+          Power                    0xD702
+          Guide                    0x86B1
+          Text                     0xEB16
+          Up                       0x6F9A
+          Down                     0xF722
+          Left                     0x729D
+          Right                    0xF41F
+          Vol_Up                   0x5E89
+          Vol_Down                 0xDD08
+          OK                       0x739E
+          Mute                     0xD500
+          Prog_Up                  0x608B
+          Prog_Down                0xE10C
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          Setup                    0x709B
+          Back                     0xF520
+          Info                     0x84AF
+          Rewind                   0xF924
+          Play                     0x7AA5
+          Forward                  0xFB26
+          Pause                    0x7EA9
+          Prev                     0xF621
+          Next                     0x78A3
+          Stop                     0xFD28
+          Rec                      0x7CA7
+          MOUSEUP                  0x4772
+          MOUSEDOWN                0x4873
+          MOUSERIGHT               0x4671
+          MOUSELEFT                0x4570
+          LCLICK                   0x4E79
+          RCLICK                   0x527D
+          X                        0xDF0A
+          ANGLE                    0x002B
+          SNAPSHOT                 0xED18
+          SETUP                    0xF01B
+          DVDMENU                  0xEE19
+          SLOW                     0xF520
+      end codes
+end remote
+
