@@ -272,3 +272,82 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.3pre1(default) on Sat Jun 21 12:36:46 2008
+#
+# contributed by Matthew Wright
+#
+# brand:  Hauppauge (HRV-1600 RT Remote)
+# model no. of remote control: A415-HPG-A
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  Hauppauge
+  bits           13
+  flags RC5|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  one           919   852
+  zero          919   852
+  plead         930
+  gap          112908
+  toggle_bit_mask 0x800
+
+      begin codes
+          power                    0x17BD
+          go                       0x17BB
+          tv                       0x179C
+          videos                   0x1798
+          music                    0x1799
+          pictures                 0x179A
+          guide                    0x179B
+          radio                    0x178C
+          exit                     0x179F
+          menu                     0x178D
+          prevch                   0x1792
+          mute                     0x178F
+          up                       0x1794
+          down                     0x1795
+          left                     0x1796
+          right                    0x1797
+          ok                       0x17A5
+          volup                    0x1790
+          voldown                  0x1791
+          chup                     0x17A0
+          chdown                   0x17A1
+          record                   0x17B7
+          stop                     0x17B6
+          rewind                   0x17B2
+          fastfwd                  0x17B4
+          play                     0x17B5
+          replay                   0x17A4
+          skip                     0x179E
+          pause                    0x17B0
+          1                        0x1781
+          2                        0x1782
+          3                        0x1783
+          4                        0x1784
+          5                        0x1785
+          6                        0x1786
+          7                        0x1787
+          8                        0x1788
+          9                        0x1789
+          *                        0x178A
+          0                        0x1780
+          #                        0x178E
+          red                      0x178B
+          green                    0x17AE
+          yellow                   0x17B8
+          blue                     0x17A9
+          sub/cc                   0x178E
+          text                     0x178A
+          home                     0x17BB
+      end codes
+
+end remote
+
+
