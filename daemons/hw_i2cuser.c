@@ -1,4 +1,4 @@
-/*      $Id: hw_i2cuser.c,v 5.1 2007/07/15 07:26:39 lirc Exp $      */
+/*      $Id: hw_i2cuser.c,v 5.2 2008/06/30 16:15:04 lirc Exp $      */
 
 /*
  * Remote control driver for I2C-attached devices from userspace
@@ -52,8 +52,10 @@
 #include <dirent.h>
 #include <time.h>
 #include <signal.h>
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#ifndef I2C_SLAVE /* hack */
+#include <linux/i2c.h>
+#endif
 
 #include "hardware.h"
 #include "ir_remote.h"
