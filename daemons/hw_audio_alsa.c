@@ -1,4 +1,4 @@
-/*	$Id: hw_audio_alsa.c,v 5.4 2008/06/02 20:52:55 lirc Exp $	*/
+/*	$Id: hw_audio_alsa.c,v 5.5 2008/07/03 21:33:52 lirc Exp $	*/
 
 /****************************************************************************
  ** hw_audio_alsa.c *********************************************************
@@ -554,7 +554,8 @@ lirc_t audio_alsa_readdata (lirc_t timeout)
 	{
 		LOGPRINTF (1, "error reading from lirc device");
 		LOGPERROR (1, NULL);
-		dosigterm (SIGTERM);
+		raise(SIGTERM);
+		return 0;
 	}
 	return data;
 }

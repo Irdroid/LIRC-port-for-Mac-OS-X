@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.3 2007/07/29 18:20:06 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.4 2008/07/03 21:33:52 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -201,7 +201,8 @@ lirc_t audio_readdata(lirc_t timeout)
 	{
 		LOGPRINTF(1,"error reading from lirc");
 		LOGPERROR(1,NULL);
-		dosigterm(SIGTERM);
+		raise(SIGTERM);
+		return 0;
 	}
 	return(data);
 }

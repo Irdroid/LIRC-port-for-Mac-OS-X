@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.58 2008/07/01 20:51:43 lirc Exp $
+## $Id: Makefile.am,v 5.59 2008/07/03 21:33:52 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -52,14 +52,14 @@ EXTRA_libhw_module_a_SOURCES = \
 			transmit.c transmit.h \
 			serial.c serial.h
 
-libhw_module_a_LIBADD = @hw_module@ @alsa_lib@ @atilibusb_lib@ @caraca_lib@ @iguanaIR_lib@ @irman_lib@ @portaudio_lib@
+libhw_module_a_LIBADD = @hw_module@
 libhw_module_a_DEPENDENCIES = @hw_module@
 
 sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c lircd.h \
 		config_file.c config_file.h
-lircd_LDADD = @daemon@ libhw_module.a
+lircd_LDADD = @daemon@ libhw_module.a @hw_module_libs@
 
 lircmd_SOURCES = lircmd.c
 lircmd_LDADD = @daemon@
@@ -69,7 +69,7 @@ bin_PROGRAMS = irrecord
 irrecord_SOURCES = irrecord.c \
 		config_file.c config_file.h \
 		dump_config.c dump_config.h
-irrecord_LDADD = libhw_module.a
+irrecord_LDADD = libhw_module.a @hw_module_libs@
 
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke

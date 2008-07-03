@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.12 2008/06/13 19:33:21 lirc Exp $
+dnl $Id: configure.ac,v 1.13 2008/07/03 21:33:52 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1587,6 +1587,8 @@ sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
 prefix=$cur_prefix
 
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${caraca_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
+
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)
 AC_SUBST(forkpty)
@@ -1596,12 +1598,7 @@ AC_SUBST(moduledir)
 AC_SUBST(lirc_major)
 AC_SUBST(driver)
 AC_SUBST(lirc_driver)
-AC_SUBST(irman_lib)
-AC_SUBST(caraca_lib)
-AC_SUBST(portaudio_lib)
-AC_SUBST(alsa_lib)
-AC_SUBST(atilibusb_lib)
-AC_SUBST(iguanaIR_lib)
+AC_SUBST(hw_module_libs)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)

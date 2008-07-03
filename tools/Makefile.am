@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.18 2008/07/01 20:51:43 lirc Exp $
+## $Id: Makefile.am,v 5.19 2008/07/03 21:33:53 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -25,7 +25,7 @@ ircat_LDADD = liblirc_client.la
 mode2_SOURCES = mode2.c
 irsend_SOURCES = irsend.c
 
-mode2_LDADD = ../daemons/libhw_module.a
+mode2_LDADD = ../daemons/libhw_module.a @hw_module_libs@
 
 ## vga programs
 smode2_SOURCES = smode2.c
