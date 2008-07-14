@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.13 2008/07/03 21:33:52 lirc Exp $
+dnl $Id: configure.ac,v 1.14 2008/07/14 01:25:35 innovationone Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -317,7 +317,7 @@ AH_TEMPLATE([USE_SYSLOG],
 
 if test -n "${LIBUSB_CONFIG}"; then
   AC_DEFINE(HAVE_LIBUSB)
-  possible_drivers="${possible_drivers} (atilibusb)"
+  possible_drivers="${possible_drivers} (atilibusb) (commandir)"
 fi
 AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
@@ -424,7 +424,7 @@ AC_ARG_WITH(driver,
                           atilibusb, atiusb, audio, audio_alsa
                           avermedia, avermedia_vdomate, avermedia98,
                           bestbuy, bestbuy2, breakoutbox, bte, bw6130,
-                          caraca, chronos, cmdir, comX, cph06x,
+                          caraca, chronos, cmdir, commandir, comX, cph06x,
                           creative, creative_infracd, devinput,
                           digimatrix, dsp, dvico, ea65, exaudio,
                           flyvideo, gvbctv5pci, hauppauge,
@@ -457,6 +457,7 @@ lircmd_conf=""
 iguanaIR_lib=""
 irman_lib=""
 caraca_lib=""
+commandir_lib=""
 portaudio_lib=""
 alsa_lib=""
 atilibusb_lib=""
@@ -517,6 +518,11 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	creative_infracd)
 		hw_module="${hw_module} hw_creative_infracd.o"
+		;;
+	commandir)
+		hw_module="${hw_module} hw_commandir.o receive.o"
+		commandir_lib=`${LIBUSB_CONFIG} --libs`
+		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
 	devinput)
 		hw_module="${hw_module} hw_devinput.o"
@@ -839,6 +845,18 @@ if test "$driver" = "com4"; then
   lirc_driver="lirc_dev lirc_serial"
   port=0x2e8
   irq=3
+fi
+
+if test "$driver" = "commandir"; then
+  lirc_driver="$driver"
+  hw_module="hw_commandir.o receive.o transmit.o"
+  HW_DEFAULT="hw_commandir"
+  lircd_conf="hauppauge/lircd.conf.hauppauge"
+  lircmd_conf="hauppauge/lircmd.conf.hauppauge"
+  if test -n "${LIBUSB_CONFIG}"; then
+    commandir_lib=`${LIBUSB_CONFIG} --libs`
+    CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+  fi
 fi
 
 if test "$driver" = "cph03x" -o "$driver" = "cph06x"; then
@@ -1386,6 +1404,20 @@ in its directory.
     AC_MSG_ERROR([*** you need to have the ALSA libraries and drivers
 	from at least version 1.0.9 for this driver])
     ;;
+  commandir)
+    AC_MSG_ERROR([*** you need to have libusb installed for this driver.
+
+Get it at:
+
+  http://libusb.sourceforge.net/
+  
+Or install these packages from your distro:
+
+   libusb
+   libusb-dev 
+
+])
+    ;;
   iguanaIR)
     AC_MSG_ERROR([*** you need to have the iguanaIR headers and
         libraries for this driver])
@@ -1407,6 +1439,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "audio_alsa" || \
 	test "$lirc_driver" = "bw6130" || \
 	test "$lirc_driver" = "caraca" || \
+	test "$lirc_driver" = "commandir" || \
 	test "$lirc_driver" = "dvico" || \
 	test "$lirc_driver" = "iguanaIR" || \
 	test "$lirc_driver" = "irman" || \
@@ -1587,7 +1620,7 @@ sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
 prefix=$cur_prefix
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${caraca_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${caraca_lib} ${commandir_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)

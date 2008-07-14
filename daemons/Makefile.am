@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.59 2008/07/03 21:33:52 lirc Exp $
+## $Id: Makefile.am,v 5.60 2008/07/14 01:25:35 innovationone Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -21,6 +21,7 @@ EXTRA_libhw_module_a_SOURCES = \
 			hw_audio_alsa.c \
 			hw_bte.c hw_bte.h \
 			hw_caraca.c hw_caraca.h \
+			hw_commandir.c \
 			hw_creative.c hw_creative.h \
 			hw_creative_infracd.c hw_creative_infracd.h \
 			hw_default.c hw_default.h \

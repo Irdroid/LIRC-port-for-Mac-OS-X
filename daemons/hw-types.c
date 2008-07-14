@@ -14,6 +14,7 @@ extern struct hardware hw_audio;
 extern struct hardware hw_audio_alsa;
 extern struct hardware hw_bte;
 extern struct hardware hw_bw6130;
+extern struct hardware hw_commandir;
 extern struct hardware hw_creative;
 extern struct hardware hw_creative_infracd;
 extern struct hardware hw_default;
@@ -84,6 +85,7 @@ struct hardware *hw_list[] =
 #endif
 #ifdef HAVE_LIBUSB
 	&hw_atilibusb,
+	&hw_commandir,
 #endif
 #ifdef HAVE_LIBPORTAUDIO
 	&hw_audio,
