@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef _HW_COMMANDIR_H
-#define _HW_COMMANDIR_H
+#ifndef HW_COMMANDIR_H
+#define HW_COMMANDIR_H
 
 #define RX_BUFFER_SIZE 1024
 #define TX_BUFFER_SIZE 1024
