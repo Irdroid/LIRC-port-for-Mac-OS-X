@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.60 2008/07/14 01:25:35 innovationone Exp $
+## $Id: Makefile.am,v 5.61 2008/07/20 19:40:21 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -70,7 +70,9 @@ bin_PROGRAMS = irrecord
 irrecord_SOURCES = irrecord.c \
 		config_file.c config_file.h \
 		dump_config.c dump_config.h
-irrecord_LDADD = libhw_module.a @hw_module_libs@
+
+irrecord_LDADD = libhw_module.a @hw_module_libs@ @receive@
+irrecord_DEPENDENCIES = @receive@
 
 ## maintainer mode stuff
 EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke

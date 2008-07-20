@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.14 2008/07/14 01:25:35 innovationone Exp $
+dnl $Id: configure.ac,v 1.15 2008/07/20 19:40:21 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1620,6 +1620,11 @@ sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
 prefix=$cur_prefix
 
+receive=""
+if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
+	receive="receive.o"
+fi
+
 hw_module_libs="${alsa_lib} ${atilibusb_lib} ${caraca_lib} ${commandir_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
 
 dnl tell the Makefiles what we decided
@@ -1635,6 +1640,7 @@ AC_SUBST(hw_module_libs)
 AC_SUBST(vga_progs) 
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
+AC_SUBST(receive)
 AC_SUBST(irtty)
 AC_SUBST(lircd_conf)
 AC_SUBST(lircmd_conf)
