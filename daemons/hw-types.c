@@ -85,7 +85,6 @@ struct hardware *hw_list[] =
 #endif
 #ifdef HAVE_LIBUSB
 	&hw_atilibusb,
-	&hw_commandir,
 #endif
 #ifdef HAVE_LIBPORTAUDIO
 	&hw_audio,
@@ -96,6 +95,9 @@ struct hardware *hw_list[] =
 	&hw_bte,
 #ifdef HAVE_LINUX_HIDDEV_H
 	&hw_bw6130,
+#endif
+#ifdef HAVE_LIBUSB
+	&hw_commandir,
 #endif
 	&hw_creative,
 #ifdef HAVE_SCSI
