@@ -72,6 +72,7 @@ static void recalc_tx_available(int);
 static void set_hash_mask(int channel_mask);
 static int commandir2_convert_RX(unsigned short *bufferrx, 
 		unsigned char numvalues);
+static void cleanup_commandir_dev(int spotnum);
 
 /**********************************************************************
  *
@@ -108,6 +109,8 @@ struct commandir_device
 	int bus;
 	int busdev;
 	int interface;
+	int location;
+	unsigned char devnum;
 } open_commandir_devices[4];
 
 struct hardware hw_commandir =
@@ -158,7 +161,6 @@ static int commandir_receive_decode(struct ir_remote *remote,
 static int commandir_init()
 {
 	long fd_flags;
-
 	if(haveInited){
 		static char init_char[3] = {3, 0, INIT_HEADER_LIRC};
 		write(tochild_write, init_char, 3);	
@@ -219,7 +221,7 @@ static int commandir_deinit(void)
 {
 	/* Trying something a bit new with this driver. Keeping the driver
 	 * connected so in the future we can still monitor in the client */
-	if(USB_KEEP_WARM && (progname=="lircd") )
+	if(USB_KEEP_WARM && (!strncmp(progname, "lircd", 5)))
 	{
 		static char deinit_char[3] = {3, 0, DEINIT_HEADER_LIRC};
 		write(tochild_write, deinit_char, 3);
@@ -240,6 +242,7 @@ static int commandir_deinit(void)
 			// shutdown all USB
 			if(child_pid > 0)
 			{
+				logprintf(LOG_ERR, "Closing child process");
 				kill(child_pid, SIGTERM);
 				waitpid(child_pid, NULL, 0);
 				child_pid = -1;
@@ -367,7 +370,6 @@ static lirc_t commandir_readdata(lirc_t timeout)
 		/* if we failed to get data return 0 */
 		if (read(hw.fd, &code, sizeof(lirc_t)) <= 0)
                         commandir_deinit();
-	
 	return code;
 }
 
@@ -412,7 +414,7 @@ unsigned char commandir_last_signal_id[MAX_CHANNELS];
 unsigned char hash_mask[MAX_CHANNELS];
 unsigned char selected_channels[MAX_CHANNELS];
 unsigned char total_selected_channels = 0;
-
+int shutdown_pending = 0;
 
 // This is the only one for pre-pipelinging
 int pre_pipeline_emitter_mask = 0x000f; // default tx on only first CommandIR
@@ -495,7 +497,7 @@ static void add_to_tx_pipeline(unsigned char *buffer, int bytes,
 	top_signalq++;
 	if(top_signalq > MAX_SIGNALQ)
 	{
-		logprintf(LOG_ERR, "Too many signals in queue: > %d\n", MAX_SIGNALQ);
+		logprintf(LOG_ERR, "Too many signals in queue: > %d", MAX_SIGNALQ);
 		return;
 	}
 	
@@ -706,7 +708,6 @@ static void commandir_transmit(char *buffer, int bytes, int bitmask,
 						if(send_status < 0)
 						{
 							// Error transmitting.
-							printf("Error in usb_bulk_write8()\n");
 							hardware_scan();
 							return;
 						}
@@ -754,7 +755,6 @@ static void commandir_transmit(char *buffer, int bytes, int bitmask,
 						if(send_status < 2)
 						{
 							// Error transmitting.
-							printf("Error in usb_bulk_write2()\n");
 							hardware_scan();
 							return ;
 						}
@@ -815,6 +815,13 @@ static void commandir_child_init()
 {
 	int retValue;
 
+	alarm(0);
+	signal(SIGTERM, shutdown_usb);
+	signal(SIGPIPE, SIG_DFL);
+	signal(SIGINT, shutdown_usb);
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGALRM, SIG_IGN);
+	
 	logprintf(LOG_ERR, "Child Initializing CommandIR Hardware");
 	
 	usb_init();
@@ -833,107 +840,129 @@ static void hardware_disconnect(int commandir_spot)
 	 * reconnect - otherwise we may get perpetual read/write errors
 	 */
 	
-	int x, reset;
-	reset = device_count - 1; 
-	
+	int x;
 	
 	//	reset the hash so we don't try and disconnect this device again
-	open_bus_hash[open_commandir_devices[commandir_spot].bus]
-		[open_commandir_devices[commandir_spot].busdev] = 0;
+	//  device_count is decremented here
+	cleanup_commandir_dev(commandir_spot);
 	
-	usb_release_interface(open_commandir_devices[commandir_spot].cmdir_dev, 
-		open_commandir_devices[commandir_spot].interface);
-	usb_close(open_commandir_devices[commandir_spot].cmdir_dev);
-	open_commandir_devices[commandir_spot].cmdir_dev = NULL;
-	open_bus_hash[open_commandir_devices[commandir_spot].bus]
-			[open_commandir_devices[commandir_spot].busdev] = 0;
-
 	raise_event(COMMANDIR_UNPLUG_1 + commandir_spot);
 	
-	if(commandir_spot < (device_count-1) )
-	{
-		if(device_count > 1)
-		{
-			/* It wasn't the top device removed, and there's 
-			 * more than 1 device, so we have some vars to patch up
-			 */
-			
-			for(x=commandir_spot; x<(device_count-1); x++)
-			{
-				channels_en[x] = channels_en[x+1];
-				mini_freq[x] = mini_freq[x+1];
-				commandir_last_signal_id[x] = commandir_last_signal_id[x+1];
-				lastSendSignalID[x] = lastSendSignalID[x+1];
-				commandir_hardware_type[x] = commandir_hardware_type[x+1];
-				memcpy(&open_commandir_devices[x], 
-					&open_commandir_devices[x+1], 
-					sizeof(struct commandir_device));	
-			}
-		}
-	}
+	/* Cases are:
+	removing device 0 when there's no more device (do nothing)
+	removing device < MAX when there's still 1+ devices (patch up)
+	removing device==MAX when there's more devices (do nothing)
+	*/
 	
-	// Reset the top one that was just removed:
-	channels_en[reset] = 0x0f;
-	mini_freq[reset] = -1;
-	commandir_last_signal_id[reset] = 0;
-	lastSendSignalID[reset] = 0;
-	commandir_hardware_type[reset] = 0;
-	open_commandir_devices[reset].cmdir_dev = 0;
-	open_commandir_devices[reset].bus = 0;
-	open_commandir_devices[reset].busdev = 0;
-	open_commandir_devices[reset].interface = 0;
+	// new device count-- from cleanup (if device_count > 0 AND commandir removed isn't 0 or max)
+	if( (device_count > 0) && (commandir_spot != device_count) )
+	{
+		/* It wasn't the top device removed, and there's 
+			* more than 1 device, so we have some vars to patch up
+			*/
+		for(x=commandir_spot; x<(device_count); x++)
+		{
+			channels_en[x] = channels_en[x+1];
+			mini_freq[x] = mini_freq[x+1];
+			commandir_last_signal_id[x] = commandir_last_signal_id[x+1];
+			lastSendSignalID[x] = lastSendSignalID[x+1];
+			commandir_hardware_type[x] = commandir_hardware_type[x+1];
+			memcpy(&open_commandir_devices[x], 
+				&open_commandir_devices[x+1], 
+				sizeof(struct commandir_device));	
+		}
+	
+	// Reset the TOP one that was just removed:
+		channels_en[(int)device_count] = 0x0f;
+		mini_freq[(int)device_count] = -1;
+		commandir_last_signal_id[(int)device_count] = 0;
+		lastSendSignalID[(int)device_count] = 0;
+		commandir_hardware_type[(int)device_count] = 0;
+		open_commandir_devices[(int)device_count].cmdir_dev = 0;
+		open_commandir_devices[(int)device_count].bus = 0;
+		open_commandir_devices[(int)device_count].busdev = 0;
+		open_commandir_devices[(int)device_count].interface = 0; 
+		
+	}
 	
 	if(commandir_rx_num>=commandir_spot)
 	{
 		commandir_rx_num--;	
 	}
 
-	device_count--;	
 	hardware_setorder();
 }
 
 static void hardware_setorder(){
-		/* Tried to order to the detected CommandIRs based on bus and dev ids
-		 * so they remain the same on reboot.  Adding a new device in front
-		 * will mean it becomes device 0 and emitters or scripts must be fixed
-		 * Need a different param, these still change. 
-		 */
-		 
-		tx_order[0] = tx_order[1] = tx_order[2] = tx_order[3] = 0; 
-		mini_freq[0] = mini_freq[1] = mini_freq[2] = mini_freq[3] = -1;
-		int largest = 0;
-		int tmpvals[4];
-		int x, tx_spots, find_spot;
+	/* Tried to order to the detected CommandIRs based on bus and dev ids
+		* so they remain the same on reboot.  Adding a new device in front
+		* will mean it becomes device 0 and emitters or scripts must be fixed
+		* Need a different param, these still change. 
+		*/
 		
-		for(x=0; x<device_count; x++)
-		{
-			tmpvals[x] = 256 * open_commandir_devices[x].bus + 
-				open_commandir_devices[x].busdev;
-		}
-		
-		for(tx_spots = 0; tx_spots < device_count; tx_spots++)
-		{
-			largest = 0;
-			for(find_spot = 0; find_spot < device_count; find_spot++)
-			{
-				if(tmpvals[find_spot] > tmpvals[largest])
-				{
-					largest = find_spot;
-				}
-			}
-			tx_order[device_count - tx_spots - 1 ] = largest;
-			tmpvals[largest] = 0;
-		}
-		
-		
-		// The formerly receiving CommandIR has been unplugged
-		if(commandir_rx_num < 0)
-		{
-			if(device_count > 0)
-				commandir_rx_num = 0;
-		}
-			
+	tx_order[0] = tx_order[1] = tx_order[2] = tx_order[3] = 0; 
+	mini_freq[0] = mini_freq[1] = mini_freq[2] = mini_freq[3] = -1;
+	int largest = 0;
+	int tmpvals[4];
+	int x, tx_spots, find_spot;
+	
+	for(x=0; x<device_count; x++)
+	{
+		tmpvals[x] = 256 * open_commandir_devices[x].bus + 
+			open_commandir_devices[x].busdev;
 	}
+	
+	for(tx_spots = 0; tx_spots < device_count; tx_spots++)
+	{
+		largest = 0;
+		for(find_spot = 0; find_spot < device_count; find_spot++)
+		{
+			if(tmpvals[find_spot] > tmpvals[largest])
+			{
+				largest = find_spot;
+			}
+		}
+		tx_order[device_count - tx_spots - 1 ] = largest;
+		tmpvals[largest] = 0;
+	}
+	
+	
+	// The formerly receiving CommandIR has been unplugged
+	if(commandir_rx_num < 0)
+	{
+		if(device_count > 0)
+			commandir_rx_num = 0;
+	}
+	
+	// Clear all pending signals
+	for(x=top_signalq; x >= 0; x--)
+	{
+		free(signalq[top_signalq]);
+	}
+	top_signalq = -1;
+	
+}
+
+static void cleanup_commandir_dev(int spotnum)
+{
+	int location, devnum;
+
+	location = open_commandir_devices[spotnum].location;
+	devnum = open_commandir_devices[spotnum].devnum;
+
+  open_bus_hash[ location ][ devnum ] = 0;
+	device_count--;	
+  
+	if(open_commandir_devices[spotnum].cmdir_dev==NULL)
+	{
+		return;
+	}
+	usb_release_interface(open_commandir_devices[spotnum].cmdir_dev, 
+		open_commandir_devices[spotnum].interface);
+	usb_close(open_commandir_devices[spotnum].cmdir_dev);
+	open_commandir_devices[spotnum].cmdir_dev = NULL;
+}
+
 
 static char hardware_scan()
 {
@@ -957,7 +986,7 @@ static char hardware_scan()
 		for (dev = bus->devices; dev; dev = dev->next)	
 		{
 			if (dev->descriptor.idVendor == USB_CMDIR_VENDOR_ID) 
-			{	
+			{
 				located++;
 				// Do we already know about it?
 				if(!open_bus_hash[bus->location][dev->devnum]){
@@ -978,34 +1007,29 @@ static char hardware_scan()
 						else 
 						{
 						  
-						// Try to set configuration:
+						// Try to set configuration; not needed on Linux
 // 						int usb_set_configuration(usb_dev_handle *dev, int configuration);
  							int r = 0;
 // 							r = usb_set_configuration(open_commandir_devices[find_spot].cmdir_dev, 1);
-// 							
-//  							printf("usb_set_configuration return %d.\n", r);
-// 						  
-						  // Open OK, try to claim
+						  
 						  r = usb_claim_interface(
 						  	open_commandir_devices[find_spot].cmdir_dev,0);
-//open_commandir_devices[find_spot].interface);
-						  if(open_commandir_devices[find_spot].interface != 0)
+						  if(r < 0)
 						  {
-							usb_close(
-							  open_commandir_devices[find_spot].cmdir_dev);
-							open_commandir_devices[find_spot].cmdir_dev = NULL;
-							logprintf(LOG_ERR, 
-							 "Unable to claim CommandIR - Is it already busy?"
-							 );
-							logprintf(LOG_ERR, 
-							 "Try 'rmmod commandir' or check for other lircds"
-							 );
-							break;
+						  	cleanup_commandir_dev(find_spot);
+								logprintf(LOG_ERR, 
+								"Unable to claim CommandIR - Is it already busy?"
+								);
+								logprintf(LOG_ERR, 
+								"Try 'rmmod commandir' or check for other lircds"
+								);
+								break;
 						  }
 						  else 
 						  {
 							// great, it's ours
-
+							open_commandir_devices[find_spot].location = bus->location;
+							open_commandir_devices[find_spot].devnum = dev->devnum;
 							open_bus_hash[bus->location][dev->devnum] = 1;
 							open_commandir_devices[find_spot].bus = bus->location;
 							open_commandir_devices[find_spot].busdev = dev->devnum;
@@ -1020,32 +1044,48 @@ static char hardware_scan()
 							switch(dev->descriptor.iProduct)
 							{
 							 case 2:
-							  commandir_hardware_type[find_spot] = HW_COMMANDIR_2;
+							 	logprintf(LOG_ERR, "Product identified and CommandIR II");
+							  commandir_hardware_type[find_spot] = HW_COMMANDIR_UNKNOWN;
 							  
-							  int send_status = 0, tries=50;
+							  int send_status = 0, tries=20;
 							  static char get_version[] = {2, GET_VERSION};
 							  unsigned char commandir_data_buffer[64];
 
 								send_status = 4;	// just to start the while()
 								
 								while(tries--){
-									usleep(USB_TIMEOUT_US);	// wait a moment 
+									usleep(USB_TIMEOUT_US);	// wait a moment
+										
+									// try moving this below:
 									send_status = usb_bulk_write(
 									open_commandir_devices[find_spot].cmdir_dev, 
 										2, // endpoint2
 										get_version,
 										2, 
 										15000);
+									if(send_status < 0)
+									{
+										logprintf(LOG_ERR, 
+											"Unable to write version request - Is CommandIR busy? Error %d", send_status);
+										break;
+									}
 									
-									usleep(USB_TIMEOUT_US);	// wait a moment
-										
+									usleep(USB_TIMEOUT_US);	// wait a moment 
+									
 									send_status = usb_bulk_read(
 										open_commandir_devices[find_spot].cmdir_dev,
 										1,
 										(char *)commandir_data_buffer,
-										3,
-										10000);
+										MAX_COMMANDIR_II_PACKET,
+										15000);
 	
+									if(send_status < 0)
+									{
+										logprintf(LOG_ERR, 
+											"Unable to read version request - Is CommandIR busy? Error %d", send_status);
+										cleanup_commandir_dev(find_spot);
+										break;
+									}
 									if(send_status==3)
 									{
 										if(commandir_data_buffer[0]==GET_VERSION)
@@ -1060,6 +1100,7 @@ static char hardware_scan()
 											continue;
 										}
 									}
+									
 							}
 							break;
 							default:
@@ -1067,10 +1108,15 @@ static char hardware_scan()
 								HW_COMMANDIR_MINI;
 							}
 							
-
-							lastSendSignalID[find_spot] = 0;
-							commandir_last_signal_id[find_spot] = 0;
-							
+							if(commandir_hardware_type[find_spot] == HW_COMMANDIR_UNKNOWN)
+							{
+								cleanup_commandir_dev(find_spot);
+							}
+							else
+							{
+								lastSendSignalID[find_spot] = 0;
+								commandir_last_signal_id[find_spot] = 0;
+							}
 							break; // don't keep looping through find_spot
 							} // claim?
 						}// open?
@@ -1097,8 +1143,8 @@ static char hardware_scan()
 	{
 		if(open_commandir_devices[find_spot].cmdir_dev != NULL)
 		{
-			if(still_found[open_commandir_devices[find_spot].bus]
-				[open_commandir_devices[find_spot].busdev] != 1)
+			if(still_found[open_commandir_devices[find_spot].location]
+				[open_commandir_devices[find_spot].devnum] != 1)
 			{
 				logprintf(LOG_ERR, "Commandir %d removed.", find_spot);
 				raise_event(COMMANDIR_UNPLUG_1 + find_spot);
@@ -1122,6 +1168,15 @@ static char hardware_scan()
 static void shutdown_usb()
 {
 	int x;
+	
+	// Wait for any TX to complete before shutting down
+	if(top_signalq >= 0)
+	{
+		shutdown_pending++;
+		logprintf(LOG_ERR, "Waiting for signals to finish transmitting before shutdown");
+		return;
+	}
+	
 	for(x=0; x<MAX_DEVICES; x++)
 	{
 		if(open_commandir_devices[x].cmdir_dev )
@@ -1137,7 +1192,8 @@ static void shutdown_usb()
 	exit(0);
 }
 
-static void commandir_read_loop(){
+static void commandir_read_loop()
+{
 	// Read from CommandIR, Write to pipe
 	
 	unsigned char commands[MAX_COMMAND];
@@ -1153,13 +1209,6 @@ static void commandir_read_loop(){
 	int send_status = 0; 
 	int i = 0;
 
-	alarm(0);
-	signal(SIGTERM, shutdown_usb);
-	signal(SIGPIPE, SIG_DFL);
-	signal(SIGINT, shutdown_usb);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGALRM, SIG_IGN);
-	
 	raise_event(COMMANDIR_READY);
 	
 	for(;;){
@@ -1170,6 +1219,9 @@ static void commandir_read_loop(){
 		curCommandStart = 0;
 		curCommandLength = 0;
 		bytes_read = read(tochild_read, commands, MAX_COMMAND); 
+		
+		if(shutdown_pending > 0 && (top_signalq==-1))
+			shutdown_usb();
 		
 		if(bytes_read > 0){
 		
@@ -1211,11 +1263,6 @@ static void commandir_read_loop(){
 								(char*)init_led,
 								7, // bytes
 								USB_TIMEOUT_MS);
-								if(send_status < 7)
-								{
-									printf("Error in usb_bulk_write3()\n");
-								}
-
 						  }
 						 }
 						}
@@ -1230,10 +1277,6 @@ static void commandir_read_loop(){
 							(char*)rx_decode_led,
 							7, // bytes
 							USB_TIMEOUT_MS);
-						if(send_status < 7)
-						{
-							printf("Error in usb_bulk_write9()\n");
-						}
 
 					  }
 					  break;
@@ -1305,7 +1348,7 @@ static int check_irsend_commandir(unsigned char *command)
 	{
 		case 0x09: 
 		case 0x0A:
-			logprintf(LOG_ERR, "Re-selecting RX not implemented yet\n");
+			logprintf(LOG_ERR, "Re-selecting RX not implemented yet");
 			break;
 			
 		default:
@@ -1343,11 +1386,6 @@ static int check_irsend_commandir(unsigned char *command)
 						(char *)lightchange,
 						7, // bytes
 						USB_TIMEOUT_MS);
-					if(send_status < 7)
-					{
-						printf("Error in usb_bulk_write5()\n");
-					}
-
 				}
 				
 				return commandir_code; // done
@@ -1502,7 +1540,6 @@ static int commandir_read()
 					else
 					{
 						break;
-// 						printf("No RX\n");
 					}
 				} // while; should only repeat if there's more RX data
 				
