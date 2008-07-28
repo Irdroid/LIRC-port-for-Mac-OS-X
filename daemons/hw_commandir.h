@@ -60,14 +60,14 @@
 #define HW_COMMANDIR_2		2
 #define HW_COMMANDIR_UNKNOWN 127
 
-// Maximum packet sizes
 #define MAX_HW_MINI_PACKET 64
-#define MAX_COMMANDIR_II_PACKET 64
 
 // CommandIR has lots of buffer room, we don't need to poll constantly
 #define USB_TIMEOUT_MS 5000
 #define USB_TIMEOUT_US 1000
 #define WAIT_BETWEEN_READS_US 50000
+#define MAX_WAIT_BETWEEN_READS_US 5000000
+#define MIN_WAIT_BETWEEN_READS_US 5000
 
 #define USB_MAX_BUSES	8
 #define USB_MAX_BUSDEV	127
@@ -147,6 +147,8 @@
 #define COMMANDIR_REORDERED	0x50
 #define COMMANDIR_READY		0x51
 #define COMMANDIR_STOPPED	0x52
+#define COMMANDIR_POLL_FASTER	0x53
+#define COMMANDIR_POLL_SLOWER	0x54
 
 #define SETTRANSMITTERS_1	0xf0
 #define SETTRANSMITTERS_2	0xf1
