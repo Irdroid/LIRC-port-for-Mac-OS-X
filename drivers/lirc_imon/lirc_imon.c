@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.25 2008/07/21 17:14:22 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.26 2008/07/30 17:45:26 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -1247,27 +1247,6 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		info("%s: Registered iMON plugin(minor:%d)",
 		     __FUNCTION__, lirc_minor);
 
-alloc_status_switch:
-
-	switch (alloc_status) {
-	case 7:
-		if (vfd_ep_found)
-			usb_free_urb(tx_urb);
-	case 6:
-		usb_free_urb(rx_urb);
-	case 5:
-		lirc_buffer_free(rbuf);
-	case 4:
-		kfree(rbuf);
-	case 3:
-		kfree(plugin);
-	case 2:
-		kfree(context);
-		context = NULL;
-	case 1:
-		retval = -ENOMEM;
-	}
-
 	/* Needed while unregistering! */
 	plugin->minor = lirc_minor;
 
@@ -1325,6 +1304,29 @@ alloc_status_switch:
 			__FUNCTION__, dev->bus->busnum, dev->devnum);
 
 	UNLOCK_CONTEXT;
+
+alloc_status_switch:
+
+	switch (alloc_status) {
+	case 7:
+		if (vfd_ep_found)
+			usb_free_urb(tx_urb);
+	case 6:
+		usb_free_urb(rx_urb);
+	case 5:
+		lirc_buffer_free(rbuf);
+	case 4:
+		kfree(rbuf);
+	case 3:
+		kfree(plugin);
+	case 2:
+		kfree(context);
+		context = NULL;
+	case 1:
+		retval = -ENOMEM;
+	case SUCCESS:
+		;
+	}
 
  exit:
 #ifdef KERNEL_2_5
