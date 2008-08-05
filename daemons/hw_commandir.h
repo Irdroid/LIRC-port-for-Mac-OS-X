@@ -65,7 +65,7 @@
 // CommandIR has lots of buffer room, we don't need to poll constantly
 #define USB_TIMEOUT_MS 5000
 #define USB_TIMEOUT_US 1000
-#define WAIT_BETWEEN_READS_US 50000
+#define WAIT_BETWEEN_READS_US 10000
 #define MAX_WAIT_BETWEEN_READS_US 5000000
 #define MIN_WAIT_BETWEEN_READS_US 5000
 
