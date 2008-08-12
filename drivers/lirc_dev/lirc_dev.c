@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.58 2008/05/14 16:37:49 lirc Exp $
+ * $Id: lirc_dev.c,v 1.59 2008/08/12 20:50:39 lirc Exp $
  *
  */
 
@@ -49,7 +49,11 @@
 #include <linux/uaccess.h>
 #include <linux/errno.h>
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
 #include <asm/semaphore.h>
+#else
+#include <linux/semaphore.h>
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #include <linux/wrapper.h>
 #endif
