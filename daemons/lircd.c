@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.77 2008/05/09 18:40:59 lirc Exp $      */
+/*      $Id: lircd.c,v 5.78 2008/08/21 18:39:25 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -515,10 +515,13 @@ void add_client(int sock)
 		{
 			if(!hw.init_func())
 			{
-				shutdown(clis[0],2);
-				close(clis[0]);
-				clin=0;
-				dosigterm(SIGTERM);
+				logprintf(LOG_WARNING,
+					  "Failed to initialize hardware");
+				/* Don't exit here, otherwise lirc
+				 * bails out, and lircd exits, making
+				 * it impossible to connect to when we
+				 * have a device actually plugged
+				 * in. */
 			}
 		}
 	}
