@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.26 2008/07/30 17:45:26 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.27 2008/08/22 21:38:17 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -162,6 +162,7 @@ struct imon_context {
 	struct usb_endpoint_descriptor *tx_endpoint;
 	struct urb *rx_urb;
 	struct urb *tx_urb;
+	int tx_control;
 	unsigned char usb_rx_buf[8];
 	unsigned char usb_tx_buf[8];
 
@@ -200,24 +201,35 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{ USB_DEVICE(0x15c2, 0xffda) },
 	/* IMON USB Control Board (IR & VFD) */
 	{ USB_DEVICE(0x15c2, 0xffdc) },
+	/* IMON USB Control Board (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0038) },
 	/* IMON USB Control Board (ext IR only) */
 	{ USB_DEVICE(0x04e8, 0xff30) },
 	{}
 };
 
 /* Some iMON VFD models requires a 6th packet */
-static unsigned short vfd_proto_6p_vendor_list[] = {
-			/* terminate this list with a 0 */
-			0x15c2,
-			0 };
+static struct usb_device_id vfd_proto_6p_list[] = {
+	{ USB_DEVICE(0x15c2, 0xffda) },
+	{ USB_DEVICE(0x15c2, 0xffdc) },
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{}
+};
 static unsigned char vfd_packet6[] = {
-		0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
+	0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
+
+/* Some iMON LCD models use control endpoint */
+static struct usb_device_id lcd_control_endpoint_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{}
+};
 
 /* Newer iMON models decode the signal onboard */
-static unsigned short ir_onboard_decode_product_list[] = {
-			/* terminate this list with a 0 */
-			0xffdc,
-			0 };
+static struct usb_device_id ir_onboard_decode_list[] = {
+	{ USB_DEVICE(0x15c2, 0xffdc) },
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{}
+};
 
 /* USB Device data */
 static struct usb_driver imon_driver = {
@@ -435,18 +447,45 @@ static inline int send_packet(struct imon_context *context)
 	unsigned int pipe;
 	int interval = 0;
 	int retval = SUCCESS;
+	struct usb_ctrlrequest *control_req = NULL;
 
-	pipe = usb_sndintpipe(context->dev,
-			context->tx_endpoint->bEndpointAddress);
+	/* Check if we need to use control or interrupt urb */
+	if (!context->tx_control) {
+		pipe = usb_sndintpipe(context->dev,
+				context->tx_endpoint->bEndpointAddress);
 #ifdef KERNEL_2_5
-	interval = context->tx_endpoint->bInterval;
+		interval = context->tx_endpoint->bInterval;
 #endif	/* Use 0 for 2.4 kernels */
 
-	usb_fill_int_urb(context->tx_urb, context->dev, pipe,
-		context->usb_tx_buf, sizeof(context->usb_tx_buf),
-		usb_tx_callback, context, interval);
+		usb_fill_int_urb(context->tx_urb, context->dev, pipe,
+			context->usb_tx_buf, sizeof(context->usb_tx_buf),
+			usb_tx_callback, context, interval);
 
-	context->tx_urb->actual_length = 0;
+		context->tx_urb->actual_length = 0;
+	} else {
+		/* fill request into kmalloc'ed space: */
+		control_req = kmalloc(sizeof(struct usb_ctrlrequest), GFP_NOIO);
+		if (control_req == NULL)
+			return -ENOMEM;
+
+		/* setup packet is '21 09 0200 0001 0008' */
+		control_req->bRequestType = 0x21;
+		control_req->bRequest = 0x09;
+		control_req->wValue = cpu_to_le16(0x0002);
+		control_req->wIndex = cpu_to_le16(0x0100);
+		control_req->wLength = cpu_to_le16(0x0800);
+
+		/* control pipe is endpoint 0x00 */
+		pipe = usb_sndctrlpipe(context->dev, 0);
+
+		/* build the control urb */
+		usb_fill_control_urb(context->tx_urb, context->dev, pipe,
+			(unsigned char *)control_req,
+			context->usb_tx_buf, sizeof(context->usb_tx_buf),
+			usb_tx_callback, context);
+
+		context->tx_urb->actual_length = 0;
+	}
 
 	init_completion(&context->tx.finished);
 	atomic_set(&(context->tx.busy), 1);
@@ -469,6 +508,8 @@ static inline int send_packet(struct imon_context *context)
 		if (retval != SUCCESS)
 			err("%s: packet tx failed(%d)", __FUNCTION__, retval);
 	}
+
+	kfree(control_req);
 
 	return retval;
 }
@@ -1043,6 +1084,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	int alloc_status;
 	int vfd_proto_6p = FALSE;
 	int ir_onboard_decode = FALSE;
+	int tx_control = FALSE;
 	struct imon_context *context = NULL;
 	int i;
 
@@ -1118,6 +1160,19 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
+	/* If we didn't find a vfd endpoint, and we have a next-gen LCD,
+	 * use control urb instead of interrupt
+	 */
+	if (!vfd_ep_found) {
+		if (usb_match_id(interface, lcd_control_endpoint_list)) {
+			tx_control = 1;
+			vfd_ep_found = TRUE;
+			if (debug)
+				info("%s: LCD device uses control endpoint, "
+				     "not interface OUT endpoint", __func__);
+		}
+	}
+
 	/* Input endpoint is mandatory */
 	if (!ir_ep_found) {
 		err("%s: no valid input(IR) endpoint found.", __FUNCTION__);
@@ -1125,17 +1180,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		goto exit;
 	} else {
 		/* Determine if the IR signals are decoded onboard */
-		unsigned short product_id;
-		unsigned short *id_list_item;
-
-		product_id = cpu_to_le16(dev->descriptor.idProduct);
-		id_list_item = ir_onboard_decode_product_list;
-		while (*id_list_item) {
-			if (*id_list_item++ == product_id) {
-				ir_onboard_decode = TRUE;
-				break;
-			}
-		}
+		if (usb_match_id(interface, ir_onboard_decode_list))
+			ir_onboard_decode = TRUE;
 
 		if (debug)
 			info("ir_onboard_decode: %d", ir_onboard_decode);
@@ -1143,17 +1189,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/* Determine if VFD requires 6 packets */
 	if (vfd_ep_found) {
-		unsigned short vendor_id;
-		unsigned short *id_list_item;
-
-		vendor_id = cpu_to_le16(dev->descriptor.idVendor);
-		id_list_item = vfd_proto_6p_vendor_list;
-		while (*id_list_item) {
-			if (*id_list_item++ == vendor_id) {
-				vfd_proto_6p = TRUE;
-				break;
-			}
-		}
+		if (usb_match_id(interface, vfd_proto_6p_list))
+			vfd_proto_6p = TRUE;
 
 		if (debug)
 			info("vfd_proto_6p: %d", vfd_proto_6p);
@@ -1258,6 +1295,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		context->vfd_supported = TRUE;
 		context->tx_endpoint = tx_endpoint;
 		context->tx_urb = tx_urb;
+		context->tx_control = tx_control;
 	}
 	context->plugin = plugin;
 
