@@ -194,10 +194,10 @@ static int commandir_init()
 	
 	fd_flags = fcntl(pipe_tochild[0], F_GETFL);
   	if(fcntl(pipe_tochild[0], F_SETFL, fd_flags | O_NONBLOCK) == -1)
-    {
-      logprintf(LOG_ERR, "can't set pipe to non-blocking");
-      exit(1);
-    }	
+	{
+		logprintf(LOG_ERR, "can't set pipe to non-blocking");
+		return 0;
+	}	
 	
 	child_pid= fork();
 	if (child_pid== -1)
@@ -1208,7 +1208,7 @@ static void shutdown_usb()
 	logprintf(LOG_ERR, "CommandIR driver child cleaned up and exiting");
 	raise_event(COMMANDIR_STOPPED);
 
-	exit(0);
+	_exit(EXIT_SUCCESS);
 }
 
 static void commandir_read_loop()

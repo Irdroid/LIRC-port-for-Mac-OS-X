@@ -1,4 +1,4 @@
-/*      $Id: hw_atilibusb.c,v 5.2 2005/07/10 08:34:11 lirc Exp $      */
+/*      $Id: hw_atilibusb.c,v 5.3 2008/08/23 21:03:22 lirc Exp $      */
 
 /****************************************************************************
  ** hw_atilibusb.c **********************************************************
@@ -349,5 +349,5 @@ static void usb_read_loop(int fd)
 	
 done:
 	if (!usb_close(dev_handle)) err = 1;
-	exit(err);
+	_exit(err);
 }
