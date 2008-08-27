@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.73 2008/07/20 19:40:21 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.74 2008/08/27 17:04:46 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -110,8 +110,8 @@ struct ir_ncode ncode;
 
 lirc_t signals[MAX_SIGNALS];
 
-#define AEPS (hw.resolution>100 ? hw.resolution:100)
-#define EPS 30
+unsigned int eps = 30;
+lirc_t aeps = 100;
 
 /* some threshold values */
 
@@ -417,6 +417,7 @@ int main(int argc,char **argv)
 			progname);
 		exit(EXIT_FAILURE);
 	}
+	aeps = (hw.resolution>aeps ? hw.resolution:aeps);
 	filename=argv[optind];
 	fin=fopen(filename,"r");
 	if(fin!=NULL)
@@ -610,8 +611,8 @@ int main(int argc,char **argv)
 			}
 			printf("Creating config file in raw mode.\n");
 			set_protocol(&remote, RAW_CODES);
-			remote.eps=EPS;
-			remote.aeps=AEPS;
+			remote.eps=eps;
+			remote.aeps=aeps;
 			break;
 		}
 		
@@ -1378,6 +1379,8 @@ void analyse_remote(struct ir_remote *raw_data)
 			progname, raw_data->name);
 		return;
 	}
+	aeps = raw_data->aeps;
+	eps = raw_data->eps;
 	emulation_data = raw_data;
 	next_code = NULL;
 	current_code = NULL;
@@ -1760,8 +1763,8 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 			}
 			sum+=data&PULSE_MASK;
 
-			if((data&PULSE_MASK)>=remaining_gap*(100-EPS)/100
-			   || (data&PULSE_MASK)>=remaining_gap-AEPS)
+			if((data&PULSE_MASK)>=remaining_gap*(100-eps)/100
+			   || (data&PULSE_MASK)>=remaining_gap-aeps)
 			{
 				if(is_space(data))
 				{
@@ -1877,8 +1880,8 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					}
 					break;
 				}
-				if((data&PULSE_MASK)<=(remaining_gap+header)*(100+EPS)/100
-				   || (data&PULSE_MASK)<=(remaining_gap+header)+AEPS)
+				if((data&PULSE_MASK)<=(remaining_gap+header)*(100+eps)/100
+				   || (data&PULSE_MASK)<=(remaining_gap+header)+aeps)
 				{
 					first_signal=0;
 					header=0;
@@ -1981,15 +1984,15 @@ void merge_lengths(struct lengths *first)
 			new_sum=l->sum+inner->sum;
 			new_count=l->count+inner->count;
 			
-			if((l->max<=new_sum/new_count+AEPS &&
-			    l->min>=new_sum/new_count-AEPS &&
-			    inner->max<=new_sum/new_count+AEPS &&
-			    inner->min>=new_sum/new_count-AEPS)
+			if((l->max<=new_sum/new_count+aeps &&
+			    l->min+aeps>=new_sum/new_count &&
+			    inner->max<=new_sum/new_count+aeps &&
+			    inner->min+aeps>=new_sum/new_count)
 			   ||
-			   (l->max<=new_sum/new_count*(100+EPS) &&
-			    l->min>=new_sum/new_count*(100-EPS) &&
-			    inner->max<=new_sum/new_count*(100+EPS) &&
-			    inner->min>=new_sum/new_count*(100-EPS)))
+			   (l->max<=new_sum/new_count*(100+eps) &&
+			    l->min>=new_sum/new_count*(100-eps) &&
+			    inner->max<=new_sum/new_count*(100+eps) &&
+			    inner->min>=new_sum/new_count*(100-eps)))
 			{
 				l->sum=new_sum;
 				l->count=new_count;
@@ -2190,7 +2193,7 @@ int get_lead_length(struct ir_remote *remote)
 	{
 		swap=a; a=b; b=swap;
 	}
-	if(abs(2*a-b)<b*EPS/100 || abs(2*a-b)<AEPS)
+	if(abs(2*a-b)<b*eps/100 || abs(2*a-b)<aeps)
 	{
 		printf("Found hidden lead pulse: %lu\n",
 		       (unsigned long) a);
@@ -2414,8 +2417,8 @@ int get_data_length(struct ir_remote *remote, int interactive)
 #                       endif
 
 
-			remote->eps=EPS;
-			remote->aeps=AEPS;
+			remote->eps=eps;
+			remote->aeps=aeps;
 			if(is_biphase(remote))
 			{
 				if(max2_plength==NULL || max2_slength==NULL)
@@ -2540,8 +2543,8 @@ int get_gap_length(struct ir_remote *remote)
 	int maxcount,lastmaxcount;
 	lirc_t gap;
 	
-	remote->eps=EPS;
-	remote->aeps=AEPS;
+	remote->eps=eps;
+	remote->aeps=aeps;
 
 	count=0;flag=0;lastmaxcount=0;
 	printf("Hold down an arbitrary button.\n");
