@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.15 2008/07/20 19:40:21 lirc Exp $
+dnl $Id: configure.ac,v 1.16 2008/08/29 06:35:42 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -165,6 +165,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_ttusbir) \
 	(lirc_dev lirc_imon) \
 	(lirc_dev lirc_it87) \
+	(lirc_dev lirc_ite8709) \
 	(lirc_dev lirc_mceusb) \
 	(lirc_dev lirc_mceusb2) \
 	(lirc_dev lirc_parallel) \
@@ -432,7 +433,7 @@ AC_ARG_WITH(driver,
                           i2cuser, igorplugusb, iguanaIR, imon,
                           imon_24g, imon_knob, imon_lcd, imon_pad,
                           imon_rsc, irdeo, irdeo_remote, irlink,
-                          irman, irreal, it87, knc_one, kworld,
+                          irman, irreal, it87, ite8709, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
                           lptX, macmini, mceusb, mceusb2, mediafocusI,
@@ -580,6 +581,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	lirc_dev-lirc_imon)
 		;;
 	lirc_dev-lirc_it87)
+		;;
+	lirc_dev-lirc_ite8709)
 		;;
 	lirc_dev-lirc_mceusb)
 		;;
@@ -1037,6 +1040,10 @@ if test "$driver" = "it87"; then
   lirc_driver="lirc_dev lirc_it87"
 fi
 
+if test "$driver" = "ite8709"; then
+  lirc_driver="lirc_dev lirc_ite8709"
+fi
+
 if test "$driver" = "knc_one"; then
   lirc_driver="lirc_dev lirc_i2c"
   lircd_conf="knc_one/lircd.conf.knc_one"
@@ -1459,6 +1466,7 @@ elif test "$lirc_driver" = "all"; then
 	lirc_igorplugusb \
 	lirc_imon \
 	lirc_it87 \
+	lirc_ite8709 \
 	lirc_mceusb \
 	lirc_mceusb2 \
 	lirc_parallel \
@@ -1738,6 +1746,7 @@ AC_CONFIG_FILES([
   drivers/lirc_ttusbir/Makefile
   drivers/lirc_imon/Makefile
   drivers/lirc_it87/Makefile
+  drivers/lirc_ite8709/Makefile
   drivers/lirc_mceusb/Makefile
   drivers/lirc_mceusb2/Makefile
   drivers/lirc_parallel/Makefile

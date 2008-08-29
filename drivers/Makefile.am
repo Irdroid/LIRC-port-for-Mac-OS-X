@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.30 2008/07/17 20:34:01 lirc Exp $
+## $Id: Makefile.am,v 5.31 2008/08/29 06:35:42 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -17,6 +17,7 @@ DIST_SUBDIRS = \
 	lirc_igorplugusb \
 	lirc_imon \
 	lirc_it87 \
+	lirc_ite8709 \
 	lirc_mceusb \
 	lirc_mceusb2 \
 	lirc_parallel \

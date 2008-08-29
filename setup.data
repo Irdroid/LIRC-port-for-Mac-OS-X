@@ -102,6 +102,7 @@ hw_menu_entry: @hw-irda
 	sir: "SIR IrDA (built-in IR ports)"
 	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
 	it87: "ITE IT8712/IT8705 CIR port"
+	ite8709: "ITE8709 CIR port"
 	digimatrix: "Asus Digimatrix IT87xx CIR port"
 	act200l: "Actisys Act200L SIR driver support"
 	act220l: "Actisys Act220L(+) SIR driver support"
@@ -229,6 +230,7 @@ param_type: \
 	imon_pad \
 	imon_rsc \
 	it87 \
+	ite8709 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
@@ -299,6 +301,7 @@ default_param: \
 	imon_pad \
 	imon_rsc \
 	it87 \
+	ite8709 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
