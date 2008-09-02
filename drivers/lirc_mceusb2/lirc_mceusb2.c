@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.47 $"
+#define DRIVER_VERSION	"$Revision: 1.48 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -193,6 +193,22 @@ static struct usb_device_id usb_remote_table [] = {
 	{ }
 };
 
+static struct usb_device_id pinnacle_list[] = {
+	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
+	{}
+};
+
+static struct usb_device_id transmitter_mask_list[] = {
+	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
+	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
+	{ USB_DEVICE(VENDOR_SMK, 0x0334) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0001) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0007) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
+	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
+	{}
+};
+
 /* data structure for each usb remote */
 struct irctl {
 
@@ -213,7 +229,12 @@ struct irctl {
 	struct lirc_plugin *p;
 	lirc_t lircdata;
 	unsigned char is_pulse;
-	int connected;
+	struct {
+		u32 connected:1;
+		u32 pinnacle:1;
+		u32 transmitter_mask_inverted:1;
+		u32 reserved:29;
+	} flags;
 
 	unsigned char transmitter_mask;
 	unsigned int carrier_freq;
@@ -228,6 +249,10 @@ struct irctl {
 /* init strings */
 static char init1[] = {0x00, 0xff, 0xaa, 0xff, 0x0b};
 static char init2[] = {0xff, 0x18};
+
+static char pin_init1[] = { 0x9f, 0x07};
+static char pin_init2[] = { 0x9f, 0x13};
+static char pin_init3[] = { 0x9f, 0x0d};
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 static inline unsigned long usecs_to_jiffies(const unsigned int u)
@@ -403,10 +428,10 @@ static int set_use_inc(void *data)
 
 	MOD_INC_USE_COUNT;
 
-	if (!ir->connected) {
+	if (!ir->flags.connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
-		ir->connected = 1;
+		ir->flags.connected = 1;
 	}
 
 	return SUCCESS;
@@ -422,9 +447,9 @@ static void set_use_dec(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
-	if (ir->connected) {
+	if (ir->flags.connected) {
 		IRLOCK;
-		ir->connected = 0;
+		ir->flags.connected = 0;
 		IRUNLOCK;
 	}
 	MOD_DEC_USE_COUNT;
@@ -655,23 +680,13 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 
 static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 {
-
-	/* SMK Transceiver does not use the inverted scheme, nor does Topseed*/
-	if ((ir->usbdev->descriptor.idVendor == VENDOR_SMK &&
-	     (ir->usbdev->descriptor.idProduct == 0x031d ||
-	      ir->usbdev->descriptor.idProduct == 0x0322 ||
-	      ir->usbdev->descriptor.idProduct == 0x0334)) ||
-	    (ir->usbdev->descriptor.idVendor == VENDOR_TOPSEED &&
-	     (ir->usbdev->descriptor.idProduct == 0x0001 ||
-	      ir->usbdev->descriptor.idProduct == 0x0007 ||
-	      ir->usbdev->descriptor.idProduct == 0x0008)) ||
-	    (ir->usbdev->descriptor.idVendor == VENDOR_PINNACLE &&
-	     (ir->usbdev->descriptor.idProduct == 0x0225)))
-		ir->transmitter_mask = mask;
-	else
+	if (ir->flags.transmitter_mask_inverted)
 		/* The mask begins at 0x02 and has an inverted
 		   numbering scheme */
-		ir->transmitter_mask = (mask != 0x03 ? mask ^ 0x03 : mask) << 1;
+		ir->transmitter_mask =
+			(mask != 0x03 ? mask ^ 0x03 : mask) << 1;
+	else
+		ir->transmitter_mask = mask;
 }
 
 
@@ -839,7 +854,14 @@ static int usb_remote_probe(struct usb_interface *intf,
 				"found\n");
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
-			ep_in->bInterval = 1;
+			if (usb_match_id(intf, pinnacle_list)) {
+				/* setting to seems to give issues
+				   with Pinnacle timing out on
+				   transfer */
+				ep_in->bInterval = ep->bInterval;
+			} else {
+				ep_in->bInterval = 1;
+			}
 		}
 
 		if ((ep_out == NULL)
@@ -854,7 +876,14 @@ static int usb_remote_probe(struct usb_interface *intf,
 				"found\n");
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
-			ep_out->bInterval = 1;
+			if (usb_match_id(intf, pinnacle_list)) {
+				/* setting to 1 seems to give issues
+				   with Pinnacle timing out on
+				   transfer */
+				ep_out->bInterval = ep->bInterval;
+			} else {
+				ep_out->bInterval = 1;
+			}
 		}
 	}
 	if (ep_in == NULL) {
@@ -957,12 +986,15 @@ mem_failure_switch:
 	ir->devnum = devnum;
 	ir->usbdev = dev;
 	ir->len_in = maxp;
-	ir->connected = 0;
+	ir->flags.connected = 0;
+	ir->flags.pinnacle = usb_match_id(intf, pinnacle_list) ? 1:0;
+	ir->flags.transmitter_mask_inverted =
+		usb_match_id(intf, transmitter_mask_list) ? 0:1;
 
 	ir->lircdata = PULSE_MASK;
 	ir->is_pulse = 0;
 
-	/* ir->usbdev must be set */
+	/* ir->flags.transmitter_mask_inverted must be set */
 	set_transmitter_mask(ir, MCE_DEFAULT_TX_MASK);
 	/* Saving usb interface data for use by the transmitter routine */
 	ir->usb_ep_in = ep_in;
@@ -982,14 +1014,51 @@ mem_failure_switch:
 		maxp, (usb_complete_t) usb_remote_recv, ir, ep_in->bInterval);
 
 	/* initialize device */
-	request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
-	request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
-	request_packet_async(ir, ep_out, init1,
-			     sizeof(init1), PHILUSB_OUTBOUND);
-	request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
-	request_packet_async(ir, ep_out, init2,
-			     sizeof(init2), PHILUSB_OUTBOUND);
-	request_packet_async(ir, ep_in, NULL, maxp, 0);
+	if (ir->flags.pinnacle) {
+		int usbret;
+
+		/* I have no idea why but this reset seems to be
+		   crucial to getting the device to do outbound IO
+		   correctly - without this the device seems to hang
+		   ignoring all input - although IR signals are
+		   correctly sent from the device no input is
+		   interpreted by the device and the host never does
+		   the completion routine */
+
+		usbret = usb_reset_configuration(dev);
+		printk(DRIVER_NAME "[%d]: usb reset config ret %x\n",
+		       devnum, usbret);
+
+		/* its possible we really should wait for a return for
+		   each of these */
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_out, pin_init1, sizeof(pin_init1),
+				     PHILUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_out, pin_init2, sizeof(pin_init2),
+				     PHILUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
+				     PHILUSB_OUTBOUND);
+		/* if we dont issue the correct number of receives
+		   (PHILUSB_INBOUND) for each outbound then the first
+		   few ir pulses will be interpreted by the
+		   usb_async_callback routine ah - we should ensure we
+		   have the right amount OR less - as the
+		   usb_remote_recv routine will handle the control
+		   packets OK - they start with 0x9f - but the async
+		   callback doesnt handle ir pulse packets */
+		request_packet_async(ir, ep_in, NULL, maxp, 0);
+	} else {
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_out, init1,
+				     sizeof(init1), PHILUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_out, init2,
+				     sizeof(init2), PHILUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, 0);
+	}
 
 	usb_set_intfdata(intf, ir);
 
