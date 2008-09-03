@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.36 2008/03/30 14:53:06 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.37 2008/09/03 20:22:12 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -137,6 +137,19 @@ lirc_t default_readdata(lirc_t timeout)
 		logperror(LOG_ERR, NULL);
 		default_deinit();
 		return 0;
+	}
+	if(data == 0)
+	{
+		static int data_warning = 1;
+
+		if(data_warning)
+		{
+			logprintf(LOG_WARNING, 
+				  "read invalid data from device %s",
+				  hw.device);
+			data_warning = 0;
+		}
+		data = 1;
 	}
 #endif
 	return(data);
