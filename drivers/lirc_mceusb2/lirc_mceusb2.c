@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.48 $"
+#define DRIVER_VERSION	"$Revision: 1.49 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -886,8 +886,9 @@ static int usb_remote_probe(struct usb_interface *intf,
 			}
 		}
 	}
-	if (ep_in == NULL) {
-		dprintk(DRIVER_NAME ": inbound and/or endpoint not found\n");
+	if (ep_in == NULL || ep_out == NULL) {
+		dprintk(DRIVER_NAME ": inbound and/or "
+			"outbound endpoint not found\n");
 		return -ENODEV;
 	}
 
