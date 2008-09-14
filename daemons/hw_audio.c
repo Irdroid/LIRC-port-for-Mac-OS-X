@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.4 2008/07/03 21:33:52 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.5 2008/09/14 18:04:37 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -66,7 +66,7 @@ typedef struct
 }
 paTestData;
 
-PortAudioStream *stream;
+PaStream *stream;
 
 
 extern struct ir_remote *repeat_remote;
@@ -90,7 +90,9 @@ void addCode( lirc_t data)
 
 static int recordCallback( void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
-                           PaTimestamp outTime, void *userData )
+                           PaStreamCallbackTimeInfo outTime,
+                           PaStreamCallbackFlags status,
+                           void *userData )
 {
 	paTestData *data = (paTestData*)userData;
 	SAMPLE *rptr = (SAMPLE*)inputBuffer;
@@ -216,6 +218,7 @@ paTestData data;
 int audio_init()
 {
 
+	PaStreamParameters inputParameters;
 	PaError    err;
 	int 		flags;
 	struct termios	t;
@@ -238,22 +241,27 @@ int audio_init()
 	err = Pa_Initialize();
 	if( err != paNoError ) goto error;
 
+	inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+	if (inputParameters.device == paNoDevice) {
+		logprintf(LOG_ERR, "No default input device");
+		goto error;
+	}
+	inputParameters.channelCount = NUM_CHANNELS;	/* stereo input */
+	inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+	inputParameters.suggestedLatency =
+		Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
+	inputParameters.hostApiSpecificStreamInfo = NULL;
+
+
 	// Record some audio. --------------------------------------------
 	err = Pa_OpenStream
 		(
 		 &stream,
-		 Pa_GetDefaultInputDeviceID(),
-		 NUM_CHANNELS,               // stereo input
-		 PA_SAMPLE_TYPE,
-		 NULL,
-		 paNoDevice,
-		 0,
-		 PA_SAMPLE_TYPE,
-		 NULL,
+		 &inputParameters,
+		 NULL,		  // output parameters
 		 SAMPLE_RATE,
 		 512,             // frames per buffer 
-		 0,               // number of buffers, if zero then use default minimum 
-		 0, 			   // flags 
+		 0, 		  // flags 
 		 recordCallback,
 		 &data );
 
