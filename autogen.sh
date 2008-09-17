@@ -3,6 +3,9 @@ rm -rf Makefile aclocal.m4 config.guess config.h.in* config.sub configure depcom
 find  -name Makefile.in -exec rm {} \;
 autoreconf -i -f
 
+#depcom is not added to DIST_COMMON by the previous run of automake, strange
+automake
+
 TMPFILE=$(mktemp)
 
 cat >$TMPFILE <<EOF
