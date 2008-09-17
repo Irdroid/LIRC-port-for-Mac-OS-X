@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.28 2008/05/16 22:02:13 uzuul Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.29 2008/09/17 18:20:16 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.28 $"
+#define DRIVER_VERSION	"$Revision: 1.29 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -209,9 +209,11 @@ static void stop_timer(struct usb_streamzap *sz)
 	spin_lock_irqsave(&sz->timer_lock, flags);
 	if (sz->timer_running) {
 		sz->timer_running = 0;
+		spin_unlock_irqrestore(&sz->timer_lock, flags);
 		del_timer_sync(&sz->delay_timer);
+	} else {
+		spin_unlock_irqrestore(&sz->timer_lock, flags);
 	}
-	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
 static void flush_timeout(unsigned long arg)
@@ -736,9 +738,9 @@ static void streamzap_use_dec(void *data)
 		del_timer_sync(&sz->flush_timer);
 	}
 
-	stop_timer(sz);
-
 	usb_kill_urb(sz->urb_in);
+
+	stop_timer(sz);
 
 	MOD_DEC_USE_COUNT;
 	sz->in_use--;
