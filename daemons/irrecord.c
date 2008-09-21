@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.74 2008/08/27 17:04:46 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.75 2008/09/21 10:36:51 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -141,11 +141,12 @@ struct ir_remote *emulation_data;
 struct ir_ncode *next_code = NULL;
 struct ir_ncode *current_code = NULL;
 int current_index = 0;
+int current_rep = 0;
 
 lirc_t emulation_readdata(lirc_t timeout)
 {
 	static lirc_t sum = 0;
-	lirc_t data;
+	lirc_t data = 0;
 	
 	if(current_code == NULL)
 	{
@@ -176,20 +177,29 @@ lirc_t emulation_readdata(lirc_t timeout)
 			}
 			else
 			{
-				current_code++;
+				current_rep++;
+				if(current_rep > 2)
+				{
+					current_code++;
+					current_rep = 0;
+					data = 1000000;
+				}
 			}
 			current_index = 0;
 			if(current_code->name == NULL)
 			{
 				current_code = NULL;
 			}
-			if(is_const(emulation_data))
+			if(data == 0)
 			{
-				data = emulation_data->gap - sum;
-			}
-			else
-			{
-				data = emulation_data->gap;
+				if(is_const(emulation_data))
+				{
+					data = emulation_data->gap - sum;
+				}
+				else
+				{
+					data = emulation_data->gap;
+				}
 			}
 			
 			sum = 0;
@@ -1887,7 +1897,9 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					header=0;
 				}
 				else
+				{
 					first_signal=1;
+				}
 			}
 		}
 	}
