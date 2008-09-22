@@ -67,7 +67,7 @@ waveform details.
 
 .SH DIAGNOSTICS
 If \fBlircd\fR is not running (or /dev/lircd lacks write permissions)
-\fBrc\fR aborts with the following diagnostics:
+\fBirsend\fR aborts with the following diagnostics:
 .nf
 "irsend: could not connect to socket"
 "irsend: Connection refused" (or "Permission denied").
