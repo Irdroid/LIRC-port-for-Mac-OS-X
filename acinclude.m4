@@ -1,4 +1,4 @@
-## $Id: acinclude.m4,v 1.11 2008/05/04 17:40:30 lirc Exp $
+## $Id: acinclude.m4,v 1.12 2008/09/25 17:36:08 lirc Exp $
 ##
 ## additional m4 macros
 ##
@@ -17,7 +17,7 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
   if test `uname` != "Linux"; then
     kerneldir="not running Linux"
   else
-    for dir in /usr/src/kernel-source-`uname -r` /usr/src/linux-`uname -r` /usr/src/linux /lib/modules/`uname -r`/build /lib/modules/`uname -r`/source ${ac_kerneldir}; do
+    for dir in /usr/src/kernel-source-`uname -r` /usr/src/linux-`uname -r` /usr/src/linux /lib/modules/`uname -r`/source /lib/modules/`uname -r`/build ${ac_kerneldir}; do
       if test -d $dir; then
         kerneldir=`dirname $dir/Makefile`/
         no_kernel=no
@@ -33,10 +33,6 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
         ac_pkss_makefile=/tmp/LIRCMF.XXXXXX
       fi
       cat ${kerneldir}/Makefile >${ac_pkss_makefile}
-      echo "lirc_tell_me_what_cc_is:" >>${ac_pkss_makefile}
-      echo "	echo \$(CC)" >>${ac_pkss_makefile}
-
-      kernelcc=$(make -s -C ${kerneldir} -f ${ac_pkss_makefile} lirc_tell_me_what_cc_is M=$(pwd))
 
       echo "lirc_tell_me_what_version_is:" >>${ac_pkss_makefile}
       echo "	echo \$(VERSION)" >>${ac_pkss_makefile}
@@ -57,8 +53,7 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE_SEARCH],
   fi
   ac_cv_have_kernel="no_kernel=${no_kernel} \
 		kerneldir=\"${kerneldir}\" \
-		kernelext=\"${kernelext}\" \
-		kernelcc=\"${kernelcc}\""
+		kernelext=\"${kernelext}\""
 ]
 )
 
@@ -81,7 +76,6 @@ AC_DEFUN([AC_PATH_KERNEL_SOURCE],
   eval "$ac_cv_have_kernel"
 
   AC_SUBST(kerneldir)
-  AC_SUBST(kernelcc)
   AC_SUBST(kernelext)
   AC_MSG_RESULT(${kerneldir})
 ]
