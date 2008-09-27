@@ -1,4 +1,4 @@
-# $Id: Makefile.common,v 5.9 2008/07/17 20:34:01 lirc Exp $
+# $Id: Makefile.common,v 5.10 2008/09/27 16:08:39 lirc Exp $
 
 # where the kernel sources are located
 KERNEL_LOCATION=@kerneldir@
@@ -21,7 +21,7 @@ $(module_DATA): $(automake_dummy_SOURCES) $(top_builddir)/config.h ../lirc.h
 			[ -e $$f ] || ln -s $(srcdir)/$$f $$f || exit $$? ; \
 		done \
 	fi
-	-cp $(srcdir)/../lirc_dev/Modules.symvers .
+	-cp $(srcdir)/../lirc_dev/Module*.symvers .
 	mv Makefile Makefile.automake
 	cp $(srcdir)/../Makefile.kernel Makefile
 	CPPFLAGS="" CFLAGS="" LDFLAGS="" \
