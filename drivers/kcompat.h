@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.36 2008/05/14 16:37:49 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.37 2008/09/27 08:16:15 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -36,7 +36,7 @@ static inline void class_destroy(lirc_class_t *cls)
 	class_simple_destroy(cls);
 }
 
-#define lirc_device_create(cs, parent, dev, fmt, args...) \
+#define lirc_device_create(cs, parent, dev, drvdata, fmt, args...) \
 	class_simple_device_add(cs, dev, parent, fmt, ## args)
 
 static inline void lirc_device_destroy(lirc_class_t *cls, dev_t devt)
@@ -48,19 +48,28 @@ static inline void lirc_device_destroy(lirc_class_t *cls, dev_t devt)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 
-#define lirc_device_create(cs, parent, dev, fmt, args...) \
+#define lirc_device_create(cs, parent, dev, drvdata, fmt, args...) \
 	class_device_create(cs, dev, parent, fmt, ## args)
 
 #else /* >= 2.6.15 */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 
-#define lirc_device_create(cs, parent, dev, fmt, args...) \
+#define lirc_device_create(cs, parent, dev, drvdata, fmt, args...) \
 	class_device_create(cs, NULL, dev, parent, fmt, ## args)
 
 #else /* >= 2.6.26 */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
+
+#define lirc_device_create(cs, parent, dev, drvdata, fmt, args...) \
+	class_device_create(cs, parent, dev, fmt, ## args)
+
+#else /* >= 2.6.27 */
+
 #define lirc_device_create device_create
+
+#endif /* >= 2.6.27 */
 
 #endif /* >= 2.6.26 */
 

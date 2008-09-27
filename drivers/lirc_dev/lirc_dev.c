@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.60 2008/09/06 07:30:16 lirc Exp $
+ * $Id: lirc_dev.c,v 1.61 2008/09/27 08:16:15 lirc Exp $
  *
  */
 
@@ -397,7 +397,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			DEV_LIRC "/%u", ir->p.minor);
 #endif
 	(void) lirc_device_create(lirc_class, ir->p.dev,
-				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor), NULL,
 				  "lirc%u", ir->p.minor);
 
 	if (p->sample_rate || p->get_queue) {
