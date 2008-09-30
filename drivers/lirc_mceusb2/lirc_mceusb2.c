@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.50 $"
+#define DRIVER_VERSION	"$Revision: 1.51 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -144,6 +144,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060d) },
 	/* Philips Infrared Transceiver - Omaura */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060f) },
+	/* Philips Infrared Transceiver - Spinel plus */
+	{ USB_DEVICE(VENDOR_PHILIPS, 0x0613) },
 	/* SMK/Toshiba G83C0004D410 */
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
 	/* SMK eHome Infrared Transceiver (Sony VAIO) */
