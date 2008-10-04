@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.79 2008/09/03 18:10:14 lirc Exp $      */
+/*      $Id: lircd.c,v 5.80 2008/10/04 21:48:43 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -879,6 +879,7 @@ void log_enable(int enabled)
 #ifdef USE_SYSLOG
 void logprintf(int prio,char *format_str, ...)
 {
+	int save_errno = errno;
 	va_list ap;
 	
 	if(!log_enabled) return;
@@ -886,6 +887,8 @@ void logprintf(int prio,char *format_str, ...)
 	va_start(ap,format_str);
 	vsyslog(prio, format_str, ap);
 	va_end(ap);
+
+	errno = save_errno;
 }
 
 void logperror(int prio,const char *s)
@@ -898,6 +901,7 @@ void logperror(int prio,const char *s)
 #else
 void logprintf(int prio,char *format_str, ...)
 {
+	int save_errno = errno;
 	va_list ap;  
 	
 	if(!log_enabled) return;
@@ -926,6 +930,7 @@ void logprintf(int prio,char *format_str, ...)
 		fputc('\n',stderr);fflush(stderr);
 		va_end(ap);
 	}
+	errno = save_errno;
 }
 
 void logperror(int prio,const char *s)
