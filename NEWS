@@ -1,4 +1,4 @@
-0.8.4-CVS: future
+0.8.4: 10/12/08
   * added support for ITE8709 CIR port (Gregory Lardiere)
   * added pronto2lirc converter (Olavi Akerman)
   * support for include directive in lircd.conf
