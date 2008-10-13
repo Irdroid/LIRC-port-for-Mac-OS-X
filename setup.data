@@ -142,6 +142,7 @@ hw_menu_entry: @hw-usb
 	ttusbir: "TechnoTrend USB IR receiver"
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
+	mplay: "VLSystem MPlay Mini"
 	mceusb: "Windows Media Center Remotes (old version, MicroSoft USB ID)"
 	mceusb2: "Windows Media Center Remotes (new version, Philips et al.)"
 
