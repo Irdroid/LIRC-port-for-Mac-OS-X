@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.27 2008/08/22 21:38:17 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.28 2008/10/13 03:58:52 jarodwilson Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -202,6 +202,10 @@ static struct usb_device_id imon_usb_id_table[] = {
 	/* IMON USB Control Board (IR & VFD) */
 	{ USB_DEVICE(0x15c2, 0xffdc) },
 	/* IMON USB Control Board (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	/* IMON USB Control Board (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0036) },
+	/* IMON USB Control Board (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	/* IMON USB Control Board (ext IR only) */
 	{ USB_DEVICE(0x04e8, 0xff30) },
@@ -220,13 +224,24 @@ static unsigned char vfd_packet6[] = {
 
 /* Some iMON LCD models use control endpoint */
 static struct usb_device_id lcd_control_endpoint_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{}
+};
+
+/* Some iMon devices apparently need a larger buffer */
+static struct usb_device_id large_buffer_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0036) },
 	{}
 };
 
 /* Newer iMON models decode the signal onboard */
 static struct usb_device_id ir_onboard_decode_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffdc) },
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	{}
 };
@@ -922,6 +937,40 @@ static inline void incoming_packet(struct imon_context *context,
 	int i;
 #endif
 
+	/*
+	 * we need to add some special handling for
+	 * the imon's IR mouse events
+	 */
+	if ((len == 5) && (buf[0] == 0x01) && (buf[4] == 0x00)) {
+		/* first, pad to 8 bytes so it conforms with everything else */
+		buf[5] = buf[6] = buf[7] = 0;
+		len = 8;
+
+		/*
+		 * the imon directional pad functions more like a touchpad.
+		 * Bytes 3 & 4 contain a position coordinate (x,y), with each
+		 * component ranging from -14 to 14. Since this doesn't
+		 * cooperate well with the way lirc works (it would appear to
+		 * lirc as more than 100 different buttons) we need to map it
+		 * to 4 discrete values. Also, when you get too close to
+		 * diagonals, it has a tendancy to jump back and forth, so lets
+		 * try to ignore when they get too close
+		 */
+		if ((buf[1] == 0) && ((buf[2] != 0) || (buf[3] != 0))) {
+			int y = (int)(char)buf[2];
+			int x = (int)(char)buf[3];
+			if (abs(abs(x) - abs(y)) < 3) {
+				return;
+			} else if (abs(y) > abs(x)) {
+				buf[2] = 0x00;
+				buf[3] = (y > 0) ? 0x7f : 0x80;
+			} else {
+				buf[3] = 0x00;
+				buf[2] = (x > 0) ? 0x7f : 0x80;
+			}
+		}
+	}
+
 	if (len != 8) {
 		warn("%s: invalid incoming packet size(%d)",
 		     __FUNCTION__, len);
@@ -1085,6 +1134,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	int vfd_proto_6p = FALSE;
 	int ir_onboard_decode = FALSE;
 	int tx_control = FALSE;
+	int buf_chunk_size = BUF_CHUNK_SIZE;
+	int code_length;
 	struct imon_context *context = NULL;
 	int i;
 
@@ -1196,6 +1247,11 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			info("vfd_proto_6p: %d", vfd_proto_6p);
 	}
 
+	/* Determine if this device requires a larger buffer */
+	if (usb_match_id(interface, large_buffer_list))
+		buf_chunk_size = 8;
+
+	code_length = buf_chunk_size * 8;
 
 	/* Allocate memory */
 
@@ -1219,7 +1275,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 3;
 		goto alloc_status_switch;
 	}
-	if (lirc_buffer_init(rbuf, BUF_CHUNK_SIZE, BUF_SIZE)) {
+	if (lirc_buffer_init(rbuf, buf_chunk_size, BUF_SIZE)) {
 		err("%s: lirc_buffer_init failed", __FUNCTION__);
 		alloc_status = 4;
 		goto alloc_status_switch;
@@ -1258,8 +1314,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	strcpy(plugin->name, MOD_NAME);
 	plugin->minor = -1;
-	plugin->code_length = (ir_onboard_decode) ?
-		32 : sizeof(lirc_t) * 8;
+	plugin->code_length = ir_onboard_decode ?
+			      code_length : sizeof(lirc_t) * 8;
 	plugin->sample_rate = 0;
 	plugin->features = (ir_onboard_decode) ?
 		LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
