@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.75 2008/09/21 10:36:51 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.76 2008/10/13 20:16:59 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1379,7 +1379,8 @@ void analyse_remote(struct ir_remote *raw_data)
 	ir_code pre, code, post;
 	int repeat_flag;
 	lirc_t min_remaining_gap, max_remaining_gap;
-	struct ir_ncode new_codes[100];
+	struct ir_ncode *new_codes;
+	size_t new_codes_count = 100;
 	int new_index = 0;
 	int ret;
 
@@ -1406,7 +1407,14 @@ void analyse_remote(struct ir_remote *raw_data)
 
 	remote.name = raw_data->name;
 	
-	memset(new_codes, 0, sizeof(new_codes));
+	new_codes = malloc(new_codes_count * sizeof(*new_codes));
+	if(new_codes == NULL)
+	{
+		fprintf(stderr, "%s: out of memory\n",
+			progname);
+		return;
+	}
+	new_codes[new_index].name = NULL;
 	codes = raw_data->codes;
 	while(codes->name!=NULL)
 	{
@@ -1429,6 +1437,24 @@ void analyse_remote(struct ir_remote *raw_data)
 		}
 		else
 		{
+			if(new_index >= new_codes_count)
+			{
+				struct ir_ncode *renew_codes;
+				
+				new_codes_count *= 2;
+				renew_codes = realloc
+					(new_codes,
+					 new_codes_count * sizeof(*new_codes));
+				if(renew_codes == NULL)
+				{
+					fprintf(stderr, "%s: out of memory\n",
+						progname);
+					free(new_codes);
+					return;
+				}
+				new_codes = renew_codes;
+			}
+			
 			new_codes[new_index].name = codes->name;
 			new_codes[new_index].code = code;
 			new_index++;
@@ -1438,6 +1464,8 @@ void analyse_remote(struct ir_remote *raw_data)
 	new_codes[new_index].name = NULL;
 	remote.codes = new_codes;
 	fprint_remotes(stdout, &remote);
+	remote.codes = NULL;
+	free(new_codes);
 }
 
 #ifdef DEBUG
