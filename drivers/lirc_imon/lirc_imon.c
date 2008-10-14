@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.28 2008/10/13 03:58:52 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.29 2008/10/14 14:19:52 jarodwilson Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -222,18 +222,11 @@ static struct usb_device_id vfd_proto_6p_list[] = {
 static unsigned char vfd_packet6[] = {
 	0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
 
-/* Some iMON LCD models use control endpoint */
-static struct usb_device_id lcd_control_endpoint_list[] = {
+/* iMON LCD models use control endpoints and a larger buffer */
+static struct usb_device_id lcd_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
-	{}
-};
-
-/* Some iMon devices apparently need a larger buffer */
-static struct usb_device_id large_buffer_list[] = {
-	{ USB_DEVICE(0x15c2, 0x0034) },
-	{ USB_DEVICE(0x15c2, 0x0036) },
 	{}
 };
 
@@ -243,6 +236,17 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{}
+};
+
+/* Some iMon devices have no lcd/vfd */
+static struct usb_device_id ir_only_list[] = {
+	{ USB_DEVICE(0x0aa8, 0x8001) },
+	/*
+	 * Nb: this device ID might actually be used by multiple devices, some
+	 * with a display, some without. iMon Knob has this ID, is w/o.
+	 */
+	{ USB_DEVICE(0x15c2, 0xffdc) },
 	{}
 };
 
@@ -274,11 +278,9 @@ static struct usb_class_driver imon_class = {
 static DECLARE_MUTEX(disconnect_sem);
 
 static int debug;
-#ifdef LIRC_IMON_LCD
-static int is_lcd = 1;
-#else
-static int is_lcd; /* If LIRC_IMON_LCD not defined, default to non-LCD */
-#endif
+
+/* lcd, vfd or none? should be auto-detected, but can be overridden... */
+static int display_type;
 
 #if !defined(KERNEL_2_5)
 
@@ -309,15 +311,9 @@ MODULE_DEVICE_TABLE(usb, imon_usb_id_table);
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
 
-#ifdef LIRC_IMON_LCD
-module_param(is_lcd, int, 1);
-MODULE_PARM_DESC(is_lcd, "The device is an LCD: 0=no (it's a VFD), "
-		 "1=yes (default:yes)");
-#else
-module_param(is_lcd, int, 0);
-MODULE_PARM_DESC(is_lcd, "The device is an LCD: 0=no (it's a VFD), "
-		 "1=yes (default:no)");
-#endif
+module_param(display_type, int, 0);
+MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
+		 "1=vfd, 2=lcd, 3=none (default: autodetect)");
 
 static inline void delete_context(struct imon_context *context)
 {
@@ -486,9 +482,9 @@ static inline int send_packet(struct imon_context *context)
 		/* setup packet is '21 09 0200 0001 0008' */
 		control_req->bRequestType = 0x21;
 		control_req->bRequest = 0x09;
-		control_req->wValue = cpu_to_le16(0x0002);
-		control_req->wIndex = cpu_to_le16(0x0100);
-		control_req->wLength = cpu_to_le16(0x0800);
+		control_req->wValue = cpu_to_le16(0x0200);
+		control_req->wIndex = cpu_to_le16(0x0001);
+		control_req->wLength = cpu_to_le16(0x0008);
 
 		/* control pipe is endpoint 0x00 */
 		pipe = usb_sndctrlpipe(context->dev, 0);
@@ -1134,6 +1130,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	int vfd_proto_6p = FALSE;
 	int ir_onboard_decode = FALSE;
 	int tx_control = FALSE;
+	int is_lcd = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
 	int code_length;
 	struct imon_context *context = NULL;
@@ -1143,10 +1140,15 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
-	 * the "write" file op.
+	 * the "write" file op and use a larger buffer.
 	 */
-	if (is_lcd)
+	if (usb_match_id(interface, lcd_device_list) || display_type == 2) {
 		vfd_fops.write = &lcd_write;
+		is_lcd = 1;
+		buf_chunk_size = 8;
+	}
+
+	code_length = buf_chunk_size * 8;
 
 #if !defined(KERNEL_2_5)
 	for (subminor = 0; subminor < MAX_DEVICES; ++subminor) {
@@ -1211,17 +1213,30 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	/* If we didn't find a vfd endpoint, and we have a next-gen LCD,
+	/*
+	 * If we didn't find a vfd endpoint, and we have a next-gen LCD,
 	 * use control urb instead of interrupt
 	 */
 	if (!vfd_ep_found) {
-		if (usb_match_id(interface, lcd_control_endpoint_list)) {
+		if (is_lcd) {
 			tx_control = 1;
 			vfd_ep_found = TRUE;
 			if (debug)
 				info("%s: LCD device uses control endpoint, "
 				     "not interface OUT endpoint", __func__);
 		}
+	}
+
+	/*
+	 * Some iMon receivers have no display. Unfortunately, it seems
+	 * that SoundGraph recycles device IDs between devices both with
+	 * and without... :\
+	 */
+	if (usb_match_id(interface, ir_only_list) || display_type == 3) {
+		tx_control = 0;
+		display_ep_found = 0;
+		if (debug)
+			info("%s: device has no display", __func__);
 	}
 
 	/* Input endpoint is mandatory */
@@ -1246,12 +1261,6 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		if (debug)
 			info("vfd_proto_6p: %d", vfd_proto_6p);
 	}
-
-	/* Determine if this device requires a larger buffer */
-	if (usb_match_id(interface, large_buffer_list))
-		buf_chunk_size = 8;
-
-	code_length = buf_chunk_size * 8;
 
 	/* Allocate memory */
 
