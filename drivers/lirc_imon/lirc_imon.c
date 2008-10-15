@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.30 2008/10/15 03:44:59 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.31 2008/10/15 21:10:52 jarodwilson Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -1246,7 +1246,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	     usb_match_id(interface, ir_only_list)) ||
 	    display_type == IMON_DISPLAY_TYPE_NONE) {
 		tx_control = 0;
-		display_ep_found = 0;
+		vfd_ep_found = 0;
 		if (debug)
 			info("%s: device has no display", __func__);
 	}
