@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.76 2008/10/13 20:16:59 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.77 2008/10/15 17:28:16 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -1398,11 +1398,11 @@ void analyse_remote(struct ir_remote *raw_data)
 	current_index = 0;
 	get_lengths(&remote, 0, 0 /* not interactive */ );
 
-	if(is_rc6(&remote))
+	if(is_rc6(&remote) && remote.bits >= 5)
 	{
 		/* have to assume something as it's very difficult to
 		   extract the rc6_mask from the data that we have */
-		remote.rc6_mask = (ir_code) 0x100000000ll;
+		remote.rc6_mask = ((ir_code) 0x1ll) << (remote.bits-5);
 	}
 
 	remote.name = raw_data->name;
@@ -1414,7 +1414,7 @@ void analyse_remote(struct ir_remote *raw_data)
 			progname);
 		return;
 	}
-	new_codes[new_index].name = NULL;
+	memset(new_codes, 0 , new_codes_count * sizeof(*new_codes));
 	codes = raw_data->codes;
 	while(codes->name!=NULL)
 	{
@@ -1437,7 +1437,7 @@ void analyse_remote(struct ir_remote *raw_data)
 		}
 		else
 		{
-			if(new_index >= new_codes_count)
+			if(new_index+1 >= new_codes_count)
 			{
 				struct ir_ncode *renew_codes;
 				
@@ -1452,6 +1452,7 @@ void analyse_remote(struct ir_remote *raw_data)
 					free(new_codes);
 					return;
 				}
+				memset(&new_codes[new_codes_count/2], 0 , new_codes_count/2 * sizeof(*new_codes));
 				new_codes = renew_codes;
 			}
 			
