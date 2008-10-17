@@ -25,6 +25,7 @@ begin remote
 
       begin codes
           AppExit                  0x288195B7
+          Power                    0x289115B7
           Record                   0x298115B7
           Play                     0x2A8115B7
           SlowMotion               0x29B195B7
@@ -83,10 +84,35 @@ begin remote
           Left                     0x6ABAFFBF
           Down                     0x6F9ECBB7
           Right                    0x69A281B7
+# Variants and additions of keys reported by Ryan Gardner
+          1                        0x0200001E
+          2                        0x0200001F
+          3                        0x02000020
+          4                        0x02000021
+          5                        0x02000022
+          6                        0x02000023
+          7                        0x02000024
+          8                        0x02000025
+          9                        0x02000026
+          Star                     0x02200025
+          0                        0x02000027
+          Hash                     0x02200020
+          Backspace                0x0200002A
+          Select                   0x0200002C
+          LeftMenu                 0x02800000
+          RightMenu                0x02000065
+          Enter                    0x02000028
+          Escape                   0x02000029
+          LeftClick                0x01010000
+          RightClick               0x01020000
+          Up                       0x01008000
+          Down                     0x01007F00
+          Left                     0x01000080
+          Right                    0x0100007F
 
       end codes
 
-end remote 
+end remote
 
 #
 # this config file was automatically generated
