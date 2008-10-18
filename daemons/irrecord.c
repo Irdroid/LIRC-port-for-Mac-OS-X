@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.77 2008/10/15 17:28:16 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.78 2008/10/18 18:06:14 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -120,7 +120,7 @@ lirc_t aeps = 100;
 #define TH_REPEAT      90
 #define TH_TRAIL       90
 #define TH_LEAD        90
-#define TH_IS_BIT      15
+#define TH_IS_BIT      10
 #define TH_RC6_SIGNAL 550
 
 #define MIN_GAP  20000
