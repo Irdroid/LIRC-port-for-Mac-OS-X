@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.63 2008/10/26 15:10:17 lirc Exp $
+## $Id: Makefile.am,v 5.64 2008/10/26 15:14:41 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -129,9 +129,9 @@ rmfifo:
 	-$(RM) $(DESTDIR)$(devdir)/lircm
 
 input_map.inc:
-	./input_map.sh >$@
+	$(srcdir)/input_map.sh >$@
 
 DISTCLEANFILES = input_map.inc
-EXTRA_DIST = input_map.inc
+EXTRA_DIST = input_map.inc input_map.sh
 
 CLEANFILES = *~
