@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.78 2008/10/18 18:06:14 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.79 2008/10/26 14:44:32 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -427,7 +427,6 @@ int main(int argc,char **argv)
 			progname);
 		exit(EXIT_FAILURE);
 	}
-	aeps = (hw.resolution>aeps ? hw.resolution:aeps);
 	filename=argv[optind];
 	fin=fopen(filename,"r");
 	if(fin!=NULL)
@@ -542,6 +541,7 @@ int main(int argc,char **argv)
 			exit(EXIT_FAILURE);
 		}
 	}
+	aeps = (hw.resolution>aeps ? hw.resolution:aeps);
 	
 	if(hw.rec_mode==LIRC_MODE_STRING)
 	{
@@ -608,7 +608,7 @@ int main(int argc,char **argv)
 	switch(hw.rec_mode)
 	{
 	case LIRC_MODE_MODE2:
-		if(!using_template && !get_lengths(&remote, force, 0))
+		if(!using_template && !get_lengths(&remote, force, 1))
 		{
 			if(remote.gap==0)
 			{
