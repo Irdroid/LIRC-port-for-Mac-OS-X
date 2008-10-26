@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.62 2008/09/21 18:33:19 lirc Exp $
+## $Id: Makefile.am,v 5.63 2008/10/26 15:10:17 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -6,6 +6,8 @@
 ## programs in this directory.  So we must make sure they get distributed
 
 INCLUDES = -I$(top_srcdir)
+
+BUILT_SOURCES = input_map.inc
 
 noinst_LIBRARIES = libhw_module.a
 libhw_module_a_SOURCES = \
@@ -69,7 +71,8 @@ bin_PROGRAMS = irrecord
 
 irrecord_SOURCES = irrecord.c \
 		config_file.c config_file.h \
-		dump_config.c dump_config.h
+		dump_config.c dump_config.h \
+		input_map.c input_map.h
 
 irrecord_LDADD = libhw_module.a @hw_module_libs@ @receive@
 irrecord_DEPENDENCIES = @receive@
@@ -124,5 +127,11 @@ rmdev:
 rmfifo:
 	-$(RM) $(DESTDIR)$(devdir)/lircd
 	-$(RM) $(DESTDIR)$(devdir)/lircm
+
+input_map.inc:
+	./input_map.sh >$@
+
+DISTCLEANFILES = input_map.inc
+EXTRA_DIST = input_map.inc
 
 CLEANFILES = *~

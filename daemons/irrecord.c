@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.79 2008/10/26 14:44:32 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.80 2008/10/26 15:10:17 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -52,6 +52,7 @@
 #include "ir_remote.h"
 #include "config_file.h"
 #include "receive.h"
+#include "input_map.h"
 
 void flushhw(void);
 int resethw(void);
@@ -96,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "0.5"
+#define IRRECORD_VERSION "$Revision: 5.80 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -314,6 +315,7 @@ int main(int argc,char **argv)
 	int repeat_flag;
 	lirc_t min_remaining_gap, max_remaining_gap;
 	int force;
+	int disable_namespace = 0;
 	int retries;
 	int no_data = 0;
 	struct ir_remote *remotes=NULL;
@@ -338,6 +340,8 @@ int main(int argc,char **argv)
 			{"device",required_argument,NULL,'d'},
 			{"driver",required_argument,NULL,'H'},
 			{"force",no_argument,NULL,'f'},
+			{"disable-namespace",no_argument,NULL,'n'},
+			{"list-namespace",no_argument,NULL,'l'},
 #ifdef DEBUG
 			{"pre",no_argument,NULL,'p'},
 			{"post",no_argument,NULL,'P'},
@@ -348,9 +352,9 @@ int main(int argc,char **argv)
 			{0, 0, 0, 0}
 		};
 #ifdef DEBUG
-		c = getopt_long(argc,argv,"hvad:H:fpPtiT",long_options,NULL);
+		c = getopt_long(argc,argv,"hvad:H:fnlpPtiT",long_options,NULL);
 #else
-		c = getopt_long(argc,argv,"hvad:H:f",long_options,NULL);
+		c = getopt_long(argc,argv,"hvad:H:fnl",long_options,NULL);
 #endif
 		if(c==-1)
 			break;
@@ -362,6 +366,8 @@ int main(int argc,char **argv)
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -a --analyse\t\tanalyse raw_codes config files\n");
 			printf("\t -f --force\t\tforce raw mode\n");
+			printf("\t -n --disable-namespace\t\tdisables namespace checks\n");
+			printf("\t -l --list-namespace\t\tlist valid button names\n");
 			printf("\t -H --driver=driver\tuse given driver\n");
 			printf("\t -d --device=device\tread from given device\n");
 			exit(EXIT_SUCCESS);
@@ -384,6 +390,13 @@ int main(int argc,char **argv)
 			break;
 		case 'f':
 			force=1;
+			break;
+		case 'n':
+			disable_namespace = 1;
+			break;
+		case 'l':
+			fprint_namespace(stdout);
+			exit(EXIT_SUCCESS);
 			break;
 #ifdef DEBUG
 		case 'p':
@@ -716,6 +729,17 @@ int main(int argc,char **argv)
 		if(strlen(buffer)==0)
 		{
 			break;
+		}
+		if(!disable_namespace && !is_in_namespace(buffer))
+		{
+			printf("'%s' is not in name space (use "
+			       "--disable-namespace to disable checks)\n",
+			       buffer);
+			printf("Use '%s --list-namespace' to see a full list "
+			       "of valid button names\n",
+			       progname);
+			printf("Please try again.\n");
+			continue;
 		}
 		
 		if(is_raw(&remote))
