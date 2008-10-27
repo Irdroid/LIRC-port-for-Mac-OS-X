@@ -792,6 +792,8 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 				      (udev, endpoint->bEndpointAddress),
 				      dev->bulk_out_buffer, buffer_size,
 				      mceusb_write_bulk_callback, dev);
+			dev->write_urb->transfer_dma = dev->dma_out;
+			dev->write_urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 #else
 			FILL_BULK_URB(dev->write_urb, udev,
 				      usb_sndbulkpipe(udev,

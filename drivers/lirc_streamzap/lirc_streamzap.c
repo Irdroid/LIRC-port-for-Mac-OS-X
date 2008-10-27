@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.29 2008/09/17 18:20:16 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.30 2008/10/27 22:24:17 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.29 $"
+#define DRIVER_VERSION	"$Revision: 1.30 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -623,6 +623,10 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		usb_rcvintpipe(udev, sz->endpoint->bEndpointAddress),
 		sz->buf_in, sz->buf_in_len, usb_streamzap_irq, sz,
 		sz->endpoint->bInterval);
+#ifdef KERNEL_2_5
+	sz->urb_in->transfer_dma = sz->dma_in;
+	sz->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+#endif
 
 	if (udev->descriptor.iManufacturer
 	    && usb_string(udev, udev->descriptor.iManufacturer, buf, 63) > 0)

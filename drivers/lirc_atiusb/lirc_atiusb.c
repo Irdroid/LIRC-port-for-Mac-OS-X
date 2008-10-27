@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.71 2008/05/19 08:10:35 uzuul Exp $
+ * $Id: lirc_atiusb.c,v 1.72 2008/10/27 22:24:16 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.71 $"
+#define DRIVER_VERSION		"$Revision: 1.72 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1182,6 +1182,10 @@ static void send_outbound_init(struct irctl *ir)
 			usb_sndintpipe(ir->usbdev, oep->ep->bEndpointAddress),
 			oep->buf, USB_OUTLEN, usb_remote_send,
 			oep, oep->ep->bInterval);
+#ifdef KERNEL_2_5
+		oep->urb->transfer_dma = oep->dma;
+		oep->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
+#endif
 
 		send_packet(oep, 0x8004, init1);
 		send_packet(oep, 0x8007, init2);
@@ -1262,11 +1266,18 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 			iep = new_in_endpt(ir, ep);
 			if (iep)
+			{
 				usb_fill_int_urb(iep->urb, dev,
 					usb_rcvintpipe(dev,
 						iep->ep->bEndpointAddress),
 					iep->buf, iep->len, usb_remote_recv,
 					iep, iep->ep->bInterval);
+#ifdef KERNEL_2_5
+				iep->urb->transfer_dma = iep->dma;
+				iep->urb->transfer_flags |=
+					URB_NO_TRANSFER_DMA_MAP;
+#endif
+			}
 		}
 
 		if (((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) ==
@@ -1357,7 +1368,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.71 2008/05/19 08:10:35 uzuul Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.72 2008/10/27 22:24:16 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

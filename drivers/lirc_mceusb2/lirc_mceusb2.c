@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.51 $"
+#define DRIVER_VERSION	"$Revision: 1.52 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -1018,6 +1018,8 @@ mem_failure_switch:
 	/* inbound data */
 	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
 		maxp, (usb_complete_t) usb_remote_recv, ir, ep_in->bInterval);
+	ir->urb_in->transfer_dma = ir->dma_in;
+	ir->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
 	/* initialize device */
 	if (ir->flags.pinnacle) {
