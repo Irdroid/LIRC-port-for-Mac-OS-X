@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.80 2008/10/26 15:10:17 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.81 2008/10/27 18:50:45 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -81,7 +81,7 @@ void get_scheme(struct ir_remote *remote, int interactive);
 struct lengths *get_max_length(struct lengths *first,unsigned int *sump);
 void unlink_length(struct lengths **first,struct lengths *remove);
 int get_trail_length(struct ir_remote *remote, int interactive);
-int get_lead_length(struct ir_remote *remote);
+int get_lead_length(struct ir_remote *remote, int interactive);
 int get_repeat_length(struct ir_remote *remote, int interactive);
 int get_header_length(struct ir_remote *remote, int interactive);
 int get_data_length(struct ir_remote *remote, int interactive);
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.80 $"
+#define IRRECORD_VERSION "$Revision: 5.81 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -1935,7 +1935,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					get_scheme(remote, interactive);
 					if(!get_header_length(remote, interactive) ||
 					   !get_trail_length(remote, interactive) ||
-					   !get_lead_length(remote) ||
+					   !get_lead_length(remote, interactive) ||
 					   !get_repeat_length(remote, interactive) ||
 					   !get_data_length(remote, interactive))
 					{
@@ -2226,7 +2226,7 @@ int get_trail_length(struct ir_remote *remote, int interactive)
 	return(1);
 }
 
-int get_lead_length(struct ir_remote *remote)
+int get_lead_length(struct ir_remote *remote, int interactive)
 {
 	unsigned int sum,max_count;
 	struct lengths *first_lead,*max_length,*max2_length;
@@ -2243,7 +2243,7 @@ int get_lead_length(struct ir_remote *remote)
 #       endif
 	if(max_count>=sum*TH_LEAD/100)
 	{
-		printf("Found lead pulse: %lu\n",
+		iprintf(interactive, "Found lead pulse: %lu\n",
 		       (unsigned long) calc_signal(max_length));
 		remote->plead=calc_signal(max_length);
 		return(1);
@@ -2260,12 +2260,12 @@ int get_lead_length(struct ir_remote *remote)
 	}
 	if(abs(2*a-b)<b*eps/100 || abs(2*a-b)<aeps)
 	{
-		printf("Found hidden lead pulse: %lu\n",
+		iprintf(interactive, "Found hidden lead pulse: %lu\n",
 		       (unsigned long) a);
 		remote->plead=a;
 		return(1);
 	}
-	printf("No lead pulse found.\n");
+	iprintf(interactive, "No lead pulse found.\n");
 	return(1);
 }
 
