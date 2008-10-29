@@ -28,8 +28,9 @@ the device name isn't fixed. \fISTRING\fR may contain the '*' and '?'
 wildcards and '\\' to mark them as literal.
 
 With the --listen option you can let lircd listen for network
-connections on the given port. The default port is 8765. No security
-checks are currently implemented.
+connections on the given address/port. The default address is 0.0.0.0,
+which means that connections on all network interfaces will be accepted.
+The default port is 8765. No security checks are currently implemented.
 
 The --connect option allows you to connect to other lircd servers that
 provide a network socket at the given host and port number. The number

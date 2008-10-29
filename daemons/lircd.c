@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.80 2008/10/04 21:48:43 lirc Exp $      */
+/*      $Id: lircd.c,v 5.81 2008/10/29 20:17:11 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -165,6 +165,7 @@ int clin=0;
 
 int listen_tcpip=0;
 unsigned short int port=LIRC_INET_PORT;
+struct in_addr address;
 
 struct	peer_connection *peers[MAX_PEERS];
 int	peern = 0;
@@ -815,7 +816,7 @@ void start_server(mode_t permission,int nodaemon)
 		(void) setsockopt(sockinet,SOL_SOCKET,SO_REUSEADDR,
 				  &enable,sizeof(enable));
 		serv_addr_in.sin_family=AF_INET;
-		serv_addr_in.sin_addr.s_addr=htonl(INADDR_ANY);
+		serv_addr_in.sin_addr=address;
 		serv_addr_in.sin_port=htons(port);
 		
 		if(bind(sockinet,(struct sockaddr *) &serv_addr_in,
@@ -2034,6 +2035,7 @@ int main(int argc,char **argv)
 	mode_t permission=S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 	char *device=NULL;
 
+	address.s_addr = htonl(INADDR_ANY);
 	hw_choose_driver(NULL);
 	while(1)
 	{
@@ -2080,7 +2082,7 @@ int main(int argc,char **argv)
 			printf("\t -p --permission=mode\t\tfile permissions for " LIRCD "\n");
 			printf("\t -H --driver=driver\t\tuse given driver\n");
 			printf("\t -d --device=device\t\tread from given device\n");
-			printf("\t -l --listen[=port]\t\tlisten for network connections on port\n");
+			printf("\t -l --listen[=[address:]port]\tlisten for network connections\n");
 			printf("\t -c --connect=host[:port]\tconnect to remote lircd server\n");
                         printf("\t -o --output=socket\t\toutput socket filename\n");
                         printf("\t -P --pidfile=file\t\tdaemon pid file\n");
@@ -2135,16 +2137,28 @@ int main(int argc,char **argv)
 			{
 				long p;
 				char *endptr;
-				
-				p=strtol(optarg,&endptr,10);
+				char *sep = strchr(optarg, ':');
+				char *port_str = sep ? sep + 1 : optarg;
+				p=strtol(port_str,&endptr,10);
 				if(!*optarg || *endptr || p<1 || p>USHRT_MAX)
 				{
 					fprintf(stderr,
 						"%s: bad port number \"%s\"\n",
-						progname,optarg);
+						progname,port_str);
 					return(EXIT_FAILURE);
 				}
 				port=(unsigned short int) p;
+				if (sep)
+				{
+					*sep = 0;
+					if(!inet_aton(optarg, &address))
+					{
+						fprintf(stderr,
+							"%s: bad address \"%s\"\n",
+       							progname,optarg);
+						return(EXIT_FAILURE);
+					}
+				}
 			}
 			else
 			{
