@@ -117,6 +117,7 @@ hw_menu_entry: @hw-usb
 	asusdh: "Asus DH USB Remote"
 	atiusb: "ATI/NVidia/X10 I & II RF Remote"
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
+	awlibusb: "Awox RF/IR Remote (userspace)"
 	sb0540: "Creative USB IR Receiver (SB0540)"
 	cmdir: "COMMANDIR USB Transceiver"
 	commandir: "CommandIR Multi-IR Transceiver (userspace)"
@@ -200,6 +201,7 @@ param_type: \
 	avermedia \
 	avermedia98 \
 	avermedia_vdomate \
+	awlibusb \
 	bestbuy \
 	bestbuy2 \
 	breakoutbox \
@@ -272,6 +274,7 @@ default_param: \
 	avermedia \
 	avermedia98 \
 	avermedia_vdomate \
+	awlibusb \
 	bestbuy \
 	bestbuy2 \
 	breakoutbox \

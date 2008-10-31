@@ -1,4 +1,5 @@
 0.8.5-CVS: future
+  * added support for Awox RF/IR Remote (Arif)
 
 0.8.4a: 10/26/08
   * fixed show-stopper bug in irrecord for drivers using MODE2

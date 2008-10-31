@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.18 2008/10/26 14:44:32 lirc Exp $
+dnl $Id: configure.ac,v 1.19 2008/10/31 21:15:59 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -318,8 +318,9 @@ AH_TEMPLATE([USE_SYSLOG],
 
 if test -n "${LIBUSB_CONFIG}"; then
   AC_DEFINE(HAVE_LIBUSB)
-  possible_drivers="${possible_drivers} (atilibusb) (commandir)"
+  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (commandir)"
 fi
+
 AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
   possible_drivers="${possible_drivers} (caraca)"
@@ -424,16 +425,17 @@ AC_ARG_WITH(driver,
                           act220l, adaptec, alsa_usb, animax, asusdh,
                           atilibusb, atiusb, audio, audio_alsa
                           avermedia, avermedia_vdomate, avermedia98,
-                          bestbuy, bestbuy2, breakoutbox, bte, bw6130,
-                          caraca, chronos, cmdir, commandir, comX, cph06x,
-                          creative, creative_infracd, devinput,
-                          digimatrix, dsp, dvico, ea65, exaudio,
-                          flyvideo, gvbctv5pci, hauppauge,
-                          hauppauge_dvb, hercules_smarttv_stereo,
-                          i2cuser, igorplugusb, iguanaIR, imon,
-                          imon_24g, imon_knob, imon_lcd, imon_pad,
-                          imon_rsc, irdeo, irdeo_remote, irlink,
-                          irman, irreal, it87, ite8709, knc_one, kworld,
+                          awlibusb, bestbuy, bestbuy2, breakoutbox,
+                          bte, bw6130, caraca, chronos, cmdir,
+                          commandir, comX, cph06x, creative,
+                          creative_infracd, devinput, digimatrix, dsp,
+                          dvico, ea65, exaudio, flyvideo, gvbctv5pci,
+                          hauppauge, hauppauge_dvb,
+                          hercules_smarttv_stereo, i2cuser,
+                          igorplugusb, iguanaIR, imon, imon_24g,
+                          imon_knob, imon_lcd, imon_pad, imon_rsc,
+                          irdeo, irdeo_remote, irlink, irman, irreal,
+                          it87, ite8709, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
                           lptX, macmini, mceusb, mceusb2, mediafocusI,
@@ -462,6 +464,7 @@ commandir_lib=""
 portaudio_lib=""
 alsa_lib=""
 atilibusb_lib=""
+awlibusb_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
 kernel_module=""
@@ -503,6 +506,11 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	audio_alsa)
 		hw_module="${hw_module} hw_audio_alsa.o receive.o"
 		alsa_lib=-lasound
+		;;
+	awlibusb)
+		hw_module="${hw_module} hw_awlibusb.o receive.o"
+		awlibusb_lib=`${LIBUSB_CONFIG} --libs`
+		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
 	bte)
 		hw_module="${hw_module} hw_bte.o serial.o"
@@ -738,6 +746,17 @@ if test "$driver" = "atilibusb"; then
   lircd_conf="atiusb/lircd.conf.atilibusb"
   if test -n "${LIBUSB_CONFIG}"; then
     atilibusb_lib=`${LIBUSB_CONFIG} --libs`
+    CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+  fi
+fi
+
+if test "$driver" = "awlibusb"; then
+  lirc_driver="$driver"
+  hw_module="hw_awlibusb.o receive.o"
+  HW_DEFAULT="hw_awlibusb"
+  lircd_conf="awlibusb/lircd.conf.awlibusb"
+  if test -n "${LIBUSB_CONFIG}"; then
+    awlibusb_lib=`${LIBUSB_CONFIG} --libs`
     CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
   fi
 fi
@@ -1387,12 +1406,18 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
-  atilibusb)
+  atilibusb|awlibusb|commandir)
     AC_MSG_ERROR([*** you need to have libusb installed for this driver.
 
 Get it at:
 
   http://libusb.sourceforge.net/
+  
+Or install these packages from your distro:
+
+   libusb
+   libusb-dev
+
 ])
     ;;
   audio)
@@ -1410,20 +1435,6 @@ in its directory.
   alsa_usb)
     AC_MSG_ERROR([*** you need to have the ALSA libraries and drivers
 	from at least version 1.0.9 for this driver])
-    ;;
-  commandir)
-    AC_MSG_ERROR([*** you need to have libusb installed for this driver.
-
-Get it at:
-
-  http://libusb.sourceforge.net/
-  
-Or install these packages from your distro:
-
-   libusb
-   libusb-dev 
-
-])
     ;;
   iguanaIR)
     AC_MSG_ERROR([*** you need to have the iguanaIR headers and
@@ -1444,6 +1455,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "atilibusb" || \
 	test "$lirc_driver" = "audio" || \
 	test "$lirc_driver" = "audio_alsa" || \
+	test "$lirc_driver" = "awlibusb" || \
 	test "$lirc_driver" = "bw6130" || \
 	test "$lirc_driver" = "caraca" || \
 	test "$lirc_driver" = "commandir" || \
@@ -1633,7 +1645,7 @@ if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
 	receive="receive.o"
 fi
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${caraca_lib} ${commandir_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)
