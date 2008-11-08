@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.31 2008/10/15 21:10:52 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.32 2008/11/08 05:45:07 jarodwilson Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -75,9 +75,9 @@
 #define MOD_AUTHOR	"Venky Raju <dev@venky.ws>"
 #define MOD_DESC	"Driver for Soundgraph iMON MultiMedia IR/VFD"
 #define MOD_NAME	"lirc_imon"
-#define MOD_VERSION	"0.4"
+#define MOD_VERSION	"0.5"
 
-#define VFD_MINOR_BASE	144	/* Same as LCD */
+#define DISPLAY_MINOR_BASE	144	/* Same as LCD */
 #define DEVFS_MODE	(S_IFCHR | S_IRUSR | S_IWUSR | \
 			 S_IRGRP | S_IWGRP | S_IROTH)
 #define DEVFS_NAME	LIRC_DEVFS_PREFIX "lcd%d"
@@ -117,9 +117,9 @@ static void usb_rx_callback(struct urb *urb);
 static void usb_tx_callback(struct urb *urb);
 #endif
 
-/* VFD file_operations function prototypes */
-static int vfd_open(struct inode *inode, struct file *file);
-static int vfd_close(struct inode *inode, struct file *file);
+/* Display file_operations function prototypes */
+static int display_open(struct inode *inode, struct file *file);
+static int display_close(struct inode *inode, struct file *file);
 static ssize_t vfd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos);
 
@@ -142,8 +142,8 @@ static void __exit imon_exit(void);
 
 struct imon_context {
 	struct usb_device *dev;
-	int vfd_supported;		/* not all controllers do */
-	int vfd_isopen;			/* VFD port has been opened */
+	int display_supported;		/* not all controllers do */
+	int display_isopen;		/* VFD port has been opened */
 #if !defined(KERNEL_2_5)
 	int subminor;			/* index into minor_table */
 	devfs_handle_t devfs;
@@ -154,7 +154,7 @@ struct imon_context {
 	struct semaphore sem;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
-	int vfd_proto_6p;		/* VFD requires 6th packet */
+	int display_proto_6p;		/* VFD requires 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
 
 	struct lirc_plugin *plugin;
@@ -184,11 +184,11 @@ struct imon_context {
 #define UNLOCK_CONTEXT	up(&context->sem)
 
 /* VFD file operations */
-static struct file_operations vfd_fops = {
+static struct file_operations display_fops = {
 	.owner		= THIS_MODULE,
-	.open		= &vfd_open,
+	.open		= &display_open,
 	.write		= &vfd_write,
-	.release	= &vfd_close
+	.release	= &display_close
 };
 
 enum {
@@ -204,37 +204,74 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{ USB_DEVICE(0x0aa8, 0xffda) },
 	/* IMON USB Control Board (IR only) */
 	{ USB_DEVICE(0x0aa8, 0x8001) },
-	/* IMON USB Control Board (IR & VFD) */
-	{ USB_DEVICE(0x15c2, 0xffda) },
-	/* IMON USB Control Board (IR & VFD) */
-	{ USB_DEVICE(0x15c2, 0xffdc) },
-	/* IMON USB Control Board (IR & LCD) */
-	{ USB_DEVICE(0x15c2, 0x0034) },
-	/* IMON USB Control Board (IR & LCD) */
-	{ USB_DEVICE(0x15c2, 0x0036) },
-	/* IMON USB Control Board (IR & LCD) */
-	{ USB_DEVICE(0x15c2, 0x0038) },
 	/* IMON USB Control Board (ext IR only) */
 	{ USB_DEVICE(0x04e8, 0xff30) },
+	/* IMON USB Control Board (IR & VFD) */
+	{ USB_DEVICE(0x15c2, 0xffda) },
+	/* IMON USB Control Board (IR & LCD) *and* iMon Knob (IR only) */
+	{ USB_DEVICE(0x15c2, 0xffdc) },
+	/* IMON USB Control Board (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	/* IMON USB Control Board (IR & VFD) */
+	{ USB_DEVICE(0x15c2, 0x0036) },
+	/* IMON USB Control Board (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	/* SoundGraph iMON MINI (IR only) */
+	{ USB_DEVICE(0x15c2, 0x0041) },
+	/* Antec Veris Multimedia Station EZ External (IR only) */
+	{ USB_DEVICE(0x15c2, 0x0042) },
+	/* Antec Veris Multimedia Station Basic Internal (IR only) */
+	{ USB_DEVICE(0x15c2, 0x0043) },
+	/* Antec Veris Multimedia Station Elite (IR & VFD) */
+	{ USB_DEVICE(0x15c2, 0x0044) },
+	/* Antec Veris Multimedia Station Premiere (IR & LCD) */
+	{ USB_DEVICE(0x15c2, 0x0045) },
 	{}
 };
 
-/* Some iMON VFD models requires a 6th packet */
-static struct usb_device_id vfd_proto_6p_list[] = {
+/* Some iMON models requires a 6th packet */
+static struct usb_device_id display_proto_6p_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffda) },
 	{ USB_DEVICE(0x15c2, 0xffdc) },
-	{ USB_DEVICE(0x15c2, 0x0038) },
-	{}
-};
-static unsigned char vfd_packet6[] = {
-	0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
-
-/* iMON LCD models use control endpoints and a larger buffer */
-static struct usb_device_id lcd_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0041) },
+	{ USB_DEVICE(0x15c2, 0x0042) },
+	{ USB_DEVICE(0x15c2, 0x0043) },
+	{ USB_DEVICE(0x15c2, 0x0044) },
+	{ USB_DEVICE(0x15c2, 0x0045) },
 	{}
+};
+static unsigned char display_packet6[] = {
+	0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
+
+/* newer iMON models use control endpoints */
+static struct usb_device_id ctl_ep_device_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0036) },
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0041) },
+	{ USB_DEVICE(0x15c2, 0x0042) },
+	{ USB_DEVICE(0x15c2, 0x0043) },
+	{ USB_DEVICE(0x15c2, 0x0044) },
+	{ USB_DEVICE(0x15c2, 0x0045) },
+	{}
+};
+
+/* iMon LCD modules use a different write op */
+static struct usb_device_id lcd_device_list[] = {
+	{ USB_DEVICE(0x15c2, 0xffdc) },
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0045) },
+	{}
+};
+
+/* iMon devices with front panel buttons need a larger buffer */
+static struct usb_device_id large_buffer_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0045) },
 };
 
 /* Newer iMON models decode the signal onboard */
@@ -243,17 +280,23 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0041) },
+	{ USB_DEVICE(0x15c2, 0x0042) },
+	{ USB_DEVICE(0x15c2, 0x0043) },
+	{ USB_DEVICE(0x15c2, 0x0044) },
+	{ USB_DEVICE(0x15c2, 0x0045) },
 	{}
 };
 
 /* Some iMon devices have no lcd/vfd */
 static struct usb_device_id ir_only_list[] = {
 	{ USB_DEVICE(0x0aa8, 0x8001) },
-	/*
-	 * Nb: this device ID might actually be used by multiple devices, some
-	 * with a display, some without. iMon Knob has this ID, is w/o.
-	 */
-	{ USB_DEVICE(0x15c2, 0xffdc) },
+	{ USB_DEVICE(0x04e8, 0xff30) },
+	/* the first imon lcd and the knob share this device id. :\ */
+	/*{ USB_DEVICE(0x15c2, 0xffdc) },*/
+	{ USB_DEVICE(0x15c2, 0x0041) },
+	{ USB_DEVICE(0x15c2, 0x0042) },
+	{ USB_DEVICE(0x15c2, 0x0043) },
 	{}
 };
 
@@ -265,19 +308,19 @@ static struct usb_driver imon_driver = {
 	.disconnect	= imon_disconnect,
 	.id_table	= imon_usb_id_table,
 #if !defined(KERNEL_2_5)
-	.fops		= &vfd_fops,
-	.minor		= VFD_MINOR_BASE,
+	.fops		= &display_fops,
+	.minor		= DISPLAY_MINOR_BASE,
 #endif
 };
 
 #ifdef KERNEL_2_5
 static struct usb_class_driver imon_class = {
 	.name		= DEVFS_NAME,
-	.fops		= &vfd_fops,
+	.fops		= &display_fops,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 	.mode		= DEVFS_MODE,
 #endif
-	.minor_base	= VFD_MINOR_BASE,
+	.minor_base	= DISPLAY_MINOR_BASE,
 };
 #endif
 
@@ -324,7 +367,7 @@ MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 
 static inline void delete_context(struct imon_context *context)
 {
-	if (context->vfd_supported)
+	if (context->display_supported)
 		usb_free_urb(context->tx_urb);
 	usb_free_urb(context->rx_urb);
 	lirc_buffer_free(context->plugin->rbuf);
@@ -351,10 +394,10 @@ static inline void deregister_from_lirc(struct imon_context *context)
 }
 
 /**
- * Called when the VFD device(e.g. /dev/usb/lcd)
+ * Called when the Display device (e.g. /dev/lcd0)
  * is opened by the application.
  */
-static int vfd_open(struct inode *inode, struct file *file)
+static int display_open(struct inode *inode, struct file *file)
 {
 #ifdef KERNEL_2_5
 	struct usb_interface *interface;
@@ -377,7 +420,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 	}
 	context = usb_get_intfdata(interface);
 #else
-	subminor = MINOR(inode->i_rdev) - VFD_MINOR_BASE;
+	subminor = MINOR(inode->i_rdev) - DISPLAY_MINOR_BASE;
 	if (subminor < 0 || subminor >= MAX_DEVICES) {
 		err("%s: no record of minor %d", __FUNCTION__, subminor);
 		retval = -ENODEV;
@@ -395,15 +438,15 @@ static int vfd_open(struct inode *inode, struct file *file)
 
 	LOCK_CONTEXT;
 
-	if (!context->vfd_supported) {
+	if (!context->display_supported) {
 		err("%s: VFD not supported by device", __FUNCTION__);
 		retval = -ENODEV;
-	} else if (context->vfd_isopen) {
+	} else if (context->display_isopen) {
 		err("%s: VFD port is already open", __FUNCTION__);
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
-		context->vfd_isopen = TRUE;
+		context->display_isopen = TRUE;
 		file->private_data = context;
 		info("VFD port opened");
 	}
@@ -419,7 +462,7 @@ exit:
  * Called when the VFD device(e.g. /dev/usb/lcd)
  * is closed by the application.
  */
-static int vfd_close(struct inode *inode, struct file *file)
+static int display_close(struct inode *inode, struct file *file)
 {
 	struct imon_context *context = NULL;
 	int retval = SUCCESS;
@@ -433,14 +476,14 @@ static int vfd_close(struct inode *inode, struct file *file)
 
 	LOCK_CONTEXT;
 
-	if (!context->vfd_supported) {
+	if (!context->display_supported) {
 		err("%s: VFD not supported by device", __FUNCTION__);
 		retval = -ENODEV;
-	} else if (!context->vfd_isopen) {
+	} else if (!context->display_isopen) {
 		err("%s: VFD is not open", __FUNCTION__);
 		retval = -EIO;
 	} else {
-		context->vfd_isopen = FALSE;
+		context->display_isopen = FALSE;
 		MOD_DEC_USE_COUNT;
 		info("VFD port closed");
 		if (!context->dev_present && !context->ir_isopen) {
@@ -706,9 +749,9 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 
 	} while (offset < 35);
 
-	if (context->vfd_proto_6p) {
+	if (context->display_proto_6p) {
 		/* Send packet #6 */
-		memcpy(context->usb_tx_buf, vfd_packet6, 7);
+		memcpy(context->usb_tx_buf, display_packet6, 7);
 		context->usb_tx_buf[7] = (unsigned char) seq;
 		retval = send_packet(context);
 		if (retval != SUCCESS)
@@ -887,12 +930,15 @@ static void ir_close(void *data)
 		 * at disconnect time, so do it now. */
 		deregister_from_lirc(context);
 
-		if (!context->vfd_isopen) {
+		if (!context->display_isopen) {
 			UNLOCK_CONTEXT;
 			delete_context(context);
 			return;
 		}
-		/* If VFD port is open, context will be deleted by vfd_close */
+		/*
+		 * If display port is open, context will be deleted by
+		 * display_close
+		 */
 	}
 
 	UNLOCK_CONTEXT;
@@ -1131,15 +1177,14 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	int lirc_minor = 0;
 	int num_endpoints;
 	int retval = SUCCESS;
-	int vfd_ep_found;
+	int display_ep_found;
 	int ir_ep_found;
 	int alloc_status;
-	int vfd_proto_6p = FALSE;
+	int display_proto_6p = FALSE;
 	int ir_onboard_decode = FALSE;
-	int tx_control = FALSE;
-	int is_lcd = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
 	int code_length;
+	int tx_control = FALSE;
 	struct imon_context *context = NULL;
 	int i;
 
@@ -1147,16 +1192,19 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
-	 * the "write" file op and use a larger buffer.
+	 * the "write" file op.
 	 */
 	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
 	     usb_match_id(interface, lcd_device_list)) ||
-	    display_type == IMON_DISPLAY_TYPE_LCD) {
-		vfd_fops.write = &lcd_write;
-		is_lcd = 1;
-		/* this should be unnecessary, per Christoph */
-		//buf_chunk_size = 8;
-	}
+	    display_type == IMON_DISPLAY_TYPE_LCD)
+		display_fops.write = &lcd_write;
+
+	/*
+	 * To get front panel buttons working properly for newer LCD devices,
+	 * we really do need a larger buffer.
+	 */
+	if (usb_match_id(interface, large_buffer_list))
+		buf_chunk_size = 2 * BUF_CHUNK_SIZE;
 
 	code_length = buf_chunk_size * 8;
 
@@ -1190,9 +1238,10 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	 */
 
 	ir_ep_found = FALSE;
-	vfd_ep_found = FALSE;
+	display_ep_found = FALSE;
 
-	for (i = 0; i < num_endpoints && !(ir_ep_found && vfd_ep_found); ++i) {
+	for (i = 0; i < num_endpoints && !(ir_ep_found && display_ep_found);
+	     ++i) {
 		struct usb_endpoint_descriptor *ep;
 		int ep_dir;
 		int ep_type;
@@ -1213,24 +1262,24 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			if (debug)
 				info("%s: found IR endpoint", __FUNCTION__);
 
-		} else if (!vfd_ep_found &&
+		} else if (!display_ep_found &&
 			   ep_dir == USB_DIR_OUT &&
 			   ep_type == USB_ENDPOINT_XFER_INT) {
 			tx_endpoint = ep;
-			vfd_ep_found = TRUE;
+			display_ep_found = TRUE;
 			if (debug)
 				info("%s: found VFD endpoint", __FUNCTION__);
 		}
 	}
 
 	/*
-	 * If we didn't find a vfd endpoint, and we have a next-gen LCD,
-	 * use control urb instead of interrupt
+	 * If we didn't find a display endpoint, this is probably one of the
+	 * newer iMon devices that use control urb instead of interrupt
 	 */
-	if (!vfd_ep_found) {
-		if (is_lcd) {
+	if (!display_ep_found) {
+		if (usb_match_id(interface, ctl_ep_device_list)) {
 			tx_control = 1;
-			vfd_ep_found = TRUE;
+			display_ep_found = TRUE;
 			if (debug)
 				info("%s: LCD device uses control endpoint, "
 				     "not interface OUT endpoint", __func__);
@@ -1246,7 +1295,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	     usb_match_id(interface, ir_only_list)) ||
 	    display_type == IMON_DISPLAY_TYPE_NONE) {
 		tx_control = 0;
-		vfd_ep_found = 0;
+		display_ep_found = 0;
 		if (debug)
 			info("%s: device has no display", __func__);
 	}
@@ -1266,12 +1315,12 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	}
 
 	/* Determine if VFD requires 6 packets */
-	if (vfd_ep_found) {
-		if (usb_match_id(interface, vfd_proto_6p_list))
-			vfd_proto_6p = TRUE;
+	if (display_ep_found) {
+		if (usb_match_id(interface, display_proto_6p_list))
+			display_proto_6p = TRUE;
 
 		if (debug)
-			info("vfd_proto_6p: %d", vfd_proto_6p);
+			info("display_proto_6p: %d", display_proto_6p);
 	}
 
 	/* Allocate memory */
@@ -1311,7 +1360,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 5;
 		goto alloc_status_switch;
 	}
-	if (vfd_ep_found) {
+	if (display_ep_found) {
 #ifdef KERNEL_2_5
 		tx_urb = usb_alloc_urb(0, GFP_KERNEL);
 #else
@@ -1328,7 +1377,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	/* clear all members of imon_context and lirc_plugin */
 	memset(context, 0, sizeof(struct imon_context));
 	init_MUTEX(&context->sem);
-	context->vfd_proto_6p = vfd_proto_6p;
+	context->display_proto_6p = display_proto_6p;
 	context->ir_onboard_decode = ir_onboard_decode;
 
 	memset(plugin, 0, sizeof(struct lirc_plugin));
@@ -1336,7 +1385,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	strcpy(plugin->name, MOD_NAME);
 	plugin->minor = -1;
 	plugin->code_length = ir_onboard_decode ?
-			      code_length : sizeof(lirc_t) * 8;
+		buf_chunk_size * 8 : sizeof(lirc_t) * 8;
 	plugin->sample_rate = 0;
 	plugin->features = (ir_onboard_decode) ?
 		LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
@@ -1368,8 +1417,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	context->dev_present = TRUE;
 	context->rx_endpoint = rx_endpoint;
 	context->rx_urb = rx_urb;
-	if (vfd_ep_found) {
-		context->vfd_supported = TRUE;
+	if (display_ep_found) {
+		context->display_supported = TRUE;
 		context->tx_endpoint = tx_endpoint;
 		context->tx_urb = tx_urb;
 		context->tx_control = tx_control;
@@ -1393,7 +1442,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	context->subminor = subminor;
 #endif
 
-	if (vfd_ep_found) {
+	if (display_ep_found) {
 		if (debug)
 			info("Registering VFD with devfs");
 #ifdef KERNEL_2_5
@@ -1405,9 +1454,9 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #else
 		sprintf(name, DEVFS_NAME, subminor);
 		if (!(context->devfs = devfs_register(usb_devfs_handle, name,
-					DEVFS_FL_DEFAULT,
-					USB_MAJOR, VFD_MINOR_BASE + subminor,
-					DEVFS_MODE, &vfd_fops, NULL))) {
+					DEVFS_FL_DEFAULT, USB_MAJOR,
+					DISPLAY_MINOR_BASE + subminor,
+					DEVFS_MODE, &display_fops, NULL))) {
 			/* not a fatal error so ignore */
 			info("%s: devfs register failed for VFD",
 					__FUNCTION__);
@@ -1424,7 +1473,7 @@ alloc_status_switch:
 
 	switch (alloc_status) {
 	case 7:
-		if (vfd_ep_found)
+		if (display_ep_found)
 			usb_free_urb(tx_urb);
 	case 6:
 		usb_free_urb(rx_urb);
@@ -1462,7 +1511,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 {
 	struct imon_context *context;
 
-	/* prevent races with ir_open()/vfd_open() */
+	/* prevent races with ir_open()/display_open() */
 	down(&disconnect_sem);
 
 #ifdef KERNEL_2_5
@@ -1498,7 +1547,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 	if (!context->ir_isopen)
 		deregister_from_lirc(context);
 
-	if (context->vfd_supported)
+	if (context->display_supported)
 #ifdef KERNEL_2_5
 		usb_deregister_dev(interface, &imon_class);
 #else
@@ -1508,7 +1557,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 
 	UNLOCK_CONTEXT;
 
-	if (!context->ir_isopen && !context->vfd_isopen)
+	if (!context->ir_isopen && !context->display_isopen)
 		delete_context(context);
 
 	up(&disconnect_sem);
