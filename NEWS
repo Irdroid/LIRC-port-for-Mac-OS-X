@@ -1,5 +1,7 @@
 0.8.5-CVS: future
   * added support for Awox RF/IR Remote (Arif)
+  * added support for new iMon LCD devices
+  * added support for Antec-branded iMon LCD and VFD devices
 
 0.8.4a: 10/26/08
   * fixed show-stopper bug in irrecord for drivers using MODE2

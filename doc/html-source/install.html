@@ -739,3 +739,17 @@
       changed. Please use the config file in
       <em>remotes/creative/lircd.conf.creative</em>.
     </P>
+    <A NAME="updating084"></A><HR>
+    <H1 ALIGN="CENTER">Updating from lirc-0.8.4</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      Newly added iMon LCD displays with device ids 15c2:0038 and 15c2:0045
+      use a larger buffer to enable all remote and panel buttons. Consequently,
+      config files for earlier iMon receivers are not compatible with these
+      new devices, and vice versa. Be sure to select the appropriate 64-bit
+      config for a newer iMon LCD. (Early cvs support for the 0038 used only
+      a 32-bit buffer).
+      <em>For the 0038: remotes/imon/lircd.conf.imon-ultrabay</em>.
+      <em>For the 0045: remotes/imon/lircd.conf.imon-antec-veris</em>.
+    </P>
