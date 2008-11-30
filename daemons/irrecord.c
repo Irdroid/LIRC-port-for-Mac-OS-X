@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.82 2008/11/30 19:16:07 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.83 2008/11/30 19:19:59 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.82 $"
+#define IRRECORD_VERSION "$Revision: 5.83 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -1827,8 +1827,9 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 			}
 			sum+=data&PULSE_MASK;
 
-			if((data&PULSE_MASK)>=remaining_gap*(100-eps)/100
-			   || (data&PULSE_MASK)>=remaining_gap-aeps)
+			if(count>2 &&
+			   ((data&PULSE_MASK)>=remaining_gap*(100-eps)/100
+			    || (data&PULSE_MASK)>=remaining_gap-aeps))
 			{
 				if(is_space(data))
 				{
