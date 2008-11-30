@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.83 2008/11/30 19:19:59 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.84 2008/11/30 19:46:58 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.83 $"
+#define IRRECORD_VERSION "$Revision: 5.84 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -1664,7 +1664,7 @@ inline lirc_t calc_signal(struct lengths *len)
 int get_lengths(struct ir_remote *remote, int force, int interactive)
 {
 	int retval;
-	lirc_t data,average,sum,remaining_gap,header;
+	lirc_t data,average,maxspace,sum,remaining_gap,header;
 	enum analyse_mode mode=MODE_GAP;
 	int first_signal;
 
@@ -1682,7 +1682,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 		flushhw();
 	}
 	retval=1;
-	average=0;sum=0;count=0;count_spaces=0;
+	average=0;maxspace=0;sum=0;count=0;count_spaces=0;
 	count_3repeats=0;count_5repeats=0;count_signals=0;
 	first_signal=-1;header=0;
 	first_length=0;
@@ -1711,12 +1711,15 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					continue;
 				}
 				average=data;
+				maxspace=data;
 			}
 			else if(is_space(data))
 			{
 				if(data>MIN_GAP || data>100*average ||
 				   /* this MUST be a gap */
-				   (count_spaces>10 && data>5*average))  
+				   (count_spaces>10 && data>5*average)
+				   /* || Echostar
+				      (count_spaces>20 && data>9*maxspace/10)*/)
 					/* this should be a gap */
 				{
 					struct lengths *scan;
@@ -1728,7 +1731,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					merge_lengths(first_sum);
 					add_length(&first_gap,data);
 					merge_lengths(first_gap);
-					sum=0;count_spaces=0;average=0;
+					sum=0;count_spaces=0;average=0;maxspace=0;
 					
 					maxcount=0;
 					scan=first_sum;
@@ -1794,6 +1797,10 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 				average=(average*count_spaces+data)
 				/(count_spaces+1);
 				count_spaces++;
+				if(data>maxspace)
+				{
+					maxspace=data;
+				}
 			}
 			if(count>SAMPLES*MAX_SIGNALS*2)
 			{
