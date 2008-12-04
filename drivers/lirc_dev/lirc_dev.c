@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.61 2008/09/27 08:16:15 lirc Exp $
+ * $Id: lirc_dev.c,v 1.62 2008/12/04 19:01:07 lirc Exp $
  *
  */
 
@@ -92,7 +92,8 @@ struct irctl {
 
 	struct semaphore buffer_sem;
 	struct lirc_buffer *buf;
-
+	unsigned int chunk_size;
+	
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	int tpid;
 	struct completion *t_notify;
@@ -154,30 +155,19 @@ static void cleanup(struct irctl *ir)
 
 /*  helper function
  *  reads key codes from plugin and puts them into buffer
- *  buffer free space is checked and locking performed
  *  returns 0 on success
  */
 static inline int add_to_buf(struct irctl *ir)
 {
-	if (lirc_buffer_full(ir->buf)) {
-		dprintk(LOGHEAD "buffer overflow\n",
-			ir->p.name, ir->p.minor);
-		return -EOVERFLOW;
-	}
-
 	if (ir->p.add_to_buf) {
 		int res = -ENODATA;
 		int got_data = 0;
 
 		/* service the device as long as it is returning
-		 * data and we have space
-		 */
-		while (!lirc_buffer_full(ir->buf)) {
-			res = ir->p.add_to_buf(ir->p.data, ir->buf);
-			if (res == SUCCESS)
-				got_data++;
-			else
-				break;
+		   data */
+		while ((res = ir->p.add_to_buf(ir->p.data, ir->buf))
+		       == SUCCESS) {
+			got_data++;
 		}
 
 		if (res == -ENODEV)
@@ -377,6 +367,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 			goto out_lock;
 		}
 	}
+	ir->chunk_size = ir->buf->chunk_size;
 
 	if (p->features == 0)
 		p->features = (p->code_length > 8) ?
@@ -753,7 +744,7 @@ static ssize_t irctl_read(struct file *file,
 			  loff_t *ppos)
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
-	unsigned char buf[ir->buf->chunk_size];
+	unsigned char buf[ir->chunk_size];
 	int ret = 0, written = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
