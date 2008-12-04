@@ -69,10 +69,6 @@
 #define USB_CTRL_GET_TIMEOUT    5
 #endif
 
-/* lock irctl structure */
-#define IRLOCK			down_interruptible(&ir->lock)
-#define IRUNLOCK		up(&ir->lock)
-
 /* module identification */
 #define DRIVER_VERSION		"0.1"
 #define DRIVER_AUTHOR		\
@@ -87,10 +83,10 @@ static int debug = 1;
 static int debug;
 #endif
 
-#define dprintk(fmt, args...)					\
-	do {							\
-		if (debug)					\
-			printk(KERN_DEBUG fmt, ## args);	\
+#define dprintk(fmt, args...)						\
+	do {								\
+		if (debug)						\
+			printk(KERN_DEBUG DRIVER_NAME fmt, ## args);	\
 	} while (0)
 
 /* general constants */
@@ -253,43 +249,20 @@ struct irctl {
 
 	/* handle sending (init strings) */
 	int send_flags;
-	wait_queue_head_t wait_out;
 
 	struct semaphore lock;
 };
-
-static int unregister_from_lirc(struct irctl *ir)
-{
-	struct lirc_plugin *p = ir->p;
-	int devnum;
-
-	if (!ir->p)
-		return -EINVAL;
-
-	devnum = ir->devnum;
-	dprintk(DRIVER_NAME "[%d]: unregister from lirc called\n", devnum);
-
-	lirc_unregister_plugin(p->minor);
-
-	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", devnum);
-
-	lirc_buffer_free(p->rbuf);
-	kfree(p->rbuf);
-	kfree(p);
-	kfree(ir);
-	ir->p = NULL;
-	return SUCCESS;
-}
 
 static int set_use_inc(void *data)
 {
 	struct irctl *ir = data;
 
 	if (!ir) {
-		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		printk(KERN_ERR DRIVER_NAME
+		       "[?]: set_use_inc called with no context\n");
 		return -EIO;
 	}
-	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
+	dprintk("[%d]: set use inc\n", ir->devnum);
 
 	MOD_INC_USE_COUNT;
 
@@ -304,10 +277,11 @@ static void set_use_dec(void *data)
 	struct irctl *ir = data;
 
 	if (!ir) {
-		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
+		printk(KERN_ERR DRIVER_NAME
+		       "[?]: set_use_dec called with no context\n");
 		return;
 	}
-	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
+	dprintk("[%d]: set use dec\n", ir->devnum);
 
 	MOD_DEC_USE_COUNT;
 }
@@ -343,12 +317,12 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 		if (ret <= 1)  /* ACK packet has 1 byte --> ignore */
 			return -ENODATA;
 
-		dprintk(DRIVER_NAME ": Got %d bytes. Header: %02x %02x %02x\n",
+		dprintk(": Got %d bytes. Header: %02x %02x %02x\n",
 			ret, ir->buf_in[0], ir->buf_in[1], ir->buf_in[2]);
 
 		if (ir->buf_in[2] != 0) {
-			printk(DRIVER_NAME "[%d]: Device buffer overrun.\n",
-				ir->devnum);
+			printk(KERN_WARNING DRIVER_NAME
+			       "[%d]: Device buffer overrun.\n", ir->devnum);
 			/* start at earliest byte */
 			i = DEVICE_HEADERLEN + ir->buf_in[2];
 			/* where are we now? space, gap or pulse? */
@@ -392,11 +366,13 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 		      /*dummy*/ir->buf_in, /*dummy*/ir->len_in,
 		      /*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
 		if (ret < 0)
-			printk(DRIVER_NAME "[%d]: SET_INFRABUFFER_EMPTY: "
-			       "error %d\n", ir->devnum, ret);
+			printk(KERN_WARNING DRIVER_NAME
+			       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
+			       ir->devnum, ret);
 		return SUCCESS;
 	} else
-		printk(DRIVER_NAME "[%d]: GET_INFRACODE: error %d\n",
+		printk(KERN_WARNING DRIVER_NAME
+		       "[%d]: GET_INFRACODE: error %d\n",
 			ir->devnum, ret);
 
 	return -ENODATA;
@@ -428,7 +404,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	int mem_failure = 0;
 	int ret;
 
-	dprintk(DRIVER_NAME ": usb probe called.\n");
+	dprintk(": usb probe called.\n");
 
 #if defined(KERNEL_2_5)
 	dev = interface_to_usbdev(intf);
@@ -466,7 +442,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	bytes_in_key = CODE_LENGTH;
 
-	dprintk(DRIVER_NAME "[%d]: bytes_in_key=%d maxp=%d\n",
+	dprintk("[%d]: bytes_in_key=%d maxp=%d\n",
 		devnum, bytes_in_key, maxp);
 
 
@@ -528,9 +504,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #endif
 	plugin->owner = THIS_MODULE;
 
-	init_MUTEX(&ir->lock);
-	init_waitqueue_head(&ir->wait_out);
-
 	minor = lirc_register_plugin(plugin);
 	if (minor < 0)
 		mem_failure = 9;
@@ -555,7 +528,7 @@ mem_failure_switch:
 	case 2:
 		kfree(ir);
 	case 1:
-		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n",
+		printk(KERN_ERR DRIVER_NAME "[%d]: out of memory (code=%d)\n",
 			devnum, mem_failure);
 #if defined(KERNEL_2_5)
 		return -ENOMEM;
@@ -578,7 +551,7 @@ mem_failure_switch:
 	if (dev->descriptor.iProduct
 		&& usb_string(dev, dev->descriptor.iProduct, buf, 63) > 0)
 		snprintf(name, 128, "%s %s", name, buf);
-	printk(DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
+	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
 	       dev->bus->busnum, devnum);
 
 	/* clear device buffer */
@@ -588,7 +561,8 @@ mem_failure_switch:
 		/*dummy*/ir->buf_in, /*dummy*/ir->len_in,
 		/*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
 	if (ret < 0)
-		printk(DRIVER_NAME "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
+		printk(KERN_WARNING DRIVER_NAME
+		       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
 			devnum, ret);
 
 #if defined(KERNEL_2_5)
@@ -605,7 +579,6 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
 	struct irctl *ir = usb_get_intfdata(intf);
-	usb_set_intfdata(intf, NULL);
 #else
 static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 {
@@ -615,18 +588,23 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	if (!ir || !ir->p)
 		return;
 
-	ir->usbdev = NULL;
-	wake_up_all(&ir->wait_out);
+	printk(KERN_INFO DRIVER_NAME
+	       "[%d]: usb remote disconnected\n", ir->devnum);
 
-	IRLOCK;
+	lirc_unregister_plugin(ir->p->minor);
+
+	lirc_buffer_free(ir->p->rbuf);
+	kfree(ir->p->rbuf);
+	kfree(ir->p);
+
+
 #if defined(KERNEL_2_5)
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
 #else
 	kfree(ir->buf_in);
 #endif
-	IRUNLOCK;
 
-	unregister_from_lirc(ir);
+	kfree(ir);
 }
 
 static struct usb_device_id usb_remote_id_table [] = {
@@ -649,16 +627,16 @@ static int __init usb_remote_init(void)
 {
 	int i;
 
-	printk(KERN_INFO "\n"
-	       DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
-	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(DRIVER_NAME ": debug mode enabled\n");
+	printk(KERN_INFO DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
+	printk(KERN_INFO DRIVER_NAME ": " DRIVER_AUTHOR "\n");
+	dprintk(": debug mode enabled\n");
 
 	request_module("lirc_dev");
 
 	i = usb_register(&usb_remote_driver);
 	if (i < 0) {
-		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
+		printk(KERN_ERR DRIVER_NAME
+		       ": usb register failed, result = %d\n", i);
 		return -ENODEV;
 	}
 
