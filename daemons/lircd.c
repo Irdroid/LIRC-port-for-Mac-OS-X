@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.81 2008/10/29 20:17:11 lirc Exp $      */
+/*      $Id: lircd.c,v 5.82 2008/12/06 20:00:03 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -56,6 +56,12 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <sys/file.h>
+
+#if defined(__linux__)
+#include <linux/input.h>
+#include <linux/uinput.h>
+#include "input_map.h"
+#endif
 
 #if defined __APPLE__
 #include <sys/ioccom.h>
@@ -151,17 +157,18 @@ FILE *lf=NULL;
 
 /* quite arbitrary limits */
 #define MAX_PEERS	100
-/* substract one for lirc, sockfd, sockinet, logfile, pidfile */
-#define MAX_CLIENTS     (FD_SETSIZE-5-MAX_PEERS)
+/* substract one for lirc, sockfd, sockinet, logfile, pidfile, uinput */
+#define MAX_CLIENTS     (FD_SETSIZE-6-MAX_PEERS)
 
 int sockfd, sockinet;
+static int uinputfd = -1;
 int clis[MAX_CLIENTS];
 
 #define CT_LOCAL  1
 #define CT_REMOTE 2
 
-int cli_type[MAX_CLIENTS];
-int clin=0;
+static int cli_type[MAX_CLIENTS];
+static int clin=0;
 
 int listen_tcpip=0;
 unsigned short int port=LIRC_INET_PORT;
@@ -171,11 +178,18 @@ struct	peer_connection *peers[MAX_PEERS];
 int	peern = 0;
 
 int debug=0;
-int daemonized=0;
-int allow_simulate=0;
+static int daemonized=0;
+static int allow_simulate=0;
+static int userelease=0;
+static int useuinput=0;
 
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
+
+inline int use_hw()
+{
+	return (clin>0 || (useuinput && uinputfd != -1) || repeat_remote != NULL);
+}
 
 /* set_transmitters only supports 32 bit int */
 #define MAX_TX (CHAR_BIT*sizeof(unsigned long))
@@ -304,6 +318,7 @@ void dosigterm(int sig)
 		free_config(free_remotes);
 	}
 	free_config(remotes);
+	repeat_remote = NULL;
 	logprintf(LOG_NOTICE,"caught signal");
 	for (i=0; i<clin; i++)
 	{
@@ -312,6 +327,13 @@ void dosigterm(int sig)
 	};
 	shutdown(sockfd,2);
 	close(sockfd);
+
+	if(uinputfd != -1)
+	{
+		ioctl(uinputfd, UI_DEV_DESTROY);
+		close(uinputfd);
+		uinputfd = -1;
+	}
 	if(listen_tcpip)
 	{
 		shutdown(sockinet,2);
@@ -319,7 +341,7 @@ void dosigterm(int sig)
 	}
 	fclose(pidf);
 	(void) unlink(pidfile);
-	if(clin>0 && hw.deinit_func) hw.deinit_func();
+	if(use_hw() && hw.deinit_func) hw.deinit_func();
 #ifdef USE_SYSLOG
 	closelog();
 #else
@@ -388,6 +410,52 @@ void dosighup(int sig)
       }
 }
 
+int setup_uinputfd(const char *name)
+{
+#if defined(__linux__)
+	int fd;
+	int key;
+	struct uinput_user_dev dev;
+	
+	fd = open("/dev/input/uinput", O_RDWR);
+	if(fd == -1)
+	{
+		fprintf(stderr, "could not open %s\n", "uinput");
+		perror(NULL);
+		return -1;
+	}
+	memset(&dev, 0, sizeof(dev));
+	strncpy(dev.name, name, sizeof(dev.name));
+	dev.name[sizeof(dev.name)-1] = 0;
+	if(write(fd, &dev, sizeof(dev)) != sizeof(dev) ||
+	   ioctl(fd, UI_SET_EVBIT, EV_KEY) != 0 ||
+	   ioctl(fd, UI_SET_EVBIT, EV_REP) != 0)
+	{
+		goto setup_error;
+	}
+
+        for(key = KEY_RESERVED; key <= KEY_UNKNOWN; key++)
+	{
+                if(ioctl(fd, UI_SET_KEYBIT, key) != 0)
+		{
+			goto setup_error;
+                }
+	}
+
+	if(ioctl(fd, UI_DEV_CREATE) != 0)
+	{
+		goto setup_error;
+	}
+	return fd;
+	
+ setup_error:
+	fprintf(stderr, "could not setup %s\n", "uinput");
+	perror(NULL);
+	close(fd);
+#endif
+	return -1;
+}
+
 void config(void)
 {
 	FILE *fd;
@@ -449,9 +517,7 @@ void remove_client(int fd)
 			logprintf(LOG_INFO,"removed client");
 			
 			clin--;
-			if(clin==0 &&
-			   repeat_remote==NULL &&
-			   hw.deinit_func)
+			if(!use_hw() && hw.deinit_func)
 			{
 				hw.deinit_func();
 			}
@@ -509,8 +575,8 @@ void add_client(int sock)
 	{
 		cli_type[clin]=0; /* what? */
 	}
-	clis[clin++]=fd;
-	if(clin==1 && repeat_remote==NULL)
+	clis[clin]=fd;
+	if(!use_hw())
 	{
 		if(hw.init_func)
 		{
@@ -526,6 +592,7 @@ void add_client(int sock)
 			}
 		}
 	}
+	clin++;
 }
 
 int add_peer_connection(char *server)
@@ -800,6 +867,10 @@ void start_server(mode_t permission,int nodaemon)
 	listen(sockfd,3);
 	nolinger(sockfd);
 
+	if(useuinput)
+	{
+		uinputfd = setup_uinputfd(progname);
+	}
 	if(listen_tcpip)
 	{
 		int enable=1;
@@ -996,7 +1067,7 @@ void dosigalrm(int sig)
 			free(repeat_message);
 			repeat_message=NULL;
 		}
-		if(clin==0 && repeat_remote==NULL && hw.deinit_func)
+		if(!use_hw() && hw.deinit_func)
 		{
 			hw.deinit_func();
 		}
@@ -1026,7 +1097,7 @@ void dosigalrm(int sig)
 		repeat_message=NULL;
 		repeat_fd=-1;
 	}
-	if(clin==0 && repeat_remote==NULL && hw.deinit_func)
+	if(!use_hw() && hw.deinit_func)
 	{
 		hw.deinit_func();
 	}
@@ -1646,13 +1717,21 @@ void free_old_remotes()
 	struct ir_remote *scan_remotes,*found;
 	struct ir_ncode *code;
 	const char *release_event;
+	const char *release_remote_name;
+	const char *release_button_name;
 	
 	if(decoding ==free_remotes) return;
 	
-	release_event = release_map_remotes(free_remotes, remotes);
+	release_event = release_map_remotes(free_remotes, remotes,
+					    &release_remote_name,
+					    &release_button_name);
 	if(release_event != NULL)
 	{
-		broadcast_message(release_event);
+		input_message(release_event,
+			      release_remote_name,
+			      release_button_name,
+			      0,
+			      1);
 	}
 	if(last_remote!=NULL)
 	{
@@ -1742,19 +1821,56 @@ void free_old_remotes()
 	}
 }
 
+void input_message(const char *message, const char *remote_name,
+		   const char *button_name, int reps, int release)
+{
+	const char *release_message;
+	const char *release_remote_name;
+	const char *release_button_name;
+
+	release_message = check_release_event(&release_remote_name,
+					      &release_button_name);
+	if(release_message)
+	{
+		input_message(release_message, release_remote_name,
+			      release_button_name, 0, 1);
+	}
+	
+	if(!release || userelease)
+	{
+		broadcast_message(message);
+	}
+	
+#ifdef __linux__
+	if(uinputfd != -1)
+	{
+		linux_input_code input_code;
+		
+		if(reps < 2 &&
+		   get_input_code(button_name, &input_code) != -1)
+		{
+			struct input_event event;
+			
+			memset(&event, 0, sizeof(event));
+			event.type = EV_KEY;
+			event.code = input_code;
+			event.value = release ? 0 : (reps>0 ? 2:1);
+			if(write(uinputfd, &event, sizeof(event)) != sizeof(event))
+			{
+				logprintf(LOG_ERR, "writing to uinput failed");
+				logperror(LOG_ERR, NULL);
+			}
+		}
+	}
+#endif
+}
+
 void broadcast_message(const char *message)
 {
 	int len,i;
-	const char *release_message;
-
-	release_message = check_release_event();
-	if(release_message)
-	{
-		broadcast_message(release_message);
-	}
-
+	
 	len=strlen(message);
-			
+	
 	for (i=0; i<clin; i++)
 	{
 		LOGPRINTF(1,"writing to client %d",i);
@@ -1800,7 +1916,7 @@ int waitfordata(long maxusec)
 				FD_SET(sockinet,&fds);
 				maxfd=max(maxfd,sockinet);
 			}
-			if(clin>0 && hw.rec_mode!=0 && hw.fd!=-1)
+			if(use_hw() && hw.rec_mode!=0 && hw.fd!=-1)
 			{
 				FD_SET(hw.fd,&fds);
 				maxfd=max(maxfd,hw.fd);
@@ -1916,10 +2032,19 @@ int waitfordata(long maxusec)
 			   timercmp(&now, &release_time, >))
 			{
 				const char *release_message;
-				release_message = trigger_release_event();
+				const char *release_remote_name;
+				const char *release_button_name;
+				
+				release_message = trigger_release_event
+					(&release_remote_name,
+					 &release_button_name);
 				if(release_message)
 				{
-					broadcast_message(release_message);
+					input_message(release_message,
+						      release_remote_name,
+						      release_button_name,
+						      0,
+						      1);
 				}
 			}
 			if(free_remotes!=NULL)
@@ -1949,7 +2074,9 @@ int waitfordata(long maxusec)
 		}
 		while(ret==-1 && errno==EINTR);
 		
-		if(hw.fd == -1 && clin > 0 && hw.init_func)
+		if(hw.fd == -1 &&
+		   use_hw() &&
+		   hw.init_func)
 		{
 			log_enable(0);
 			hw.init_func();
@@ -1994,7 +2121,7 @@ int waitfordata(long maxusec)
 			LOGPRINTF(1,"registering inet client");
 			add_client(sockinet);
 		}
-                if(clin>0 && hw.rec_mode!=0 && hw.fd!=-1 &&
+                if(use_hw() && hw.rec_mode!=0 && hw.fd!=-1 &&
 		   FD_ISSET(hw.fd,&fds))
                 {
 			register_input();
@@ -2017,13 +2144,20 @@ void loop()
 		
 		if(message!=NULL)
 		{
+			const char *remote_name;
+			const char *button_name;
+			int reps;
+			
 			if(hw.ioctl_func &&
 			   (hw.features&LIRC_CAN_NOTIFY_DECODE))
 			{
 				hw.ioctl_func(LIRC_NOTIFY_DECODE, NULL);
 			}
 			
-			broadcast_message(message);
+			get_release_data(&remote_name, &button_name, &reps);
+
+			input_message(message, remote_name, button_name,
+				      reps, 0);
 		}
 	}
 }
@@ -2060,9 +2194,15 @@ int main(int argc,char **argv)
 #                       endif
 			{"release",optional_argument,NULL,'r'},
 			{"allow-simulate",no_argument,NULL,'a'},
+#                       if defined(__linux__)
+			{"uinput",no_argument,NULL,'u'},
+#                       endif
 			{0, 0, 0, 0}
 		};
 		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::a"
+#                               if defined(__linux__)
+				"u"
+#                               endif
 #                               ifndef USE_SYSLOG
 				"L:"
 #                               endif
@@ -2094,6 +2234,9 @@ int main(int argc,char **argv)
 #                       endif
 			printf("\t -r --release[=suffix]\t\tauto-generate release events\n");
 			printf("\t -a --allow-simulate\t\taccept SIMULATE command\n");
+#                       if defined(__linux__)
+			printf("\t -u --uinput\t\tgenerate Linux input events\n");
+#                       endif
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s %s\n",progname,VERSION);
@@ -2188,10 +2331,16 @@ int main(int argc,char **argv)
 			{
 				set_release_suffix(LIRC_RELEASE_SUFFIX);
 			}
+			userelease=1;
 			break;
 		case 'a':
 			allow_simulate=1;
 			break;
+#               if defined(__linux__)
+		case 'u':
+			useuinput=1;
+			break;
+#               endif
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);

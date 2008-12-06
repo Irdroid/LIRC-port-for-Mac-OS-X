@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.16 2007/09/29 17:13:14 lirc Exp $      */
+/*      $Id: lircd.h,v 5.17 2008/12/06 20:00:03 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -32,6 +32,7 @@ void sigterm(int sig);
 void dosigterm(int sig);
 void sighup(int sig);
 void dosighup(int sig);
+int setup_uinput(const char *name);
 void config(void);
 void nolinger(int sock);
 void remove_client(int fd);
@@ -76,6 +77,8 @@ int send_core(int fd,char *message,char *arguments,int once);
 int version(int fd,char *message,char *arguments);
 int get_pid(int fd,char *message,char *arguments);
 int get_command(int fd);
+void input_message(const char *message, const char *remote_name,
+		   const char *button_name, int reps, int release);
 void broadcast_message(const char *message);
 int waitfordata(long maxusec);
 void loop(void);

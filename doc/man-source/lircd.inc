@@ -59,6 +59,13 @@ E.g. if you have configured your system to shut down by a button press
 on your remote control, everybody will be able to shut down
 your system from the command line.
 
+On Linux systems the --uinput option will enable automatic generation
+of Linux input events. lircd will open /dev/input/uinput and inject
+key events to the Linux kernel. The key code depends on the name that
+was given a button in the lircd config file, e.g. if the button is
+named KEY_1, the '1' key code will be generated. You will find a
+complete list of possible button names in /usr/include/linux/input.h.
+
 [FILES]
 
 The config file for lircd is located in /etc/lircd.conf. lircd

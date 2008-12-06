@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.65 2008/10/31 21:15:59 lirc Exp $
+## $Id: Makefile.am,v 5.66 2008/12/06 20:00:03 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -62,7 +62,8 @@ libhw_module_a_DEPENDENCIES = @hw_module@
 sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c lircd.h \
-		config_file.c config_file.h
+		config_file.c config_file.h \
+		input_map.c input_map.h
 lircd_LDADD = @daemon@ libhw_module.a @hw_module_libs@
 
 lircmd_SOURCES = lircmd.c
@@ -83,6 +84,7 @@ EXTRA_PROGRAMS = lircd.simsend lircd.simrec slinke
 noinst_PROGRAMS = @maintmode_daemons_extra@
 lircd_simsend_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h ir_remote_types.h config_file.h \
+		input_map.c input_map.h \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \
@@ -91,6 +93,7 @@ lircd_simsend_SOURCES = lircd.c ir_remote.c config_file.c \
 lircd_simsend_CFLAGS = -DSIM_SEND
 lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
 		lircd.h ir_remote.h ir_remote_types.h config_file.h \
+		input_map.c input_map.h \
 		hw-types.c hw-types.h hardware.h \
 		hw_default.c hw_default.h \
 		receive.c receive.h \

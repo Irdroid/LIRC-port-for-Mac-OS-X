@@ -1,4 +1,6 @@
 0.8.5-CVS: future
+  * Linux input event generation using uinput
+  * standardised namespace following Linux input conventions
   * added support for Awox RF/IR Remote (Arif)
   * added support for new iMon LCD devices
   * added support for Antec-branded iMon LCD and VFD devices
