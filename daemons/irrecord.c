@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.84 2008/11/30 19:46:58 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.85 2008/12/08 18:32:20 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.84 $"
+#define IRRECORD_VERSION "$Revision: 5.85 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -1420,6 +1420,7 @@ void analyse_remote(struct ir_remote *raw_data)
 	next_code = NULL;
 	current_code = NULL;
 	current_index = 0;
+	memset(&remote, 0, sizeof(remote));
 	get_lengths(&remote, 0, 0 /* not interactive */ );
 
 	if(is_rc6(&remote) && remote.bits >= 5)
