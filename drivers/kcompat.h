@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.38 2008/10/05 08:23:47 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.39 2008/12/08 18:30:53 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -162,8 +162,8 @@ static inline void del_timer_sync(struct timer_list *timerlist)
 #ifndef LIRC_HAVE_SYSFS
 #define class_destroy(x) do { } while (0)
 #define class_create(x, y) NULL
-#define lirc_class_destroy(x, y) do { } while (0)
-#define lirc_class_create(x, y, z, xx, yy, zz) 0
+#define lirc_device_destroy(x, y) do { } while (0)
+#define lirc_device_create(x, y, z, xx, yy, zz) 0
 #define IS_ERR(x) 0
 typedef struct class_simple
 {
