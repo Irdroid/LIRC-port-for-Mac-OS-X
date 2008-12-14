@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.32 2008/11/08 05:45:07 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.33 2008/12/14 13:22:48 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -116,6 +116,9 @@ static void imon_disconnect(struct usb_device *dev, void *data);
 static void usb_rx_callback(struct urb *urb);
 static void usb_tx_callback(struct urb *urb);
 #endif
+
+static int imon_resume(struct usb_interface *intf);
+static int imon_suspend(struct usb_interface *intf, pm_message_t message);
 
 /* Display file_operations function prototypes */
 static int display_open(struct inode *inode, struct file *file);
@@ -306,6 +309,8 @@ static struct usb_driver imon_driver = {
 	.name		= MOD_NAME,
 	.probe		= imon_probe,
 	.disconnect	= imon_disconnect,
+	.suspend        = imon_suspend,
+	.resume         = imon_resume,
 	.id_table	= imon_usb_id_table,
 #if !defined(KERNEL_2_5)
 	.fops		= &display_fops,
@@ -1561,6 +1566,26 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 		delete_context(context);
 
 	up(&disconnect_sem);
+}
+
+static int imon_suspend(struct usb_interface *intf, pm_message_t message)
+{
+	struct imon_context *context = usb_get_intfdata(intf);
+
+	if (context->ir_isopen)
+		usb_kill_urb(context->rx_urb);
+	return 0;
+}
+
+static int imon_resume(struct usb_interface *intf)
+{
+	int r = 0;
+	struct imon_context *context = usb_get_intfdata(intf);
+
+	if (context->ir_isopen)
+		usb_submit_urb(context->rx_urb, GFP_ATOMIC);
+
+	return r;
 }
 
 static int __init imon_init(void)
