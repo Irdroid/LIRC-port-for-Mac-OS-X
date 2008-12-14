@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.85 2008/12/08 18:32:20 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.86 2008/12/14 13:00:49 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.85 $"
+#define IRRECORD_VERSION "$Revision: 5.86 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -2162,7 +2162,8 @@ void get_scheme(struct ir_remote *remote, int interactive)
 				
 				maxs=get_max_length(first_space,NULL);
 				
-				if((calc_signal(maxp)<TH_RC6_SIGNAL ||
+				if(length > 20 &&
+				   (calc_signal(maxp)<TH_RC6_SIGNAL ||
 				    calc_signal(max2p)<TH_RC6_SIGNAL) &&
 				   (calc_signal(maxs)<TH_RC6_SIGNAL ||
 				    calc_signal(max2s)<TH_RC6_SIGNAL))
@@ -2242,7 +2243,7 @@ int get_lead_length(struct ir_remote *remote, int interactive)
 	struct lengths *first_lead,*max_length,*max2_length;
 	lirc_t a,b,swap;
 	
-	if(!is_biphase(remote)) return(1);
+	if(!is_biphase(remote) || has_header(remote)) return(1);
 	if(is_rc6(remote)) return(1);
 	
 	first_lead=has_header(remote) ? first_3lead:first_1lead;
