@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.54 $"
+#define DRIVER_VERSION	"$Revision: 1.55 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -135,6 +135,7 @@ static int debug;
 #define VENDOR_PINNACLE		0x2304
 #define VENDOR_ECS		0x1019
 #define VENDOR_WISTRON          0x0fb8
+#define VENDOR_COMPRO           0x185b
 
 static struct usb_device_id usb_remote_table [] = {
 	/* Philips eHome Infrared Transceiver */
@@ -199,6 +200,8 @@ static struct usb_device_id usb_remote_table [] = {
 	{ USB_DEVICE(VENDOR_ECS, 0x0f38) },
 	/* Wistron Corp. eHome Infrared Receiver */
 	{ USB_DEVICE(VENDOR_WISTRON, 0x0002) },
+	/* Compro K100 */
+	{ USB_DEVICE(VENDOR_COMPRO, 0x3020) },
 	/* Terminating entry */
 	{ }
 };
