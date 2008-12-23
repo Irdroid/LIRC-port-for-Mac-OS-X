@@ -1,5 +1,10 @@
 #
-# A tool for converting Pronto format hex codes to lircd.conf format
+# A tool for converting Pronto format hex codes to lircd.conf format. Version 1.11
+#
+# Version History:
+#       1.11 - Made more resiliant against whitespace imperfections in input files
+#       1.1  - Added support for CCFTools/CCFDecompiler XML files and multiple devices
+#       1.0  - Initial release
 #
 # Copyright by Olavi Akerman <olavi.akerman@gmail.com>
 #
@@ -17,6 +22,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
+
+import string
 
 class CodeSequence:           # Handles codesequences parsing and conversion
    
@@ -40,7 +47,15 @@ class CodeSequence:           # Handles codesequences parsing and conversion
 
     def AnalyzeCode(self,sCodeName,sHexCodes):
 
-        sHexTable=sHexCodes.split()
+        # sHexTable=sHexCodes.split()
+        s=string.join(sHexCodes.split(),'') # Remove whitespace formatting between sequences
+
+        sHexTable=[]
+
+        while s<>'':                        # Re-split into group of 4
+            sHexTable.append(s[:4])
+            s=s[4:]
+            
         self.sCodeName=sCodeName.rstrip()  # Name of the Code associated with code sequence
 
         self.ProcessPreamble(sHexTable[:4]) # First four sequences make up Preamble
@@ -48,7 +63,7 @@ class CodeSequence:           # Handles codesequences parsing and conversion
         return self.dPulseWidths[-1]        # Final gap=last off signal length
 
     def WriteCodeSection(self,fOut):
-        fOut.write('\n\t\t\tname '+self.sCodeName+'\n')
+        fOut.write('\n\t\t\tname '+self.sCodeName.strip().replace(' ','')+'\n')  # Can't contain whitespace
         for i in range(len(self.dPulseWidths)-1):   # Do not write the last signal as lircd.conf
                                                     # does not contain last off signal length
             if (i%6) ==0:
@@ -61,34 +76,26 @@ class CodeSequence:           # Handles codesequences parsing and conversion
 
         fOut.write('\n')          # Final EOL
 
-class HexParser:            
-    def __init__(self,sFileName):
-        f=open(sFileName,'r')
-        self.sRemoteName=sFileName.split('.')[:1][0]  # Name of the remote
-        self.sCodes=[]    # Codes contained in file
-        self.lGap=0         # Final Gap
+class Device:   # Handles devices
 
-        while True:
-            sLine=f.readline()
+    def AddCodes(self,sCodeName,sHexCodes):  # Add new code sequence
+        seq=CodeSequence()
+        finalgap=seq.AnalyzeCode(sCodeName,sHexCodes)
+        
+        if finalgap>self.lGap:
+            self.lGap=finalgap
 
-            if sLine=='' or sLine.strip()=='':   # EOF?
-                break
-
+        self.sCodes.append(seq)            
+    
+    def ProcessHEX(self,fHexFile,sLine):    # Process HEX files
+        while sLine<>'' and sLine.strip()<>'':   # EOF?
             [sCodeName,sHexCodes]=sLine.split(':')
-            seq=CodeSequence()
-            finalgap=seq.AnalyzeCode(sCodeName,sHexCodes)
-            if finalgap>self.lGap:
-                self.lGap=finalgap
+            self.AddCodes(sCodeName,sHexCodes)
+            sLine=fHexFile.readline()
 
-            self.sCodes.append(seq)
-            
-        f.close()
-
-    def WriteLIRCConf(self,sOutFileName):
-        f=open(sOutFileName,'w')
-
+    def WriteLIRCCConfDevice(self,f):
         f.write('begin remote\n')
-        f.write('\tname\t'+self.sRemoteName+'\n')
+        f.write('\tname\t'+self.sDeviceName.replace(' ','')+'\n')
         f.write('\tflags\tRAW_CODES\n')
         f.write('\teps\t30\n')
         f.write('\taeps\t100\n')
@@ -100,19 +107,61 @@ class HexParser:
         
         f.write('\t\tend raw_codes\n')
         f.write('end remote\n')
+            
+    def __init__(self,sDeviceName):
+        self.sDeviceName=sDeviceName    # Name of the device
+        self.sCodes=[]                  # Codes contained in file
+        self.lGap=0                     # Final Gap
+
+class RemoteFilesParser:
+    def ProcessXML(self,fXMLFile):
+        def start_element(name,attrs):
+            if name=="RAWCODE":
+                self.Devices[-1].AddCodes(attrs['name'],attrs['data'])
+            if name=="DEVICE":
+                self.Devices.append(Device(attrs['name']))
+
+        p = xml.parsers.expat.ParserCreate()
+        p.StartElementHandler = start_element
+        fXMLFile.seek(0)        # Need to start from the beginning
+        p.ParseFile(fXMLFile)
+        
+    def __init__(self,sFileName):
+        self.Devices=[]
+        
+        f=open(sFileName,'r')
+        sLine=f.readline()
+
+        if sLine.strip()=='<?xml version="1.0"?>':   # Are we dealing with CCF Decompiler XML file?
+                self.ProcessXML(f)   
+        else:
+                device=Device(sFileName.split('.')[:1][0])
+                self.Devices.append(device)
+                device.ProcessHEX(f,sLine)
+
         f.close()
 
+    def WriteLIRCConf(self,sOutFileName):
+        f=open(sOutFileName,'w')
+
+        for d in self.Devices:
+            d.WriteLIRCCConfDevice(f)
+            
+        f.close()
 # Main 
     
 import sys
+import xml.parsers.expat
 
 if len(sys.argv)<>2:
-	print "Pronto codes converter to lircd.conf format (version 1.00)"
+	print "Pronto codes converter to lircd.conf format (version 1.11)"
 	print 
-	print "Usage:   pronto2lirc.py inputfile.hex "
+	print "Usage:   pronto2lirc.py inputfile"
 	print
-	print "Input file must be in format where each line contains all codes"
-	print "         associated with a button like:"
+	print "Inputfile can be:"
+	print "         1.An xml file output by CCFTools/CCFDecompiler."
+	print "         2.Text file where each line contains the name of the button and "
+	print "         all codes associated with it"
 	print "         Button1:0000 00ac 000b 00de ..."
 	print
 	print "Result:  lircd.conf file is written to the current directory"
@@ -120,5 +169,5 @@ if len(sys.argv)<>2:
 	print "         the input file"
 	print
 else:
-	p=HexParser(sys.argv[1])
+	p=RemoteFilesParser(sys.argv[1])
 	p.WriteLIRCConf('lircd.conf')
