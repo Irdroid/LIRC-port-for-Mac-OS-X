@@ -64,14 +64,14 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.55 $"
+#define DRIVER_VERSION	"$Revision: 1.56 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
 			"MCE 2005 Remote Control driver for LIRC"
 #define DRIVER_NAME	"lirc_mceusb2"
 
-#define USB_BUFLEN	16	/* USB reception buffer length */
+#define USB_BUFLEN	32	/* USB reception buffer length */
 #define LIRCBUF_SIZE	256	/* LIRC work buffer length */
 
 /* MCE constants */
@@ -511,26 +511,8 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 	case SUCCESS:
 		for (i = 0; i < buf_len; i++) {
 			/* decode mce packets of the form (84),AA,BB,CC,DD */
-			switch (ir->buf_in[i]) {
-
-			/* data headers */
-			case 0x90: /* used Pinnacle Remote Kit */
-			case 0x8F:
-			case 0x8E:
-			case 0x8D:
-			case 0x8C:
-			case 0x8B:
-			case 0x8A:
-			case 0x89:
-			case 0x88:
-			case 0x87:
-			case 0x86:
-			case 0x85:
-			case 0x84:
-			case 0x83:
-			case 0x82:
-			case 0x81:
-			case 0x80:
+			if (ir->buf_in[i] >= 0x80 && ir->buf_in[i] <= 0x9e) {
+				/* data headers */
 				/* decode packet data */
 				packet_len =
 					ir->buf_in[i] & MCE_PACKET_LENGTH_MASK;
@@ -556,10 +538,8 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 				}
 
 				i += packet_len;
-				break;
-
+			} else if (ir->buf_in[i] == MCE_CONTROL_HEADER) {
 				/* status header (0x9F) */
-			case MCE_CONTROL_HEADER:
 				/* A transmission containing one or
 				   more consecutive ir commands always
 				   ends with a GAP of 100ms followed by the
@@ -579,9 +559,6 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 
 				/* end decode loop */
 				i = buf_len;
-				break;
-			default:
-				break;
 			}
 		}
 
