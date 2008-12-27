@@ -361,17 +361,13 @@ static int commandir_ioctl(unsigned int cmd, void *arg)
 static lirc_t commandir_readdata(lirc_t timeout)
 {
 	lirc_t code = 0;
-	struct timeval tv = {0, timeout};
-	fd_set fds;
 
-	FD_ZERO(&fds);
-	FD_SET(hw.fd, &fds);
+	if (!waitfordata(timeout))
+		return 0;
 
-	/* attempt a read with a timeout using select */
-	if (select(hw.fd + 1, &fds, NULL, &fds, &tv) > 0)
-		/* if we failed to get data return 0 */
-		if (read(hw.fd, &code, sizeof(lirc_t)) <= 0)
-                        commandir_deinit();
+	/* if we failed to get data return 0 */
+	if (read(hw.fd, &code, sizeof(lirc_t)) <= 0)
+		commandir_deinit();
 	return code;
 }
 

@@ -108,8 +108,6 @@ lirc_t udp_readdata(lirc_t timeout)
 	lirc_t data;
 	u_int8_t packed[2];
 	u_int32_t tmp;
-	fd_set rfd;
-	struct timeval tv;
 
 	/* Assume buffer is empty; LIRC should select on the socket */
 	hw.fd=sockfd;
@@ -117,11 +115,7 @@ lirc_t udp_readdata(lirc_t timeout)
 	/* If buffer is empty, get data into it */
 	if((bufptr+2)>buflen) 
 	{
-		FD_ZERO(&rfd);
-		FD_SET(sockfd,&rfd);
-		tv.tv_sec=0;
-		tv.tv_usec=timeout;
-		if(select(sockfd+1,&rfd,NULL,NULL,&tv)!=1) 
+		if (!waitfordata(timeout))
 			return 0;
 		if((buflen=recv(sockfd,&buffer,sizeof(buffer),0))<0)
 		{
