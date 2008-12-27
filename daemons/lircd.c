@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.82 2008/12/06 20:00:03 lirc Exp $      */
+/*      $Id: lircd.c,v 5.83 2008/12/27 11:06:06 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -420,9 +420,18 @@ int setup_uinputfd(const char *name)
 	fd = open("/dev/input/uinput", O_RDWR);
 	if(fd == -1)
 	{
-		fprintf(stderr, "could not open %s\n", "uinput");
-		perror(NULL);
-		return -1;
+		fd = open("/dev/uinput", O_RDWR);
+		if(fd == -1)
+		{
+			fd = open("/dev/misc/uinput", O_RDWR);
+			if(fd == -1)
+			{
+				fprintf(stderr, "could not open %s\n",
+					"uinput");
+				perror(NULL);
+				return -1;
+			}
+		}
 	}
 	memset(&dev, 0, sizeof(dev));
 	strncpy(dev.name, name, sizeof(dev.name));
