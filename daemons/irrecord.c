@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.86 2008/12/14 13:00:49 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.87 2008/12/29 14:57:34 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.86 $"
+#define IRRECORD_VERSION "$Revision: 5.87 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -160,6 +160,7 @@ lirc_t emulation_readdata(lirc_t timeout)
 		{
 			current_code = emulation_data->codes;
 		}
+		current_rep = 0;
 		sum = 0;
 	}
 	else
@@ -1400,7 +1401,7 @@ void for_each_remote(struct ir_remote *remotes, remote_func func)
 void analyse_remote(struct ir_remote *raw_data)
 {
 	struct ir_ncode *codes;
-	ir_code pre, code, post;
+	ir_code pre, code, code2, post;
 	int repeat_flag;
 	lirc_t min_remaining_gap, max_remaining_gap;
 	struct ir_ncode *new_codes;
@@ -1482,8 +1483,23 @@ void analyse_remote(struct ir_remote *raw_data)
 				new_codes = renew_codes;
 			}
 			
+			clear_rec_buffer();
+			ret = receive_decode(&remote,
+					     &pre, &code2, &post,
+					     &repeat_flag,
+					     &min_remaining_gap,
+					     &max_remaining_gap);
+			if(ret && code2 != code)
+			{
+				new_codes[new_index].next = malloc(sizeof(*(new_codes[new_index].next)));
+				if(new_codes[new_index].next)
+				{
+					memset(new_codes[new_index].next, 0, sizeof(*(new_codes[new_index].next)));
+					new_codes[new_index].next->code = code2;
+				}
+			}
 			new_codes[new_index].name = codes->name;
-			new_codes[new_index].code = code;
+			new_codes[new_index].code = code;			
 			new_index++;
 		}
 		codes++;
