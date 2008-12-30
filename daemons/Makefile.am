@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.66 2008/12/06 20:00:03 lirc Exp $
+## $Id: Makefile.am,v 5.67 2008/12/30 21:25:09 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -31,6 +31,7 @@ EXTRA_libhw_module_a_SOURCES = \
 			hw_devinput.c \
 			hw_dsp.c \
 			hw_ea65.c hw_ea65.h \
+			hw_ftdi.c \
 			hw_hiddev.c \
 			hw_i2cuser.c \
 			hw_iguanaIR.c \

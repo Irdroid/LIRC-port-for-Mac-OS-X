@@ -1,4 +1,5 @@
 0.8.5-CVS: future
+  * added support for FTDI FT232-based IR Receiver
   * Linux input event generation using uinput
   * standardised namespace following Linux input conventions
   * added support for Awox RF/IR Remote (Arif)

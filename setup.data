@@ -123,6 +123,7 @@ hw_menu_entry: @hw-usb
 	commandir: "CommandIR Multi-IR Transceiver (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
+	ftdi: "FTDI FT232-based IR Receiver"
 	tira: "Home Electronics Tira USB device"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
 	iguanaIR: "Iguanaworks USB IR Transceiver"
@@ -219,6 +220,7 @@ param_type: \
 	dvico \
 	exaudio \
 	flyvideo \
+	ftdi \
 	gvbctv5pci \
 	hauppauge \
 	hauppauge_dvb \
@@ -291,6 +293,7 @@ default_param: \
 	dvico \
 	exaudio \
 	flyvideo \
+	ftdi \
 	gvbctv5pci \
 	hauppauge \
 	hauppauge_dvb \

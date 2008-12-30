@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.19 2008/10/31 21:15:59 lirc Exp $
+dnl $Id: configure.ac,v 1.20 2008/12/30 21:25:09 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -129,6 +129,7 @@ possible_drivers="(none) \
 	(creative) \
 	(ea65) \
 	(exaudio) \
+	(ftdi) \
 	(irlink) \
 	(irreal) \
 	(livedrive_midi) \
@@ -196,6 +197,9 @@ AH_TEMPLATE([HAVE_FORKPTY],
 AH_TEMPLATE([HAVE_IGUANAIR],
 	[Define if the iguanaIR library is installed])
 
+AH_TEMPLATE([HAVE_FTDI],
+	[Define if the libftdi library is installed])
+	
 AH_TEMPLATE([HAVE_LIBALSA],
 	[Define if the ALSA library is installed])
 
@@ -325,6 +329,10 @@ AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
   possible_drivers="${possible_drivers} (caraca)"
 )
+AC_CHECK_HEADER(ftdi.h,
+  AC_DEFINE(HAVE_FTDI)
+  possible_drivers="${possible_drivers} (ftdi)"
+)
 AC_CHECK_HEADER(iguanaIR.h,
   AC_DEFINE(HAVE_IGUANAIR)
   possible_drivers="${possible_drivers} (iguanaIR)"
@@ -429,8 +437,8 @@ AC_ARG_WITH(driver,
                           bte, bw6130, caraca, chronos, cmdir,
                           commandir, comX, cph06x, creative,
                           creative_infracd, devinput, digimatrix, dsp,
-                          dvico, ea65, exaudio, flyvideo, gvbctv5pci,
-                          hauppauge, hauppauge_dvb,
+                          dvico, ea65, exaudio, flyvideo, ftdi,
+                          gvbctv5pci, hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, i2cuser,
                           igorplugusb, iguanaIR, imon, imon_24g,
                           imon_knob, imon_lcd, imon_pad, imon_rsc,
@@ -459,6 +467,7 @@ lircd_conf=""
 lircmd_conf=""
 iguanaIR_lib=""
 irman_lib=""
+ftdi_lib=""
 caraca_lib=""
 commandir_lib=""
 portaudio_lib=""
@@ -546,6 +555,10 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		hw_module="${hw_module} hw_ea65.o serial.o"
 		;;
 	exaudio)
+		;;
+	ftdi)
+		hw_module="${hw_module} hw_ftdi.o receive.o"
+		ftdi_lib="-lftdi"
 		;;
 	i2cuser)
 		hw_module="${hw_module} hw_i2cuser.o receive.o"
@@ -946,6 +959,13 @@ if test "$driver" = "flyvideo"; then
   lirc_driver="lirc_dev lirc_gpio"
   lircd_conf="life-view/lircd.conf.flyvideo"
   lircmd_conf="life-view/lircmd.conf.flyvideo"
+fi
+
+if test "$driver" = "ftdi"; then
+  lirc_driver="none"
+  hw_module="hw_ftdi.o receive.o"
+  HW_DEFAULT="hw_ftdi"
+  ftdi_lib="-lftdi"
 fi
 
 if test "$driver" = "gvbctv5pci"; then
@@ -1394,6 +1414,10 @@ if echo ${possible_drivers} | grep "($lirc_driver)" >/dev/null 2>&1; then
   dummy=
 else
   case $lirc_driver in
+  ftdi*)
+    AC_MSG_ERROR([*** you need to first install the libftdi package
+	before you can use this driver])
+    ;;
   irman*)
     AC_MSG_ERROR([*** you need to first install the libirman package
 	(libirman-0.4.2 or better) before you can use this driver])
@@ -1645,7 +1669,7 @@ if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
 	receive="receive.o"
 fi
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)

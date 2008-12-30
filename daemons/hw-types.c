@@ -23,6 +23,7 @@ extern struct hardware hw_devinput;
 extern struct hardware hw_dsp;
 extern struct hardware hw_dvico;
 extern struct hardware hw_ea65;
+extern struct hardware hw_ftdi;
 extern struct hardware hw_i2cuser;
 extern struct hardware hw_iguanaIR;
 extern struct hardware hw_irlink;
@@ -118,6 +119,9 @@ struct hardware *hw_list[] =
 	&hw_dvico,
 #endif
 	&hw_ea65,
+#ifdef HAVE_FTDI
+	&hw_ftdi,
+#endif
 #ifdef HAVE_LINUX_I2C_DEV_H
 	&hw_i2cuser,
 #endif
