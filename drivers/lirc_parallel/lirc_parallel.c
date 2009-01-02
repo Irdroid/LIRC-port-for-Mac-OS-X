@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.40 2008/01/13 11:13:50 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.41 2009/01/02 22:58:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -619,7 +619,7 @@ static void set_use_dec(void *data)
 #endif
 }
 
-static struct lirc_plugin plugin = {
+static struct lirc_driver driver = {
        .name		= LIRC_DRIVER_NAME,
        .minor		= -1,
        .code_length	= 1,
@@ -740,8 +740,8 @@ int init_module(void)
 	is_claimed = 0;
 	parport_release(ppdevice);
  skip_init:
-	plugin.minor = lirc_register_plugin(&plugin);
-	if (plugin.minor < 0) {
+	driver.minor = lirc_register_driver(&driver);
+	if (driver.minor < 0) {
 		printk(KERN_NOTICE "%s: register_chrdev() failed\n",
 		       LIRC_DRIVER_NAME);
 		parport_unregister_device(ppdevice);
@@ -755,7 +755,7 @@ int init_module(void)
 void cleanup_module(void)
 {
 	parport_unregister_device(ppdevice);
-	lirc_unregister_plugin(plugin.minor);
+	lirc_unregister_driver(driver.minor);
 }
 
 MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");

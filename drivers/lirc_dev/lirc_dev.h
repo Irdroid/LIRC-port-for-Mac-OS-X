@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.22 2008/01/13 10:45:02 lirc Exp $
+ * $Id: lirc_dev.h,v 1.23 2009/01/02 22:58:30 lirc Exp $
  *
  */
 
@@ -169,7 +169,7 @@ static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 	lirc_buffer_unlock(buf, &flags);
 }
 
-struct lirc_plugin {
+struct lirc_driver {
 	char name[40];
 	int minor;
 	int code_length;
@@ -191,7 +191,7 @@ struct lirc_plugin {
  * this string will be used for logs
  *
  * minor:
- * indicates minor device (/dev/lirc) number for registered plugin
+ * indicates minor device (/dev/lirc) number for registered driver
  * if caller fills it with negative value, then the first free minor
  * number will be used (if available)
  *
@@ -204,7 +204,7 @@ struct lirc_plugin {
  * returned by get_queue)
  *
  * data:
- * it may point to any plugin data and this pointer will be passed to
+ * it may point to any driver data and this pointer will be passed to
  * all callback functions
  *
  * add_to_buf:
@@ -236,7 +236,7 @@ struct lirc_plugin {
  * -ENOIOCTLCMD (see also lirc_serial.c).
  *
  * fops:
- * file_operations for drivers which don't fit the current plugin model.
+ * file_operations for drivers which don't fit the current driver model.
  *
  * owner:
  * the module owning this struct
@@ -248,15 +248,15 @@ struct lirc_plugin {
  *
  * returns negative value on error or minor number
  * of the registered device if success
- * contens of the structure pointed by p is copied
+ * contents of the structure pointed by d is copied
  */
-extern int lirc_register_plugin(struct lirc_plugin *p);
+extern int lirc_register_driver(struct lirc_driver *d);
 
 /* returns negative value on error or 0 if success
 */
-extern int lirc_unregister_plugin(int minor);
+extern int lirc_unregister_driver(int minor);
 
-/* Returns the private data stored in the lirc_plugin
+/* Returns the private data stored in the lirc_driver
  * associated with the given device file pointer.
  */
 void *lirc_get_pdata(struct file *file);

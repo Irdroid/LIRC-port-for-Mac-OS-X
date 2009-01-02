@@ -81,7 +81,7 @@ static struct usb_device_id device_id_table[] = {
 MODULE_DEVICE_TABLE(usb, device_id_table);
 
 /* USB driver definition */
-static struct usb_driver driver = {
+static struct usb_driver usb_driver = {
     .name = "TTUSBIR",
     .id_table = &(device_id_table[0]),
     .probe = probe,
@@ -90,7 +90,7 @@ static struct usb_driver driver = {
 
 /* USB device definition */
 struct ttusbir_device {
-	struct usb_driver *driver;
+	struct usb_driver *usb_driver;
 	struct usb_device *udev;
 	struct usb_interface *interf;
 	struct usb_class_driver class_driver;
@@ -100,7 +100,7 @@ struct ttusbir_device {
 	struct urb **urb; /* num_urb URB pointers*/
 	char **buffer; /* 128 byte buffer for each URB */
 	struct lirc_buffer rbuf; /* Buffer towards LIRC */
-	struct lirc_plugin plugin;
+	struct lirc_driver driver;
 	int minor;
 	int last_pulse; /* remembers if last received byte was pulse or space */
 	int last_num; /* remembers how many last bytes appeared */
@@ -255,7 +255,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 		ttusbir->buffer[i] = (char *)ttusbir->buffer +
 			(sizeof(char *)*num_urbs) + (i * 128);
 
-	ttusbir->driver = &driver;
+	ttusbir->usb_driver = &usb_driver;
 	ttusbir->alt_setting = -1;
 	/* @TODO check if error can be returned */
 	ttusbir->udev = usb_get_dev(interface_to_usbdev(intf));
@@ -295,30 +295,30 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	/* Store device info in interface structure */
 	usb_set_intfdata(intf, ttusbir);
 
-	/* Register as a LIRC plugin */
+	/* Register as a LIRC driver */
 	if (lirc_buffer_init(&ttusbir->rbuf, sizeof(lirc_t), 256) < 0) {
 		err("Could not get memory for LIRC data buffer\n");
 		usb_set_intfdata(intf, NULL);
 		kfree(ttusbir);
 		return -ENOMEM;
 	}
-	strcpy(ttusbir->plugin.name, "TTUSBIR");
-	ttusbir->plugin.minor = -1;
-	ttusbir->plugin.code_length = 1;
-	ttusbir->plugin.sample_rate = 0;
-	ttusbir->plugin.data = ttusbir;
-	ttusbir->plugin.add_to_buf = NULL;
-	ttusbir->plugin.get_queue = NULL;
-	ttusbir->plugin.rbuf = &ttusbir->rbuf;
-	ttusbir->plugin.set_use_inc = set_use_inc;
-	ttusbir->plugin.set_use_dec = set_use_dec;
-	ttusbir->plugin.ioctl = NULL;
-	ttusbir->plugin.fops = NULL;
-	ttusbir->plugin.owner = THIS_MODULE;
-	ttusbir->plugin.features = LIRC_CAN_REC_MODE2;
-	ttusbir->minor = lirc_register_plugin(&ttusbir->plugin);
+	strcpy(ttusbir->driver.name, "TTUSBIR");
+	ttusbir->driver.minor = -1;
+	ttusbir->driver.code_length = 1;
+	ttusbir->driver.sample_rate = 0;
+	ttusbir->driver.data = ttusbir;
+	ttusbir->driver.add_to_buf = NULL;
+	ttusbir->driver.get_queue = NULL;
+	ttusbir->driver.rbuf = &ttusbir->rbuf;
+	ttusbir->driver.set_use_inc = set_use_inc;
+	ttusbir->driver.set_use_dec = set_use_dec;
+	ttusbir->driver.ioctl = NULL;
+	ttusbir->driver.fops = NULL;
+	ttusbir->driver.owner = THIS_MODULE;
+	ttusbir->driver.features = LIRC_CAN_REC_MODE2;
+	ttusbir->minor = lirc_register_driver(&ttusbir->driver);
 	if (ttusbir->minor < 0) {
-		err("Error registering as LIRC plugin\n");
+		err("Error registering as LIRC driver\n");
 		usb_set_intfdata(intf, NULL);
 		lirc_buffer_free(&ttusbir->rbuf);
 		kfree(ttusbir);
@@ -333,7 +333,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 			for (j = i - 1; j >= 0; j--)
 				kfree(ttusbir->urb[j]);
 			lirc_buffer_free(&ttusbir->rbuf);
-			lirc_unregister_plugin(ttusbir->minor);
+			lirc_unregister_driver(ttusbir->minor);
 			kfree(ttusbir);
 			usb_set_intfdata(intf, NULL);
 			return -ENOMEM;
@@ -367,7 +367,7 @@ static void disconnect(struct usb_interface *intf)
 
 	ttusbir = (struct ttusbir_device *) usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
-	lirc_unregister_plugin(ttusbir->minor);
+	lirc_unregister_driver(ttusbir->minor);
 	DPRINTK("unregistered\n");
 
 	for (i = 0; i < num_urbs; i++) {
@@ -386,7 +386,7 @@ static int ttusbir_init_module(void)
 	DPRINTK(KERN_DEBUG "Module ttusbir init\n");
 
 	/* register this driver with the USB subsystem */
-	result = usb_register(&driver);
+	result = usb_register(&usb_driver);
 	if (result)
 		err("usb_register failed. Error number %d", result);
 	return result;
@@ -396,7 +396,7 @@ static void ttusbir_exit_module(void)
 {
 	printk(KERN_DEBUG "Module ttusbir exit\n");
 	/* deregister this driver with the USB subsystem */
-	usb_deregister(&driver);
+	usb_deregister(&usb_driver);
 }
 
 module_init(ttusbir_init_module);

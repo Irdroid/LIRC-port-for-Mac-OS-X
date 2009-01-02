@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.90 2008/05/28 06:19:25 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.91 2009/01/02 22:58:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -1130,7 +1130,7 @@ static struct file_operations lirc_fops = {
 	.write	= lirc_write,
 };
 
-static struct lirc_plugin plugin = {
+static struct lirc_driver driver = {
 	.name		= LIRC_DRIVER_NAME,
 	.minor		= -1,
 	.code_length	= 1,
@@ -1284,9 +1284,9 @@ int __init init_module(void)
 	result = init_port();
 	if (result < 0)
 		goto exit_serial_exit;
-	plugin.features = hardware[type].features;
-	plugin.minor = lirc_register_plugin(&plugin);
-	if (plugin.minor < 0) {
+	driver.features = hardware[type].features;
+	driver.minor = lirc_register_driver(&driver);
+	if (driver.minor < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME
 		       ": register_chrdev failed!\n");
 		result = -EIO;
@@ -1315,7 +1315,7 @@ void __exit cleanup_module(void)
 #else
 	release_region(io, 8);
 #endif
-	lirc_unregister_plugin(plugin.minor);
+	lirc_unregister_driver(driver.minor);
 	dprintk("cleaned up module\n");
 }
 

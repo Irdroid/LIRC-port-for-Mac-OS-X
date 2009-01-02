@@ -69,7 +69,7 @@ static int atir_minor;
 static unsigned long pci_addr_phys;
 static unsigned char *pci_addr_lin;
 
-static struct lirc_plugin atir_plugin;
+static struct lirc_driver atir_driver;
 
 static struct pci_dev *do_pci_probe(void)
 {
@@ -139,20 +139,20 @@ int init_module(void)
 	if (!atir_init_start())
 		return 1;
 
-	strcpy(atir_plugin.name, "ATIR");
-	atir_plugin.minor       = -1;
-	atir_plugin.code_length = 8;
-	atir_plugin.sample_rate = 10;
-	atir_plugin.data        = 0;
-	atir_plugin.add_to_buf  = atir_add_to_buf;
-	atir_plugin.set_use_inc = atir_set_use_inc;
-	atir_plugin.set_use_dec = atir_set_use_dec;
+	strcpy(atir_driver.name, "ATIR");
+	atir_driver.minor       = -1;
+	atir_driver.code_length = 8;
+	atir_driver.sample_rate = 10;
+	atir_driver.data        = 0;
+	atir_driver.add_to_buf  = atir_add_to_buf;
+	atir_driver.set_use_inc = atir_set_use_inc;
+	atir_driver.set_use_dec = atir_set_use_dec;
 #ifdef LIRC_HAVE_SYSFS
-	atir_plugin.dev         = &pdev->dev;
+	atir_driver.dev         = &pdev->dev;
 #endif
-	atir_plugin.owner       = THIS_MODULE;
+	atir_driver.owner       = THIS_MODULE;
 
-	atir_minor = lirc_register_plugin(&atir_plugin);
+	atir_minor = lirc_register_driver(&atir_driver);
 	dprintk("ATIR driver is registered on minor %d\n", atir_minor);
 
 	return 0;
@@ -161,7 +161,7 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	lirc_unregister_plugin(atir_minor);
+	lirc_unregister_driver(atir_minor);
 }
 
 

@@ -378,7 +378,7 @@ static void set_use_dec(void *data)
 	MOD_DEC_USE_COUNT;
 #endif
 }
-static struct lirc_plugin plugin = {
+static struct lirc_driver driver = {
        .name		= LIRC_DRIVER_NAME,
        .minor		= -1,
        .code_length	= 1,
@@ -397,9 +397,9 @@ static struct lirc_plugin plugin = {
 #ifdef MODULE
 static int init_chrdev(void)
 {
-	plugin.minor = lirc_register_plugin(&plugin);
+	driver.minor = lirc_register_driver(&driver);
 
-	if (plugin.minor < 0) {
+	if (driver.minor < 0) {
 		printk(KERN_ERR LIRC_DRIVER_NAME ": init_chrdev() failed.\n");
 		return -EIO;
 	}
@@ -409,7 +409,7 @@ static int init_chrdev(void)
 
 static void drop_chrdev(void)
 {
-	lirc_unregister_plugin(plugin.minor);
+	lirc_unregister_driver(driver.minor);
 }
 #endif
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.9 2008/01/13 11:13:49 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.10 2009/01/02 22:58:30 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -556,7 +556,7 @@ static struct file_operations lirc_fops = {
 	.write		= lirc_write,
 };
 
-static struct lirc_plugin plugin = {
+static struct lirc_driver driver = {
 	.name		= LIRC_DRIVER_NAME,
 	.minor		= -1,
 	.code_length	= 1,
@@ -591,9 +591,9 @@ EXPORT_NO_SYMBOLS;
 
 int init_module(void)
 {
-	plugin.features = hardware.features;
-	plugin.minor = lirc_register_plugin(&plugin);
-	if (plugin.minor < 0) {
+	driver.features = hardware.features;
+	driver.minor = lirc_register_driver(&driver);
+	if (driver.minor < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME
 		       ": register_chrdev failed!\n");
 		return -EIO;
@@ -604,7 +604,7 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	lirc_unregister_plugin(plugin.minor);
+	lirc_unregister_driver(driver.minor);
 	printk(KERN_INFO  LIRC_DRIVER_NAME  ": module removed\n");
 }
 

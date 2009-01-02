@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.50 2007/09/27 19:47:20 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.51 2009/01/02 22:58:30 lirc Exp $
  *
  */
 
@@ -405,7 +405,7 @@ static wait_queue_head_t *get_queue(void *data)
 	return bttv_get_gpio_queue(card);
 }
 
-static struct lirc_plugin plugin = {
+static struct lirc_driver driver = {
 	.name		= "lirc_gpio  ",
 	.add_to_buf	= add_to_buf,
 	.get_queue	= get_queue,
@@ -432,19 +432,19 @@ static int gpio_remote_init(void)
 	}
 
 	if (code_length)
-		plugin.code_length = code_length;
+		driver.code_length = code_length;
 	else {
 		/* calculate scan code length in bits if needed */
-		plugin.code_length = 1;
+		driver.code_length = 1;
 		mask = gpio_mask >> 1;
 		while (mask) {
 			if (mask & 1u)
-				plugin.code_length++;
+				driver.code_length++;
 			mask >>= 1;
 		}
 	}
 
-	code_bytes = (plugin.code_length/8) + (plugin.code_length % 8 ? 1 : 0);
+	code_bytes = (driver.code_length/8) + (driver.code_length % 8 ? 1 : 0);
 	if (MAX_BYTES < code_bytes) {
 		printk(LOGHEAD "scan code too long (%d bytes)\n",
 			minor, code_bytes);
@@ -462,10 +462,10 @@ static int gpio_remote_init(void)
 	/* translate ms to jiffies */
 	soft_gap = (soft_gap*HZ) / 1000;
 
-	plugin.minor = minor;
-	plugin.sample_rate = sample_rate;
+	driver.minor = minor;
+	driver.sample_rate = sample_rate;
 
-	ret = lirc_register_plugin(&plugin);
+	ret = lirc_register_driver(&driver);
 
 	if (0 > ret) {
 		printk(LOGHEAD "device registration failed with %d\n",
@@ -575,7 +575,7 @@ int init_module(void)
  */
 void cleanup_module(void)
 {
-	lirc_unregister_plugin(minor);
+	lirc_unregister_driver(minor);
 
 	dprintk(LOGHEAD "module successfully unloaded\n", minor);
 }

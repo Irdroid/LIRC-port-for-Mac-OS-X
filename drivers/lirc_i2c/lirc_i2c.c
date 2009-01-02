@@ -1,7 +1,7 @@
-/*      $Id: lirc_i2c.c,v 1.47 2008/08/12 20:50:39 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.48 2009/01/02 22:58:30 lirc Exp $      */
 
 /*
- * i2c IR lirc plugin for Hauppauge and Pixelview cards - new 2.3.x i2c stack
+ * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
  *
  * Copyright (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
  * modified for PixelView (BT878P+W/FM) by
@@ -64,7 +64,7 @@
 #include "drivers/lirc_dev/lirc_dev.h"
 
 struct IR {
-	struct lirc_plugin l;
+	struct lirc_driver l;
 	struct i2c_client  c;
 	int nextkey;
 	unsigned char b[3];
@@ -357,7 +357,7 @@ static void set_use_dec(void *data)
 	MOD_DEC_USE_COUNT;
 }
 
-static struct lirc_plugin lirc_template = {
+static struct lirc_driver lirc_template = {
 	.name		= "lirc_i2c",
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
@@ -406,7 +406,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	ir = kmalloc(sizeof(struct IR), GFP_KERNEL);
 	if (!ir)
 		return -ENOMEM;
-	memcpy(&ir->l, &lirc_template, sizeof(struct lirc_plugin));
+	memcpy(&ir->l, &lirc_template, sizeof(struct lirc_driver));
 	memcpy(&ir->c, &client_template, sizeof(struct i2c_client));
 
 	ir->c.adapter = adap;
@@ -494,7 +494,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		kfree(ir);
 		return err;
 	}
-	ir->l.minor = lirc_register_plugin(&ir->l);
+	ir->l.minor = lirc_register_driver(&ir->l);
 
 	return 0;
 }
@@ -504,7 +504,7 @@ static int ir_detach(struct i2c_client *client)
 	struct IR *ir = i2c_get_clientdata(client);
 
 	/* unregister device */
-	lirc_unregister_plugin(ir->l.minor);
+	lirc_unregister_driver(ir->l.minor);
 	i2c_detach_client(&ir->c);
 
 	/* free memory */

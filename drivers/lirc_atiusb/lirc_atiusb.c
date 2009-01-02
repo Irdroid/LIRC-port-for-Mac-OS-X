@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.72 2008/10/27 22:24:16 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.73 2009/01/02 22:58:30 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.72 $"
+#define DRIVER_VERSION		"$Revision: 1.73 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -257,7 +257,7 @@ struct irctl {
 	int mode;
 
 	/* lirc */
-	struct lirc_plugin *p;
+	struct lirc_driver *d;
 	int connected;
 
 	/* locking */
@@ -326,13 +326,13 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 
 static int unregister_from_lirc(struct irctl *ir)
 {
-	struct lirc_plugin *p = ir->p;
+	struct lirc_driver *d = ir->d;
 	int devnum;
 
 	devnum = ir->devnum;
 	dprintk(DRIVER_NAME "[%d]: unregister from lirc called\n", devnum);
 
-	lirc_unregister_plugin(p->minor);
+	lirc_unregister_driver(d->minor);
 
 	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", devnum);
 	return SUCCESS;
@@ -723,8 +723,8 @@ static void usb_remote_recv(struct urb *urb)
 		}
 		if (result < 0)
 			break;
-		lirc_buffer_write_1(iep->ir->p->rbuf, iep->buf);
-		wake_up(&iep->ir->p->rbuf->wait_poll);
+		lirc_buffer_write_1(iep->ir->d->rbuf, iep->buf);
+		wake_up(&iep->ir->d->rbuf->wait_poll);
 		break;
 
 	/* unlink */
@@ -1026,17 +1026,17 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 	case 5:
 	case 4:
 	case 3:
-		if (ir->p) {
+		if (ir->d) {
 			switch (mem_failure) {
 			case 5:
-				lirc_buffer_free(ir->p->rbuf);
+				lirc_buffer_free(ir->d->rbuf);
 			case 4:
-				kfree(ir->p->rbuf);
+				kfree(ir->d->rbuf);
 			case 3:
-				kfree(ir->p);
+				kfree(ir->d);
 			}
 		} else
-			printk(DRIVER_NAME "[%d]: ir->p is a null pointer!\n",
+			printk(DRIVER_NAME "[%d]: ir->d is a null pointer!\n",
 			       ir->devnum);
 	case 2:
 		IRUNLOCK;
@@ -1049,7 +1049,7 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 static struct irctl *new_irctl(struct usb_device *dev)
 {
 	struct irctl *ir;
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 	int type, devnum;
 	int mem_failure;
 	int dclen;
@@ -1093,36 +1093,36 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	list_add_tail(&ir->remote_list_link, &remote_list);
 	ir->dev_refcount = 1;
 
-	plugin = kmalloc(sizeof(*plugin), GFP_KERNEL);
-	if (!plugin) {
+	driver = kmalloc(sizeof(*driver), GFP_KERNEL);
+	if (!driver) {
 		mem_failure = 2;
 		goto new_irctl_failure_check;
 	}
 
-	memset(plugin, 0, sizeof(*plugin));
-	ir->p = plugin;
-	plugin->rbuf = kmalloc(sizeof(*(plugin->rbuf)), GFP_KERNEL);
-	if (!plugin->rbuf) {
+	memset(driver, 0, sizeof(*driver));
+	ir->d = driver;
+	driver->rbuf = kmalloc(sizeof(*(driver->rbuf)), GFP_KERNEL);
+	if (!driver->rbuf) {
 		mem_failure = 3;
 		goto new_irctl_failure_check;
 	}
 
-	if (lirc_buffer_init(plugin->rbuf, dclen, 1)) {
+	if (lirc_buffer_init(driver->rbuf, dclen, 1)) {
 		mem_failure = 4;
 		goto new_irctl_failure_check;
 	}
 
-	strcpy(plugin->name, DRIVER_NAME " ");
-	plugin->minor = -1;
-	plugin->code_length = dclen * 8;
-	plugin->features = LIRC_CAN_REC_LIRCCODE;
-	plugin->data = ir;
-	plugin->set_use_inc = &set_use_inc;
-	plugin->set_use_dec = &set_use_dec;
+	strcpy(driver->name, DRIVER_NAME " ");
+	driver->minor = -1;
+	driver->code_length = dclen * 8;
+	driver->features = LIRC_CAN_REC_LIRCCODE;
+	driver->data = ir;
+	driver->set_use_inc = &set_use_inc;
+	driver->set_use_dec = &set_use_dec;
 #ifdef LIRC_HAVE_SYSFS
-	plugin->dev = &dev->dev;
+	driver->dev = &dev->dev;
 #endif
-	plugin->owner = THIS_MODULE;
+	driver->owner = THIS_MODULE;
 	ir->usbdev = dev;
 	ir->remote_type = type;
 	ir->devnum = devnum;
@@ -1298,8 +1298,8 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #endif
 	}
 	if (ir->dev_refcount == 1) {
-		ir->p->minor = lirc_register_plugin(ir->p);
-		if (ir->p->minor < 0) {
+		ir->d->minor = lirc_register_driver(ir->d);
+		if (ir->d->minor < 0) {
 			free_irctl(ir, FREE_ALL);
 #ifdef KERNEL_2_5
 			return -ENODEV;
@@ -1337,7 +1337,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 
 	dprintk(DRIVER_NAME ": disconnecting remote %d:\n",
 		(ir? ir->devnum: -1));
-	if (!ir || !ir->p)
+	if (!ir || !ir->d)
 		return;
 
 	if (ir->usbdev) {
@@ -1368,7 +1368,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.72 2008/10/27 22:24:16 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.73 2009/01/02 22:58:30 lirc Exp $\n");
 
 	request_module("lirc_dev");
 

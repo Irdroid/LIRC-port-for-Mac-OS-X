@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.22 2008/05/16 22:02:13 uzuul Exp $      */
+/*      $Id: lirc_sasem.c,v 1.23 2009/01/02 22:58:30 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -8,7 +8,7 @@
  *
  * This driver was derived from:
  *   Venky Raju <dev@venky.ws>
- *      "lirc_imon - "LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD"
+ *      "lirc_imon - "LIRC/VFD driver for Ahanix/Soundgraph IMON IR/VFD"
  *   Paul Miller <pmiller9@users.sourceforge.net>'s 2003-2004
  *      "lirc_atiusb - USB remote support for LIRC"
  *   Culver Consulting Services <henry@culcon.com>'s 2003
@@ -131,7 +131,7 @@ static int vfd_close(struct inode *inode, struct file *file);
 static ssize_t vfd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos);
 
-/* LIRC plugin function prototypes */
+/* LIRC driver function prototypes */
 static int ir_open(void *data);
 static void ir_close(void *data);
 
@@ -158,7 +158,7 @@ struct sasem_context {
 	struct semaphore sem;		/* to lock this object	    */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 	struct usb_endpoint_descriptor *rx_endpoint;
 	struct usb_endpoint_descriptor *tx_endpoint;
 	struct urb *rx_urb;
@@ -254,9 +254,9 @@ static inline void delete_context(struct sasem_context *context)
 {
 	usb_free_urb(context->tx_urb);  /* VFD */
 	usb_free_urb(context->rx_urb);  /* IR */
-	lirc_buffer_free(context->plugin->rbuf);
-	kfree(context->plugin->rbuf);
-	kfree(context->plugin);
+	lirc_buffer_free(context->driver->rbuf);
+	kfree(context->driver->rbuf);
+	kfree(context->driver);
 	kfree(context);
 
 	if (debug)
@@ -266,14 +266,14 @@ static inline void delete_context(struct sasem_context *context)
 static inline void deregister_from_lirc(struct sasem_context *context)
 {
 	int retval;
-	int minor = context->plugin->minor;
+	int minor = context->driver->minor;
 
-	retval = lirc_unregister_plugin(minor);
+	retval = lirc_unregister_driver(minor);
 	if (retval)
 		err("%s: unable to deregister from lirc (%d)",
 			__FUNCTION__, retval);
 	else
-		info("Deregistered Sasem plugin (minor:%d)", minor);
+		info("Deregistered Sasem driver (minor:%d)", minor);
 
 }
 
@@ -651,7 +651,7 @@ static void ir_close(void *data)
 
 		/*
 		 * Device disconnected while IR port was
-		 * still open. Plugin was not deregistered
+		 * still open. Driver was not deregistered
 		 * at disconnect time, so do it now.
 		 */
 		deregister_from_lirc(context);
@@ -724,8 +724,8 @@ static inline void incoming_packet(struct sasem_context *context,
 		context->presstime.tv_usec = tv.tv_usec;
 	}
 
-	lirc_buffer_write_1(context->plugin->rbuf, buf);
-	wake_up(&context->plugin->rbuf->wait_poll);
+	lirc_buffer_write_1(context->driver->rbuf, buf);
+	wake_up(&context->driver->rbuf->wait_poll);
 }
 
 /**
@@ -793,7 +793,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	struct usb_endpoint_descriptor *tx_endpoint = NULL;
 	struct urb *rx_urb = NULL;
 	struct urb *tx_urb = NULL;
-	struct lirc_plugin *plugin = NULL;
+	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int lirc_minor = 0;
 	int num_endpoints;
@@ -893,9 +893,9 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
-	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
-	if (!plugin) {
-		err("%s: kmalloc failed for lirc_plugin", __FUNCTION__);
+	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	if (!driver) {
+		err("%s: kmalloc failed for lirc_driver", __FUNCTION__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
@@ -934,35 +934,35 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	/* clear all members of sasem_context and lirc_plugin */
+	/* clear all members of sasem_context and lirc_driver */
 	memset(context, 0, sizeof(struct sasem_context));
 	init_MUTEX(&context->sem);
 
-	memset(plugin, 0, sizeof(struct lirc_plugin));
+	memset(driver, 0, sizeof(struct lirc_driver));
 
-	strcpy(plugin->name, MOD_NAME);
-	plugin->minor = -1;
-	plugin->code_length = 64;
-	plugin->sample_rate = 0;
-	plugin->features = LIRC_CAN_REC_LIRCCODE;
-	plugin->data = context;
-	plugin->rbuf = rbuf;
-	plugin->set_use_inc = ir_open;
-	plugin->set_use_dec = ir_close;
+	strcpy(driver->name, MOD_NAME);
+	driver->minor = -1;
+	driver->code_length = 64;
+	driver->sample_rate = 0;
+	driver->features = LIRC_CAN_REC_LIRCCODE;
+	driver->data = context;
+	driver->rbuf = rbuf;
+	driver->set_use_inc = ir_open;
+	driver->set_use_dec = ir_close;
 #ifdef LIRC_HAVE_SYSFS
-	plugin->dev   = &dev->dev;
+	driver->dev   = &dev->dev;
 #endif
-	plugin->owner = THIS_MODULE;
+	driver->owner = THIS_MODULE;
 
 	LOCK_CONTEXT;
 
-	lirc_minor = lirc_register_plugin(plugin);
+	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
-		err("%s: lirc_register_plugin failed", __FUNCTION__);
+		err("%s: lirc_register_driver failed", __FUNCTION__);
 		alloc_status = 7;
 		UNLOCK_CONTEXT;
 	} else
-		info("%s: Registered Sasem plugin (minor:%d)",
+		info("%s: Registered Sasem driver (minor:%d)",
 			__FUNCTION__, lirc_minor);
 
 alloc_status_switch:
@@ -979,7 +979,7 @@ alloc_status_switch:
 	case 4:
 		kfree(rbuf);
 	case 3:
-		kfree(plugin);
+		kfree(driver);
 	case 2:
 		kfree(context);
 		context = NULL;
@@ -989,7 +989,7 @@ alloc_status_switch:
 	}
 
 	/* Needed while unregistering! */
-	plugin->minor = lirc_minor;
+	driver->minor = lirc_minor;
 
 	context->dev = dev;
 	context->dev_present = TRUE;
@@ -1000,7 +1000,7 @@ alloc_status_switch:
 		context->tx_urb = tx_urb;
 		context->vfd_contrast = 1000;   /* range 0 - 1000 */
 	}
-	context->plugin = plugin;
+	context->driver = driver;
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, context);

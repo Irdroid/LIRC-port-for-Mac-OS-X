@@ -114,7 +114,7 @@ struct ite8709_device {
 	unsigned long long acc_space;
 	char lastbit;
 	struct timeval last_tv;
-	struct lirc_plugin plugin;
+	struct lirc_driver driver;
 	struct lirc_buffer buffer;
 	struct tasklet_struct tasklet;
 	char force_rearm;
@@ -271,11 +271,11 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 	char bit;
 	struct timeval curr_tv;
 
-	struct ite8709_device *dev;
-	dev = dev_id;
-
 	/* Bit duration in microseconds */
 	const unsigned long bit_duration = 1000000ul / (115200 / CFG_BDR);
+
+	struct ite8709_device *dev;
+	dev = dev_id;
 
 	/* If device is busy, we simply discard data because we are in one of */
 	/* these two cases : shutting down or rearming the device, so this    */
@@ -396,9 +396,9 @@ static int ite8709_cleanup(struct ite8709_device *dev, int stage, int errno,
 	case 4:
 		release_region(dev->io, 2);
 	case 3:
-		lirc_unregister_plugin(dev->plugin.minor);
+		lirc_unregister_driver(dev->driver.minor);
 	case 2:
-		lirc_buffer_free(dev->plugin.rbuf);
+		lirc_buffer_free(dev->driver.rbuf);
 	case 1:
 		kfree(dev);
 	case 0:
@@ -411,7 +411,7 @@ static int ite8709_cleanup(struct ite8709_device *dev, int stage, int errno,
 static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 					const struct pnp_device_id *dev_id)
 {
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 	struct ite8709_device *ite8709_dev;
 	int ret;
 
@@ -443,34 +443,34 @@ static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 	ite8709_dev->rearmed = 0;
 	ite8709_dev->device_busy = 0;
 
-	/* Initialize plugin struct */
-	plugin = &ite8709_dev->plugin;
-	strcpy(plugin->name, LIRC_DRIVER_NAME);
-	plugin->minor = -1;
-	plugin->code_length = sizeof(lirc_t) * 8;
-	plugin->sample_rate = 0;
-	plugin->features = LIRC_CAN_REC_MODE2;
-	plugin->data = ite8709_dev;
-	plugin->add_to_buf = NULL;
-	plugin->get_queue = NULL;
-	plugin->rbuf = &ite8709_dev->buffer;
-	plugin->set_use_inc = ite8709_set_use_inc;
-	plugin->set_use_dec = ite8709_set_use_dec;
-	plugin->ioctl = NULL;
-	plugin->fops = NULL;
-	plugin->dev = &dev->dev;
-	plugin->owner = THIS_MODULE;
+	/* Initialize driver struct */
+	driver = &ite8709_dev->driver;
+	strcpy(driver->name, LIRC_DRIVER_NAME);
+	driver->minor = -1;
+	driver->code_length = sizeof(lirc_t) * 8;
+	driver->sample_rate = 0;
+	driver->features = LIRC_CAN_REC_MODE2;
+	driver->data = ite8709_dev;
+	driver->add_to_buf = NULL;
+	driver->get_queue = NULL;
+	driver->rbuf = &ite8709_dev->buffer;
+	driver->set_use_inc = ite8709_set_use_inc;
+	driver->set_use_dec = ite8709_set_use_dec;
+	driver->ioctl = NULL;
+	driver->fops = NULL;
+	driver->dev = &dev->dev;
+	driver->owner = THIS_MODULE;
 
 	/* Initialize LIRC buffer */
-	if (lirc_buffer_init(plugin->rbuf, BUF_CHUNK_SIZE, BUF_SIZE))
+	if (lirc_buffer_init(driver->rbuf, BUF_CHUNK_SIZE, BUF_SIZE))
 		return ite8709_cleanup(ite8709_dev, 1, -ENOMEM,
 						"lirc_buffer_init() failed");
 
-	/* Register LIRC plugin */
-	ret = lirc_register_plugin(plugin);
+	/* Register LIRC driver */
+	ret = lirc_register_driver(driver);
 	if (ret < 0)
 		return ite8709_cleanup(ite8709_dev, 2, ret,
-					"lirc_register_plugin() failed");
+					"lirc_register_driver() failed");
 
 	/* Reserve I/O port access */
 	if (!request_region(ite8709_dev->io, 2, LIRC_DRIVER_NAME))

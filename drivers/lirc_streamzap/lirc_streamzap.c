@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.30 2008/10/27 22:24:17 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.31 2009/01/02 22:58:30 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.30 $"
+#define DRIVER_VERSION	"$Revision: 1.31 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -110,10 +110,10 @@ enum StreamzapDecoderState {
 
    - from the USB layer throuh probe/disconnect/irq
 
-     Careful placement of lirc_register_plugin/lirc_unregister_plugin
+     Careful placement of lirc_register_driver/lirc_unregister_driver
      calls will prevent conflicts. lirc_dev makes sure that
      set_use_inc/set_use_dec are not being executed and will not be
-     called after lirc_unregister_plugin returns.
+     called after lirc_unregister_driver returns.
 
    - by the timer callback
 
@@ -140,7 +140,7 @@ struct usb_streamzap {
 	struct urb		*urb_in;
 
 	/* lirc */
-	struct lirc_plugin	plugin;
+	struct lirc_driver	driver;
 	struct lirc_buffer	delay_buf;
 	struct lirc_buffer	lirc_buf;
 
@@ -274,7 +274,7 @@ static inline void flush_delay_buffer(struct usb_streamzap *sz)
 			lirc_buffer_write_1(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		} else {
-			dprintk("buffer overflow\n", sz->plugin.minor);
+			dprintk("buffer overflow\n", sz->driver.minor);
 		}
 	}
 	if (!empty)
@@ -294,7 +294,7 @@ static inline void push(struct usb_streamzap *sz, unsigned char *data)
 			lirc_buffer_write_1(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		} else {
-			dprintk("buffer overflow", sz->plugin.minor);
+			dprintk("buffer overflow", sz->driver.minor);
 		}
 	}
 
@@ -330,7 +330,7 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 					sz->signal_last.tv_usec);
 			tmp -= sz->sum;
 		}
-		dprintk("ls %u", sz->plugin.minor, tmp);
+		dprintk("ls %u", sz->driver.minor, tmp);
 		push(sz, (char *)&tmp);
 
 		sz->idle = 0;
@@ -342,7 +342,7 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 	sz->sum += pulse;
 	pulse |= PULSE_BIT;
 
-	dprintk("p %u", sz->plugin.minor, pulse&PULSE_MASK);
+	dprintk("p %u", sz->driver.minor, pulse&PULSE_MASK);
 	push(sz, (char *)&pulse);
 }
 
@@ -360,7 +360,7 @@ static inline void push_full_space(struct usb_streamzap *sz,
 	space = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	space += STREAMZAP_RESOLUTION/2;
 	sz->sum += space;
-	dprintk("s %u", sz->plugin.minor, space);
+	dprintk("s %u", sz->driver.minor, space);
 	push(sz, (char *)&space);
 }
 
@@ -404,10 +404,10 @@ static void usb_streamzap_irq(struct urb *urb)
 		break;
 	}
 
-	dprintk("received %d", sz->plugin.minor, urb->actual_length);
+	dprintk("received %d", sz->driver.minor, urb->actual_length);
 	if (!sz->flush) {
 		for (i = 0; i < urb->actual_length; i++) {
-			dprintk("%d: %x", sz->plugin.minor,
+			dprintk("%d: %x", sz->driver.minor,
 				i, (unsigned char) sz->buf_in[i]);
 			switch (sz->decoder_state) {
 			case PulseSpace:
@@ -584,25 +584,25 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 
 	/***************************************************
-	 * As required memory is allocated now populate the plugin structure
+	 * As required memory is allocated now populate the driver structure
 	 */
 
-	memset(&sz->plugin, 0, sizeof(sz->plugin));
+	memset(&sz->driver, 0, sizeof(sz->driver));
 
-	strcpy(sz->plugin.name, DRIVER_NAME);
-	sz->plugin.minor = -1;
-	sz->plugin.sample_rate = 0;
-	sz->plugin.code_length = sizeof(lirc_t) * 8;
-	sz->plugin.features = LIRC_CAN_REC_MODE2|LIRC_CAN_GET_REC_RESOLUTION;
-	sz->plugin.data = sz;
-	sz->plugin.rbuf = &sz->lirc_buf;
-	sz->plugin.set_use_inc = &streamzap_use_inc;
-	sz->plugin.set_use_dec = &streamzap_use_dec;
-	sz->plugin.ioctl = streamzap_ioctl;
+	strcpy(sz->driver.name, DRIVER_NAME);
+	sz->driver.minor = -1;
+	sz->driver.sample_rate = 0;
+	sz->driver.code_length = sizeof(lirc_t) * 8;
+	sz->driver.features = LIRC_CAN_REC_MODE2|LIRC_CAN_GET_REC_RESOLUTION;
+	sz->driver.data = sz;
+	sz->driver.rbuf = &sz->lirc_buf;
+	sz->driver.set_use_inc = &streamzap_use_inc;
+	sz->driver.set_use_dec = &streamzap_use_dec;
+	sz->driver.ioctl = streamzap_ioctl;
 #ifdef LIRC_HAVE_SYSFS
-	sz->plugin.dev = &udev->dev;
+	sz->driver.dev = &udev->dev;
 #endif
-	sz->plugin.owner = THIS_MODULE;
+	sz->driver.owner = THIS_MODULE;
 
 	sz->idle = 1;
 	sz->decoder_state = PulseSpace;
@@ -637,14 +637,14 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		snprintf(name, 128, "%s %s", name, buf);
 
 	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d attached\n",
-	       sz->plugin.minor, name,
+	       sz->driver.minor, name,
 	       udev->bus->busnum, sz->udev->devnum);
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, sz);
 #endif
 
-	if (lirc_register_plugin(&sz->plugin) < 0) {
+	if (lirc_register_driver(&sz->driver) < 0) {
 		lirc_buffer_free(&sz->delay_buf);
 		lirc_buffer_free(&sz->lirc_buf);
 		goto error;
@@ -698,7 +698,7 @@ static int streamzap_use_inc(void *data)
 		dprintk("%s called with no context", -1, __FUNCTION__);
 		return -EINVAL;
 	}
-	dprintk("set use inc", sz->plugin.minor);
+	dprintk("set use inc", sz->driver.minor);
 
 	MOD_INC_USE_COUNT;
 
@@ -718,7 +718,7 @@ static int streamzap_use_inc(void *data)
 	if (usb_submit_urb(sz->urb_in)) {
 #endif
 		dprintk("open result = -EIO error submitting urb",
-			sz->plugin.minor);
+			sz->driver.minor);
 		MOD_DEC_USE_COUNT;
 		return -EIO;
 	}
@@ -735,7 +735,7 @@ static void streamzap_use_dec(void *data)
 		dprintk("%s called with no context", -1, __FUNCTION__);
 		return;
 	}
-	dprintk("set use dec", sz->plugin.minor);
+	dprintk("set use dec", sz->driver.minor);
 
 	if (sz->flush) {
 		sz->flush = 0;
@@ -797,10 +797,10 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	 * unregister from the LIRC sub-system
 	 */
 
-	errnum = lirc_unregister_plugin(sz->plugin.minor);
+	errnum = lirc_unregister_driver(sz->driver.minor);
 	if (errnum != 0)
 		dprintk("error in lirc_unregister: (returned %d)",
-			sz->plugin.minor, errnum);
+			sz->driver.minor, errnum);
 
 	lirc_buffer_free(&sz->delay_buf);
 	lirc_buffer_free(&sz->lirc_buf);
@@ -817,7 +817,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	kfree(sz->buf_in);
 #endif
 
-	minor = sz->plugin.minor;
+	minor = sz->driver.minor;
 	kfree(sz);
 
 	printk(KERN_INFO DRIVER_NAME "[%d]: disconnected\n", minor);
@@ -828,7 +828,7 @@ static int streamzap_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
 
-	printk(DRIVER_NAME "[%d]: suspend\n", sz->plugin.minor);
+	printk(DRIVER_NAME "[%d]: suspend\n", sz->driver.minor);
 	if (sz->in_use) {
 		if (sz->flush) {
 			sz->flush = 0;
@@ -863,7 +863,7 @@ static int streamzap_resume(struct usb_interface *intf)
 		if (usb_submit_urb(sz->urb_in)) {
 #endif
 			dprintk("open result = -EIO error submitting urb",
-				sz->plugin.minor);
+				sz->driver.minor);
 			MOD_DEC_USE_COUNT;
 			return -EIO;
 		}

@@ -1,7 +1,7 @@
 /*
- *   lirc_imon.c:  LIRC plugin/VFD driver for Ahanix/Soundgraph IMON IR/VFD
+ *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.33 2008/12/14 13:22:48 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.34 2009/01/02 22:58:30 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -130,7 +130,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 static ssize_t lcd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos);
 
-/* LIRC plugin function prototypes */
+/* LIRC driver function prototypes */
 static int ir_open(void *data);
 static void ir_close(void *data);
 
@@ -160,7 +160,7 @@ struct imon_context {
 	int display_proto_6p;		/* VFD requires 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
 
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 	struct usb_endpoint_descriptor *rx_endpoint;
 	struct usb_endpoint_descriptor *tx_endpoint;
 	struct urb *rx_urb;
@@ -375,9 +375,9 @@ static inline void delete_context(struct imon_context *context)
 	if (context->display_supported)
 		usb_free_urb(context->tx_urb);
 	usb_free_urb(context->rx_urb);
-	lirc_buffer_free(context->plugin->rbuf);
-	kfree(context->plugin->rbuf);
-	kfree(context->plugin);
+	lirc_buffer_free(context->driver->rbuf);
+	kfree(context->driver->rbuf);
+	kfree(context->driver);
 	kfree(context);
 
 	if (debug)
@@ -387,14 +387,14 @@ static inline void delete_context(struct imon_context *context)
 static inline void deregister_from_lirc(struct imon_context *context)
 {
 	int retval;
-	int minor = context->plugin->minor;
+	int minor = context->driver->minor;
 
-	retval = lirc_unregister_plugin(minor);
+	retval = lirc_unregister_driver(minor);
 	if (retval)
 		err("%s: unable to deregister from lirc(%d)",
 			__FUNCTION__, retval);
 	else
-		info("Deregistered iMON plugin(minor:%d)", minor);
+		info("Deregistered iMON driver(minor:%d)", minor);
 
 }
 
@@ -931,7 +931,7 @@ static void ir_close(void *data)
 
 	if (!context->dev_present) {
 		/* Device disconnected while IR port was
-		 * still open. Plugin was not deregistered
+		 * still open. Driver was not deregistered
 		 * at disconnect time, so do it now. */
 		deregister_from_lirc(context);
 
@@ -971,8 +971,8 @@ static inline void submit_data(struct imon_context *context)
 	for (i = 0; i < 4; ++i)
 		buf[i] = value>>(i*8);
 
-	lirc_buffer_write_1(context->plugin->rbuf, buf);
-	wake_up(&context->plugin->rbuf->wait_poll);
+	lirc_buffer_write_1(context->driver->rbuf, buf);
+	wake_up(&context->driver->rbuf->wait_poll);
 	return;
 }
 
@@ -1066,8 +1066,8 @@ static inline void incoming_packet(struct imon_context *context,
 
 	if (context->ir_onboard_decode) {
 		/* The signals have been decoded onboard the iMON controller */
-		lirc_buffer_write_1(context->plugin->rbuf, buf);
-		wake_up(&context->plugin->rbuf->wait_poll);
+		lirc_buffer_write_1(context->driver->rbuf, buf);
+		wake_up(&context->driver->rbuf->wait_poll);
 		return;
 	}
 
@@ -1177,7 +1177,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	struct usb_endpoint_descriptor *tx_endpoint = NULL;
 	struct urb *rx_urb = NULL;
 	struct urb *tx_urb = NULL;
-	struct lirc_plugin *plugin = NULL;
+	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int lirc_minor = 0;
 	int num_endpoints;
@@ -1338,9 +1338,9 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
-	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
-	if (!plugin) {
-		err("%s: kmalloc failed for lirc_plugin", __FUNCTION__);
+	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	if (!driver) {
+		err("%s: kmalloc failed for lirc_driver", __FUNCTION__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
@@ -1379,44 +1379,44 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	/* clear all members of imon_context and lirc_plugin */
+	/* clear all members of imon_context and lirc_driver */
 	memset(context, 0, sizeof(struct imon_context));
 	init_MUTEX(&context->sem);
 	context->display_proto_6p = display_proto_6p;
 	context->ir_onboard_decode = ir_onboard_decode;
 
-	memset(plugin, 0, sizeof(struct lirc_plugin));
+	memset(driver, 0, sizeof(struct lirc_driver));
 
-	strcpy(plugin->name, MOD_NAME);
-	plugin->minor = -1;
-	plugin->code_length = ir_onboard_decode ?
+	strcpy(driver->name, MOD_NAME);
+	driver->minor = -1;
+	driver->code_length = ir_onboard_decode ?
 		buf_chunk_size * 8 : sizeof(lirc_t) * 8;
-	plugin->sample_rate = 0;
-	plugin->features = (ir_onboard_decode) ?
+	driver->sample_rate = 0;
+	driver->features = (ir_onboard_decode) ?
 		LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_MODE2;
-	plugin->data = context;
-	plugin->rbuf = rbuf;
-	plugin->set_use_inc = ir_open;
-	plugin->set_use_dec = ir_close;
+	driver->data = context;
+	driver->rbuf = rbuf;
+	driver->set_use_inc = ir_open;
+	driver->set_use_dec = ir_close;
 #ifdef LIRC_HAVE_SYSFS
-	plugin->dev = &dev->dev;
+	driver->dev = &dev->dev;
 #endif
-	plugin->owner = THIS_MODULE;
+	driver->owner = THIS_MODULE;
 
 	LOCK_CONTEXT;
 
-	lirc_minor = lirc_register_plugin(plugin);
+	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
-		err("%s: lirc_register_plugin failed", __FUNCTION__);
+		err("%s: lirc_register_driver failed", __FUNCTION__);
 		alloc_status = 7;
 		UNLOCK_CONTEXT;
 		goto alloc_status_switch;
 	} else
-		info("%s: Registered iMON plugin(minor:%d)",
+		info("%s: Registered iMON driver(minor:%d)",
 		     __FUNCTION__, lirc_minor);
 
 	/* Needed while unregistering! */
-	plugin->minor = lirc_minor;
+	driver->minor = lirc_minor;
 
 	context->dev = dev;
 	context->dev_present = TRUE;
@@ -1428,7 +1428,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		context->tx_urb = tx_urb;
 		context->tx_control = tx_control;
 	}
-	context->plugin = plugin;
+	context->driver = driver;
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, context);
@@ -1487,7 +1487,7 @@ alloc_status_switch:
 	case 4:
 		kfree(rbuf);
 	case 3:
-		kfree(plugin);
+		kfree(driver);
 	case 2:
 		kfree(context);
 		context = NULL;

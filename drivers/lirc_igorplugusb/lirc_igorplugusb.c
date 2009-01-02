@@ -245,7 +245,7 @@ struct irctl {
 #endif
 
 	/* lirc */
-	struct lirc_plugin *p;
+	struct lirc_driver *d;
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -396,7 +396,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	struct usb_endpoint_descriptor *ep_ctl2;
 #endif
 	struct irctl *ir = NULL;
-	struct lirc_plugin *plugin = NULL;
+	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int devnum, pipe, maxp, bytes_in_key;
 	int minor = 0;
@@ -456,8 +456,8 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	memset(ir, 0, sizeof(struct irctl));
 
-	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
-	if (!plugin) {
+	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	if (!driver) {
 		mem_failure = 2;
 		goto mem_failure_switch;
 	}
@@ -487,24 +487,24 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		goto mem_failure_switch;
 	}
 
-	memset(plugin, 0, sizeof(struct lirc_plugin));
+	memset(driver, 0, sizeof(struct lirc_driver));
 
-	strcpy(plugin->name, DRIVER_NAME " ");
-	plugin->minor = -1;
-	plugin->code_length = bytes_in_key*8; /* in bits */
-	plugin->features = LIRC_CAN_REC_MODE2;
-	plugin->data = ir;
-	plugin->rbuf = rbuf;
-	plugin->set_use_inc = &set_use_inc;
-	plugin->set_use_dec = &set_use_dec;
-	plugin->sample_rate = sample_rate;    /* per second */
-	plugin->add_to_buf = &usb_remote_poll;
+	strcpy(driver->name, DRIVER_NAME " ");
+	driver->minor = -1;
+	driver->code_length = bytes_in_key*8; /* in bits */
+	driver->features = LIRC_CAN_REC_MODE2;
+	driver->data = ir;
+	driver->rbuf = rbuf;
+	driver->set_use_inc = &set_use_inc;
+	driver->set_use_dec = &set_use_dec;
+	driver->sample_rate = sample_rate;    /* per second */
+	driver->add_to_buf = &usb_remote_poll;
 #ifdef LIRC_HAVE_SYSFS
-	plugin->dev = &dev->dev;
+	driver->dev = &dev->dev;
 #endif
-	plugin->owner = THIS_MODULE;
+	driver->owner = THIS_MODULE;
 
-	minor = lirc_register_plugin(plugin);
+	minor = lirc_register_driver(driver);
 	if (minor < 0)
 		mem_failure = 9;
 
@@ -524,7 +524,7 @@ mem_failure_switch:
 	case 4:
 		kfree(rbuf);
 	case 3:
-		kfree(plugin);
+		kfree(driver);
 	case 2:
 		kfree(ir);
 	case 1:
@@ -537,8 +537,8 @@ mem_failure_switch:
 #endif
 	}
 
-	plugin->minor = minor;
-	ir->p = plugin;
+	driver->minor = minor;
+	ir->d = driver;
 	ir->devnum = devnum;
 	ir->usbdev = dev;
 	ir->len_in = DEVICE_BUFLEN+DEVICE_HEADERLEN;
@@ -585,17 +585,17 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	struct irctl *ir = ptr;
 #endif
 
-	if (!ir || !ir->p)
+	if (!ir || !ir->d)
 		return;
 
 	printk(KERN_INFO DRIVER_NAME
 	       "[%d]: usb remote disconnected\n", ir->devnum);
 
-	lirc_unregister_plugin(ir->p->minor);
+	lirc_unregister_driver(ir->d->minor);
 
-	lirc_buffer_free(ir->p->rbuf);
-	kfree(ir->p->rbuf);
-	kfree(ir->p);
+	lirc_buffer_free(ir->d->rbuf);
+	kfree(ir->d->rbuf);
+	kfree(ir->d);
 
 
 #if defined(KERNEL_2_5)

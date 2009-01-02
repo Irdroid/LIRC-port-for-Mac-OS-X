@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.62 2008/12/04 19:01:07 lirc Exp $
+ * $Id: lirc_dev.c,v 1.63 2009/01/02 22:58:30 lirc Exp $
  *
  */
 
@@ -86,7 +86,7 @@ static int debug;
 #define LOGHEAD           "lirc_dev (%s[%d]): "
 
 struct irctl {
-	struct lirc_plugin p;
+	struct lirc_driver d;
 	int attached;
 	int open;
 
@@ -109,7 +109,7 @@ struct irctl {
 #endif
 };
 
-DECLARE_MUTEX(plugin_lock);
+static DECLARE_MUTEX(driver_lock);
 
 static struct irctl irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
@@ -122,9 +122,9 @@ static lirc_class_t *lirc_class;
  */
 static inline void init_irctl(struct irctl *ir)
 {
-	memset(&ir->p, 0, sizeof(struct lirc_plugin));
+	memset(&ir->d, 0, sizeof(struct lirc_driver));
 	sema_init(&ir->buffer_sem, 1);
-	ir->p.minor = NOPLUG;
+	ir->d.minor = NOPLUG;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	ir->tpid = -1;
@@ -142,9 +142,9 @@ static inline void init_irctl(struct irctl *ir)
 
 static void cleanup(struct irctl *ir)
 {
-	dprintk(LOGHEAD "cleaning up\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "cleaning up\n", ir->d.name, ir->d.minor);
 
-	if (ir->buf != ir->p.rbuf) {
+	if (ir->buf != ir->d.rbuf) {
 		lirc_buffer_free(ir->buf);
 		kfree(ir->buf);
 	}
@@ -154,18 +154,18 @@ static void cleanup(struct irctl *ir)
 }
 
 /*  helper function
- *  reads key codes from plugin and puts them into buffer
+ *  reads key codes from driver and puts them into buffer
  *  returns 0 on success
  */
 static inline int add_to_buf(struct irctl *ir)
 {
-	if (ir->p.add_to_buf) {
+	if (ir->d.add_to_buf) {
 		int res = -ENODATA;
 		int got_data = 0;
 
 		/* service the device as long as it is returning
 		   data */
-		while ((res = ir->p.add_to_buf(ir->p.data, ir->buf))
+		while ((res = ir->d.add_to_buf(ir->d.data, ir->buf))
 		       == SUCCESS) {
 			got_data++;
 		}
@@ -199,7 +199,7 @@ static int lirc_thread(void *irctl)
 		complete(ir->t_notify);
 #endif
 
-	dprintk(LOGHEAD "poll thread started\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll thread started\n", ir->d.name, ir->d.minor);
 
 	do {
 		if (ir->open) {
@@ -208,7 +208,7 @@ static int lirc_thread(void *irctl)
 				schedule_timeout(ir->jiffies_to_wait);
 			} else {
 				interruptible_sleep_on(
-					ir->p.get_queue(ir->p.data));
+					ir->d.get_queue(ir->d.data));
 			}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 			if (ir->shutdown)
@@ -236,12 +236,12 @@ static int lirc_thread(void *irctl)
 	} while (!kthread_should_stop());
 #endif
 
-	dprintk(LOGHEAD "poll thread ended\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll thread ended\n", ir->d.name, ir->d.minor);
 
 	return 0;
 }
 
-int lirc_register_plugin(struct lirc_plugin *p)
+int lirc_register_driver(struct lirc_driver *d)
 {
 	struct irctl *ir;
 	int minor;
@@ -252,87 +252,87 @@ int lirc_register_plugin(struct lirc_plugin *p)
 #endif
 	DECLARE_COMPLETION(tn);
 
-	if (!p) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
-		       "plugin pointer must be not NULL!\n");
+	if (!d) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
+		       "driver pointer must be not NULL!\n");
 		err = -EBADRQC;
 		goto out;
 	}
 
-	if (MAX_IRCTL_DEVICES <= p->minor) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	if (MAX_IRCTL_DEVICES <= d->minor) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "\"minor\" must be between 0 and %d (%d)!\n",
-		       MAX_IRCTL_DEVICES-1, p->minor);
+		       MAX_IRCTL_DEVICES-1, d->minor);
 		err = -EBADRQC;
 		goto out;
 	}
 
-	if (1 > p->code_length || (BUFLEN * 8) < p->code_length) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	if (1 > d->code_length || (BUFLEN * 8) < d->code_length) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "code length in bits for minor (%d) "
 		       "must be less than %d!\n",
-		       p->minor, BUFLEN * 8);
+		       d->minor, BUFLEN * 8);
 		err = -EBADRQC;
 		goto out;
 	}
 
-	printk(KERN_INFO "lirc_dev: lirc_register_plugin: sample_rate: %d\n",
-		p->sample_rate);
-	if (p->sample_rate) {
-		if (2 > p->sample_rate || HZ < p->sample_rate) {
-			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	printk(KERN_INFO "lirc_dev: lirc_register_driver: sample_rate: %d\n",
+		d->sample_rate);
+	if (d->sample_rate) {
+		if (2 > d->sample_rate || HZ < d->sample_rate) {
+			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "sample_rate must be between 2 and %d!\n", HZ);
 			err = -EBADRQC;
 			goto out;
 		}
-		if (!p->add_to_buf) {
-			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+		if (!d->add_to_buf) {
+			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "add_to_buf cannot be NULL when "
 			       "sample_rate is set\n");
 			err = -EBADRQC;
 			goto out;
 		}
-	} else if (!(p->fops && p->fops->read)
-		   && !p->get_queue && !p->rbuf) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	} else if (!(d->fops && d->fops->read)
+		   && !d->get_queue && !d->rbuf) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "fops->read, get_queue and rbuf "
 		       "cannot all be NULL!\n");
 		err = -EBADRQC;
 		goto out;
-	} else if (!p->get_queue && !p->rbuf) {
-		if (!(p->fops && p->fops->read && p->fops->poll)
-		    || (!p->fops->ioctl && !p->ioctl)) {
-			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	} else if (!d->get_queue && !d->rbuf) {
+		if (!(d->fops && d->fops->read && d->fops->poll)
+		    || (!d->fops->ioctl && !d->ioctl)) {
+			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "neither read, poll nor ioctl can be NULL!\n");
 			err = -EBADRQC;
 			goto out;
 		}
 	}
 
-	if (p->owner == NULL) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	if (d->owner == NULL) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 				    "no module owner registered\n");
 		err = -EBADRQC;
 		goto out;
 	}
 
-	down(&plugin_lock);
+	down(&driver_lock);
 
-	minor = p->minor;
+	minor = d->minor;
 
 	if (0 > minor) {
-		/* find first free slot for plugin */
+		/* find first free slot for driver */
 		for (minor = 0; minor < MAX_IRCTL_DEVICES; minor++)
-			if (irctls[minor].p.minor == NOPLUG)
+			if (irctls[minor].d.minor == NOPLUG)
 				break;
 		if (MAX_IRCTL_DEVICES == minor) {
-			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
-			       "no free slots for plugins!\n");
+			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
+			       "no free slots for drivers!\n");
 			err = -ENOMEM;
 			goto out_lock;
 		}
-	} else if (irctls[minor].p.minor != NOPLUG) {
-		printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+	} else if (irctls[minor].d.minor != NOPLUG) {
+		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "minor (%d) just registered!\n", minor);
 		err = -EBUSY;
 		goto out_lock;
@@ -340,20 +340,20 @@ int lirc_register_plugin(struct lirc_plugin *p)
 
 	ir = &irctls[minor];
 
-	if (p->sample_rate) {
-		ir->jiffies_to_wait = HZ / p->sample_rate;
+	if (d->sample_rate) {
+		ir->jiffies_to_wait = HZ / d->sample_rate;
 	} else {
 		/* it means - wait for external event in task queue */
 		ir->jiffies_to_wait = 0;
 	}
 
 	/* some safety check 8-) */
-	p->name[sizeof(p->name)-1] = '\0';
+	d->name[sizeof(d->name)-1] = '\0';
 
-	bytes_in_key = p->code_length/8 + (p->code_length%8 ? 1 : 0);
+	bytes_in_key = d->code_length/8 + (d->code_length%8 ? 1 : 0);
 
-	if (p->rbuf) {
-		ir->buf = p->rbuf;
+	if (d->rbuf) {
+		ir->buf = d->rbuf;
 	} else {
 		ir->buf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 		if (!ir->buf) {
@@ -369,29 +369,29 @@ int lirc_register_plugin(struct lirc_plugin *p)
 	}
 	ir->chunk_size = ir->buf->chunk_size;
 
-	if (p->features == 0)
-		p->features = (p->code_length > 8) ?
+	if (d->features == 0)
+		d->features = (d->code_length > 8) ?
 			LIRC_CAN_REC_LIRCCODE : LIRC_CAN_REC_CODE;
 
-	ir->p = *p;
-	ir->p.minor = minor;
+	ir->d = *d;
+	ir->d.minor = minor;
 
 #if defined(LIRC_HAVE_DEVFS_24)
-	sprintf(name, DEV_LIRC "/%d", ir->p.minor);
+	sprintf(name, DEV_LIRC "/%d", ir->d.minor);
 	ir->devfs_handle = devfs_register(NULL, name, DEVFS_FL_DEFAULT,
-					  IRCTL_DEV_MAJOR, ir->p.minor,
+					  IRCTL_DEV_MAJOR, ir->d.minor,
 					  S_IFCHR | S_IRUSR | S_IWUSR,
 					  &fops, NULL);
 #elif defined(LIRC_HAVE_DEVFS_26)
-	devfs_mk_cdev(MKDEV(IRCTL_DEV_MAJOR, ir->p.minor),
+	devfs_mk_cdev(MKDEV(IRCTL_DEV_MAJOR, ir->d.minor),
 			S_IFCHR|S_IRUSR|S_IWUSR,
-			DEV_LIRC "/%u", ir->p.minor);
+			DEV_LIRC "/%u", ir->d.minor);
 #endif
-	(void) lirc_device_create(lirc_class, ir->p.dev,
-				  MKDEV(IRCTL_DEV_MAJOR, ir->p.minor), NULL,
-				  "lirc%u", ir->p.minor);
+	(void) lirc_device_create(lirc_class, ir->d.dev,
+				  MKDEV(IRCTL_DEV_MAJOR, ir->d.minor), NULL,
+				  "lirc%u", ir->d.minor);
 
-	if (p->sample_rate || p->get_queue) {
+	if (d->sample_rate || d->get_queue) {
 		/* try to fire up polling thread */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 		ir->t_notify = &tn;
@@ -401,9 +401,9 @@ int lirc_register_plugin(struct lirc_plugin *p)
 		ir->task = kthread_run(lirc_thread, (void *)ir, "lirc_dev");
 		if (IS_ERR(ir->task)) {
 #endif
-			printk(KERN_ERR "lirc_dev: lirc_register_plugin: "
+			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "cannot run poll thread for minor = %d\n",
-			       p->minor);
+			       d->minor);
 			err = -ECHILD;
 			goto out_sysfs;
 		}
@@ -413,7 +413,7 @@ int lirc_register_plugin(struct lirc_plugin *p)
 #endif
 	}
 	ir->attached = 1;
-	up(&plugin_lock);
+	up(&driver_lock);
 
 /*
  * Recent kernels should handle this autmatically by increasing/decreasing
@@ -422,35 +422,35 @@ int lirc_register_plugin(struct lirc_plugin *p)
 #ifndef KERNEL_2_5
 	MOD_INC_USE_COUNT;
 #endif
-	dprintk("lirc_dev: plugin %s registered at minor number = %d\n",
-		ir->p.name, ir->p.minor);
-	p->minor = minor;
+	dprintk("lirc_dev: driver %s registered at minor number = %d\n",
+		ir->d.name, ir->d.minor);
+	d->minor = minor;
 	return minor;
 
 out_sysfs:
 	lirc_device_destroy(lirc_class,
-			    MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+			    MKDEV(IRCTL_DEV_MAJOR, ir->d.minor));
 #ifdef LIRC_HAVE_DEVFS_24
 	devfs_unregister(ir->devfs_handle);
 #endif
 #ifdef LIRC_HAVE_DEVFS_26
-	devfs_remove(DEV_LIRC "/%i", ir->p.minor);
+	devfs_remove(DEV_LIRC "/%i", ir->d.minor);
 #endif
 out_lock:
-	up(&plugin_lock);
+	up(&driver_lock);
 out:
 	return err;
 }
-EXPORT_SYMBOL(lirc_register_plugin);
+EXPORT_SYMBOL(lirc_register_driver);
 
-int lirc_unregister_plugin(int minor)
+int lirc_unregister_driver(int minor)
 {
 	struct irctl *ir;
 	DECLARE_COMPLETION(tn);
 	DECLARE_COMPLETION(tn2);
 
 	if (minor < 0 || minor >= MAX_IRCTL_DEVICES) {
-		printk(KERN_ERR "lirc_dev: lirc_unregister_plugin: "
+		printk(KERN_ERR "lirc_dev: lirc_unregister_driver: "
 		       "\"minor\" must be between 0 and %d!\n",
 		       MAX_IRCTL_DEVICES-1);
 		return -EBADRQC;
@@ -458,12 +458,12 @@ int lirc_unregister_plugin(int minor)
 
 	ir = &irctls[minor];
 
-	down(&plugin_lock);
+	down(&driver_lock);
 
-	if (ir->p.minor != minor) {
-		printk(KERN_ERR "lirc_dev: lirc_unregister_plugin: "
+	if (ir->d.minor != minor) {
+		printk(KERN_ERR "lirc_dev: lirc_unregister_driver: "
 		       "minor (%d) device not registered!", minor);
-		up(&plugin_lock);
+		up(&driver_lock);
 		return -ENOENT;
 	}
 
@@ -482,7 +482,7 @@ int lirc_unregister_plugin(int minor)
 		}
 #else
 		/* 2.2.x does not export wake_up_process() */
-		wake_up_interruptible(ir->p.get_queue(ir->p.data));
+		wake_up_interruptible(ir->d.get_queue(ir->d.data));
 #endif
 		complete(&tn2);
 		wait_for_completion(&tn);
@@ -496,17 +496,17 @@ int lirc_unregister_plugin(int minor)
 	}
 #endif
 
-	dprintk("lirc_dev: plugin %s unregistered from minor number = %d\n",
-		ir->p.name, ir->p.minor);
+	dprintk("lirc_dev: driver %s unregistered from minor number = %d\n",
+		ir->d.name, ir->d.minor);
 
 	ir->attached = 0;
 	if (ir->open) {
-		dprintk(LOGHEAD "releasing opened plugin\n",
-			ir->p.name, ir->p.minor);
+		dprintk(LOGHEAD "releasing opened driver\n",
+			ir->d.name, ir->d.minor);
 		wake_up_interruptible(&ir->buf->wait_poll);
 		down(&ir->buffer_sem);
-		ir->p.set_use_dec(ir->p.data);
-		module_put(ir->p.owner);
+		ir->d.set_use_dec(ir->d.data);
+		module_put(ir->d.owner);
 		up(&ir->buffer_sem);
 	}
 
@@ -514,14 +514,14 @@ int lirc_unregister_plugin(int minor)
 	devfs_unregister(ir->devfs_handle);
 #endif
 #ifdef LIRC_HAVE_DEVFS_26
-	devfs_remove(DEV_LIRC "/%u", ir->p.minor);
+	devfs_remove(DEV_LIRC "/%u", ir->d.minor);
 #endif
 	lirc_device_destroy(lirc_class,
-			    MKDEV(IRCTL_DEV_MAJOR, ir->p.minor));
+			    MKDEV(IRCTL_DEV_MAJOR, ir->d.minor));
 
 	if (!ir->open)
 		cleanup(ir);
-	up(&plugin_lock);
+	up(&driver_lock);
 
 /*
  * Recent kernels should handle this autmatically by increasing/decreasing
@@ -533,7 +533,7 @@ int lirc_unregister_plugin(int minor)
 
 	return SUCCESS;
 }
-EXPORT_SYMBOL(lirc_unregister_plugin);
+EXPORT_SYMBOL(lirc_unregister_driver);
 
 /*
  *
@@ -551,55 +551,55 @@ static int irctl_open(struct inode *inode, struct file *file)
 
 	ir = &irctls[MINOR(inode->i_rdev)];
 
-	dprintk(LOGHEAD "open called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "open called\n", ir->d.name, ir->d.minor);
 
-	/* if the plugin has an open function use it instead */
-	if (ir->p.fops && ir->p.fops->open)
-		return ir->p.fops->open(inode, file);
+	/* if the driver has an open function use it instead */
+	if (ir->d.fops && ir->d.fops->open)
+		return ir->d.fops->open(inode, file);
 
-	if (down_interruptible(&plugin_lock))
+	if (down_interruptible(&driver_lock))
 		return -ERESTARTSYS;
 
-	if (ir->p.minor == NOPLUG) {
-		up(&plugin_lock);
+	if (ir->d.minor == NOPLUG) {
+		up(&driver_lock);
 		dprintk(LOGHEAD "open result = -ENODEV\n",
-			ir->p.name, ir->p.minor);
+			ir->d.name, ir->d.minor);
 		return -ENODEV;
 	}
 
 	if (ir->open) {
-		up(&plugin_lock);
+		up(&driver_lock);
 		dprintk(LOGHEAD "open result = -EBUSY\n",
-			ir->p.name, ir->p.minor);
+			ir->d.name, ir->d.minor);
 		return -EBUSY;
 	}
 
 	/* there is no need for locking here because ir->open is 0
 	 * and lirc_thread isn't using buffer
-	 * plugins which use irq's should allocate them on set_use_inc,
+	 * drivers which use irq's should allocate them on set_use_inc,
 	 * so there should be no problem with those either.
 	 */
 	ir->buf->head = ir->buf->tail;
 	ir->buf->fill = 0;
 
-	if (ir->p.owner != NULL && try_module_get(ir->p.owner)) {
+	if (ir->d.owner != NULL && try_module_get(ir->d.owner)) {
 		++ir->open;
-		retval = ir->p.set_use_inc(ir->p.data);
+		retval = ir->d.set_use_inc(ir->d.data);
 
 		if (retval != SUCCESS) {
-			module_put(ir->p.owner);
+			module_put(ir->d.owner);
 			--ir->open;
 		}
 	} else {
-		if (ir->p.owner == NULL)
+		if (ir->d.owner == NULL)
 			dprintk(LOGHEAD "no module owner!!!\n",
-				ir->p.name, ir->p.minor);
+				ir->d.name, ir->d.minor);
 
 		retval = -ENODEV;
 	}
 
-	dprintk(LOGHEAD "open result = %d\n", ir->p.name, ir->p.minor, retval);
-	up(&plugin_lock);
+	dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor, retval);
+	up(&driver_lock);
 
 	return retval;
 }
@@ -611,24 +611,24 @@ static int irctl_close(struct inode *inode, struct file *file)
 {
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
 
-	dprintk(LOGHEAD "close called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "close called\n", ir->d.name, ir->d.minor);
 
-	/* if the plugin has a close function use it instead */
-	if (ir->p.fops && ir->p.fops->release)
-		return ir->p.fops->release(inode, file);
+	/* if the driver has a close function use it instead */
+	if (ir->d.fops && ir->d.fops->release)
+		return ir->d.fops->release(inode, file);
 
-	if (down_interruptible(&plugin_lock))
+	if (down_interruptible(&driver_lock))
 		return -ERESTARTSYS;
 
 	--ir->open;
 	if (ir->attached) {
-		ir->p.set_use_dec(ir->p.data);
-		module_put(ir->p.owner);
+		ir->d.set_use_dec(ir->d.data);
+		module_put(ir->d.owner);
 	} else {
 		cleanup(ir);
 	}
 
-	up(&plugin_lock);
+	up(&driver_lock);
 
 	return SUCCESS;
 }
@@ -641,11 +641,11 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 	unsigned int ret;
 
-	dprintk(LOGHEAD "poll called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "poll called\n", ir->d.name, ir->d.minor);
 
-	/* if the plugin has a poll function use it instead */
-	if (ir->p.fops && ir->p.fops->poll)
-		return ir->p.fops->poll(file, wait);
+	/* if the driver has a poll function use it instead */
+	if (ir->d.fops && ir->d.fops->poll)
+		return ir->d.fops->poll(file, wait);
 
 	down(&ir->buffer_sem);
 	if (!ir->attached) {
@@ -656,7 +656,7 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 	poll_wait(file, &ir->buf->wait_poll, wait);
 
 	dprintk(LOGHEAD "poll result = %s\n",
-		ir->p.name, ir->p.minor,
+		ir->d.name, ir->d.minor,
 		lirc_buffer_empty(ir->buf) ? "0" : "POLLIN|POLLRDNORM");
 
 	ret = lirc_buffer_empty(ir->buf) ? 0 : (POLLIN|POLLRDNORM);
@@ -676,45 +676,45 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
-		ir->p.name, ir->p.minor, cmd);
+		ir->d.name, ir->d.minor, cmd);
 
-	/* if the plugin has a ioctl function use it instead */
-	if (ir->p.fops && ir->p.fops->ioctl)
-		return ir->p.fops->ioctl(inode, file, cmd, arg);
+	/* if the driver has a ioctl function use it instead */
+	if (ir->d.fops && ir->d.fops->ioctl)
+		return ir->d.fops->ioctl(inode, file, cmd, arg);
 
-	if (ir->p.minor == NOPLUG || !ir->attached) {
+	if (ir->d.minor == NOPLUG || !ir->attached) {
 		dprintk(LOGHEAD "ioctl result = -ENODEV\n",
-			ir->p.name, ir->p.minor);
+			ir->d.name, ir->d.minor);
 		return -ENODEV;
 	}
 
-	/* Give the plugin a chance to handle the ioctl */
-	if (ir->p.ioctl) {
-		result = ir->p.ioctl(inode, file, cmd, arg);
+	/* Give the driver a chance to handle the ioctl */
+	if (ir->d.ioctl) {
+		result = ir->d.ioctl(inode, file, cmd, arg);
 		if (result != -ENOIOCTLCMD)
 			return result;
 	}
-	/* The plugin can't handle cmd */
+	/* The driver can't handle cmd */
 	result = SUCCESS;
 
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
-		result = put_user(ir->p.features, (unsigned long *)arg);
+		result = put_user(ir->d.features, (unsigned long *)arg);
 		break;
 	case LIRC_GET_REC_MODE:
-		if (!(ir->p.features&LIRC_CAN_REC_MASK))
+		if (!(ir->d.features&LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
 		result = put_user(LIRC_REC2MODE
-				  (ir->p.features&LIRC_CAN_REC_MASK),
+				  (ir->d.features&LIRC_CAN_REC_MASK),
 				  (unsigned long *)arg);
 		break;
 	case LIRC_SET_REC_MODE:
-		if (!(ir->p.features&LIRC_CAN_REC_MASK))
+		if (!(ir->d.features&LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
 		result = get_user(mode, (unsigned long *)arg);
-		if (!result && !(LIRC_MODE2REC(mode) & ir->p.features))
+		if (!result && !(LIRC_MODE2REC(mode) & ir->d.features))
 			result = -EINVAL;
 		/*
 		 * FIXME: We should actually set the mode somehow but
@@ -722,7 +722,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		 */
 		break;
 	case LIRC_GET_LENGTH:
-		result = put_user((unsigned long)ir->p.code_length,
+		result = put_user((unsigned long)ir->d.code_length,
 				  (unsigned long *)arg);
 		break;
 	default:
@@ -730,7 +730,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	}
 
 	dprintk(LOGHEAD "ioctl result = %d\n",
-		ir->p.name, ir->p.minor, result);
+		ir->d.name, ir->d.minor, result);
 
 	return result;
 }
@@ -748,11 +748,11 @@ static ssize_t irctl_read(struct file *file,
 	int ret = 0, written = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	dprintk(LOGHEAD "read called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "read called\n", ir->d.name, ir->d.minor);
 
-	/* if the plugin has a specific read function use it instead */
-	if (ir->p.fops && ir->p.fops->read)
-		return ir->p.fops->read(file, buffer, length, ppos);
+	/* if the driver has a specific read function use it instead */
+	if (ir->d.fops && ir->d.fops->read)
+		return ir->d.fops->read(file, buffer, length, ppos);
 
 	if (down_interruptible(&ir->buffer_sem))
 		return -ERESTARTSYS;
@@ -763,7 +763,7 @@ static ssize_t irctl_read(struct file *file,
 
 	if (length % ir->buf->chunk_size) {
 		dprintk(LOGHEAD "read result = -EINVAL\n",
-			ir->p.name, ir->p.minor);
+			ir->d.name, ir->d.minor);
 		up(&ir->buffer_sem);
 		return -EINVAL;
 	}
@@ -815,7 +815,7 @@ static ssize_t irctl_read(struct file *file,
 	up(&ir->buffer_sem);
 
 	dprintk(LOGHEAD "read result = %s (%d)\n",
-		ir->p.name, ir->p.minor, ret ? "-EFAULT" : "OK", ret);
+		ir->d.name, ir->d.minor, ret ? "-EFAULT" : "OK", ret);
 
 	return ret ? ret : written;
 }
@@ -829,7 +829,7 @@ void *lirc_get_pdata(struct file *file)
 	    file->f_dentry->d_inode->i_rdev) {
 		struct irctl *ir;
 		ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
-		data = ir->p.data;
+		data = ir->d.data;
 	}
 
 	return data;
@@ -842,11 +842,11 @@ static ssize_t irctl_write(struct file *file, const char *buffer,
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 
-	dprintk(LOGHEAD "write called\n", ir->p.name, ir->p.minor);
+	dprintk(LOGHEAD "write called\n", ir->d.name, ir->d.minor);
 
-	/* if the plugin has a specific read function use it instead */
-	if (ir->p.fops && ir->p.fops->write)
-		return ir->p.fops->write(file, buffer, length, ppos);
+	/* if the driver has a specific read function use it instead */
+	if (ir->d.fops && ir->d.fops->write)
+		return ir->d.fops->write(file, buffer, length, ppos);
 
 	if (!ir->attached)
 		return -ENODEV;

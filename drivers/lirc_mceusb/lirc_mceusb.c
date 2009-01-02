@@ -37,7 +37,7 @@
  *	      lirc_thread. Restructure data read/mode2 generation to
  *	      a single pass, reducing number of buffers. Rev to .2
  *
- * 2004_02_27 - Last of fixups to plugin->add_to_buf API. Properly
+ * 2004_02_27 - Last of fixups to driver->add_to_buf API. Properly
  *	      handle broken fragments from the receiver. Up the
  *	      sample rate and remove any pacing from
  *	      fetch_more_data. Fixes all known issues.
@@ -179,7 +179,7 @@ struct usb_skel {
 
 	int present;		/* if the device is not disconnected */
 
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 
 	lirc_t lircdata[256]; /* place to store data until lirc processes it */
 	int lircidx;		/* current index */
@@ -575,7 +575,7 @@ static int msir_fetch_more_data(struct usb_skel *dev, int dont_block)
 
 /* mceusb_add_to_buf: called by lirc_dev to fetch all available keys
  * this is used as a polling interface for us: since we set
- * plugin->sample_rate we will periodically get the below call to
+ * driver->sample_rate we will periodically get the below call to
  * check for new data returns 0 on success, or -ENODATA if nothing is
  * available
  */
@@ -672,7 +672,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	struct usb_skel *dev = NULL;
 	struct usb_endpoint_descriptor *endpoint;
 
-	struct lirc_plugin *plugin;
+	struct lirc_driver *driver;
 	struct lirc_buffer *rbuf;
 
 	int minor;
@@ -813,52 +813,52 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	init_waitqueue_head(&dev->wait_q);
 
 
-	/* Set up our lirc plugin */
-	plugin = kmalloc(sizeof(struct lirc_plugin), GFP_KERNEL);
-	if (!plugin) {
+	/* Set up our lirc driver */
+	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	if (!driver) {
 		err("out of memory");
 		goto error;
 	}
-	memset(plugin, 0, sizeof(struct lirc_plugin));
+	memset(driver, 0, sizeof(struct lirc_driver));
 
 	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 	if (!rbuf) {
 		err("out of memory");
-		kfree(plugin);
+		kfree(driver);
 		goto error;
 	}
 
 	/* the lirc_atiusb module doesn't memset rbuf here ... ? */
 	if (lirc_buffer_init(rbuf, sizeof(lirc_t), 128)) {
 		err("out of memory");
-		kfree(plugin);
+		kfree(driver);
 		kfree(rbuf);
 		goto error;
 	}
 
-	strcpy(plugin->name, DRIVER_NAME " ");
-	plugin->minor = minor;
-	plugin->code_length = sizeof(lirc_t) * 8;
-	plugin->features = LIRC_CAN_REC_MODE2; /* | LIRC_CAN_SEND_MODE2; */
-	plugin->data = dev;
-	plugin->rbuf = rbuf;
-	plugin->ioctl = NULL;
-	plugin->set_use_inc = &set_use_inc;
-	plugin->set_use_dec = &set_use_dec;
-	plugin->sample_rate = 80;   /* sample at 100hz (10ms) */
-	plugin->add_to_buf = &mceusb_add_to_buf;
-	/* plugin->fops = &mceusb_fops; */
+	strcpy(driver->name, DRIVER_NAME " ");
+	driver->minor = minor;
+	driver->code_length = sizeof(lirc_t) * 8;
+	driver->features = LIRC_CAN_REC_MODE2; /* | LIRC_CAN_SEND_MODE2; */
+	driver->data = dev;
+	driver->rbuf = rbuf;
+	driver->ioctl = NULL;
+	driver->set_use_inc = &set_use_inc;
+	driver->set_use_dec = &set_use_dec;
+	driver->sample_rate = 80;   /* sample at 100hz (10ms) */
+	driver->add_to_buf = &mceusb_add_to_buf;
+	/* driver->fops = &mceusb_fops; */
 #ifdef LIRC_HAVE_SYSFS
-	plugin->dev = &udev->dev;
+	driver->dev = &udev->dev;
 #endif
-	plugin->owner = THIS_MODULE;
-	if (lirc_register_plugin(plugin) < 0) {
-		kfree(plugin);
+	driver->owner = THIS_MODULE;
+	if (lirc_register_driver(driver) < 0) {
+		kfree(driver);
 		lirc_buffer_free(rbuf);
 		kfree(rbuf);
 		goto error;
 	}
-	dev->plugin = plugin;
+	dev->driver = driver;
 
 	/* clear off the first few messages. these look like
 	 * calibration or test data, i can't really tell
@@ -929,10 +929,10 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 	minor = dev->minor;
 
 	/* unhook lirc things */
-	lirc_unregister_plugin(minor);
-	lirc_buffer_free(dev->plugin->rbuf);
-	kfree(dev->plugin->rbuf);
-	kfree(dev->plugin);
+	lirc_unregister_driver(minor);
+	lirc_buffer_free(dev->driver->rbuf);
+	kfree(dev->driver->rbuf);
+	kfree(dev->driver);
 #ifdef KERNEL_2_5
 	/* terminate an ongoing write */
 	if (atomic_read(&dev->write_busy)) {
