@@ -1,4 +1,6 @@
 0.8.5-CVS: future
+  * added support for Winbond 8769L CIR port (e.g. found on Acer
+    Aspire 6530G) (Juan J. Garcia de Soria)
   * added support for FTDI FT232-based IR Receiver
   * Linux input event generation using uinput
   * standardised namespace following Linux input conventions

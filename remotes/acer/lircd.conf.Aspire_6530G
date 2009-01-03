@@ -1,0 +1,78 @@
+#
+# this config file was automatically generated
+# using lirc-0.8.5-CVS(default) on Sat Jan  3 13:40:20 2009
+#
+# contributed by Juan J. Garcia de Soria
+#
+# brand: Acer Aspire 6530G remote control
+# model no. of remote control: RC804V-B
+# devices being controlled by this remote: Acer Aspire 6530G laptop
+#
+
+begin remote
+
+  name Acer_Aspire_6530G_MCE
+  bits           16
+  flags RC6|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  header       3020   947
+  one           531   461
+  zero          531   461
+  pre_data_bits   21
+  pre_data       0x37FF0
+  gap          121968
+  toggle_bit 22
+  rc6_mask    0x100000000
+
+      begin codes
+          KEY_POWER                0x7BF3
+          KEY_DVD                  0xFBDB
+          KEY_STOPCD               0x7BE6
+          KEY_FASTFORWARD          0xFBEB
+          KEY_NEXTSONG             0x7BE5
+          KEY_TV                   0xFBDA
+          KEY_EPG                  0x7BD9
+          KEY_PAUSECD              0xFBE7
+          KEY_PLAYCD               0x7BE9
+          KEY_RECORD               0xFBE8
+          KEY_REWIND               0x7BEA
+          KEY_PREVIOUSSONG         0xFBE4
+          KEY_TV2                  0x7BB7
+          KEY_ENTER                0xFBDD
+          KEY_UP                   0x7BE1
+          KEY_LEFT                 0xFBDF
+          KEY_RIGHT                0x7BDE
+          KEY_DOWN                 0xFBE0
+          KEY_VOLUMEUP             0x7BEF
+          KEY_VOLUMEDOWN           0xFBEE
+          KEY_PAGEUP               0x7BED
+          KEY_PAGEDOWN             0xFBEC
+          KEY_MUTE                 0x7BF1
+          KEY_ESC                  0xFBDC
+          KEY_COMPOSE              0x7BF0
+          KEY_CYCLEWINDOWS         0xFBF2
+          KEY_RED                  0x7BA4
+          KEY_GREEN                0xFBA3
+          KEY_YELLOW               0x7BA2
+          KEY_BLUE                 0xFBA1
+          KEY_TEXT                 0x7BA5
+          KEY_KPENTER              0xFBF4
+          KEY_BACKSPACE            0x7BF5
+          KEY_KPASTERISK           0xFBE2
+          KEY_KPSLASH              0x7BE3
+          KEY_0                    0xFBFF
+          KEY_1                    0x7BFE
+          KEY_2                    0xFBFD
+          KEY_3                    0x7BFC
+          KEY_4                    0xFBFB
+          KEY_5                    0x7BFA
+          KEY_6                    0xFBF9
+          KEY_7                    0x7BF8
+          KEY_8                    0xFBF7
+          KEY_9                    0x7BF6
+      end codes
+
+end remote
+

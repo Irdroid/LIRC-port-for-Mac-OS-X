@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.20 2008/12/30 21:25:09 lirc Exp $
+dnl $Id: configure.ac,v 1.21 2009/01/03 17:30:35 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -173,7 +173,8 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_sasem) \
 	(lirc_dev lirc_serial) \
 	(lirc_dev lirc_sir) \
-	(lirc_dev lirc_streamzap)"
+	(lirc_dev lirc_streamzap) \
+	(lirc_dev lirc_wpc8769l)"
 fi
 
 AH_TEMPLATE([DAEMONIZE],
@@ -454,8 +455,8 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, samsung,
                           sasem, sb0540, serial, silitek, sir, slinke,
                           streamzap, tekram, tekram_bt829, tira,
-                          ttusbir, tuxbox, tvbox, udp, uirt2, 
-                          uirt2_raw, usb_uirt_raw, usbx], 
+			  ttusbir, tuxbox, tvbox, udp, uirt2,
+			  uirt2_raw, usb_uirt_raw, usbx, wpc8769l],
 driver=${withval},
 driver="unset"
 )
@@ -618,6 +619,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	lirc_dev-lirc_sir)
 		;;
 	lirc_dev-lirc_streamzap)
+		;;
+	lirc_dev-lirc_wpc8769l)
 		;;
 	lirc_flyvideo)
 		;;
@@ -1395,6 +1398,11 @@ if test "$driver" = "usbx"; then
   lircd_conf="adstech/lircd.conf.usbx-707"
 fi
 
+if test "$driver" = "wpc8769l"; then
+  lirc_driver="lirc_dev lirc_wpc8769l"
+  lircd_conf="acer/lircd.conf.Aspire_6530G"
+fi
+
 #END HARDWARE HEURISTIC
 
 if test "$driver" = "devinput"; then
@@ -1510,7 +1518,8 @@ elif test "$lirc_driver" = "all"; then
 	lirc_serial \
 	lirc_sir \
 	lirc_streamzap \
-	lirc_ttusbir"
+	lirc_ttusbir \
+	lirc_wpc8769l"
 fi
 if kernel_module=$(expr "$lirc_driver" : 'lirc_dev \(.*\)'); then
   :
@@ -1790,6 +1799,7 @@ AC_CONFIG_FILES([
   drivers/lirc_serial/Makefile
   drivers/lirc_sir/Makefile
   drivers/lirc_streamzap/Makefile
+  drivers/lirc_wpc8769l/Makefile
   daemons/Makefile
   tools/Makefile
   doc/Makefile

@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.31 2008/08/29 06:35:42 lirc Exp $
+## $Id: Makefile.am,v 5.32 2009/01/03 17:30:35 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -25,7 +25,8 @@ DIST_SUBDIRS = \
 	lirc_serial \
 	lirc_sir \
 	lirc_streamzap \
-	lirc_ttusbir
+	lirc_ttusbir \
+	lirc_wpc8769l
 
 SUBDIRS = @lirc_driver@
 
