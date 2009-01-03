@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.63 2009/01/02 22:58:30 lirc Exp $
+ * $Id: lirc_dev.c,v 1.64 2009/01/03 09:36:40 lirc Exp $
  *
  */
 
@@ -947,11 +947,3 @@ module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 #endif /* MODULE */
-
-/*
- * Overrides for Emacs so that we follow Linus's tabbing style.
- * ---------------------------------------------------------------------------
- * Local variables:
- * c-basic-offset: 8
- * End:
- */

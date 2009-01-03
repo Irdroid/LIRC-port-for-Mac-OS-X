@@ -1017,12 +1017,3 @@ MODULE_PARM_DESC(it87_freq,
 EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */
-
-
-/*
- * Overrides for Emacs so that we follow Linus's tabbing style.
- * ---------------------------------------------------------------------------
- * Local variables:
- * c-basic-offset: 8
- * End:
- */

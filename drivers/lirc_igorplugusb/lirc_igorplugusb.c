@@ -665,11 +665,3 @@ module_param(sample_rate, int, 0644);
 MODULE_PARM_DESC(sample_rate, "Sampling rate in Hz (default: 100)");
 
 EXPORT_NO_SYMBOLS;
-
-/*
- * Overrides for Emacs so that we follow Linus's tabbing style.
- * ---------------------------------------------------------------------------
- * Local variables:
- * c-basic-offset: 8
- * End:
- */

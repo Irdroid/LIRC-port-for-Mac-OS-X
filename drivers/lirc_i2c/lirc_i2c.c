@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.48 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.49 2009/01/03 09:36:40 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -675,11 +675,3 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */
-
-/*
- * Overrides for Emacs so that we follow Linus's tabbing style.
- * ---------------------------------------------------------------------------
- * Local variables:
- * c-basic-offset: 8
- * End:
- */
