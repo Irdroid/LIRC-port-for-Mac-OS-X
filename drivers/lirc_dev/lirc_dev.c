@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.65 2009/01/04 22:17:39 lirc Exp $
+ * $Id: lirc_dev.c,v 1.66 2009/01/04 23:21:59 lirc Exp $
  *
  */
 
@@ -62,6 +62,9 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
 #include <linux/kthread.h>
 #endif
+#ifdef CONFIG_COMPAT
+#include <linux/compat.h>
+#endif
 
 #include "drivers/kcompat.h"
 
@@ -93,7 +96,7 @@ struct irctl {
 	struct semaphore buffer_sem;
 	struct lirc_buffer *buf;
 	unsigned int chunk_size;
-	
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	int tpid;
 	struct completion *t_notify;
@@ -734,6 +737,85 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	return result;
 }
 
+#ifdef CONFIG_COMPAT
+static long irctl_compat_ioctl(struct file *file,
+			       unsigned int cmd,
+			       unsigned long arg)
+{
+	mm_segment_t old_fs;
+	int ret;
+	unsigned long val;
+	unsigned char tcomm[sizeof(current->comm)];
+
+	switch (cmd) {
+	case LIRC_GET_FEATURES:
+	case LIRC_GET_SEND_MODE:
+	case LIRC_GET_REC_MODE:
+	case LIRC_GET_LENGTH:
+	case LIRC_SET_SEND_MODE:
+	case LIRC_SET_REC_MODE:
+		/*
+		 * These commands expect (unsigned long *) arg
+		 * but the 32-bit app supplied (__u32 *).
+		 * Conversion is required.
+		 */
+		if (get_user(val, (__u32 *)compat_ptr(arg)))
+			return -EFAULT;
+		lock_kernel();
+		/* tell irctl_ioctl that it's safe to use the pointer
+		   to val which is in kernel address space and not in
+		   user address space */
+		old_fs = get_fs();
+		set_fs(KERNEL_DS);
+
+		ret = irctl_ioctl(file->f_path.dentry->d_inode, file,
+				  cmd, (unsigned long)(&val));
+
+		set_fs(old_fs);
+		unlock_kernel();
+		switch (cmd) {
+		case LIRC_GET_FEATURES:
+		case LIRC_GET_SEND_MODE:
+		case LIRC_GET_REC_MODE:
+		case LIRC_GET_LENGTH:
+			if (!ret && put_user(val, (__u32 *)compat_ptr(arg)))
+				return -EFAULT;
+			break;
+		}
+		return ret;
+
+	case LIRC_GET_SEND_CARRIER:
+	case LIRC_GET_REC_CARRIER:
+	case LIRC_GET_SEND_DUTY_CYCLE:
+	case LIRC_GET_REC_DUTY_CYCLE:
+	case LIRC_GET_REC_RESOLUTION:
+	case LIRC_SET_SEND_CARRIER:
+	case LIRC_SET_REC_CARRIER:
+	case LIRC_SET_SEND_DUTY_CYCLE:
+	case LIRC_SET_REC_DUTY_CYCLE:
+	case LIRC_SET_TRANSMITTER_MASK:
+	case LIRC_SET_REC_DUTY_CYCLE_RANGE:
+	case LIRC_SET_REC_CARRIER_RANGE:
+		/*
+		 * These commands expect (unsigned int *)arg
+		 * so no problems here. Just handle the locking.
+		 */
+		lock_kernel();
+		ret = irctl_ioctl(file->f_path.dentry->d_inode,
+				  file, cmd, arg);
+		unlock_kernel();
+		return ret;
+	default:
+		get_task_comm(tcomm, current);
+
+		/* unknown */
+		printk(KERN_ERR "lirc_dev: %s(%s:%d): Unknown cmd %08x\n",
+		       __func__, tcomm, current->pid, cmd);
+		return -ENOIOCTLCMD;
+	}
+}
+#endif
+
 /*
  *
  */
@@ -859,6 +941,9 @@ static struct file_operations fops = {
 	.write		= irctl_write,
 	.poll		= irctl_poll,
 	.ioctl		= irctl_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl	= irctl_compat_ioctl,
+#endif
 	.open		= irctl_open,
 	.release	= irctl_close
 };
