@@ -633,8 +633,6 @@ static int __init usb_remote_init(void)
 	printk(KERN_INFO DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(": debug mode enabled\n");
 
-	request_module("lirc_dev");
-
 	i = usb_register(&usb_remote_driver);
 	if (i < 0) {
 		printk(KERN_ERR DRIVER_NAME

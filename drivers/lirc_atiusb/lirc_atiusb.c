@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.74 2009/01/04 11:57:19 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.75 2009/01/04 16:08:16 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.74 $"
+#define DRIVER_VERSION		"$Revision: 1.75 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1371,9 +1371,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.74 2009/01/04 11:57:19 lirc Exp $\n");
-
-	request_module("lirc_dev");
+		"$Id: lirc_atiusb.c,v 1.75 2009/01/04 16:08:16 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 

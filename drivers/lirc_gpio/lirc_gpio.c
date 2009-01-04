@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.52 2009/01/03 09:36:40 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.53 2009/01/04 16:08:16 lirc Exp $
  *
  */
 
@@ -494,8 +494,6 @@ int init_module(void)
 		return -EBADRQC;
 	}
 
-	request_module("bttv");
-
 	/* if gpio_mask not zero then use module parameters
 	 * instead of autodetecting TV card
 	 */
@@ -564,8 +562,6 @@ int init_module(void)
 			return -EBADRQC;
 		}
 	}
-
-	request_module("lirc_dev");
 
 	return gpio_remote_init();
 }
