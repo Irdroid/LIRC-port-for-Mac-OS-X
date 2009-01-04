@@ -546,11 +546,13 @@ mem_failure_switch:
 	do_gettimeofday(&ir->last_time);
 
 	if (dev->descriptor.iManufacturer
-		&& usb_string(dev, dev->descriptor.iManufacturer, buf, 63) > 0)
-		strncpy(name, buf, 128);
+	    && usb_string(dev, dev->descriptor.iManufacturer,
+			  buf, sizeof(buf)) > 0)
+		strlcpy(name, buf, sizeof(name));
 	if (dev->descriptor.iProduct
-		&& usb_string(dev, dev->descriptor.iProduct, buf, 63) > 0)
-		snprintf(name, 128, "%s %s", name, buf);
+	    && usb_string(dev, dev->descriptor.iProduct, buf, sizeof(buf)) > 0)
+		snprintf(name + strlen(name), sizeof(name) - strlen(name),
+			 " %s", buf);
 	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
 	       dev->bus->busnum, devnum);
 

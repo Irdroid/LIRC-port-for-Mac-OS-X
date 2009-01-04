@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.31 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.32 2009/01/04 11:57:19 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.31 $"
+#define DRIVER_VERSION	"$Revision: 1.32 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -629,12 +629,15 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 #endif
 
 	if (udev->descriptor.iManufacturer
-	    && usb_string(udev, udev->descriptor.iManufacturer, buf, 63) > 0)
-		strncpy(name, buf, 128);
+	    && usb_string(udev, udev->descriptor.iManufacturer, buf,
+			  sizeof(buf)) > 0)
+		strlcpy(name, buf, sizeof(name));
 
 	if (udev->descriptor.iProduct
-	    && usb_string(udev,  udev->descriptor.iProduct, buf, 63) > 0)
-		snprintf(name, 128, "%s %s", name, buf);
+	    && usb_string(udev,  udev->descriptor.iProduct, buf,
+			  sizeof(buf)) > 0)
+		snprintf(name + strlen(name), sizeof(name) - strlen(name),
+			 " %s", buf);
 
 	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d attached\n",
 	       sz->driver.minor, name,
