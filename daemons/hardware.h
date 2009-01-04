@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.11 2007/07/29 18:20:06 lirc Exp $      */
+/*      $Id: hardware.h,v 5.12 2009/01/04 22:17:39 lirc Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -38,7 +38,7 @@ struct hardware
 	lirc_t (*readdata)(lirc_t timeout);
 	char *name;
 	
-	int resolution;
+	unsigned int resolution;
 };
 
 extern struct hardware hw;

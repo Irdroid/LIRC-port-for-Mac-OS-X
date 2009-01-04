@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.64 2009/01/03 09:36:40 lirc Exp $
+ * $Id: lirc_dev.c,v 1.65 2009/01/04 22:17:39 lirc Exp $
  *
  */
 
@@ -722,8 +722,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		 */
 		break;
 	case LIRC_GET_LENGTH:
-		result = put_user((unsigned long)ir->d.code_length,
-				  (unsigned long *)arg);
+		result = put_user(ir->d.code_length, (unsigned long *) arg);
 		break;
 	default:
 		result = -ENOIOCTLCMD;

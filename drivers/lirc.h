@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.15 2009/01/02 21:45:39 lirc Exp $      */
+/*      $Id: lirc.h,v 5.16 2009/01/04 22:17:39 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -11,7 +11,6 @@
 #if defined(__NetBSD__)
 #include <sys/ioctl.h>
 #endif
-typedef u_int32_t __u32;
 #endif
 
 #define PULSE_BIT  0x01000000
@@ -75,35 +74,35 @@ typedef int lirc_t;
  * IOCTL commands for lirc driver
  */
 
-#define LIRC_GET_FEATURES              _IOR('i', 0x00000000, __u32)
+#define LIRC_GET_FEATURES              _IOR('i', 0x00000000, unsigned long)
 
-#define LIRC_GET_SEND_MODE             _IOR('i', 0x00000001, __u32)
-#define LIRC_GET_REC_MODE              _IOR('i', 0x00000002, __u32)
-#define LIRC_GET_SEND_CARRIER          _IOR('i', 0x00000003, __u32)
-#define LIRC_GET_REC_CARRIER           _IOR('i', 0x00000004, __u32)
-#define LIRC_GET_SEND_DUTY_CYCLE       _IOR('i', 0x00000005, __u32)
-#define LIRC_GET_REC_DUTY_CYCLE        _IOR('i', 0x00000006, __u32)
-#define LIRC_GET_REC_RESOLUTION        _IOR('i', 0x00000007, __u32)
+#define LIRC_GET_SEND_MODE             _IOR('i', 0x00000001, unsigned long)
+#define LIRC_GET_REC_MODE              _IOR('i', 0x00000002, unsigned long)
+#define LIRC_GET_SEND_CARRIER          _IOR('i', 0x00000003, unsigned int)
+#define LIRC_GET_REC_CARRIER           _IOR('i', 0x00000004, unsigned int)
+#define LIRC_GET_SEND_DUTY_CYCLE       _IOR('i', 0x00000005, unsigned int)
+#define LIRC_GET_REC_DUTY_CYCLE        _IOR('i', 0x00000006, unsigned int)
+#define LIRC_GET_REC_RESOLUTION        _IOR('i', 0x00000007, unsigned int)
 
 /* code length in bits, currently only for LIRC_MODE_LIRCCODE */
-#define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, __u32)
+#define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, unsigned long)
 
-#define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, __u32)
-#define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, __u32)
+#define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, unsigned long)
+#define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, unsigned long)
 /* Note: these can reset the according pulse_width */
-#define LIRC_SET_SEND_CARRIER          _IOW('i', 0x00000013, __u32)
-#define LIRC_SET_REC_CARRIER           _IOW('i', 0x00000014, __u32)
-#define LIRC_SET_SEND_DUTY_CYCLE       _IOW('i', 0x00000015, __u32)
-#define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, __u32)
-#define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, __u32)
+#define LIRC_SET_SEND_CARRIER          _IOW('i', 0x00000013, unsigned int)
+#define LIRC_SET_REC_CARRIER           _IOW('i', 0x00000014, unsigned int)
+#define LIRC_SET_SEND_DUTY_CYCLE       _IOW('i', 0x00000015, unsigned int)
+#define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, unsigned int)
+#define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, unsigned int)
 
 /* to set a range use
    LIRC_SET_REC_DUTY_CYCLE_RANGE/LIRC_SET_REC_CARRIER_RANGE with the
    lower bound first and later
    LIRC_SET_REC_DUTY_CYCLE/LIRC_SET_REC_CARRIER with the upper bound */
 
-#define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, __u32)
-#define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, __u32)
+#define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, unsigned int)
+#define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, unsigned int)
 
 #define LIRC_NOTIFY_DECODE             _IO('i', 0x00000020)
 

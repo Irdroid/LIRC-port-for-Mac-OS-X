@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.33 2009/01/04 12:12:54 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.34 2009/01/04 22:17:40 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.33 $"
+#define DRIVER_VERSION	"$Revision: 1.34 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -760,7 +760,7 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 
 	switch (cmd) {
 	case LIRC_GET_REC_RESOLUTION:
-		result = put_user(STREAMZAP_RESOLUTION, (unsigned long *) arg);
+		result = put_user(STREAMZAP_RESOLUTION, (unsigned int *) arg);
 		if (result)
 			return(result);
 		break;

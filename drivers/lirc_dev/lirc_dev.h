@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.23 2009/01/02 22:58:30 lirc Exp $
+ * $Id: lirc_dev.h,v 1.24 2009/01/04 22:17:39 lirc Exp $
  *
  */
 
@@ -172,7 +172,7 @@ static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 struct lirc_driver {
 	char name[40];
 	int minor;
-	int code_length;
+	unsigned long code_length;
 	int sample_rate;
 	unsigned long features;
 	void *data;
