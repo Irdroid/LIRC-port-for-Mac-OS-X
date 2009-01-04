@@ -636,7 +636,7 @@ static void send_it87(unsigned long len, unsigned long stime,
 	static unsigned char byte_out;
 	unsigned long hw_flags;
 
-	dprintk("%s: len=%ld, sb=%d\n", __FUNCTION__, len, send_byte);
+	dprintk("%s: len=%ld, sb=%d\n", __func__, len, send_byte);
 
 	time_left = (long)len - (long)count * (long)stime;
 	count += ((2 * time_left) / stime);

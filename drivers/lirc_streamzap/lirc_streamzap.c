@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.32 2009/01/04 11:57:19 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.33 2009/01/04 12:12:54 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.32 $"
+#define DRIVER_VERSION	"$Revision: 1.33 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -509,10 +509,10 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	if (iface_host->bNumEndpoints != 1) {
 #endif
 #ifdef KERNEL_2_5
-		err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
+		err("%s: Unexpected desc.bNumEndpoints (%d)", __func__,
 		    iface_host->desc.bNumEndpoints);
 #else
-		err("%s: Unexpected desc.bNumEndpoints (%d)", __FUNCTION__,
+		err("%s: Unexpected desc.bNumEndpoints (%d)", __func__,
 		    iface_host->bNumEndpoints);
 #endif
 		retval = -ENODEV;
@@ -527,7 +527,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	if ((sz->endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
 	    != USB_DIR_IN) {
 		err("%s: endpoint doesn't match input device 02%02x",
-		    __FUNCTION__, sz->endpoint->bEndpointAddress);
+		    __func__, sz->endpoint->bEndpointAddress);
 		retval = -ENODEV;
 		goto error;
 	}
@@ -535,13 +535,13 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	if ((sz->endpoint->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 	    != USB_ENDPOINT_XFER_INT) {
 		err("%s: endpoint attributes don't match xfer 02%02x",
-		    __FUNCTION__, sz->endpoint->bmAttributes);
+		    __func__, sz->endpoint->bmAttributes);
 		retval = -ENODEV;
 		goto error;
 	}
 
 	if (sz->endpoint->wMaxPacketSize == 0) {
-		err("%s: endpoint message size==0? ", __FUNCTION__);
+		err("%s: endpoint message size==0? ", __func__);
 		retval = -ENODEV;
 		goto error;
 	}
@@ -698,7 +698,7 @@ static int streamzap_use_inc(void *data)
 	struct usb_streamzap *sz = data;
 
 	if (!sz) {
-		dprintk("%s called with no context", -1, __FUNCTION__);
+		dprintk("%s called with no context", -1, __func__);
 		return -EINVAL;
 	}
 	dprintk("set use inc", sz->driver.minor);
@@ -735,7 +735,7 @@ static void streamzap_use_dec(void *data)
 	struct usb_streamzap *sz = data;
 
 	if (!sz) {
-		dprintk("%s called with no context", -1, __FUNCTION__);
+		dprintk("%s called with no context", -1, __func__);
 		return;
 	}
 	dprintk("set use dec", sz->driver.minor);

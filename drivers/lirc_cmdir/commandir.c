@@ -318,7 +318,7 @@ static int cmdir_open(struct inode *inode, struct file *file)
 	interface = usb_find_interface(&cmdir_driver, subminor);
 	if (!interface) {
 		err("%s - error, can't find device for minor %d",
-		     __FUNCTION__, subminor);
+		     __func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -1450,7 +1450,7 @@ exit:
 	retval = usb_submit_urb(urb, GFP_KERNEL);
 	if (retval) {
 		err("%s - failed submitting write urb, error %d",
-		    __FUNCTION__, retval);
+		    __func__, retval);
 		goto error;
 	}
 

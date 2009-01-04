@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.23 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.24 2009/01/04 12:12:54 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -260,7 +260,7 @@ static inline void delete_context(struct sasem_context *context)
 	kfree(context);
 
 	if (debug)
-		info("%s: context deleted", __FUNCTION__);
+		info("%s: context deleted", __func__);
 }
 
 static inline void deregister_from_lirc(struct sasem_context *context)
@@ -271,7 +271,7 @@ static inline void deregister_from_lirc(struct sasem_context *context)
 	retval = lirc_unregister_driver(minor);
 	if (retval)
 		err("%s: unable to deregister from lirc (%d)",
-			__FUNCTION__, retval);
+			__func__, retval);
 	else
 		info("Deregistered Sasem driver (minor:%d)", minor);
 
@@ -298,7 +298,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 	interface = usb_find_interface(&sasem_driver, subminor);
 	if (!interface) {
 		err("%s: could not find interface for minor %d",
-		    __FUNCTION__, subminor);
+		    __func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -306,7 +306,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 #else
 	subminor = MINOR(inode->i_rdev) - VFD_MINOR_BASE;
 	if (subminor < 0 || subminor >= MAX_DEVICES) {
-		err("%s: no record of minor %d", __FUNCTION__, subminor);
+		err("%s: no record of minor %d", __func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -315,7 +315,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 
 	if (!context) {
 		err("%s: no context found for minor %d",
-					__FUNCTION__, subminor);
+					__func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -323,7 +323,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 	LOCK_CONTEXT;
 
 	if (context->vfd_isopen) {
-		err("%s: VFD port is already open", __FUNCTION__);
+		err("%s: VFD port is already open", __func__);
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
@@ -351,7 +351,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 	context = (struct sasem_context *) file->private_data;
 
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
@@ -387,14 +387,14 @@ static int vfd_close(struct inode *inode, struct file *file)
 	context = (struct sasem_context *) file->private_data;
 
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->vfd_isopen) {
-		err("%s: VFD is not open", __FUNCTION__);
+		err("%s: VFD is not open", __func__);
 		retval = -EIO;
 	} else {
 		context->vfd_isopen = FALSE;
@@ -446,7 +446,7 @@ static inline int send_packet(struct sasem_context *context)
 #endif
 	if (retval != SUCCESS) {
 		atomic_set(&(context->tx.busy), 0);
-		err("%s: error submitting urb (%d)", __FUNCTION__, retval);
+		err("%s: error submitting urb (%d)", __func__, retval);
 	} else {
 		/* Wait for tranmission to complete (or abort) */
 		UNLOCK_CONTEXT;
@@ -455,7 +455,7 @@ static inline int send_packet(struct sasem_context *context)
 
 		retval = context->tx.status;
 		if (retval != SUCCESS)
-			err("%s: packet tx failed (%d)", __FUNCTION__, retval);
+			err("%s: packet tx failed (%d)", __func__, retval);
 	}
 
 	return retval;
@@ -475,20 +475,20 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 
 	context = (struct sasem_context *) file->private_data;
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->dev_present) {
-		err("%s: no Sasem device present", __FUNCTION__);
+		err("%s: no Sasem device present", __func__);
 		retval = -ENODEV;
 		goto exit;
 	}
 
 	if (n_bytes <= 0 || n_bytes > 32) {
-		err("%s: invalid payload size", __FUNCTION__);
+		err("%s: invalid payload size", __func__);
 		retval = -EINVAL;
 		goto exit;
 	}
@@ -541,7 +541,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		if (retval != SUCCESS) {
 
 			err("%s: send packet failed for packet #%d",
-					__FUNCTION__, i);
+					__func__, i);
 			goto exit;
 		}
 	}
@@ -594,7 +594,7 @@ static int ir_open(void *data)
 	LOCK_CONTEXT;
 
 	if (context->ir_isopen) {
-		err("%s: IR port is already open", __FUNCTION__);
+		err("%s: IR port is already open", __func__);
 		retval = -EBUSY;
 		goto exit;
 	}
@@ -613,7 +613,7 @@ static int ir_open(void *data)
 
 	if (retval)
 		err("%s: usb_submit_urb failed for ir_open (%d)",
-		    __FUNCTION__, retval);
+		    __func__, retval);
 	else {
 		MOD_INC_USE_COUNT;
 		context->ir_isopen = TRUE;
@@ -636,7 +636,7 @@ static void ir_close(void *data)
 
 	context = (struct sasem_context *)data;
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return;
 	}
 
@@ -682,7 +682,7 @@ static inline void incoming_packet(struct sasem_context *context,
 
 	if (len != 8) {
 		warn("%s: invalid incoming packet size (%d)",
-		     __FUNCTION__, len);
+		     __func__, len);
 		return;
 	}
 
@@ -756,8 +756,7 @@ static void usb_rx_callback(struct urb *urb)
 		break;
 
 	default:
-		warn("%s: status (%d): ignored",
-			 __FUNCTION__, urb->status);
+		warn("%s: status (%d): ignored", __func__, urb->status);
 		break;
 	}
 
@@ -804,7 +803,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	struct sasem_context *context = NULL;
 	int i;
 
-	info("%s: found Sasem device", __FUNCTION__);
+	info("%s: found Sasem device", __func__);
 
 #if !defined(KERNEL_2_5)
 	for (subminor = 0; subminor < MAX_DEVICES; ++subminor) {
@@ -813,7 +812,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	}
 	if (subminor == MAX_DEVICES) {
 		err("%s: allowed number of devices already present",
-		    __FUNCTION__);
+		    __func__);
 		retval = -ENOMEM;
 		goto exit;
 	}
@@ -858,7 +857,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			rx_endpoint = ep;
 			ir_ep_found = TRUE;
 			if (debug)
-				info("%s: found IR endpoint", __FUNCTION__);
+				info("%s: found IR endpoint", __func__);
 
 		} else if (!vfd_ep_found &&
 			ep_dir == USB_DIR_OUT &&
@@ -867,21 +866,21 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			tx_endpoint = ep;
 			vfd_ep_found = TRUE;
 			if (debug)
-				info("%s: found VFD endpoint", __FUNCTION__);
+				info("%s: found VFD endpoint", __func__);
 		}
 	}
 
 	/* Input endpoint is mandatory */
 	if (!ir_ep_found) {
 
-		err("%s: no valid input (IR) endpoint found.", __FUNCTION__);
+		err("%s: no valid input (IR) endpoint found.", __func__);
 		retval = -ENODEV;
 		goto exit;
 	}
 
 	/* Warning if no VFD endpoint */
 	if (!vfd_ep_found)
-		info("%s: no valid output (VFD) endpoint found.", __FUNCTION__);
+		info("%s: no valid output (VFD) endpoint found.", __func__);
 
 
 	/* Allocate memory */
@@ -889,24 +888,24 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 
 	context = kmalloc(sizeof(struct sasem_context), GFP_KERNEL);
 	if (!context) {
-		err("%s: kmalloc failed for context", __FUNCTION__);
+		err("%s: kmalloc failed for context", __func__);
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
 	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
-		err("%s: kmalloc failed for lirc_driver", __FUNCTION__);
+		err("%s: kmalloc failed for lirc_driver", __func__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
 	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 	if (!rbuf) {
-		err("%s: kmalloc failed for lirc_buffer", __FUNCTION__);
+		err("%s: kmalloc failed for lirc_buffer", __func__);
 		alloc_status = 3;
 		goto alloc_status_switch;
 	}
 	if (lirc_buffer_init(rbuf, BUF_CHUNK_SIZE, BUF_SIZE)) {
-		err("%s: lirc_buffer_init failed", __FUNCTION__);
+		err("%s: lirc_buffer_init failed", __func__);
 		alloc_status = 4;
 		goto alloc_status_switch;
 	}
@@ -916,7 +915,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	rx_urb = usb_alloc_urb(0);
 #endif
 	if (!rx_urb) {
-		err("%s: usb_alloc_urb failed for IR urb", __FUNCTION__);
+		err("%s: usb_alloc_urb failed for IR urb", __func__);
 		alloc_status = 5;
 		goto alloc_status_switch;
 	}
@@ -927,8 +926,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		tx_urb = usb_alloc_urb(0);
 #endif
 		if (!tx_urb) {
-			err("%s: usb_alloc_urb failed for VFD urb",
-			    __FUNCTION__);
+			err("%s: usb_alloc_urb failed for VFD urb", __func__);
 			alloc_status = 6;
 			goto alloc_status_switch;
 		}
@@ -958,12 +956,12 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 
 	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
-		err("%s: lirc_register_driver failed", __FUNCTION__);
+		err("%s: lirc_register_driver failed", __func__);
 		alloc_status = 7;
 		UNLOCK_CONTEXT;
 	} else
 		info("%s: Registered Sasem driver (minor:%d)",
-			__FUNCTION__, lirc_minor);
+			__func__, lirc_minor);
 
 alloc_status_switch:
 
@@ -1017,7 +1015,7 @@ alloc_status_switch:
 		if (usb_register_dev(interface, &sasem_class))
 			/* Not a fatal error, so ignore */
 			info("%s: could not get a minor number for VFD",
-				__FUNCTION__);
+				__func__);
 #else
 		sprintf(name, DEVFS_NAME, subminor);
 		context->devfs = devfs_register(usb_devfs_handle, name,
@@ -1027,12 +1025,12 @@ alloc_status_switch:
 		if (!context->devfs)
 			/* not a fatal error so ignore */
 			info("%s: devfs register failed for VFD",
-					__FUNCTION__);
+					__func__);
 #endif
 	}
 
 	info("%s: Sasem device on usb<%d:%d> initialized",
-			__FUNCTION__, dev->bus->busnum, dev->devnum);
+			__func__, dev->bus->busnum, dev->devnum);
 
 	UNLOCK_CONTEXT;
 exit:
@@ -1064,7 +1062,7 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 #endif
 	LOCK_CONTEXT;
 
-	info("%s: Sasem device disconnected", __FUNCTION__);
+	info("%s: Sasem device disconnected", __func__);
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, NULL);
@@ -1111,7 +1109,7 @@ static int __init sasem_init(void)
 
 	rc = usb_register(&sasem_driver);
 	if (rc < 0) {
-		err("%s: usb register failed (%d)", __FUNCTION__, rc);
+		err("%s: usb register failed (%d)", __func__, rc);
 		return -ENODEV;
 	}
 	return SUCCESS;

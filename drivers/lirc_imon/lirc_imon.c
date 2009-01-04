@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.34 2009/01/02 22:58:30 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.35 2009/01/04 12:12:54 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -381,7 +381,7 @@ static inline void delete_context(struct imon_context *context)
 	kfree(context);
 
 	if (debug)
-		info("%s: context deleted", __FUNCTION__);
+		info("%s: context deleted", __func__);
 }
 
 static inline void deregister_from_lirc(struct imon_context *context)
@@ -392,7 +392,7 @@ static inline void deregister_from_lirc(struct imon_context *context)
 	retval = lirc_unregister_driver(minor);
 	if (retval)
 		err("%s: unable to deregister from lirc(%d)",
-			__FUNCTION__, retval);
+			__func__, retval);
 	else
 		info("Deregistered iMON driver(minor:%d)", minor);
 
@@ -419,7 +419,7 @@ static int display_open(struct inode *inode, struct file *file)
 	interface = usb_find_interface(&imon_driver, subminor);
 	if (!interface) {
 		err("%s: could not find interface for minor %d",
-		    __FUNCTION__, subminor);
+		    __func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -427,7 +427,7 @@ static int display_open(struct inode *inode, struct file *file)
 #else
 	subminor = MINOR(inode->i_rdev) - DISPLAY_MINOR_BASE;
 	if (subminor < 0 || subminor >= MAX_DEVICES) {
-		err("%s: no record of minor %d", __FUNCTION__, subminor);
+		err("%s: no record of minor %d", __func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -436,7 +436,7 @@ static int display_open(struct inode *inode, struct file *file)
 
 	if (!context) {
 		err("%s: no context found for minor %d",
-					__FUNCTION__, subminor);
+					__func__, subminor);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -444,10 +444,10 @@ static int display_open(struct inode *inode, struct file *file)
 	LOCK_CONTEXT;
 
 	if (!context->display_supported) {
-		err("%s: VFD not supported by device", __FUNCTION__);
+		err("%s: VFD not supported by device", __func__);
 		retval = -ENODEV;
 	} else if (context->display_isopen) {
-		err("%s: VFD port is already open", __FUNCTION__);
+		err("%s: VFD port is already open", __func__);
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
@@ -475,17 +475,17 @@ static int display_close(struct inode *inode, struct file *file)
 	context = (struct imon_context *) file->private_data;
 
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->display_supported) {
-		err("%s: VFD not supported by device", __FUNCTION__);
+		err("%s: VFD not supported by device", __func__);
 		retval = -ENODEV;
 	} else if (!context->display_isopen) {
-		err("%s: VFD is not open", __FUNCTION__);
+		err("%s: VFD is not open", __func__);
 		retval = -EIO;
 	} else {
 		context->display_isopen = FALSE;
@@ -563,7 +563,7 @@ static inline int send_packet(struct imon_context *context)
 #endif
 	if (retval != SUCCESS) {
 		atomic_set(&(context->tx.busy), 0);
-		err("%s: error submitting urb(%d)", __FUNCTION__, retval);
+		err("%s: error submitting urb(%d)", __func__, retval);
 	} else {
 		/* Wait for tranmission to complete(or abort) */
 		UNLOCK_CONTEXT;
@@ -572,7 +572,7 @@ static inline int send_packet(struct imon_context *context)
 
 		retval = context->tx.status;
 		if (retval != SUCCESS)
-			err("%s: packet tx failed(%d)", __FUNCTION__, retval);
+			err("%s: packet tx failed(%d)", __func__, retval);
 	}
 
 	kfree(control_req);
@@ -596,14 +596,14 @@ static inline int send_associate_24g(struct imon_context *context)
 					  0x00, 0x00, 0x00, 0x20 };
 
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->dev_present) {
-		err("%s: no iMON device present", __FUNCTION__);
+		err("%s: no iMON device present", __func__);
 		retval = -ENODEV;
 		goto exit;
 	}
@@ -707,20 +707,20 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 
 	context = (struct imon_context *) file->private_data;
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->dev_present) {
-		err("%s: no iMON device present", __FUNCTION__);
+		err("%s: no iMON device present", __func__);
 		retval = -ENODEV;
 		goto exit;
 	}
 
 	if (n_bytes <= 0 || n_bytes > 32) {
-		err("%s: invalid payload size", __FUNCTION__);
+		err("%s: invalid payload size", __func__);
 		retval = -EINVAL;
 		goto exit;
 	}
@@ -745,7 +745,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		retval = send_packet(context);
 		if (retval != SUCCESS) {
 			err("%s: send packet failed for packet #%d",
-					__FUNCTION__, seq/2);
+					__func__, seq/2);
 			goto exit;
 		} else {
 			seq += 2;
@@ -761,7 +761,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		retval = send_packet(context);
 		if (retval != SUCCESS)
 			err("%s: send packet failed for packet #%d",
-					__FUNCTION__, seq/2);
+					__func__, seq/2);
 	}
 
 exit:
@@ -791,21 +791,21 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 
 	context = (struct imon_context *) file->private_data;
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return -ENODEV;
 	}
 
 	LOCK_CONTEXT;
 
 	if (!context->dev_present) {
-		err("%s: no iMON device present", __FUNCTION__);
+		err("%s: no iMON device present", __func__);
 		retval = -ENODEV;
 		goto exit;
 	}
 
 	if (n_bytes != 8) {
 		err("%s: invalid payload size: %d (expecting 8)",
-		  __FUNCTION__, (int) n_bytes);
+		  __func__, (int) n_bytes);
 		retval = -EINVAL;
 		goto exit;
 	}
@@ -817,11 +817,10 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 
 	retval = send_packet(context);
 	if (retval != SUCCESS) {
-		err("%s: send packet failed!",
-		  __FUNCTION__);
+		err("%s: send packet failed!", __func__);
 		goto exit;
 	} else if (debug) {
-		info("%s: write %d bytes to LCD", __FUNCTION__, (int) n_bytes);
+		info("%s: write %d bytes to LCD", __func__, (int) n_bytes);
 	}
 exit:
 	UNLOCK_CONTEXT;
@@ -870,7 +869,7 @@ static int ir_open(void *data)
 	LOCK_CONTEXT;
 
 	if (context->ir_isopen) {
-		err("%s: IR port is already open", __FUNCTION__);
+		err("%s: IR port is already open", __func__);
 		retval = -EBUSY;
 		goto exit;
 	}
@@ -894,7 +893,7 @@ static int ir_open(void *data)
 
 	if (retval)
 		err("%s: usb_submit_urb failed for ir_open(%d)",
-		    __FUNCTION__, retval);
+		    __func__, retval);
 	else {
 		MOD_INC_USE_COUNT;
 		context->ir_isopen = TRUE;
@@ -917,7 +916,7 @@ static void ir_close(void *data)
 
 	context = (struct imon_context *)data;
 	if (!context) {
-		err("%s: no context for device", __FUNCTION__);
+		err("%s: no context for device", __func__);
 		return;
 	}
 
@@ -1027,7 +1026,7 @@ static inline void incoming_packet(struct imon_context *context,
 
 	if (len != 8) {
 		warn("%s: invalid incoming packet size(%d)",
-		     __FUNCTION__, len);
+		     __func__, len);
 		return;
 	}
 
@@ -1039,7 +1038,7 @@ static inline void incoming_packet(struct imon_context *context,
 	    buf[5] == 0xFF &&				/* iMON 2.4G */
 	   ((buf[6] == 0x4E && buf[7] == 0xDF) ||	/* LT */
 	    (buf[6] == 0x5E && buf[7] == 0xDF))) {	/* DT */
-		warn("%s: remote associated refid=%02X", __FUNCTION__, buf[1]);
+		warn("%s: remote associated refid=%02X", __func__, buf[1]);
 		context->ir_isassociating = FALSE;
 	}
 
@@ -1141,7 +1140,7 @@ static void usb_rx_callback(struct urb *urb)
 			incoming_packet(context, urb);
 		break;
 	default	:
-		warn("%s: status(%d): ignored", __FUNCTION__, urb->status);
+		warn("%s: status(%d): ignored", __func__, urb->status);
 		break;
 	}
 
@@ -1193,7 +1192,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	struct imon_context *context = NULL;
 	int i;
 
-	info("%s: found IMON device", __FUNCTION__);
+	info("%s: found IMON device", __func__);
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
@@ -1220,7 +1219,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	}
 	if (subminor == MAX_DEVICES) {
 		err("%s: allowed max number of devices already present",
-		    __FUNCTION__);
+		    __func__);
 		retval = -ENOMEM;
 		goto exit;
 	}
@@ -1265,7 +1264,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			rx_endpoint = ep;
 			ir_ep_found = TRUE;
 			if (debug)
-				info("%s: found IR endpoint", __FUNCTION__);
+				info("%s: found IR endpoint", __func__);
 
 		} else if (!display_ep_found &&
 			   ep_dir == USB_DIR_OUT &&
@@ -1273,7 +1272,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			tx_endpoint = ep;
 			display_ep_found = TRUE;
 			if (debug)
-				info("%s: found VFD endpoint", __FUNCTION__);
+				info("%s: found VFD endpoint", __func__);
 		}
 	}
 
@@ -1307,7 +1306,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/* Input endpoint is mandatory */
 	if (!ir_ep_found) {
-		err("%s: no valid input(IR) endpoint found.", __FUNCTION__);
+		err("%s: no valid input(IR) endpoint found.", __func__);
 		retval = -ENODEV;
 		goto exit;
 	} else {
@@ -1334,24 +1333,24 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	context = kmalloc(sizeof(struct imon_context), GFP_KERNEL);
 	if (!context) {
-		err("%s: kmalloc failed for context", __FUNCTION__);
+		err("%s: kmalloc failed for context", __func__);
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
 	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
-		err("%s: kmalloc failed for lirc_driver", __FUNCTION__);
+		err("%s: kmalloc failed for lirc_driver", __func__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
 	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 	if (!rbuf) {
-		err("%s: kmalloc failed for lirc_buffer", __FUNCTION__);
+		err("%s: kmalloc failed for lirc_buffer", __func__);
 		alloc_status = 3;
 		goto alloc_status_switch;
 	}
 	if (lirc_buffer_init(rbuf, buf_chunk_size, BUF_SIZE)) {
-		err("%s: lirc_buffer_init failed", __FUNCTION__);
+		err("%s: lirc_buffer_init failed", __func__);
 		alloc_status = 4;
 		goto alloc_status_switch;
 	}
@@ -1361,7 +1360,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	rx_urb = usb_alloc_urb(0);
 #endif
 	if (!rx_urb) {
-		err("%s: usb_alloc_urb failed for IR urb", __FUNCTION__);
+		err("%s: usb_alloc_urb failed for IR urb", __func__);
 		alloc_status = 5;
 		goto alloc_status_switch;
 	}
@@ -1373,7 +1372,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #endif
 		if (!tx_urb) {
 			err("%s: usb_alloc_urb failed for VFD urb",
-			    __FUNCTION__);
+			    __func__);
 			alloc_status = 6;
 			goto alloc_status_switch;
 		}
@@ -1407,13 +1406,13 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
-		err("%s: lirc_register_driver failed", __FUNCTION__);
+		err("%s: lirc_register_driver failed", __func__);
 		alloc_status = 7;
 		UNLOCK_CONTEXT;
 		goto alloc_status_switch;
 	} else
 		info("%s: Registered iMON driver(minor:%d)",
-		     __FUNCTION__, lirc_minor);
+		     __func__, lirc_minor);
 
 	/* Needed while unregistering! */
 	driver->minor = lirc_minor;
@@ -1440,7 +1439,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 					 &imon_attribute_group);
 		if (err)
 			err("%s: Could not create sysfs entries(%d)",
-			    __FUNCTION__, err);
+			    __func__, err);
 	}
 #else
 	minor_table[subminor] = context;
@@ -1454,7 +1453,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
 			info("%s: could not get a minor number for VFD",
-				__FUNCTION__);
+				__func__);
 		}
 #else
 		sprintf(name, DEVFS_NAME, subminor);
@@ -1464,13 +1463,13 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 					DEVFS_MODE, &display_fops, NULL))) {
 			/* not a fatal error so ignore */
 			info("%s: devfs register failed for VFD",
-					__FUNCTION__);
+					__func__);
 		}
 #endif
 	}
 
 	info("%s: iMON device on usb<%d:%d> initialized",
-			__FUNCTION__, dev->bus->busnum, dev->devnum);
+			__func__, dev->bus->busnum, dev->devnum);
 
 	UNLOCK_CONTEXT;
 
@@ -1526,7 +1525,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 #endif
 	LOCK_CONTEXT;
 
-	info("%s: iMON device disconnected", __FUNCTION__);
+	info("%s: iMON device disconnected", __func__);
 
 #ifdef KERNEL_2_5
 	/* sysfs_remove_group is safe to call even if sysfs_create_group
@@ -1597,7 +1596,7 @@ static int __init imon_init(void)
 
 	rc = usb_register(&imon_driver);
 	if (rc) {
-		err("%s: usb register failed(%d)", __FUNCTION__, rc);
+		err("%s: usb register failed(%d)", __func__, rc);
 		return -ENODEV;
 	}
 	return SUCCESS;
