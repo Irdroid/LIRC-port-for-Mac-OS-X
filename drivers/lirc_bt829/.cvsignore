@@ -8,4 +8,5 @@ lirc_bt829.ko
 lirc_bt829.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

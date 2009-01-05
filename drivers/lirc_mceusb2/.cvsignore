@@ -8,4 +8,5 @@ lirc_mceusb2.ko
 lirc_mceusb2.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

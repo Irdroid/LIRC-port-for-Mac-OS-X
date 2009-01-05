@@ -8,4 +8,5 @@ lirc_sir.ko
 lirc_sir.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

@@ -8,4 +8,5 @@ lirc_parallel.ko
 lirc_parallel.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

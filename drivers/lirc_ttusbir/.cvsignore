@@ -8,4 +8,5 @@ lirc_ttusbir.ko
 lirc_ttusbir.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

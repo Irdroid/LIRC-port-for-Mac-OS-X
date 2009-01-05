@@ -1,4 +1,9 @@
 .deps
+.commandir.ko.cmd
+.commandir.mod.o.cmd
+.commandir.o.cmd
+commandir.ko
+commandir.mod.c
 .lirc_cmdir.o.flags
 .lirc_cmdir.ko.cmd
 .lirc_cmdir.mod.o.cmd
@@ -8,4 +13,5 @@ lirc_cmdir.ko
 lirc_cmdir.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers

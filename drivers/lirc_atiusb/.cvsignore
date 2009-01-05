@@ -8,4 +8,5 @@ lirc_atiusb.ko
 lirc_atiusb.mod.c
 Makefile.in
 Makefile
+Module.symvers
 Modules.symvers
