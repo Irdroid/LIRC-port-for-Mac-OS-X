@@ -706,7 +706,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 
 	/* allocate memory for our device state and initialize it */
-	dev = kmalloc(sizeof(struct usb_skel), GFP_KERNEL);
+	dev = kzalloc(sizeof(struct usb_skel), GFP_KERNEL);
 	if (dev == NULL) {
 		err("Out of memory");
 #ifdef KERNEL_2_5
@@ -716,7 +716,6 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 	minor_table[minor] = dev;
 
-	memset(dev, 0x00, sizeof(*dev));
 	init_MUTEX(&dev->sem);
 	dev->udev = udev;
 	dev->interface = interface;
@@ -814,12 +813,11 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 
 
 	/* Set up our lirc driver */
-	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
 		err("out of memory");
 		goto error;
 	}
-	memset(driver, 0, sizeof(struct lirc_driver));
 
 	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 	if (!rbuf) {

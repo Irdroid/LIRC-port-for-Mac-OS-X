@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.75 2009/01/04 16:08:16 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.76 2009/01/05 20:18:34 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.75 $"
+#define DRIVER_VERSION		"$Revision: 1.76 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -856,12 +856,11 @@ static struct in_endpt *new_in_endpt(struct irctl *ir,
 		"(maxp=%d len=%d)\n", ir->devnum, addr, maxp, len);
 
 	mem_failure = 0;
-	iep = kmalloc(sizeof(*iep), GFP_KERNEL);
+	iep = kzalloc(sizeof(*iep), GFP_KERNEL);
 	if (!iep) {
 		mem_failure = 1;
 		goto new_in_endpt_failure_check;
 	}
-	memset(iep, 0, sizeof(*iep));
 	iep->ir = ir;
 	iep->ep = ep;
 	iep->len = len;
@@ -954,11 +953,10 @@ static struct out_endpt *new_out_endpt(struct irctl *ir,
 		ir->devnum, ep->bEndpointAddress);
 
 	mem_failure = 0;
-	oep = kmalloc(sizeof(*oep), GFP_KERNEL);
+	oep = kzalloc(sizeof(*oep), GFP_KERNEL);
 	if (!oep)
 		mem_failure = 1;
 	else {
-		memset(oep, 0, sizeof(*oep));
 		oep->ir = ir;
 		oep->ep = ep;
 		init_waitqueue_head(&oep->wait);
@@ -1077,7 +1075,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 
 	/* allocate kernel memory */
 	mem_failure = 0;
-	ir = kmalloc(sizeof(*ir), GFP_KERNEL);
+	ir = kzalloc(sizeof(*ir), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto new_irctl_failure_check;
@@ -1086,20 +1084,18 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	/* at this stage we cannot use the macro [DE]CODE_LENGTH: ir
 	 * is not yet setup */
 	dclen = decode_length[type];
-	memset(ir, 0, sizeof(*ir));
 	/* add this infrared remote struct to remote_list, keeping track
 	 * of the number of drivers registered. */
 	dprintk(DRIVER_NAME "[%d]: adding remote to list\n", devnum);
 	list_add_tail(&ir->remote_list_link, &remote_list);
 	ir->dev_refcount = 1;
 
-	driver = kmalloc(sizeof(*driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(*driver), GFP_KERNEL);
 	if (!driver) {
 		mem_failure = 2;
 		goto new_irctl_failure_check;
 	}
 
-	memset(driver, 0, sizeof(*driver));
 	ir->d = driver;
 	driver->rbuf = kmalloc(sizeof(*(driver->rbuf)), GFP_KERNEL);
 	if (!driver->rbuf) {
@@ -1371,7 +1367,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.75 2009/01/04 16:08:16 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.76 2009/01/05 20:18:34 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 

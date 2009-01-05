@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.35 2009/01/04 12:12:54 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.36 2009/01/05 20:18:34 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -1331,15 +1331,15 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	alloc_status = SUCCESS;
 
-	context = kmalloc(sizeof(struct imon_context), GFP_KERNEL);
+	context = kzalloc(sizeof(struct imon_context), GFP_KERNEL);
 	if (!context) {
-		err("%s: kmalloc failed for context", __func__);
+		err("%s: kzalloc failed for context", __func__);
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
-	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
-		err("%s: kmalloc failed for lirc_driver", __func__);
+		err("%s: kzalloc failed for lirc_driver", __func__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
@@ -1378,13 +1378,9 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	/* clear all members of imon_context and lirc_driver */
-	memset(context, 0, sizeof(struct imon_context));
 	init_MUTEX(&context->sem);
 	context->display_proto_6p = display_proto_6p;
 	context->ir_onboard_decode = ir_onboard_decode;
-
-	memset(driver, 0, sizeof(struct lirc_driver));
 
 	strcpy(driver->name, MOD_NAME);
 	driver->minor = -1;

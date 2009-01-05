@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.60 $"
+#define DRIVER_VERSION	"$Revision: 1.61 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -890,15 +890,13 @@ static int usb_remote_probe(struct usb_interface *intf,
 
 	/* allocate kernel memory */
 	mem_failure = 0;
-	ir = kmalloc(sizeof(struct irctl), GFP_KERNEL);
+	ir = kzalloc(sizeof(struct irctl), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto mem_failure_switch;
 	}
 
-	memset(ir, 0, sizeof(struct irctl));
-
-	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
 		mem_failure = 2;
 		goto mem_failure_switch;
@@ -926,8 +924,6 @@ static int usb_remote_probe(struct usb_interface *intf,
 		mem_failure = 7;
 		goto mem_failure_switch;
 	}
-
-	memset(driver, 0, sizeof(struct lirc_driver));
 
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = -1;

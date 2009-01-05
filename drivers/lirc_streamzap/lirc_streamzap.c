@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.34 2009/01/04 22:17:40 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.35 2009/01/05 20:18:34 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.34 $"
+#define DRIVER_VERSION	"$Revision: 1.35 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -486,11 +486,10 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	/***************************************************
 	 * Allocate space for device driver specific data
 	 */
-	sz = kmalloc(sizeof(struct usb_streamzap), GFP_KERNEL);
+	sz = kzalloc(sizeof(struct usb_streamzap), GFP_KERNEL);
 	if (sz == NULL)
 		goto error;
 
-	memset(sz, 0, sizeof(*sz));
 	sz->udev = udev;
 	sz->interface = interface;
 
@@ -586,8 +585,6 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	/***************************************************
 	 * As required memory is allocated now populate the driver structure
 	 */
-
-	memset(&sz->driver, 0, sizeof(sz->driver));
 
 	strcpy(sz->driver.name, DRIVER_NAME);
 	sz->driver.minor = -1;

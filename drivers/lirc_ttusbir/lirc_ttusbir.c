@@ -242,10 +242,9 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 		(sizeof(struct urb *) * num_urbs) +
 		(sizeof(char *) * num_urbs) +
 		(num_urbs * 128);
-	ttusbir = kmalloc(struct_size, GFP_KERNEL);
+	ttusbir = kzalloc(struct_size, GFP_KERNEL);
 	if (!ttusbir)
 		return -ENOMEM;
-	memset(ttusbir, 0, struct_size);
 
 	ttusbir->urb = (struct urb **)((char *)ttusbir +
 				      sizeof(struct ttusbir_device));

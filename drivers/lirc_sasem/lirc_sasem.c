@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.24 2009/01/04 12:12:54 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.25 2009/01/05 20:18:34 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -886,15 +886,15 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	/* Allocate memory */
 	alloc_status = SUCCESS;
 
-	context = kmalloc(sizeof(struct sasem_context), GFP_KERNEL);
+	context = kzalloc(sizeof(struct sasem_context), GFP_KERNEL);
 	if (!context) {
-		err("%s: kmalloc failed for context", __func__);
+		err("%s: kzalloc failed for context", __func__);
 		alloc_status = 1;
 		goto alloc_status_switch;
 	}
-	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
-		err("%s: kmalloc failed for lirc_driver", __func__);
+		err("%s: kzalloc failed for lirc_driver", __func__);
 		alloc_status = 2;
 		goto alloc_status_switch;
 	}
@@ -932,11 +932,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	/* clear all members of sasem_context and lirc_driver */
-	memset(context, 0, sizeof(struct sasem_context));
 	init_MUTEX(&context->sem);
-
-	memset(driver, 0, sizeof(struct lirc_driver));
 
 	strcpy(driver->name, MOD_NAME);
 	driver->minor = -1;

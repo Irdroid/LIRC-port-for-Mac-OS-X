@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.40 2009/01/04 12:12:54 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.41 2009/01/05 20:18:34 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -377,6 +377,18 @@ typedef u32 pm_message_t;
 /* added in 2.6.11 */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 #define DEFINE_SPINLOCK(x) spinlock_t x = SPIN_LOCK_UNLOCKED
+#endif
+
+/***************************** slab.h *********************************/
+/* added in 2.6.14 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 14)
+static inline void *kzalloc(size_t size, gfp_t flags)
+{
+        void *ret = kmalloc(size, flags);
+        if (ret)
+                memset(ret, 0, size);
+        return ret;
+}
 #endif
 
 #endif /* _KCOMPAT_H */

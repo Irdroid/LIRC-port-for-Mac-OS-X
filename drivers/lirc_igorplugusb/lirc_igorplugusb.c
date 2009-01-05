@@ -448,15 +448,13 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	/* allocate kernel memory */
 	mem_failure = 0;
-	ir = kmalloc(sizeof(struct irctl), GFP_KERNEL);
+	ir = kzalloc(sizeof(struct irctl), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto mem_failure_switch;
 	}
 
-	memset(ir, 0, sizeof(struct irctl));
-
-	driver = kmalloc(sizeof(struct lirc_driver), GFP_KERNEL);
+	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
 		mem_failure = 2;
 		goto mem_failure_switch;
@@ -486,8 +484,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		mem_failure = 5;
 		goto mem_failure_switch;
 	}
-
-	memset(driver, 0, sizeof(struct lirc_driver));
 
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = -1;

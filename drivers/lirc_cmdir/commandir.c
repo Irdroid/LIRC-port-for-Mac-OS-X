@@ -367,12 +367,11 @@ static void *cmdir_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 
 	/* allocate memory for our device state and intialize it */
-	dev = kmalloc(sizeof(struct usb_skel), GFP_KERNEL);
+	dev = kzalloc(sizeof(struct usb_skel), GFP_KERNEL);
 	if (dev == NULL) {
 		err("Out of memory");
 		goto exit;
 	}
-	memset(dev, 0x00, sizeof(*dev));
 	minor_table[minor] = dev;
 
 	interface = &udev->actconfig->interface[ifnum];
@@ -464,12 +463,11 @@ static int cmdir_probe(struct usb_interface *interface,
 	int minor;
 
 	/* allocate memory for our device state and initialize it */
-	dev = kmalloc(sizeof(*dev), GFP_KERNEL);
+	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
 	if (dev == NULL) {
 		err("Out of memory");
 		goto error;
 	}
-	memset(dev, 0x00, sizeof(*dev));
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 9)
 	kref_init(&dev->kref, cmdir_delete);
 #else
