@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.1 2009/01/03 17:30:35 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.2 2009/01/10 10:19:24 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -50,7 +50,6 @@
 #include <linux/poll.h>
 
 #include <linux/bitops.h>
-#include <linux/workqueue.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 #include <asm/io.h>
@@ -102,21 +101,6 @@
 /* Number of driver->lirc-dev buffer elements. */
 #define RBUF_LEN 256
 
-/* Size of irq handler -> workqueue buffer elements. Power of 2, please. */
-#define DBUF_LEN 16
-
-/* Mask for irq handler -> workqueue buffer wrap. */
-#define DBUF_MASK (DBUF_LEN - 1)
-
-/* Descriptor queue. */
-static struct wpc8769l_descriptor wpc8769l_dqueue[DBUF_LEN];
-
-/* Queue head. */
-static unsigned int wpc8769l_dqueue_head;
-
-/* Queue tail. */
-static unsigned int wpc8769l_dqueue_tail;
-
 /* Number of 0xff bytes received in a row. */
 static unsigned int wpc8769l_ff_bytes_in_a_row;
 
@@ -143,12 +127,8 @@ static int lirc_wpc8769l_is_open;
  */
 static int protocol_select = 2;
 static int max_info_bits = 24;
-static unsigned int rc_address_value = 0x80;
-static unsigned int rc_address_mask = 0xff;
-static unsigned short wakeup_command_value[4] = { 0x0c, 0x04, 0x00, 0x00 };
-static int wakeup_command_value_num = 4;
-static unsigned short wakeup_command_mask[4] = { 0xff, 0x0f, 0x00, 0x00 };
-static int wakeup_command_mask_num = 4;
+static unsigned int rc_wakeup_code = 0x7ffffbf3;
+static unsigned int rc_wakeup_mask = 0xff000fff;
 
 /* Resource allocation pointers. */
 static struct resource *wpc8769l_portblock1_resource;
@@ -233,94 +213,10 @@ static inline void put_space_bit(lirc_t n)
 	}
 }
 
-/* Work queue function to translate descriptors to mode2 data. */
-static void wpc8769l_descriptor_translate(struct work_struct *ignore)
-{
-	struct wpc8769l_descriptor *desc;
-	unsigned int next_one, next_zero, size;
-	const unsigned long *data;
-	int something_done = 0;
-
-	/* Iterate on remaining descriptors. */
-	while (wpc8769l_dqueue_tail != wpc8769l_dqueue_head) {
-		something_done = 1;
-		desc = wpc8769l_dqueue + wpc8769l_dqueue_tail;
-
-		/* Process the current descriptor. */
-		switch (desc->type) {
-		case WPC8769L_DT_BITS:
-			size = (desc->packet.count) << 3;
-
-			/* FIXME: WE DEPEND ON THE HOST BEING LITTLE ENDIAN. */
-			data = (const unsigned long *) desc->packet.data;
-			next_one = find_first_bit(data, size);
-
-			if (next_one > 0)
-				put_pulse_bit(next_one
-					* WPC8769L_USECS_PER_BIT);
-
-			while (next_one < size) {
-				next_zero = find_next_zero_bit(data,
-					size, next_one + 1);
-
-				put_space_bit(
-					(next_zero - next_one)
-					* WPC8769L_USECS_PER_BIT);
-
-				if (next_zero < size) {
-					next_one = find_next_bit(data,
-						size, next_zero + 1);
-
-					put_pulse_bit(
-						(next_one - next_zero)
-						* WPC8769L_USECS_PER_BIT);
-				} else {
-					next_one = size;
-				}
-			}
-			break;
-		case WPC8769L_DT_SPACE:
-			put_space_bit(desc->space);
-			break;
-		default:
-			eprintk("ERROR: Unknown descriptor type %d.",
-				(int) desc->type);
-			break;
-		}
-
-		/* Get to the next tail element. */
-		wpc8769l_dqueue_tail = (wpc8769l_dqueue_tail + 1) & DBUF_MASK;
-	}
-
-	if (something_done)
-		/* Signal the bottom half wait queue
-		 * that there's data available. */
-		wake_up_interruptible(&rbuf.wait_poll);
-}
-
-DECLARE_WORK(wpc8769l_translate_work, wpc8769l_descriptor_translate);
-
-/* Increment queue head. */
-static inline void advance_head(void)
-{
-	unsigned int next_head = (wpc8769l_dqueue_head + 1) & DBUF_MASK;
-
-	if (next_head == wpc8769l_dqueue_tail) {
-		if (printk_ratelimit())
-			eprintk("RX descriptor buffer overrun.\n");
-	} else {
-		wpc8769l_dqueue_head = next_head;
-
-		/* Queue the translation work. */
-		schedule_work(&wpc8769l_translate_work);
-	}
-}
-
 /* Timeout function for last pulse part. */
 static void wpc8769l_last_timeout(unsigned long l)
 {
 	struct timeval currenttv;
-	struct wpc8769l_descriptor *desc;
 
 	unsigned long flags;
 	spin_lock_irqsave(&wpc8769l_hw_spinlock, flags);
@@ -329,11 +225,12 @@ static void wpc8769l_last_timeout(unsigned long l)
 	do_gettimeofday(&currenttv);
 	lastus = timeval_to_ns(&currenttv) / 1000;
 
-	/* Emit the timeout as a space to the workqueue. */
-	desc = wpc8769l_dqueue + wpc8769l_dqueue_head;
-	desc->type = WPC8769L_DT_SPACE;
-	desc->space = lastus - timerstartus;
-	advance_head();
+	/* Emit the timeout as a space. */
+	put_space_bit(lastus - timerstartus);
+
+	/* Signal the bottom half wait queue
+	 * that there's data available. */
+	wake_up_interruptible(&rbuf.wait_poll);
 
 	spin_unlock_irqrestore(&wpc8769l_hw_spinlock, flags);
 }
@@ -355,8 +252,10 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 	int count, more;
 	struct timeval currenttv;
 	s64 currentus, span;
-	struct wpc8769l_descriptor *desc;
+	unsigned char data_buf[WPC8769L_BYTE_BUFFER_SIZE];
 	unsigned char *data_ptr;
+	unsigned long *ldata;
+	unsigned int next_one, next_zero, size;
 
 	unsigned long flags;
 	spin_lock_irqsave(&wpc8769l_hw_spinlock, flags);
@@ -383,11 +282,8 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 
 			/* Only insert positive spans. */
 			if (span > 0) {
-				/* Put in a time-based space. */
-				desc = wpc8769l_dqueue + wpc8769l_dqueue_head;
-				desc->type = WPC8769L_DT_SPACE;
-				desc->space = span;
-				advance_head();
+				/* Emit the extended gap as a space. */
+				put_space_bit(span);
 			}
 
 			/* Mark that we had the last timeout into account. */
@@ -397,9 +293,7 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 		count = 0;
 		more = 1;
 
-		desc = wpc8769l_dqueue + wpc8769l_dqueue_head;
-		desc->type = WPC8769L_DT_BITS;
-		data_ptr = desc->packet.data;
+		data_ptr = data_buf;
 		do {
 			/* Read the next byte of data. */
 			outb(WPC8769L_BANK_00, baseport1 + WPC8769L_SELECT_REG);
@@ -442,8 +336,34 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 		}
 
 		/* Emit the data. */
-		desc->packet.count = count;
-		advance_head();
+		size = count << 3;
+
+		ldata = (unsigned long *) data_buf;
+		next_one = generic_find_next_le_bit(ldata, size, 0);
+
+		if (next_one > 0)
+			put_pulse_bit(next_one
+				* WPC8769L_USECS_PER_BIT);
+
+		while (next_one < size) {
+			next_zero = generic_find_next_zero_le_bit(ldata,
+				size, next_one + 1);
+
+			put_space_bit(
+				(next_zero - next_one)
+				* WPC8769L_USECS_PER_BIT);
+
+			if (next_zero < size) {
+				next_one = generic_find_next_le_bit(ldata,
+					size, next_zero + 1);
+
+				put_pulse_bit(
+					(next_one - next_zero)
+					* WPC8769L_USECS_PER_BIT);
+			} else {
+				next_one = size;
+			}
+		}
 
 		/* Mark the IRQ as handled. */
 		handled = 1;
@@ -551,16 +471,16 @@ static unsigned int wpc8769l_expand_value_nibble(unsigned int nibble)
 	for (i = 0; i < 4; i += 2) {
 		tmp = (nibble >> i) & 0x3;
 		switch (tmp) {
-		case 0:
+		case 3:
 			tmp2 = 5;
 			break;
-		case 1:
+		case 2:
 			tmp2 = 6;
 			break;
-		case 2:
+		case 1:
 			tmp2 = 9;
 			break;
-		case 3:
+		case 0:
 			tmp2 = 0x0a;
 			break;
 		default:
@@ -614,20 +534,7 @@ static void wpc8769l_configure_wakeup_triggers(void)
 	unsigned int x;
 	unsigned int data, data2;
 
-	u32 rc_addr_plus_bits, rc_mask_plus_bits;
-	u32 info_bits_mask;
-	u32 cmd_bits, mask_bits;
-
 	int i, j;
-
-	cmd_bits = wakeup_command_value[0]
-		| (wakeup_command_value[1] << 8)
-		| (wakeup_command_value[2] << 16)
-		| (wakeup_command_value[3] << 24);
-	mask_bits = wakeup_command_mask[0]
-		| (wakeup_command_mask[1] << 8)
-		| (wakeup_command_mask[2] << 16)
-		| (wakeup_command_mask[3] << 24);
 
 	x = inb(baseport2 + WPC8769L_WAKEUP_ENABLE_REG)
 		& WPC8769L_WAKEUP_ENABLE_MASK;
@@ -662,11 +569,8 @@ static void wpc8769l_configure_wakeup_triggers(void)
 	outb(data, baseport2 + WPC8769L_WAKEUP_CONFIG_REG);
 
 	i = j = 0;
-	info_bits_mask = (((u32) 1) << max_info_bits) - ((u32) 1);
 
 	/* Program values. */
-	rc_addr_plus_bits = (rc_address_value << max_info_bits)
-		| (cmd_bits & info_bits_mask);
 	while (j < WPC8769L_WAKEUP_DATA_BITS) {
 		data = inb(baseport2 + WPC8769L_BANK2_CLOCK_REG);
 		data &= ~WPC8769L_CLOCK_OFF_MASK;
@@ -681,7 +585,7 @@ static void wpc8769l_configure_wakeup_triggers(void)
 		data |= WPC8769L_CLOCK_ON_MASK;
 		outb(data, baseport2 + WPC8769L_BANK2_CLOCK_REG);
 
-		data = (rc_addr_plus_bits >> j) & 0x0f;
+		data = (rc_wakeup_code >> j) & 0x0f;
 		data = wpc8769l_expand_value_nibble(data);
 		outb(data, baseport2 + WPC8769L_WAKEUP_DATA_REG);
 
@@ -690,8 +594,6 @@ static void wpc8769l_configure_wakeup_triggers(void)
 	}
 
 	/* Program masks. */
-	rc_mask_plus_bits = (rc_address_mask << max_info_bits)
-		| (mask_bits & info_bits_mask);
 	while (j < WPC8769L_WAKEUP_DATA_BITS) {
 		data = inb(baseport2 + WPC8769L_BANK2_CLOCK_REG);
 		data &= ~WPC8769L_CLOCK_OFF_MASK;
@@ -706,7 +608,7 @@ static void wpc8769l_configure_wakeup_triggers(void)
 		data |= WPC8769L_CLOCK_ON_MASK;
 		outb(data, baseport2 + WPC8769L_BANK2_CLOCK_REG);
 
-		data = (rc_mask_plus_bits >> j) & 0x0f;
+		data = (rc_wakeup_mask >> j) & 0x0f;
 		data = wpc8769l_expand_mask_nibble(data);
 		outb(data, baseport2 + WPC8769L_WAKEUP_DATA_REG);
 
@@ -884,10 +786,6 @@ static int set_use_inc(void *data)
 	last_was_pulse = 0;
 	last_counter = 0;
 
-	/* Reset queue. */
-	wpc8769l_dqueue_head = 0;
-	wpc8769l_dqueue_tail = 0;
-
 	/* Reset last timeout value. */
 	lastus = 0;
 
@@ -939,9 +837,6 @@ static void set_use_dec(void *data)
 	/* Free the IRQ. */
 	free_irq(irq, THIS_MODULE);
 	dprintk("Freed IRQ %d\n", irq);
-
-	/* Cancel any pending workqueue work. */
-	cancel_work_sync(&wpc8769l_translate_work);
 
 	/* Free the RX buffer. */
 	lirc_buffer_free(&rbuf);
@@ -1168,9 +1063,9 @@ static int __init lirc_wpc8769l_module_init(void)
 exit_platform_exit:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_wpc8769l_platform_exit();
-#endif
 
 exit_release_region_2:
+#endif
 	if (baseport2)
 		release_region(baseport2, WPC8769L_IO_REGION_2_SIZE);
 
@@ -1237,25 +1132,14 @@ module_param(max_info_bits, int, S_IRUGO);
 MODULE_PARM_DESC(max_info_bits,
 	"Define the maximum info bits for wake up functions (default: 24).");
 
-module_param(rc_address_value, uint, S_IRUGO);
-MODULE_PARM_DESC(rc_address_value,
-	"Define the RC address value for wake up functions (default: 0x0080).");
+module_param(rc_wakeup_code, uint, S_IRUGO);
+MODULE_PARM_DESC(rc_wakeup_code,
+	"Define the RC code value for wake up functions\
+ (default: 0x7ffffbf3).");
 
-module_param(rc_address_mask, uint, S_IRUGO);
-MODULE_PARM_DESC(rc_address_mask,
-	"Define the RC address mask for wake up functions (default: 0x00ff).");
-
-module_param_array(wakeup_command_value, ushort, &wakeup_command_value_num,
-	S_IRUGO);
-MODULE_PARM_DESC(wakeup_command_value,
-	"Define the set of key codes causing wake up\
- (default: 0x0c, 0x04, 0x00, 0x00).");
-
-module_param_array(wakeup_command_mask, ushort, &wakeup_command_mask_num,
-	S_IRUGO);
-MODULE_PARM_DESC(wakeup_command_mask,
-	"Define the set of key code masks causing wake up\
- (default: 0xff, 0x0f, 0x00, 0x00).");
+module_param(rc_wakeup_mask, uint, S_IRUGO);
+MODULE_PARM_DESC(rc_wakeup_mask,
+	"Define the RC code mask for wake up functions (default: 0xff000fff).");
 
 EXPORT_NO_SYMBOLS;
 

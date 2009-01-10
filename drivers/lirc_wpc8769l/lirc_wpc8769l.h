@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.h,v 1.1 2009/01/03 17:30:35 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.h,v 1.2 2009/01/10 10:19:24 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.h ****************************************************
@@ -25,6 +25,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
+
+#include <linux/types.h>
 
 /* Name of the ACPI resource used to autodetect the receiver. */
 #define WPC8769L_ACPI_HID "WEC1020"
@@ -54,32 +56,13 @@
 /* Size of I/O region 2. */
 #define WPC8769L_IO_REGION_2_SIZE 0x20
 
-/* Enumeration of the kinds of data descriptors. */
-enum wpc8769l_descriptor_type {
-	WPC8769L_DT_BITS = 0,
-	WPC8769L_DT_SPACE = 1
-};
+/* Size of a byte array for a complete burst, rounded
+ * up to an integral number of unsigned longs. */
+#define WPC8769L_BYTE_BUFFER_SIZE \
+	(((WPC8769L_BYTES_PER_BURST + 1 + BITS_PER_LONG / 8 - 1) \
+	/ (BITS_PER_LONG / 8)) * (BITS_PER_LONG / 8))
 
-/* Data descriptor for getting data out of the IRQ handler. */
-struct wpc8769l_descriptor {
-	/* Kind of descriptor. */
-	enum wpc8769l_descriptor_type type;
 
-	/* Data union. */
-	union {
-		/* Timeout or gap-defined space time in us. */
-		unsigned long space;
-
-		/* Data packet. */
-		struct {
-			/* Number of actual bytes. */
-			int count;
-
-			/* Data byte array. */
-			unsigned char data[WPC8769L_BYTES_PER_BURST + 1];
-		} packet;
-	};
-};
 
 /* WPC8769L register set definitions. Note that these are all wild guesses.*/
 
