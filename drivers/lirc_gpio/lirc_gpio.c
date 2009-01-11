@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.53 2009/01/04 16:08:16 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.54 2009/01/11 12:25:54 lirc Exp $
  *
  */
 
@@ -204,7 +204,6 @@ static unsigned char code_bytes = 1;
 
 #define MAX_BYTES 8
 
-#define SUCCESS 0
 #define LOGHEAD "lirc_gpio (%d): "
 
 /* how many bits GPIO value can be shifted right before processing
@@ -356,7 +355,7 @@ static int build_key(unsigned long gpio_val, unsigned char codes[MAX_BYTES])
 		break;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 /* add_to_buf - copy a code to the buffer */
@@ -386,7 +385,7 @@ static int add_to_buf(void *data, struct lirc_buffer *buf)
 
 	lirc_buffer_write_1(buf, cur_codes);
 
-	return SUCCESS;
+	return 0;
 }
 
 static int set_use_inc(void *data)
@@ -476,7 +475,7 @@ static int gpio_remote_init(void)
 	minor = ret;
 	printk(LOGHEAD "driver registered\n", minor);
 
-	return SUCCESS;
+	return 0;
 }
 
 #ifdef MODULE

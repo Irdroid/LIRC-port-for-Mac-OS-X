@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.76 2009/01/05 20:18:34 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.77 2009/01/11 12:25:54 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.76 $"
+#define DRIVER_VERSION		"$Revision: 1.77 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -124,7 +124,6 @@ static int mgradient = 375;	/* 1000*gradient from cardinal direction */
 #define IRUNLOCK		up(&ir->lock)
 
 /* general constants */
-#define SUCCESS			0
 #define SEND_FLAG_IN_PROGRESS	1
 #define SEND_FLAG_COMPLETE	2
 #define FREE_ALL		0xFF
@@ -335,7 +334,7 @@ static int unregister_from_lirc(struct irctl *ir)
 	lirc_unregister_driver(d->minor);
 
 	printk(DRIVER_NAME "[%d]: usb remote disconnected\n", devnum);
-	return SUCCESS;
+	return 0;
 }
 
 
@@ -387,7 +386,7 @@ static int set_use_inc(void *data)
 	}
 	IRUNLOCK;
 
-	return SUCCESS;
+	return 0;
 }
 
 static void set_use_dec(void *data)
@@ -469,7 +468,7 @@ static int code_check_ati1(struct in_endpt *iep, int len)
 		iep->old_jiffies = jiffies;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 /*
@@ -582,7 +581,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 				if (ir->mode != mode) {
 					buf[1] = 0x03;
 					ir->mode = mode;
-					return SUCCESS;
+					return 0;
 				}
 			} else {
 				dprintk(DRIVER_NAME
@@ -613,7 +612,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 		/* sensitivity threshold (use L2norm^2) */
 		if (mdeadzone > (x*x+y*y)) {
 			buf[1] = 0x00;
-			return SUCCESS;
+			return 0;
 		}
 
 /* Nybble encoding: xy, 2 is -1 (S or W); 1 (N or E) */
@@ -650,7 +649,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 			x, y);
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 static int code_check_xbox(struct in_endpt *iep, int len)
@@ -677,7 +676,7 @@ static int code_check_xbox(struct in_endpt *iep, int len)
 	}
 	iep->old_jiffies = jiffies;
 
-	return SUCCESS;
+	return 0;
 }
 
 #if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
@@ -709,7 +708,7 @@ static void usb_remote_recv(struct urb *urb)
 	switch (urb->status) {
 
 	/* success */
-	case SUCCESS:
+	case 0:
 		switch (iep->ir->remote_type) {
 		case XBOX_COMPATIBLE:
 			result = code_check_xbox(iep, len);
@@ -1316,7 +1315,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(intf, ir);
-	return SUCCESS;
+	return 0;
 #else
 	return ir;
 #endif
@@ -1367,7 +1366,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.76 2009/01/05 20:18:34 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.77 2009/01/11 12:25:54 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
@@ -1377,7 +1376,7 @@ static int __init usb_remote_init(void)
 		return -ENODEV;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 static void __exit usb_remote_exit(void)
