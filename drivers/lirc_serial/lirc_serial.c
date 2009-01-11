@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.91 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.92 2009/01/11 08:44:30 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -142,6 +142,7 @@
 #endif
 #endif
 
+#define LIRC_DRIVER_VERSION "$Revision: 5.92 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -944,7 +945,7 @@ static int init_port(void)
 		   active high/low */
 		nlow = 0;
 		nhigh = 0;
-		for (i = 0; i < 9; i ++) {
+		for (i = 0; i < 9; i++) {
 			if (sinp(UART_MSR) & hardware[type].signal_pin)
 				nlow++;
 			else
@@ -1292,6 +1293,17 @@ int __init init_module(void)
 		result = -EIO;
 		goto exit_release;
 	}
+
+	printk(KERN_INFO
+	       LIRC_DRIVER_NAME " " LIRC_DRIVER_VERSION " registered\n");
+	dprintk("type = %d\n", type);
+	dprintk("IRQ = %d, port = %04x\n", irq, io);
+	dprintk("share_irq = %d\n", share_irq);
+#ifdef LIRC_SERIAL_TRANSMITTER
+	dprintk("txsense = %d\n", txsense);
+#endif
+	dprintk("softcarrier = %d\n", softcarrier);
+
 	return 0;
 exit_release:
 	release_region(io, 8);
