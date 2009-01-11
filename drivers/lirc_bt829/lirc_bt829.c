@@ -153,6 +153,10 @@ int init_module(void)
 	atir_driver.owner       = THIS_MODULE;
 
 	atir_minor = lirc_register_driver(&atir_driver);
+	if (atir_minor < 0) {
+		printk(KERN_ERR "ATIR: failed to register driver!\n");
+		return atir_minor;
+	}
 	dprintk("ATIR driver is registered on minor %d\n", atir_minor);
 
 	return 0;
@@ -169,7 +173,7 @@ static int atir_init_start(void)
 {
 	pci_addr_lin = ioremap(pci_addr_phys + DATA_PCI_OFF, 0x400);
 	if (pci_addr_lin == 0) {
-		printk(KERN_INFO "atir: pci mem must be mapped\n");
+		printk(KERN_INFO "ATIR: pci mem must be mapped\n");
 		return 0;
 	}
 	return 1;
