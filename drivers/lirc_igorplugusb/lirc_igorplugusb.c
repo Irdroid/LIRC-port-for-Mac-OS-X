@@ -246,8 +246,6 @@ struct igorplug {
 
 	/* handle sending (init strings) */
 	int send_flags;
-
-	struct semaphore lock;
 };
 
 static int set_use_inc(void *data)

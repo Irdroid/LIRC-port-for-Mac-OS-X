@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.37 2009/01/11 09:51:39 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.38 2009/01/11 21:47:22 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -149,7 +149,7 @@ struct imon_context {
 	int ir_isopen;			/* IR port open	*/
 	int ir_isassociating;		/* IR port open for association */
 	int dev_present;		/* USB device presence */
-	struct semaphore sem;		/* to lock this object */
+	struct mutex lock;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
 	int display_proto_6p;		/* VFD requires 6th packet */
@@ -177,9 +177,6 @@ struct imon_context {
 		int status;			/* status of tx completion */
 	} tx;
 };
-
-#define LOCK_CONTEXT	down(&context->sem)
-#define UNLOCK_CONTEXT	up(&context->sem)
 
 /* VFD file operations */
 static struct file_operations display_fops = {
@@ -325,7 +322,7 @@ static struct usb_class_driver imon_class = {
 #endif
 
 /* to prevent races between open() and disconnect() */
-static DECLARE_MUTEX(disconnect_sem);
+static DEFINE_MUTEX(disconnect_lock);
 
 static int debug;
 
@@ -336,12 +333,6 @@ static int display_type;
 
 #define MAX_DEVICES	4	/* In case there's more than one iMON device */
 static struct imon_context *minor_table[MAX_DEVICES];
-
-/*
-static DECLARE_MUTEX(minor_table_sem);
-#define LOCK_MINOR_TABLE	down(&minor_table_sem)
-#define UNLOCK_MINOR_TABLE	up(&minor_table_sem)
-*/
 
 /* the global usb devfs handle */
 extern devfs_handle_t usb_devfs_handle;
@@ -407,7 +398,7 @@ static int display_open(struct inode *inode, struct file *file)
 	int retval = 0;
 
 	/* prevent races with disconnect */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 #ifdef KERNEL_2_5
 	subminor = iminor(inode);
@@ -436,7 +427,7 @@ static int display_open(struct inode *inode, struct file *file)
 		goto exit;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->display_supported) {
 		err("%s: VFD not supported by device", __func__);
@@ -451,10 +442,10 @@ static int display_open(struct inode *inode, struct file *file)
 		info("VFD port opened");
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 exit:
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 	return retval;
 }
 
@@ -474,7 +465,7 @@ static int display_close(struct inode *inode, struct file *file)
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->display_supported) {
 		err("%s: VFD not supported by device", __func__);
@@ -490,13 +481,13 @@ static int display_close(struct inode *inode, struct file *file)
 			/* Device disconnected before close and IR port is not
 			 * open. If IR port is open, context will be deleted by
 			 * ir_close. */
-			UNLOCK_CONTEXT;
+			mutex_unlock(&context->lock);
 			delete_context(context);
 			return retval;
 		}
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return retval;
 }
 
@@ -561,9 +552,9 @@ static inline int send_packet(struct imon_context *context)
 		err("%s: error submitting urb(%d)", __func__, retval);
 	} else {
 		/* Wait for tranmission to complete(or abort) */
-		UNLOCK_CONTEXT;
+		mutex_unlock(&context->lock);
 		wait_for_completion(&context->tx.finished);
-		LOCK_CONTEXT;
+		mutex_lock(&context->lock);
 
 		retval = context->tx.status;
 		if (retval)
@@ -590,13 +581,6 @@ static inline int send_associate_24g(struct imon_context *context)
 	const unsigned char packet[8] = { 0x01, 0x00, 0x00, 0x00,
 					  0x00, 0x00, 0x00, 0x20 };
 
-	if (!context) {
-		err("%s: no context for device", __func__);
-		return -ENODEV;
-	}
-
-	LOCK_CONTEXT;
-
 	if (!context->dev_present) {
 		err("%s: no iMON device present", __func__);
 		retval = -ENODEV;
@@ -607,8 +591,6 @@ static inline int send_associate_24g(struct imon_context *context)
 	retval = send_packet(context);
 
 exit:
-	UNLOCK_CONTEXT;
-
 	return retval;
 }
 
@@ -628,6 +610,7 @@ static ssize_t show_associate_remote(struct device *d,
 	if (!context)
 		return -ENODEV;
 
+	mutex_lock(&context->lock);
 	if (context->ir_isassociating) {
 		strcpy(buf, "The device it associating press some button "
 			    "on the remote.\n");
@@ -639,6 +622,7 @@ static ssize_t show_associate_remote(struct device *d,
 		strcpy(buf, "Device is closed, you need to open it to "
 			    "associate the remote(you can use irw).\n");
 	}
+	mutex_unlock(&context->lock);
 	return strlen(buf);
 }
 
@@ -653,13 +637,17 @@ static ssize_t store_associate_remote(struct device *d,
 	if (!context)
 		return -ENODEV;
 
-	if (!context->ir_isopen)
+	mutex_lock(&context->lock);
+	if (!context->ir_isopen) {
+		mutex_unlock(&context->lock);
 		return -EINVAL;
+	}
 
 	if (context->ir_isopen) {
 		context->ir_isassociating = 1;
 		send_associate_24g(context);
 	}
+	mutex_unlock(&context->lock);
 
 	return count;
 }
@@ -706,7 +694,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->dev_present) {
 		err("%s: no iMON device present", __func__);
@@ -760,7 +748,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 	}
 
 exit:
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 	return(retval == 0) ? n_bytes : retval;
 }
@@ -790,7 +778,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->dev_present) {
 		err("%s: no iMON device present", __func__);
@@ -818,7 +806,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 		info("%s: write %d bytes to LCD", __func__, (int) n_bytes);
 	}
 exit:
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return (retval == 0) ? n_bytes : retval;
 }
 
@@ -857,11 +845,11 @@ static int ir_open(void *data)
 	struct imon_context *context;
 
 	/* prevent races with disconnect */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 	context = (struct imon_context *) data;
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (context->ir_isopen) {
 		err("%s: IR port is already open", __func__);
@@ -896,9 +884,9 @@ static int ir_open(void *data)
 	}
 
 exit:
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 	return 0;
 }
 
@@ -915,7 +903,7 @@ static void ir_close(void *data)
 		return;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	usb_kill_urb(context->rx_urb);
 	context->ir_isopen = 0;
@@ -930,7 +918,7 @@ static void ir_close(void *data)
 		deregister_from_lirc(context);
 
 		if (!context->display_isopen) {
-			UNLOCK_CONTEXT;
+			mutex_unlock(&context->lock);
 			delete_context(context);
 			return;
 		}
@@ -940,7 +928,7 @@ static void ir_close(void *data)
 		 */
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return;
 }
 
@@ -1373,7 +1361,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	init_MUTEX(&context->sem);
+	mutex_init(&context->lock);
 	context->display_proto_6p = display_proto_6p;
 	context->ir_onboard_decode = ir_onboard_decode;
 
@@ -1393,13 +1381,13 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #endif
 	driver->owner = THIS_MODULE;
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
 		err("%s: lirc_register_driver failed", __func__);
 		alloc_status = 7;
-		UNLOCK_CONTEXT;
+		mutex_unlock(&context->lock);
 		goto alloc_status_switch;
 	} else
 		info("%s: Registered iMON driver(minor:%d)",
@@ -1462,7 +1450,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	info("%s: iMON device on usb<%d:%d> initialized",
 			__func__, dev->bus->busnum, dev->devnum);
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 alloc_status_switch:
 
@@ -1507,14 +1495,14 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 	struct imon_context *context;
 
 	/* prevent races with ir_open()/display_open() */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 #ifdef KERNEL_2_5
 	context = usb_get_intfdata(interface);
 #else
 	context = (struct imon_context *)data;
 #endif
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	info("%s: iMON device disconnected", __func__);
 
@@ -1550,12 +1538,12 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 			devfs_unregister(context->devfs);
 #endif
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 	if (!context->ir_isopen && !context->display_isopen)
 		delete_context(context);
 
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 }
 
 static int imon_suspend(struct usb_interface *intf, pm_message_t message)

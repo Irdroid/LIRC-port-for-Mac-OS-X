@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.63 $"
+#define DRIVER_VERSION	"$Revision: 1.64 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -101,11 +101,6 @@ static int debug;
 		if (debug)					\
 			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
-
-/* lock mceusb2_dev structure */
-/*#define IRLOCK	down_interruptible(&ir->lock) */
-#define IRLOCK		down(&ir->lock)
-#define IRUNLOCK	up(&ir->lock)
 
 /* general constants */
 #define SEND_FLAG_IN_PROGRESS	1
@@ -257,7 +252,7 @@ struct mceusb2_dev {
 	int send_flags;
 	wait_queue_head_t wait_out;
 
-	struct semaphore lock;
+	struct mutex lock;
 };
 
 /* init strings */
@@ -462,9 +457,9 @@ static void set_use_dec(void *data)
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
 	if (ir->flags.connected) {
-		IRLOCK;
+		mutex_lock(&ir->lock);
 		ir->flags.connected = 0;
-		IRUNLOCK;
+		mutex_unlock(&ir->lock);
 	}
 	MOD_DEC_USE_COUNT;
 }
@@ -940,7 +935,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	driver->dev   = &dev->dev;
 	driver->owner = THIS_MODULE;
 
-	init_MUTEX(&ir->lock);
+	mutex_init(&ir->lock);
 	init_waitqueue_head(&ir->wait_out);
 
 	minor = lirc_register_driver(driver);
@@ -1072,11 +1067,11 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 	ir->usbdev = NULL;
 	wake_up_all(&ir->wait_out);
 
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	usb_kill_urb(ir->urb_in);
 	usb_free_urb(ir->urb_in);
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 
 	unregister_from_lirc(ir);
 }

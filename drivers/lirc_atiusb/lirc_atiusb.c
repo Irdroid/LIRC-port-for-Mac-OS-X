@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.77 2009/01/11 12:25:54 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.78 2009/01/11 21:47:22 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.77 $"
+#define DRIVER_VERSION		"$Revision: 1.78 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -118,10 +118,6 @@ static int mgradient = 375;	/* 1000*gradient from cardinal direction */
 /* get hi and low bytes of a 16-bits int */
 #define HI(a)			((unsigned char)((a) >> 8))
 #define LO(a)			((unsigned char)((a) & 0xff))
-
-/* lock irctl structure */
-#define IRLOCK			down_interruptible(&ir->lock)
-#define IRUNLOCK		up(&ir->lock)
 
 /* general constants */
 #define SEND_FLAG_IN_PROGRESS	1
@@ -260,7 +256,7 @@ struct irctl {
 	int connected;
 
 	/* locking */
-	struct semaphore lock;
+	struct mutex lock;
 };
 
 /* list of all registered devices via the remote_list_link in irctl */
@@ -283,7 +279,7 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 
 	dprintk(DRIVER_NAME "[%d]: send called (%#x)\n", ir->devnum, cmd);
 
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	oep->urb->transfer_buffer_length = LO(cmd) + 1;
 	oep->urb->dev = oep->ir->usbdev;
 	oep->send_flags = SEND_FLAG_IN_PROGRESS;
@@ -302,10 +298,10 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 #endif
 		set_current_state(TASK_RUNNING);
 		remove_wait_queue(&oep->wait, &wait);
-		IRUNLOCK;
+		mutex_unlock(&ir->lock);
 		return;
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 
 	while (timeout && (oep->urb->status == -EINPROGRESS)
 	       && !(oep->send_flags & SEND_FLAG_COMPLETE)) {
@@ -353,10 +349,10 @@ static int set_use_inc(void *data)
 
 	MOD_INC_USE_COUNT;
 
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	if (!ir->connected) {
 		if (!ir->usbdev) {
-			IRUNLOCK;
+			mutex_unlock(&ir->lock);
 			dprintk(DRIVER_NAME "[%d]: !ir->usbdev\n", ir->devnum);
 			return -ENOENT;
 		}
@@ -377,14 +373,14 @@ static int set_use_inc(void *data)
 				printk(DRIVER_NAME "[%d]: open result = %d "
 				       "error submitting urb\n",
 				       ir->devnum, rtn);
-				IRUNLOCK;
+				mutex_unlock(&ir->lock);
 				MOD_DEC_USE_COUNT;
 				return -EIO;
 			}
 		}
 		ir->connected = 1;
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 
 	return 0;
 }
@@ -401,7 +397,7 @@ static void set_use_dec(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	if (ir->connected) {
 		/* Free inbound usb urbs */
 		list_for_each_safe(pos, n, &ir->iep_listhead) {
@@ -412,7 +408,7 @@ static void set_use_dec(void *data)
 		}
 		ir->connected = 0;
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 	MOD_DEC_USE_COUNT;
 }
 
@@ -800,7 +796,7 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 		dprintk(DRIVER_NAME ": free_in_endpt: WARNING! null ir\n");
 		return;
 	}
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	switch (mem_failure) {
 	case FREE_ALL:
 	case 5:
@@ -828,7 +824,7 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 	case 2:
 		kfree(iep);
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 }
 
 /*
@@ -910,7 +906,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 		dprintk(DRIVER_NAME ": free_out_endpt: WARNING! null ir\n");
 		return;
 	}
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	switch (mem_failure) {
 	case FREE_ALL:
 	case 4:
@@ -936,7 +932,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 	case 2:
 		kfree(oep);
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 }
 
 static struct out_endpt *new_out_endpt(struct irctl *ir,
@@ -1005,7 +1001,7 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 		ir->out_init = NULL;
 	}
 
-	IRLOCK;
+	mutex_lock(&ir->lock);
 	switch (mem_failure) {
 	case FREE_ALL:
 	case 6:
@@ -1017,7 +1013,7 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 			dprintk(DRIVER_NAME "[%d]: free_irctl: refcount at %d,"
 				"aborting free_irctl\n",
 				ir->devnum, ir->dev_refcount);
-			IRUNLOCK;
+			mutex_unlock(&ir->lock);
 			return;
 		}
 	case 5:
@@ -1036,11 +1032,11 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 			printk(DRIVER_NAME "[%d]: ir->d is a null pointer!\n",
 			       ir->devnum);
 	case 2:
-		IRUNLOCK;
+		mutex_unlock(&ir->lock);
 		kfree(ir);
 		return;
 	}
-	IRUNLOCK;
+	mutex_unlock(&ir->lock);
 }
 
 static struct irctl *new_irctl(struct usb_device *dev)
@@ -1123,7 +1119,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	ir->devnum = devnum;
 	ir->mode = RW2_NULL_MODE;
 
-	init_MUTEX(&ir->lock);
+	mutex_init(&ir->lock);
 	INIT_LIST_HEAD(&ir->iep_listhead);
 
 new_irctl_failure_check:
@@ -1366,7 +1362,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.77 2009/01/11 12:25:54 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.78 2009/01/11 21:47:22 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 

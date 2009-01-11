@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.67 2009/01/11 09:51:39 lirc Exp $
+ * $Id: lirc_dev.c,v 1.68 2009/01/11 21:47:22 lirc Exp $
  *
  */
 
@@ -48,11 +48,6 @@
 #else
 #include <linux/uaccess.h>
 #include <linux/errno.h>
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-#include <asm/semaphore.h>
-#else
-#include <linux/semaphore.h>
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 #include <linux/wrapper.h>
@@ -92,7 +87,7 @@ struct irctl {
 	int attached;
 	int open;
 
-	struct semaphore buffer_sem;
+	struct mutex buffer_lock;
 	struct lirc_buffer *buf;
 	unsigned int chunk_size;
 
@@ -125,7 +120,7 @@ static lirc_class_t *lirc_class;
 static inline void init_irctl(struct irctl *ir)
 {
 	memset(&ir->d, 0, sizeof(struct lirc_driver));
-	sema_init(&ir->buffer_sem, 1);
+	mutex_init(&ir->buffer_lock);
 	ir->d.minor = NOPLUG;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
@@ -505,10 +500,10 @@ int lirc_unregister_driver(int minor)
 		dprintk(LOGHEAD "releasing opened driver\n",
 			ir->d.name, ir->d.minor);
 		wake_up_interruptible(&ir->buf->wait_poll);
-		down(&ir->buffer_sem);
+		mutex_lock(&ir->buffer_lock);
 		ir->d.set_use_dec(ir->d.data);
 		module_put(ir->d.owner);
-		up(&ir->buffer_sem);
+		mutex_unlock(&ir->buffer_lock);
 	}
 
 #ifdef LIRC_HAVE_DEVFS_24
@@ -648,9 +643,9 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 	if (ir->d.fops && ir->d.fops->poll)
 		return ir->d.fops->poll(file, wait);
 
-	down(&ir->buffer_sem);
+	mutex_lock(&ir->buffer_lock);
 	if (!ir->attached) {
-		up(&ir->buffer_sem);
+		mutex_unlock(&ir->buffer_lock);
 		return POLLERR;
 	}
 
@@ -662,7 +657,7 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 
 	ret = lirc_buffer_empty(ir->buf) ? 0 : (POLLIN|POLLRDNORM);
 
-	up(&ir->buffer_sem);
+	mutex_unlock(&ir->buffer_lock);
 	return ret;
 }
 
@@ -825,6 +820,7 @@ static ssize_t irctl_read(struct file *file,
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
 	unsigned char buf[ir->chunk_size];
 	int ret = 0, written = 0;
+	int unlock = 1;
 	DECLARE_WAITQUEUE(wait, current);
 
 	dprintk(LOGHEAD "read called\n", ir->d.name, ir->d.minor);
@@ -833,17 +829,17 @@ static ssize_t irctl_read(struct file *file,
 	if (ir->d.fops && ir->d.fops->read)
 		return ir->d.fops->read(file, buffer, length, ppos);
 
-	if (down_interruptible(&ir->buffer_sem))
+	if (mutex_lock_interruptible(&ir->buffer_lock))
 		return -ERESTARTSYS;
 	if (!ir->attached) {
-		up(&ir->buffer_sem);
+		mutex_unlock(&ir->buffer_lock);
 		return -ENODEV;
 	}
 
 	if (length % ir->buf->chunk_size) {
 		dprintk(LOGHEAD "read result = -EINVAL\n",
 			ir->d.name, ir->d.minor);
-		up(&ir->buffer_sem);
+		mutex_unlock(&ir->buffer_lock);
 		return -EINVAL;
 	}
 
@@ -875,8 +871,17 @@ static ssize_t irctl_read(struct file *file,
 				ret = -ERESTARTSYS;
 				break;
 			}
+
+			mutex_unlock(&ir->buffer_lock);
 			schedule();
 			set_current_state(TASK_INTERRUPTIBLE);
+
+			if (mutex_lock_interruptible(&ir->buffer_lock)) {
+				unlock = 0;
+				ret = -ERESTARTSYS;
+				break;
+			}
+
 			if (!ir->attached) {
 				ret = -ENODEV;
 				break;
@@ -891,7 +896,7 @@ static ssize_t irctl_read(struct file *file,
 
 	remove_wait_queue(&ir->buf->wait_poll, &wait);
 	set_current_state(TASK_RUNNING);
-	up(&ir->buffer_sem);
+	if(unlock) mutex_unlock(&ir->buffer_lock);
 
 	dprintk(LOGHEAD "read result = %s (%d)\n",
 		ir->d.name, ir->d.minor, ret ? "-EFAULT" : "OK", ret);

@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.26 2009/01/11 09:51:39 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.27 2009/01/11 21:47:23 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -151,7 +151,7 @@ struct sasem_context {
 #endif
 	int ir_isopen;			/* IR port has been opened	*/
 	int dev_present;		/* USB device presence	    */
-	struct semaphore sem;		/* to lock this object	    */
+	struct mutex lock;		/* to lock this object	    */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
 	struct lirc_driver *driver;
@@ -174,9 +174,6 @@ struct sasem_context {
 	char lastcode[8];
 	int codesaved;
 };
-
-#define LOCK_CONTEXT	down(&context->sem)
-#define UNLOCK_CONTEXT	up(&context->sem)
 
 /* VFD file operations */
 static struct file_operations vfd_fops = {
@@ -221,7 +218,7 @@ static struct usb_class_driver sasem_class = {
 #endif
 
 /* to prevent races between open() and disconnect() */
-static DECLARE_MUTEX(disconnect_sem);
+static DEFINE_MUTEX(disconnect_lock);
 
 static int debug;
 
@@ -287,7 +284,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 	int retval = 0;
 
 	/* prevent races with disconnect */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 #ifdef KERNEL_2_5
 	subminor = iminor(inode);
@@ -316,7 +313,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 		goto exit;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (context->vfd_isopen) {
 		err("%s: VFD port is already open", __func__);
@@ -328,10 +325,10 @@ static int vfd_open(struct inode *inode, struct file *file)
 		info("VFD port opened");
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 exit:
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 	return retval;
 }
 
@@ -351,7 +348,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	switch (cmd) {
 	case IOCTL_LCD_CONTRAST:
@@ -363,11 +360,11 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 		break;
 	default:
 		info("Unknown IOCTL command");
-		UNLOCK_CONTEXT;
+		mutex_unlock(&context->lock);
 		return -ENOIOCTLCMD;  /* not supported */
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return 0;
 }
 
@@ -387,7 +384,7 @@ static int vfd_close(struct inode *inode, struct file *file)
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->vfd_isopen) {
 		err("%s: VFD is not open", __func__);
@@ -401,13 +398,13 @@ static int vfd_close(struct inode *inode, struct file *file)
 			/* Device disconnected before close and IR port is
 			 * not open. If IR port is open, context will be
 			 * deleted by ir_close. */
-			UNLOCK_CONTEXT;
+			mutex_unlock(&context->lock);
 			delete_context(context);
 			return retval;
 		}
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return retval;
 }
 
@@ -445,9 +442,9 @@ static inline int send_packet(struct sasem_context *context)
 		err("%s: error submitting urb (%d)", __func__, retval);
 	} else {
 		/* Wait for tranmission to complete (or abort) */
-		UNLOCK_CONTEXT;
+		mutex_unlock(&context->lock);
 		wait_for_completion(&context->tx.finished);
-		LOCK_CONTEXT;
+		mutex_lock(&context->lock);
 
 		retval = context->tx.status;
 		if (retval)
@@ -475,7 +472,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		return -ENODEV;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (!context->dev_present) {
 		err("%s: no Sasem device present", __func__);
@@ -543,7 +540,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 	}
 exit:
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 	return (retval == 0) ? n_bytes : retval;
 }
@@ -583,11 +580,11 @@ static int ir_open(void *data)
 	struct sasem_context *context;
 
 	/* prevent races with disconnect */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 	context = (struct sasem_context *) data;
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	if (context->ir_isopen) {
 		err("%s: IR port is already open", __func__);
@@ -617,9 +614,9 @@ static int ir_open(void *data)
 	}
 
 exit:
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 	return 0;
 }
 
@@ -636,7 +633,7 @@ static void ir_close(void *data)
 		return;
 	}
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	usb_kill_urb(context->rx_urb);
 	context->ir_isopen = 0;
@@ -654,14 +651,14 @@ static void ir_close(void *data)
 
 		if (!context->vfd_isopen) {
 
-			UNLOCK_CONTEXT;
+			mutex_unlock(&context->lock);
 			delete_context(context);
 			return;
 		}
 		/* If VFD port is open, context will be deleted by vfd_close */
 	}
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 	return;
 }
 
@@ -928,7 +925,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		}
 	}
 
-	init_MUTEX(&context->sem);
+	mutex_init(&context->lock);
 
 	strcpy(driver->name, MOD_NAME);
 	driver->minor = -1;
@@ -944,13 +941,13 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 #endif
 	driver->owner = THIS_MODULE;
 
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	lirc_minor = lirc_register_driver(driver);
 	if (lirc_minor < 0) {
 		err("%s: lirc_register_driver failed", __func__);
 		alloc_status = 7;
-		UNLOCK_CONTEXT;
+		mutex_unlock(&context->lock);
 	} else
 		info("%s: Registered Sasem driver (minor:%d)",
 			__func__, lirc_minor);
@@ -1024,7 +1021,7 @@ alloc_status_switch:
 	info("%s: Sasem device on usb<%d:%d> initialized",
 			__func__, dev->bus->busnum, dev->devnum);
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 exit:
 #ifdef KERNEL_2_5
 	return retval;
@@ -1045,14 +1042,14 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 	struct sasem_context *context;
 
 	/* prevent races with ir_open()/vfd_open() */
-	down(&disconnect_sem);
+	mutex_lock(&disconnect_lock);
 
 #ifdef KERNEL_2_5
 	context = usb_get_intfdata(interface);
 #else
 	context = (struct sasem_context *)data;
 #endif
-	LOCK_CONTEXT;
+	mutex_lock(&context->lock);
 
 	info("%s: Sasem device disconnected", __func__);
 
@@ -1084,12 +1081,12 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 		devfs_unregister(context->devfs);
 #endif
 
-	UNLOCK_CONTEXT;
+	mutex_unlock(&context->lock);
 
 	if (!context->ir_isopen && !context->vfd_isopen)
 		delete_context(context);
 
-	up(&disconnect_sem);
+	mutex_unlock(&disconnect_lock);
 }
 
 static int __init sasem_init(void)

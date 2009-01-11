@@ -175,7 +175,7 @@ struct mceusb_device {
 
 	wait_queue_head_t wait_q; /* for timeouts */
 	int open_count;		/* number of times this port has been opened */
-	struct semaphore sem;	/* locks this structure */
+	struct mutex lock;	/* locks this structure */
 
 	int present;		/* if the device is not disconnected */
 
@@ -229,7 +229,7 @@ static int set_use_inc(void *data);
 static struct mceusb_device *minor_table[MAX_DEVICES];
 
 /* lock to protect the minor_table structure */
-static DECLARE_MUTEX(minor_table_mutex);
+static DEFINE_MUTEX(minor_table_mutex);
 static void mceusb_setup(struct usb_device *udev);
 
 /* usb specific object needed to register this driver with the usb subsystem */
@@ -583,11 +583,11 @@ static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 {
 	struct mceusb_device *dev = (struct mceusb_device *) data;
 
-	down(&dev->sem);
+	mutex_lock(&dev->lock);
 
 	/* verify device still present */
 	if (dev->udev == NULL) {
-		up(&dev->sem);
+		mutex_unlock(&dev->lock);
 		return -ENODEV;
 	}
 
@@ -600,7 +600,7 @@ static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 		if (res == 0)
 			res = -ENODATA;
 		if (res < 0) {
-			up(&dev->sem);
+			mutex_unlock(&dev->lock);
 			return res;
 		}
 	}
@@ -619,11 +619,11 @@ static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 		dev->lircidx += keys_to_copy;
 		dev->lirccnt -= keys_to_copy;
 
-		up(&dev->sem);
+		mutex_unlock(&dev->lock);
 		return 0;
 	}
 
-	up(&dev->sem);
+	mutex_unlock(&dev->lock);
 	return -ENODATA;
 }
 
@@ -694,7 +694,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 
 	/* select a "subminor" number (part of a minor number) */
-	down(&minor_table_mutex);
+	mutex_lock(&minor_table_mutex);
 	for (minor = 0; minor < MAX_DEVICES; ++minor) {
 		if (minor_table[minor] == NULL)
 			break;
@@ -716,7 +716,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 	minor_table[minor] = dev;
 
-	init_MUTEX(&dev->sem);
+	mutex_init(&dev->lock);
 	dev->udev = udev;
 	dev->interface = interface;
 	dev->minor = minor;
@@ -878,7 +878,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	/* let the user know what node this device is now attached to */
 	/* info("USB Microsoft IR Transceiver device now attached to msir%d",
 		dev->minor); */
-	up(&minor_table_mutex);
+	mutex_unlock(&minor_table_mutex);
 #ifdef KERNEL_2_5
 	return 0;
 #else
@@ -888,7 +888,7 @@ error:
 	mceusb_delete(dev);
 	dev = NULL;
 	dprintk("%s: retval = %x", __func__, retval);
-	up(&minor_table_mutex);
+	mutex_unlock(&minor_table_mutex);
 #ifdef KERNEL_2_5
 	return retval;
 #else
@@ -922,8 +922,8 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 	dev = (struct mceusb_device *)ptr;
 #endif
 
-	down(&minor_table_mutex);
-	down(&dev->sem);
+	mutex_lock(&minor_table_mutex);
+	mutex_lock(&dev->lock);
 	minor = dev->minor;
 
 	/* unhook lirc things */
@@ -942,11 +942,11 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 	dev->present = 0;
 #endif
 
+	mutex_unlock(&dev->lock);
 	mceusb_delete(dev);
 
 	info("Microsoft IR Transceiver #%d now disconnected", minor);
-	up(&dev->sem);
-	up(&minor_table_mutex);
+	mutex_unlock(&minor_table_mutex);
 }
 
 

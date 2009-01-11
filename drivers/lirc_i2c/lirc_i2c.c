@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.49 2009/01/03 09:36:40 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.50 2009/01/11 21:47:22 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -53,12 +53,6 @@
 #include <linux/slab.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-bit.h>
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-#include <asm/semaphore.h>
-#else
-#include <linux/semaphore.h>
-#endif
 
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
