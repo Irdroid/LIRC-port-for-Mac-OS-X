@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.62 $"
+#define DRIVER_VERSION	"$Revision: 1.63 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -108,7 +108,6 @@ static int debug;
 #define IRUNLOCK	up(&ir->lock)
 
 /* general constants */
-#define SUCCESS			0
 #define SEND_FLAG_IN_PROGRESS	1
 #define SEND_FLAG_COMPLETE	2
 #define RECV_FLAG_IN_PROGRESS	3
@@ -417,7 +416,7 @@ static int unregister_from_lirc(struct mceusb2_dev *ir)
 			devnum);
 	}
 
-	if (rtn != SUCCESS) {
+	if (rtn) {
 		printk(DRIVER_NAME "[%d]: didn't free resources\n", devnum);
 		return -EAGAIN;
 	}
@@ -428,7 +427,7 @@ static int unregister_from_lirc(struct mceusb2_dev *ir)
 	kfree(d->rbuf);
 	kfree(d);
 	kfree(ir);
-	return SUCCESS;
+	return 0;
 }
 
 static int set_use_inc(void *data)
@@ -449,7 +448,7 @@ static int set_use_inc(void *data)
 		ir->flags.connected = 1;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 static void set_use_dec(void *data)
@@ -510,7 +509,7 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 
 	switch (urb->status) {
 	/* success */
-	case SUCCESS:
+	case 0:
 		for (i = 0; i < buf_len; i++) {
 			/* decode mce packets of the form (84),AA,BB,CC,DD */
 			if (ir->buf_in[i] >= 0x80 && ir->buf_in[i] <= 0x9e) {
@@ -1056,7 +1055,7 @@ mem_failure_switch:
 
 	usb_set_intfdata(intf, ir);
 
-	return SUCCESS;
+	return 0;
 }
 
 
@@ -1128,7 +1127,7 @@ static int __init usb_remote_init(void)
 		return -ENODEV;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 static void __exit usb_remote_exit(void)

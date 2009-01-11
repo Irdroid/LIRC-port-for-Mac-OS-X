@@ -89,9 +89,6 @@ static int debug;
 			printk(KERN_DEBUG DRIVER_NAME fmt, ## args);	\
 	} while (0)
 
-/* general constants */
-#define SUCCESS		 0
-
 /* One mode2 pulse/space has 4 bytes. */
 #define CODE_LENGTH	     sizeof(lirc_t)
 
@@ -269,7 +266,7 @@ static int set_use_inc(void *data)
 	if (!ir->usbdev)
 		return -ENODEV;
 
-	return SUCCESS;
+	return 0;
 }
 
 static void set_use_dec(void *data)
@@ -369,7 +366,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 			printk(KERN_WARNING DRIVER_NAME
 			       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
 			       ir->devnum, ret);
-		return SUCCESS;
+		return 0;
 	} else
 		printk(KERN_WARNING DRIVER_NAME
 		       "[%d]: GET_INFRACODE: error %d\n",
@@ -565,7 +562,7 @@ mem_failure_switch:
 
 #if defined(KERNEL_2_5)
 	usb_set_intfdata(intf, ir);
-	return SUCCESS;
+	return 0;
 #else
 	return ir;
 #endif
@@ -636,7 +633,7 @@ static int __init usb_remote_init(void)
 		return -ENODEV;
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 static void __exit usb_remote_exit(void)

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.66 2009/01/04 23:21:59 lirc Exp $
+ * $Id: lirc_dev.c,v 1.67 2009/01/11 09:51:39 lirc Exp $
  *
  */
 
@@ -84,7 +84,6 @@ static int debug;
 	} while (0)
 
 #define IRCTL_DEV_NAME    "BaseRemoteCtl"
-#define SUCCESS           0
 #define NOPLUG            -1
 #define LOGHEAD           "lirc_dev (%s[%d]): "
 
@@ -168,8 +167,7 @@ static inline int add_to_buf(struct irctl *ir)
 
 		/* service the device as long as it is returning
 		   data */
-		while ((res = ir->d.add_to_buf(ir->d.data, ir->buf))
-		       == SUCCESS) {
+		while ((res = ir->d.add_to_buf(ir->d.data, ir->buf)) == 0) {
 			got_data++;
 		}
 
@@ -180,10 +178,10 @@ static inline int add_to_buf(struct irctl *ir)
 			kthread_stop(ir->task);
 #endif
 
-		return (got_data ? SUCCESS : res);
+		return (got_data ? 0 : res);
 	}
 
-	return SUCCESS;
+	return 0;
 }
 
 /* main function of the polling thread
@@ -364,7 +362,7 @@ int lirc_register_driver(struct lirc_driver *d)
 			goto out_lock;
 		}
 		if (lirc_buffer_init(ir->buf, bytes_in_key,
-				     BUFLEN/bytes_in_key) != 0) {
+				     BUFLEN/bytes_in_key)) {
 			kfree(ir->buf);
 			err = -ENOMEM;
 			goto out_lock;
@@ -534,7 +532,7 @@ int lirc_unregister_driver(int minor)
 	MOD_DEC_USE_COUNT;
 #endif
 
-	return SUCCESS;
+	return 0;
 }
 EXPORT_SYMBOL(lirc_unregister_driver);
 
@@ -589,7 +587,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 		++ir->open;
 		retval = ir->d.set_use_inc(ir->d.data);
 
-		if (retval != SUCCESS) {
+		if (retval) {
 			module_put(ir->d.owner);
 			--ir->open;
 		}
@@ -633,7 +631,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 
 	up(&driver_lock);
 
-	return SUCCESS;
+	return 0;
 }
 
 /*
@@ -698,7 +696,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 			return result;
 	}
 	/* The driver can't handle cmd */
-	result = SUCCESS;
+	result = 0;
 
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
@@ -970,7 +968,7 @@ static int lirc_dev_init(void)
 	printk(KERN_INFO "lirc_dev: IR Remote Control driver registered, "
 	       "major %d \n", IRCTL_DEV_MAJOR);
 
-	return SUCCESS;
+	return 0;
 
 out_unregister:
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)

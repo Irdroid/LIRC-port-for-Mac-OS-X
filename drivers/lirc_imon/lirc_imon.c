@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.36 2009/01/05 20:18:34 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.37 2009/01/11 09:51:39 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -86,11 +86,6 @@
 #define BUF_SIZE	128
 
 #define BIT_DURATION	250	/* each bit received is 250us */
-
-#define SUCCESS		0
-#define	TRUE		1
-#define FALSE		0
-
 
 /* ------------------------------------------------------------
  *		     P R O T O T Y P E S
@@ -409,7 +404,7 @@ static int display_open(struct inode *inode, struct file *file)
 #endif
 	struct imon_context *context = NULL;
 	int subminor;
-	int retval = SUCCESS;
+	int retval = 0;
 
 	/* prevent races with disconnect */
 	down(&disconnect_sem);
@@ -451,7 +446,7 @@ static int display_open(struct inode *inode, struct file *file)
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
-		context->display_isopen = TRUE;
+		context->display_isopen = 1;
 		file->private_data = context;
 		info("VFD port opened");
 	}
@@ -470,7 +465,7 @@ exit:
 static int display_close(struct inode *inode, struct file *file)
 {
 	struct imon_context *context = NULL;
-	int retval = SUCCESS;
+	int retval = 0;
 
 	context = (struct imon_context *) file->private_data;
 
@@ -488,7 +483,7 @@ static int display_close(struct inode *inode, struct file *file)
 		err("%s: VFD is not open", __func__);
 		retval = -EIO;
 	} else {
-		context->display_isopen = FALSE;
+		context->display_isopen = 0;
 		MOD_DEC_USE_COUNT;
 		info("VFD port closed");
 		if (!context->dev_present && !context->ir_isopen) {
@@ -512,7 +507,7 @@ static inline int send_packet(struct imon_context *context)
 {
 	unsigned int pipe;
 	int interval = 0;
-	int retval = SUCCESS;
+	int retval = 0;
 	struct usb_ctrlrequest *control_req = NULL;
 
 	/* Check if we need to use control or interrupt urb */
@@ -561,7 +556,7 @@ static inline int send_packet(struct imon_context *context)
 #else
 	retval =  usb_submit_urb(context->tx_urb);
 #endif
-	if (retval != SUCCESS) {
+	if (retval) {
 		atomic_set(&(context->tx.busy), 0);
 		err("%s: error submitting urb(%d)", __func__, retval);
 	} else {
@@ -571,7 +566,7 @@ static inline int send_packet(struct imon_context *context)
 		LOCK_CONTEXT;
 
 		retval = context->tx.status;
-		if (retval != SUCCESS)
+		if (retval)
 			err("%s: packet tx failed(%d)", __func__, retval);
 	}
 
@@ -662,7 +657,7 @@ static ssize_t store_associate_remote(struct device *d,
 		return -EINVAL;
 
 	if (context->ir_isopen) {
-		context->ir_isassociating = TRUE;
+		context->ir_isassociating = 1;
 		send_associate_24g(context);
 	}
 
@@ -702,7 +697,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 	int i;
 	int offset;
 	int seq;
-	int retval = SUCCESS;
+	int retval = 0;
 	struct imon_context *context;
 
 	context = (struct imon_context *) file->private_data;
@@ -743,7 +738,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		context->usb_tx_buf[7] = (unsigned char) seq;
 
 		retval = send_packet(context);
-		if (retval != SUCCESS) {
+		if (retval) {
 			err("%s: send packet failed for packet #%d",
 					__func__, seq/2);
 			goto exit;
@@ -759,7 +754,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		memcpy(context->usb_tx_buf, display_packet6, 7);
 		context->usb_tx_buf[7] = (unsigned char) seq;
 		retval = send_packet(context);
-		if (retval != SUCCESS)
+		if (retval)
 			err("%s: send packet failed for packet #%d",
 					__func__, seq/2);
 	}
@@ -767,7 +762,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 exit:
 	UNLOCK_CONTEXT;
 
-	return(retval == SUCCESS) ? n_bytes : retval;
+	return(retval == 0) ? n_bytes : retval;
 }
 
 /**
@@ -786,7 +781,7 @@ exit:
 static ssize_t lcd_write(struct file *file, const char *buf,
 			 size_t n_bytes, loff_t *pos)
 {
-	int retval = SUCCESS;
+	int retval = 0;
 	struct imon_context *context;
 
 	context = (struct imon_context *) file->private_data;
@@ -816,7 +811,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 	}
 
 	retval = send_packet(context);
-	if (retval != SUCCESS) {
+	if (retval) {
 		err("%s: send packet failed!", __func__);
 		goto exit;
 	} else if (debug) {
@@ -824,7 +819,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 	}
 exit:
 	UNLOCK_CONTEXT;
-	return (retval == SUCCESS) ? n_bytes : retval;
+	return (retval == 0) ? n_bytes : retval;
 }
 
 /**
@@ -858,7 +853,7 @@ static void usb_tx_callback(struct urb *urb)
  */
 static int ir_open(void *data)
 {
-	int retval = SUCCESS;
+	int retval = 0;
 	struct imon_context *context;
 
 	/* prevent races with disconnect */
@@ -896,7 +891,7 @@ static int ir_open(void *data)
 		    __func__, retval);
 	else {
 		MOD_INC_USE_COUNT;
-		context->ir_isopen = TRUE;
+		context->ir_isopen = 1;
 		info("IR port opened");
 	}
 
@@ -904,7 +899,7 @@ exit:
 	UNLOCK_CONTEXT;
 
 	up(&disconnect_sem);
-	return SUCCESS;
+	return 0;
 }
 
 /**
@@ -923,8 +918,8 @@ static void ir_close(void *data)
 	LOCK_CONTEXT;
 
 	usb_kill_urb(context->rx_urb);
-	context->ir_isopen = FALSE;
-	context->ir_isassociating = FALSE;
+	context->ir_isopen = 0;
+	context->ir_isassociating = 0;
 	MOD_DEC_USE_COUNT;
 	info("IR port closed");
 
@@ -1039,7 +1034,7 @@ static inline void incoming_packet(struct imon_context *context,
 	   ((buf[6] == 0x4E && buf[7] == 0xDF) ||	/* LT */
 	    (buf[6] == 0x5E && buf[7] == 0xDF))) {	/* DT */
 		warn("%s: remote associated refid=%02X", __func__, buf[1]);
-		context->ir_isassociating = FALSE;
+		context->ir_isassociating = 0;
 	}
 
 	chunk_num = buf[7];
@@ -1135,7 +1130,7 @@ static void usb_rx_callback(struct urb *urb)
 	switch (urb->status) {
 	case -ENOENT:		/* usbcore unlink successful! */
 		return;
-	case SUCCESS:
+	case 0:
 		if (context->ir_isopen)
 			incoming_packet(context, urb);
 		break;
@@ -1180,15 +1175,15 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	struct lirc_buffer *rbuf = NULL;
 	int lirc_minor = 0;
 	int num_endpoints;
-	int retval = SUCCESS;
+	int retval = 0;
 	int display_ep_found;
 	int ir_ep_found;
 	int alloc_status;
-	int display_proto_6p = FALSE;
-	int ir_onboard_decode = FALSE;
+	int display_proto_6p = 0;
+	int ir_onboard_decode = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
 	int code_length;
-	int tx_control = FALSE;
+	int tx_control = 0;
 	struct imon_context *context = NULL;
 	int i;
 
@@ -1241,8 +1236,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	 *	first output endpoint = VFD endpoint
 	 */
 
-	ir_ep_found = FALSE;
-	display_ep_found = FALSE;
+	ir_ep_found = 0;
+	display_ep_found = 0;
 
 	for (i = 0; i < num_endpoints && !(ir_ep_found && display_ep_found);
 	     ++i) {
@@ -1262,7 +1257,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			ep_type == USB_ENDPOINT_XFER_INT) {
 
 			rx_endpoint = ep;
-			ir_ep_found = TRUE;
+			ir_ep_found = 1;
 			if (debug)
 				info("%s: found IR endpoint", __func__);
 
@@ -1270,7 +1265,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			   ep_dir == USB_DIR_OUT &&
 			   ep_type == USB_ENDPOINT_XFER_INT) {
 			tx_endpoint = ep;
-			display_ep_found = TRUE;
+			display_ep_found = 1;
 			if (debug)
 				info("%s: found VFD endpoint", __func__);
 		}
@@ -1283,7 +1278,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	if (!display_ep_found) {
 		if (usb_match_id(interface, ctl_ep_device_list)) {
 			tx_control = 1;
-			display_ep_found = TRUE;
+			display_ep_found = 1;
 			if (debug)
 				info("%s: LCD device uses control endpoint, "
 				     "not interface OUT endpoint", __func__);
@@ -1312,7 +1307,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	} else {
 		/* Determine if the IR signals are decoded onboard */
 		if (usb_match_id(interface, ir_onboard_decode_list))
-			ir_onboard_decode = TRUE;
+			ir_onboard_decode = 1;
 
 		if (debug)
 			info("ir_onboard_decode: %d", ir_onboard_decode);
@@ -1321,7 +1316,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	/* Determine if VFD requires 6 packets */
 	if (display_ep_found) {
 		if (usb_match_id(interface, display_proto_6p_list))
-			display_proto_6p = TRUE;
+			display_proto_6p = 1;
 
 		if (debug)
 			info("display_proto_6p: %d", display_proto_6p);
@@ -1329,7 +1324,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/* Allocate memory */
 
-	alloc_status = SUCCESS;
+	alloc_status = 0;
 
 	context = kzalloc(sizeof(struct imon_context), GFP_KERNEL);
 	if (!context) {
@@ -1414,11 +1409,11 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	driver->minor = lirc_minor;
 
 	context->dev = dev;
-	context->dev_present = TRUE;
+	context->dev_present = 1;
 	context->rx_endpoint = rx_endpoint;
 	context->rx_urb = rx_urb;
 	if (display_ep_found) {
-		context->display_supported = TRUE;
+		context->display_supported = 1;
 		context->tx_endpoint = tx_endpoint;
 		context->tx_urb = tx_urb;
 		context->tx_control = tx_control;
@@ -1488,7 +1483,7 @@ alloc_status_switch:
 		context = NULL;
 	case 1:
 		retval = -ENOMEM;
-	case SUCCESS:
+	case 0:
 		;
 	}
 
@@ -1496,7 +1491,7 @@ alloc_status_switch:
 #ifdef KERNEL_2_5
 	return retval;
 #else
-	return (retval == SUCCESS) ? context : NULL;
+	return (retval == 0) ? context : NULL;
 #endif
 }
 
@@ -1532,7 +1527,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 #else
 	minor_table[context->subminor] = NULL;
 #endif
-	context->dev_present = FALSE;
+	context->dev_present = 0;
 
 	/* Stop reception */
 	usb_kill_urb(context->rx_urb);
@@ -1595,7 +1590,7 @@ static int __init imon_init(void)
 		err("%s: usb register failed(%d)", __func__, rc);
 		return -ENODEV;
 	}
-	return SUCCESS;
+	return 0;
 }
 
 static void __exit imon_exit(void)

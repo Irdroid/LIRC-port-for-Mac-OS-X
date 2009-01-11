@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.25 2009/01/05 20:18:34 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.26 2009/01/11 09:51:39 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -91,10 +91,6 @@
 
 #define BUF_CHUNK_SIZE	8
 #define BUF_SIZE	128
-
-#define SUCCESS		0
-#define	TRUE		1
-#define FALSE		0
 
 #define IOCTL_LCD_CONTRAST 1
 
@@ -288,7 +284,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 #endif
 	struct sasem_context *context = NULL;
 	int subminor;
-	int retval = SUCCESS;
+	int retval = 0;
 
 	/* prevent races with disconnect */
 	down(&disconnect_sem);
@@ -327,7 +323,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
-		context->vfd_isopen = TRUE;
+		context->vfd_isopen = 1;
 		file->private_data = context;
 		info("VFD port opened");
 	}
@@ -382,7 +378,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 static int vfd_close(struct inode *inode, struct file *file)
 {
 	struct sasem_context *context = NULL;
-	int retval = SUCCESS;
+	int retval = 0;
 
 	context = (struct sasem_context *) file->private_data;
 
@@ -397,7 +393,7 @@ static int vfd_close(struct inode *inode, struct file *file)
 		err("%s: VFD is not open", __func__);
 		retval = -EIO;
 	} else {
-		context->vfd_isopen = FALSE;
+		context->vfd_isopen = 0;
 		MOD_DEC_USE_COUNT;
 		info("VFD port closed");
 		if (!context->dev_present && !context->ir_isopen) {
@@ -422,7 +418,7 @@ static inline int send_packet(struct sasem_context *context)
 {
 	unsigned int pipe;
 	int interval = 0;
-	int retval = SUCCESS;
+	int retval = 0;
 
 	pipe = usb_sndintpipe(context->dev,
 			context->tx_endpoint->bEndpointAddress);
@@ -444,7 +440,7 @@ static inline int send_packet(struct sasem_context *context)
 #else
 	retval =  usb_submit_urb(context->tx_urb);
 #endif
-	if (retval != SUCCESS) {
+	if (retval) {
 		atomic_set(&(context->tx.busy), 0);
 		err("%s: error submitting urb (%d)", __func__, retval);
 	} else {
@@ -454,7 +450,7 @@ static inline int send_packet(struct sasem_context *context)
 		LOCK_CONTEXT;
 
 		retval = context->tx.status;
-		if (retval != SUCCESS)
+		if (retval)
 			err("%s: packet tx failed (%d)", __func__, retval);
 	}
 
@@ -470,7 +466,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos)
 {
 	int i;
-	int retval = SUCCESS;
+	int retval = 0;
 	struct sasem_context *context;
 
 	context = (struct sasem_context *) file->private_data;
@@ -538,7 +534,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 			break;
 		}
 		retval = send_packet(context);
-		if (retval != SUCCESS) {
+		if (retval) {
 
 			err("%s: send packet failed for packet #%d",
 					__func__, i);
@@ -549,7 +545,7 @@ exit:
 
 	UNLOCK_CONTEXT;
 
-	return (retval == SUCCESS) ? n_bytes : retval;
+	return (retval == 0) ? n_bytes : retval;
 }
 
 /**
@@ -583,7 +579,7 @@ static void usb_tx_callback(struct urb *urb)
  */
 static int ir_open(void *data)
 {
-	int retval = SUCCESS;
+	int retval = 0;
 	struct sasem_context *context;
 
 	/* prevent races with disconnect */
@@ -616,7 +612,7 @@ static int ir_open(void *data)
 		    __func__, retval);
 	else {
 		MOD_INC_USE_COUNT;
-		context->ir_isopen = TRUE;
+		context->ir_isopen = 1;
 		info("IR port opened");
 	}
 
@@ -624,7 +620,7 @@ exit:
 	UNLOCK_CONTEXT;
 
 	up(&disconnect_sem);
-	return SUCCESS;
+	return 0;
 }
 
 /**
@@ -643,7 +639,7 @@ static void ir_close(void *data)
 	LOCK_CONTEXT;
 
 	usb_kill_urb(context->rx_urb);
-	context->ir_isopen = FALSE;
+	context->ir_isopen = 0;
 	MOD_DEC_USE_COUNT;
 	info("IR port closed");
 
@@ -750,7 +746,7 @@ static void usb_rx_callback(struct urb *urb)
 	case -ENOENT: 		/* usbcore unlink successful! */
 		return;
 
-	case SUCCESS:
+	case 0:
 		if (context->ir_isopen)
 			incoming_packet(context, urb);
 		break;
@@ -796,7 +792,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	struct lirc_buffer *rbuf = NULL;
 	int lirc_minor = 0;
 	int num_endpoints;
-	int retval = SUCCESS;
+	int retval = 0;
 	int vfd_ep_found;
 	int ir_ep_found;
 	int alloc_status;
@@ -834,8 +830,8 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	 * 	first output endpoint = VFD endpoint
 	 */
 
-	ir_ep_found = FALSE;
-	vfd_ep_found = FALSE;
+	ir_ep_found = 0;
+	vfd_ep_found = 0;
 
 	for (i = 0; i < num_endpoints && !(ir_ep_found && vfd_ep_found); ++i) {
 
@@ -855,7 +851,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			ep_type == USB_ENDPOINT_XFER_INT) {
 
 			rx_endpoint = ep;
-			ir_ep_found = TRUE;
+			ir_ep_found = 1;
 			if (debug)
 				info("%s: found IR endpoint", __func__);
 
@@ -864,7 +860,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			ep_type == USB_ENDPOINT_XFER_INT) {
 
 			tx_endpoint = ep;
-			vfd_ep_found = TRUE;
+			vfd_ep_found = 1;
 			if (debug)
 				info("%s: found VFD endpoint", __func__);
 		}
@@ -884,7 +880,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 
 
 	/* Allocate memory */
-	alloc_status = SUCCESS;
+	alloc_status = 0;
 
 	context = kzalloc(sizeof(struct sasem_context), GFP_KERNEL);
 	if (!context) {
@@ -986,7 +982,7 @@ alloc_status_switch:
 	driver->minor = lirc_minor;
 
 	context->dev = dev;
-	context->dev_present = TRUE;
+	context->dev_present = 1;
 	context->rx_endpoint = rx_endpoint;
 	context->rx_urb = rx_urb;
 	if (vfd_ep_found) {
@@ -1033,7 +1029,7 @@ exit:
 #ifdef KERNEL_2_5
 	return retval;
 #else
-	return (retval == SUCCESS) ? context : NULL;
+	return (retval == 0) ? context : NULL;
 #endif
 }
 
@@ -1065,7 +1061,7 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 #else
 	minor_table [context->subminor] = NULL;
 #endif
-	context->dev_present = FALSE;
+	context->dev_present = 0;
 
 	/* Stop reception */
 	usb_kill_urb(context->rx_urb);
@@ -1108,7 +1104,7 @@ static int __init sasem_init(void)
 		err("%s: usb register failed (%d)", __func__, rc);
 		return -ENODEV;
 	}
-	return SUCCESS;
+	return 0;
 }
 
 static void __exit sasem_exit(void)
