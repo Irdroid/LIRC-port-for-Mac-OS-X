@@ -228,7 +228,7 @@ static int sample_rate = SAMPLE_RATE;
 
 
 /* data structure for each usb remote */
-struct irctl {
+struct igorplug {
 
 	/* usb */
 	struct usb_device *usbdev;
@@ -255,7 +255,7 @@ struct irctl {
 
 static int set_use_inc(void *data)
 {
-	struct irctl *ir = data;
+	struct igorplug *ir = data;
 
 	if (!ir) {
 		printk(KERN_ERR DRIVER_NAME
@@ -274,7 +274,7 @@ static int set_use_inc(void *data)
 
 static void set_use_dec(void *data)
 {
-	struct irctl *ir = data;
+	struct igorplug *ir = data;
 
 	if (!ir) {
 		printk(KERN_ERR DRIVER_NAME
@@ -296,7 +296,7 @@ static void set_use_dec(void *data)
 static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 {
 	int ret;
-	struct irctl *ir = (struct irctl *)data;
+	struct igorplug *ir = (struct igorplug *)data;
 
 	if (!ir->usbdev)  /* Has the device been removed? */
 		return -ENODEV;
@@ -395,7 +395,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	struct usb_interface_descriptor *idesc;
 	struct usb_endpoint_descriptor *ep_ctl2;
 #endif
-	struct irctl *ir = NULL;
+	struct igorplug *ir = NULL;
 	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int devnum, pipe, maxp, bytes_in_key;
@@ -448,7 +448,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	/* allocate kernel memory */
 	mem_failure = 0;
-	ir = kzalloc(sizeof(struct irctl), GFP_KERNEL);
+	ir = kzalloc(sizeof(struct igorplug), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto mem_failure_switch;
@@ -576,11 +576,11 @@ mem_failure_switch:
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
-	struct irctl *ir = usb_get_intfdata(intf);
+	struct igorplug *ir = usb_get_intfdata(intf);
 #else
 static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 {
-	struct irctl *ir = ptr;
+	struct igorplug *ir = ptr;
 #endif
 
 	if (!ir || !ir->d)

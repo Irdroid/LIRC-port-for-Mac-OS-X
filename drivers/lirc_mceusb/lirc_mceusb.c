@@ -152,7 +152,7 @@ static struct usb_device_id mceusb_table[] = {
 #define MAX_DEVICES		16
 
 /* Structure to hold all of our device specific stuff */
-struct usb_skel {
+struct mceusb_device {
 	struct usb_device *udev; /* save off the usb device pointer */
 	struct usb_interface *interface; /* the interface for this device */
 	unsigned char minor;	 /* the starting minor number for this device */
@@ -218,15 +218,15 @@ static void mceusb_write_bulk_callback(struct urb *urb);
 #endif
 
 /* read data from the usb bus; convert to mode2 */
-static int msir_fetch_more_data(struct usb_skel *dev, int dont_block);
+static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block);
 
 /* helper functions */
-static void msir_cleanup(struct usb_skel *dev);
+static void msir_cleanup(struct mceusb_device *dev);
 static void set_use_dec(void *data);
 static int set_use_inc(void *data);
 
 /* array of pointers to our devices that are currently connected */
-static struct usb_skel *minor_table[MAX_DEVICES];
+static struct mceusb_device *minor_table[MAX_DEVICES];
 
 /* lock to protect the minor_table structure */
 static DECLARE_MUTEX(minor_table_mutex);
@@ -262,7 +262,7 @@ static inline void usb_mceusb_debug_data(const char *function, int size,
 /**
  *mceusb_delete
  */
-static inline void mceusb_delete(struct usb_skel *dev)
+static inline void mceusb_delete(struct mceusb_device *dev)
 {
 	dprintk("%s", __func__);
 	minor_table[dev->minor] = NULL;
@@ -340,7 +340,7 @@ static void mceusb_setup(struct usb_device *udev)
 #endif
 }
 
-static void msir_cleanup(struct usb_skel *dev)
+static void msir_cleanup(struct mceusb_device *dev)
 {
 	memset(dev->bulk_in_buffer, 0, dev->bulk_in_size);
 
@@ -381,7 +381,7 @@ static void set_use_dec(void *data)
  * This routine always returns the number of words available
  *
  */
-static int msir_fetch_more_data(struct usb_skel *dev, int dont_block)
+static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 {
 	int retries = 0;
 	int words_to_read =
@@ -581,7 +581,7 @@ static int msir_fetch_more_data(struct usb_skel *dev, int dont_block)
  */
 static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 {
-	struct usb_skel *dev = (struct usb_skel *) data;
+	struct mceusb_device *dev = (struct mceusb_device *) data;
 
 	down(&dev->sem);
 
@@ -636,7 +636,7 @@ static void mceusb_write_bulk_callback(struct urb *urb, struct pt_regs *regs)
 static void mceusb_write_bulk_callback(struct urb *urb)
 #endif
 {
-	struct usb_skel *dev = (struct usb_skel *)urb->context;
+	struct mceusb_device *dev = (struct mceusb_device *)urb->context;
 
 	dprintk("%s - minor %d", __func__, dev->minor);
 
@@ -669,7 +669,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	struct usb_interface *interface = &udev->actconfig->interface[ifnum];
 	struct usb_interface_descriptor *iface_desc;
 #endif
-	struct usb_skel *dev = NULL;
+	struct mceusb_device *dev = NULL;
 	struct usb_endpoint_descriptor *endpoint;
 
 	struct lirc_driver *driver;
@@ -706,7 +706,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	}
 
 	/* allocate memory for our device state and initialize it */
-	dev = kzalloc(sizeof(struct usb_skel), GFP_KERNEL);
+	dev = kzalloc(sizeof(struct mceusb_device), GFP_KERNEL);
 	if (dev == NULL) {
 		err("Out of memory");
 #ifdef KERNEL_2_5
@@ -913,13 +913,13 @@ static void mceusb_disconnect(struct usb_interface *interface)
 static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 #endif
 {
-	struct usb_skel *dev;
+	struct mceusb_device *dev;
 	int minor;
 #ifdef KERNEL_2_5
 	dev = usb_get_intfdata(interface);
 	usb_set_intfdata(interface, NULL);
 #else
-	dev = (struct usb_skel *)ptr;
+	dev = (struct mceusb_device *)ptr;
 #endif
 
 	down(&minor_table_mutex);

@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.61 $"
+#define DRIVER_VERSION	"$Revision: 1.62 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -102,7 +102,7 @@ static int debug;
 			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
 
-/* lock irctl structure */
+/* lock mceusb2_dev structure */
 /*#define IRLOCK	down_interruptible(&ir->lock) */
 #define IRLOCK		down(&ir->lock)
 #define IRUNLOCK	up(&ir->lock)
@@ -224,8 +224,8 @@ static struct usb_device_id transmitter_mask_list[] = {
 	{}
 };
 
-/* data structure for each usb remote */
-struct irctl {
+/* data structure for each usb transceiver */
+struct mceusb2_dev {
 
 	/* usb */
 	struct usb_device *usbdev;
@@ -285,7 +285,7 @@ static inline unsigned long usecs_to_jiffies(const unsigned int u)
 #endif
 
 
-static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
+static void usb_remote_printdata(struct mceusb2_dev *ir, char *buf, int len)
 {
 	char codes[USB_BUFLEN*3 + 1];
 	int i;
@@ -302,7 +302,7 @@ static void usb_remote_printdata(struct irctl *ir, char *buf, int len)
 
 static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 {
-	struct irctl *ir;
+	struct mceusb2_dev *ir;
 	int len;
 
 	if (!urb)
@@ -324,7 +324,7 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 
 
 /* request incoming or send outgoing usb packet - used to initialize remote */
-static void request_packet_async(struct irctl *ir,
+static void request_packet_async(struct mceusb2_dev *ir,
 				 struct usb_endpoint_descriptor *ep,
 				 unsigned char *data, int size, int urb_type)
 {
@@ -389,7 +389,7 @@ static void request_packet_async(struct irctl *ir,
 		ir->devnum, res);
 }
 
-static int unregister_from_lirc(struct irctl *ir)
+static int unregister_from_lirc(struct mceusb2_dev *ir)
 {
 	struct lirc_driver *d = ir->d;
 	int devnum;
@@ -433,7 +433,7 @@ static int unregister_from_lirc(struct irctl *ir)
 
 static int set_use_inc(void *data)
 {
-	struct irctl *ir = data;
+	struct mceusb2_dev *ir = data;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
@@ -454,7 +454,7 @@ static int set_use_inc(void *data)
 
 static void set_use_dec(void *data)
 {
-	struct irctl *ir = data;
+	struct mceusb2_dev *ir = data;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
@@ -470,7 +470,7 @@ static void set_use_dec(void *data)
 	MOD_DEC_USE_COUNT;
 }
 
-static void send_packet_to_lirc(struct irctl *ir)
+static void send_packet_to_lirc(struct mceusb2_dev *ir)
 {
 	if (ir->lircdata != 0) {
 		lirc_buffer_write_1(ir->d->rbuf,
@@ -482,7 +482,7 @@ static void send_packet_to_lirc(struct irctl *ir)
 
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 {
-	struct irctl *ir;
+	struct mceusb2_dev *ir;
 	int buf_len, packet_len;
 	int i, j;
 
@@ -588,7 +588,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 			  size_t n, loff_t *ppos)
 {
 	int i, count = 0, cmdcount = 0;
-	struct irctl *ir = NULL;
+	struct mceusb2_dev *ir = NULL;
 	lirc_t wbuf[LIRCBUF_SIZE]; /* Workbuffer with values from lirc */
 	unsigned char cmdbuf[MCE_CMDBUF_SIZE]; /* MCE command buffer */
 	unsigned long signal_duration = 0; /* Singnal length in us */
@@ -670,7 +670,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	return n;
 }
 
-static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
+static void set_transmitter_mask(struct mceusb2_dev *ir, unsigned int mask)
 {
 	if (ir->flags.transmitter_mask_inverted)
 		/* The mask begins at 0x02 and has an inverted
@@ -683,7 +683,7 @@ static void set_transmitter_mask(struct irctl *ir, unsigned int mask)
 
 
 /* Sets the send carrier frequency */
-static int set_send_carrier(struct irctl *ir, int carrier)
+static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
 {
 	int clk = 10000000;
 	int prescaler = 0, divisor = 0;
@@ -735,7 +735,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 	int result;
 	unsigned int ivalue;
 	unsigned long lvalue;
-	struct irctl *ir = NULL;
+	struct mceusb2_dev *ir = NULL;
 
 	/* Retrieve lirc_driver data for the device */
 	ir = lirc_get_pdata(filep);
@@ -813,7 +813,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	struct usb_endpoint_descriptor *ep_in = NULL;
 	struct usb_endpoint_descriptor *ep_out = NULL;
 	struct usb_host_config *config;
-	struct irctl *ir = NULL;
+	struct mceusb2_dev *ir = NULL;
 	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int devnum, pipe, maxp;
@@ -890,7 +890,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 
 	/* allocate kernel memory */
 	mem_failure = 0;
-	ir = kzalloc(sizeof(struct irctl), GFP_KERNEL);
+	ir = kzalloc(sizeof(struct mceusb2_dev), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto mem_failure_switch;
@@ -1063,7 +1063,7 @@ mem_failure_switch:
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
-	struct irctl *ir = usb_get_intfdata(intf);
+	struct mceusb2_dev *ir = usb_get_intfdata(intf);
 
 	usb_set_intfdata(intf, NULL);
 
@@ -1085,7 +1085,7 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int usb_remote_suspend(struct usb_interface *intf, pm_message_t message)
 {
-	struct irctl *ir = usb_get_intfdata(intf);
+	struct mceusb2_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: suspend\n", ir->devnum);
 	usb_kill_urb(ir->urb_in);
 	return 0;
@@ -1093,7 +1093,7 @@ static int usb_remote_suspend(struct usb_interface *intf, pm_message_t message)
 
 static int usb_remote_resume(struct usb_interface *intf)
 {
-	struct irctl *ir = usb_get_intfdata(intf);
+	struct mceusb2_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: resume\n", ir->devnum);
 	if (usb_submit_urb(ir->urb_in, GFP_ATOMIC))
 		return -EIO;
