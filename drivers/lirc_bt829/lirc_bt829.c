@@ -337,11 +337,11 @@ static void do_set_bits(unsigned char new_bits)
 	write_index(0x34, reg_val);
 
 	reg_val = read_index(0x31);
-	if (new_bits & 1) {
+	if (new_bits & 1)
 		reg_val |= 0x1000000;
-	} else {
+	else
 		reg_val &= 0xFEFFFFFF;
-	}
+
 	reg_val |= 0x8000000;
 	write_index(0x31, reg_val);
 }
@@ -358,17 +358,17 @@ static unsigned char do_get_bits(void)
 
 	reg_val = read_index(0x34);
 	bits = 0;
-	if (reg_val & 8) {
+	if (reg_val & 8)
 		bits |= 2;
-	} else {
+	else
 		bits &= 0xFD;
-	}
+
 	reg_val = read_index(0x31);
-	if (reg_val & 0x1000000) {
+	if (reg_val & 0x1000000)
 		bits |= 1;
-	} else {
+	else
 		bits &= 0xFE;
-	}
+
 	return bits;
 }
 
