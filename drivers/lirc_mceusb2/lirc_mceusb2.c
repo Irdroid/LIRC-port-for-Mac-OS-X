@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.64 $"
+#define DRIVER_VERSION	"$Revision: 1.65 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -264,7 +264,7 @@ static char pin_init2[] = { 0x9f, 0x13};
 static char pin_init3[] = { 0x9f, 0x0d};
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
-static inline unsigned long usecs_to_jiffies(const unsigned int u)
+static unsigned long usecs_to_jiffies(const unsigned int u)
 {
 	if (u > jiffies_to_usecs(MAX_JIFFY_OFFSET))
 		return MAX_JIFFY_OFFSET;

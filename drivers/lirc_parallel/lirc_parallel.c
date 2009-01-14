@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.41 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.42 2009/01/14 19:53:17 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -131,7 +131,7 @@ unsigned int tx_mask = 1;
  *************************   Interne Funktionen  ***********************
  ***********************************************************************/
 
-static inline unsigned int in(int offset)
+static unsigned int in(int offset)
 {
 	switch (offset) {
 	case LIRC_LP_BASE:
@@ -144,7 +144,7 @@ static inline unsigned int in(int offset)
 	return 0; /* make compiler happy */
 }
 
-static inline void out(int offset, int value)
+static void out(int offset, int value)
 {
 	switch (offset) {
 	case LIRC_LP_BASE:
@@ -160,22 +160,22 @@ static inline void out(int offset, int value)
 	}
 }
 
-static inline unsigned int lirc_get_timer(void)
+static unsigned int lirc_get_timer(void)
 {
 	return (in(LIRC_PORT_TIMER)&LIRC_PORT_TIMER_BIT);
 }
 
-static inline  unsigned int lirc_get_signal(void)
+static unsigned int lirc_get_signal(void)
 {
 	return (in(LIRC_PORT_SIGNAL)&LIRC_PORT_SIGNAL_BIT);
 }
 
-static inline void lirc_on(void)
+static void lirc_on(void)
 {
 	out(LIRC_PORT_DATA, tx_mask);
 }
 
-static inline void lirc_off(void)
+static void lirc_off(void)
 {
 	out(LIRC_PORT_DATA, 0);
 }
@@ -252,7 +252,7 @@ static int lirc_claim(void)
  *************************   interrupt handler  ************************
  ***********************************************************************/
 
-static inline void rbuf_write(lirc_t signal)
+static void rbuf_write(lirc_t signal)
 {
 	unsigned int nwptr;
 

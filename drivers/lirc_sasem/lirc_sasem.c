@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.27 2009/01/11 21:47:23 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.28 2009/01/14 19:53:17 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -243,7 +243,7 @@ MODULE_LICENSE("GPL");
 module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes (default: no)");
 
-static inline void delete_context(struct sasem_context *context)
+static void delete_context(struct sasem_context *context)
 {
 	usb_free_urb(context->tx_urb);  /* VFD */
 	usb_free_urb(context->rx_urb);  /* IR */
@@ -256,7 +256,7 @@ static inline void delete_context(struct sasem_context *context)
 		info("%s: context deleted", __func__);
 }
 
-static inline void deregister_from_lirc(struct sasem_context *context)
+static void deregister_from_lirc(struct sasem_context *context)
 {
 	int retval;
 	int minor = context->driver->minor;
@@ -411,7 +411,7 @@ static int vfd_close(struct inode *inode, struct file *file)
 /**
  * Sends a packet to the VFD.
  */
-static inline int send_packet(struct sasem_context *context)
+static int send_packet(struct sasem_context *context)
 {
 	unsigned int pipe;
 	int interval = 0;
@@ -665,7 +665,7 @@ static void ir_close(void *data)
 /**
  * Process the incoming packet
  */
-static inline void incoming_packet(struct sasem_context *context,
+static void incoming_packet(struct sasem_context *context,
 				   struct urb *urb)
 {
 	int len = urb->actual_length;

@@ -245,7 +245,7 @@ static struct usb_driver mceusb_driver = {
 /**
  *	usb_mceusb_debug_data
  */
-static inline void usb_mceusb_debug_data(const char *function, int size,
+static void usb_mceusb_debug_data(const char *function, int size,
 					  const unsigned char *data)
 {
 	int i;
@@ -262,7 +262,7 @@ static inline void usb_mceusb_debug_data(const char *function, int size,
 /**
  *mceusb_delete
  */
-static inline void mceusb_delete(struct mceusb_device *dev)
+static void mceusb_delete(struct mceusb_device *dev)
 {
 	dprintk("%s", __func__);
 	minor_table[dev->minor] = NULL;

@@ -238,22 +238,22 @@ int init_module(void);
 void cleanup_module(void);
 
 #ifdef LIRC_ON_SA1100
-static inline void on(void)
+static void on(void)
 {
 	PPSR |= PPC_TXD2;
 }
 
-static inline void off(void)
+static void off(void)
 {
 	PPSR &= ~PPC_TXD2;
 }
 #else
-static inline unsigned int sinp(int offset)
+static unsigned int sinp(int offset)
 {
 	return inb(io + offset);
 }
 
-static inline void soutp(int offset, int value)
+static void soutp(int offset, int value)
 {
 	outb(value, io + offset);
 }
@@ -265,7 +265,7 @@ static inline void soutp(int offset, int value)
 #define MAX_UDELAY_US (MAX_UDELAY_MS*1000)
 #endif
 
-static inline void safe_udelay(unsigned long usecs)
+static void safe_udelay(unsigned long usecs)
 {
 	while (usecs > MAX_UDELAY_US) {
 		udelay(MAX_UDELAY_US);
@@ -810,7 +810,7 @@ static void send_pulse(unsigned long len)
 #endif
 
 #ifdef CONFIG_SA1100_COLLIE
-static inline int sa1100_irda_set_power_collie(int state)
+static int sa1100_irda_set_power_collie(int state)
 {
 	if (state) {
 		/*

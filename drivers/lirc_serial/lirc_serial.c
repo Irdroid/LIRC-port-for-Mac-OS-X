@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.92 2009/01/11 08:44:30 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.93 2009/01/14 19:53:17 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -142,7 +142,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.92 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.93 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -400,7 +400,7 @@ static unsigned long space_width;
 
 #endif  /* __i386__ */
 
-static inline unsigned int sinp(int offset)
+static unsigned int sinp(int offset)
 {
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 	if (iommap != 0) {
@@ -412,7 +412,7 @@ static inline unsigned int sinp(int offset)
 	return inb(io + offset);
 }
 
-static inline void soutp(int offset, int value)
+static void soutp(int offset, int value)
 {
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 	if (iommap != 0) {
@@ -424,7 +424,7 @@ static inline void soutp(int offset, int value)
 	outb(value, io + offset);
 }
 
-static inline void on(void)
+static void on(void)
 {
 #if defined(LIRC_SERIAL_NSLU2)
 	/* On NSLU2, we put the transmit diode between the output of the green
@@ -440,7 +440,7 @@ static inline void on(void)
 		soutp(UART_MCR, hardware[type].on);
 }
 
-static inline void off(void)
+static void off(void)
 {
 #if defined(LIRC_SERIAL_NSLU2)
 	if (type == LIRC_NSLU2) {
@@ -460,7 +460,7 @@ static inline void off(void)
 #define MAX_UDELAY_US (MAX_UDELAY_MS*1000)
 #endif
 
-static inline void safe_udelay(unsigned long usecs)
+static void safe_udelay(unsigned long usecs)
 {
 	while (usecs > MAX_UDELAY_US) {
 		udelay(MAX_UDELAY_US);
@@ -482,7 +482,7 @@ static inline void safe_udelay(unsigned long usecs)
 /* So send_pulse can quickly convert microseconds to clocks */
 static unsigned long conv_us_to_clocks;
 
-static inline int init_timing_params(unsigned int new_duty_cycle,
+static int init_timing_params(unsigned int new_duty_cycle,
 		unsigned int new_freq)
 {
 	unsigned long long loops_per_sec, work;
@@ -515,7 +515,7 @@ static inline int init_timing_params(unsigned int new_duty_cycle,
 	return 0;
 }
 #else /* ! USE_RDTSC */
-static inline int init_timing_params(unsigned int new_duty_cycle,
+static int init_timing_params(unsigned int new_duty_cycle,
 		unsigned int new_freq)
 {
 /* period, pulse/space width are kept with 8 binary places -
@@ -584,7 +584,7 @@ static long send_pulse_irdeo(unsigned long length)
  * Implicitly i586 architecture...  - Steve
  */
 
-static inline long send_pulse_homebrew_softcarrier(unsigned long length)
+static long send_pulse_homebrew_softcarrier(unsigned long length)
 {
 	int flag;
 	unsigned long target, start, now;
@@ -625,7 +625,7 @@ static inline long send_pulse_homebrew_softcarrier(unsigned long length)
 
 /* To match 8 fractional bits used for pulse/space length */
 
-static inline long send_pulse_homebrew_softcarrier(unsigned long length)
+static long send_pulse_homebrew_softcarrier(unsigned long length)
 {
 	int flag;
 	unsigned long actual, target, d;
@@ -681,7 +681,7 @@ static void send_space_homebrew(long length)
 	safe_udelay(length);
 }
 
-static inline void rbwrite(lirc_t l)
+static void rbwrite(lirc_t l)
 {
 	if (lirc_buffer_full(&rbuf)) {
 		/* no new signals will be accepted */
@@ -691,7 +691,7 @@ static inline void rbwrite(lirc_t l)
 	_lirc_buffer_write_1(&rbuf, (void *)&l);
 }
 
-static inline void frbwrite(lirc_t l)
+static void frbwrite(lirc_t l)
 {
 	/* simple noise filter */
 	static lirc_t pulse = 0L, space = 0L;

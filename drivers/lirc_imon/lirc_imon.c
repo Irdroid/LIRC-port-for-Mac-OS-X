@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.38 2009/01/11 21:47:22 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.39 2009/01/14 19:53:17 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -356,7 +356,7 @@ module_param(display_type, int, 0);
 MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 		 "1=vfd, 2=lcd, 3=none (default: autodetect)");
 
-static inline void delete_context(struct imon_context *context)
+static void delete_context(struct imon_context *context)
 {
 	if (context->display_supported)
 		usb_free_urb(context->tx_urb);
@@ -370,7 +370,7 @@ static inline void delete_context(struct imon_context *context)
 		info("%s: context deleted", __func__);
 }
 
-static inline void deregister_from_lirc(struct imon_context *context)
+static void deregister_from_lirc(struct imon_context *context)
 {
 	int retval;
 	int minor = context->driver->minor;
@@ -494,7 +494,7 @@ static int display_close(struct inode *inode, struct file *file)
 /**
  * Sends a packet to the VFD.
  */
-static inline int send_packet(struct imon_context *context)
+static int send_packet(struct imon_context *context)
 {
 	unsigned int pipe;
 	int interval = 0;
@@ -575,7 +575,7 @@ static inline int send_packet(struct imon_context *context)
  * at the product description string.(Which we currently do
  * not fetch).
  */
-static inline int send_associate_24g(struct imon_context *context)
+static int send_associate_24g(struct imon_context *context)
 {
 	int retval;
 	const unsigned char packet[8] = { 0x01, 0x00, 0x00, 0x00,
@@ -936,7 +936,7 @@ static void ir_close(void *data)
  * Convert bit count to time duration(in us) and submit
  * the value to lirc_dev.
  */
-static inline void submit_data(struct imon_context *context)
+static void submit_data(struct imon_context *context)
 {
 	unsigned char buf[4];
 	int value = context->rx.count;
@@ -961,7 +961,7 @@ static inline void submit_data(struct imon_context *context)
 /**
  * Process the incoming packet
  */
-static inline void incoming_packet(struct imon_context *context,
+static void incoming_packet(struct imon_context *context,
 				   struct urb *urb)
 {
 	int len = urb->actual_length;

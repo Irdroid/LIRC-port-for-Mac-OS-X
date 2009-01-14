@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.2 2009/01/10 10:19:24 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.3 2009/01/14 19:53:17 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -151,7 +151,7 @@ static s64 lastus;
 static s64 timerstartus;
 
 /* Put another pulse/space to the queue, checking for overruns. */
-static inline void put_item(lirc_t data)
+static void put_item(lirc_t data)
 {
 	if (lirc_buffer_full(&rbuf)) {
 		if (printk_ratelimit())
@@ -162,7 +162,7 @@ static inline void put_item(lirc_t data)
 }
 
 /* Put any accumulated pulse/space to userspace. */
-static inline void put_span(void)
+static void put_span(void)
 {
 	lirc_t data;
 	if (last_counter) {
@@ -182,7 +182,7 @@ static inline void put_span(void)
 }
 
 /* Aggregate pulse time. */
-static inline void put_pulse_bit(lirc_t n)
+static void put_pulse_bit(lirc_t n)
 {
 	if (last_was_pulse) {
 		last_counter += n;
@@ -198,7 +198,7 @@ static inline void put_pulse_bit(lirc_t n)
 }
 
 /* Aggregate space time. */
-static inline void put_space_bit(lirc_t n)
+static void put_space_bit(lirc_t n)
 {
 	if (!last_was_pulse) {
 		last_counter += n;

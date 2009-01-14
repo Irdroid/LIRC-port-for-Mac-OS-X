@@ -235,7 +235,7 @@ static char cmdir_var[] =
 
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-static inline void cmdir_delete(struct usb_skel *dev)
+static void cmdir_delete(struct usb_skel *dev)
 {
 	minor_table[dev->minor] = NULL;
 	if (dev->bulk_in_buffer != NULL)

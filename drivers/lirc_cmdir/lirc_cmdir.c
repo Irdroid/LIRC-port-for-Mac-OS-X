@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.10 2009/01/02 22:58:30 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.11 2009/01/14 19:53:17 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -95,7 +95,7 @@ unsigned int freq = 38000;
 #define MAX_UDELAY_US (MAX_UDELAY_MS*1000)
 #endif
 
-static inline void safe_udelay(unsigned long usecs)
+static void safe_udelay(unsigned long usecs)
 {
 	while (usecs > MAX_UDELAY_US) {
 		udelay(MAX_UDELAY_US);

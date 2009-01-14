@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.50 2009/01/11 21:47:22 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.51 2009/01/14 19:53:17 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -85,7 +85,7 @@ static int minor = -1;	/* minor number */
 
 /* ----------------------------------------------------------------------- */
 
-static inline int reverse(int data, int bits)
+static int reverse(int data, int bits)
 {
 	int i;
 	int c;

@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.35 2009/01/05 20:18:34 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.36 2009/01/14 19:53:17 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.35 $"
+#define DRIVER_VERSION	"$Revision: 1.36 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -262,7 +262,7 @@ static void delay_timeout(unsigned long arg)
 	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
-static inline void flush_delay_buffer(struct usb_streamzap *sz)
+static void flush_delay_buffer(struct usb_streamzap *sz)
 {
 	lirc_t data;
 	int empty = 1;
@@ -281,7 +281,7 @@ static inline void flush_delay_buffer(struct usb_streamzap *sz)
 		wake_up(&sz->lirc_buf.wait_poll);
 }
 
-static inline void push(struct usb_streamzap *sz, unsigned char *data)
+static void push(struct usb_streamzap *sz, unsigned char *data)
 {
 	unsigned long flags;
 
@@ -309,7 +309,7 @@ static inline void push(struct usb_streamzap *sz, unsigned char *data)
 	spin_unlock_irqrestore(&sz->timer_lock, flags);
 }
 
-static inline void push_full_pulse(struct usb_streamzap *sz,
+static void push_full_pulse(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	lirc_t pulse;
@@ -346,13 +346,13 @@ static inline void push_full_pulse(struct usb_streamzap *sz,
 	push(sz, (char *)&pulse);
 }
 
-static inline void push_half_pulse(struct usb_streamzap *sz,
+static void push_half_pulse(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	push_full_pulse(sz, (value & STREAMZAP_PULSE_MASK)>>4);
 }
 
-static inline void push_full_space(struct usb_streamzap *sz,
+static void push_full_space(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	lirc_t space;
@@ -364,7 +364,7 @@ static inline void push_full_space(struct usb_streamzap *sz,
 	push(sz, (char *)&space);
 }
 
-static inline void push_half_space(struct usb_streamzap *sz,
+static void push_half_space(struct usb_streamzap *sz,
 				   unsigned char value)
 {
 	push_full_space(sz, value & STREAMZAP_SPACE_MASK);

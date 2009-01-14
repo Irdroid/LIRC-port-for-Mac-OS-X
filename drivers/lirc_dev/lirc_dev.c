@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.68 2009/01/11 21:47:22 lirc Exp $
+ * $Id: lirc_dev.c,v 1.69 2009/01/14 19:53:17 lirc Exp $
  *
  */
 
@@ -117,7 +117,7 @@ static lirc_class_t *lirc_class;
 /*  helper function
  *  initializes the irctl structure
  */
-static inline void init_irctl(struct irctl *ir)
+static void init_irctl(struct irctl *ir)
 {
 	memset(&ir->d, 0, sizeof(struct lirc_driver));
 	mutex_init(&ir->buffer_lock);
@@ -154,7 +154,7 @@ static void cleanup(struct irctl *ir)
  *  reads key codes from driver and puts them into buffer
  *  returns 0 on success
  */
-static inline int add_to_buf(struct irctl *ir)
+static int add_to_buf(struct irctl *ir)
 {
 	if (ir->d.add_to_buf) {
 		int res = -ENODATA;
