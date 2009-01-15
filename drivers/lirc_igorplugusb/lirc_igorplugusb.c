@@ -491,7 +491,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	driver->sample_rate = sample_rate;    /* per second */
 	driver->add_to_buf = &usb_remote_poll;
 #ifdef LIRC_HAVE_SYSFS
-	driver->dev = &dev->dev;
+	driver->dev = &intf->dev;
 #endif
 	driver->owner = THIS_MODULE;
 

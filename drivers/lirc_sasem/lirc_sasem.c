@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.28 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.29 2009/01/15 07:19:56 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -937,7 +937,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	driver->set_use_inc = ir_open;
 	driver->set_use_dec = ir_close;
 #ifdef LIRC_HAVE_SYSFS
-	driver->dev   = &dev->dev;
+	driver->dev   = &interface->dev;
 #endif
 	driver->owner = THIS_MODULE;
 

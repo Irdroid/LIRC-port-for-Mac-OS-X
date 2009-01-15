@@ -313,6 +313,7 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	ttusbir->driver.set_use_dec = set_use_dec;
 	ttusbir->driver.ioctl = NULL;
 	ttusbir->driver.fops = NULL;
+	ttusbir->driver.dev = &intf->dev;
 	ttusbir->driver.owner = THIS_MODULE;
 	ttusbir->driver.features = LIRC_CAN_REC_MODE2;
 	ttusbir->minor = lirc_register_driver(&ttusbir->driver);

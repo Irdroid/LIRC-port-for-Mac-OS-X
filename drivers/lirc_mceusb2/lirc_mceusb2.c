@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.65 $"
+#define DRIVER_VERSION	"$Revision: 1.66 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -932,7 +932,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	driver->code_length = sizeof(lirc_t) * 8;
 	driver->ioctl = lirc_ioctl;
 	driver->fops  = &lirc_fops;
-	driver->dev   = &dev->dev;
+	driver->dev   = &intf->dev;
 	driver->owner = THIS_MODULE;
 
 	mutex_init(&ir->lock);

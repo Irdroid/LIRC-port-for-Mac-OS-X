@@ -847,7 +847,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	driver->add_to_buf = &mceusb_add_to_buf;
 	/* driver->fops = &mceusb_fops; */
 #ifdef LIRC_HAVE_SYSFS
-	driver->dev = &udev->dev;
+	driver->dev = &interface->dev;
 #endif
 	driver->owner = THIS_MODULE;
 	if (lirc_register_driver(driver) < 0) {

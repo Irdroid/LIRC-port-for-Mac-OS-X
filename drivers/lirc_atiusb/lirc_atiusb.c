@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.78 2009/01/11 21:47:22 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.79 2009/01/15 07:19:55 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.78 $"
+#define DRIVER_VERSION		"$Revision: 1.79 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1039,8 +1039,9 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 	mutex_unlock(&ir->lock);
 }
 
-static struct irctl *new_irctl(struct usb_device *dev)
+static struct irctl *new_irctl(struct usb_interface *intf)
 {
+	struct usb_device *dev = interface_to_usbdev(intf);
 	struct irctl *ir;
 	struct lirc_driver *driver;
 	int type, devnum;
@@ -1111,7 +1112,7 @@ static struct irctl *new_irctl(struct usb_device *dev)
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 #ifdef LIRC_HAVE_SYSFS
-	driver->dev = &dev->dev;
+	driver->dev = &intf->dev;
 #endif
 	driver->owner = THIS_MODULE;
 	ir->usbdev = dev;
@@ -1232,7 +1233,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	ir = get_prior_reg_ir(dev);
 
 	if (!ir) {
-		ir = new_irctl(dev);
+		ir = new_irctl(intf);
 		if (!ir)
 #ifdef KERNEL_2_5
 			return -ENOMEM;
@@ -1362,7 +1363,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.78 2009/01/11 21:47:22 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.79 2009/01/15 07:19:55 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
