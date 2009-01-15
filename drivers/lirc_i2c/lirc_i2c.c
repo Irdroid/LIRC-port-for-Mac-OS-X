@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.51 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.52 2009/01/15 07:14:07 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -409,6 +409,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
+	ir->l.dev     = &ir->c.dev;
 	ir->nextkey   = -1;
 
 	switch (addr) {
