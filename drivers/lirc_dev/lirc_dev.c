@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.69 2009/01/14 19:53:17 lirc Exp $
+ * $Id: lirc_dev.c,v 1.70 2009/01/16 19:26:47 lirc Exp $
  *
  */
 
@@ -799,7 +799,14 @@ static long irctl_compat_ioctl(struct file *file,
 		unlock_kernel();
 		return ret;
 	default:
+#if 0
+		/* get_task_comm not exported ?!? */
 		get_task_comm(tcomm, current);
+#else
+		task_lock(current);
+		memcpy(tcomm, current->comm, sizeof(current->comm));
+		task_unlock(current);
+#endif
 
 		/* unknown */
 		printk(KERN_ERR "lirc_dev: %s(%s:%d): Unknown cmd %08x\n",
