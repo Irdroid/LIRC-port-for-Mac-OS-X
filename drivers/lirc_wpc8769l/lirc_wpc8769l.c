@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.4 2009/01/16 20:19:17 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.5 2009/01/16 20:20:58 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -120,8 +120,8 @@ static int skip_probe;
 static int lirc_wpc8769l_is_open;
 
 /* Code disabled since it didn't seem to work with the test hardware. */
-/*#define LIRC_WPC8769L_WAKUP*/
-#ifdef LIRC_WPC8769L_WAKUP
+/*#define LIRC_WPC8769L_WAKEUP*/
+#ifdef LIRC_WPC8769L_WAKEUP
 /* These parameters are taken from the driver for MS Windows Vista.
  * The specific values used for your hardware may be found at this registry
  * key:
@@ -486,7 +486,7 @@ static void wpc8769l_disable_interrupts(void)
 	spin_unlock_irqrestore(&wpc8769l_hw_spinlock, flags);
 }
 
-#ifdef LIRC_WPC8769L_WAKUP
+#ifdef LIRC_WPC8769L_WAKEUP
 /* Expand value nibble for configuration of wake up parameters.
  * This seems to manchester-encode a nibble into a byte. */
 static unsigned int wpc8769l_expand_value_nibble(unsigned int nibble)
@@ -765,7 +765,7 @@ static void wpc8769l_enable_interrupts(void)
 		outb(data2, baseport2 + WPC8769L_WAKEUP_CONFIG3_REG);
 		/* -- end internal subroutine -- */
 
-#ifdef LIRC_WPC8769L_WAKUP
+#ifdef LIRC_WPC8769L_WAKEUP
 		/* Call for setting wake up filters */
 		wpc8769l_configure_wakeup_triggers();
 #endif
@@ -1155,7 +1155,7 @@ MODULE_PARM_DESC(skip_probe,
 	"Skip ACPI-based device detection \
 (default: false for ACPI autodetect).");
 
-#ifdef LIRC_WPC8769L_WAKUP
+#ifdef LIRC_WPC8769L_WAKEUP
 module_param(protocol_select, int, S_IRUGO);
 MODULE_PARM_DESC(protocol_select,
 	"Define the protocol for wake up functions (default: 2).");
