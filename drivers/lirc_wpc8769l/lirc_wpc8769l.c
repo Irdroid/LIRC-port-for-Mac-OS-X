@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.3 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.4 2009/01/16 20:19:17 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -9,7 +9,7 @@
  *                 the Winbond 8769L embedded controller.
  *                 (Written using the lirc_serial driver as a guide).
  *
- * Copyright (C) 2008 Juan J. Garcia de Soria <skandalfo@gmail.com>
+ * Copyright (C) 2008, 2009 Juan J. Garcia de Soria <skandalfo@gmail.com>
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -119,16 +119,20 @@ static int skip_probe;
 /* Whether the device is open or not. */
 static int lirc_wpc8769l_is_open;
 
+/* Code disabled since it didn't seem to work with the test hardware. */
+/*#define LIRC_WPC8769L_WAKUP*/
+#ifdef LIRC_WPC8769L_WAKUP
 /* These parameters are taken from the driver for MS Windows Vista.
  * The specific values used for your hardware may be found at this registry
- * key: (FIXME: this isn't accurate)
+ * key:
  *
- * HKEY_LOCAL_MACHINE/Services/Winbond CIR/PowerKey
+ * HKEY_LOCAL_MACHINE/CurrentControlSet/Services/Winbond CIR/PowerKey
  */
 static int protocol_select = 2;
 static int max_info_bits = 24;
 static unsigned int rc_wakeup_code = 0x7ffffbf3;
 static unsigned int rc_wakeup_mask = 0xff000fff;
+#endif
 
 /* Resource allocation pointers. */
 static struct resource *wpc8769l_portblock1_resource;
@@ -223,7 +227,7 @@ static void wpc8769l_last_timeout(unsigned long l)
 
 	/* Mark the time at which we inserted the timeout span. */
 	do_gettimeofday(&currenttv);
-	lastus = timeval_to_ns(&currenttv) / 1000;
+	lastus = ((s64) currenttv.tv_sec) * 1000000ll + currenttv.tv_usec;
 
 	/* Emit the timeout as a space. */
 	put_space_bit(lastus - timerstartus);
@@ -252,10 +256,15 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 	int count, more;
 	struct timeval currenttv;
 	s64 currentus, span;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 	unsigned char data_buf[WPC8769L_BYTE_BUFFER_SIZE];
 	unsigned char *data_ptr;
 	unsigned long *ldata;
 	unsigned int next_one, next_zero, size;
+#else
+	unsigned int mask;
+#endif
 
 	unsigned long flags;
 	spin_lock_irqsave(&wpc8769l_hw_spinlock, flags);
@@ -267,7 +276,8 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 	if (data & WPC8769L_DATA_READY_MASK) {
 		/* Get current timestamp. */
 		do_gettimeofday(&currenttv);
-		currentus = timeval_to_ns(&currenttv) / 1000;
+		currentus = ((s64) currenttv.tv_sec) * 1000000ll +
+			currenttv.tv_usec;
 
 		/* If we had a timeout before we might need to fill
 		 * in additional space time. */
@@ -293,12 +303,23 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 		count = 0;
 		more = 1;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 		data_ptr = data_buf;
+#endif
 		do {
 			/* Read the next byte of data. */
 			outb(WPC8769L_BANK_00, baseport1 + WPC8769L_SELECT_REG);
 			data = inb(baseport1 + WPC8769L_DATA_REG);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 			*data_ptr++ = data;
+#else
+			for (mask = 0x01 ; mask < 0x100; mask <<= 1) {
+				if (data & mask)
+					put_space_bit(WPC8769L_USECS_PER_BIT);
+				else
+					put_pulse_bit(WPC8769L_USECS_PER_BIT);
+			}
+#endif
 
 			/* Check for 0xff in a row. */
 			if (data == 0xff)
@@ -325,8 +346,12 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 			>= WPC8769L_FF_BYTES_BEFORE_RESET) {
 
 			/* Put in another 0xff byte. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 			*data_ptr++ = 0xff;
 			count++;
+#else
+			put_space_bit(8 * WPC8769L_USECS_PER_BIT);
+#endif
 
 			/* Reset the hardware in the case of too many
 			 * 0xff bytes in a row. */
@@ -335,6 +360,7 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 				baseport1 + WPC8769L_TIMEOUT_RESET_REG);
 		}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 		/* Emit the data. */
 		size = count << 3;
 
@@ -364,6 +390,7 @@ static irqreturn_t irq_handler(int irqno, void *blah, struct pt_regs *regs)
 				next_one = size;
 			}
 		}
+#endif
 
 		/* Mark the IRQ as handled. */
 		handled = 1;
@@ -459,6 +486,7 @@ static void wpc8769l_disable_interrupts(void)
 	spin_unlock_irqrestore(&wpc8769l_hw_spinlock, flags);
 }
 
+#ifdef LIRC_WPC8769L_WAKUP
 /* Expand value nibble for configuration of wake up parameters.
  * This seems to manchester-encode a nibble into a byte. */
 static unsigned int wpc8769l_expand_value_nibble(unsigned int nibble)
@@ -637,6 +665,7 @@ static void wpc8769l_configure_wakeup_triggers(void)
 		| WPC8769L_WAKEUP_ENABLE_MASK,
 		baseport2 + WPC8769L_WAKEUP_ENABLE_REG);
 }
+#endif
 
 /* Enable interrupts from device. */
 static void wpc8769l_enable_interrupts(void)
@@ -736,8 +765,10 @@ static void wpc8769l_enable_interrupts(void)
 		outb(data2, baseport2 + WPC8769L_WAKEUP_CONFIG3_REG);
 		/* -- end internal subroutine -- */
 
+#ifdef LIRC_WPC8769L_WAKUP
 		/* Call for setting wake up filters */
 		wpc8769l_configure_wakeup_triggers();
+#endif
 	} else {
 		/* No second port range. Take these defaults. */
 		a = (data_save & WPC8769L_WAKEUP_STATUS_LEG_MASK_A)
@@ -1005,7 +1036,7 @@ static int __init lirc_wpc8769l_module_init(void)
 
 	/* Check that we got some resource info to work with. */
 	if (!baseport1 || !irq) {
-		rc = -ENOENT;
+		rc = -ENODEV;
 		eprintk("Not all required resources found for %s device.\n",
 			LIRC_DRIVER_NAME);
 		return rc;
@@ -1124,6 +1155,7 @@ MODULE_PARM_DESC(skip_probe,
 	"Skip ACPI-based device detection \
 (default: false for ACPI autodetect).");
 
+#ifdef LIRC_WPC8769L_WAKUP
 module_param(protocol_select, int, S_IRUGO);
 MODULE_PARM_DESC(protocol_select,
 	"Define the protocol for wake up functions (default: 2).");
@@ -1140,6 +1172,7 @@ MODULE_PARM_DESC(rc_wakeup_code,
 module_param(rc_wakeup_mask, uint, S_IRUGO);
 MODULE_PARM_DESC(rc_wakeup_mask,
 	"Define the RC code mask for wake up functions (default: 0xff000fff).");
+#endif
 
 EXPORT_NO_SYMBOLS;
 
