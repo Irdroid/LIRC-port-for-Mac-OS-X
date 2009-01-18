@@ -144,3 +144,53 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was hand-generated
+# using lirc-0.8.5-CVS (imon) on Wed Jan 14 2009
+#
+# contributed by Michel Quercia <michel.quercia|prepas.org>
+#
+# brand:                       Antec Veris
+# model no. of remote control: RM100 (Rebadged iMon PAD)
+# devices being controlled by this remote:
+# 	-Antec Veris Fusion 350
+#
+# nb: most codes appear to come in with an initial keypress value, as well as
+# a "this key is no longer being pressed" value, which is "key | 0x00004000"
+
+begin remote
+
+  name   Antec_Veris_RM100
+  bits                  64
+  eps                   30
+  aeps                 100
+
+  one              0     0
+  zero             0     0
+  gap               139998
+  ignore_mask 0x0000000000000301
+  min_repeat             1
+  toggle_bit             0
+
+      begin codes
+          KEY_EXIT                 0x288195b700000101 # AppExit
+          KEY_POWER                0x289115b700000101 # Power
+          KEY_BACKSPACE            0x0200002a00000000 # Backspace
+          KEY_UP                   0x2aa515b700000101 # Pad Up
+          RightMenu                0x0200006500000000 # Right Menu
+          KEY_LEFT                 0x29a515b700000101 # Pad Left
+          KEY_ENTER                0x0200002800000000 # ENTER
+          KEY_RIGHT                0x2ba515b700000101 # Pad Right
+          KEY_VOLUMEUP             0x28a395b700000101 # VOL +
+          KEY_DOWN                 0x289515b700000101 # Pad Down
+          KEY_CHANNELUP            0x289395b700000101 # CH +
+          KEY_VOLUMEDOWN           0x28a595b700000101 # VOL -
+          KEY_MUTE                 0x2b9595b700000101 # Mute
+          KEY_CHANNELDOWN          0x288795b700000101 # CH -
+          KEY_REWIND               0x298315b700000101 # Rewind
+          KEY_PLAY                 0x2a8315b700000101 # Play
+          KEY_FASTFORWARD          0x2b8315b700000101 # Fast Forward
+          Go                       0x2ab195b700000101 # Go
+      end codes
+
+end remote
