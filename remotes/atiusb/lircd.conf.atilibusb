@@ -424,3 +424,90 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.4a(atilibusb) on Sat Jan 10 12:55:29 2009
+#
+# contributed by Tom Laermans <tom.laermans|powersource.cx>
+#
+# brand:                       Medion
+# model no. of remote control: Medion P/N 20016096
+# devices being controlled by this remote: MythTV
+#
+# ID 0bc7:0006 X10 Wireless Technology, Inc. Wireless Transceiver (ACPI-compliant)
+
+begin remote
+
+  name  Medion_20016096
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139992
+  toggle_bit_mask 0x0
+
+      begin codes
+          TV                       0x012C
+          VCR                      0x022D
+          DVD                      0xD904
+          Music                    0xDB06
+          Radio                    0x032E
+          Photo                    0xDA05
+          TV_Preview               0x042F
+          Channel_List             0x0530
+          Setup                    0xF01B
+          Video_Desktop            0x0631
+          Channel_Up               0xE00B
+          Channel_Down             0xE10C
+          Volume_Up                0xDE09
+          Volume_Down              0xDD08
+          Mute                     0xD500
+          Red                      0x0732
+          Green                    0x0833
+          Yellow                   0x0934
+          Blue                     0x0A35
+          Text                     0xEB16
+          1                        0xE20D
+          2                        0xE30E
+          3                        0xE40F
+          4                        0xE510
+          5                        0xE611
+          6                        0xE712
+          7                        0xE813
+          8                        0xE914
+          9                        0xEA15
+          0                        0xEC17
+          Channel_Search           0xF11C
+          Back                     0xF520
+          Rename                   0x0B36
+          Snapshot                 0xED18
+          Up                       0xEF1A
+          Down                     0xF722
+          Left                     0xF21D
+          Right                    0xF41F
+          Acquire_Image            0x0C37
+          Edit_Image               0x0D38
+          Rewind                   0xF924
+          Forward                  0xFB26
+          Play                     0xFA25
+          Stop                     0xFD28
+          Record                   0xFC27
+          Pause                    0xFE29
+          Previous                 0xF621
+          Next                     0xF823
+          Fullscreen               0x0E39
+          Menu                     0xEE19
+          Audio                    0x0F3A
+          Power                    0xD702
+          OK                       0xF31E
+      end codes
+
+end remote
+
+
