@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.52 2009/01/15 07:14:07 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.53 2009/01/19 21:12:21 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -392,7 +392,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
 {
 	struct IR *ir;
-	int err;
+	int err, retval;
 
 	client_template.adapter = adap;
 	client_template.addr = addr;
@@ -489,7 +489,17 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		kfree(ir);
 		return err;
 	}
-	ir->l.minor = lirc_register_driver(&ir->l);
+	
+	retval = lirc_register_driver(&ir->l);
+
+	if (retval < 0) {
+		printk(KERN_ERR "lirc_i2c: failed to register driver!\n");
+		i2c_detach_client(&ir->c);
+		kfree(ir);
+		return retval;
+	}
+
+	ir->l.minor = retval;
 
 	return 0;
 }
