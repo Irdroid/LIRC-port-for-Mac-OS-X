@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.70 2009/01/16 19:26:47 lirc Exp $
+ * $Id: lirc_dev.c,v 1.71 2009/01/22 21:06:33 lirc Exp $
  *
  */
 
@@ -731,22 +731,33 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 }
 
 #ifdef CONFIG_COMPAT
+#define LIRC_GET_FEATURES_COMPAT32     _IOR('i', 0x00000000, __u32)
+
+#define LIRC_GET_SEND_MODE_COMPAT32    _IOR('i', 0x00000001, __u32)
+#define LIRC_GET_REC_MODE_COMPAT32     _IOR('i', 0x00000002, __u32)
+
+#define LIRC_GET_LENGTH_COMPAT32       _IOR('i', 0x0000000f, __u32)
+
+#define LIRC_SET_SEND_MODE_COMPAT32    _IOW('i', 0x00000011, __u32)
+#define LIRC_SET_REC_MODE_COMPAT32     _IOW('i', 0x00000012, __u32)
+
 static long irctl_compat_ioctl(struct file *file,
-			       unsigned int cmd,
+			       unsigned int cmd32,
 			       unsigned long arg)
 {
 	mm_segment_t old_fs;
 	int ret;
 	unsigned long val;
 	unsigned char tcomm[sizeof(current->comm)];
+	unsigned int cmd;
 
-	switch (cmd) {
-	case LIRC_GET_FEATURES:
-	case LIRC_GET_SEND_MODE:
-	case LIRC_GET_REC_MODE:
-	case LIRC_GET_LENGTH:
-	case LIRC_SET_SEND_MODE:
-	case LIRC_SET_REC_MODE:
+	switch (cmd32) {
+	case LIRC_GET_FEATURES_COMPAT32:
+	case LIRC_GET_SEND_MODE_COMPAT32:
+	case LIRC_GET_REC_MODE_COMPAT32:
+	case LIRC_GET_LENGTH_COMPAT32:
+	case LIRC_SET_SEND_MODE_COMPAT32:
+	case LIRC_SET_REC_MODE_COMPAT32:
 		/*
 		 * These commands expect (unsigned long *) arg
 		 * but the 32-bit app supplied (__u32 *).
@@ -761,6 +772,8 @@ static long irctl_compat_ioctl(struct file *file,
 		old_fs = get_fs();
 		set_fs(KERNEL_DS);
 
+		cmd = _IOC(_IOC_DIR(cmd32), _IOC_TYPE(cmd32), _IOC_NR(cmd32),
+			   (_IOC_TYPECHECK(unsigned long)));
 		ret = irctl_ioctl(file->f_path.dentry->d_inode, file,
 				  cmd, (unsigned long)(&val));
 
@@ -794,6 +807,7 @@ static long irctl_compat_ioctl(struct file *file,
 		 * so no problems here. Just handle the locking.
 		 */
 		lock_kernel();
+		cmd = cmd32;
 		ret = irctl_ioctl(file->f_path.dentry->d_inode,
 				  file, cmd, arg);
 		unlock_kernel();
@@ -810,7 +824,7 @@ static long irctl_compat_ioctl(struct file *file,
 
 		/* unknown */
 		printk(KERN_ERR "lirc_dev: %s(%s:%d): Unknown cmd %08x\n",
-		       __func__, tcomm, current->pid, cmd);
+		       __func__, tcomm, current->pid, cmd32);
 		return -ENOIOCTLCMD;
 	}
 }
