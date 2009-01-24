@@ -1,7 +1,7 @@
 /*
- *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
+ *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.41 2009/01/24 13:07:23 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.42 2009/01/24 17:22:44 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -193,23 +193,23 @@ enum {
 	IMON_DISPLAY_TYPE_NONE,
 };
 
-/* USB Device ID for IMON USB Control Board */
+/* USB Device ID for iMON USB Control Board */
 static struct usb_device_id imon_usb_id_table[] = {
-	/* IMON USB Control Board (IR & VFD) */
+	/* iMON USB Control Board (IR & VFD) */
 	{ USB_DEVICE(0x0aa8, 0xffda) },
-	/* IMON USB Control Board (IR only) */
+	/* iMON USB Control Board (IR only) */
 	{ USB_DEVICE(0x0aa8, 0x8001) },
-	/* IMON USB Control Board (ext IR only) */
+	/* iMON USB Control Board (ext IR only) */
 	{ USB_DEVICE(0x04e8, 0xff30) },
-	/* IMON USB Control Board (IR & VFD) */
+	/* iMON USB Control Board (IR & VFD) */
 	{ USB_DEVICE(0x15c2, 0xffda) },
-	/* IMON USB Control Board (IR & LCD) *and* iMon Knob (IR only) */
+	/* iMON USB Control Board (IR & LCD) *and* iMON Knob (IR only) */
 	{ USB_DEVICE(0x15c2, 0xffdc) },
-	/* IMON USB Control Board (IR & LCD) */
+	/* iMON USB Control Board (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0034) },
-	/* IMON USB Control Board (IR & VFD) */
+	/* iMON USB Control Board (IR & VFD) */
 	{ USB_DEVICE(0x15c2, 0x0036) },
-	/* IMON USB Control Board (IR & LCD) */
+	/* iMON USB Control Board (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	/* SoundGraph iMON MINI (IR only) */
 	{ USB_DEVICE(0x15c2, 0x0041) },
@@ -254,7 +254,7 @@ static struct usb_device_id ctl_ep_device_list[] = {
 	{}
 };
 
-/* iMon LCD modules use a different write op */
+/* iMON LCD models use a different write op */
 static struct usb_device_id lcd_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffdc) },
 	{ USB_DEVICE(0x15c2, 0x0034) },
@@ -263,7 +263,7 @@ static struct usb_device_id lcd_device_list[] = {
 	{}
 };
 
-/* iMon devices with front panel buttons need a larger buffer */
+/* iMON devices with front panel buttons need a larger buffer */
 static struct usb_device_id large_buffer_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
@@ -283,7 +283,7 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{}
 };
 
-/* Some iMon devices have no lcd/vfd */
+/* Some iMON devices have no lcd/vfd */
 static struct usb_device_id ir_only_list[] = {
 	{ USB_DEVICE(0x0aa8, 0x8001) },
 	{ USB_DEVICE(0x04e8, 0xff30) },
@@ -667,7 +667,7 @@ static struct attribute_group imon_attribute_group = {
 
 
 /**
- * Writes data to the VFD.  The IMON VFD is 2x16 characters
+ * Writes data to the VFD.  The iMON VFD is 2x16 characters
  * and requires data in 5 consecutive USB interrupt packets,
  * each packet but the last carrying 7 bytes.
  *
@@ -1173,7 +1173,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	struct imon_context *context = NULL;
 	int i;
 
-	info("%s: found IMON device", __func__);
+	info("%s: found iMON device", __func__);
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
@@ -1259,7 +1259,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/*
 	 * If we didn't find a display endpoint, this is probably one of the
-	 * newer iMon devices that use control urb instead of interrupt
+	 * newer iMON devices that use control urb instead of interrupt
 	 */
 	if (!display_ep_found) {
 		if (usb_match_id(interface, ctl_ep_device_list)) {
@@ -1272,7 +1272,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	}
 
 	/*
-	 * Some iMon receivers have no display. Unfortunately, it seems
+	 * Some iMON receivers have no display. Unfortunately, it seems
 	 * that SoundGraph recycles device IDs between devices both with
 	 * and without... :\
 	 */
