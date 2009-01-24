@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.54 2009/01/24 13:07:23 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.55 2009/01/24 17:05:14 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -566,8 +566,11 @@ static int ir_probe(struct i2c_adapter *adap)
 			dprintk("probe 0x%02x @ %s: %s\n",
 				probe[i], adap->name,
 				(1 == rc) ? "yes" : "no");
-			if (1 == rc)
-				ir_attach(adap, probe[i], 0, 0);
+			if (1 == rc) {
+				rc = ir_attach(adap, probe[i], 0, 0);
+				if (rc < 0)
+					goto attach_fail;
+			}
 		}
 	}
 
@@ -582,8 +585,11 @@ static int ir_probe(struct i2c_adapter *adap)
 			dprintk("probe 0x%02x @ %s: %s\n",
 				c.addr, adap->name,
 				(1 == rc) ? "yes" : "no");
-			if (1 == rc)
-				ir_attach(adap, c.addr, 0, 0);
+			if (1 == rc) {
+				rc = ir_attach(adap, c.addr, 0, 0);
+				if (rc < 0)
+					goto attach_fail;
+			}
 		}
 	}
 #endif
@@ -632,13 +638,21 @@ static int ir_probe(struct i2c_adapter *adap)
 			}
 			dprintk("probe 0x%02x @ %s: %s\n",
 				c.addr, adap->name, rc ? "yes" : "no");
-			if (rc)
-				ir_attach(adap, pcf_probe[i],
-					  bits|(flag<<8), 0);
+			if (rc) {
+				rc = ir_attach(adap, pcf_probe[i],
+					       bits|(flag<<8), 0);
+				if (rc < 0)
+					goto attach_fail;
+			}
 		}
 	}
 
 	return 0;
+
+attach_fail:
+	printk(KERN_ERR "lirc_i2c: %s: ir_attach failed!\n", __func__);
+	return rc;
+
 }
 
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg)
