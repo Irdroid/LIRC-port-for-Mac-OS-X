@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.93 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.94 2009/01/24 13:07:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -142,7 +142,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.93 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.94 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -864,7 +864,7 @@ static void hardware_init_port(void)
 		soutp(UART_IER, sinp(UART_IER) | UART_IE_IXP42X_UUE);
 		/* Disable Receiver data Time out interrupt */
 		soutp(UART_IER, sinp(UART_IER) & ~UART_IE_IXP42X_RTOIE);
-		/* set out2 = interupt unmask; off() doesn't set MCR
+		/* set out2 = interrupt unmask; off() doesn't set MCR
 		   on NSLU2 */
 		soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
 	}

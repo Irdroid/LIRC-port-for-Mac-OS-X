@@ -319,7 +319,7 @@ static void mceusb_setup(struct usb_device *udev)
 	dprintk("%s - res = %d", __func__, res);
 
 	/* These two are sent by the windows driver, but stall for
-	 * me. I dont have an analyzer on the linux side so i can't
+	 * me. I don't have an analyzer on the Linux side so I can't
 	 * see what is actually different and why the device takes
 	 * issue with them
 	 */
@@ -375,7 +375,7 @@ static void set_use_dec(void *data)
  * this situation, it will perform a few reads and will exit out if it
  * does not see any appropriate data
  *
- * dev->sem should be locked when this function is called - fine grain
+ * dev->lock should be locked when this function is called - fine grain
  * locking isn't really important here anyways
  *
  * This routine always returns the number of words available
@@ -494,8 +494,8 @@ static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 				 * the data in the packetized format,
 				 * the transceiver sends a trailing 8
 				 * bytes that aren't part of the
-				 * transmittion from the remote,
-				 * aren't packetized, and dont really
+				 * transmission from the remote,
+				 * aren't packetized, and don't really
 				 * have any value. we can basically
 				 * tell we have hit them if 1) we have
 				 * a loooong space currently stored
@@ -542,7 +542,7 @@ static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 					dev->last_space = 0;
 					words_to_read--;
 
-					/* clear the lirc_t for the pulse */
+					/* clear for the pulse */
 					dev->lircdata[dev->lirccnt] = 0;
 				}
 				dev->lircdata[dev->lirccnt] += keycode;
@@ -561,7 +561,7 @@ static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 		}
 	}
 
-	/* save off some info if we are exiting mid-packet, or with
+	/* save off some info if we're exiting mid-packet, or with
 	   leftovers */
 	if (bytes_left_in_packet)
 		dev->mce_bytes_left_in_packet = bytes_left_in_packet;

@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.29 2009/01/15 07:19:56 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.30 2009/01/24 13:07:23 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -441,7 +441,7 @@ static int send_packet(struct sasem_context *context)
 		atomic_set(&(context->tx.busy), 0);
 		err("%s: error submitting urb (%d)", __func__, retval);
 	} else {
-		/* Wait for tranmission to complete (or abort) */
+		/* Wait for transmission to complete (or abort) */
 		mutex_unlock(&context->lock);
 		wait_for_completion(&context->tx.finished);
 		mutex_lock(&context->lock);
@@ -998,14 +998,16 @@ alloc_status_switch:
 
 	if (vfd_ep_found) {
 
-		if (debug)
-			info("Registering VFD with devfs");
 #ifdef KERNEL_2_5
+		if (debug)
+			info("Registering VFD with sysfs");
 		if (usb_register_dev(interface, &sasem_class))
 			/* Not a fatal error, so ignore */
 			info("%s: could not get a minor number for VFD",
 				__func__);
 #else
+		if (debug)
+			info("Registering VFD with devfs");
 		sprintf(name, DEVFS_NAME, subminor);
 		context->devfs = devfs_register(usb_devfs_handle, name,
 				 DEVFS_FL_DEFAULT,

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.42 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.43 2009/01/24 13:07:23 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -340,7 +340,7 @@ static void irq_handler(int i, void *blah)
 	}
 	while (lirc_get_signal());
 	if (signal != 0) {
-		/* ajust value to usecs */
+		/* adjust value to usecs */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 		unsigned long long helper;
 

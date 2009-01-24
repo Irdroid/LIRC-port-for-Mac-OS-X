@@ -5,7 +5,7 @@
 
 /* based on the following documentation from ITE:
    a) IT8712F Preliminary CIR Programming Guide V0.1
-   b) IT8705F Simple LPC I/O Preliminary Specifiction V0.3
+   b) IT8705F Simple LPC I/O Preliminary Specification V0.3
    c) IT8712F EC-LPC I/O Preliminary Specification V0.5
 */
 
@@ -51,7 +51,7 @@
 #define IT87_CIR_BDHR 6
 #define IT87_CIR_IIR  7
 
-/* Bit Definitionen */
+/* Bit Definition */
 /* IER: */
 #define IT87_CIR_IER_TM_EN   0x80
 #define IT87_CIR_IER_RESEVED 0x40

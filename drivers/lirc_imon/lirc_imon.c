@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph IMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.40 2009/01/15 07:19:55 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.41 2009/01/24 13:07:23 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -31,7 +31,7 @@
  *   lirc_imon is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ *   (at your option) any later version.
  *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -551,7 +551,7 @@ static int send_packet(struct imon_context *context)
 		atomic_set(&(context->tx.busy), 0);
 		err("%s: error submitting urb(%d)", __func__, retval);
 	} else {
-		/* Wait for tranmission to complete(or abort) */
+		/* Wait for transmission to complete (or abort) */
 		mutex_unlock(&context->lock);
 		wait_for_completion(&context->tx.finished);
 		mutex_lock(&context->lock);
@@ -572,7 +572,7 @@ static int send_packet(struct imon_context *context)
  * This might not be such a good idea, since it has an id
  * collition with some versions of the "IR & VFD" combo.
  * The only way to determine if it is a RF version is to look
- * at the product description string.(Which we currently do
+ * at the product description string. (Which we currently do
  * not fetch).
  */
 static int send_associate_24g(struct imon_context *context)
@@ -596,9 +596,7 @@ exit:
 
 #ifdef KERNEL_2_5
 /**
- * This is the sysfs functions to handle the association og the iMON 2.4G LT.
- *
- *
+ * These are the sysfs functions to handle the association on the iMON 2.4G LT.
  */
 
 static ssize_t show_associate_remote(struct device *d,
@@ -1122,7 +1120,7 @@ static void usb_rx_callback(struct urb *urb)
 		if (context->ir_isopen)
 			incoming_packet(context, urb);
 		break;
-	default	:
+	default :
 		warn("%s: status(%d): ignored", __func__, urb->status);
 		break;
 	}
@@ -1484,7 +1482,7 @@ alloc_status_switch:
 }
 
 /**
- * Callback function for USB core API: disonnect
+ * Callback function for USB core API: disconnect
  */
 #ifdef KERNEL_2_5
 static void imon_disconnect(struct usb_interface *interface)

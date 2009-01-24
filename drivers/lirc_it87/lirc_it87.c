@@ -712,7 +712,7 @@ static void terminate_send(unsigned long len)
 		send_space(len);
 	/* wait until all data sent */
 	while ((inb(io + IT87_CIR_TSR) & IT87_CIR_TSR_TXFBC) != 0);
-	/* then reenable receiver */
+	/* then re-enable receiver */
 	spin_lock_irqsave(&hardware_lock, flags);
 	it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 	outb(inb(io + IT87_CIR_RCR) | IT87_CIR_RCR_RXEN,
@@ -754,7 +754,7 @@ static int init_hardware(void)
 		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x00,
 		     io + IT87_CIR_TCR2);
 	} else {
-		/* TX: 38kHz, 13,3us (pulse-width */
+		/* TX: 38kHz, 13,3us (pulse-width) */
 		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x06,
 		     io + IT87_CIR_TCR2);
 	}

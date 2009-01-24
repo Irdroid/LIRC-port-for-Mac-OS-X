@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.66 $"
+#define DRIVER_VERSION	"$Revision: 1.67 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -1017,8 +1017,8 @@ mem_failure_switch:
 		printk(DRIVER_NAME "[%d]: usb reset config ret %x\n",
 		       devnum, usbret);
 
-		/* its possible we really should wait for a return for
-		   each of these */
+		/* it's possible we really should wait for a return for
+		   each of these... */
 		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init1, sizeof(pin_init1),
 				     PHILUSB_OUTBOUND);
@@ -1028,7 +1028,7 @@ mem_failure_switch:
 		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
 				     PHILUSB_OUTBOUND);
-		/* if we dont issue the correct number of receives
+		/* if we don't issue the correct number of receives
 		   (PHILUSB_INBOUND) for each outbound then the first
 		   few ir pulses will be interpreted by the
 		   usb_async_callback routine ah - we should ensure we

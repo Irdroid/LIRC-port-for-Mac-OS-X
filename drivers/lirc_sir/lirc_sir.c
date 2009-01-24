@@ -108,7 +108,7 @@
 
 #define TEKRAM_PW 0x10 /* Pulse select bit */
 
-/* 10bit * 1s/115200bit in miliseconds = 87ms*/
+/* 10bit * 1s/115200bit in milliseconds = 87ms*/
 #define TIME_CONST (10000000ul/115200ul)
 
 #endif
@@ -478,8 +478,8 @@ static void add_read_queue(int flag, unsigned long val)
 
 	newval = val & PULSE_MASK;
 
-	/* statistically pulses are ~TIME_CONST/2 too long: we could
-	   maybe make this more exactly but this is good enough */
+	/* statistically, pulses are ~TIME_CONST/2 too long: we could
+	   maybe make this more exact, but this is good enough */
 	if (flag) {
 		/* pulse */
 		if (newval > TIME_CONST/2)
@@ -1064,7 +1064,7 @@ static void drop_port(void)
 /* Crystal/Cirrus CS8130 IR transceiver, used in Actisys Act200L dongle */
 /* some code borrowed from Linux IRDA driver */
 
-/* Regsiter 0: Control register #1 */
+/* Register 0: Control register #1 */
 #define ACT200L_REG0    0x00
 #define ACT200L_TXEN    0x01 /* Enable transmitter */
 #define ACT200L_RXEN    0x02 /* Enable receiver */
@@ -1101,7 +1101,7 @@ static void drop_port(void)
 #define ACT200L_REG7    0x70
 #define ACT200L_ENPOS   0x04 /* Ignore the falling edge */
 
-/* Register 8,9: Baud Rate Dvider register #1,#2 */
+/* Register 8,9: Baud Rate Divider register #1,#2 */
 #define ACT200L_REG8    0x80
 #define ACT200L_REG9    0x90
 

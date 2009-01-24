@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.71 2009/01/22 21:06:33 lirc Exp $
+ * $Id: lirc_dev.c,v 1.72 2009/01/24 13:07:23 lirc Exp $
  *
  */
 
@@ -867,13 +867,13 @@ static ssize_t irctl_read(struct file *file,
 	/*
 	 * we add ourselves to the task queue before buffer check
 	 * to avoid losing scan code (in case when queue is awaken somewhere
-	 * beetwen while condition checking and scheduling)
+	 * between while condition checking and scheduling)
 	 */
 	add_wait_queue(&ir->buf->wait_poll, &wait);
 	set_current_state(TASK_INTERRUPTIBLE);
 
 	/*
-	 * while we did't provide 'length' bytes, device is opened in blocking
+	 * while we didn't provide 'length' bytes, device is opened in blocking
 	 * mode and 'copy_to_user' is happy, wait for data.
 	 */
 	while (written < length && ret == 0) {

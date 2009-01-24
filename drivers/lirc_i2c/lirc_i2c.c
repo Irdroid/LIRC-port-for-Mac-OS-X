@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.53 2009/01/19 21:12:21 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.54 2009/01/24 13:07:23 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -184,7 +184,7 @@ static int add_to_buf_haup_common(void *data, struct lirc_buffer *buf,
 		dprintk("key (0x%02x/0x%02x)\n", ir->b[0], ir->b[1]);
 	} else {
 		dprintk("read error\n");
-		/* keep last successfull read buffer */
+		/* keep last successful read buffer */
 	}
 
 	/* key pressed ? */
@@ -306,8 +306,8 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer *buf)
 		return -ENODATA;
 	}
 
-	/* it seems that 0xFE indicates that a button is still hold
-	   down, while 0xFF indicates that no button is hold
+	/* it seems that 0xFE indicates that a button is still held
+	   down, while 0xFF indicates that no button is held
 	   down. 0xFE sequences are sometimes interrupted by 0xFF */
 
 	dprintk("key %02x\n", key);
