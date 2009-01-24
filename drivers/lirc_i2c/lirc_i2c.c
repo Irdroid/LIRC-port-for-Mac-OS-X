@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.55 2009/01/24 17:05:14 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.56 2009/01/24 17:23:42 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -551,6 +551,7 @@ static int ir_probe(struct i2c_adapter *adap)
 	char buf;
 	int i, rc;
 
+	memset(&c, 0, sizeof(c));
 #ifdef I2C_HW_B_CX2341X
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848) ||
 	    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X))
@@ -558,7 +559,6 @@ static int ir_probe(struct i2c_adapter *adap)
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
 #endif
 	{
-		memset(&c, 0, sizeof(c));
 		c.adapter = adap;
 		for (i = 0; -1 != probe[i]; i++) {
 			c.addr = probe[i];
@@ -577,7 +577,6 @@ static int ir_probe(struct i2c_adapter *adap)
 #ifdef I2C_HW_B_CX2388x
 	/* Leadtek Winfast PVR2000 or Hauppauge HVR-1300 */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2388x)) {
-		memset(&c, 0, sizeof(c));
 		c.adapter = adap;
 		for (i = 0; -1 != probe_cx88[i]; i++) {
 			c.addr = probe_cx88[i];
@@ -608,7 +607,6 @@ static int ir_probe(struct i2c_adapter *adap)
 		int ret1, ret2, ret3, ret4;
 		unsigned char bits = 0, flag = 0;
 
-		memset(&c, 0, sizeof(c));
 		c.adapter = adap;
 		for (i = 0; -1 != pcf_probe[i]; i++) {
 			c.addr = pcf_probe[i];
