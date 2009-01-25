@@ -3,9 +3,6 @@
  *
  * Copyright (c) 2003-2004 Dan Conti (dconti@acm.wwu.edu)
  *
- * This driver is based on the USB skeleton driver packaged with the
- * kernel, and the notice from that package has been retained below.
- *
  * The Microsoft IR Transceiver is a neat little IR receiver with two
  * emitters on it designed for Windows Media Center. This driver might
  * work for all media center remotes, but I have only tested it with
@@ -18,53 +15,10 @@
  * this device is an actual hardware poll (instead of a receive queue
  * check) and is rather expensive.
  *
- * All trademarks property of their respective owners. This driver was
- * originally based on the USB skeleton driver, although significant
- * portions of that code have been removed as the driver has evolved.
+ * All trademarks property of their respective owners.
  *
  * TODO
  *   - Fix up minor number, registration of major/minor with usb subsystem
- *
- */
-/*
- * USB Skeleton driver - 1.1
- *
- * Copyright (C) 2001-2003 Greg Kroah-Hartman (greg@kroah.com)
- *
- *	This program is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License as
- *	published by the Free Software Foundation, version 2.
- *
- *
- * This driver is to be used as a skeleton driver to be able to create a
- * USB driver quickly.  The design of it is based on the usb-serial and
- * dc2xx drivers.
- *
- * Thanks to Oliver Neukum, David Brownell, and Alan Stern for their help
- * in debugging this driver.
- *
- *
- * History:
- *
- * 2003-05-06 - 1.1 - changes due to usb core changes with usb_register_dev()
- * 2003-02-25 - 1.0 - fix races involving urb->status, unlink_urb(), and
- *			disconnect.  Fix transfer amount in read().  Use
- *			macros instead of magic numbers in probe().  Change
- *			size variables to size_t.  Show how to eliminate
- *			DMA bounce buffer.
- * 2002_12_12 - 0.9 - compile fixes and got rid of fixed minor array.
- * 2002_09_26 - 0.8 - changes due to USB core conversion to struct device
- *			driver.
- * 2002_02_12 - 0.7 - zero out dev in probe function for devices that do
- *			not have both a bulk in and bulk out endpoint.
- *			Thanks to Holger Waechtler for the fix.
- * 2001_11_05 - 0.6 - fix minor locking problem in skel_disconnect.
- *			Thanks to Pete Zaitcev for the fix.
- * 2001_09_04 - 0.5 - fix devfs bug in skel_disconnect. Thanks to wim delvaux
- * 2001_08_21 - 0.4 - more small bug fixes.
- * 2001_05_29 - 0.3 - more bug fixes based on review from linux-usb-devel
- * 2001_05_24 - 0.2 - bug fixes based on review from linux-usb-devel people
- * 2001_05_01 - 0.1 - first version
  *
  */
 
@@ -881,11 +835,6 @@ error:
  *
  *	Called by the usb core when the device is removed from the system.
  *
- *	This routine guarantees that the driver will not submit any more urbs
- *	by clearing dev->udev.  It is also supposed to terminate any currently
- *	active urbs.  Unfortunately, usb_bulk_msg(), used in skel_read(), does
- *	not provide any way to do this.  But at least we can cancel an active
- *	write.
  */
 #ifdef KERNEL_2_5
 static void mceusb_disconnect(struct usb_interface *interface)
