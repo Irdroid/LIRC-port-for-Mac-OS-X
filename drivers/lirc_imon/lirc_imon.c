@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.44 2009/01/25 10:50:28 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.45 2009/01/25 11:10:23 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -494,7 +494,8 @@ static int send_packet(struct imon_context *context)
 		context->tx_urb->actual_length = 0;
 	} else {
 		/* fill request into kmalloc'ed space: */
-		control_req = kmalloc(sizeof(struct usb_ctrlrequest), GFP_NOIO);
+		control_req = kmalloc(sizeof(struct usb_ctrlrequest),
+				      GFP_KERNEL);
 		if (control_req == NULL)
 			return -ENOMEM;
 
