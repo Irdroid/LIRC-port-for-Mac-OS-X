@@ -74,18 +74,18 @@ MODULE_PARM_DESC(num_urbs,
 /* table of devices that work with this driver */
 static struct usb_device_id device_id_table[] = {
 	/* TechnoTrend USB IR Receiver */
-    { USB_DEVICE(0x0B48, 0x2003) },
-    /* Terminating entry */
-    { }
+	{ USB_DEVICE(0x0B48, 0x2003) },
+	/* Terminating entry */
+	{ }
 };
 MODULE_DEVICE_TABLE(usb, device_id_table);
 
 /* USB driver definition */
 static struct usb_driver usb_driver = {
-    .name = "TTUSBIR",
-    .id_table = &(device_id_table[0]),
-    .probe = probe,
-    .disconnect = disconnect,
+	.name = "TTUSBIR",
+	.id_table = &(device_id_table[0]),
+	.probe = probe,
+	.disconnect = disconnect,
 };
 
 /* USB device definition */
