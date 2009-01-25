@@ -104,14 +104,8 @@ struct mceusb_device {
 	struct urb *write_urb;		/* the urb used to send data */
 	__u8 bulk_out_endpointAddr;	/* the address of bulk out endpoint */
 
-	atomic_t write_busy;		/* true iff write urb is busy */
-	struct completion write_finished; /* wait for the write to finish */
-
 	wait_queue_head_t wait_q; /* for timeouts */
-	int open_count;		/* number of times this port has been opened */
 	struct mutex lock;	/* locks this structure */
-
-	int present;		/* if the device is not disconnected */
 
 	struct lirc_driver *driver;
 
@@ -175,23 +169,6 @@ static struct usb_driver mceusb_driver = {
 	.id_table	= mceusb_table,
 };
 
-
-/**
- *	usb_mceusb_debug_data
- */
-static void usb_mceusb_debug_data(const char *function, int size,
-					  const unsigned char *data)
-{
-	int i;
-	if (!debug)
-		return;
-
-	printk(KERN_DEBUG __FILE__": %s - length = %d, data = ",
-	       function, size);
-	for (i = 0; i < size; ++i)
-		printk(KERN_DEBUG "%.2x ", data[i]);
-	printk(KERN_DEBUG "\n");
-}
 
 /**
  *mceusb_delete
@@ -343,8 +320,6 @@ static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 		/* handle signals and USB disconnects */
 		if (signal_pending(current))
 			return dev->lirccnt ? dev->lirccnt : -EINTR;
-		if (!dev->udev)
-			return -ENODEV;
 
 		bulkidx = 0;
 
@@ -518,12 +493,6 @@ static int mceusb_add_to_buf(void *data, struct lirc_buffer *buf)
 	struct mceusb_device *dev = (struct mceusb_device *) data;
 
 	mutex_lock(&dev->lock);
-
-	/* verify device still present */
-	if (dev->udev == NULL) {
-		mutex_unlock(&dev->lock);
-		return -ENODEV;
-	}
 
 	if (!dev->lirccnt) {
 		int res;
@@ -860,16 +829,6 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 	lirc_buffer_free(dev->driver->rbuf);
 	kfree(dev->driver->rbuf);
 	kfree(dev->driver);
-#ifdef KERNEL_2_5
-	/* terminate an ongoing write */
-	if (atomic_read(&dev->write_busy)) {
-		usb_kill_urb(dev->write_urb);
-		wait_for_completion(&dev->write_finished);
-	}
-
-	/* prevent device read, write and ioctl */
-	dev->present = 0;
-#endif
 
 	mutex_unlock(&dev->lock);
 	mceusb_delete(dev);
