@@ -1,30 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.43 2009/01/25 10:42:27 lirc Exp $
- *
- *   Version 0.3
- *		Supports newer iMON models that send decoded IR signals.
- *			This includes the iMON PAD model.
- *		Removed module option for vfd_proto_6p. This driver supports
- *			multiple iMON devices so it is meaningless to have
- *			a global option to set protocol variants.
- *
- *   Version 0.2 beta 2 [January 31, 2005]
- *		USB disconnect/reconnect no longer causes problems for lircd
- *
- *   Version 0.2 beta 1 [January 29, 2005]
- *		Added support for original iMON receiver(ext USB)
- *
- *   Version 0.2 alpha 2 [January 24, 2005]
- *		Added support for VFDs with 6-packet protocol
- *
- *   Version 0.2 alpha 1 [January 23, 2005]
- *		Added support for 2.6 kernels
- *		Reworked disconnect handling
- *		Incorporated Changwoo Ryu's algorithm
- *
- *   Version 0.1 alpha 1[July 5, 2004]
+ *   $Id: lirc_imon.c,v 1.44 2009/01/25 10:50:28 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *

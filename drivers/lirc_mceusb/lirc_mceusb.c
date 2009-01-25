@@ -22,26 +22,6 @@
  * originally based on the USB skeleton driver, although significant
  * portions of that code have been removed as the driver has evolved.
  *
- * 2003_11_11 - Restructured to minimalize code interpretation in the
- *	      driver. The normal use case will be with lirc.
- *
- * 2004_01_01 - Removed all code interpretation. Generate mode2 data
- *	      for passing off to lirc. Cleanup
- *
- * 2004_01_04 - Removed devfs handle. Put in a temporary workaround
- *	      for a known issue where repeats generate two
- *	      sequential spaces (last_was_repeat_gap)
- *
- * 2004_02_17 - Changed top level api to no longer use fops, and
- *	      instead use new interface for polling via
- *	      lirc_thread. Restructure data read/mode2 generation to
- *	      a single pass, reducing number of buffers. Rev to .2
- *
- * 2004_02_27 - Last of fixups to driver->add_to_buf API. Properly
- *	      handle broken fragments from the receiver. Up the
- *	      sample rate and remove any pacing from
- *	      fetch_more_data. Fixes all known issues.
- *
  * TODO
  *   - Fix up minor number, registration of major/minor with usb subsystem
  *

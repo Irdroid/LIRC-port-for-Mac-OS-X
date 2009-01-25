@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.30 2009/01/24 13:07:23 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.31 2009/01/25 10:50:28 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -14,25 +14,6 @@
  *   Culver Consulting Services <henry@culcon.com>'s 2003
  *      "Sasem OnAir VFD/IR USB driver"
  *
- *
- * 2004/06/13   -   0.1
- *		  initial version
- *
- * 2004/06/28   -   0.2
- *		  added file system support to write data to VFD device (used
- *		  in conjunction with LCDProc)
- *
- * 2004/11/22   -   0.3
- *		  Ported to 2.6 kernel
- *		  	- Tim Davies <tim@opensystems.net.au>
- *
- * 2005/03/29   -   0.4
- *		  A few tidyups and keypress timings
- *		  	- Tim Davies <tim@opensystems.net.au>
- *
- * 2005/06/23   -   0.5
- *		  A complete rewrite (shamelessly) based on lirc_imon.c
- *		  Tim Davies <tim@opensystems.net.au>
  *
  * NOTE - The LCDproc iMon driver should work with this module.  More info at
  *	http://www.frogstorm.info/sasem
