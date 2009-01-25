@@ -112,15 +112,21 @@ struct ttusbir_device {
  */
 static int set_use_inc(void *data)
 {
-	int i;
+	int i, retval;
 	struct ttusbir_device *ttusbir = data;
 
 	DPRINTK("Sending first URBs\n");
 	/* @TODO Do I need to check if I am already opened */
 	ttusbir->opened = 1;
 
-	for (i = 0; i < num_urbs; i++)
-		usb_submit_urb(ttusbir->urb[i], GFP_KERNEL);
+	for (i = 0; i < num_urbs; i++) {
+		retval = usb_submit_urb(ttusbir->urb[i], GFP_KERNEL);
+		if (retval) {
+			err("%s: usb_submit_urb failed on urb %d",
+			    __func__, i);
+			return retval;
+		}
+	}
 
 	return 0;
 }
