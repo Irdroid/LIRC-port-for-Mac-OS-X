@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.42 2009/01/24 17:22:44 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.43 2009/01/25 10:42:27 lirc Exp $
  *
  *   Version 0.3
  *		Supports newer iMON models that send decoded IR signals.
@@ -139,7 +139,7 @@ static void __exit imon_exit(void);
  */
 
 struct imon_context {
-	struct usb_device *dev;
+	struct usb_device *usbdev;
 	int display_supported;		/* not all controllers do */
 	int display_isopen;		/* VFD port has been opened */
 #if !defined(KERNEL_2_5)
@@ -503,15 +503,16 @@ static int send_packet(struct imon_context *context)
 
 	/* Check if we need to use control or interrupt urb */
 	if (!context->tx_control) {
-		pipe = usb_sndintpipe(context->dev,
-				context->tx_endpoint->bEndpointAddress);
+		pipe = usb_sndintpipe(context->usbdev,
+				      context->tx_endpoint->bEndpointAddress);
 #ifdef KERNEL_2_5
 		interval = context->tx_endpoint->bInterval;
 #endif	/* Use 0 for 2.4 kernels */
 
-		usb_fill_int_urb(context->tx_urb, context->dev, pipe,
-			context->usb_tx_buf, sizeof(context->usb_tx_buf),
-			usb_tx_callback, context, interval);
+		usb_fill_int_urb(context->tx_urb, context->usbdev, pipe,
+				 context->usb_tx_buf,
+				 sizeof(context->usb_tx_buf),
+				 usb_tx_callback, context, interval);
 
 		context->tx_urb->actual_length = 0;
 	} else {
@@ -528,13 +529,14 @@ static int send_packet(struct imon_context *context)
 		control_req->wLength = cpu_to_le16(0x0008);
 
 		/* control pipe is endpoint 0x00 */
-		pipe = usb_sndctrlpipe(context->dev, 0);
+		pipe = usb_sndctrlpipe(context->usbdev, 0);
 
 		/* build the control urb */
-		usb_fill_control_urb(context->tx_urb, context->dev, pipe,
-			(unsigned char *)control_req,
-			context->usb_tx_buf, sizeof(context->usb_tx_buf),
-			usb_tx_callback, context);
+		usb_fill_control_urb(context->tx_urb, context->usbdev, pipe,
+				     (unsigned char *)control_req,
+				     context->usb_tx_buf,
+				     sizeof(context->usb_tx_buf),
+				     usb_tx_callback, context);
 
 		context->tx_urb->actual_length = 0;
 	}
@@ -860,8 +862,8 @@ static int ir_open(void *data)
 	context->rx.initial_space = 1;
 	context->rx.prev_bit = 0;
 
-	usb_fill_int_urb(context->rx_urb, context->dev,
-		usb_rcvintpipe(context->dev,
+	usb_fill_int_urb(context->rx_urb, context->usbdev,
+		usb_rcvintpipe(context->usbdev,
 				context->rx_endpoint->bEndpointAddress),
 		context->usb_rx_buf, sizeof(context->usb_rx_buf),
 		usb_rx_callback, context, context->rx_endpoint->bInterval);
@@ -1145,7 +1147,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #endif
 {
 #ifdef KERNEL_2_5
-	struct usb_device *dev = NULL;
+	struct usb_device *usbdev = NULL;
 	struct usb_host_interface *iface_desc = NULL;
 #else
 	struct usb_interface *interface = NULL;
@@ -1207,11 +1209,11 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #endif
 
 #ifdef KERNEL_2_5
-	dev = usb_get_dev(interface_to_usbdev(interface));
+	usbdev = usb_get_dev(interface_to_usbdev(interface));
 	iface_desc = interface->cur_altsetting;
 	num_endpoints = iface_desc->desc.bNumEndpoints;
 #else
-	interface = &dev->actconfig->interface[intf];
+	interface = &usbdev->actconfig->interface[intf];
 	iface_desc = &interface->altsetting[interface->act_altsetting];
 	num_endpoints = iface_desc->bNumEndpoints;
 #endif
@@ -1394,7 +1396,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	/* Needed while unregistering! */
 	driver->minor = lirc_minor;
 
-	context->dev = dev;
+	context->usbdev = usbdev;
 	context->dev_present = 1;
 	context->rx_endpoint = rx_endpoint;
 	context->rx_urb = rx_urb;
@@ -1409,7 +1411,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, context);
 
-	if (cpu_to_le16(dev->descriptor.idProduct) == 0xffdc) {
+	if (cpu_to_le16(usbdev->descriptor.idProduct) == 0xffdc) {
 		int err;
 
 		err = sysfs_create_group(&interface->dev.kobj,
@@ -1446,7 +1448,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	}
 
 	info("%s: iMON device on usb<%d:%d> initialized",
-			__func__, dev->bus->busnum, dev->devnum);
+			__func__, usbdev->bus->busnum, usbdev->devnum);
 
 	mutex_unlock(&context->lock);
 
