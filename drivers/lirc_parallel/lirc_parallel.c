@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.43 2009/01/24 13:07:23 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.44 2009/01/26 00:43:11 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_parallel.c *********************************************************
@@ -606,17 +606,11 @@ static struct file_operations lirc_fops = {
 
 static int set_use_inc(void *data)
 {
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_INC_USE_COUNT;
-#endif
 	return 0;
 }
 
 static void set_use_dec(void *data)
 {
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_DEC_USE_COUNT;
-#endif
 }
 
 static struct lirc_driver driver = {

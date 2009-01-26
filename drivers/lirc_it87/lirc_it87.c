@@ -366,17 +366,11 @@ static struct file_operations lirc_fops = {
 
 static int set_use_inc(void *data)
 {
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_INC_USE_COUNT;
-#endif
        return 0;
 }
 
 static void set_use_dec(void *data)
 {
-#if WE_DONT_USE_LOCAL_OPEN_CLOSE
-	MOD_DEC_USE_COUNT;
-#endif
 }
 static struct lirc_driver driver = {
        .name		= LIRC_DRIVER_NAME,
