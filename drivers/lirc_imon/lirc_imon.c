@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.45 2009/01/25 11:10:23 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.46 2009/01/26 00:45:13 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -686,8 +686,10 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		goto exit;
 	}
 
-	if (copy_from_user(context->tx.data_buf, buf, n_bytes))
-		return -EFAULT;
+	if (copy_from_user(context->tx.data_buf, buf, n_bytes)) {
+		retval = -EFAULT;
+		goto exit;
+	}
 
 	/* Pad with spaces */
 	for (i = n_bytes; i < 32; ++i)
