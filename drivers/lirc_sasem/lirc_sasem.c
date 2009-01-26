@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.31 2009/01/25 10:50:28 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.32 2009/01/26 00:44:00 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -467,7 +467,9 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		goto exit;
 	}
 
-	copy_from_user(context->tx.data_buf, buf, n_bytes);
+	retval = copy_from_user(context->tx.data_buf, buf, n_bytes);
+	if (retval < 0)
+		goto exit;
 
 	/* Pad with spaces */
 	for (i = n_bytes; i < 32; ++i)
