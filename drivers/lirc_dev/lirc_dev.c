@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.72 2009/01/24 13:07:23 lirc Exp $
+ * $Id: lirc_dev.c,v 1.73 2009/01/27 18:43:11 lirc Exp $
  *
  */
 
@@ -748,7 +748,6 @@ static long irctl_compat_ioctl(struct file *file,
 	mm_segment_t old_fs;
 	int ret;
 	unsigned long val;
-	unsigned char tcomm[sizeof(current->comm)];
 	unsigned int cmd;
 
 	switch (cmd32) {
@@ -813,18 +812,9 @@ static long irctl_compat_ioctl(struct file *file,
 		unlock_kernel();
 		return ret;
 	default:
-#if 0
-		/* get_task_comm not exported ?!? */
-		get_task_comm(tcomm, current);
-#else
-		task_lock(current);
-		memcpy(tcomm, current->comm, sizeof(current->comm));
-		task_unlock(current);
-#endif
-
 		/* unknown */
 		printk(KERN_ERR "lirc_dev: %s(%s:%d): Unknown cmd %08x\n",
-		       __func__, tcomm, current->pid, cmd32);
+		       __func__, current->comm, current->pid, cmd32);
 		return -ENOIOCTLCMD;
 	}
 }
