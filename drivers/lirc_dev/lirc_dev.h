@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.24 2009/01/04 22:17:39 lirc Exp $
+ * $Id: lirc_dev.h,v 1.25 2009/01/28 20:37:03 lirc Exp $
  *
  */
 
@@ -102,7 +102,7 @@ static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
 	buf->head = mod(buf->head+1, buf->size);
 	buf->fill -= 1;
 }
-static inline void lirc_buffer_remove_1(struct lirc_buffer *buf)
+static inline void lirc_buffer_remove(struct lirc_buffer *buf)
 {
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
@@ -110,14 +110,14 @@ static inline void lirc_buffer_remove_1(struct lirc_buffer *buf)
 	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
-				     unsigned char *dest)
+				       unsigned char *dest)
 {
 	memcpy(dest, &buf->data[buf->head*buf->chunk_size], buf->chunk_size);
 	buf->head = mod(buf->head+1, buf->size);
 	buf->fill -= 1;
 }
-static inline void lirc_buffer_read_1(struct lirc_buffer *buf,
-				      unsigned char *dest)
+static inline void lirc_buffer_read(struct lirc_buffer *buf,
+				    unsigned char *dest)
 {
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
@@ -131,8 +131,8 @@ static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
 	buf->tail = mod(buf->tail+1, buf->size);
 	buf->fill++;
 }
-static inline void lirc_buffer_write_1(struct lirc_buffer *buf,
-				       unsigned char *orig)
+static inline void lirc_buffer_write(struct lirc_buffer *buf,
+				     unsigned char *orig)
 {
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);

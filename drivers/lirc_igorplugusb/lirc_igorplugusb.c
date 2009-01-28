@@ -336,7 +336,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 
 		/* create leading gap  */
 		code = timediff;
-		lirc_buffer_write_n(buf, (unsigned char *)&code, 1);
+		lirc_buffer_write(buf, (unsigned char *)&code);
 		ir->in_space = 1;   /* next comes a pulse */
 
 		/* MODE2: pulse/space (PULSE_BIT) in 1us units */
@@ -348,7 +348,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 			ir->last_time.tv_usec += code;
 			if (ir->in_space)
 				code |= PULSE_BIT;
-			lirc_buffer_write_n(buf, (unsigned char *)&code, 1);
+			lirc_buffer_write(buf, (unsigned char *)&code);
 			/* 1 chunk = CODE_LENGTH bytes */
 			ir->in_space ^= 1;
 			++i;

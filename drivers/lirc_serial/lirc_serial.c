@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.94 2009/01/24 13:07:23 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.95 2009/01/28 20:37:04 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_serial.c ***********************************************************
@@ -142,7 +142,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.94 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.95 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -688,7 +688,7 @@ static void rbwrite(lirc_t l)
 		dprintk("Buffer overrun\n");
 		return;
 	}
-	_lirc_buffer_write_1(&rbuf, (void *)&l);
+	lirc_buffer_write(&rbuf, (void *)&l);
 }
 
 static void frbwrite(lirc_t l)

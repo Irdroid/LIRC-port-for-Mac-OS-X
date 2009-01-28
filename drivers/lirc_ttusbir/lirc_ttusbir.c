@@ -217,7 +217,7 @@ static void urb_complete(struct urb *urb)
 			if (ttusbir->last_pulse) /* pulse or space? */
 				l |= PULSE_BIT;
 			if (!lirc_buffer_full(&ttusbir->rbuf)) {
-				lirc_buffer_write_1(&ttusbir->rbuf, (void *)&l);
+				lirc_buffer_write(&ttusbir->rbuf, (void *)&l);
 				wake_up_interruptible(&ttusbir->rbuf.wait_poll);
 			}
 			ttusbir->last_num = 0;

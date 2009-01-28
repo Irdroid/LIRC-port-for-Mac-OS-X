@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.67 $"
+#define DRIVER_VERSION	"$Revision: 1.68 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -467,8 +467,8 @@ static void set_use_dec(void *data)
 static void send_packet_to_lirc(struct mceusb2_dev *ir)
 {
 	if (ir->lircdata != 0) {
-		lirc_buffer_write_1(ir->d->rbuf,
-				    (unsigned char *) &ir->lircdata);
+		lirc_buffer_write(ir->d->rbuf,
+				  (unsigned char *) &ir->lircdata);
 		wake_up(&ir->d->rbuf->wait_poll);
 		ir->lircdata = 0;
 	}

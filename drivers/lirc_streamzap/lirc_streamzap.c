@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.37 2009/01/15 07:19:56 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.38 2009/01/28 20:37:04 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -57,7 +57,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.37 $"
+#define DRIVER_VERSION	"$Revision: 1.38 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -236,17 +236,17 @@ static void delay_timeout(unsigned long arg)
 
 	if (!lirc_buffer_empty(&sz->delay_buf) &&
 	    !lirc_buffer_full(&sz->lirc_buf)) {
-		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
-		lirc_buffer_write_1(&sz->lirc_buf, (unsigned char *) &data);
+		lirc_buffer_read(&sz->delay_buf, (unsigned char *) &data);
+		lirc_buffer_write(&sz->lirc_buf, (unsigned char *) &data);
 	}
 	if (!lirc_buffer_empty(&sz->delay_buf)) {
 		while (lirc_buffer_available(&sz->delay_buf) <
 		      STREAMZAP_BUFFER_SIZE/2 &&
 		      !lirc_buffer_full(&sz->lirc_buf)) {
-			lirc_buffer_read_1(&sz->delay_buf,
-					   (unsigned char *) &data);
-			lirc_buffer_write_1(&sz->lirc_buf,
-					    (unsigned char *) &data);
+			lirc_buffer_read(&sz->delay_buf,
+					 (unsigned char *) &data);
+			lirc_buffer_write(&sz->lirc_buf,
+					  (unsigned char *) &data);
 		}
 		if (sz->timer_running) {
 			sz->delay_timer.expires += timer_inc;
@@ -269,9 +269,9 @@ static void flush_delay_buffer(struct usb_streamzap *sz)
 
 	while (!lirc_buffer_empty(&sz->delay_buf)) {
 		empty = 0;
-		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
+		lirc_buffer_read(&sz->delay_buf, (unsigned char *) &data);
 		if (!lirc_buffer_full(&sz->lirc_buf)) {
-			lirc_buffer_write_1(&sz->lirc_buf,
+			lirc_buffer_write(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		} else {
 			dprintk("buffer overflow\n", sz->driver.minor);
@@ -289,16 +289,16 @@ static void push(struct usb_streamzap *sz, unsigned char *data)
 	if (lirc_buffer_full(&sz->delay_buf)) {
 		lirc_t data;
 
-		lirc_buffer_read_1(&sz->delay_buf, (unsigned char *) &data);
+		lirc_buffer_read(&sz->delay_buf, (unsigned char *) &data);
 		if (!lirc_buffer_full(&sz->lirc_buf)) {
-			lirc_buffer_write_1(&sz->lirc_buf,
-					    (unsigned char *) &data);
+			lirc_buffer_write(&sz->lirc_buf,
+					  (unsigned char *) &data);
 		} else {
 			dprintk("buffer overflow", sz->driver.minor);
 		}
 	}
 
-	lirc_buffer_write_1(&sz->delay_buf, data);
+	lirc_buffer_write(&sz->delay_buf, data);
 
 	if (!sz->timer_running) {
 		sz->delay_timer.expires = jiffies + HZ/10;
@@ -703,9 +703,9 @@ static int streamzap_use_inc(void *data)
 	MOD_INC_USE_COUNT;
 
 	while (!lirc_buffer_empty(&sz->lirc_buf))
-		lirc_buffer_remove_1(&sz->lirc_buf);
+		lirc_buffer_remove(&sz->lirc_buf);
 	while (!lirc_buffer_empty(&sz->delay_buf))
-		lirc_buffer_remove_1(&sz->delay_buf);
+		lirc_buffer_remove(&sz->delay_buf);
 
 	sz->flush_timer.expires = jiffies + HZ;
 	sz->flush = 1;
@@ -847,9 +847,9 @@ static int streamzap_resume(struct usb_interface *intf)
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
 
 	while (!lirc_buffer_empty(&sz->lirc_buf))
-		lirc_buffer_remove_1(&sz->lirc_buf);
+		lirc_buffer_remove(&sz->lirc_buf);
 	while (!lirc_buffer_empty(&sz->delay_buf))
-		lirc_buffer_remove_1(&sz->delay_buf);
+		lirc_buffer_remove(&sz->delay_buf);
 
 	if (sz->in_use) {
 		sz->flush_timer.expires = jiffies + HZ;

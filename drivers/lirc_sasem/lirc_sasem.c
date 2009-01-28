@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.32 2009/01/26 00:44:00 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.33 2009/01/28 20:37:04 lirc Exp $      */
 
 /* lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -700,7 +700,7 @@ static void incoming_packet(struct sasem_context *context,
 		context->presstime.tv_usec = tv.tv_usec;
 	}
 
-	lirc_buffer_write_1(context->driver->rbuf, buf);
+	lirc_buffer_write(context->driver->rbuf, buf);
 	wake_up(&context->driver->rbuf->wait_poll);
 }
 

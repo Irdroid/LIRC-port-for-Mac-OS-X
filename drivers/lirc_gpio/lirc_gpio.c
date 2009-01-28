@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.55 2009/01/14 19:53:17 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.56 2009/01/28 20:37:04 lirc Exp $
  *
  */
 
@@ -383,7 +383,7 @@ static int add_to_buf(void *data, struct lirc_buffer *buf)
 	}
 	memcpy(prev_codes, cur_codes, code_bytes);
 
-	lirc_buffer_write_1(buf, cur_codes);
+	lirc_buffer_write(buf, cur_codes);
 
 	return 0;
 }

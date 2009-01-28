@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.56 2009/01/24 17:23:42 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.57 2009/01/28 20:37:04 lirc Exp $      */
 
 /*
  * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
@@ -120,7 +120,7 @@ static int add_to_buf_adap(void *data, struct lirc_buffer *buf)
 	keybuf[2] &= 0x7f;
 	keybuf[3] |= 0x80;
 
-	lirc_buffer_write_1(buf, keybuf);
+	lirc_buffer_write(buf, keybuf);
 	return 0;
 }
 
@@ -164,7 +164,7 @@ static int add_to_buf_pcf8574(void *data, struct lirc_buffer *buf)
 
 	/* set valid key code */
 	key  = rc & ir->bits;
-	lirc_buffer_write_1(buf, &key);
+	lirc_buffer_write(buf, &key);
 	return 0;
 }
 
@@ -198,7 +198,7 @@ static int add_to_buf_haup_common(void *data, struct lirc_buffer *buf,
 	codes[1] = code & 0xff;
 
 	/* return it */
-	lirc_buffer_write_1(buf, codes);
+	lirc_buffer_write(buf, codes);
 	return 0;
 }
 
@@ -248,7 +248,7 @@ static int add_to_buf_pvr2000(void *data, struct lirc_buffer *buf)
 	dprintk("IR Key/Flags: (0x%02x/0x%02x)\n", key, flags & 0xFF);
 
 	/* return it */
-	lirc_buffer_write_1(buf, &key);
+	lirc_buffer_write(buf, &key);
 	return 0;
 }
 
@@ -265,7 +265,7 @@ static int add_to_buf_pixelview(void *data, struct lirc_buffer *buf)
 	dprintk("key %02x\n", key);
 
 	/* return it */
-	lirc_buffer_write_1(buf, &key);
+	lirc_buffer_write(buf, &key);
 	return 0;
 }
 
@@ -290,7 +290,7 @@ static int add_to_buf_pv951(void *data, struct lirc_buffer *buf)
 	codes[2] = reverse(key, 8);
 	codes[3] = (~codes[2])&0xff;
 
-	lirc_buffer_write_1(buf, codes);
+	lirc_buffer_write(buf, codes);
 	return 0;
 }
 
@@ -319,7 +319,7 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer *buf)
 		key = last_key;
 
 	last_key = key;
-	lirc_buffer_write_1(buf, &key);
+	lirc_buffer_write(buf, &key);
 
 	return 0;
 }

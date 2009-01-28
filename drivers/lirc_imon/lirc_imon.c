@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.46 2009/01/26 00:45:13 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.47 2009/01/28 20:37:04 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -933,7 +933,7 @@ static void submit_data(struct imon_context *context)
 	for (i = 0; i < 4; ++i)
 		buf[i] = value>>(i*8);
 
-	lirc_buffer_write_1(context->driver->rbuf, buf);
+	lirc_buffer_write(context->driver->rbuf, buf);
 	wake_up(&context->driver->rbuf->wait_poll);
 	return;
 }
@@ -1028,7 +1028,7 @@ static void incoming_packet(struct imon_context *context,
 
 	if (context->ir_onboard_decode) {
 		/* The signals have been decoded onboard the iMON controller */
-		lirc_buffer_write_1(context->driver->rbuf, buf);
+		lirc_buffer_write(context->driver->rbuf, buf);
 		wake_up(&context->driver->rbuf->wait_poll);
 		return;
 	}

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.73 2009/01/27 18:43:11 lirc Exp $
+ * $Id: lirc_dev.c,v 1.74 2009/01/28 20:37:03 lirc Exp $
  *
  */
 
@@ -898,7 +898,7 @@ static ssize_t irctl_read(struct file *file,
 				break;
 			}
 		} else {
-			lirc_buffer_read_1(ir->buf, buf);
+			lirc_buffer_read(ir->buf, buf);
 			ret = copy_to_user((void *)buffer+written, buf,
 					   ir->buf->chunk_size);
 			written += ir->buf->chunk_size;

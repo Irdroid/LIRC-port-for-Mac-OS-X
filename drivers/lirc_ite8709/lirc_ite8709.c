@@ -253,7 +253,7 @@ static void ite8709_add_read_queue(struct ite8709_device *dev, int flag,
 		value |= PULSE_BIT;
 
 	if (!lirc_buffer_full(&dev->buffer)) {
-		lirc_buffer_write_1(&dev->buffer, (void *) &value);
+		lirc_buffer_write(&dev->buffer, (void *) &value);
 		wake_up(&dev->buffer.wait_poll);
 	}
 }

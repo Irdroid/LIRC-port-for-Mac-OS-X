@@ -109,7 +109,7 @@ static int atir_add_to_buf(void *data, struct lirc_buffer *buf)
 	key = (status >> 8) & 0xFF;
 	if (status & 0xFF) {
 		dprintk("ATIR reading key %02X\n", key);
-		lirc_buffer_write_1(buf, &key);
+		lirc_buffer_write(buf, &key);
 		return 0;
 	}
 	return -ENODATA;

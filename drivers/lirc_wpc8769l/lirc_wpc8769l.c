@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.5 2009/01/16 20:20:58 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.6 2009/01/28 20:37:04 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -162,7 +162,7 @@ static void put_item(lirc_t data)
 			eprintk("RX buffer overrun.\n");
 		return;
 	}
-	_lirc_buffer_write_1(&rbuf, (void *) &data);
+	lirc_buffer_write(&rbuf, (void *) &data);
 }
 
 /* Put any accumulated pulse/space to userspace. */
