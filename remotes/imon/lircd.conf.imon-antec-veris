@@ -47,7 +47,7 @@ begin remote
           KEY_MUTE                 0x2b9595b700000201 # Mute
           KEY_VOLUMEUP             0x28a395b700000201 # VOL +
           KEY_VOLUMEDOWN           0x28a595b700000201 # VOL -
-          KEY_CHANNELUP            0x289395b700000201 # CH -
+          KEY_CHANNELUP            0x289395b700000201 # CH +
           KEY_CHANNELDOWN          0x288795b700000201 # CH -
           Timer                    0x2b8395b700000201 # Timer
           KEY_1                    0x0200001e00000201 # 1
