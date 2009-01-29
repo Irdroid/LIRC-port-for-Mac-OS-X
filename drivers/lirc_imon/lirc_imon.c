@@ -1,7 +1,7 @@
 /*
  *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
  *
- *   $Id: lirc_imon.c,v 1.47 2009/01/28 20:37:04 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.48 2009/01/29 07:39:55 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -50,7 +50,7 @@
 
 
 #define MOD_AUTHOR	"Venky Raju <dev@venky.ws>"
-#define MOD_DESC	"Driver for Soundgraph iMON MultiMedia IR/VFD"
+#define MOD_DESC	"Driver for Soundgraph iMON MultiMedia IR/Display"
 #define MOD_NAME	"lirc_imon"
 #define MOD_VERSION	"0.5"
 
@@ -118,7 +118,7 @@ static void __exit imon_exit(void);
 struct imon_context {
 	struct usb_device *usbdev;
 	int display_supported;		/* not all controllers do */
-	int display_isopen;		/* VFD port has been opened */
+	int display_isopen;		/* display port has been opened */
 #if !defined(KERNEL_2_5)
 	int subminor;			/* index into minor_table */
 	devfs_handle_t devfs;
@@ -129,7 +129,7 @@ struct imon_context {
 	struct mutex lock;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
-	int display_proto_6p;		/* VFD requires 6th packet */
+	int display_proto_6p;		/* display requires 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
 
 	struct lirc_driver *driver;
@@ -155,7 +155,7 @@ struct imon_context {
 	} tx;
 };
 
-/* VFD file operations */
+/* display file operations */
 static struct file_operations display_fops = {
 	.owner		= THIS_MODULE,
 	.open		= &display_open,
@@ -407,16 +407,16 @@ static int display_open(struct inode *inode, struct file *file)
 	mutex_lock(&context->lock);
 
 	if (!context->display_supported) {
-		err("%s: VFD not supported by device", __func__);
+		err("%s: display not supported by device", __func__);
 		retval = -ENODEV;
 	} else if (context->display_isopen) {
-		err("%s: VFD port is already open", __func__);
+		err("%s: display port is already open", __func__);
 		retval = -EBUSY;
 	} else {
 		MOD_INC_USE_COUNT;
 		context->display_isopen = 1;
 		file->private_data = context;
-		info("VFD port opened");
+		info("display port opened");
 	}
 
 	mutex_unlock(&context->lock);
@@ -427,7 +427,7 @@ exit:
 }
 
 /**
- * Called when the VFD device(e.g. /dev/usb/lcd)
+ * Called when the display device(e.g. /dev/usb/lcd)
  * is closed by the application.
  */
 static int display_close(struct inode *inode, struct file *file)
@@ -445,15 +445,15 @@ static int display_close(struct inode *inode, struct file *file)
 	mutex_lock(&context->lock);
 
 	if (!context->display_supported) {
-		err("%s: VFD not supported by device", __func__);
+		err("%s: display not supported by device", __func__);
 		retval = -ENODEV;
 	} else if (!context->display_isopen) {
-		err("%s: VFD is not open", __func__);
+		err("%s: display is not open", __func__);
 		retval = -EIO;
 	} else {
 		context->display_isopen = 0;
 		MOD_DEC_USE_COUNT;
-		info("VFD port closed");
+		info("display port closed");
 		if (!context->dev_present && !context->ir_isopen) {
 			/* Device disconnected before close and IR port is not
 			 * open. If IR port is open, context will be deleted by
@@ -469,7 +469,7 @@ static int display_close(struct inode *inode, struct file *file)
 }
 
 /**
- * Sends a packet to the VFD.
+ * Sends a packet to the display.
  */
 static int send_packet(struct imon_context *context)
 {
@@ -1201,7 +1201,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	/*
 	 * Scan the endpoint list and set:
 	 *	first input endpoint = IR endpoint
-	 *	first output endpoint = VFD endpoint
+	 *	first output endpoint = display endpoint
 	 */
 
 	ir_ep_found = 0;
@@ -1235,7 +1235,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			tx_endpoint = ep;
 			display_ep_found = 1;
 			if (debug)
-				info("%s: found VFD endpoint", __func__);
+				info("%s: found display endpoint", __func__);
 		}
 	}
 
@@ -1281,7 +1281,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			info("ir_onboard_decode: %d", ir_onboard_decode);
 	}
 
-	/* Determine if VFD requires 6 packets */
+	/* Determine if display requires 6 packets */
 	if (display_ep_found) {
 		if (usb_match_id(interface, display_proto_6p_list))
 			display_proto_6p = 1;
@@ -1334,7 +1334,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		tx_urb = usb_alloc_urb(0);
 #endif
 		if (!tx_urb) {
-			err("%s: usb_alloc_urb failed for VFD urb",
+			err("%s: usb_alloc_urb failed for display urb",
 			    __func__);
 			alloc_status = 6;
 			goto alloc_status_switch;
@@ -1407,11 +1407,11 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	if (display_ep_found) {
 		if (debug)
-			info("Registering VFD with devfs");
+			info("Registering display with devfs");
 #ifdef KERNEL_2_5
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
-			info("%s: could not get a minor number for VFD",
+			info("%s: could not get a minor number for display",
 				__func__);
 		}
 #else
@@ -1421,7 +1421,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 					DISPLAY_MINOR_BASE + subminor,
 					DEVFS_MODE, &display_fops, NULL))) {
 			/* not a fatal error so ignore */
-			info("%s: devfs register failed for VFD",
+			info("%s: devfs register failed for display",
 					__func__);
 		}
 #endif
