@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.58 2009/01/30 19:39:26 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.59 2009/01/30 19:56:36 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -41,7 +41,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
  */
 
 
@@ -432,7 +431,8 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 #else
 		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
 #endif
-			/* 
+			/*
+			 * The PVR150 IR receiver uses the same protocol as
 			 * other Hauppauge cards, but the data flow is
 			 * different, so we need to deal with it by its own.
 			 */
@@ -665,7 +665,6 @@ static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg)
 	return 0;
 }
 
-/* ----------------------------------------------------------------------- */
 #ifdef MODULE
 
 int init_module(void)
