@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.75 2009/01/30 19:39:26 lirc Exp $
+ * $Id: lirc_dev.c,v 1.76 2009/01/30 19:47:18 lirc Exp $
  *
  */
 
@@ -181,7 +181,8 @@ static int add_to_buf(struct irctl *ir)
 	return 0;
 }
 
-/* main function of the polling thread
+/*
+ * main function of the polling thread
  */
 static int lirc_thread(void *irctl)
 {
@@ -534,9 +535,6 @@ int lirc_unregister_driver(int minor)
 }
 EXPORT_SYMBOL(lirc_unregister_driver);
 
-/*
- *
- */
 static int irctl_open(struct inode *inode, struct file *file)
 {
 	struct irctl *ir;
@@ -603,9 +601,6 @@ static int irctl_open(struct inode *inode, struct file *file)
 	return retval;
 }
 
-/*
- *
- */
 static int irctl_close(struct inode *inode, struct file *file)
 {
 	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
@@ -632,9 +627,6 @@ static int irctl_close(struct inode *inode, struct file *file)
 	return 0;
 }
 
-/*
- *
- */
 static unsigned int irctl_poll(struct file *file, poll_table *wait)
 {
 	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
@@ -823,9 +815,6 @@ static long irctl_compat_ioctl(struct file *file,
 }
 #endif
 
-/*
- *
- */
 static ssize_t irctl_read(struct file *file,
 			  char *buffer,
 			  size_t length,
@@ -1001,23 +990,14 @@ out:
 	return -1;
 }
 
-/* ---------------------------------------------------------------------- */
-
 /* For now dont try to use it as a static version !  */
-
 #ifdef MODULE
 
-/*
- *
- */
 int init_module(void)
 {
 	return lirc_dev_init();
 }
 
-/*
- *
- */
 void cleanup_module(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
