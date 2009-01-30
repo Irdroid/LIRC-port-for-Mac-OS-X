@@ -1,8 +1,7 @@
-/*      $Id: lirc_parallel.c,v 5.44 2009/01/26 00:43:11 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.45 2009/01/30 19:39:27 lirc Exp $      */
 
-/****************************************************************************
- ** lirc_parallel.c *********************************************************
- ****************************************************************************
+/*
+ * lirc_parallel.c
  *
  * lirc_parallel - device driver for infra-red signal receiving and
  *                 transmitting unit built by the author
@@ -25,9 +24,7 @@
  *
  */
 
-/***********************************************************************
- *************************       Includes        ***********************
- ***********************************************************************/
+/*** Includes ***/
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -94,9 +91,7 @@
 #define LIRC_TIMER 65536
 #endif
 
-/***********************************************************************
- *************************   Globale Variablen   ***********************
- ***********************************************************************/
+/*** Global Variables ***/
 
 static int debug;
 static int check_pselecd;
@@ -127,9 +122,7 @@ int is_claimed;
 
 unsigned int tx_mask = 1;
 
-/***********************************************************************
- *************************   Interne Funktionen  ***********************
- ***********************************************************************/
+/*** Internal Functions ***/
 
 static unsigned int in(int offset)
 {
@@ -248,9 +241,7 @@ static int lirc_claim(void)
 	return 1;
 }
 
-/***********************************************************************
- *************************   interrupt handler  ************************
- ***********************************************************************/
+/*** interrupt handler ***/
 
 static void rbuf_write(lirc_t signal)
 {
@@ -287,11 +278,11 @@ static void irq_handler(int i, void *blah)
 	if (!is_claimed)
 		return;
 
+#if 0
 	/* disable interrupt */
-	/*
-	  disable_irq(irq);
-	  out(LIRC_PORT_IRQ, in(LIRC_PORT_IRQ) & (~LP_PINTEN));
-	*/
+	disable_irq(irq);
+	out(LIRC_PORT_IRQ, in(LIRC_PORT_IRQ) & (~LP_PINTEN));
+#endif
 	if (check_pselecd && (in(1) & LP_PSELECD))
 		return;
 
@@ -311,9 +302,10 @@ static void irq_handler(int i, void *blah)
 		rbuf_write(data); /* space */
 	} else {
 		if (timer == 0) {
-			/* wake up; we'll lose this signal
-			 * but it will be garbage if the device
-			 * is turned on anyway */
+			/*
+			 * wake up; we'll lose this signal, but it will be
+			 * garbage if the device is turned on anyway
+			 */
 			timer = init_lirc_timer();
 			/* enable_irq(irq); */
 			return;
@@ -371,9 +363,7 @@ static void irq_handler(int i, void *blah)
 	*/
 }
 
-/***********************************************************************
- **************************   file_operations   ************************
- ***********************************************************************/
+/*** file operations ***/
 
 static loff_t lirc_lseek(struct file *filep, loff_t offset, int orig)
 {
@@ -499,8 +489,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 	}
 	local_irq_restore(flags);
 #else
-	/* place code that handles write
-	 * without external timer here */
+	/* place code that handles write without external timer here */
 #endif
 	return n;
 }
@@ -676,9 +665,7 @@ static void kf(void *handle)
 	*/
 }
 
-/***********************************************************************
- ******************   init_module()/cleanup_module()  ******************
- ***********************************************************************/
+/*** module initialization and cleanup ***/
 
 int init_module(void)
 {

@@ -101,7 +101,7 @@ static unsigned char it87_RXEN_mask = IT87_CIR_RCR_RXEN;
 /* must be longer than TIME_CONST */
 #define IT87_TIMEOUT	(HZ*5/100)
 
-/* insmod parameters */
+/* module parameters */
 static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
@@ -162,7 +162,7 @@ static void init_send(void);
 static void terminate_send(unsigned long len);
 static int init_hardware(void);
 static void drop_hardware(void);
-	/* Initialisation */
+/* Initialisation */
 static int init_port(void);
 static void drop_port(void);
 int init_module(void);
@@ -333,8 +333,10 @@ static void add_read_queue(int flag, unsigned long val)
 
 	newval = val & PULSE_MASK;
 
-	/* statistically pulses are ~TIME_CONST/2 too long: we could
-	   maybe make this more exactly but this is good enough */
+	/*
+	 * statistically, pulses are ~TIME_CONST/2 too long. we could
+	 * maybe make this more exact, but this is good enough
+	 */
 	if (flag) {
 		/* pulse */
 		if (newval > TIME_CONST / 2)
@@ -429,9 +431,7 @@ static void it87_timeout(unsigned long data)
 	spin_lock_irqsave(&timer_lock, flags);
 
 	if (digimatrix) {
-		/* We have timed out.
-		   Disable the RX mechanism.
-		*/
+		/* We have timed out. Disable the RX mechanism. */
 
 		outb((inb(io + IT87_CIR_RCR) & ~IT87_CIR_RCR_RXEN) |
 		     IT87_CIR_RCR_RXACT, io + IT87_CIR_RCR);
@@ -446,11 +446,12 @@ static void it87_timeout(unsigned long data)
 		     io+IT87_CIR_TCR1);
 
 	} else {
-		/* if last received signal was a pulse, but receiving
-		   stopped within the 9 bit frame, we need to finish
-		   this pulse and simulate a signal change to from
-		   pulse to space. Otherwise upper layers will receive
-		   two sequences next time. */
+		/*
+		 * if last received signal was a pulse, but receiving stopped
+		 * within the 9 bit frame, we need to finish this pulse and
+		 * simulate a signal change to from pulse to space. Otherwise
+		 * upper layers will receive two sequences next time.
+		 */
 
 		if (last_value) {
 			unsigned long pulse_end;
@@ -512,8 +513,10 @@ static irqreturn_t it87_interrupt(int irq, void *dev_id)
 				if (data != 0x00) {
 					if (timer_enabled)
 						del_timer(&timerlist);
-					/* start timer for end of
-					 * sequence detection */
+					/*
+					 * start timer for end of
+					 * sequence detection
+					 */
 					timerlist.expires = jiffies +
 							    IT87_TIMEOUT;
 					add_timer(&timerlist);
@@ -555,8 +558,10 @@ static irqreturn_t it87_interrupt(int irq, void *dev_id)
 				dprintk("t %lu , d %d\n",
 					deltintrtv, (int)data);
 
-				/* if nothing came in last 2 cycles,
-				   it was gap */
+				/*
+				 * if nothing came in last 2 cycles,
+				 * it was gap
+				 */
 				if (deltintrtv > TIME_CONST * 2) {
 					if (last_value) {
 						dprintk("GAP\n");
@@ -575,9 +580,11 @@ static irqreturn_t it87_interrupt(int irq, void *dev_id)
 				}
 				data = 1;
 				if (data ^ last_value) {
-					/* deltintrtv > 2*TIME_CONST,
-					   remember ? */
-					/* the other case is timeout */
+					/*
+					 * deltintrtv > 2*TIME_CONST,
+					 * remember ? the other case is
+					 * timeout
+					 */
 					add_read_queue(last_value,
 						       deltv-TIME_CONST);
 					last_value = data;
@@ -592,8 +599,10 @@ static irqreturn_t it87_interrupt(int irq, void *dev_id)
 				}
 				last_intr_tv = curr_tv;
 				if (data) {
-					/* start timer for end of
-					 * sequence detection */
+					/*
+					 * start timer for end of
+					 * sequence detection
+					 */
 					timerlist.expires =
 						jiffies + IT87_TIMEOUT;
 					add_timer(&timerlist);
@@ -663,11 +672,7 @@ static void send_it87(unsigned long len, unsigned long stime,
 }
 
 
-/*
-maybe: exchange space and pulse because
-it8705 only modulates 0-bits
-*/
-
+/*TODO: maybe exchange space and pulse because it8705 only modulates 0-bits */
 
 static void send_space(unsigned long len)
 {
@@ -743,8 +748,10 @@ static int init_hardware(void)
 		outb(inb(io + IT87_CIR_TCR1) |  0x00,
 		     io + IT87_CIR_TCR1);
 
-		/* TX: it87_freq (36kHz),
-		   'reserved' sensitivity setting (0x00) */
+		/*
+		 * TX: it87_freq (36kHz), 'reserved' sensitivity
+		 * setting (0x00)
+		 */
 		outb(((it87_freq - IT87_CIR_FREQ_MIN) << 3) | 0x00,
 		     io + IT87_CIR_TCR2);
 	} else {
@@ -906,7 +913,7 @@ static int init_port(void)
 
 static void drop_port(void)
 {
-/*
+#if 0
 	unsigned char init_bytes[4] = {IT87_INIT};
 
 	/ * Enter MB PnP Mode * /
@@ -920,7 +927,7 @@ static void drop_port(void)
 
 	/ * Leaving MB PnP Mode * /
 	it87_write(IT87_CFGCTRL, 0x2);
-*/
+#endif
 
 	del_timer_sync(&timerlist);
 	free_irq(irq, NULL);

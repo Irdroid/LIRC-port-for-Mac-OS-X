@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.68 $"
+#define DRIVER_VERSION	"$Revision: 1.69 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -536,11 +536,13 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 				i += packet_len;
 			} else if (ir->buf_in[i] == MCE_CONTROL_HEADER) {
 				/* status header (0x9F) */
-				/* A transmission containing one or
-				   more consecutive ir commands always
-				   ends with a GAP of 100ms followed by the
-				   sequence 0x9F 0x01 0x01 0x9F 0x15
-				   0x00 0x00 0x80 */
+				/*
+				 * A transmission containing one or
+				 * more consecutive ir commands always
+				 * ends with a GAP of 100ms followed by the
+				 * sequence 0x9F 0x01 0x01 0x9F 0x15
+				 * 0x00 0x00 0x80
+				 */
 
 		/*
 		Uncomment this if the last 100ms
@@ -560,7 +562,6 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 
 		break;
 
-		/* unlink */
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
@@ -573,7 +574,6 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 		break;
 	}
 
-	/* resubmit urb */
 	usb_submit_urb(urb, GFP_ATOMIC);
 }
 
@@ -650,9 +650,11 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	request_packet_async(ir, ir->usb_ep_out, cmdbuf,
 			     cmdcount, PHILUSB_OUTBOUND);
 
-	/* The lircd gap calculation expects the write function to
-	   wait the time it takes for the ircommand to be sent before
-	   it returns. */
+	/*
+	 * The lircd gap calculation expects the write function to
+	 * wait the time it takes for the ircommand to be sent before
+	 * it returns.
+	 */
 	do_gettimeofday(&end_time);
 	signal_duration -= (end_time.tv_usec - start_time.tv_usec) +
 			   (end_time.tv_sec - start_time.tv_sec) * 1000000;
@@ -667,8 +669,10 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 static void set_transmitter_mask(struct mceusb2_dev *ir, unsigned int mask)
 {
 	if (ir->flags.transmitter_mask_inverted)
-		/* The mask begins at 0x02 and has an inverted
-		   numbering scheme */
+		/*
+		 * The mask begins at 0x02 and has an inverted
+		 * numbering scheme
+		 */
 		ir->transmitter_mask =
 			(mask != 0x03 ? mask ^ 0x03 : mask) << 1;
 	else
@@ -706,8 +710,7 @@ static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
 					"requesting %d Hz\n",
 					ir->devnum, carrier);
 
-				/* Transmit the new carrier to the mce
-				   device */
+				/* Transmit new carrier to mce device */
 				request_packet_async(ir, ir->usb_ep_out,
 						     cmdbuf, sizeof(cmdbuf),
 						     PHILUSB_OUTBOUND);
@@ -841,9 +844,10 @@ static int usb_remote_probe(struct usb_interface *intf,
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
 			if (usb_match_id(intf, pinnacle_list)) {
-				/* setting to seems to give issues
-				   with Pinnacle timing out on
-				   transfer */
+				/*
+				 * setting seems to 1 seem to cause issues with
+				 * Pinnacle timing out on transfer.
+				 */
 				ep_in->bInterval = ep->bInterval;
 			} else {
 				ep_in->bInterval = 1;
@@ -863,9 +867,10 @@ static int usb_remote_probe(struct usb_interface *intf,
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
 			if (usb_match_id(intf, pinnacle_list)) {
-				/* setting to 1 seems to give issues
-				   with Pinnacle timing out on
-				   transfer */
+				/*
+				 * setting seems to 1 seem to cause issues with
+				 * Pinnacle timing out on transfer.
+				 */
 				ep_out->bInterval = ep->bInterval;
 			} else {
 				ep_out->bInterval = 1;
@@ -882,7 +887,6 @@ static int usb_remote_probe(struct usb_interface *intf,
 	pipe = usb_rcvintpipe(dev, ep_in->bEndpointAddress);
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
-	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kzalloc(sizeof(struct mceusb2_dev), GFP_KERNEL);
 	if (!ir) {
@@ -944,7 +948,6 @@ static int usb_remote_probe(struct usb_interface *intf,
 
 mem_failure_switch:
 
-	/* free allocated memory incase of failure */
 	switch (mem_failure) {
 	case 9:
 		usb_free_urb(ir->urb_in);
@@ -1005,20 +1008,23 @@ mem_failure_switch:
 	if (ir->flags.pinnacle) {
 		int usbret;
 
-		/* I have no idea why but this reset seems to be
-		   crucial to getting the device to do outbound IO
-		   correctly - without this the device seems to hang
-		   ignoring all input - although IR signals are
-		   correctly sent from the device no input is
-		   interpreted by the device and the host never does
-		   the completion routine */
+		/*
+		 * I have no idea why but this reset seems to be crucial to
+		 * getting the device to do outbound IO correctly - without
+		 * this the device seems to hang, ignoring all input - although
+		 * IR signals are correctly sent from the device, no input is
+		 * interpreted by the device and the host never does the
+		 * completion routine
+		 */
 
 		usbret = usb_reset_configuration(dev);
 		printk(DRIVER_NAME "[%d]: usb reset config ret %x\n",
 		       devnum, usbret);
 
-		/* it's possible we really should wait for a return for
-		   each of these... */
+		/*
+		 * its possible we really should wait for a return
+		 * for each of these...
+		 */
 		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init1, sizeof(pin_init1),
 				     PHILUSB_OUTBOUND);
@@ -1029,13 +1035,13 @@ mem_failure_switch:
 		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
 				     PHILUSB_OUTBOUND);
 		/* if we don't issue the correct number of receives
-		   (PHILUSB_INBOUND) for each outbound then the first
-		   few ir pulses will be interpreted by the
-		   usb_async_callback routine ah - we should ensure we
-		   have the right amount OR less - as the
-		   usb_remote_recv routine will handle the control
-		   packets OK - they start with 0x9f - but the async
-		   callback doesnt handle ir pulse packets */
+		 * (PHILUSB_INBOUND) for each outbound, then the first few ir
+		 * pulses will be interpreted by the usb_async_callback routine
+		 * - we should ensure we have the right amount OR less - as the
+		 * mceusb_dev_recv routine will handle the control packets OK -
+		 * they start with 0x9f - but the async callback doesn't handle
+		 * ir pulse packets
+		 */
 		request_packet_async(ir, ep_in, NULL, maxp, 0);
 	} else {
 		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);

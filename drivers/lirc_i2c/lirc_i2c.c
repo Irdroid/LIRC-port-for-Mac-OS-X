@@ -1,7 +1,15 @@
-/*      $Id: lirc_i2c.c,v 1.57 2009/01/28 20:37:04 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.58 2009/01/30 19:39:26 lirc Exp $      */
 
 /*
- * i2c IR lirc driver for Hauppauge and Pixelview cards - new 2.3.x i2c stack
+ * lirc_i2c.c
+ *
+ * i2c IR driver for the onboard IR port on many TV tuner cards, including:
+ *  -Flavors of the Hauppauge PVR-150/250/350
+ *  -Hauppauge HVR-1300
+ *  -PixelView (BT878P+W/FM)
+ *  -KNC ONE TV Station/Anubis Typhoon TView Tuner
+ *  -Asus TV-Box and Creative/VisionTek BreakOut-Box
+ *  -Leadtek Winfast PVR2000
  *
  * Copyright (c) 2000 Gerd Knorr <kraxel@goldbach.in-berlin.de>
  * modified for PixelView (BT878P+W/FM) by
@@ -66,13 +74,9 @@ struct IR {
 	unsigned char flag;
 };
 
-/* ----------------------------------------------------------------------- */
-
 #define DEVICE_NAME "lirc_i2c"
 
-/* ----------------------------------------------------------------------- */
-/* insmod parameters						       */
-
+/* module parameters */
 static int debug;	/* debug output */
 static int minor = -1;	/* minor number */
 
@@ -82,8 +86,6 @@ static int minor = -1;	/* minor number */
 			printk(KERN_DEBUG DEVICE_NAME ": " fmt,		\
 			       ## args);				\
 	} while (0)
-
-/* ----------------------------------------------------------------------- */
 
 static int reverse(int data, int bits)
 {
@@ -306,9 +308,11 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer *buf)
 		return -ENODATA;
 	}
 
-	/* it seems that 0xFE indicates that a button is still held
-	   down, while 0xFF indicates that no button is held
-	   down. 0xFE sequences are sometimes interrupted by 0xFF */
+	/*
+	 * it seems that 0xFE indicates that a button is still held
+	 * down, while 0xFF indicates that no button is held
+	 * down. 0xFE sequences are sometimes interrupted by 0xFF
+	 */
 
 	dprintk("key %02x\n", key);
 
@@ -358,8 +362,6 @@ static struct lirc_driver lirc_template = {
 	.dev		= NULL,
 	.owner		= THIS_MODULE,
 };
-
-/* ----------------------------------------------------------------------- */
 
 static int ir_attach(struct i2c_adapter *adap, int addr,
 		      unsigned short flags, int kind);
@@ -430,9 +432,10 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 #else
 		if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
 #endif
-			/* The PVR150 IR receiver uses the same protocol as
+			/* 
 			 * other Hauppauge cards, but the data flow is
-			 * different, so we need to deal with it by its own. */
+			 * different, so we need to deal with it by its own.
+			 */
 			strlcpy(ir->c.name, "Hauppauge PVR150", I2C_NAME_SIZE);
 		} else /* I2C_HW_B_CX2388x */
 			strlcpy(ir->c.name, "Hauppauge HVR1300", I2C_NAME_SIZE);
@@ -519,7 +522,8 @@ static int ir_detach(struct i2c_client *client)
 
 static int ir_probe(struct i2c_adapter *adap)
 {
-	/* The external IR receiver is at i2c address 0x34 (0x35 for
+	/*
+	 * The external IR receiver is at i2c address 0x34 (0x35 for
 	 * reads).  Future Hauppauge cards will have an internal
 	 * receiver at 0x30 (0x31 for reads).  In theory, both can be
 	 * fitted, and Hauppauge suggest an external overrides an
@@ -528,7 +532,8 @@ static int ir_probe(struct i2c_adapter *adap)
 	 * That's why we probe 0x1a (~0x34) first. CB
 	 *
 	 * The i2c address for the Hauppauge PVR-150 card is 0xe2,
-	 * so we need to probe 0x71 as well. */
+	 * so we need to probe 0x71 as well.
+	 */
 
 	static const int probe[] = {
 		0x1a, /* Hauppauge IR external */
@@ -595,13 +600,14 @@ static int ir_probe(struct i2c_adapter *adap)
 
 	/* Asus TV-Box and Creative/VisionTek BreakOut-Box (PCF8574) */
 	else if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_RIVA)) {
-		/* addresses to probe;
-		   leave 0x24 and 0x25 because SAA7113H possibly uses it
-		   0x21 and 0x22 possibly used by SAA7108E
-		   Asus:      0x21 is a correct address (channel 1 of PCF8574)
-		   Creative:  0x23 is a correct address (channel 3 of PCF8574)
-		   VisionTek: 0x23 is a correct address (channel 3 of PCF8574)
-		*/
+		/*
+		 * addresses to probe;
+		 * leave 0x24 and 0x25 because SAA7113H possibly uses it
+		 * 0x21 and 0x22 possibly used by SAA7108E
+		 * Asus:      0x21 is a correct address (channel 1 of PCF8574)
+		 * Creative:  0x23 is a correct address (channel 3 of PCF8574)
+		 * VisionTek: 0x23 is a correct address (channel 3 of PCF8574)
+		 */
 		static const int pcf_probe[] = { 0x20, 0x21, 0x22, 0x23,
 						 0x24, 0x25, 0x26, 0x27, -1 };
 		int ret1, ret2, ret3, ret4;

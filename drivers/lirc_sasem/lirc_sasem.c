@@ -1,6 +1,6 @@
-/*      $Id: lirc_sasem.c,v 1.33 2009/01/28 20:37:04 lirc Exp $      */
-
-/* lirc_sasem.c - USB remote support for LIRC
+/*      $Id: lirc_sasem.c,v 1.34 2009/01/30 19:39:27 lirc Exp $      */
+/*
+ * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
  *
  * Copyright (C) 2004-2005 Oliver Stabel <oliver.stabel@gmx.de>
@@ -75,10 +75,7 @@
 
 #define IOCTL_LCD_CONTRAST 1
 
-/* ------------------------------------------------------------
- *		     P R O T O T Y P E S
- * ------------------------------------------------------------
- */
+/*** P R O T O T Y P E S ***/
 
 /* USB Callback prototypes */
 #ifdef KERNEL_2_5
@@ -116,10 +113,7 @@ static void ir_close(void *data);
 static int __init sasem_init(void);
 static void __exit sasem_exit(void);
 
-/* ------------------------------------------------------------
- *		     G L O B A L S
- * ------------------------------------------------------------
- */
+/*** G L O B A L S ***/
 
 struct sasem_context {
 
@@ -213,10 +207,7 @@ extern devfs_handle_t usb_devfs_handle;
 
 #endif
 
-/* ------------------------------------------------------------
- *		     M O D U L E   C O D E
- * ------------------------------------------------------------
- */
+/*** M O D U L E   C O D E ***/
 
 MODULE_AUTHOR(MOD_AUTHOR);
 MODULE_DESCRIPTION(MOD_DESC);
@@ -669,8 +660,10 @@ static void incoming_packet(struct sasem_context *context,
 	printk(KERN_INFO "\n");
 #endif
 
-	/* Lirc could deal with the repeat code, but we really need to block it
-	 * if it arrives too late.  Otherwise we could repeat the wrong code. */
+	/*
+	 * Lirc could deal with the repeat code, but we really need to block it
+	 * if it arrives too late.  Otherwise we could repeat the wrong code.
+	 */
 
 	/* get the time since the last button press */
 	do_gettimeofday(&tv);
@@ -678,13 +671,17 @@ static void incoming_packet(struct sasem_context *context,
 	     (tv.tv_usec - context->presstime.tv_usec) / 1000;
 
 	if (memcmp(buf, "\x08\0\0\0\0\0\0\0", 8) == 0) {
-		/* the repeat code is being sent, so we copy
-		 * the old code to LIRC */
+		/*
+		 * the repeat code is being sent, so we copy
+		 * the old code to LIRC
+		 */
 
-		/* NOTE: Only if the last code was less than 250ms ago
+		/*
+		 * NOTE: Only if the last code was less than 250ms ago
 		 * - no one should be able to push another (undetected) button
 		 *   in that time and then get a false repeat of the previous
-		 *   press but it is long enough for a genuine repeat */
+		 *   press but it is long enough for a genuine repeat
+		 */
 		if ((ms < 250) && (context->codesaved != 0)) {
 			memcpy(buf, &context->lastcode, 8);
 			context->presstime.tv_sec = tv.tv_sec;
@@ -693,8 +690,10 @@ static void incoming_packet(struct sasem_context *context,
 	} else {
 		/* save the current valid code for repeats */
 		memcpy(&context->lastcode, buf, 8);
-		/* set flag to signal a valid code was save;
-		 * just for safety reasons */
+		/*
+		 * set flag to signal a valid code was save;
+		 * just for safety reasons
+		 */
 		context->codesaved = 1;
 		context->presstime.tv_sec = tv.tv_sec;
 		context->presstime.tv_usec = tv.tv_usec;
@@ -806,8 +805,8 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 
 	/*
 	 * Scan the endpoint list and set:
-	 * 	first input endpoint = IR endpoint
-	 * 	first output endpoint = VFD endpoint
+	 *	first input endpoint = IR endpoint
+	 *	first output endpoint = VFD endpoint
 	 */
 
 	ir_ep_found = 0;
@@ -854,7 +853,6 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		goto exit;
 	}
 
-	/* Warning if no VFD endpoint */
 	if (!vfd_ep_found)
 		info("%s: no valid output (VFD) endpoint found.", __func__);
 

@@ -1,7 +1,8 @@
 /*
- *   lirc_imon.c:  LIRC driver/VFD driver for Ahanix/Soundgraph iMON IR/VFD
+ *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
+ *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.48 2009/01/29 07:39:55 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.49 2009/01/30 19:39:27 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -18,7 +19,6 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
  */
 #include <linux/version.h>
 
@@ -64,10 +64,7 @@
 
 #define BIT_DURATION	250	/* each bit received is 250us */
 
-/* ------------------------------------------------------------
- *		     P R O T O T Y P E S
- * ------------------------------------------------------------
- */
+/*** P R O T O T Y P E S ***/
 
 /* USB Callback prototypes */
 #ifdef KERNEL_2_5
@@ -95,12 +92,14 @@ static int imon_suspend(struct usb_interface *intf, pm_message_t message);
 /* Display file_operations function prototypes */
 static int display_open(struct inode *inode, struct file *file);
 static int display_close(struct inode *inode, struct file *file);
+
+/* VFD write operation */
 static ssize_t vfd_write(struct file *file, const char *buf,
-				size_t n_bytes, loff_t *pos);
+			 size_t n_bytes, loff_t *pos);
 
 /* LCD file_operations override function prototypes */
 static ssize_t lcd_write(struct file *file, const char *buf,
-				size_t n_bytes, loff_t *pos);
+			 size_t n_bytes, loff_t *pos);
 
 /* LIRC driver function prototypes */
 static int ir_open(void *data);
@@ -110,10 +109,7 @@ static void ir_close(void *data);
 static int __init imon_init(void);
 static void __exit imon_exit(void);
 
-/* ------------------------------------------------------------
- *		     G L O B A L S
- * ------------------------------------------------------------
- */
+/*** G L O B A L S ***/
 
 struct imon_context {
 	struct usb_device *usbdev;
@@ -155,7 +151,7 @@ struct imon_context {
 	} tx;
 };
 
-/* display file operations */
+/* display file operations. Nb: lcd_write will be subbed in as needed later */
 static struct file_operations display_fops = {
 	.owner		= THIS_MODULE,
 	.open		= &display_open,
@@ -260,7 +256,7 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{}
 };
 
-/* Some iMON devices have no lcd/vfd */
+/* Some iMON devices have no lcd/vfd, don't set one up */
 static struct usb_device_id ir_only_list[] = {
 	{ USB_DEVICE(0x0aa8, 0x8001) },
 	{ USB_DEVICE(0x04e8, 0xff30) },
@@ -309,6 +305,7 @@ static int display_type;
 #if !defined(KERNEL_2_5)
 
 #define MAX_DEVICES	4	/* In case there's more than one iMON device */
+
 static struct imon_context *minor_table[MAX_DEVICES];
 
 /* the global usb devfs handle */
@@ -316,10 +313,7 @@ extern devfs_handle_t usb_devfs_handle;
 
 #endif
 
-/* ------------------------------------------------------------
- *		     M O D U L E   C O D E
- * ------------------------------------------------------------
- */
+/***  M O D U L E   C O D E ***/
 
 MODULE_AUTHOR(MOD_AUTHOR);
 MODULE_DESCRIPTION(MOD_DESC);
@@ -455,9 +449,11 @@ static int display_close(struct inode *inode, struct file *file)
 		MOD_DEC_USE_COUNT;
 		info("display port closed");
 		if (!context->dev_present && !context->ir_isopen) {
-			/* Device disconnected before close and IR port is not
+			/*
+			 * Device disconnected before close and IR port is not
 			 * open. If IR port is open, context will be deleted by
-			 * ir_close. */
+			 * ir_close.
+			 */
 			mutex_unlock(&context->lock);
 			delete_context(context);
 			return retval;
@@ -549,11 +545,10 @@ static int send_packet(struct imon_context *context)
 /**
  * Sends an associate packet to the iMON 2.4G.
  *
- * This might not be such a good idea, since it has an id
- * collition with some versions of the "IR & VFD" combo.
- * The only way to determine if it is a RF version is to look
- * at the product description string. (Which we currently do
- * not fetch).
+ * This might not be such a good idea, since it has an id collision with
+ * some versions of the "IR & VFD" combo. The only way to determine if it
+ * is an RF version is to look at the product description string. (Which
+ * we currently do not fetch).
  */
 static int send_associate_24g(struct imon_context *context)
 {
@@ -892,9 +887,10 @@ static void ir_close(void *data)
 	info("IR port closed");
 
 	if (!context->dev_present) {
-		/* Device disconnected while IR port was
-		 * still open. Driver was not deregistered
-		 * at disconnect time, so do it now. */
+		/*
+		 * Device disconnected while IR port was still open. Driver
+		 * was not deregistered at disconnect time, so do it now.
+		 */
 		deregister_from_lirc(context);
 
 		if (!context->display_isopen) {
@@ -1033,7 +1029,8 @@ static void incoming_packet(struct imon_context *context,
 		return;
 	}
 
-	/* Translate received data to pulse and space lengths.
+	/*
+	 * Translate received data to pulse and space lengths.
 	 * Received data is active low, i.e. pulses are 0 and
 	 * spaces are 1.
 	 *
@@ -1043,7 +1040,8 @@ static void incoming_packet(struct imon_context *context,
 	 * initial space to LIRC at the start of a new sequence
 	 * if the previous bit was a pulse.
 	 *
-	 * I've decided to adopt his algorithm. */
+	 * I've decided to adopt his algorithm.
+	 */
 
 	if (chunk_num == 1 && context->rx.initial_space) {
 		/* LIRC requires a leading space */
@@ -1290,8 +1288,6 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			info("display_proto_6p: %d", display_proto_6p);
 	}
 
-	/* Allocate memory */
-
 	alloc_status = 0;
 
 	context = kzalloc(sizeof(struct imon_context), GFP_KERNEL);
@@ -1487,8 +1483,10 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 	info("%s: iMON device disconnected", __func__);
 
 #ifdef KERNEL_2_5
-	/* sysfs_remove_group is safe to call even if sysfs_create_group
-	 * hasn't been called */
+	/*
+	 * sysfs_remove_group is safe to call even if sysfs_create_group
+	 * hasn't been called
+	 */
 	sysfs_remove_group(&interface->dev.kobj,
 			   &imon_attribute_group);
 	usb_set_intfdata(interface, NULL);

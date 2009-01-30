@@ -1,4 +1,5 @@
-/* lirc_igorplugusb - USB remote support for LIRC
+/*
+ * lirc_igorplugusb - USB remote support for LIRC
  *
  * Supports the standard homebrew IgorPlugUSB receiver with Igor's firmware.
  * See http://www.cesko.host.sk/IgorPlugUSB/IgorPlug-USB%20(AVR)_eng.htm
@@ -21,7 +22,6 @@
  *      "USB StreamZap remote driver" (LIRC)
  *   Artur Lipowski <alipowski@kki.net.pl>'s 2002
  *      "lirc_dev" and "lirc_gpio" LIRC modules
- *
  */
 
 /*
@@ -38,7 +38,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
 #include <linux/version.h>
@@ -95,11 +94,12 @@ static int debug;
 /* Igor's firmware cannot record bursts longer than 36. */
 #define DEVICE_BUFLEN	   36
 
-/** Header at the beginning of the device's buffer:
-	unsigned char data_length
-	unsigned char data_start    (!=0 means ring-buffer overrun)
-	unsigned char counter       (incremented by each burst)
-**/
+/*
+ * Header at the beginning of the device's buffer:
+ *	unsigned char data_length
+ *	unsigned char data_start    (!=0 means ring-buffer overrun)
+ *	unsigned char counter       (incremented by each burst)
+ */
 #define DEVICE_HEADERLEN	3
 
 /* This is for the gap */
@@ -116,8 +116,7 @@ static int sample_rate = SAMPLE_RATE;
 /**
  * Params: none
  * Answer: empty
- *
-**/
+ */
 
 #define GET_INFRACODE	   2
 /**
@@ -125,8 +124,7 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: offset to begin reading infra buffer
  *
  * Answer: infra data
- *
-**/
+ */
 
 #define SET_DATAPORT_DIRECTION  3
 /**
@@ -134,16 +132,14 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: (byte) 1 bit for each data port pin (0=in, 1=out)
  *
  * Answer: empty
- *
-**/
+ */
 
 #define GET_DATAPORT_DIRECTION  4
 /**
  * Params: none
  *
  * Answer: (byte) 1 bit for each data port pin (0=in, 1=out)
- *
-**/
+ */
 
 #define SET_OUT_DATAPORT	5
 /**
@@ -151,24 +147,21 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: byte to write to output data port
  *
  * Answer: empty
- *
-**/
+ */
 
 #define GET_OUT_DATAPORT	6
 /**
  * Params: none
  *
  * Answer: least significant 3 bits read from output data port
- *
-**/
+ */
 
 #define GET_IN_DATAPORT	 7
 /**
  * Params: none
  *
  * Answer: least significant 3 bits read from input data port
- *
-**/
+ */
 
 #define READ_EEPROM	     8
 /**
@@ -176,8 +169,7 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: offset to begin reading EEPROM
  *
  * Answer: EEPROM bytes
- *
-**/
+ */
 
 #define WRITE_EEPROM	    9
 /**
@@ -186,8 +178,7 @@ static int sample_rate = SAMPLE_RATE;
  *   wIndex: byte to write
  *
  * Answer: empty
- *
-**/
+ */
 
 #define SEND_RS232	      10
 /**
@@ -195,16 +186,14 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: byte to send
  *
  * Answer: empty
- *
-**/
+ */
 
 #define RECV_RS232	      11
 /**
  * Params: none
  *
  * Answer: byte received
- *
-**/
+ */
 
 #define SET_RS232_BAUD	  12
 /**
@@ -212,16 +201,14 @@ static int sample_rate = SAMPLE_RATE;
  *   wValue: byte to write to UART bit rate register (UBRR)
  *
  * Answer: empty
- *
-**/
+ */
 
 #define GET_RS232_BAUD	  13
 /**
  * Params: none
  *
  * Answer: byte read from UART bit rate register (UBRR)
- *
-**/
+ */
 
 
 /* data structure for each usb remote */
@@ -287,7 +274,7 @@ static void set_use_dec(void *data)
  * return 0 if data was added to the buffer and
  * -ENODATA if none was available. This should add some number of bits
  * evenly divisible by code_length to the buffer
-**/
+ */
 static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 {
 	int ret;
@@ -501,7 +488,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 mem_failure_switch:
 
-	/* free allocated memory in case of failure */
 	switch (mem_failure) {
 	case 9:
 #if defined(KERNEL_2_5)

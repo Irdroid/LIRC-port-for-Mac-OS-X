@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.17 2009/01/19 17:12:04 lirc Exp $      */
+/*      $Id: lirc.h,v 5.18 2009/01/30 19:39:26 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -16,10 +16,7 @@
 
 typedef int lirc_t;
 
-/*
- * lirc compatible hardware features
- */
-
+/*** lirc compatible hardware features ***/
 
 #define LIRC_MODE2SEND(x) (x)
 #define LIRC_SEND2MODE(x) (x)
@@ -68,9 +65,7 @@ typedef int lirc_t;
 
 #define LIRC_CAN_NOTIFY_DECODE            0x01000000
 
-/*
- * IOCTL commands for lirc driver
- */
+/*** IOCTL commands for lirc driver ***/
 
 #define LIRC_GET_FEATURES              _IOR('i', 0x00000000, unsigned long)
 
@@ -94,10 +89,12 @@ typedef int lirc_t;
 #define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, unsigned int)
 #define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, unsigned int)
 
-/* to set a range use
-   LIRC_SET_REC_DUTY_CYCLE_RANGE/LIRC_SET_REC_CARRIER_RANGE with the
-   lower bound first and later
-   LIRC_SET_REC_DUTY_CYCLE/LIRC_SET_REC_CARRIER with the upper bound */
+/*
+ * to set a range use
+ * LIRC_SET_REC_DUTY_CYCLE_RANGE/LIRC_SET_REC_CARRIER_RANGE with the
+ * lower bound first and later
+ * LIRC_SET_REC_DUTY_CYCLE/LIRC_SET_REC_CARRIER with the upper bound
+ */
 
 #define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, unsigned int)
 #define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, unsigned int)

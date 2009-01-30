@@ -1,8 +1,6 @@
-/*      $Id: lirc_serial.c,v 5.95 2009/01/28 20:37:04 lirc Exp $      */
-
-/****************************************************************************
- ** lirc_serial.c ***********************************************************
- ****************************************************************************
+/*      $Id: lirc_serial.c,v 5.96 2009/01/30 19:39:27 lirc Exp $      */
+/*
+ * lirc_serial.c
  *
  * lirc_serial - Device driver that records pulse- and pause-lengths
  *	       (space-lengths) between DDCD event on a serial port.
@@ -28,27 +26,28 @@
  *
  */
 
-/* Steve's changes to improve transmission fidelity:
-     - for systems with the rdtsc instruction and the clock counter, a
-       send_pule that times the pulses directly using the counter.
-       This means that the LIRC_SERIAL_TRANSMITTER_LATENCY fudge is
-       not needed. Measurement shows very stable waveform, even where
-       PCI activity slows the access to the UART, which trips up other
-       versions.
-     - For other system, non-integer-microsecond pulse/space lengths,
-       done using fixed point binary. So, much more accurate carrier
-       frequency.
-     - fine tuned transmitter latency, taking advantage of fractional
-       microseconds in previous change
-     - Fixed bug in the way transmitter latency was accounted for by
-       tuning the pulse lengths down - the send_pulse routine ignored
-       this overhead as it timed the overall pulse length - so the
-       pulse frequency was right but overall pulse length was too
-       long. Fixed by accounting for latency on each pulse/space
-       iteration.
-
-   Steve Davies <steve@daviesfam.org>  July 2001
-*/
+/*
+ * Steve's changes to improve transmission fidelity:
+ *   - for systems with the rdtsc instruction and the clock counter, a
+ *     send_pule that times the pulses directly using the counter.
+ *     This means that the LIRC_SERIAL_TRANSMITTER_LATENCY fudge is
+ *     not needed. Measurement shows very stable waveform, even where
+ *     PCI activity slows the access to the UART, which trips up other
+ *     versions.
+ *   - For other system, non-integer-microsecond pulse/space lengths,
+ *     done using fixed point binary. So, much more accurate carrier
+ *     frequency.
+ *   - fine tuned transmitter latency, taking advantage of fractional
+ *     microseconds in previous change
+ *   - Fixed bug in the way transmitter latency was accounted for by
+ *     tuning the pulse lengths down - the send_pulse routine ignored
+ *     this overhead as it timed the overall pulse length - so the
+ *     pulse frequency was right but overall pulse length was too
+ *     long. Fixed by accounting for latency on each pulse/space
+ *     iteration.
+ *
+ * Steve Davies <steve@daviesfam.org>  July 2001
+ */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -142,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.95 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.96 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -301,11 +300,13 @@ static struct lirc_serial hardware[] = {
 	},
 
 #if defined(LIRC_SERIAL_NSLU2)
-	/* Modified Linksys Network Storage Link USB 2.0 (NSLU2):
-	   We receive on CTS of the 2nd serial port (R142,LHS), we
-	   transmit with a IR diode between GPIO[1] (green status LED),
-	   and ground (Matthias Goebl <matthias.goebl@goebl.net>).
-	   See also http://www.nslu2-linux.org for this device */
+	/*
+	 * Modified Linksys Network Storage Link USB 2.0 (NSLU2):
+	 * We receive on CTS of the 2nd serial port (R142,LHS), we
+	 * transmit with a IR diode between GPIO[1] (green status LED),
+	 * and ground (Matthias Goebl <matthias.goebl@goebl.net>).
+	 * See also http://www.nslu2-linux.org for this device
+	 */
 	{
 		UART_MSR_CTS,
 		UART_MSR_DCTS,
@@ -327,12 +328,14 @@ static struct lirc_serial hardware[] = {
 
 #define RS_ISR_PASS_LIMIT 256
 
-/* A long pulse code from a remote might take upto 300 bytes.  The
-   daemon should read the bytes as soon as they are generated, so take
-   the number of keys you think you can push before the daemon runs
-   and multiply by 300.  The driver will warn you if you overrun this
-   buffer.  If you have a slow computer or non-busmastering IDE disks,
-   maybe you will need to increase this.  */
+/*
+ * A long pulse code from a remote might take up to 300 bytes.  The
+ * daemon should read the bytes as soon as they are generated, so take
+ * the number of keys you think you can push before the daemon runs
+ * and multiply by 300.  The driver will warn you if you overrun this
+ * buffer.  If you have a slow computer or non-busmastering IDE disks,
+ * maybe you will need to increase this.
+ */
 
 /* This MUST be a power of two!  It has to be larger than 1 as well. */
 
@@ -368,18 +371,18 @@ static unsigned long space_width;
 
 #if defined(__i386__)
 /*
-  From:
-  Linux I/O port programming mini-HOWTO
-  Author: Riku Saikkonen <Riku.Saikkonen@hut.fi>
-  v, 28 December 1997
-
-  [...]
-  Actually, a port I/O instruction on most ports in the 0-0x3ff range
-  takes almost exactly 1 microsecond, so if you're, for example, using
-  the parallel port directly, just do additional inb()s from that port
-  to delay.
-  [...]
-*/
+ * From:
+ * Linux I/O port programming mini-HOWTO
+ * Author: Riku Saikkonen <Riku.Saikkonen@hut.fi>
+ * v, 28 December 1997
+ *
+ * [...]
+ * Actually, a port I/O instruction on most ports in the 0-0x3ff range
+ * takes almost exactly 1 microsecond, so if you're, for example, using
+ * the parallel port directly, just do additional inb()s from that port
+ * to delay.
+ * [...]
+ */
 /* transmitter latency 1.5625us 0x1.90 - this figure arrived at from
  * comment above plus trimming to match actual measured frequency.
  * This will be sensitive to cpu speed, though hopefully most of the 1.5us
@@ -387,9 +390,10 @@ static unsigned long space_width;
  * 1.13GHz Athlon system - Steve
  */
 
-/* changed from 400 to 450 as this works better on slower machines;
-   faster machines will use the rdtsc code anyway */
-
+/*
+ * changed from 400 to 450 as this works better on slower machines;
+ * faster machines will use the rdtsc code anyway
+ */
 #define LIRC_SERIAL_TRANSMITTER_LATENCY 450
 
 #else
@@ -427,8 +431,10 @@ static void soutp(int offset, int value)
 static void on(void)
 {
 #if defined(LIRC_SERIAL_NSLU2)
-	/* On NSLU2, we put the transmit diode between the output of the green
-	   status LED and ground */
+	/*
+	 * On NSLU2, we put the transmit diode between the output of the green
+	 * status LED and ground
+	 */
 	if (type == LIRC_NSLU2) {
 		gpio_line_set(NSLU2_LED_GRN_GPIO, IXP4XX_GPIO_LOW);
 		return;
@@ -470,10 +476,13 @@ static void safe_udelay(unsigned long usecs)
 }
 
 #ifdef USE_RDTSC
-/* This is an overflow/precision juggle, complicated in that we can't
-   do long long divide in the kernel */
+/*
+ * This is an overflow/precision juggle, complicated in that we can't
+ * do long long divide in the kernel
+ */
 
-/* When we use the rdtsc instruction to measure clocks, we keep the
+/*
+ * When we use the rdtsc instruction to measure clocks, we keep the
  * pulse and space widths as clock cycles.  As this is CPU speed
  * dependent, the widths must be calculated in init_port and ioctl
  * time
@@ -498,13 +507,14 @@ static int init_timing_params(unsigned int new_duty_cycle,
 	work *= 4295;  /* 4295 = 2^32 / 1e6 */
 	conv_us_to_clocks = (work>>32);
 
-	/* Carrier period in clocks, approach good up to 32GHz clock,
-	   gets carrier frequency within 8Hz */
+	/*
+	 * Carrier period in clocks, approach good up to 32GHz clock,
+	 * gets carrier frequency within 8Hz
+	 */
 	period = loops_per_sec>>3;
 	period /= (freq>>3);
 
 	/* Derive pulse and space from the period */
-
 	pulse_width = period*duty_cycle/100;
 	space_width = period - pulse_width;
 	dprintk("in init_timing_params, freq=%d, duty_cycle=%d, "
@@ -518,8 +528,10 @@ static int init_timing_params(unsigned int new_duty_cycle,
 static int init_timing_params(unsigned int new_duty_cycle,
 		unsigned int new_freq)
 {
-/* period, pulse/space width are kept with 8 binary places -
- * IE multiplied by 256. */
+/*
+ * period, pulse/space width are kept with 8 binary places -
+ * IE multiplied by 256.
+ */
 	if (256*1000000L/new_freq*new_duty_cycle/100 <=
 	    LIRC_SERIAL_TRANSMITTER_LATENCY)
 		return -EINVAL;
@@ -579,7 +591,8 @@ static long send_pulse_irdeo(unsigned long length)
 #ifdef USE_RDTSC
 /* Version that uses Pentium rdtsc instruction to measure clocks */
 
-/* This version does sub-microsecond timing using rdtsc instruction,
+/*
+ * This version does sub-microsecond timing using rdtsc instruction,
  * and does away with the fudged LIRC_SERIAL_TRANSMITTER_LATENCY
  * Implicitly i586 architecture...  - Steve
  */
@@ -619,9 +632,11 @@ static long send_pulse_homebrew_softcarrier(unsigned long length)
 #else /* ! USE_RDTSC */
 /* Version using udelay() */
 
-/* here we use fixed point arithmetic, with 8
-   fractional bits.  that gets us within 0.1% or so of the right average
-   frequency, albeit with some jitter in pulse length - Steve */
+/*
+ * here we use fixed point arithmetic, with 8
+ * fractional bits.  that gets us within 0.1% or so of the right average
+ * frequency, albeit with some jitter in pulse length - Steve
+ */
 
 /* To match 8 fractional bits used for pulse/space length */
 
@@ -641,8 +656,10 @@ static long send_pulse_homebrew_softcarrier(unsigned long length)
 			target += pulse_width;
 		}
 		d = (target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
-		/* Note - we've checked in ioctl that the pulse/space
-		   widths are big enough so that d is > 0 */
+		/*
+		 * Note - we've checked in ioctl that the pulse/space
+		 * widths are big enough so that d is > 0
+		 */
 		udelay(d);
 		actual += (d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
 		flag = !flag;
@@ -767,26 +784,27 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			/* New mode, written by Trent Piepho
 			   <xyzzy@u.washington.edu>. */
 
-			/* The old format was not very portable.
-			   We now use the type lirc_t to pass pulses
-			   and spaces to user space.
+			/*
+			 * The old format was not very portable.
+			 * We now use an int to pass pulses
+			 * and spaces to user space.
+			 *
+			 * If PULSE_BIT is set a pulse has been
+			 * received, otherwise a space has been
+			 * received.  The driver needs to know if your
+			 * receiver is active high or active low, or
+			 * the space/pulse sense could be
+			 * inverted. The bits denoted by PULSE_MASK are
+			 * the length in microseconds. Lengths greater
+			 * than or equal to 16 seconds are clamped to
+			 * PULSE_MASK.  All other bits are unused.
+			 * This is a much simpler interface for user
+			 * programs, as well as eliminating "out of
+			 * phase" errors with space/pulse
+			 * autodetection.
+			 */
 
-			   If PULSE_BIT is set a pulse has been
-			   received, otherwise a space has been
-			   received.  The driver needs to know if your
-			   receiver is active high or active low, or
-			   the space/pulse sense could be
-			   inverted. The bits denoted by PULSE_MASK are
-			   the length in microseconds. Lengths greater
-			   than or equal to 16 seconds are clamped to
-			   PULSE_MASK.  All other bits are unused.
-			   This is a much simpler interface for user
-			   programs, as well as eliminating "out of
-			   phase" errors with space/pulse
-			   autodetection. */
-
-			/* calculate time since last interrupt in
-			   microseconds */
+			/* calc time since last interrupt in microseconds */
 			dcd = (status & hardware[type].signal_pin) ? 1:0;
 
 			if (dcd == last_dcd) {
@@ -821,8 +839,10 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 					       dcd, sense,
 					       tv.tv_sec, lasttv.tv_sec,
 					       tv.tv_usec, lasttv.tv_usec);
-					/* detecting pulse while this
-					   MUST be a space! */
+					/*
+					 * detecting pulse while this
+					 * MUST be a space!
+					 */
 					sense = sense ? 0:1;
 				}
 			} else
@@ -907,9 +927,11 @@ static int init_port(void)
 
 	/* Reserve io region. */
 #if defined(LIRC_ALLOW_MMAPPED_IO)
-	/* Future MMAP-Developers: Attention!
-	   For memory mapped I/O you *might* need to use ioremap() first,
-	   for the NSLU2 it's done in boot code. */
+	/*
+	 * Future MMAP-Developers: Attention!
+	 * For memory mapped I/O you *might* need to use ioremap() first,
+	 * for the NSLU2 it's done in boot code.
+	 */
 	if (((iommap != 0)
 	     && (request_mem_region(iommap, 8<<ioshift,
 				    LIRC_DRIVER_NAME) == NULL))
@@ -941,8 +963,10 @@ static int init_port(void)
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule_timeout(HZ/2);
 
-		/* probe 9 times every 0.04s, collect "votes" for
-		   active high/low */
+		/*
+		 * probe 9 times every 0.04s, collect "votes" for
+		 * active high/low
+		 */
 		nlow = 0;
 		nhigh = 0;
 		for (i = 0; i < 9; i++) {
@@ -1355,9 +1379,11 @@ module_param(iommap, bool, 0444);
 MODULE_PARM_DESC(iommap, "physical base for memory mapped I/O"
 		" (0 = no memory mapped io)");
 
-/* some architectures (e.g. intel xscale) align the 8bit serial registers
-   on 32bit word boundaries.
-   See linux-kernel/drivers/serial/8250.c serial_in()/out() */
+/*
+ * some architectures (e.g. intel xscale) align the 8bit serial registers
+ * on 32bit word boundaries.
+ * See linux-kernel/serial/8250.c serial_in()/out()
+ */
 module_param(ioshift, int, 0444);
 MODULE_PARM_DESC(ioshift, "shift I/O register offset (0 = no shift)");
 #endif

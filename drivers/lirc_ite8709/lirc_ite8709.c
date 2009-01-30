@@ -44,20 +44,20 @@
 #define BUF_CHUNK_SIZE	sizeof(lirc_t)
 #define BUF_SIZE	(128*BUF_CHUNK_SIZE)
 
-/*******************************************************************************
-* The ITE8709 device seems to be the combination of IT8512 superIO chip and    *
-* a specific firmware running on the IT8512's embedded micro-controller.       *
-* In addition of the embedded micro-controller, the IT8512 chip contains a     *
-* CIR module and several other modules. A few modules are directly accessible  *
-* by the host CPU, but most of them are only accessible by the                 *
-* micro-controller. The CIR module is only accessible by the micro-controller. *
-* The battery-backed SRAM module is accessible by the host CPU and the         *
-* micro-controller. So one of the MC's firmware role is to act as a bridge     *
-* between the host CPU and the CIR module. The firmware implements a kind of   *
-* communication protocol using the SRAM module as a shared memory. The IT8512  *
-* specification is publicly available on ITE's web site, but the communication *
-* protocol is not, so it was reverse-engineered.                               *
-*******************************************************************************/
+/*
+ * The ITE8709 device seems to be the combination of IT8512 superIO chip and
+ * a specific firmware running on the IT8512's embedded micro-controller.
+ * In addition of the embedded micro-controller, the IT8512 chip contains a
+ * CIR module and several other modules. A few modules are directly accessible
+ * by the host CPU, but most of them are only accessible by the
+ * micro-controller. The CIR module is only accessible by the micro-controller.
+ * The battery-backed SRAM module is accessible by the host CPU and the
+ * micro-controller. So one of the MC's firmware role is to act as a bridge
+ * between the host CPU and the CIR module. The firmware implements a kind of
+ * communication protocol using the SRAM module as a shared memory. The IT8512
+ * specification is publicly available on ITE's web site, but the communication
+ * protocol is not, so it was reverse-engineered.
+ */
 
 /* ITE8709 Registers addresses and values (reverse-engineered) */
 #define ITE8709_MODE		0x1a
@@ -74,8 +74,10 @@
 #define ITE8709_IIR_RFOI	0x04  /* Receiver FIFO overrun interrupt */
 #define ITE8709_RFSR_MASK	0x3f  /* FIFO byte count mask */
 
-/* IT8512 CIR-module registers addresses and values (from IT8512 E/F */
-/* specification v0.4.1)                                             */
+/*
+ * IT8512 CIR-module registers addresses and values
+ * (from IT8512 E/F specification v0.4.1)
+ */
 #define IT8512_REG_MSTCR	0x01  /* Master control register */
 #define IT8512_REG_IER		0x02  /* Interrupt enable register */
 #define IT8512_REG_CFR		0x04  /* Carrier frequency register */
@@ -147,8 +149,10 @@ static void ite8709_write(struct ite8709_device *dev, unsigned char port,
 static void ite8709_wait_device(struct ite8709_device *dev)
 {
 	int i = 0;
-	/* loop until device tells it's ready to continue */
-	/* iterations count is usually ~750 but can sometimes achieve 13000 */
+	/*
+	 * loop until device tells it's ready to continue
+	 * iterations count is usually ~750 but can sometimes achieve 13000
+	 */
 	for (i = 0; i < 15000; i++) {
 		udelay(2);
 		if (ite8709_read(dev, ITE8709_MODE) == ITE8709_MODE_READY)
@@ -277,9 +281,11 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 	struct ite8709_device *dev;
 	dev = dev_id;
 
-	/* If device is busy, we simply discard data because we are in one of */
-	/* these two cases : shutting down or rearming the device, so this    */
-	/* doesn't really matter and this avoids waiting too long in IRQ ctx  */
+	/*
+	 * If device is busy, we simply discard data because we are in one of
+	 * these two cases : shutting down or rearming the device, so this
+	 * doesn't really matter and this avoids waiting too long in IRQ ctx
+	 */
 	spin_lock(&dev->hardware_lock);
 	if (dev->device_busy) {
 		spin_unlock(&dev->hardware_lock);

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.74 2009/01/28 20:37:03 lirc Exp $
+ * $Id: lirc_dev.c,v 1.75 2009/01/30 19:39:26 lirc Exp $
  *
  */
 
@@ -160,8 +160,10 @@ static int add_to_buf(struct irctl *ir)
 		int res = -ENODATA;
 		int got_data = 0;
 
-		/* service the device as long as it is returning
-		   data */
+		/*
+		 * service the device as long as it is returning
+		 * data and we have space
+		 */
 		while ((res = ir->d.add_to_buf(ir->d.data, ir->buf)) == 0) {
 			got_data++;
 		}
@@ -185,8 +187,9 @@ static int lirc_thread(void *irctl)
 {
 	struct irctl *ir = irctl;
 
-	/* This thread doesn't need any user-level access,
-	 * so get rid of all our resources
+	/*
+	 * This thread doesn't need any user-level access, so get rid
+	 * of all our resources
 	 */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	daemonize("lirc_dev");

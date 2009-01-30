@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.38 2009/01/28 20:37:04 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.39 2009/01/30 19:39:27 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -28,7 +28,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
  */
 
 #include <linux/version.h>
@@ -57,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.38 $"
+#define DRIVER_VERSION	"$Revision: 1.39 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -76,9 +75,7 @@ static int debug;
 			       fmt "\n", ## args);		\
 	} while (0)
 
-/*
- * table of devices that work with this driver
- */
+/* table of devices that work with this driver */
 static struct usb_device_id streamzap_table [] = {
 	/* Streamzap Remote Control */
 	{ USB_DEVICE(USB_STREAMZAP_VENDOR_ID, USB_STREAMZAP_PRODUCT_ID) },
@@ -102,25 +99,26 @@ enum StreamzapDecoderState {
 	IgnorePulse
 };
 
-/* Structure to hold all of our device specific stuff */
-/* some remarks regarding locking:
-   theoretically this struct can be accessed from three threads:
-
-   - from lirc_dev through set_use_inc/set_use_dec
-
-   - from the USB layer throuh probe/disconnect/irq
-
-     Careful placement of lirc_register_driver/lirc_unregister_driver
-     calls will prevent conflicts. lirc_dev makes sure that
-     set_use_inc/set_use_dec are not being executed and will not be
-     called after lirc_unregister_driver returns.
-
-   - by the timer callback
-
-     The timer is only running when the device is connected and the
-     LIRC device is open. Making sure the timer is deleted by
-     set_use_dec will make conflicts impossible.
-*/
+/* Structure to hold all of our device specific stuff
+ *
+ * some remarks regarding locking:
+ * theoretically this struct can be accessed from three threads:
+ *
+ * - from lirc_dev through set_use_inc/set_use_dec
+ *
+ * - from the USB layer throuh probe/disconnect/irq
+ *
+ *   Careful placement of lirc_register_driver/lirc_unregister_driver
+ *   calls will prevent conflicts. lirc_dev makes sure that
+ *   set_use_inc/set_use_dec are not being executed and will not be
+ *   called after lirc_unregister_driver returns.
+ *
+ * - by the timer callback
+ *
+ *   The timer is only running when the device is connected and the
+ *   LIRC device is open. Making sure the timer is deleted by
+ *   set_use_dec will make conflicts impossible.
+ */
 struct usb_streamzap {
 
 	/* usb */
@@ -370,7 +368,7 @@ static void push_half_space(struct usb_streamzap *sz,
 	push_full_space(sz, value & STREAMZAP_SPACE_MASK);
 }
 
-/*
+/**
  * usb_streamzap_irq - IRQ handler
  *
  * This procedure is invoked on reception of data from
@@ -396,8 +394,10 @@ static void usb_streamzap_irq(struct urb *urb)
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
-		/* this urb is terminated, clean up */
-		/* sz might already be invalid at this point */
+		/*
+		 * this urb is terminated, clean up.
+		 * sz might already be invalid at this point
+		 */
 		dprintk("urb status: %d", -1, urb->status);
 		return;
 	default:
@@ -483,9 +483,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	struct usb_streamzap *sz = NULL;
 	char buf[63], name[128] = "";
 
-	/***************************************************
-	 * Allocate space for device driver specific data
-	 */
+	/* Allocate space for device driver specific data */
 	sz = kzalloc(sizeof(struct usb_streamzap), GFP_KERNEL);
 	if (sz == NULL)
 		goto error;
@@ -493,9 +491,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->udev = udev;
 	sz->interface = interface;
 
-	/***************************************************
-	 * Check to ensure endpoint information matches requirements
-	 */
+	/* Check to ensure endpoint information matches requirements */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
 	iface_host = &interface->altsetting[interface->act_altsetting];
 #else
@@ -545,9 +541,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		goto error;
 	}
 
-	/***************************************************
-	 * Allocate the USB buffer and IRQ URB
-	 */
+	/* Allocate the USB buffer and IRQ URB */
 
 	sz->buf_in_len = sz->endpoint->wMaxPacketSize;
 #ifdef KERNEL_2_5
@@ -568,9 +562,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	if (sz->urb_in == NULL)
 		goto error;
 
-	/***************************************************
-	 * Connect this device to the LIRC sub-system
-	 */
+	/* Connect this device to the LIRC sub-system */
 
 	if (lirc_buffer_init(&sz->lirc_buf, sizeof(lirc_t),
 			     STREAMZAP_BUFFER_SIZE))
@@ -581,10 +573,6 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		lirc_buffer_free(&sz->lirc_buf);
 		goto error;
 	}
-
-	/***************************************************
-	 * As required memory is allocated now populate the driver structure
-	 */
 
 	strcpy(sz->driver.name, DRIVER_NAME);
 	sz->driver.minor = -1;
@@ -612,9 +600,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	init_timer(&sz->flush_timer);
 	sz->flush_timer.function = flush_timeout;
 	sz->flush_timer.data = (unsigned long) sz;
-	/***************************************************
-	 * Complete final initialisations
-	 */
+	/* Complete final initialisations */
 
 	usb_fill_int_urb(sz->urb_in, udev,
 		usb_rcvintpipe(udev, sz->endpoint->bEndpointAddress),
@@ -658,7 +644,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 
 error:
 
-	/***************************************************
+	/*
 	 * Premise is that a 'goto error' can be invoked from inside the
 	 * probe function and all necessary cleanup actions will be taken
 	 * including freeing any necessary memory blocks
@@ -768,14 +754,14 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 }
 
 /**
- *	streamzap_disconnect
+ * streamzap_disconnect
  *
- *	Called by the usb core when the device is removed from the system.
+ * Called by the usb core when the device is removed from the system.
  *
- *	This routine guarantees that the driver will not submit any more urbs
- *	by clearing dev->udev.  It is also supposed to terminate any currently
- *	active urbs.  Unfortunately, usb_bulk_msg(), used in streamzap_read(),
- *	does not provide any way to do this.
+ * This routine guarantees that the driver will not submit any more urbs
+ * by clearing dev->udev.  It is also supposed to terminate any currently
+ * active urbs.  Unfortunately, usb_bulk_msg(), used in streamzap_read(),
+ * does not provide any way to do this.
  */
 #ifdef KERNEL_2_5
 static void streamzap_disconnect(struct usb_interface *interface)
@@ -793,9 +779,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	sz = ptr;
 #endif
 
-	/*
-	 * unregister from the LIRC sub-system
-	 */
+	/* unregister from the LIRC sub-system */
 
 	errnum = lirc_unregister_driver(sz->driver.minor);
 	if (errnum != 0)
@@ -805,9 +789,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	lirc_buffer_free(&sz->delay_buf);
 	lirc_buffer_free(&sz->lirc_buf);
 
-	/*
-	 * unregister from the USB sub-system
-	 */
+	/* unregister from the USB sub-system */
 
 	usb_free_urb(sz->urb_in);
 
@@ -900,7 +882,6 @@ static int __init usb_streamzap_init(void)
  */
 static void __exit usb_streamzap_exit(void)
 {
-	/* deregister this driver with the USB subsystem */
 	usb_deregister(&streamzap_driver);
 }
 

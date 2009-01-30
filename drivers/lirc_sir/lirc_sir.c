@@ -95,7 +95,7 @@
 
 /* SECTION: Definitions */
 
-/**************************** Tekram dongle ***************************/
+/*** Tekram dongle ***/
 #ifdef LIRC_SIR_TEKRAM
 /* stolen from kernel source */
 /* definitions for Tekram dongle */
@@ -119,7 +119,7 @@ static void init_act200(void);
 static void init_act220(void);
 #endif
 
-/******************************* SA1100 ********************************/
+/*** SA1100 ***/
 #ifdef LIRC_ON_SA1100
 struct sa1100_ser2_registers {
 	/* HSSP control register */
@@ -161,8 +161,7 @@ static unsigned int duty_cycle = 50;   /* duty cycle of 50% */
 #endif
 
 
-/* timeout for sequences in jiffies (=5/100s) */
-/* must be longer than TIME_CONST */
+/* timeout for sequences in jiffies (=5/100s), must be longer than TIME_CONST */
 #define SIR_TIMEOUT	(HZ*5/100)
 
 #ifndef LIRC_ON_SA1100
@@ -231,7 +230,7 @@ static void send_space(unsigned long len);
 static void send_pulse(unsigned long len);
 static int init_hardware(void);
 static void drop_hardware(void);
-	/* Initialisation */
+/* Initialisation */
 static int init_port(void);
 static void drop_port(void);
 int init_module(void);
@@ -478,8 +477,10 @@ static void add_read_queue(int flag, unsigned long val)
 
 	newval = val & PULSE_MASK;
 
-	/* statistically, pulses are ~TIME_CONST/2 too long: we could
-	   maybe make this more exact, but this is good enough */
+	/*
+	 * statistically, pulses are ~TIME_CONST/2 too long. we could
+	 * maybe make this more exact, but this is good enough
+	 */
 	if (flag) {
 		/* pulse */
 		if (newval > TIME_CONST/2)
@@ -567,10 +568,12 @@ static long delta(struct timeval *tv1, struct timeval *tv2)
 
 static void sir_timeout(unsigned long data)
 {
-	/* if last received signal was a pulse, but receiving stopped
-	   within the 9 bit frame, we need to finish this pulse and
-	   simulate a signal change to from pulse to space. Otherwise
-	   upper layers will receive two sequences next time. */
+	/*
+	 * if last received signal was a pulse, but receiving stopped
+	 * within the 9 bit frame, we need to finish this pulse and
+	 * simulate a signal change to from pulse to space. Otherwise
+	 * upper layers will receive two sequences next time.
+	 */
 
 	unsigned long flags;
 	unsigned long pulse_end;
@@ -638,9 +641,8 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 			data = Ser2UTDR;
 			dprintk("%d data: %u\n", n, (unsigned int) data);
 			n++;
-		} while (status & UTSR0_RID && /* do not empty fifo in
-						order to get UTSR0_RID in
-						any case */
+		} while (status & UTSR0_RID && /* do not empty fifo in order to
+						* get UTSR0_RID in any case */
 		      Ser2UTSR1 & UTSR1_RNE); /* data ready */
 
 		if (status&UTSR0_RID) {
@@ -654,9 +656,7 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 	if (status & UTSR0_TFS)
 		printk(KERN_ERR "transmit fifo not full, shouldn't happen\n");
 
-	/*
-	 * We must clear certain bits.
-	 */
+	/* We must clear certain bits. */
 	status &= (UTSR0_RID | UTSR0_RBB | UTSR0_REB);
 	if (status)
 		Ser2UTSR0 = status;
@@ -689,8 +689,10 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
 				dprintk("t %lu, d %d\n", deltintrtv, (int)data);
-				/* if nothing came in last X cycles,
-				   it was gap */
+				/*
+				 * if nothing came in last X cycles,
+				 * it was gap
+				 */
 				if (deltintrtv > TIME_CONST * threshold) {
 					if (last_value) {
 						dprintk("GAP\n");
@@ -708,9 +710,10 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 				}
 				data = 1;
 				if (data ^ last_value) {
-					/* deltintrtv > 2*TIME_CONST,
-						remember ? */
-					/* the other case is timeout */
+					/*
+					 * deltintrtv > 2*TIME_CONST, remember?
+					 * the other case is timeout
+					 */
 					add_read_queue(last_value,
 						       deltv-TIME_CONST);
 					last_value = data;
@@ -725,8 +728,10 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 				}
 				last_intr_tv = curr_tv;
 				if (data) {
-					/* start timer for end of
-					 * sequence detection */
+					/*
+					 * start timer for end of
+					 * sequence detection
+					 */
 					timerlist.expires = jiffies +
 								SIR_TIMEOUT;
 					add_timer(&timerlist);
@@ -752,8 +757,10 @@ static void send_pulse(unsigned long length)
 
 	if (length == 0)
 		return;
-	/* this won't give us the carrier frequency we really want
-	   due to integer arithmetic, but we can accept this inaccuracy */
+	/*
+	 * this won't give us the carrier frequency we really want
+	 * due to integer arithmetic, but we can accept this inaccuracy
+	 */
 
 	for (k = flag = 0; k < length; k += delay, flag = !flag) {
 		if (flag) {
@@ -862,9 +869,7 @@ static int init_hardware(void)
 	/* set output to 0 */
 	off();
 
-	/*
-	 * Enable HP-SIR modulation, and ensure that the port is disabled.
-	 */
+	/* Enable HP-SIR modulation, and ensure that the port is disabled. */
 	Ser2UTCR3 = 0;
 	Ser2HSCR0 = sr.hscr0 & (~HSCR0_HSSP);
 
@@ -954,14 +959,14 @@ static int init_hardware(void)
 	outb(0, io + UART_MCR);
 	outb(0, io + UART_IER);
 	/* init UART */
-		/* set DLAB, speed = 115200 */
+	/* set DLAB, speed = 115200 */
 	outb(UART_LCR_DLAB | UART_LCR_WLEN7, io + UART_LCR);
 	outb(1, io + UART_DLL); outb(0, io + UART_DLM);
-		/* 7N1+start = 9 bits at 115200 ~ 3 bits at 44000 */
+	/* 7N1+start = 9 bits at 115200 ~ 3 bits at 44000 */
 	outb(UART_LCR_WLEN7, io + UART_LCR);
-		/* FIFO operation */
+	/* FIFO operation */
 	outb(UART_FCR_ENABLE_FIFO, io + UART_FCR);
-		/* interrupts */
+	/* interrupts */
 	/* outb(UART_IER_RLSI|UART_IER_RDI|UART_IER_THRI, io + UART_IER); */
 	outb(UART_IER_RDI, io + UART_IER);
 	/* turn on UART */
@@ -1054,7 +1059,6 @@ static void drop_port(void)
 }
 
 #ifdef LIRC_SIR_ACTISYS_ACT200L
-/******************************************************/
 /* Crystal/Cirrus CS8130 IR transceiver, used in Actisys Act200L dongle */
 /* some code borrowed from Linux IRDA driver */
 
@@ -1165,7 +1169,7 @@ static void init_act200(void)
 	soutp(UART_MCR, UART_MCR_RTS|UART_MCR_OUT2);
 	udelay(7);
 
-/* send out the control register settings for 115K 7N1 SIR operation */
+	/* send out the control register settings for 115K 7N1 SIR operation */
 	for (i = 0; i < sizeof(control); i++) {
 		soutp(UART_TX, control[i]);
 		/* one byte takes ~1042 usec to transmit at 9600,8N1 */
@@ -1198,8 +1202,10 @@ static void init_act200(void)
 #endif
 
 #ifdef LIRC_SIR_ACTISYS_ACT220L
-/* Derived from linux IrDA driver (drivers/net/irda/actisys.c)
- * Drop me a mail for any kind of comment: maxx@spaceboyz.net */
+/*
+ * Derived from linux IrDA driver (net/irda/actisys.c)
+ * Drop me a mail for any kind of comment: maxx@spaceboyz.net
+ */
 
 void init_act220(void)
 {
@@ -1222,8 +1228,10 @@ void init_act220(void)
 	/* back to normal (still 9600) */
 	soutp(UART_MCR, UART_MCR_DTR|UART_MCR_RTS|UART_MCR_OUT2);
 
-	/* send RTS pulses until we reach 115200
-	 * i hope this is really the same for act220l/act220l+ */
+	/*
+	 * send RTS pulses until we reach 115200
+	 * i hope this is really the same for act220l/act220l+
+	 */
 	for (i = 0; i < 3; i++) {
 		udelay(10);
 		/* set RTS low for 10 us */
@@ -1244,8 +1252,7 @@ void init_act220(void)
 	soutp(UART_DLL, 1);
 
 	/* Set DLAB 0, 7 Bit */
-	/* The dongle doesn't seem to have any problems with operation
-	   at 7N1 */
+	/* The dongle doesn't seem to have any problems with operation at 7N1 */
 	soutp(UART_LCR, UART_LCR_WLEN7);
 
 	/* enable interrupts */
