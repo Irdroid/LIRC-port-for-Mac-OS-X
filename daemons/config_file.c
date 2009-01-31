@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.29 2008/05/31 21:29:12 lirc Exp $      */
+/*      $Id: config_file.c,v 5.30 2009/01/31 09:46:47 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -213,6 +213,11 @@ lirc_t s_strtolirc_t(char *val)
 			  "number",val);
 		parse_error=1;
 		return(0);
+	}
+	if(h < 0)
+	{
+		logprintf(LOG_WARNING, "error in configfile line %d:", line);
+		logprintf(LOG_WARNING, "\"%s\" is out of range", val);
 	}
 	return(h);
 }
