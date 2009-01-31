@@ -338,7 +338,7 @@ static ssize_t lirc_read(struct file *file, char *buf, size_t count,
 	}
 	remove_wait_queue(&lirc_read_queue, &wait);
 	set_current_state(TASK_RUNNING);
-	return (n ? n : retval);
+	return n ? n : retval;
 }
 static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 				loff_t *pos)
@@ -346,7 +346,7 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 	unsigned long flags;
 	int i;
 
-	if (n % sizeof(lirc_t) || (n/sizeof(lirc_t)) > WBUF_LEN)
+	if (n % sizeof(lirc_t) || (n / sizeof(lirc_t)) > WBUF_LEN)
 		return -EINVAL;
 	if (copy_from_user(tx_buf, buf, n))
 		return -EFAULT;
@@ -736,9 +736,9 @@ static irqreturn_t sir_interrupt(int irq, void *dev_id)
 								SIR_TIMEOUT;
 					add_timer(&timerlist);
 				}
-			}
-			while ((lsr = inb(io + UART_LSR))
-				& UART_LSR_DR); /* data ready */
+
+				lsr = inb(io + UART_LSR);
+			} while (lsr & UART_LSR_DR); /* data ready */
 			spin_unlock_irqrestore(&timer_lock, flags);
 			break;
 		default:

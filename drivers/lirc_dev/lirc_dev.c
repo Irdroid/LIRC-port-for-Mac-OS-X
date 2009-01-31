@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.76 2009/01/30 19:47:18 lirc Exp $
+ * $Id: lirc_dev.c,v 1.77 2009/01/31 10:43:53 lirc Exp $
  *
  */
 
@@ -175,7 +175,7 @@ static int add_to_buf(struct irctl *ir)
 			kthread_stop(ir->task);
 #endif
 
-		return (got_data ? 0 : res);
+		return got_data ? 0 : res;
 	}
 
 	return 0;
@@ -320,7 +320,7 @@ int lirc_register_driver(struct lirc_driver *d)
 
 	minor = d->minor;
 
-	if (0 > minor) {
+	if (minor < 0) {
 		/* find first free slot for driver */
 		for (minor = 0; minor < MAX_IRCTL_DEVICES; minor++)
 			if (irctls[minor].d.minor == NOPLUG)
@@ -693,15 +693,15 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		result = put_user(ir->d.features, (unsigned long *)arg);
 		break;
 	case LIRC_GET_REC_MODE:
-		if (!(ir->d.features&LIRC_CAN_REC_MASK))
+		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
 		result = put_user(LIRC_REC2MODE
-				  (ir->d.features&LIRC_CAN_REC_MASK),
+				  (ir->d.features & LIRC_CAN_REC_MASK),
 				  (unsigned long *)arg);
 		break;
 	case LIRC_SET_REC_MODE:
-		if (!(ir->d.features&LIRC_CAN_REC_MASK))
+		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
 		result = get_user(mode, (unsigned long *)arg);

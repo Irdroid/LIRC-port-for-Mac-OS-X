@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.34 2009/01/30 19:39:27 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.35 2009/01/31 10:43:53 lirc Exp $      */
 /*
  * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -134,11 +134,11 @@ struct sasem_context {
 	struct usb_endpoint_descriptor *tx_endpoint;
 	struct urb *rx_urb;
 	struct urb *tx_urb;
-	unsigned char usb_rx_buf [8];
-	unsigned char usb_tx_buf [8];
+	unsigned char usb_rx_buf[8];
+	unsigned char usb_tx_buf[8];
 
 	struct tx_t {
-		unsigned char data_buf [32]; /* user data buffer	  */
+		unsigned char data_buf[32];  /* user data buffer	  */
 		struct completion finished;  /* wait for write to finish  */
 		atomic_t busy;		     /* write in progress	 */
 		int status;		     /* status of tx completion   */
@@ -171,10 +171,10 @@ static struct usb_device_id sasem_usb_id_table [] = {
 /* USB Device data */
 static struct usb_driver sasem_driver = {
 	LIRC_THIS_MODULE(.owner = THIS_MODULE)
-	.name 		= MOD_NAME,
-	.probe 		= sasem_probe,
-	.disconnect 	= sasem_disconnect,
-	.id_table 	= sasem_usb_id_table,
+	.name		= MOD_NAME,
+	.probe		= sasem_probe,
+	.disconnect	= sasem_disconnect,
+	.id_table	= sasem_usb_id_table,
 #if !defined(KERNEL_2_5)
 	.fops		= &vfd_fops,
 	.minor		= VFD_MINOR_BASE,
@@ -183,7 +183,7 @@ static struct usb_driver sasem_driver = {
 
 #ifdef KERNEL_2_5
 static struct usb_class_driver sasem_class = {
-	.name 		= DEVFS_NAME,
+	.name		= DEVFS_NAME,
 	.fops		= &vfd_fops,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 	.mode		= DEVFS_MODE,
@@ -464,7 +464,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 
 	/* Pad with spaces */
 	for (i = n_bytes; i < 32; ++i)
-		context->tx.data_buf [i] = ' ';
+		context->tx.data_buf[i] = ' ';
 
 	/* Nine 8 byte packets to be sent */
 	/* NOTE: "\x07\x01\0\0\0\0\0\0" or "\x0c\0\0\0\0\0\0\0"
@@ -474,7 +474,8 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 		case 0:
 			memcpy(context->usb_tx_buf, "\x07\0\0\0\0\0\0\0", 8);
 			context->usb_tx_buf[1] = (context->vfd_contrast) ?
-				(0x2B - (context->vfd_contrast - 1) / 250):0x2B;
+				(0x2B - (context->vfd_contrast - 1) / 250)
+				: 0x2B;
 			break;
 		case 1:
 			memcpy(context->usb_tx_buf, "\x09\x01\0\0\0\0\0\0", 8);
@@ -516,7 +517,7 @@ exit:
 
 	mutex_unlock(&context->lock);
 
-	return (retval == 0) ? n_bytes : retval;
+	return (!retval) ? n_bytes : retval;
 }
 
 /**
@@ -1009,7 +1010,7 @@ exit:
 #ifdef KERNEL_2_5
 	return retval;
 #else
-	return (retval == 0) ? context : NULL;
+	return (!retval) ? context : NULL;
 #endif
 }
 

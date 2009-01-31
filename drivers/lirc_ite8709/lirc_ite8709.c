@@ -470,7 +470,7 @@ static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 	/* Initialize LIRC buffer */
 	if (lirc_buffer_init(driver->rbuf, BUF_CHUNK_SIZE, BUF_SIZE))
 		return ite8709_cleanup(ite8709_dev, 1, -ENOMEM,
-						"lirc_buffer_init() failed");
+				       "lirc_buffer_init() failed");
 
 	/* Register LIRC driver */
 	ret = lirc_register_driver(driver);

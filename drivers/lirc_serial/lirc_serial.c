@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.96 2009/01/30 19:39:27 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.97 2009/01/31 10:43:53 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.96 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.97 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -154,12 +154,12 @@ struct lirc_serial {
 	int features;
 };
 
-#define LIRC_HOMEBREW	0
-#define LIRC_IRDEO	   1
-#define LIRC_IRDEO_REMOTE    2
-#define LIRC_ANIMAX	  3
-#define LIRC_IGOR	    4
-#define LIRC_NSLU2	   5
+#define LIRC_HOMEBREW		0
+#define LIRC_IRDEO		1
+#define LIRC_IRDEO_REMOTE	2
+#define LIRC_ANIMAX		3
+#define LIRC_IGOR		4
+#define LIRC_NSLU2		5
 
 #ifdef LIRC_SERIAL_IRDEO
 static int type = LIRC_IRDEO;
@@ -505,17 +505,17 @@ static int init_timing_params(unsigned int new_duty_cycle,
 	/* How many clocks in a microsecond?, avoiding long long divide */
 	work = loops_per_sec;
 	work *= 4295;  /* 4295 = 2^32 / 1e6 */
-	conv_us_to_clocks = (work>>32);
+	conv_us_to_clocks = (work >> 32);
 
 	/*
 	 * Carrier period in clocks, approach good up to 32GHz clock,
 	 * gets carrier frequency within 8Hz
 	 */
-	period = loops_per_sec>>3;
-	period /= (freq>>3);
+	period = loops_per_sec >> 3;
+	period /= (freq >> 3);
 
 	/* Derive pulse and space from the period */
-	pulse_width = period*duty_cycle/100;
+	pulse_width = period * duty_cycle / 100;
 	space_width = period - pulse_width;
 	dprintk("in init_timing_params, freq=%d, duty_cycle=%d, "
 		"clk/jiffy=%ld, pulse=%ld, space=%ld, "
@@ -532,17 +532,17 @@ static int init_timing_params(unsigned int new_duty_cycle,
  * period, pulse/space width are kept with 8 binary places -
  * IE multiplied by 256.
  */
-	if (256*1000000L/new_freq*new_duty_cycle/100 <=
+	if (256 * 1000000L / new_freq * new_duty_cycle / 100 <=
 	    LIRC_SERIAL_TRANSMITTER_LATENCY)
 		return -EINVAL;
-	if (256*1000000L/new_freq*(100-new_duty_cycle)/100 <=
+	if (256 * 1000000L / new_freq * (100 - new_duty_cycle) / 100 <=
 	    LIRC_SERIAL_TRANSMITTER_LATENCY)
 		return -EINVAL;
 	duty_cycle = new_duty_cycle;
 	freq = new_freq;
-	period = 256*1000000L/freq;
-	pulse_width = period*duty_cycle/100;
-	space_width = period-pulse_width;
+	period = 256 * 1000000L / freq;
+	pulse_width = period * duty_cycle / 100;
+	space_width = period - pulse_width;
 	dprintk("in init_timing_params, freq=%d pulse=%ld, "
 		"space=%ld\n", freq, pulse_width, space_width);
 	return 0;
@@ -554,38 +554,42 @@ static int init_timing_params(unsigned int new_duty_cycle,
 
 static long send_pulse_irdeo(unsigned long length)
 {
-	long rawbits;
+	long rawbits, ret;
 	int i;
 	unsigned char output;
 	unsigned char chunk, shifted;
 
 	/* how many bits have to be sent ? */
-	rawbits = length*1152/10000;
+	rawbits = length * 1152 / 10000;
 	if (duty_cycle > 50)
 		chunk = 3;
 	else
 		chunk = 1;
 	for (i = 0, output = 0x7f; rawbits > 0; rawbits -= 3) {
-		shifted = chunk<<(i*3);
+		shifted = chunk << (i * 3);
 		shifted >>= 1;
 		output &= (~shifted);
 		i++;
 		if (i == 3) {
 			soutp(UART_TX, output);
-			while (!(sinp(UART_LSR) & UART_LSR_THRE));
+			while (!(sinp(UART_LSR) & UART_LSR_THRE))
+				;
 			output = 0x7f;
 			i = 0;
 		}
 	}
 	if (i != 0) {
 		soutp(UART_TX, output);
-		while (!(sinp(UART_LSR) & UART_LSR_TEMT));
+		while (!(sinp(UART_LSR) & UART_LSR_TEMT))
+			;
 	}
 
 	if (i == 0)
-		return ((-rawbits)*10000/1152);
+		ret = (-rawbits) * 10000 / 1152;
 	else
-		return ((3-i)*3*10000/1152+(-rawbits)*10000/1152);
+		ret = (3 - i) * 3 *10000 / 1152 + (-rawbits) * 10000 / 1152;
+
+	return ret;
 }
 
 #ifdef USE_RDTSC
@@ -603,22 +607,24 @@ static long send_pulse_homebrew_softcarrier(unsigned long length)
 	unsigned long target, start, now;
 
 	/* Get going quick as we can */
-	rdtscl(start); on();
+	rdtscl(start);
+	on();
 	/* Convert length from microseconds to clocks */
 	length *= conv_us_to_clocks;
 	/* And loop till time is up - flipping at right intervals */
 	now = start;
 	target = pulse_width;
 	flag = 1;
-	while ((now-start) < length) {
+	while ((now - start) < length) {
 		/* Delay till flip time */
-		do
+		do {
 			rdtscl(now);
-		while ((now-start) < target);
+		} while ((now - start) < target);
 
 		/* flip */
 		if (flag) {
-			rdtscl(now); off();
+			rdtscl(now);
+			off();
 			target += space_width;
 		} else {
 			rdtscl(now); on();
@@ -627,7 +633,7 @@ static long send_pulse_homebrew_softcarrier(unsigned long length)
 		flag = !flag;
 	}
 	rdtscl(now);
-	return (((now-start)-length)/conv_us_to_clocks);
+	return ((now - start) - length) / conv_us_to_clocks;
 }
 #else /* ! USE_RDTSC */
 /* Version using udelay() */
@@ -655,16 +661,17 @@ static long send_pulse_homebrew_softcarrier(unsigned long length)
 			on();
 			target += pulse_width;
 		}
-		d = (target-actual-LIRC_SERIAL_TRANSMITTER_LATENCY+128)>>8;
+		d = (target - actual -
+		     LIRC_SERIAL_TRANSMITTER_LATENCY + 128) >> 8;
 		/*
 		 * Note - we've checked in ioctl that the pulse/space
 		 * widths are big enough so that d is > 0
 		 */
 		udelay(d);
-		actual += (d<<8)+LIRC_SERIAL_TRANSMITTER_LATENCY;
+		actual += (d << 8) + LIRC_SERIAL_TRANSMITTER_LATENCY;
 		flag = !flag;
 	}
-	return ((actual-length)>>8);
+	return (actual-length) >> 8;
 }
 #endif /* USE_RDTSC */
 
@@ -714,17 +721,17 @@ static void frbwrite(lirc_t l)
 	static lirc_t pulse = 0L, space = 0L;
 	static unsigned int ptr;
 
-	if (ptr > 0 && (l&PULSE_BIT)) {
-		pulse += l&PULSE_MASK;
+	if (ptr > 0 && (l & PULSE_BIT)) {
+		pulse += l & PULSE_MASK;
 		if (pulse > 250) {
 			rbwrite(space);
-			rbwrite(pulse|PULSE_BIT);
+			rbwrite(pulse | PULSE_BIT);
 			ptr = 0;
 			pulse = 0;
 		}
 		return;
 	}
-	if (!(l&PULSE_BIT)) {
+	if (!(l & PULSE_BIT)) {
 		if (ptr == 0) {
 			if (l > 20000) {
 				space = l;
@@ -743,7 +750,7 @@ static void frbwrite(lirc_t l)
 				return;
 			}
 			rbwrite(space);
-			rbwrite(pulse|PULSE_BIT);
+			rbwrite(pulse | PULSE_BIT);
 			ptr = 0;
 			pulse = 0;
 		}
@@ -777,7 +784,8 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			       "We're caught!\n");
 			break;
 		}
-		if ((status&hardware[type].signal_pin_change) && sense != -1) {
+		if ((status & hardware[type].signal_pin_change)
+		    && sense != -1) {
 			/* get current time */
 			do_gettimeofday(&tv);
 
@@ -805,7 +813,7 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 			 */
 
 			/* calc time since last interrupt in microseconds */
-			dcd = (status & hardware[type].signal_pin) ? 1:0;
+			dcd = (status & hardware[type].signal_pin) ? 1 : 0;
 
 			if (dcd == last_dcd) {
 				printk(KERN_WARNING LIRC_DRIVER_NAME
@@ -843,7 +851,7 @@ static irqreturn_t irq_handler(int i, void *blah, struct pt_regs *regs)
 					 * detecting pulse while this
 					 * MUST be a space!
 					 */
-					sense = sense ? 0:1;
+					sense = sense ? 0 : 1;
 				}
 			} else
 				data = (lirc_t) (deltv*1000000 +
@@ -933,7 +941,7 @@ static int init_port(void)
 	 * for the NSLU2 it's done in boot code.
 	 */
 	if (((iommap != 0)
-	     && (request_mem_region(iommap, 8<<ioshift,
+	     && (request_mem_region(iommap, 8 << ioshift,
 				    LIRC_DRIVER_NAME) == NULL))
 	   || ((iommap == 0)
 	       && (request_region(io, 8, LIRC_DRIVER_NAME) == NULL))) {
@@ -978,10 +986,10 @@ static int init_port(void)
 		}
 		sense = (nlow >= nhigh ? 1 : 0);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
-		       "%s receiver\n", sense ? "low":"high");
+		       "%s receiver\n", sense ? "low" : "high");
 	} else
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": Manually using active "
-		       "%s receiver\n", sense ? "low":"high");
+		       "%s receiver\n", sense ? "low" : "high");
 
 	return 0;
 }
@@ -999,8 +1007,8 @@ static int set_use_inc(void *data)
 	do_gettimeofday(&lasttv);
 
 	result = request_irq(irq, irq_handler,
-			   IRQF_DISABLED | (share_irq ? IRQF_SHARED:0),
-			   LIRC_DRIVER_NAME, (void *)&hardware);
+			     IRQF_DISABLED | (share_irq ? IRQF_SHARED : 0),
+			     LIRC_DRIVER_NAME, (void *)&hardware);
 
 	switch (result) {
 	case -EBUSY:
@@ -1306,6 +1314,7 @@ int __init init_module(void)
 			break;
 		}
 	}
+
 	result = init_port();
 	if (result < 0)
 		goto exit_serial_exit;
@@ -1345,7 +1354,7 @@ void __exit cleanup_module(void)
 #endif
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 	if (iommap != 0)
-		release_mem_region(iommap, 8<<ioshift);
+		release_mem_region(iommap, 8 << ioshift);
 	else
 		release_region(io, 8);
 #else

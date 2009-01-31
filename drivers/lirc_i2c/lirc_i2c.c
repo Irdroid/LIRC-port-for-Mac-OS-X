@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.59 2009/01/30 19:56:36 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.60 2009/01/31 10:43:53 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -92,7 +92,7 @@ static int reverse(int data, int bits)
 	int c;
 
 	for (c = 0, i = 0; i < bits; i++)
-		c |= (((data & (1<<i)) ? 1:0)) << (bits-1-i);
+		c |= ((data & (1<<i)) ? 1 : 0) << (bits-1-i);
 
 	return c;
 }
@@ -158,10 +158,9 @@ static int add_to_buf_pcf8574(void *data, struct lirc_buffer *buf)
 	dprintk("%s key 0x%02X %s\n", ir->c.name, rc & ir->bits,
 		(rc & ir->flag) ? "released" : "pressed");
 
-	if (rc & ir->flag) {
-		/* ignore released buttons */
+	/* ignore released buttons */
+	if (rc & ir->flag)
 		return -ENODATA;
-	}
 
 	/* set valid key code */
 	key  = rc & ir->bits;
@@ -492,7 +491,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		kfree(ir);
 		return err;
 	}
-	
+
 	retval = lirc_register_driver(&ir->l);
 
 	if (retval < 0) {

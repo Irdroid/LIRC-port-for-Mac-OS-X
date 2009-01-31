@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.45 2009/01/30 19:39:27 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.46 2009/01/31 10:43:53 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -128,11 +128,11 @@ static unsigned int in(int offset)
 {
 	switch (offset) {
 	case LIRC_LP_BASE:
-		return (parport_read_data(pport));
+		return parport_read_data(pport);
 	case LIRC_LP_STATUS:
-		return (parport_read_status(pport));
+		return parport_read_status(pport);
 	case LIRC_LP_CONTROL:
-		return (parport_read_control(pport));
+		return parport_read_control(pport);
 	}
 	return 0; /* make compiler happy */
 }
@@ -155,12 +155,12 @@ static void out(int offset, int value)
 
 static unsigned int lirc_get_timer(void)
 {
-	return (in(LIRC_PORT_TIMER)&LIRC_PORT_TIMER_BIT);
+	return in(LIRC_PORT_TIMER) & LIRC_PORT_TIMER_BIT;
 }
 
 static unsigned int lirc_get_signal(void)
 {
-	return (in(LIRC_PORT_SIGNAL)&LIRC_PORT_SIGNAL_BIT);
+	return in(LIRC_PORT_SIGNAL) & LIRC_PORT_SIGNAL_BIT;
 }
 
 static void lirc_on(void)
@@ -329,8 +329,8 @@ static void irq_handler(int i, void *blah)
 			printk(KERN_NOTICE "%s: timeout\n", LIRC_DRIVER_NAME);
 			break;
 		}
-	}
-	while (lirc_get_signal());
+	} while (lirc_get_signal());
+
 	if (signal != 0) {
 		/* adjust value to usecs */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
@@ -405,7 +405,7 @@ static ssize_t lirc_read(struct file *filep, char *buf, size_t n, loff_t *ppos)
 	}
 	remove_wait_queue(&lirc_wait, &wait);
 	set_current_state(TASK_RUNNING);
-	return (count ? count : result);
+	return count ? count : result;
 }
 
 static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
@@ -418,15 +418,15 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 	lirc_t counttimer;
 
 	if (!is_claimed)
-		return(-EBUSY);
+		return -EBUSY;
 
 	if (n % sizeof(lirc_t))
-		return(-EINVAL);
+		return -EINVAL;
 
 	count = n / sizeof(lirc_t);
 
 	if (count > WBUF_SIZE || count % 2 == 0)
-		return(-EINVAL);
+		return -EINVAL;
 
 	if (copy_from_user(wbuf, buf, n))
 		return -EFAULT;
@@ -436,7 +436,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 		/* try again if device is ready */
 		timer = init_lirc_timer();
 		if (timer == 0)
-			return(-EIO);
+			return -EIO;
 	}
 
 	/* ajust values from usecs */
@@ -498,7 +498,7 @@ static unsigned int lirc_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &lirc_wait, wait);
 	if (rptr != wptr)
-		return (POLLIN|POLLRDNORM);
+		return POLLIN | POLLRDNORM;
 	return 0;
 }
 

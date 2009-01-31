@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.69 $"
+#define DRIVER_VERSION	"$Revision: 1.70 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -87,7 +87,7 @@
 #define MCE_PULSE_BIT	0x80 /* Pulse bit, MSB set == PULSE else SPACE */
 #define MCE_PULSE_MASK	0x7F /* Pulse mask */
 #define MCE_MAX_PULSE_LENGTH 0x7F /* Longest transmittable pulse symbol */
-#define MCE_PACKET_LENGTH_MASK	0x7F /* Pulse mask */
+#define MCE_PACKET_LENGTH_MASK  0x7F /* Pulse mask */
 
 
 /* module parameters */
@@ -128,12 +128,12 @@ static int debug;
 #define VENDOR_FINTEK		0x1934
 #define VENDOR_PINNACLE		0x2304
 #define VENDOR_ECS		0x1019
-#define VENDOR_WISTRON          0x0fb8
-#define VENDOR_COMPRO           0x185b
+#define VENDOR_WISTRON		0x0fb8
+#define VENDOR_COMPRO		0x185b
 
 static struct usb_device_id usb_remote_table [] = {
-        /* Philips Infrared Transceiver - Sahara branded */
-        { USB_DEVICE(VENDOR_PHILIPS, 0x0608) },
+	/* Philips Infrared Transceiver - Sahara branded */
+	{ USB_DEVICE(VENDOR_PHILIPS, 0x0608) },
 	/* Philips Infrared Transceiver - HP branded */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x060c) },
 	/* Philips SRM5100 */
@@ -436,7 +436,6 @@ static int set_use_inc(void *data)
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
 
 	MOD_INC_USE_COUNT;
-
 	if (!ir->flags.connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
@@ -596,12 +595,12 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 		return -EFAULT;
 
 	if (n % sizeof(lirc_t))
-		return(-EINVAL);
+		return -EINVAL;
 	count = n / sizeof(lirc_t);
 
 	/* Check if command is within limits */
 	if (count > LIRCBUF_SIZE || count%2 == 0)
-		return(-EINVAL);
+		return -EINVAL;
 	if (copy_from_user(wbuf, buf, n))
 		return -EFAULT;
 
@@ -843,15 +842,14 @@ static int usb_remote_probe(struct usb_interface *intf,
 				"found\n");
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (usb_match_id(intf, pinnacle_list)) {
+			if (usb_match_id(intf, pinnacle_list))
 				/*
 				 * setting seems to 1 seem to cause issues with
 				 * Pinnacle timing out on transfer.
 				 */
 				ep_in->bInterval = ep->bInterval;
-			} else {
+			else
 				ep_in->bInterval = 1;
-			}
 		}
 
 		if ((ep_out == NULL)
@@ -866,15 +864,14 @@ static int usb_remote_probe(struct usb_interface *intf,
 				"found\n");
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (usb_match_id(intf, pinnacle_list)) {
+			if (usb_match_id(intf, pinnacle_list))
 				/*
 				 * setting seems to 1 seem to cause issues with
 				 * Pinnacle timing out on transfer.
 				 */
 				ep_out->bInterval = ep->bInterval;
-			} else {
+			else
 				ep_out->bInterval = 1;
-			}
 		}
 	}
 	if (ep_in == NULL || ep_out == NULL) {

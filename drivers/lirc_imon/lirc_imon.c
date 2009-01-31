@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.49 2009/01/30 19:39:27 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.50 2009/01/31 10:43:53 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -511,7 +511,6 @@ static int send_packet(struct imon_context *context)
 				     context->usb_tx_buf,
 				     sizeof(context->usb_tx_buf),
 				     usb_tx_callback, context);
-
 		context->tx_urb->actual_length = 0;
 	}
 
@@ -519,7 +518,7 @@ static int send_packet(struct imon_context *context)
 	atomic_set(&(context->tx.busy), 1);
 
 #ifdef KERNEL_2_5
-	retval =  usb_submit_urb(context->tx_urb, GFP_KERNEL);
+	retval = usb_submit_urb(context->tx_urb, GFP_KERNEL);
 #else
 	retval =  usb_submit_urb(context->tx_urb);
 #endif
@@ -534,7 +533,7 @@ static int send_packet(struct imon_context *context)
 
 		retval = context->tx.status;
 		if (retval)
-			err("%s: packet tx failed(%d)", __func__, retval);
+			err("%s: packet tx failed (%d)", __func__, retval);
 	}
 
 	kfree(control_req);
@@ -725,7 +724,7 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 exit:
 	mutex_unlock(&context->lock);
 
-	return(retval == 0) ? n_bytes : retval;
+	return (!retval) ? n_bytes : retval;
 }
 
 /**
@@ -763,7 +762,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 
 	if (n_bytes != 8) {
 		err("%s: invalid payload size: %d (expecting 8)",
-		  __func__, (int) n_bytes);
+		    __func__, (int) n_bytes);
 		retval = -EINVAL;
 		goto exit;
 	}
@@ -782,7 +781,7 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 	}
 exit:
 	mutex_unlock(&context->lock);
-	return (retval == 0) ? n_bytes : retval;
+	return (!retval) ? n_bytes : retval;
 }
 
 /**
@@ -1100,7 +1099,7 @@ static void usb_rx_callback(struct urb *urb)
 		if (context->ir_isopen)
 			incoming_packet(context, urb);
 		break;
-	default :
+	default:
 		warn("%s: status(%d): ignored", __func__, urb->status);
 		break;
 	}
@@ -1185,7 +1184,6 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		goto exit;
 	}
 #endif
-
 #ifdef KERNEL_2_5
 	usbdev = usb_get_dev(interface_to_usbdev(interface));
 	iface_desc = interface->cur_altsetting;
@@ -1267,7 +1265,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	/* Input endpoint is mandatory */
 	if (!ir_ep_found) {
-		err("%s: no valid input(IR) endpoint found.", __func__);
+		err("%s: no valid input (IR) endpoint found.", __func__);
 		retval = -ENODEV;
 		goto exit;
 	} else {
@@ -1451,7 +1449,7 @@ alloc_status_switch:
 		;
 	}
 
- exit:
+exit:
 #ifdef KERNEL_2_5
 	return retval;
 #else
@@ -1564,7 +1562,6 @@ static void __exit imon_exit(void)
 	usb_deregister(&imon_driver);
 	info("module removed. Goodbye!");
 }
-
 
 module_init(imon_init);
 module_exit(imon_exit);

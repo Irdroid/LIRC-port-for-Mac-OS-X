@@ -12,13 +12,13 @@
 /* IT8712/05 Ports: */
 #define IT87_ADRPORT      0x2e
 #define IT87_DATAPORT     0x2f
-#define IT87_INIT         0x87, 0x01, 0x55, 0x55
+#define IT87_INIT         {0x87, 0x01, 0x55, 0x55}
 
 /* alternate Ports: */
 /*
 #define IT87_ADRPORT      0x4e
 #define IT87_DATAPORT     0x4f
-#define IT87_INIT         0x87, 0x01, 0x55, 0xaa
+#define IT87_INIT         {0x87, 0x01, 0x55, 0xaa}
  */
 
 /* IT8712/05 Registers */

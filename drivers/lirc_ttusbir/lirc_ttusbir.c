@@ -124,7 +124,6 @@ static int set_use_inc(void *data)
 			return retval;
 		}
 	}
-
 	return 0;
 }
 

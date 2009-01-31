@@ -82,9 +82,9 @@ static int debug = 1;
 static int debug;
 #endif
 
-#define dprintk(fmt, args...)						\
-	do {								\
-		if (debug)						\
+#define dprintk(fmt, args...)					\
+	do {							\
+		if (debug)					\
 			printk(KERN_DEBUG DRIVER_NAME fmt, ## args);	\
 	} while (0)
 
@@ -107,8 +107,8 @@ static int debug;
 
 /* times to poll per second */
 #define SAMPLE_RATE	     100
-
 static int sample_rate = SAMPLE_RATE;
+
 
 /**** Igor's USB Request Codes */
 
@@ -469,7 +469,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = -1;
-	driver->code_length = bytes_in_key*8; /* in bits */
+	driver->code_length = bytes_in_key * 8; /* in bits */
 	driver->features = LIRC_CAN_REC_MODE2;
 	driver->data = ir;
 	driver->rbuf = rbuf;

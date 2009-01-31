@@ -298,7 +298,7 @@ static int msir_fetch_more_data(struct mceusb_device *dev, int dont_block)
 	int partial, this_read = 0;
 	int bulkidx = 0;
 	int bytes_left_in_packet = 0;
-	signed char *signedp = (signed char*)dev->bulk_in_buffer;
+	signed char *signedp = (signed char *)dev->bulk_in_buffer;
 
 	if (words_to_read == 0)
 		return dev->lirccnt;

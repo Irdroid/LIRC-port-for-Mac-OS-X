@@ -374,6 +374,7 @@ static int set_use_inc(void *data)
 static void set_use_dec(void *data)
 {
 }
+
 static struct lirc_driver driver = {
        .name		= LIRC_DRIVER_NAME,
        .minor		= -1,
@@ -710,7 +711,8 @@ static void terminate_send(unsigned long len)
 	while (last == it87_send_counter)
 		send_space(len);
 	/* wait until all data sent */
-	while ((inb(io + IT87_CIR_TSR) & IT87_CIR_TSR_TXFBC) != 0);
+	while ((inb(io + IT87_CIR_TSR) & IT87_CIR_TSR_TXFBC) != 0)
+		;
 	/* then re-enable receiver */
 	spin_lock_irqsave(&hardware_lock, flags);
 	it87_RXEN_mask = IT87_CIR_RCR_RXEN;
@@ -805,7 +807,7 @@ static int init_port(void)
 	unsigned long hw_flags;
 	int retval = 0;
 
-	unsigned char init_bytes[4] = {IT87_INIT};
+	unsigned char init_bytes[4] = IT87_INIT;
 	unsigned char it87_chipid = 0;
 	unsigned char ldn = 0;
 	unsigned int  it87_io = 0;
@@ -914,7 +916,7 @@ static int init_port(void)
 static void drop_port(void)
 {
 #if 0
-	unsigned char init_bytes[4] = {IT87_INIT};
+	unsigned char init_bytes[4] = IT87_INIT;
 
 	/ * Enter MB PnP Mode * /
 	outb(init_bytes[0], IT87_ADRPORT);

@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.39 2009/01/30 19:39:27 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.40 2009/01/31 10:43:54 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.39 $"
+#define DRIVER_VERSION	"$Revision: 1.40 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -76,7 +76,7 @@ static int debug;
 	} while (0)
 
 /* table of devices that work with this driver */
-static struct usb_device_id streamzap_table [] = {
+static struct usb_device_id streamzap_table[] = {
 	/* Streamzap Remote Control */
 	{ USB_DEVICE(USB_STREAMZAP_VENDOR_ID, USB_STREAMZAP_PRODUCT_ID) },
 	/* Terminating entry */
@@ -226,7 +226,7 @@ static void delay_timeout(unsigned long arg)
 	unsigned long flags;
 	/* deliver data every 10 ms */
 	static unsigned long timer_inc =
-		(10000/(1000000/HZ)) == 0 ? 1:(10000/(1000000/HZ));
+		(10000/(1000000/HZ)) == 0 ? 1 : (10000/(1000000/HZ));
 	struct usb_streamzap *sz = (struct usb_streamzap *) arg;
 	lirc_t data;
 
@@ -578,7 +578,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->driver.minor = -1;
 	sz->driver.sample_rate = 0;
 	sz->driver.code_length = sizeof(lirc_t) * 8;
-	sz->driver.features = LIRC_CAN_REC_MODE2|LIRC_CAN_GET_REC_RESOLUTION;
+	sz->driver.features = LIRC_CAN_REC_MODE2 | LIRC_CAN_GET_REC_RESOLUTION;
 	sz->driver.data = sz;
 	sz->driver.rbuf = &sz->lirc_buf;
 	sz->driver.set_use_inc = &streamzap_use_inc;
@@ -745,7 +745,7 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 	case LIRC_GET_REC_RESOLUTION:
 		result = put_user(STREAMZAP_RESOLUTION, (unsigned int *) arg);
 		if (result)
-			return(result);
+			return result;
 		break;
 	default:
 		return -ENOIOCTLCMD;
@@ -864,7 +864,6 @@ static int __init usb_streamzap_init(void)
 	int result;
 
 	/* register this driver with the USB subsystem */
-
 	result = usb_register(&streamzap_driver);
 
 	if (result) {
