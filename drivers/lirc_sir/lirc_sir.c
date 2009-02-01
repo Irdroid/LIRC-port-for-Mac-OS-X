@@ -219,7 +219,7 @@ static void add_read_queue(int flag, unsigned long val);
 static int init_chrdev(void);
 static void drop_chrdev(void);
 #endif
-	/* Hardware */
+/* Hardware */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static irqreturn_t sir_interrupt(int irq, void *dev_id,
 				 struct pt_regs *regs);
@@ -306,7 +306,7 @@ static ssize_t lirc_read(struct file *file, char *buf, size_t count,
 	int retval = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	if (n % sizeof(lirc_t))
+	if (count % sizeof(lirc_t))
 		return -EINVAL;
 
 	add_wait_queue(&lirc_read_queue, &wait);
