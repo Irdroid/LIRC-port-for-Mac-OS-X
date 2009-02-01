@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.61 2009/02/01 11:20:32 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.62 2009/02/01 14:58:12 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -666,7 +666,7 @@ static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg)
 
 #ifdef MODULE
 
-int init_module(void)
+static int __init lirc_i2c_init(void)
 {
 	request_module("bttv");
 	request_module("rivatv");
@@ -676,7 +676,7 @@ int init_module(void)
 	return 0;
 }
 
-void cleanup_module(void)
+static void __exit lirc_i2c_exit(void)
 {
 	i2c_del_driver(&driver);
 }
@@ -693,6 +693,8 @@ MODULE_PARM_DESC(minor, "Preferred minor device number");
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
+module_init(lirc_i2c_init);
+module_exit(lirc_i2c_exit);
 EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */

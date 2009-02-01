@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.77 2009/01/31 10:43:53 lirc Exp $
+ * $Id: lirc_dev.c,v 1.78 2009/02/01 14:58:12 lirc Exp $
  *
  */
 
@@ -954,8 +954,10 @@ static struct file_operations fops = {
 	.release	= irctl_close
 };
 
+/* For now don't try to use it as a static version !  */
+#ifdef MODULE
 
-static int lirc_dev_init(void)
+static int __init lirc_dev_init(void)
 {
 	int i;
 
@@ -990,15 +992,7 @@ out:
 	return -1;
 }
 
-/* For now dont try to use it as a static version !  */
-#ifdef MODULE
-
-int init_module(void)
-{
-	return lirc_dev_init();
-}
-
-void cleanup_module(void)
+static void __exit lirc_dev_exit(void)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	int ret;
@@ -1018,6 +1012,9 @@ void cleanup_module(void)
 	dprintk("lirc_dev: module unloaded\n");
 #endif
 }
+
+module_init(lirc_dev_init);
+module_exit(lirc_dev_exit);
 
 MODULE_DESCRIPTION("LIRC base driver module");
 MODULE_AUTHOR("Artur Lipowski");

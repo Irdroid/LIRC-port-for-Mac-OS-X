@@ -165,8 +165,6 @@ static void drop_hardware(void);
 /* Initialisation */
 static int init_port(void);
 static void drop_port(void);
-int init_module(void);
-void cleanup_module(void);
 
 
 /* SECTION: Communication with user-space */
@@ -953,7 +951,7 @@ static int init_lirc_it87(void)
 
 #ifdef MODULE
 
-int init_module(void)
+static int __init lirc_it87_init(void)
 {
 	int retval;
 
@@ -969,13 +967,16 @@ int init_module(void)
 }
 
 
-void cleanup_module(void)
+static void __exit lirc_it87_exit(void)
 {
 	drop_hardware();
 	drop_chrdev();
 	drop_port();
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
+
+module_init(lirc_it87_init);
+module_exit(lirc_it87_exit);
 
 MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
 MODULE_AUTHOR("Hans-Günter Lütke Uphues");

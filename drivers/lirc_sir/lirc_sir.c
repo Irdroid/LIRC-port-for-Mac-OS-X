@@ -233,8 +233,6 @@ static void drop_hardware(void);
 /* Initialisation */
 static int init_port(void);
 static void drop_port(void);
-int init_module(void);
-void cleanup_module(void);
 
 #ifdef LIRC_ON_SA1100
 static void on(void)
@@ -1276,7 +1274,7 @@ static int init_lirc_sir(void)
 
 #ifdef MODULE
 
-int init_module(void)
+static int __init lirc_sir_init(void)
 {
 	int retval;
 
@@ -1291,13 +1289,16 @@ int init_module(void)
 	return 0;
 }
 
-void cleanup_module(void)
+static void __exit lirc_sir_exit(void)
 {
 	drop_hardware();
 	drop_chrdev();
 	drop_port();
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
+
+module_init(lirc_sir_init);
+module_exit(lirc_sir_exit);
 
 #ifdef LIRC_SIR_TEKRAM
 MODULE_DESCRIPTION("Infrared receiver driver for Tekram Irmate 210");

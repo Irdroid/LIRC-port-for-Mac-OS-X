@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.97 2009/01/31 10:43:53 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.98 2009/02/01 14:58:13 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.97 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.98 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1280,7 +1280,7 @@ static void __exit lirc_serial_exit(void)
 }
 #endif
 
-int __init init_module(void)
+static int __init lirc_serial_init_module(void)
 {
 	int result;
 
@@ -1347,7 +1347,7 @@ exit_serial_exit:
 	return result;
 }
 
-void __exit cleanup_module(void)
+static void __exit lirc_serial_exit_module(void)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_serial_exit();
@@ -1363,6 +1363,10 @@ void __exit cleanup_module(void)
 	lirc_unregister_driver(driver.minor);
 	dprintk("cleaned up module\n");
 }
+
+
+module_init(lirc_serial_init_module);
+module_exit(lirc_serial_exit_module);
 
 MODULE_DESCRIPTION("Infra-red receiver driver for serial ports.");
 MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, "

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.46 2009/01/31 10:43:53 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.47 2009/02/01 14:58:13 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -667,7 +667,7 @@ static void kf(void *handle)
 
 /*** module initialization and cleanup ***/
 
-int init_module(void)
+static int __init lirc_parallel_init(void)
 {
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 3)
 	pport = parport_find_base(io);
@@ -733,11 +733,14 @@ int init_module(void)
 	return 0;
 }
 
-void cleanup_module(void)
+static void __exit lirc_parallel_exit(void)
 {
 	parport_unregister_device(ppdevice);
 	lirc_unregister_driver(driver.minor);
 }
+
+module_init(lirc_parallel_init);
+module_exit(lirc_parallel_exit);
 
 MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
 MODULE_AUTHOR("Christoph Bartelmus");
