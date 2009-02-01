@@ -544,8 +544,13 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	you enter a special mode.
       </DD>
       <DT>quit</DT>
-      <DD>Usually all configurations are examined if they have
-	to be executed. You can stop this immediately with this flag.
+      <DD>Usually all configurations are examined whether they have
+	to be executed. You can stop this immediately with this
+	flag. Configurations further below will not be executed if
+	the current button press matches the current configuration. A
+	match also happens if the current configuration defines a
+	button sequence and only part of the sequence already was
+	entered.
       </DD>
       <DT>mode</DT>
       <DD>This is only allowed within a mode block. It tells the
