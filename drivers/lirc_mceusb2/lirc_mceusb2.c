@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.70 $"
+#define DRIVER_VERSION	"$Revision: 1.71 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -131,7 +131,7 @@ static int debug;
 #define VENDOR_WISTRON		0x0fb8
 #define VENDOR_COMPRO		0x185b
 
-static struct usb_device_id usb_remote_table [] = {
+static struct usb_device_id mceusb_dev_table [] = {
 	/* Philips Infrared Transceiver - Sahara branded */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0608) },
 	/* Philips Infrared Transceiver - HP branded */
@@ -278,8 +278,7 @@ static unsigned long usecs_to_jiffies(const unsigned int u)
 }
 #endif
 
-
-static void usb_remote_printdata(struct mceusb2_dev *ir, char *buf, int len)
+static void mceusb_dev_printdata(struct mceusb2_dev *ir, char *buf, int len)
 {
 	char codes[USB_BUFLEN*3 + 1];
 	int i;
@@ -311,7 +310,7 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 			ir->devnum, urb->status, len);
 
 		if (debug)
-			usb_remote_printdata(ir, urb->transfer_buffer, len);
+			mceusb_dev_printdata(ir, urb->transfer_buffer, len);
 	}
 
 }
@@ -473,7 +472,7 @@ static void send_packet_to_lirc(struct mceusb2_dev *ir)
 	}
 }
 
-static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
+static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 {
 	struct mceusb2_dev *ir;
 	int buf_len, packet_len;
@@ -493,7 +492,7 @@ static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 	packet_len = 0;
 
 	if (debug)
-		usb_remote_printdata(ir, urb->transfer_buffer, buf_len);
+		mceusb_dev_printdata(ir, urb->transfer_buffer, buf_len);
 
 	if (ir->send_flags == RECV_FLAG_IN_PROGRESS) {
 		ir->send_flags = SEND_FLAG_COMPLETE;
@@ -800,7 +799,7 @@ static struct file_operations lirc_fops = {
 };
 
 
-static int usb_remote_probe(struct usb_interface *intf,
+static int mceusb_dev_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
@@ -997,7 +996,7 @@ mem_failure_switch:
 
 	/* inbound data */
 	usb_fill_int_urb(ir->urb_in, dev, pipe, ir->buf_in,
-		maxp, (usb_complete_t) usb_remote_recv, ir, ep_in->bInterval);
+		maxp, (usb_complete_t) mceusb_dev_recv, ir, ep_in->bInterval);
 	ir->urb_in->transfer_dma = ir->dma_in;
 	ir->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
@@ -1057,7 +1056,7 @@ mem_failure_switch:
 }
 
 
-static void usb_remote_disconnect(struct usb_interface *intf)
+static void mceusb_dev_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
 	struct mceusb2_dev *ir = usb_get_intfdata(intf);
@@ -1080,7 +1079,7 @@ static void usb_remote_disconnect(struct usb_interface *intf)
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static int usb_remote_suspend(struct usb_interface *intf, pm_message_t message)
+static int mceusb_dev_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct mceusb2_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: suspend\n", ir->devnum);
@@ -1088,7 +1087,7 @@ static int usb_remote_suspend(struct usb_interface *intf, pm_message_t message)
 	return 0;
 }
 
-static int usb_remote_resume(struct usb_interface *intf)
+static int mceusb_dev_resume(struct usb_interface *intf)
 {
 	struct mceusb2_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: resume\n", ir->devnum);
@@ -1098,19 +1097,19 @@ static int usb_remote_resume(struct usb_interface *intf)
 }
 #endif
 
-static struct usb_driver usb_remote_driver = {
+static struct usb_driver mceusb_dev_driver = {
 	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
-	.probe =	usb_remote_probe,
-	.disconnect =	usb_remote_disconnect,
+	.probe =	mceusb_dev_probe,
+	.disconnect =	mceusb_dev_disconnect,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	.suspend =	usb_remote_suspend,
-	.resume =	usb_remote_resume,
+	.suspend =	mceusb_dev_suspend,
+	.resume =	mceusb_dev_resume,
 #endif
-	.id_table =	usb_remote_table
+	.id_table =	mceusb_dev_table
 };
 
-static int __init usb_remote_init(void)
+static int __init mceusb_dev_init(void)
 {
 	int i;
 
@@ -1119,7 +1118,7 @@ static int __init usb_remote_init(void)
 	printk(KERN_INFO DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled\n");
 
-	i = usb_register(&usb_remote_driver);
+	i = usb_register(&mceusb_dev_driver);
 	if (i < 0) {
 		printk(DRIVER_NAME ": usb register failed, result = %d\n", i);
 		return -ENODEV;
@@ -1128,18 +1127,18 @@ static int __init usb_remote_init(void)
 	return 0;
 }
 
-static void __exit usb_remote_exit(void)
+static void __exit mceusb_dev_exit(void)
 {
-	usb_deregister(&usb_remote_driver);
+	usb_deregister(&mceusb_dev_driver);
 }
 
-module_init(usb_remote_init);
-module_exit(usb_remote_exit);
+module_init(mceusb_dev_init);
+module_exit(mceusb_dev_exit);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
-MODULE_DEVICE_TABLE(usb, usb_remote_table);
+MODULE_DEVICE_TABLE(usb, mceusb_dev_table);
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
