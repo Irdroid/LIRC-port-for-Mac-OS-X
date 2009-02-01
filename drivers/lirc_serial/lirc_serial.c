@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.98 2009/02/01 14:58:13 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.99 2009/02/01 18:47:20 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.98 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.99 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -228,75 +228,68 @@ static void send_space_irdeo(long length);
 static void send_space_homebrew(long length);
 
 static struct lirc_serial hardware[] = {
-	/* home-brew receiver/transmitter */
-	{
-		UART_MSR_DCD,
-		UART_MSR_DDCD,
-		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
-		UART_MCR_RTS|UART_MCR_OUT2,
-		send_pulse_homebrew,
-		send_space_homebrew,
-		(
+	[LIRC_HOMEBREW] = {
+		.signal_pin        = UART_MSR_DCD,
+		.signal_pin_change = UART_MSR_DDCD,
+		.on  = (UART_MCR_RTS | UART_MCR_OUT2 | UART_MCR_DTR),
+		.off = (UART_MCR_RTS | UART_MCR_OUT2),
+		.send_pulse = send_pulse_homebrew,
+		.send_space = send_space_homebrew,
 #ifdef LIRC_SERIAL_TRANSMITTER
-		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
-		 LIRC_CAN_SET_SEND_CARRIER|
-		 LIRC_CAN_SEND_PULSE|
+		.features    = (LIRC_CAN_SET_SEND_DUTY_CYCLE |
+				LIRC_CAN_SET_SEND_CARRIER |
+				LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2)
+#else
+		.features    = LIRC_CAN_REC_MODE2
 #endif
-		 LIRC_CAN_REC_MODE2)
 	},
 
-	/* IRdeo classic */
-	{
-		UART_MSR_DSR,
-		UART_MSR_DDSR,
-		UART_MCR_OUT2,
-		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
-		send_pulse_irdeo,
-		send_space_irdeo,
-		(LIRC_CAN_SET_SEND_DUTY_CYCLE|
-		 LIRC_CAN_SEND_PULSE|
-		 LIRC_CAN_REC_MODE2)
+	[LIRC_IRDEO] = {
+		.signal_pin        = UART_MSR_DSR,
+		.signal_pin_change = UART_MSR_DDSR,
+		.on  = UART_MCR_OUT2,
+		.off = (UART_MCR_RTS | UART_MCR_DTR | UART_MCR_OUT2),
+		.send_pulse  = send_pulse_irdeo,
+		.send_space  = send_space_irdeo,
+		.features    = (LIRC_CAN_SET_SEND_DUTY_CYCLE |
+				LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2)
 	},
 
-	/* IRdeo remote */
-	{
-		UART_MSR_DSR,
-		UART_MSR_DDSR,
-		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
-		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
-		send_pulse_irdeo,
-		send_space_irdeo,
-		(LIRC_CAN_SET_SEND_DUTY_CYCLE|
-		 LIRC_CAN_SEND_PULSE|
-		 LIRC_CAN_REC_MODE2)
+	[LIRC_IRDEO_REMOTE] = {
+		.signal_pin        = UART_MSR_DSR,
+		.signal_pin_change = UART_MSR_DDSR,
+		.on  = (UART_MCR_RTS | UART_MCR_DTR | UART_MCR_OUT2),
+		.off = (UART_MCR_RTS | UART_MCR_DTR | UART_MCR_OUT2),
+		.send_pulse  = send_pulse_irdeo,
+		.send_space  = send_space_irdeo,
+		.features    = (LIRC_CAN_SET_SEND_DUTY_CYCLE |
+				LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2)
 	},
 
-	/* AnimaX */
-	{
-		UART_MSR_DCD,
-		UART_MSR_DDCD,
-		0,
-		UART_MCR_RTS|UART_MCR_DTR|UART_MCR_OUT2,
-		NULL,
-		NULL,
-		LIRC_CAN_REC_MODE2
+	[LIRC_ANIMAX] = {
+		.signal_pin        = UART_MSR_DCD,
+		.signal_pin_change = UART_MSR_DDCD,
+		.on  = 0,
+		.off = (UART_MCR_RTS | UART_MCR_DTR | UART_MCR_OUT2),
+		.send_pulse = NULL,
+		.send_space = NULL,
+		.features   = LIRC_CAN_REC_MODE2
 	},
 
-	/* home-brew receiver/transmitter (Igor Cesko's variation) */
-	{
-		UART_MSR_DSR,
-		UART_MSR_DDSR,
-		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
-		UART_MCR_RTS|UART_MCR_OUT2,
-		send_pulse_homebrew,
-		send_space_homebrew,
-		(
+	[LIRC_IGOR] = {
+		.signal_pin        = UART_MSR_DSR,
+		.signal_pin_change = UART_MSR_DDSR,
+		.on  = (UART_MCR_RTS | UART_MCR_OUT2 | UART_MCR_DTR),
+		.off = (UART_MCR_RTS | UART_MCR_OUT2),
+		.send_pulse = send_pulse_homebrew,
+		.send_space = send_space_homebrew,
 #ifdef LIRC_SERIAL_TRANSMITTER
-		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
-		 LIRC_CAN_SET_SEND_CARRIER|
-		 LIRC_CAN_SEND_PULSE|
+		.features    = (LIRC_CAN_SET_SEND_DUTY_CYCLE |
+				LIRC_CAN_SET_SEND_CARRIER |
+				LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2)
+#else
+		.features    = LIRC_CAN_REC_MODE2
 #endif
-		 LIRC_CAN_REC_MODE2)
 	},
 
 #if defined(LIRC_SERIAL_NSLU2)
@@ -307,20 +300,20 @@ static struct lirc_serial hardware[] = {
 	 * and ground (Matthias Goebl <matthias.goebl@goebl.net>).
 	 * See also http://www.nslu2-linux.org for this device
 	 */
-	{
-		UART_MSR_CTS,
-		UART_MSR_DCTS,
-		UART_MCR_RTS|UART_MCR_OUT2|UART_MCR_DTR,
-		UART_MCR_RTS|UART_MCR_OUT2,
-		send_pulse_homebrew,
-		send_space_homebrew,
-		(
+	[LIRC_NSLU2] = {
+		.signal_pin        = UART_MSR_CTS,
+		.signal_pin_change = UART_MSR_DCTS,
+		.on  = (UART_MCR_RTS | UART_MCR_OUT2 | UART_MCR_DTR),
+		.off = (UART_MCR_RTS | UART_MCR_OUT2),
+		.send_pulse = send_pulse_homebrew,
+		.send_space = send_space_homebrew,
 #ifdef LIRC_SERIAL_TRANSMITTER
-		 LIRC_CAN_SET_SEND_DUTY_CYCLE|
-		 LIRC_CAN_SET_SEND_CARRIER|
-		 LIRC_CAN_SEND_PULSE|
+		.features    = (LIRC_CAN_SET_SEND_DUTY_CYCLE |
+				LIRC_CAN_SET_SEND_CARRIER |
+				LIRC_CAN_SEND_PULSE | LIRC_CAN_REC_MODE2)
+#else
+		.features    = LIRC_CAN_REC_MODE2
 #endif
-		 LIRC_CAN_REC_MODE2)
 	},
 #endif
 
