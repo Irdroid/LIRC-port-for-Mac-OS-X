@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.40 2009/01/31 10:43:54 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.41 2009/02/01 20:33:45 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.40 $"
+#define DRIVER_VERSION	"$Revision: 1.41 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -688,10 +688,8 @@ static int streamzap_use_inc(void *data)
 
 	MOD_INC_USE_COUNT;
 
-	while (!lirc_buffer_empty(&sz->lirc_buf))
-		lirc_buffer_remove(&sz->lirc_buf);
-	while (!lirc_buffer_empty(&sz->delay_buf))
-		lirc_buffer_remove(&sz->delay_buf);
+	lirc_buffer_clear(&sz->lirc_buf);
+	lirc_buffer_clear(&sz->delay_buf);
 
 	sz->flush_timer.expires = jiffies + HZ;
 	sz->flush = 1;
@@ -828,10 +826,8 @@ static int streamzap_resume(struct usb_interface *intf)
 {
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
 
-	while (!lirc_buffer_empty(&sz->lirc_buf))
-		lirc_buffer_remove(&sz->lirc_buf);
-	while (!lirc_buffer_empty(&sz->delay_buf))
-		lirc_buffer_remove(&sz->delay_buf);
+	lirc_buffer_clear(&sz->lirc_buf);
+	lirc_buffer_clear(&sz->delay_buf);
 
 	if (sz->in_use) {
 		sz->flush_timer.expires = jiffies + HZ;
