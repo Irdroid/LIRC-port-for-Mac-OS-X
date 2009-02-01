@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.60 2009/01/31 10:43:53 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.61 2009/02/01 11:20:32 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -480,7 +480,7 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		/* shouldn't happen */
 		printk("lirc_i2c: Huh? unknown i2c address (0x%02x)?\n", addr);
 		kfree(ir);
-		return -1;
+		return -EINVAL;
 	}
 	printk(KERN_INFO "lirc_i2c: chip 0x%x found @ 0x%02x (%s)\n",
 	       adap->id, addr, ir->c.name);
