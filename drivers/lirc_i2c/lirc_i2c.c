@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.62 2009/02/01 14:58:12 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.63 2009/02/01 21:13:34 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -558,11 +558,10 @@ static int ir_probe(struct i2c_adapter *adap)
 	memset(&c, 0, sizeof(c));
 #ifdef I2C_HW_B_CX2341X
 	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848) ||
-	    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X))
+	    adap->id == (I2C_ALGO_BIT | I2C_HW_B_CX2341X)) {
 #else
-	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848))
+	if (adap->id == (I2C_ALGO_BIT | I2C_HW_B_BT848)) {
 #endif
-	{
 		c.adapter = adap;
 		for (i = 0; -1 != probe[i]; i++) {
 			c.addr = probe[i];
@@ -643,7 +642,7 @@ static int ir_probe(struct i2c_adapter *adap)
 				c.addr, adap->name, rc ? "yes" : "no");
 			if (rc) {
 				rc = ir_attach(adap, pcf_probe[i],
-					       bits|(flag<<8), 0);
+					       bits | (flag << 8), 0);
 				if (rc < 0)
 					goto attach_fail;
 			}
