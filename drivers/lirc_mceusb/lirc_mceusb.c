@@ -791,7 +791,7 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	return dev;
 #endif
 error:
-	if(dev)
+	if (likely(dev))
 		mceusb_delete(dev);
 
 	dev = NULL;

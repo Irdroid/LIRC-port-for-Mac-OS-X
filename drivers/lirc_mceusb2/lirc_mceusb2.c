@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.72 $"
+#define DRIVER_VERSION	"$Revision: 1.73 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -327,7 +327,7 @@ static void request_packet_async(struct mceusb2_dev *ir,
 
 	if (urb_type) {
 		async_urb = usb_alloc_urb(0, GFP_KERNEL);
-		if (async_urb) {
+		if (likely(async_urb)) {
 			/* alloc buffer */
 			async_buf = kmalloc(size, GFP_KERNEL);
 			if (async_buf) {
