@@ -791,7 +791,9 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	return dev;
 #endif
 error:
-	mceusb_delete(dev);
+	if(dev)
+		mceusb_delete(dev);
+
 	dev = NULL;
 	dprintk("%s: retval = %x", __func__, retval);
 	mutex_unlock(&minor_table_mutex);
