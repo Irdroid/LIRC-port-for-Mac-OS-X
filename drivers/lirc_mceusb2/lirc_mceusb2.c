@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.71 $"
+#define DRIVER_VERSION	"$Revision: 1.72 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -590,7 +590,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 
 	/* Retrieve lirc_driver data for the device */
 	ir = lirc_get_pdata(file);
-	if (!ir && !ir->usb_ep_out)
+	if (!ir || !ir->usb_ep_out)
 		return -EFAULT;
 
 	if (n % sizeof(lirc_t))
@@ -734,7 +734,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 
 	/* Retrieve lirc_driver data for the device */
 	ir = lirc_get_pdata(filep);
-	if (!ir && !ir->usb_ep_out)
+	if (!ir || !ir->usb_ep_out)
 		return -EFAULT;
 
 
