@@ -33,7 +33,6 @@
  *   parts cut'n'pasted from sa1100_ir.c (C) 2000 Russell King
  */
 
-
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
 #error "**********************************************************"
@@ -47,7 +46,6 @@
 #endif
 
 #include <linux/autoconf.h>
-
 #if !defined(LIRC_ON_SA1100) && !defined(CONFIG_SERIAL_MODULE)
 #warning "******************************************"
 #warning " Your serial port driver is compiled into "
@@ -516,6 +514,7 @@ static int set_use_inc(void *data)
 static void set_use_dec(void *data)
 {
 }
+
 static struct lirc_driver driver = {
        .name		= LIRC_DRIVER_NAME,
        .minor		= -1,
@@ -799,7 +798,8 @@ static void send_pulse(unsigned long len)
 	while (bytes_out--) {
 		outb(PULSE, io + UART_TX);
 		/* FIXME treba seriozne cakanie z drivers/char/serial.c */
-		while (!(inb(io + UART_LSR) & UART_LSR_THRE));
+		while (!(inb(io + UART_LSR) & UART_LSR_THRE))
+			;
 	}
 #if 0
 	if (time_left > 0)
