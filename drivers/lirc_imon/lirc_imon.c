@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.50 2009/01/31 10:43:53 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.51 2009/02/04 19:06:17 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -338,7 +338,7 @@ static void delete_context(struct imon_context *context)
 	kfree(context);
 
 	if (debug)
-		info("%s: context deleted", __func__);
+		printk(KERN_INFO "%s: context deleted\n", __func__);
 }
 
 static void deregister_from_lirc(struct imon_context *context)
@@ -351,7 +351,8 @@ static void deregister_from_lirc(struct imon_context *context)
 		err("%s: unable to deregister from lirc(%d)",
 			__func__, retval);
 	else
-		info("Deregistered iMON driver(minor:%d)", minor);
+		printk(KERN_INFO "Deregistered iMON driver(minor:%d)\n",
+		       minor);
 
 }
 
@@ -410,7 +411,7 @@ static int display_open(struct inode *inode, struct file *file)
 		MOD_INC_USE_COUNT;
 		context->display_isopen = 1;
 		file->private_data = context;
-		info("display port opened");
+		printk(KERN_INFO "display port opened\n");
 	}
 
 	mutex_unlock(&context->lock);
@@ -447,7 +448,7 @@ static int display_close(struct inode *inode, struct file *file)
 	} else {
 		context->display_isopen = 0;
 		MOD_DEC_USE_COUNT;
-		info("display port closed");
+		printk(KERN_INFO "display port closed\n");
 		if (!context->dev_present && !context->ir_isopen) {
 			/*
 			 * Device disconnected before close and IR port is not
@@ -777,7 +778,8 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 		err("%s: send packet failed!", __func__);
 		goto exit;
 	} else if (debug) {
-		info("%s: write %d bytes to LCD", __func__, (int) n_bytes);
+		printk(KERN_INFO "%s: write %d bytes to LCD\n",
+		       __func__, (int) n_bytes);
 	}
 exit:
 	mutex_unlock(&context->lock);
@@ -854,7 +856,7 @@ static int ir_open(void *data)
 	else {
 		MOD_INC_USE_COUNT;
 		context->ir_isopen = 1;
-		info("IR port opened");
+		printk(KERN_INFO "IR port opened\n");
 	}
 
 exit:
@@ -883,7 +885,7 @@ static void ir_close(void *data)
 	context->ir_isopen = 0;
 	context->ir_isassociating = 0;
 	MOD_DEC_USE_COUNT;
-	info("IR port closed");
+	printk(KERN_INFO "IR port closed\n");
 
 	if (!context->dev_present) {
 		/*
@@ -918,7 +920,7 @@ static void submit_data(struct imon_context *context)
 	int i;
 
 	if (debug)
-		info("submitting data to LIRC\n");
+		printk(KERN_INFO "submitting data to LIRC\n");
 
 	value *= BIT_DURATION;
 	value &= PULSE_MASK;
@@ -983,7 +985,7 @@ static void incoming_packet(struct imon_context *context,
 	}
 
 	if (len != 8) {
-		warn("%s: invalid incoming packet size(%d)",
+		printk(KERN_WARNING "%s: invalid incoming packet size(%d)\n",
 		     __func__, len);
 		return;
 	}
@@ -996,7 +998,8 @@ static void incoming_packet(struct imon_context *context,
 	    buf[5] == 0xFF &&				/* iMON 2.4G */
 	   ((buf[6] == 0x4E && buf[7] == 0xDF) ||	/* LT */
 	    (buf[6] == 0x5E && buf[7] == 0xDF))) {	/* DT */
-		warn("%s: remote associated refid=%02X", __func__, buf[1]);
+		printk(KERN_WARNING "%s: remote associated refid=%02X\n",
+		       __func__, buf[1]);
 		context->ir_isassociating = 0;
 	}
 
@@ -1100,7 +1103,8 @@ static void usb_rx_callback(struct urb *urb)
 			incoming_packet(context, urb);
 		break;
 	default:
-		warn("%s: status(%d): ignored", __func__, urb->status);
+		printk(KERN_WARNING "%s: status(%d): ignored\n",
+		       __func__, urb->status);
 		break;
 	}
 
@@ -1152,7 +1156,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	struct imon_context *context = NULL;
 	int i;
 
-	info("%s: found iMON device", __func__);
+	printk(KERN_INFO "%s: found iMON device\n", __func__);
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
@@ -1223,7 +1227,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			rx_endpoint = ep;
 			ir_ep_found = 1;
 			if (debug)
-				info("%s: found IR endpoint", __func__);
+				printk(KERN_INFO "%s: found IR endpoint\n",
+				       __func__);
 
 		} else if (!display_ep_found &&
 			   ep_dir == USB_DIR_OUT &&
@@ -1231,7 +1236,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			tx_endpoint = ep;
 			display_ep_found = 1;
 			if (debug)
-				info("%s: found display endpoint", __func__);
+				printk(KERN_INFO "%s: found display endpoint\n",
+				       __func__);
 		}
 	}
 
@@ -1244,8 +1250,9 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			tx_control = 1;
 			display_ep_found = 1;
 			if (debug)
-				info("%s: LCD device uses control endpoint, "
-				     "not interface OUT endpoint", __func__);
+				printk(KERN_INFO "%s: LCD device uses control "
+				       "endpoint, not interface OUT "
+				       "endpoint\n", __func__);
 		}
 	}
 
@@ -1260,7 +1267,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		tx_control = 0;
 		display_ep_found = 0;
 		if (debug)
-			info("%s: device has no display", __func__);
+			printk(KERN_INFO "%s: device has no display\n",
+			       __func__);
 	}
 
 	/* Input endpoint is mandatory */
@@ -1274,7 +1282,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			ir_onboard_decode = 1;
 
 		if (debug)
-			info("ir_onboard_decode: %d", ir_onboard_decode);
+			printk(KERN_INFO "ir_onboard_decode: %d\n",
+			       ir_onboard_decode);
 	}
 
 	/* Determine if display requires 6 packets */
@@ -1283,7 +1292,8 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 			display_proto_6p = 1;
 
 		if (debug)
-			info("display_proto_6p: %d", display_proto_6p);
+			printk(KERN_INFO "display_proto_6p: %d\n",
+			       display_proto_6p);
 	}
 
 	alloc_status = 0;
@@ -1364,7 +1374,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 		mutex_unlock(&context->lock);
 		goto alloc_status_switch;
 	} else
-		info("%s: Registered iMON driver(minor:%d)",
+		printk(KERN_INFO "%s: Registered iMON driver(minor:%d)\n",
 		     __func__, lirc_minor);
 
 	/* Needed while unregistering! */
@@ -1401,12 +1411,12 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 
 	if (display_ep_found) {
 		if (debug)
-			info("Registering display with devfs");
+			printk(KERN_INFO "Registering display with devfs\n");
 #ifdef KERNEL_2_5
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
-			info("%s: could not get a minor number for display",
-				__func__);
+			printk(KERN_INFO "%s: could not get a minor number for "
+			       "display\n", __func__);
 		}
 #else
 		sprintf(name, DEVFS_NAME, subminor);
@@ -1415,13 +1425,13 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 					DISPLAY_MINOR_BASE + subminor,
 					DEVFS_MODE, &display_fops, NULL))) {
 			/* not a fatal error so ignore */
-			info("%s: devfs register failed for display",
-					__func__);
+			printk(KERN_INFO "%s: devfs register failed for "
+			       "display\n", __func__);
 		}
 #endif
 	}
 
-	info("%s: iMON device on usb<%d:%d> initialized",
+	printk(KERN_INFO "%s: iMON device on usb<%d:%d> initialized\n",
 			__func__, usbdev->bus->busnum, usbdev->devnum);
 
 	mutex_unlock(&context->lock);
@@ -1478,7 +1488,7 @@ static void imon_disconnect(struct usb_device *dev, void *data)
 #endif
 	mutex_lock(&context->lock);
 
-	info("%s: iMON device disconnected", __func__);
+	printk(KERN_INFO "%s: iMON device disconnected\n", __func__);
 
 #ifdef KERNEL_2_5
 	/*
@@ -1546,8 +1556,8 @@ static int __init imon_init(void)
 {
 	int rc;
 
-	info(MOD_DESC ", v" MOD_VERSION);
-	info(MOD_AUTHOR);
+	printk(KERN_INFO MOD_DESC ", v" MOD_VERSION "\n");
+	printk(KERN_INFO MOD_AUTHOR "\n");
 
 	rc = usb_register(&imon_driver);
 	if (rc) {
@@ -1560,7 +1570,7 @@ static int __init imon_init(void)
 static void __exit imon_exit(void)
 {
 	usb_deregister(&imon_driver);
-	info("module removed. Goodbye!");
+	printk(KERN_INFO "module removed. Goodbye!\n");
 }
 
 module_init(imon_init);

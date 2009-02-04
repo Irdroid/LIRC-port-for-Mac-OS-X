@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.35 2009/01/31 10:43:53 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.36 2009/02/04 19:06:17 lirc Exp $      */
 /*
  * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -225,7 +225,7 @@ static void delete_context(struct sasem_context *context)
 	kfree(context);
 
 	if (debug)
-		info("%s: context deleted", __func__);
+		printk(KERN_INFO "%s: context deleted\n", __func__);
 }
 
 static void deregister_from_lirc(struct sasem_context *context)
@@ -238,7 +238,8 @@ static void deregister_from_lirc(struct sasem_context *context)
 		err("%s: unable to deregister from lirc (%d)",
 			__func__, retval);
 	else
-		info("Deregistered Sasem driver (minor:%d)", minor);
+		printk(KERN_INFO "Deregistered Sasem driver (minor:%d)\n",
+		       minor);
 
 }
 
@@ -294,7 +295,7 @@ static int vfd_open(struct inode *inode, struct file *file)
 		MOD_INC_USE_COUNT;
 		context->vfd_isopen = 1;
 		file->private_data = context;
-		info("VFD port opened");
+		printk(KERN_INFO "VFD port opened\n");
 	}
 
 	mutex_unlock(&context->lock);
@@ -331,7 +332,7 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 		context->vfd_contrast = (unsigned int)arg;
 		break;
 	default:
-		info("Unknown IOCTL command");
+		printk(KERN_INFO "Unknown IOCTL command\n");
 		mutex_unlock(&context->lock);
 		return -ENOIOCTLCMD;  /* not supported */
 	}
@@ -364,7 +365,7 @@ static int vfd_close(struct inode *inode, struct file *file)
 	} else {
 		context->vfd_isopen = 0;
 		MOD_DEC_USE_COUNT;
-		info("VFD port closed");
+		printk(KERN_INFO "VFD port closed\n");
 		if (!context->dev_present && !context->ir_isopen) {
 
 			/* Device disconnected before close and IR port is
@@ -585,7 +586,7 @@ static int ir_open(void *data)
 	else {
 		MOD_INC_USE_COUNT;
 		context->ir_isopen = 1;
-		info("IR port opened");
+		printk(KERN_INFO "IR port opened\n");
 	}
 
 exit:
@@ -613,7 +614,7 @@ static void ir_close(void *data)
 	usb_kill_urb(context->rx_urb);
 	context->ir_isopen = 0;
 	MOD_DEC_USE_COUNT;
-	info("IR port closed");
+	printk(KERN_INFO "IR port closed\n");
 
 	if (!context->dev_present) {
 
@@ -649,7 +650,7 @@ static void incoming_packet(struct sasem_context *context,
 	struct timeval tv;
 
 	if (len != 8) {
-		warn("%s: invalid incoming packet size (%d)",
+		printk(KERN_WARNING "%s: invalid incoming packet size (%d)\n",
 		     __func__, len);
 		return;
 	}
@@ -732,7 +733,8 @@ static void usb_rx_callback(struct urb *urb)
 		break;
 
 	default:
-		warn("%s: status (%d): ignored", __func__, urb->status);
+		printk(KERN_WARNING "%s: status (%d): ignored\n",
+		       __func__, urb->status);
 		break;
 	}
 
@@ -779,7 +781,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	struct sasem_context *context = NULL;
 	int i;
 
-	info("%s: found Sasem device", __func__);
+	printk(KERN_INFO "%s: found Sasem device\n", __func__);
 
 #if !defined(KERNEL_2_5)
 	for (subminor = 0; subminor < MAX_DEVICES; ++subminor) {
@@ -833,7 +835,8 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			rx_endpoint = ep;
 			ir_ep_found = 1;
 			if (debug)
-				info("%s: found IR endpoint", __func__);
+				printk(KERN_INFO "%s: found IR endpoint\n",
+				       __func__);
 
 		} else if (!vfd_ep_found &&
 			ep_dir == USB_DIR_OUT &&
@@ -842,7 +845,8 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 			tx_endpoint = ep;
 			vfd_ep_found = 1;
 			if (debug)
-				info("%s: found VFD endpoint", __func__);
+				printk(KERN_INFO "%s: found VFD endpoint\n",
+				       __func__);
 		}
 	}
 
@@ -855,7 +859,8 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 	}
 
 	if (!vfd_ep_found)
-		info("%s: no valid output (VFD) endpoint found.", __func__);
+		printk(KERN_INFO "%s: no valid output (VFD) endpoint found.\n",
+		       __func__);
 
 
 	/* Allocate memory */
@@ -931,7 +936,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 7;
 		mutex_unlock(&context->lock);
 	} else
-		info("%s: Registered Sasem driver (minor:%d)",
+		printk(KERN_INFO "%s: Registered Sasem driver (minor:%d)\n",
 			__func__, lirc_minor);
 
 alloc_status_switch:
@@ -982,14 +987,14 @@ alloc_status_switch:
 
 #ifdef KERNEL_2_5
 		if (debug)
-			info("Registering VFD with sysfs");
+			printk(KERN_INFO "Registering VFD with sysfs\n");
 		if (usb_register_dev(interface, &sasem_class))
 			/* Not a fatal error, so ignore */
-			info("%s: could not get a minor number for VFD",
-				__func__);
+			printk(KERN_INFO "%s: could not get a minor number "
+			       "for VFD\n", __func__);
 #else
 		if (debug)
-			info("Registering VFD with devfs");
+			printk(KERN_INFO "Registering VFD with devfs\n");
 		sprintf(name, DEVFS_NAME, subminor);
 		context->devfs = devfs_register(usb_devfs_handle, name,
 				 DEVFS_FL_DEFAULT,
@@ -997,12 +1002,12 @@ alloc_status_switch:
 				 DEVFS_MODE, &vfd_fops, NULL);
 		if (!context->devfs)
 			/* not a fatal error so ignore */
-			info("%s: devfs register failed for VFD",
+			printk(KERN_INFO "%s: devfs register failed for VFD\n",
 					__func__);
 #endif
 	}
 
-	info("%s: Sasem device on usb<%d:%d> initialized",
+	printk(KERN_INFO "%s: Sasem device on usb<%d:%d> initialized\n",
 			__func__, dev->bus->busnum, dev->devnum);
 
 	mutex_unlock(&context->lock);
@@ -1035,7 +1040,7 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 #endif
 	mutex_lock(&context->lock);
 
-	info("%s: Sasem device disconnected", __func__);
+	printk(KERN_INFO "%s: Sasem device disconnected\n", __func__);
 
 #ifdef KERNEL_2_5
 	usb_set_intfdata(interface, NULL);
@@ -1077,8 +1082,8 @@ static int __init sasem_init(void)
 {
 	int rc;
 
-	info(MOD_DESC ", v" MOD_VERSION);
-	info(MOD_AUTHOR);
+	printk(KERN_INFO MOD_DESC ", v" MOD_VERSION "\n");
+	printk(KERN_INFO MOD_AUTHOR "\n");
 
 	rc = usb_register(&sasem_driver);
 	if (rc < 0) {
@@ -1091,7 +1096,7 @@ static int __init sasem_init(void)
 static void __exit sasem_exit(void)
 {
 	usb_deregister(&sasem_driver);
-	info("module removed. Goodbye!");
+	printk(KERN_INFO "module removed. Goodbye!\n");
 }
 
 

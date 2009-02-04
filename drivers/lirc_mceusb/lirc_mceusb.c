@@ -605,8 +605,8 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 			break;
 	}
 	if (minor >= MAX_DEVICES) {
-		info("Too many devices plugged in, "
-		     "can not handle this device.");
+		printk(KERN_INFO "Too many devices plugged in, "
+		       "can not handle this device.\n");
 		goto error;
 	}
 
@@ -781,9 +781,6 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	/* we can register the device now, as it is ready */
 	usb_set_intfdata(interface, dev);
 #endif
-	/* let the user know what node this device is now attached to */
-	/* info("USB Microsoft IR Transceiver device now attached to msir%d",
-		dev->minor); */
 	mutex_unlock(&minor_table_mutex);
 #ifdef KERNEL_2_5
 	return 0;
@@ -838,7 +835,8 @@ static void mceusb_disconnect(struct usb_device *udev, void *ptr)
 	mutex_unlock(&dev->lock);
 	mceusb_delete(dev);
 
-	info("Microsoft IR Transceiver #%d now disconnected", minor);
+	printk(KERN_INFO "Microsoft IR Transceiver #%d now disconnected\n",
+	       minor);
 	mutex_unlock(&minor_table_mutex);
 }
 
@@ -864,7 +862,7 @@ static int __init usb_mceusb_init(void)
 #endif
 	}
 
-	info(DRIVER_DESC " " DRIVER_VERSION);
+	printk(KERN_INFO DRIVER_DESC " " DRIVER_VERSION "\n");
 	return 0;
 }
 
