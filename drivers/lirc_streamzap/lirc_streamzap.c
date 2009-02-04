@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.41 2009/02/01 20:33:45 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.42 2009/02/04 19:17:48 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,11 +56,9 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.41 $"
+#define DRIVER_VERSION	"$Revision: 1.42 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
-
-/* ------------------------------------------------------------------ */
 
 static int debug;
 
@@ -452,7 +450,6 @@ static void usb_streamzap_irq(struct urb *urb)
 	}
 
 #ifdef KERNEL_2_5
-	/* resubmit only for 2.6 */
 	usb_submit_urb(urb, GFP_ATOMIC);
 #endif
 
