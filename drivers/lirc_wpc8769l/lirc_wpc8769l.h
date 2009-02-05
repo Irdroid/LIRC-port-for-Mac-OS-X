@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.h,v 1.3 2009/01/16 20:19:17 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.h,v 1.4 2009/02/05 20:55:20 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.h ****************************************************
@@ -32,8 +32,8 @@
 #define WPC8769L_ACPI_HID "WEC1020"
 
 /* Number of microseconds for a whole byte of samples. */
-/* This is assuming 18 kHz bit sampling frequency.     */
-#define WPC8769L_USECS_PER_BYTE 444
+/* This is assuming 20 kHz bit sampling frequency.     */
+#define WPC8769L_USECS_PER_BYTE 400
 
 /* Number of microseconds for a bit sample. */
 #define WPC8769L_USECS_PER_BIT (WPC8769L_USECS_PER_BYTE >> 3)
