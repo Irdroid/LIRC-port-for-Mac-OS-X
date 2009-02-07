@@ -66,8 +66,13 @@ begin remote
           Thumbnail                0x2AB715B7
           AspectRatio              0x29A595B7
           FullScreen               0x2AA395B7
+
           MyDVD                    0x29A295B7
           Menu                     0x2BA385B7
+# different codes
+          MyDVD                    0x29A3D5B7
+          Menu                     0x2BA3D5B7
+
           Caption                  0x298595B7
           Language                 0x2B8595B7
           MouseKeyboard            0x299115B7
