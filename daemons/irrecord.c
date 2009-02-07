@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.87 2008/12/29 14:57:34 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.88 2009/02/07 16:47:02 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.87 $"
+#define IRRECORD_VERSION "$Revision: 5.88 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -1734,7 +1734,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 			{
 				if(data>MIN_GAP || data>100*average ||
 				   /* this MUST be a gap */
-				   (count_spaces>10 && data>5*average)
+				   (count_spaces>10 && data>5*maxspace/2)
 				   /* || Echostar
 				      (count_spaces>20 && data>9*maxspace/10)*/)
 					/* this should be a gap */
