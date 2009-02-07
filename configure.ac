@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.21 2009/01/03 17:30:35 lirc Exp $
+dnl $Id: configure.ac,v 1.22 2009/02/07 18:00:41 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -922,8 +922,7 @@ if test "$driver" = "devinput"; then
   lirc_driver="none"
   hw_module="hw_devinput.o"
   HW_DEFAULT="hw_devinput"
-# for table.html (unset later)
-  lircd_conf='<A HREF="http://linux.bytesex.org/v4l2/faq.html#lircd">generic config file for Linux input layer</A>'
+  lircd_conf="devinput/lircd.conf.devinput"
 fi
 
 if test "$driver" = "digimatrix"; then
@@ -1404,11 +1403,6 @@ if test "$driver" = "wpc8769l"; then
 fi
 
 #END HARDWARE HEURISTIC
-
-if test "$driver" = "devinput"; then
-  lircd_conf=""
-fi
-
 
 AC_DEFINE_UNQUOTED(HW_DEFAULT, ${HW_DEFAULT})
 
