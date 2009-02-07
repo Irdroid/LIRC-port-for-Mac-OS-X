@@ -762,3 +762,15 @@
       configurations stop even though just part of the button sequence
       has been entered.
     </P>
+    <P>
+      There was an interface change in the <em>lirc_dev</em> kernel
+      module. If you get an error message like
+<PRE>
+lirc_serial: Unknown symbol lirc_unregister_driver
+lirc_serial: Unknown symbol lirc_register_driver
+</PRE>
+    when trying to load any of the lirc kernel modules, then you have
+    probably an old version of <em>lirc_dev</em> loaded. Make sure
+    that the <em>lirc_dev</em> version that comes with this release is
+    loaded.
+    </P>
