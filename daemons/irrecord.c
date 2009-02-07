@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.88 2009/02/07 16:47:02 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.89 2009/02/07 17:23:06 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.88 $"
+#define IRRECORD_VERSION "$Revision: 5.89 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -191,6 +191,7 @@ lirc_t emulation_readdata(lirc_t timeout)
 			if(current_code->name == NULL)
 			{
 				current_code = NULL;
+				return emulation_readdata(timeout);
 			}
 			if(data == 0)
 			{
