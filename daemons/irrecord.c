@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.89 2009/02/07 17:23:06 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.90 2009/02/07 17:26:27 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.89 $"
+#define IRRECORD_VERSION "$Revision: 5.90 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -948,7 +948,9 @@ int main(int argc,char **argv)
 	
 	if(!has_toggle_bit_mask(remotes))
 	{
-		if(!using_template) get_toggle_bit_mask(remotes);
+		if(!using_template &&
+		   strcmp(hw.name, "devinput") != 0)
+			get_toggle_bit_mask(remotes);
 	}
 	else
 	{
