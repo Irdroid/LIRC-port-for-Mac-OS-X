@@ -31,10 +31,14 @@ With the --listen option you can let lircd listen for network
 connections on the given address/port. The default address is 0.0.0.0,
 which means that connections on all network interfaces will be accepted.
 The default port is 8765. No security checks are currently implemented.
+The listening lircd instance will send all IR events to the connecting
+lircd instances.
 
 The --connect option allows you to connect to other lircd servers that
 provide a network socket at the given host and port number. The number
 of such connections is currently limited to 100.
+The connecting lircd instance will receive IR events from the lircd
+instance it connects to.
 
 With the --output option you can select Unix domain socket, which lircd
 will write remote key codes to. The default currently is /dev/lircd.
