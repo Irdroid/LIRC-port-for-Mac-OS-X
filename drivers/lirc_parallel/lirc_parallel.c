@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.47 2009/02/01 14:58:13 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.48 2009/02/08 18:44:22 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -439,7 +439,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 			return -EIO;
 	}
 
-	/* ajust values from usecs */
+	/* adjust values from usecs */
 	for (i = 0; i < count; i++) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 		unsigned long long helper;
