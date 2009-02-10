@@ -516,6 +516,11 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	...
     end mode</PRE>
 	
+	All configurations embraced by this mode construct will stay
+	inactive until the program enters the given mode by using the
+	mode token. Please note that configurations outside a mode
+	will always stay active even though you enter a specific mode.
+	
 	If mode is equal to the name of a client application this
 	application will always start in this mode. Consider this
 	situation: you want to start <em>xawtv</em> with
@@ -577,6 +582,17 @@ end</PRE>
       </DD>
     </DL>
     
+    <P>
+      If you press a button on your remote the .lircrc is searched
+      from top to bottom for matching configurations. Be aware that
+      the search is not stopped by a match unless you have specified
+      the <em>quit</em> flag in the matching configuration. You should
+      also be aware that if a configuration changes the current mode,
+      the change takes effect immediately, which means that the
+      further search for matching configurations will take place with
+      the new mode setting.
+    </P>
+
     <P>
       It is possible to split the lirc configuration into several
       files by using the <em>include</em> command. It tells the parser
