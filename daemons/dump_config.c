@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.22 2008/06/03 17:21:29 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.23 2009/02/12 21:14:48 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -95,12 +95,16 @@ void fprint_remote_gap(FILE *f, struct ir_remote *rem)
 void fprint_remote_head(FILE *f, struct ir_remote *rem)
 {
 	fprintf(f, "begin remote\n\n");
-	if(!is_raw(rem)){
-		fprintf(f, "  name  %s\n",rem->name);
+	fprintf(f, "  name  %s\n",rem->name);
+	if(!is_raw(rem))
+	{
 		fprintf(f, "  bits        %5d\n",rem->bits);
-		fprint_flags(f,rem->flags);
-		fprintf(f, "  eps         %5d\n",rem->eps);
-		fprintf(f, "  aeps        %5d\n\n",rem->aeps);
+	}
+	fprint_flags(f,rem->flags);
+	fprintf(f, "  eps         %5d\n",rem->eps);
+	fprintf(f, "  aeps        %5d\n\n",rem->aeps);
+	if(!is_raw(rem))
+	{
 		if(has_header(rem))
 		{
 			fprintf(f, "  header      %5lu %5lu\n",
@@ -121,11 +125,14 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  zero        %5lu %5lu\n",
 			(unsigned long) rem->pzero,
 			(unsigned long)  rem->szero);
-		if(rem->ptrail!=0)
-		{
-			fprintf(f, "  ptrail      %5lu\n",
-				(unsigned long) rem->ptrail);
-		}
+	}
+	if(rem->ptrail!=0)
+	{
+		fprintf(f, "  ptrail      %5lu\n",
+			(unsigned long) rem->ptrail);
+	}
+	if(!is_raw(rem))
+	{
 		if(rem->plead!=0)
 		{
 			fprintf(f, "  plead       %5lu\n",
@@ -137,12 +144,15 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 				(unsigned long) rem->pfoot,
 				(unsigned long) rem->sfoot);
 		}
-		if(has_repeat(rem))
-		{
-			fprintf(f, "  repeat      %5lu %5lu\n",
-				(unsigned long) rem->prepeat,
-				(unsigned long) rem->srepeat);
-		}
+	}
+	if(has_repeat(rem))
+	{
+		fprintf(f, "  repeat      %5lu %5lu\n",
+			(unsigned long) rem->prepeat,
+			(unsigned long) rem->srepeat);
+	}
+	if(!is_raw(rem))
+	{
 		if(rem->pre_data_bits>0)
 		{
 			fprintf(f, "  pre_data_bits   %d\n",rem->pre_data_bits);
@@ -173,16 +183,19 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 				(unsigned long) rem->post_p,
 				(unsigned long) rem->post_s);
 		}
-		fprint_remote_gap(f, rem);
-		if(has_repeat_gap(rem))
-		{
-			fprintf(f, "  repeat_gap   %lu\n",
-				(unsigned long) rem->repeat_gap);
-		}
-		if(rem->min_repeat>0)
-		{
-			fprintf(f, "  min_repeat      %d\n",rem->min_repeat);
-		}
+	}
+	fprint_remote_gap(f, rem);
+	if(has_repeat_gap(rem))
+	{
+		fprintf(f, "  repeat_gap   %lu\n",
+			(unsigned long) rem->repeat_gap);
+	}
+	if(rem->min_repeat>0)
+	{
+		fprintf(f, "  min_repeat      %d\n",rem->min_repeat);
+	}
+	if(!is_raw(rem))
+	{
 		if(rem->min_code_repeat>0)
 		{
 			fprintf(f, "  min_code_repeat %d\n",
@@ -233,18 +246,6 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 				rem->stop_bits/2,
 				rem->stop_bits%2 ? ".5":"");
 		}
-	}
-	else
-	{
-		fprintf(f, "  name   %s\n",rem->name);
-		fprint_flags(f,rem->flags);
-		fprintf(f, "  eps         %5d\n",rem->eps);
-		fprintf(f, "  aeps        %5d\n\n",rem->aeps);
-		fprintf(f, "  ptrail      %5lu\n",(unsigned long) rem->ptrail);
-		fprintf(f, "  repeat %5lu %5lu\n",
-			(unsigned long) rem->prepeat,
-			(unsigned long) rem->srepeat);
-		fprint_remote_gap(f, rem);
 	}
 	if(rem->freq!=0)
 	{
