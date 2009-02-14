@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.51 2009/02/04 19:06:17 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.52 2009/02/14 19:33:17 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -320,10 +320,10 @@ MODULE_DESCRIPTION(MOD_DESC);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, imon_usb_id_table);
 
-module_param(debug, int, 0);
+module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
 
-module_param(display_type, int, 0);
+module_param(display_type, int, 0444);
 MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 		 "1=vfd, 2=lcd, 3=none (default: autodetect)");
 

@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.36 2009/02/04 19:06:17 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.37 2009/02/14 19:33:17 lirc Exp $      */
 /*
  * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -212,7 +212,7 @@ extern devfs_handle_t usb_devfs_handle;
 MODULE_AUTHOR(MOD_AUTHOR);
 MODULE_DESCRIPTION(MOD_DESC);
 MODULE_LICENSE("GPL");
-module_param(debug, int, 0);
+module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes (default: no)");
 
 static void delete_context(struct sasem_context *context)
