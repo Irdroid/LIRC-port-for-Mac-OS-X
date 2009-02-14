@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.6 2009/01/28 20:37:04 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.7 2009/02/14 19:35:53 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -1136,7 +1136,7 @@ MODULE_DESCRIPTION("Driver for the integrated Winbond WPC8769L-based IR\
  receiver found in Acer laptops.");
 MODULE_VERSION("0.0");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_param(baseport1, uint, S_IRUGO);

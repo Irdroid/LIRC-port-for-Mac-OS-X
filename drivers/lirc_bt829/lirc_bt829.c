@@ -393,7 +393,7 @@ MODULE_AUTHOR("Froenchenko Leonid");
 MODULE_DESCRIPTION("IR remote driver for bt829 based TV cards");
 MODULE_LICENSE("GPL");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
 
 EXPORT_NO_SYMBOLS;

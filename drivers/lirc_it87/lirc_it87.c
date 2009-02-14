@@ -982,24 +982,24 @@ MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
 MODULE_AUTHOR("Hans-Günter Lütke Uphues");
 MODULE_LICENSE("GPL");
 
-module_param(io, int, 0444);
+module_param(io, int, S_IRUGO);
 MODULE_PARM_DESC(io, "I/O base address (default: 0x310)");
 
-module_param(irq, int, 0444);
+module_param(irq, int, S_IRUGO);
 #ifdef LIRC_IT87_DIGIMATRIX
 MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 9)");
 #else
 MODULE_PARM_DESC(irq, "Interrupt (1,3-12) (default: 7)");
 #endif
 
-module_param(it87_enable_demodulator, bool, 0444);
+module_param(it87_enable_demodulator, bool, S_IRUGO);
 MODULE_PARM_DESC(it87_enable_demodulator,
 		 "Receiver demodulator enable/disable (1/0), default: 0");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
-module_param(digimatrix, bool, 0644);
+module_param(digimatrix, bool, S_IRUGO | S_IWUSR);
 #ifdef LIRC_IT87_DIGIMATRIX
 MODULE_PARM_DESC(digimatrix,
 	"Asus Digimatrix it87 compat. enable/disable (1/0), default: 1");
@@ -1009,7 +1009,7 @@ MODULE_PARM_DESC(digimatrix,
 #endif
 
 
-module_param(it87_freq, int, 0444);
+module_param(it87_freq, int, S_IRUGO);
 #ifdef LIRC_IT87_DIGIMATRIX
 MODULE_PARM_DESC(it87_freq,
     "Carrier demodulator frequency (kHz), (default: 36)");

@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.80 2009/01/28 20:37:03 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.81 2009/02/14 19:35:52 lirc Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.80 $"
+#define DRIVER_VERSION		"$Revision: 1.81 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -1363,7 +1363,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.80 2009/01/28 20:37:03 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.81 2009/02/14 19:35:52 lirc Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
@@ -1389,19 +1389,19 @@ MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, usb_remote_table);
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not (default: 0)");
 
-module_param(mask, int, 0644);
+module_param(mask, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mask, "Set channel acceptance bit mask (default: 0xFFFF)");
 
-module_param(unique, bool, 0644);
+module_param(unique, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(unique, "Enable channel-specific codes (default: 0)");
 
-module_param(repeat, int, 0644);
+module_param(repeat, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(repeat, "Repeat timeout (1/100 sec) (default: 10)");
 
-module_param(mdeadzone, int, 0644);
+module_param(mdeadzone, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
 
 /*
@@ -1425,16 +1425,16 @@ MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
  *
  * 1 is easier to write lircd configs for; 2 allows full control.
  */
-module_param(emit_updown, int, 0644);
+module_param(emit_updown, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(emit_updown, "emit press/release codes (rw2): 0:don't "
 		 "(default), 1:emit 2 codes only, 2:code for each button");
 
-module_param(emit_modekeys, int, 0644);
+module_param(emit_modekeys, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(emit_modekeys, "emit keycodes for aux1-aux4, pc, and mouse "
 		 "(rw2): 0:don't (default), 1:emit translated codes: one for "
 		 "mode switch, one for same mode, 2:raw codes");
 
-module_param(mgradient, int, 0644);
+module_param(mgradient, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mgradient, "rw2 mouse: 1000*gradient from E to NE (default: "
 		 "500 => .5 => ~27 degrees)");
 

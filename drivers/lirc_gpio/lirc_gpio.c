@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.56 2009/01/28 20:37:04 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.57 2009/02/14 19:35:52 lirc Exp $
  *
  */
 
@@ -581,31 +581,31 @@ MODULE_DESCRIPTION("Driver module for remote control (data "
 MODULE_AUTHOR("Artur Lipowski");
 MODULE_LICENSE("GPL");
 
-module_param(minor, int, 0444);
+module_param(minor, int, S_IRUGO);
 MODULE_PARM_DESC(minor, "Preferred minor device number");
 
-module_param(card, int, 0444);
+module_param(card, int, S_IRUGO);
 MODULE_PARM_DESC(card, "TV card number to attach to");
 
-module_param(gpio_mask, long, 0444);
+module_param(gpio_mask, long, S_IRUGO);
 MODULE_PARM_DESC(gpio_mask, "gpio_mask");
 
-module_param(gpio_lock_mask, long, 0444);
+module_param(gpio_lock_mask, long, S_IRUGO);
 MODULE_PARM_DESC(gpio_lock_mask, "gpio_lock_mask");
 
-module_param(gpio_xor_mask, long, 0444);
+module_param(gpio_xor_mask, long, S_IRUGO);
 MODULE_PARM_DESC(gpio_xor_mask, "gpio_xor_mask");
 
-module_param(soft_gap, int, 0444);
+module_param(soft_gap, int, S_IRUGO);
 MODULE_PARM_DESC(soft_gap, "Time between keypresses (in ms)");
 
-module_param(sample_rate, int, 0444);
+module_param(sample_rate, int, S_IRUGO);
 MODULE_PARM_DESC(sample_rate, "Sample rate (between 2 and HZ)");
 
-module_param(bttv_id, int, 0444);
+module_param(bttv_id, int, S_IRUGO);
 MODULE_PARM_DESC(bttv_id, "BTTV card type");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;

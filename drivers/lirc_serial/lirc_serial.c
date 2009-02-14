@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.99 2009/02/01 18:47:20 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.100 2009/02/14 19:35:53 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.99 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.100 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1366,7 +1366,7 @@ MODULE_AUTHOR("Ralph Metzler, Trent Piepho, Ben Pfaff, "
 	      "Christoph Bartelmus, Andrei Tanas");
 MODULE_LICENSE("GPL");
 
-module_param(type, int, 0444);
+module_param(type, int, S_IRUGO);
 #if defined(LIRC_SERIAL_NSLU2)
 MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
 		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug,"
@@ -1376,12 +1376,12 @@ MODULE_PARM_DESC(type, "Hardware type (0 = home-brew, 1 = IRdeo,"
 		 " 2 = IRdeo Remote, 3 = AnimaX, 4 = IgorPlug)");
 #endif
 
-module_param(io, int, 0444);
+module_param(io, int, S_IRUGO);
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 
 #if defined(LIRC_ALLOW_MMAPPED_IO)
 /* some architectures (e.g. intel xscale) have memory mapped registers */
-module_param(iommap, bool, 0444);
+module_param(iommap, bool, S_IRUGO);
 MODULE_PARM_DESC(iommap, "physical base for memory mapped I/O"
 		" (0 = no memory mapped io)");
 
@@ -1390,30 +1390,30 @@ MODULE_PARM_DESC(iommap, "physical base for memory mapped I/O"
  * on 32bit word boundaries.
  * See linux-kernel/serial/8250.c serial_in()/out()
  */
-module_param(ioshift, int, 0444);
+module_param(ioshift, int, S_IRUGO);
 MODULE_PARM_DESC(ioshift, "shift I/O register offset (0 = no shift)");
 #endif
 
-module_param(irq, int, 0444);
+module_param(irq, int, S_IRUGO);
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
 
-module_param(share_irq, bool, 0444);
+module_param(share_irq, bool, S_IRUGO);
 MODULE_PARM_DESC(share_irq, "Share interrupts (0 = off, 1 = on)");
 
-module_param(sense, bool, 0444);
+module_param(sense, bool, S_IRUGO);
 MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
 		 " (0 = active high, 1 = active low )");
 
 #ifdef LIRC_SERIAL_TRANSMITTER
-module_param(txsense, bool, 0444);
+module_param(txsense, bool, S_IRUGO);
 MODULE_PARM_DESC(txsense, "Sense of transmitter circuit"
 		 " (0 = active high, 1 = active low )");
 #endif
 
-module_param(softcarrier, bool, 0444);
+module_param(softcarrier, bool, S_IRUGO);
 MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on)");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;

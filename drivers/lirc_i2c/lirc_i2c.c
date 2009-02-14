@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.63 2009/02/01 21:13:34 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.64 2009/02/14 19:35:52 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -686,10 +686,10 @@ MODULE_AUTHOR("Gerd Knorr, Michal Kochanowicz, Christoph Bartelmus, "
 	      "Ulrich Mueller, Stefan Jahn, Jerome Brock");
 MODULE_LICENSE("GPL");
 
-module_param(minor, int, 0444);
+module_param(minor, int, S_IRUGO);
 MODULE_PARM_DESC(minor, "Preferred minor device number");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_init(lirc_i2c_init);

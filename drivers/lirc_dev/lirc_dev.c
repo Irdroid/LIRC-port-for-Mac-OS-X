@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.78 2009/02/01 14:58:12 lirc Exp $
+ * $Id: lirc_dev.c,v 1.79 2009/02/14 19:35:52 lirc Exp $
  *
  */
 
@@ -1021,7 +1021,7 @@ MODULE_AUTHOR("Artur Lipowski");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS_CHARDEV_MAJOR(IRCTL_DEV_MAJOR);
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 #endif /* MODULE */

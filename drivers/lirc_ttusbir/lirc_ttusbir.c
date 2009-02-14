@@ -65,7 +65,7 @@ static int set_use_inc(void *data);
 static void set_use_dec(void *data);
 
 static int num_urbs = 2;
-module_param(num_urbs, int, 0444);
+module_param(num_urbs, int, S_IRUGO);
 MODULE_PARM_DESC(num_urbs,
 		 "Number of URBs in queue. Try to increase to 4 in case "
 		 "of problems (default: 2; minimum: 2)");

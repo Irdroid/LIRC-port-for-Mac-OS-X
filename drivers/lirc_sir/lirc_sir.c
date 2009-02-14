@@ -1319,20 +1319,20 @@ MODULE_AUTHOR("Milan Pikula");
 MODULE_LICENSE("GPL");
 
 #ifdef LIRC_ON_SA1100
-module_param(irq, int, 0444);
+module_param(irq, int, S_IRUGO);
 MODULE_PARM_DESC(irq, "Interrupt (16)");
 #else
-module_param(io, int, 0444);
+module_param(io, int, S_IRUGO);
 MODULE_PARM_DESC(io, "I/O address base (0x3f8 or 0x2f8)");
 
-module_param(irq, int, 0444);
+module_param(irq, int, S_IRUGO);
 MODULE_PARM_DESC(irq, "Interrupt (4 or 3)");
 
-module_param(threshold, int, 0444);
+module_param(threshold, int, S_IRUGO);
 MODULE_PARM_DESC(threshold, "space detection threshold (3)");
 #endif
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;

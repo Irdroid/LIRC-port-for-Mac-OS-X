@@ -566,7 +566,7 @@ MODULE_DESCRIPTION("LIRC driver for ITE8709 CIR port");
 MODULE_AUTHOR("Grégory Lardière");
 MODULE_LICENSE("GPL");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.48 2009/02/08 18:44:22 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.49 2009/02/14 19:35:53 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -746,19 +746,19 @@ MODULE_DESCRIPTION("Infrared receiver driver for parallel ports.");
 MODULE_AUTHOR("Christoph Bartelmus");
 MODULE_LICENSE("GPL");
 
-module_param(io, int, 0444);
+module_param(io, int, S_IRUGO);
 MODULE_PARM_DESC(io, "I/O address base (0x3bc, 0x378 or 0x278)");
 
-module_param(irq, int, 0444);
+module_param(irq, int, S_IRUGO);
 MODULE_PARM_DESC(irq, "Interrupt (7 or 5)");
 
-module_param(tx_mask, int, 0444);
+module_param(tx_mask, int, S_IRUGO);
 MODULE_PARM_DESC(tx_maxk, "Transmitter mask (default: 0x01)");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
-module_param(check_pselecd, bool, 0644);
+module_param(check_pselecd, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Check for printer (default: 0)");
 
 EXPORT_NO_SYMBOLS;

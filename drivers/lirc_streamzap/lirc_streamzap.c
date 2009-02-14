@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.42 2009/02/04 19:17:48 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.43 2009/02/14 19:35:53 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.42 $"
+#define DRIVER_VERSION	"$Revision: 1.43 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -885,7 +885,7 @@ MODULE_AUTHOR("Christoph Bartelmus, Greg Wickham, Adrian Dewhurst");
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 EXPORT_NO_SYMBOLS;

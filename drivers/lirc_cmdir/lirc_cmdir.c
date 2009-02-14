@@ -1,4 +1,4 @@
-/*      $Id: lirc_cmdir.c,v 1.11 2009/01/14 19:53:17 lirc Exp $      */
+/*      $Id: lirc_cmdir.c,v 1.12 2009/02/14 19:35:52 lirc Exp $      */
 
 /*
  * lirc_cmdir.c - Driver for InnovationOne's COMMANDIR USB Transceiver
@@ -582,7 +582,7 @@ MODULE_DESCRIPTION("InnovationOne driver for "
 MODULE_LICENSE("GPL");
 #endif
 
-module_param(debug, bool, 0644);
+module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 #ifndef KERNEL_2_5
