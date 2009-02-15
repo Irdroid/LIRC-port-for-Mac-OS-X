@@ -578,7 +578,6 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	struct usb_endpoint_descriptor *endpoint;
 
 	struct lirc_driver *driver;
-	struct lirc_buffer *rbuf;
 
 	int minor;
 	size_t buffer_size;
@@ -725,40 +724,23 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 		goto error;
 	}
 
-	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
-	if (!rbuf) {
-		err("out of memory");
-		kfree(driver);
-		goto error;
-	}
-
-	if (lirc_buffer_init(rbuf, sizeof(lirc_t), 128)) {
-		err("out of memory");
-		kfree(driver);
-		kfree(rbuf);
-		goto error;
-	}
-
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = minor;
 	driver->code_length = sizeof(lirc_t) * 8;
 	driver->features = LIRC_CAN_REC_MODE2; /* | LIRC_CAN_SEND_MODE2; */
 	driver->data = dev;
-	driver->rbuf = rbuf;
+	driver->buffer_size = 128;
 	driver->ioctl = NULL;
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 	driver->sample_rate = 80;   /* sample at 100hz (10ms) */
 	driver->add_to_buf = &mceusb_add_to_buf;
-	/* driver->fops = &mceusb_fops; */
 #ifdef LIRC_HAVE_SYSFS
 	driver->dev = &interface->dev;
 #endif
 	driver->owner = THIS_MODULE;
 	if (lirc_register_driver(driver) < 0) {
 		kfree(driver);
-		lirc_buffer_free(rbuf);
-		kfree(rbuf);
 		goto error;
 	}
 	dev->driver = driver;

@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.79 2009/02/14 19:35:52 lirc Exp $
+ * $Id: lirc_dev.c,v 1.80 2009/02/15 21:34:47 lirc Exp $
  *
  */
 
@@ -246,6 +246,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	struct irctl *ir;
 	int minor;
 	int bytes_in_key;
+	unsigned int chunk_size;
 	int err;
 #ifdef LIRC_HAVE_DEVFS_24
 	char name[16];
@@ -351,6 +352,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	d->name[sizeof(d->name)-1] = '\0';
 
 	bytes_in_key = d->code_length/8 + (d->code_length%8 ? 1 : 0);
+	buffer_size = d->buffer_size ? d->buffer_size : BUFLEN / bytes_in_key;
 
 	if (d->rbuf) {
 		ir->buf = d->rbuf;
@@ -360,8 +362,7 @@ int lirc_register_driver(struct lirc_driver *d)
 			err = -ENOMEM;
 			goto out_lock;
 		}
-		if (lirc_buffer_init(ir->buf, bytes_in_key,
-				     BUFLEN/bytes_in_key)) {
+		if (lirc_buffer_init(ir->buf, bytes_in_key, buffer_size)) {
 			kfree(ir->buf);
 			err = -ENOMEM;
 			goto out_lock;

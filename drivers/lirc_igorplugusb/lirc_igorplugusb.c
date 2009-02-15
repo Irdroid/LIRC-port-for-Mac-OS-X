@@ -379,8 +379,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #endif
 	struct igorplug *ir = NULL;
 	struct lirc_driver *driver = NULL;
-	struct lirc_buffer *rbuf = NULL;
-	int devnum, pipe, maxp, bytes_in_key;
+	int devnum, pipe, maxp;
 	int minor = 0;
 	char buf[63], name[128] = "";
 	int mem_failure = 0;
@@ -422,13 +421,10 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	devnum = dev->devnum;
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
-	bytes_in_key = CODE_LENGTH;
-
-	dprintk("[%d]: bytes_in_key=%d maxp=%d\n",
-		devnum, bytes_in_key, maxp);
+	dprintk(DRIVER_NAME "[%d]: bytes_in_key=%d maxp=%d\n",
+		devnum, CODE_LENGTH, maxp);
 
 
-	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kzalloc(sizeof(struct igorplug), GFP_KERNEL);
 	if (!ir) {
@@ -442,18 +438,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		goto mem_failure_switch;
 	}
 
-	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
-	if (!rbuf) {
-		mem_failure = 3;
-		goto mem_failure_switch;
-	}
-
-	if (lirc_buffer_init(rbuf, bytes_in_key,
-			DEVICE_BUFLEN+ADDITIONAL_LIRC_BYTES)) {
-		mem_failure = 4;
-		goto mem_failure_switch;
-	}
-
 #if defined(KERNEL_2_5)
 	ir->buf_in = usb_buffer_alloc(dev,
 			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
@@ -463,16 +447,16 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 			     GFP_KERNEL);
 #endif
 	if (!ir->buf_in) {
-		mem_failure = 5;
+		mem_failure = 3;
 		goto mem_failure_switch;
 	}
 
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = -1;
-	driver->code_length = bytes_in_key * 8; /* in bits */
+	driver->code_length = CODE_LENGTH * 8; /* in bits */
 	driver->features = LIRC_CAN_REC_MODE2;
 	driver->data = ir;
-	driver->rbuf = rbuf;
+	driver->buffer_size = DEVICE_BUFLEN + ADDITIONAL_LIRC_BYTES;
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 	driver->sample_rate = sample_rate;    /* per second */
@@ -496,10 +480,6 @@ mem_failure_switch:
 #else
 		kfree(ir->buf_in);
 #endif
-	case 5:
-		lirc_buffer_free(rbuf);
-	case 4:
-		kfree(rbuf);
 	case 3:
 		kfree(driver);
 	case 2:
