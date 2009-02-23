@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.43 2009/02/14 19:35:53 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.44 2009/02/23 18:43:43 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.43 $"
+#define DRIVER_VERSION	"$Revision: 1.44 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -245,7 +245,7 @@ static void delay_timeout(unsigned long arg)
 					  (unsigned char *) &data);
 		}
 		if (sz->timer_running) {
-			sz->delay_timer.expires += timer_inc;
+			sz->delay_timer.expires = jiffies + timer_inc;
 			add_timer(&sz->delay_timer);
 		}
 	} else {
