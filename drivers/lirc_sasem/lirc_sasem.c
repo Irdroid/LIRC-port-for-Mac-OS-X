@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.38 2009/02/14 19:35:53 lirc Exp $      */
+/*      $Id: lirc_sasem.c,v 1.39 2009/02/23 20:58:21 lirc Exp $      */
 /*
  * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -327,8 +327,6 @@ static int vfd_ioctl(struct inode *inode, struct file *file,
 	case IOCTL_LCD_CONTRAST:
 		if (arg > 1000)
 			arg = 1000;
-		if (arg < 0)
-			arg = 0;
 		context->vfd_contrast = (unsigned int)arg;
 		break;
 	default:
