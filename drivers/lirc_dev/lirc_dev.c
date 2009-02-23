@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.80 2009/02/15 21:34:47 lirc Exp $
+ * $Id: lirc_dev.c,v 1.81 2009/02/23 04:11:16 jarodwilson Exp $
  *
  */
 
@@ -246,7 +246,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	struct irctl *ir;
 	int minor;
 	int bytes_in_key;
-	unsigned int chunk_size;
+	unsigned int buffer_size;
 	int err;
 #ifdef LIRC_HAVE_DEVFS_24
 	char name[16];
