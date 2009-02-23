@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.53 2009/02/14 19:35:52 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.54 2009/02/23 04:20:39 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -43,6 +43,7 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/usb.h>
+#include <linux/time.h>
 
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
@@ -274,8 +275,8 @@ static struct usb_driver imon_driver = {
 	.name		= MOD_NAME,
 	.probe		= imon_probe,
 	.disconnect	= imon_disconnect,
-	.suspend        = imon_suspend,
-	.resume         = imon_resume,
+	.suspend	= imon_suspend,
+	.resume		= imon_resume,
 	.id_table	= imon_usb_id_table,
 #if !defined(KERNEL_2_5)
 	.fops		= &display_fops,
@@ -935,17 +936,113 @@ static void submit_data(struct imon_context *context)
 	return;
 }
 
+static inline int tv2int(const struct timeval *a, const struct timeval *b)
+{
+       int usecs = 0;
+       int sec   = 0;
+
+       if (b->tv_usec > a->tv_usec) {
+	       usecs = 1000000;
+	       sec--;
+       }
+
+       usecs += a->tv_usec - b->tv_usec;
+
+       sec += a->tv_sec - b->tv_sec;
+       sec *= 1000;
+       usecs /= 1000;
+       sec += usecs;
+
+       if (sec < 0)
+	       sec = 1000;
+
+       return sec;
+}
+
+/**
+ * The directional pad is overly sensitive in keyboard mode, so we do some
+ * interesting contortions to make it less touchy.
+ */
+#define IMON_PAD_TIMEOUT       1000    /* in msecs */
+#define IMON_PAD_THRESHOLD     80      /* 160x160 square */
+static int stabilize(int a, int b)
+{
+       struct timeval ct;
+       static struct timeval prev_time = {0, 0};
+       static struct timeval hit_time  = {0, 0};
+       static int x, y, prev_result, hits;
+       int result = 0;
+       int msec, msec_hit;
+
+       do_gettimeofday(&ct);
+       msec = tv2int(&ct, &prev_time);
+       msec_hit = tv2int(&ct, &hit_time);
+
+       if (msec > 100) {
+	       x = 0;
+	       y = 0;
+	       hits = 0;
+       }
+
+       x += a;
+       y += b;
+
+       prev_time = ct;
+
+       if (abs(x) > IMON_PAD_THRESHOLD || abs(y) > IMON_PAD_THRESHOLD) {
+	       if (abs(y) > abs(x))
+		       result = (y > 0) ? 0x7F : 0x80;
+	       else
+		       result = (x > 0) ? 0x7F00 : 0x8000;
+
+	       x = 0;
+	       y = 0;
+
+	       if (result == prev_result) {
+		       hits++;
+
+		       if (hits > 3) {
+			       switch (result) {
+			       case 0x7F:
+				       y = 17 * IMON_PAD_THRESHOLD / 30;
+				       break;
+			       case 0x80:
+				       y -= 17 * IMON_PAD_THRESHOLD / 30;
+				       break;
+			       case 0x7F00:
+				       x = 17 * IMON_PAD_THRESHOLD / 30;
+				       break;
+			       case 0x8000:
+				       x -= 17 * IMON_PAD_THRESHOLD / 30;
+				       break;
+			       }
+		       }
+
+		       if (hits == 2 && msec_hit < IMON_PAD_TIMEOUT) {
+			       result = 0;
+			       hits = 1;
+		       }
+	       } else {
+		       prev_result = result;
+		       hits = 1;
+		       hit_time = ct;
+	       }
+       }
+
+       return result;
+}
+
 /**
  * Process the incoming packet
  */
 static void incoming_packet(struct imon_context *context,
-				   struct urb *urb)
+			    struct urb *urb)
 {
 	int len = urb->actual_length;
 	unsigned char *buf = urb->transfer_buffer;
 	int octet, bit;
 	unsigned char mask;
-	int chunk_num;
+	int chunk_num, dir;
 #ifdef DEBUG
 	int i;
 #endif
@@ -970,17 +1067,11 @@ static void incoming_packet(struct imon_context *context,
 		 * try to ignore when they get too close
 		 */
 		if ((buf[1] == 0) && ((buf[2] != 0) || (buf[3] != 0))) {
-			int y = (int)(char)buf[2];
-			int x = (int)(char)buf[3];
-			if (abs(abs(x) - abs(y)) < 3) {
+			dir = stabilize((int)(char)buf[2], (int)(char)buf[3]);
+			if (!dir)
 				return;
-			} else if (abs(y) > abs(x)) {
-				buf[2] = 0x00;
-				buf[3] = (y > 0) ? 0x7f : 0x80;
-			} else {
-				buf[3] = 0x00;
-				buf[2] = (x > 0) ? 0x7f : 0x80;
-			}
+			buf[2] = dir & 0xFF;
+			buf[3] = (dir >> 8) & 0xFF;
 		}
 	}
 
