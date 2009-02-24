@@ -174,3 +174,83 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was automatically generated
+# using lirc-0.8.4a(default) on Mon Feb 23 23:55:04 2009
+#
+# contributed by 
+#
+# brand:                       Hauppauge
+# model no. of remote control: 
+# devices being controlled by this remote: PVR-150 Remote (MCE kit)
+# SMK dongle 0609:031d
+#
+
+begin remote
+
+  name  mceusb
+  bits           13
+  flags RC6|CONST_LENGTH
+  eps            30
+  aeps          100
+
+  header       2674   870
+  one           455   427
+  zero          455   427
+  pre_data_bits   24
+  pre_data       0x1BFF82
+  gap          106288
+  min_repeat      1
+  toggle_bit_mask 0x8000
+  rc6_mask    0x100000000
+
+      begin codes
+          TV                       0x1BB9
+          Music                    0x1BB8
+          Pictures                 0x1BB6
+          Videos                   0x1BB5
+          Power                    0x1BF3
+          Stop                     0x1BE6
+          Record                   0x1BE8
+          Pause                    0x1BE7
+          Play                     0x1BE9
+          Rewind                   0x1BEA
+          Foward                   0x1BEB
+          Replay                   0x1BE4
+          Skip                     0x1BE5
+          Back                     0x1BDC
+          More                     0x1BF0
+          Up                       0x1BE1
+          Left                     0x1BDF
+          Right                    0x1BDE
+          OK                       0x1BDD
+          Down                     0x1BE0
+          VolUp                    0x1BEF
+          VolDown                  0x1BEE
+          Home                     0x1BF2
+          ChanDown                 0x1BED
+          ChanUp                   0x1BEC
+          Mute                     0x1BF1
+          RecTV                    0x1BB7
+          Guide                    0x1BD9
+          LiveTV                   0x1BDA
+          DVD                      0x1BDB
+          One                      0x1BFE
+          Two                      0x1BFD
+          Three                    0x1BFC
+          Four                     0x1BFB
+          Five                     0x1BFA
+          Six                      0x1BF9
+          Seven                    0x1BF8
+          Eight                    0x1BF7
+          Nine                     0x1BF6
+          Star                     0x1BE2
+          Zero                     0x1BFF
+          Hash                     0x1BE3
+          Clear                    0x1BF5
+          Enter                    0x1BF4
+      end codes
+
+end remote
+
+
