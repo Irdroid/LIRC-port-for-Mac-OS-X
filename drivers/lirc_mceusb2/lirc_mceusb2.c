@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.74 $"
+#define DRIVER_VERSION	"$Revision: 1.75 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -131,7 +131,7 @@ static int debug;
 #define VENDOR_WISTRON		0x0fb8
 #define VENDOR_COMPRO		0x185b
 
-static struct usb_device_id mceusb_dev_table [] = {
+static struct usb_device_id mceusb_dev_table[] = {
 	/* Philips Infrared Transceiver - Sahara branded */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0608) },
 	/* Philips Infrared Transceiver - HP branded */
@@ -816,6 +816,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	int i;
 	char buf[63], name[128] = "";
 	int mem_failure = 0;
+	int is_pinnacle;
 
 	dprintk(DRIVER_NAME ": usb probe called\n");
 
@@ -824,6 +825,8 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	config = dev->actconfig;
 
 	idesc = intf->cur_altsetting;
+
+	is_pinnacle = usb_match_id(intf, pinnacle_list) ? 1 : 0;
 
 	/* step through the endpoints to find first bulk in and out endpoint */
 	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
@@ -841,7 +844,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (usb_match_id(intf, pinnacle_list))
+			if (is_pinnacle)
 				/*
 				 * setting seems to 1 seem to cause issues with
 				 * Pinnacle timing out on transfer.
@@ -863,7 +866,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (usb_match_id(intf, pinnacle_list))
+			if (is_pinnacle)
 				/*
 				 * setting seems to 1 seem to cause issues with
 				 * Pinnacle timing out on transfer.
@@ -969,9 +972,9 @@ mem_failure_switch:
 	ir->usbdev = dev;
 	ir->len_in = maxp;
 	ir->flags.connected = 0;
-	ir->flags.pinnacle = usb_match_id(intf, pinnacle_list) ? 1:0;
+	ir->flags.pinnacle = is_pinnacle;
 	ir->flags.transmitter_mask_inverted =
-		usb_match_id(intf, transmitter_mask_list) ? 0:1;
+		usb_match_id(intf, transmitter_mask_list) ? 0 : 1;
 
 	ir->lircdata = PULSE_MASK;
 	ir->is_pulse = 0;
