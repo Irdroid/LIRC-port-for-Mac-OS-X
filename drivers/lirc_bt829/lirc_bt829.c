@@ -58,11 +58,13 @@ static unsigned char do_get_bits(void);
 #define DATA_PCI_OFF 0x7FFC00
 #define WAIT_CYCLE   20
 
+#define DRIVER_NAME "lirc_bt829"
+
 static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
 		if (debug)					\
-			printk(KERN_DEBUG fmt, ## args);	\
+			printk(KERN_DEBUG DRIVER_NAME ": " fmt, ## args); \
 	} while (0)
 
 static int atir_minor;
@@ -77,25 +79,25 @@ static struct pci_dev *do_pci_probe(void)
 #ifndef KERNEL_2_5
 	/* unnecessary with recent kernels */
 	if (!pci_present())
-		printk(KERN_ERR "ATIR: no pci in this kernel\n");
+		printk(KERN_ERR DRIVER_NAME ": no pci in this kernel\n");
 #endif
 	my_dev = pci_get_device(PCI_VENDOR_ID_ATI,
 				PCI_DEVICE_ID_ATI_264VT, NULL);
 	if (my_dev) {
-		printk(KERN_ERR "ATIR: Using device: %s\n",
+		printk(KERN_ERR DRIVER_NAME ": Using device: %s\n",
 		       pci_name(my_dev));
 		pci_addr_phys = 0;
 		if (my_dev->resource[0].flags & IORESOURCE_MEM) {
 			pci_addr_phys = my_dev->resource[0].start;
-			printk(KERN_INFO "ATIR memory at 0x%08X \n",
+			printk(KERN_INFO DRIVER_NAME ": memory at 0x%08X\n",
 			       (unsigned int)pci_addr_phys);
 		}
 		if (pci_addr_phys == 0) {
-			printk(KERN_ERR "ATIR no memory resource ?\n");
+			printk(KERN_ERR DRIVER_NAME ": no memory resource\n");
 			return NULL;
 		}
 	} else {
-		printk(KERN_ERR "ATIR: pci_prob failed\n");
+		printk(KERN_ERR DRIVER_NAME ": pci_prob failed\n");
 		return NULL;
 	}
 	return my_dev;
@@ -108,7 +110,7 @@ static int atir_add_to_buf(void *data, struct lirc_buffer *buf)
 	status = poll_main();
 	key = (status >> 8) & 0xFF;
 	if (status & 0xFF) {
-		dprintk("ATIR reading key %02X\n", key);
+		dprintk("reading key %02X\n", key);
 		lirc_buffer_write(buf, &key);
 		return 0;
 	}
@@ -118,14 +120,14 @@ static int atir_add_to_buf(void *data, struct lirc_buffer *buf)
 static int atir_set_use_inc(void *data)
 {
 	MOD_INC_USE_COUNT;
-	dprintk("ATIR driver is opened\n");
+	dprintk("driver is opened\n");
 	return 0;
 }
 
 static void atir_set_use_dec(void *data)
 {
 	MOD_DEC_USE_COUNT;
-	dprintk("ATIR driver is closed\n");
+	dprintk("driver is closed\n");
 }
 
 int init_module(void)
@@ -154,10 +156,10 @@ int init_module(void)
 
 	atir_minor = lirc_register_driver(&atir_driver);
 	if (atir_minor < 0) {
-		printk(KERN_ERR "ATIR: failed to register driver!\n");
+		printk(KERN_ERR DRIVER_NAME ": failed to register driver!\n");
 		return atir_minor;
 	}
-	dprintk("ATIR driver is registered on minor %d\n", atir_minor);
+	dprintk("driver is registered on minor %d\n", atir_minor);
 
 	return 0;
 }
@@ -173,7 +175,7 @@ static int atir_init_start(void)
 {
 	pci_addr_lin = ioremap(pci_addr_phys + DATA_PCI_OFF, 0x400);
 	if (pci_addr_lin == 0) {
-		printk(KERN_INFO "ATIR: pci mem must be mapped\n");
+		printk(KERN_INFO DRIVER_NAME ": pci mem must be mapped\n");
 		return 0;
 	}
 	return 1;
