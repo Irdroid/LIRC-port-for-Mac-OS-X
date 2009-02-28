@@ -55,7 +55,6 @@
 #warning "******************************************"
 #endif
 
-#include <linux/module.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
@@ -63,7 +62,6 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/kernel.h>
-#include <linux/major.h>
 #include <linux/serial_reg.h>
 #include <linux/time.h>
 #include <linux/string.h>
@@ -73,10 +71,16 @@
 #include <linux/delay.h>
 #include <linux/poll.h>
 #include <asm/system.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 #include <asm/uaccess.h>
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 #include <asm/io.h>
+#else
+#include <linux/io.h>
+#endif
 #include <asm/irq.h>
-#include <asm/fcntl.h>
+#include <linux/fcntl.h>
 #ifdef LIRC_ON_SA1100
 #include <asm/hardware.h>
 #ifdef CONFIG_SA1100_COLLIE
