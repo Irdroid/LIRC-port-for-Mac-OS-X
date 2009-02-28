@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.54 2009/02/23 04:20:39 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.55 2009/02/28 10:27:10 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -56,8 +56,10 @@
 #define MOD_VERSION	"0.5"
 
 #define DISPLAY_MINOR_BASE	144	/* Same as LCD */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 #define DEVFS_MODE	(S_IFCHR | S_IRUSR | S_IWUSR | \
 			 S_IRGRP | S_IWGRP | S_IROTH)
+#endif
 #define DEVFS_NAME	LIRC_DEVFS_PREFIX "lcd%d"
 
 #define BUF_CHUNK_SIZE	4
