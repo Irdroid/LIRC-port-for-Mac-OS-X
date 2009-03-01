@@ -138,10 +138,8 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 static int lirc_ioctl(struct inode *node, struct file *filep,
 		      unsigned int cmd, unsigned long arg);
 static void add_read_queue(int flag, unsigned long val);
-#ifdef MODULE
 static int init_chrdev(void);
 static void drop_chrdev(void);
-#endif
 	/* Hardware */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static irqreturn_t it87_interrupt(int irq, void *dev_id,
@@ -382,7 +380,6 @@ static struct lirc_driver driver = {
 };
 
 
-#ifdef MODULE
 static int init_chrdev(void)
 {
 	driver.minor = lirc_register_driver(&driver);
@@ -399,7 +396,6 @@ static void drop_chrdev(void)
 {
 	lirc_unregister_driver(driver.minor);
 }
-#endif
 
 
 /* SECTION: Hardware */
@@ -942,8 +938,6 @@ static int init_lirc_it87(void)
 }
 
 
-#ifdef MODULE
-
 static int __init lirc_it87_init(void)
 {
 	int retval;
@@ -1010,7 +1004,4 @@ MODULE_PARM_DESC(it87_freq,
 MODULE_PARM_DESC(it87_freq,
     "Carrier demodulator frequency (kHz), (default: 38)");
 #endif
-
 EXPORT_NO_SYMBOLS;
-
-#endif /* MODULE */
