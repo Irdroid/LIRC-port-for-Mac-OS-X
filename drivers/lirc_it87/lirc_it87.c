@@ -30,17 +30,13 @@
  *   Forum: Art103 <r_tay@hotmail.com>
  */
 
-
-#include <linux/version.h>
-#include <linux/module.h>
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
+#include <linux/version.h>
+#include <linux/module.h>
 #include <linux/autoconf.h>
-
-
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
@@ -48,7 +44,6 @@
 #include <linux/interrupt.h>
 #include <linux/ioport.h>
 #include <linux/kernel.h>
-#include <linux/major.h>
 #include <linux/serial_reg.h>
 #include <linux/time.h>
 #include <linux/string.h>
@@ -59,12 +54,10 @@
 #include <linux/poll.h>
 #include <asm/system.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-#include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/fcntl.h>
 #else
-#include <linux/uaccess.h>
 #include <linux/io.h>
 #include <linux/irq.h>
 #include <linux/fcntl.h>
