@@ -120,7 +120,6 @@ hw_menu_entry: @hw-usb
 	atilibusb: "ATI/NVidia/X10 RF Remote (userspace)"
 	awlibusb: "Awox RF/IR Remote (userspace)"
 	sb0540: "Creative USB IR Receiver (SB0540)"
-	cmdir: "COMMANDIR USB Transceiver"
 	commandir: "CommandIR Multi-IR Transceiver (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
@@ -210,7 +209,6 @@ param_type: \
 	bte \
 	bw6130 \
 	chronos \
-	cmdir \
 	commandir \
 	cph03x \
 	cph06x \
@@ -284,7 +282,6 @@ default_param: \
 	breakoutbox \
 	bw6130 \
 	chronos \
-	cmdir \
 	commandir \
 	cph03x \
 	cph06x \
