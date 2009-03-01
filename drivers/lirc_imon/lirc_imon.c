@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.55 2009/02/28 10:27:10 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.56 2009/03/01 09:11:40 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -425,7 +425,7 @@ exit:
 }
 
 /**
- * Called when the display device(e.g. /dev/usb/lcd)
+ * Called when the display device(e.g. /dev/lcd0)
  * is closed by the application.
  */
 static int display_close(struct inode *inode, struct file *file)
