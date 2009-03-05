@@ -1,4 +1,4 @@
-/* CommandIR transceivers driver 0.95
+/* CommandIR transceivers driver 0.96 CVS $Revision: 5.6 $
  * Supporting CommandIR II and CommandIR Mini (and multiple of both)
  * April-June 2008, Matthew Bodkin
  */
@@ -19,6 +19,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/un.h>
+#include <sys/utsname.h>
 
 #include "hardware.h"
 #include "ir_remote.h"
@@ -80,7 +81,7 @@ static void cleanup_commandir_dev(int spotnum);
  *
  **********************************************************************/
 static int current_transmitter_mask = 0xff;
-static char unsigned commandir_data_buffer[256];
+static char unsigned commandir_data_buffer[512];
 static int last_mc_time = -1;	
 static int commandir_rx_num = 0;
 
@@ -111,8 +112,9 @@ struct commandir_device
 	int location;
 	int hw_type;
 	int hw_revision;
+	int hw_subversion;
 	unsigned char devnum;
-	int endpoint_max[2];
+	int endpoint_max[3];
 } open_commandir_devices[4];
 
 struct hardware hw_commandir =
@@ -414,6 +416,7 @@ unsigned char selected_channels[MAX_CHANNELS];
 unsigned char total_selected_channels = 0;
 int shutdown_pending = 0;
 int read_delay = WAIT_BETWEEN_READS_US;
+int insert_fast_zeros = 0;
 
 int rx_hold = 0;
 
@@ -800,7 +803,7 @@ static void commandir_transmit(char *buffer, int bytes, int bitmask,
 							hardware_scan();
 							return;
 						}
-						sent += send_status;
+						sent += tosend;
 					} // while unsent data
 					continue; // for transmitting on next CommandIR device
 				default:
@@ -830,6 +833,7 @@ static void commandir_child_init()
 		next_signalq_per_channel[i] = -1;
 		channels_en[i] = 0xff;
 	}
+	/* Placeholder for fast decode support */
 	hardware_scan();
 }
 
@@ -879,6 +883,9 @@ static void hardware_disconnect(int commandir_spot)
 		open_commandir_devices[(int)device_count].bus = 0;
 		open_commandir_devices[(int)device_count].busdev = 0;
 		open_commandir_devices[(int)device_count].interface = 0; 
+		open_commandir_devices[(int)device_count].hw_type = 0;
+		open_commandir_devices[(int)device_count].hw_revision = 0;
+		open_commandir_devices[(int)device_count].hw_subversion = 0;
 		
 	}
 	
@@ -1043,15 +1050,22 @@ static void hardware_scan()
 							struct usb_interface_descriptor *ainterface = &interface->altsetting[0];
 /*						struct usb_endpoint_descriptor *endpoint = &ainterface->endpoint[2];*/
 							
-							open_commandir_devices[find_spot].endpoint_max[0] = ainterface->endpoint[0].wMaxPacketSize;
-							open_commandir_devices[find_spot].endpoint_max[1] = ainterface->endpoint[1].wMaxPacketSize;
+							int i;// Load wMaxPacketSize for each endpoint; subtract 0x80 
+										// for double-buffer bit
+							for (i = 0; i < ainterface->bNumEndpoints; i++)
+							{
+								open_commandir_devices[find_spot].endpoint_max[ 
+									(ainterface->endpoint[i].bEndpointAddress >= 0x80) 
+									? (ainterface->endpoint[i].bEndpointAddress-0x80) 
+									: (ainterface->endpoint[i].bEndpointAddress)] 
+									= ainterface->endpoint[i].wMaxPacketSize;
+							}
 							
-							if(open_commandir_devices[find_spot].endpoint_max[0] >= 0x800)
-								open_commandir_devices[find_spot].endpoint_max[0] -= 0x800; // double-buffer bit
-							if(open_commandir_devices[find_spot].endpoint_max[1] >= 0x800)
-								open_commandir_devices[find_spot].endpoint_max[1] -= 0x800; // double-buffer bit
+							// compensate for double buffer:
+							open_commandir_devices[find_spot].endpoint_max[1] *= 2;
 							
-							commandir_rx_num = find_spot;	// Is this right?
+							// Always use the latest to RX:
+							commandir_rx_num = find_spot;	
 							
 							switch(dev->descriptor.iProduct)
 							{
@@ -1059,6 +1073,7 @@ static void hardware_scan()
 							 	logprintf(LOG_ERR, "Product identified as CommandIR II");
 							 	open_commandir_devices[find_spot].hw_type = HW_COMMANDIR_2;
 							  open_commandir_devices[find_spot].hw_revision = 0;
+							  open_commandir_devices[find_spot].hw_subversion = 0;
 							  
 							  int send_status = 0, tries=20;
 							  static char get_version[] = {2, GET_VERSION};
@@ -1074,7 +1089,7 @@ static void hardware_scan()
 										2, // endpoint2
 										get_version,
 										2, 
-										15000);
+										1500);
 									if(send_status < 0)
 									{
 										logprintf(LOG_ERR, 
@@ -1082,14 +1097,12 @@ static void hardware_scan()
 										break;
 									}
 									
-									usleep(USB_TIMEOUT_US);	// wait a moment 
-									
 									send_status = usb_bulk_read(
 										open_commandir_devices[find_spot].cmdir_udev,
 										1,
 										(char *)commandir_data_buffer,
-										open_commandir_devices[ find_spot ].endpoint_max[0],
-										15000);
+										open_commandir_devices[ find_spot ].endpoint_max[1],
+										1500);
 	
 									if(send_status < 0)
 									{
@@ -1105,8 +1118,10 @@ static void hardware_scan()
 											// Sending back version information.
 											open_commandir_devices[find_spot].hw_revision = 
 												commandir_data_buffer[1];
-											logprintf(LOG_ERR, "Hardware revision set to %d.", 
-												commandir_data_buffer[1]);
+											open_commandir_devices[find_spot].hw_subversion = 
+												commandir_data_buffer[2];
+											logprintf(LOG_ERR, "Hardware revision is %d.%d.", 
+												commandir_data_buffer[1], commandir_data_buffer[2]);
 											break;
 										}
 										else
@@ -1118,6 +1133,7 @@ static void hardware_scan()
 							}
 							break;
 							default:
+								logprintf(LOG_ERR, "Product identified as CommandIR Mini");
    							open_commandir_devices[find_spot].hw_type = 
 								HW_COMMANDIR_MINI;
 							}
@@ -1125,6 +1141,7 @@ static void hardware_scan()
 							if(open_commandir_devices[find_spot].hw_type == 
 								HW_COMMANDIR_UNKNOWN)
 							{
+								logprintf(LOG_ERR, "Product UNKNOWN - cleanup");
 								cleanup_commandir_dev(find_spot);
 							}
 							else
@@ -1161,7 +1178,9 @@ static void hardware_scan()
 			if(still_found[open_commandir_devices[find_spot].location]
 				[open_commandir_devices[find_spot].devnum] != 1)
 			{
-				logprintf(LOG_ERR, "Commandir %d removed.", find_spot);
+				logprintf(LOG_ERR, "Commandir %d removed from [%d][%d].", 
+					find_spot,open_commandir_devices[find_spot].location, 
+					open_commandir_devices[find_spot].devnum);
 				raise_event(COMMANDIR_UNPLUG_1 + find_spot);
 				hardware_disconnect(find_spot);
 				commandir_rx_num = -1;
@@ -1223,6 +1242,8 @@ static void commandir_read_loop()
 
 	int send_status = 0; 
 	int i = 0;
+	int tmp = 0;
+	int tmp2 = 0;
 
 	raise_event(COMMANDIR_READY);
 	
@@ -1330,7 +1351,12 @@ static void commandir_read_loop()
 		}
 		// If we're receiving, make sure the commandir buffer doesn't overrun
 		if(commandir_read() < 20 )
+			tmp = 2;
+		while(tmp-- > 0)
 		{
+			tmp2 = commandir_read();
+		}
+		if(tmp2 < 20 ){
 			// once in a while, but never while we're retreaving a signal
 			if(++periodic_checks>100)
 			{
@@ -1380,6 +1406,22 @@ static int check_irsend_commandir(unsigned char *command)
 		case 0x09: 
 		case 0x0A:
 			logprintf(LOG_ERR, "Re-selecting RX not implemented yet");
+			break;
+			
+		case 0xe6:	//	disable-fast-decode
+			logprintf(LOG_ERR, "Fast decoding disabled");
+			insert_fast_zeros = 0;
+			break;
+			
+		case 0xe7:	//	enable-fast-decode
+		case 0xe9:	//	force-fast-decode-2
+			logprintf(LOG_ERR, "Fast decoding enabled");
+			insert_fast_zeros = 2;
+			break;
+		
+		case 0xe8:	//	force-fast-decode-1
+			logprintf(LOG_ERR, "Fast decoding enabled (1)");
+			insert_fast_zeros = 1;
 			break;
 			
 		default:
@@ -1441,6 +1483,7 @@ static int commandir_read()
 	int read_retval = 0;
 	int conv_retval = 0;
 	int max_read = 5;
+	static int zeroterminated = 0;
 
 	for(i=0; i<device_count; i++)
 	{
@@ -1453,7 +1496,7 @@ static int commandir_read()
 					open_commandir_devices[ tx_order[i] ].cmdir_udev,
 					1,
 					(char *)commandir_data_buffer,
-					open_commandir_devices[ tx_order[i] ].endpoint_max[0],
+					open_commandir_devices[ tx_order[i] ].endpoint_max[1],
 					5000);	
 					
 				if(read_retval==0)
@@ -1501,6 +1544,28 @@ static int commandir_read()
 					{
 						read_received++;	
 					}
+					
+					// This ALSO implies there's NO MORE RX DATA.
+					lirc_t lirc_zero_buffer[2] = {0, 0};
+					
+					int tmp4 = 0;
+					if(zeroterminated>1001)
+					{
+						// Send LIRC a 0,0 packet to allow IMMEDIATE decoding
+						if(insert_fast_zeros > 0)
+						{
+							tmp4 = write(child_pipe_write, lirc_zero_buffer, sizeof(lirc_t)*insert_fast_zeros);
+						}
+						zeroterminated = 0;
+					}
+					else
+					{
+						if((zeroterminated < 1000) && (zeroterminated > 0))
+							zeroterminated += 1000;
+						if(zeroterminated > 1000)
+							zeroterminated++;
+					}
+					
 					break;
 				}
 						
@@ -1519,6 +1584,7 @@ static int commandir_read()
 					{
 						if(rx_hold==0)	// Only if we should be listening for remote cmds
 						{
+							zeroterminated = 1;
 							conv_retval = commandir2_convert_RX(
 								(unsigned short *)&commandir_data_buffer[2], 
 								commandir_data_buffer[1]);
@@ -1622,6 +1688,7 @@ static int commandir2_convert_RX(unsigned short *bufferrx,
 	i=0;
 	int pca_count = 0;
 	int overflows = 0;
+	
 	while(curpos < numvalues )
 	{
 		pca_count = (bufferrx[curpos] & 0x3fff) << 2; 
@@ -1646,8 +1713,6 @@ static int commandir2_convert_RX(unsigned short *bufferrx,
 				lirc_data_buffer[i] |= PULSE_BIT;
 			}
 		}
-		
-		
 		
 		curpos++;
 		i++;
