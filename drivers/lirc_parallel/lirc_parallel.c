@@ -1,5 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.52 2009/03/08 19:13:45 lirc Exp $      */
-
+/*      $Id: lirc_parallel.c,v 5.53 2009/03/08 19:22:28 lirc Exp $      */
 /*
  * lirc_parallel.c
  *
@@ -25,11 +24,9 @@
  */
 
 /*** Includes ***/
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-
 #include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
 #error "**********************************************************"
@@ -38,7 +35,6 @@
 #endif
 
 #include <linux/autoconf.h>
-
 #ifdef CONFIG_SMP
 #error "--- Sorry, this driver is not SMP safe. ---"
 #endif
@@ -623,7 +619,6 @@ static struct lirc_driver driver = {
 };
 
 #ifdef MODULE
-
 static int pf(void *handle);
 static void kf(void *handle);
 
@@ -765,7 +760,5 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_param(check_pselecd, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Check for printer (default: 0)");
-
 EXPORT_NO_SYMBOLS;
-
 #endif /* MODULE */
