@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.27 2009/03/08 13:29:50 lirc Exp $
+ * $Id: lirc_dev.h,v 1.28 2009/03/08 13:31:51 lirc Exp $
  *
  */
 
@@ -14,12 +14,8 @@
 #define MAX_IRCTL_DEVICES 4
 #define BUFLEN            16
 
-/* #define LIRC_BUFF_POWER_OF_2 */
-#ifdef LIRC_BUFF_POWER_OF_2
-#define mod(n, div) ((n) & ((div) - 1))
-#else
 #define mod(n, div) ((n) % (div))
-#endif
+
 #include <linux/slab.h>
 #include <linux/fs.h>
 
