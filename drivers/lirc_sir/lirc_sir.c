@@ -46,13 +46,15 @@
 #endif
 
 #include <linux/autoconf.h>
-#if !defined(LIRC_ON_SA1100) && !defined(CONFIG_SERIAL_MODULE)
+#if !defined(CONFIG_SERIAL_MODULE)
+#if !defined(LIRC_ON_SA1100)
 #warning "******************************************"
 #warning " Your serial port driver is compiled into "
 #warning " the kernel. You will have to release the "
 #warning " port you want to use for LIRC with:      "
 #warning "    setserial /dev/ttySx uart none        "
 #warning "******************************************"
+#endif
 #endif
 
 #include <linux/sched.h>
