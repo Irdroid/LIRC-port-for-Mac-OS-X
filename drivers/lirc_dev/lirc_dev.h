@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.31 2009/03/08 14:45:45 lirc Exp $
+ * $Id: lirc_dev.h,v 1.32 2009/03/08 15:02:07 lirc Exp $
  *
  */
 
@@ -151,8 +151,21 @@ static inline void lirc_buffer_write(struct lirc_buffer *buf,
 static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
 					unsigned char *orig, int count)
 {
-	memcpy(&buf->data[buf->tail * buf->chunk_size], orig,
-	       count * buf->chunk_size);
+	int space1;
+	if (buf->head > buf->tail)
+		space1 = buf->head - buf->tail;
+	else
+		space1 = buf->size - buf->tail;
+
+	if (count > space1) {
+		memcpy(&buf->data[buf->tail * buf->chunk_size], orig,
+		       space1 * buf->chunk_size);
+		memcpy(&buf->data[0], orig + (space1 * buf->chunk_size),
+		       (count - space1) * buf->chunk_size);
+	} else {
+		memcpy(&buf->data[buf->tail * buf->chunk_size], orig,
+		       count * buf->chunk_size);
+	}
 	buf->tail = mod(buf->tail + count, buf->size);
 	buf->fill += count;
 }
@@ -160,21 +173,8 @@ static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 				       unsigned char *orig, int count)
 {
 	unsigned long flags;
-	int space1;
-
 	lirc_buffer_lock(buf, &flags);
-	if (buf->head > buf->tail)
-		space1 = buf->head - buf->tail;
-	else
-		space1 = buf->size - buf->tail;
-
-	if (count > space1) {
-		_lirc_buffer_write_n(buf, orig, space1);
-		_lirc_buffer_write_n(buf, orig+(space1*buf->chunk_size),
-				     count-space1);
-	} else {
-		_lirc_buffer_write_n(buf, orig, count);
-	}
+	_lirc_buffer_write_n(buf, orig, count);
 	lirc_buffer_unlock(buf, &flags);
 }
 
