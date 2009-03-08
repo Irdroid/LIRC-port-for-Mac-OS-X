@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.102 2009/03/08 19:13:45 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.103 2009/03/08 20:00:12 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.102 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.103 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -960,9 +960,12 @@ static int init_port(void)
 	/* If pin is high, then this must be an active low receiver. */
 	if (sense == -1) {
 		/* wait 1/2 sec for the power supply */
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+		msleep(500);
+#else
 		set_current_state(TASK_INTERRUPTIBLE);
 		schedule_timeout(HZ/2);
+#endif
 
 		/*
 		 * probe 9 times every 0.04s, collect "votes" for
@@ -975,7 +978,11 @@ static int init_port(void)
 				nlow++;
 			else
 				nhigh++;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+			msleep(40);
+#else
 			schedule_timeout(HZ/25);
+#endif
 		}
 		sense = (nlow >= nhigh ? 1 : 0);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
