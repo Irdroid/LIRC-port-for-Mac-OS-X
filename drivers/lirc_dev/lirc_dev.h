@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.28 2009/03/08 13:31:51 lirc Exp $
+ * $Id: lirc_dev.h,v 1.29 2009/03/08 13:35:17 lirc Exp $
  *
  */
 
@@ -41,8 +41,6 @@ static inline int lirc_buffer_init(struct lirc_buffer *buf,
 				    unsigned int chunk_size,
 				    unsigned int size)
 {
-	/* Adjusting size to the next power of 2 would allow for
-	 * inconditional LIRC_BUFF_POWER_OF_2 optimization */
 	init_waitqueue_head(&buf->wait_poll);
 	spin_lock_init(&buf->lock);
 	_lirc_buffer_clear(buf);
