@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.77 $"
+#define DRIVER_VERSION	"$Revision: 1.78 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -348,7 +348,6 @@ static void request_packet_async(struct mceusb2_dev *ir,
 					async_buf, size,
 					(usb_complete_t) usb_async_callback,
 					ir, ep->bInterval);
-
 					async_urb->transfer_flags =
 						URB_ASYNC_UNLINK;
 				}
