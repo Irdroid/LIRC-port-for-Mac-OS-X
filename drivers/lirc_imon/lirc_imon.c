@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.56 2009/03/01 09:11:40 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.57 2009/03/08 19:41:51 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1636,13 +1636,13 @@ static int imon_suspend(struct usb_interface *intf, pm_message_t message)
 
 static int imon_resume(struct usb_interface *intf)
 {
-	int r = 0;
+	int rc = 0;
 	struct imon_context *context = usb_get_intfdata(intf);
 
 	if (context->ir_isopen)
-		usb_submit_urb(context->rx_urb, GFP_ATOMIC);
+		rc = usb_submit_urb(context->rx_urb, GFP_ATOMIC);
 
-	return r;
+	return rc;
 }
 
 static int __init imon_init(void)
