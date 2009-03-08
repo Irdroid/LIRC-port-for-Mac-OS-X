@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.45 2009/02/28 19:48:06 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.46 2009/03/08 18:36:04 lirc Exp $      */
 
 /*
  * Streamzap Remote Control driver
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.45 $"
+#define DRIVER_VERSION	"$Revision: 1.46 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -651,18 +651,14 @@ error:
 		err("Out of memory");
 
 	if (sz) {
-
-		if (sz->urb_in)
-			usb_free_urb(sz->urb_in);
-
-		if (sz->buf_in) {
+		usb_free_urb(sz->urb_in);
 #ifdef KERNEL_2_5
-			usb_buffer_free(udev, sz->buf_in_len,
-					sz->buf_in, sz->dma_in);
+		usb_buffer_free(udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
 #else
+		if (sz->buf_in) {
 			kfree(sz->buf_in);
-#endif
 		}
+#endif
 		kfree(sz);
 	}
 
