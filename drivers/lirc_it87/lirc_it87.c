@@ -297,7 +297,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 		break;
 
 	default:
-		retval = -ENOIOCTLCMD;
+		retval = -EINVAL;
 	}
 
 	if (retval)
