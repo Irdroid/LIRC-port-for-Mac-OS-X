@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.82 2009/03/08 13:29:50 lirc Exp $
+ * $Id: lirc_dev.c,v 1.83 2009/03/08 15:08:11 lirc Exp $
  *
  */
 
@@ -594,8 +594,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 	 * drivers which use irq's should allocate them on set_use_inc,
 	 * so there should be no problem with those either.
 	 */
-	ir->buf->head = ir->buf->tail;
-	ir->buf->fill = 0;
+	_lirc_buffer_clear(ir->buf);
 
 	if (ir->d.owner != NULL && try_module_get(ir->d.owner)) {
 		++ir->open;
