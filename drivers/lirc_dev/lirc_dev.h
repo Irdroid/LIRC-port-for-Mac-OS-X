@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.30 2009/03/08 14:24:16 lirc Exp $
+ * $Id: lirc_dev.h,v 1.31 2009/03/08 14:45:45 lirc Exp $
  *
  */
 
@@ -62,18 +62,6 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 	buf->chunk_size = 0;
 	buf->size = 0;
 }
-static inline int  lirc_buffer_full(struct lirc_buffer *buf)
-{
-	return (buf->fill >= buf->size);
-}
-static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
-{
-	return !(buf->fill);
-}
-static inline int  lirc_buffer_available(struct lirc_buffer *buf)
-{
-    return (buf->size - buf->fill);
-}
 static inline void lirc_buffer_lock(struct lirc_buffer *buf,
 				    unsigned long *flags)
 {
@@ -83,6 +71,45 @@ static inline void lirc_buffer_unlock(struct lirc_buffer *buf,
 				      unsigned long *flags)
 {
 	spin_unlock_irqrestore(&buf->lock, *flags);
+}
+static inline int  _lirc_buffer_full(struct lirc_buffer *buf)
+{
+	return (buf->fill >= buf->size);
+}
+static inline int  lirc_buffer_full(struct lirc_buffer *buf)
+{
+	unsigned long flags;
+	int ret;
+	lirc_buffer_lock(buf, &flags);
+	ret = _lirc_buffer_full(buf);
+	lirc_buffer_unlock(buf, &flags);
+	return ret;
+}
+static inline int  _lirc_buffer_empty(struct lirc_buffer *buf)
+{
+	return !(buf->fill);
+}
+static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
+{
+	unsigned long flags;
+	int ret;
+	lirc_buffer_lock(buf, &flags);
+	ret = _lirc_buffer_empty(buf);
+	lirc_buffer_unlock(buf, &flags);
+	return ret;
+}
+static inline int  _lirc_buffer_available(struct lirc_buffer *buf)
+{
+	return (buf->size - buf->fill);
+}
+static inline int  lirc_buffer_available(struct lirc_buffer *buf)
+{
+	unsigned long flags;
+	int ret;
+	lirc_buffer_lock(buf, &flags);
+	ret = _lirc_buffer_available(buf);
+	lirc_buffer_unlock(buf, &flags);
+	return ret;
 }
 static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 {
