@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.41 2009/01/05 20:18:34 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.42 2009/03/08 15:15:14 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -16,6 +16,11 @@
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+/* when was it really introduced? */
+#define LIRC_HAVE_KFIFO
+#endif
 
 #include <linux/device.h>
 

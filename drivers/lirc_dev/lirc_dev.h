@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.32 2009/03/08 15:02:07 lirc Exp $
+ * $Id: lirc_dev.h,v 1.33 2009/03/08 15:15:14 lirc Exp $
  *
  */
 
@@ -18,24 +18,35 @@
 
 #include <linux/slab.h>
 #include <linux/fs.h>
+#ifdef LIRC_HAVE_KFIFO
+#include <linux/kfifo.h>
+#endif
 
 struct lirc_buffer {
 	wait_queue_head_t wait_poll;
 	spinlock_t lock;
-
-	unsigned char *data;
 	unsigned int chunk_size;
 	unsigned int size; /* in chunks */
-	unsigned int fill; /* in chunks */
-	int head, tail;    /* in chunks */
 	/* Using chunks instead of bytes pretends to simplify boundary checking
 	 * And should allow for some performance fine tunning later */
+#ifdef LIRC_HAVE_KFIFO
+	struct kfifo *fifo;
+#else
+	unsigned int fill; /* in chunks */
+	int head, tail;    /* in chunks */
+	unsigned char *data;
+#endif
 };
 static inline void _lirc_buffer_clear(struct lirc_buffer *buf)
 {
+#ifdef LIRC_HAVE_KFIFO
+	if (buf->fifo)
+		kfifo_reset(buf->fifo);
+#else
 	buf->head = 0;
 	buf->tail = 0;
 	buf->fill = 0;
+#endif
 }
 static inline int lirc_buffer_init(struct lirc_buffer *buf,
 				    unsigned int chunk_size,
@@ -43,17 +54,29 @@ static inline int lirc_buffer_init(struct lirc_buffer *buf,
 {
 	init_waitqueue_head(&buf->wait_poll);
 	spin_lock_init(&buf->lock);
+#ifndef LIRC_HAVE_KFIFO
 	_lirc_buffer_clear(buf);
+#endif
 	buf->chunk_size = chunk_size;
 	buf->size = size;
+#ifdef LIRC_HAVE_KFIFO
+	buf->fifo = kfifo_alloc(size*chunk_size, GFP_KERNEL, &buf->lock);
+	if (!buf->fifo)
+		return -ENOMEM;
+#else
 	buf->data = kmalloc(size*chunk_size, GFP_KERNEL);
 	if (buf->data == NULL)
-		return -1;
+		return -ENOMEM;
 	memset(buf->data, 0, size*chunk_size);
+#endif
 	return 0;
 }
 static inline void lirc_buffer_free(struct lirc_buffer *buf)
 {
+#ifdef LIRC_HAVE_KFIFO
+	if (buf->fifo)
+		kfifo_free(buf->fifo);
+#else
 	kfree(buf->data);
 	buf->data = NULL;
 	buf->head = 0;
@@ -61,6 +84,7 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 	buf->fill = 0;
 	buf->chunk_size = 0;
 	buf->size = 0;
+#endif
 }
 static inline void lirc_buffer_lock(struct lirc_buffer *buf,
 				    unsigned long *flags)
@@ -74,7 +98,11 @@ static inline void lirc_buffer_unlock(struct lirc_buffer *buf,
 }
 static inline int  _lirc_buffer_full(struct lirc_buffer *buf)
 {
+#ifdef LIRC_HAVE_KFIFO
+	return kfifo_len(buf->fifo) == buf->fifo->size;
+#else
 	return (buf->fill >= buf->size);
+#endif
 }
 static inline int  lirc_buffer_full(struct lirc_buffer *buf)
 {
@@ -87,7 +115,11 @@ static inline int  lirc_buffer_full(struct lirc_buffer *buf)
 }
 static inline int  _lirc_buffer_empty(struct lirc_buffer *buf)
 {
+#ifdef LIRC_HAVE_KFIFO
+	return !kfifo_len(buf->fifo);
+#else
 	return !(buf->fill);
+#endif
 }
 static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
 {
@@ -100,7 +132,11 @@ static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
 }
 static inline int  _lirc_buffer_available(struct lirc_buffer *buf)
 {
+#ifdef LIRC_HAVE_KFIFO
+	return (buf->fifo->size - kfifo_len(buf->fifo)) / buf->chunk_size;
+#else
 	return (buf->size - buf->fill);
+#endif
 }
 static inline int  lirc_buffer_available(struct lirc_buffer *buf)
 {
@@ -121,9 +157,14 @@ static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
 				       unsigned char *dest)
 {
+#ifdef LIRC_HAVE_KFIFO
+	if (kfifo_len(buf->fifo) > buf->chunk_size)
+		kfifo_get(buf->fifo, dest, buf->chunk_size);
+#else
 	memcpy(dest, &buf->data[buf->head*buf->chunk_size], buf->chunk_size);
 	buf->head = mod(buf->head+1, buf->size);
 	buf->fill -= 1;
+#endif
 }
 static inline void lirc_buffer_read(struct lirc_buffer *buf,
 				    unsigned char *dest)
@@ -136,9 +177,13 @@ static inline void lirc_buffer_read(struct lirc_buffer *buf,
 static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
 				      unsigned char *orig)
 {
+#ifdef LIRC_HAVE_KFIFO
+	kfifo_put(buf->fifo, orig, buf->chunk_size);
+#else
 	memcpy(&buf->data[buf->tail*buf->chunk_size], orig, buf->chunk_size);
 	buf->tail = mod(buf->tail+1, buf->size);
 	buf->fill++;
+#endif
 }
 static inline void lirc_buffer_write(struct lirc_buffer *buf,
 				     unsigned char *orig)
@@ -151,6 +196,9 @@ static inline void lirc_buffer_write(struct lirc_buffer *buf,
 static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
 					unsigned char *orig, int count)
 {
+#ifdef LIRC_HAVE_KFIFO
+	kfifo_put(buf->fifo, orig, count * buf->chunk_size);
+#else
 	int space1;
 	if (buf->head > buf->tail)
 		space1 = buf->head - buf->tail;
@@ -168,6 +216,7 @@ static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
 	}
 	buf->tail = mod(buf->tail + count, buf->size);
 	buf->fill += count;
+#endif
 }
 static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 				       unsigned char *orig, int count)
