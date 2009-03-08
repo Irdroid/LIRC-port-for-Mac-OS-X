@@ -21,13 +21,6 @@
 
 #include <linux/version.h>
 #include <linux/module.h>
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <linux/autoconf.h>
-
 #include <linux/pnp.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 #include <asm/io.h>
@@ -557,5 +550,4 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-
 EXPORT_NO_SYMBOLS;
