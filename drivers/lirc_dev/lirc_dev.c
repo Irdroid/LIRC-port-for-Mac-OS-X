@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.81 2009/02/23 04:11:16 jarodwilson Exp $
+ * $Id: lirc_dev.c,v 1.82 2009/03/08 13:29:50 lirc Exp $
  *
  */
 
@@ -206,9 +206,11 @@ static int lirc_thread(void *irctl)
 			if (ir->jiffies_to_wait) {
 				set_current_state(TASK_INTERRUPTIBLE);
 				schedule_timeout(ir->jiffies_to_wait);
+#ifndef LIRC_REMOVE_DURING_EXPORT
 			} else {
 				interruptible_sleep_on(
 					ir->d.get_queue(ir->d.data));
+#endif
 			}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 			if (ir->shutdown)
@@ -293,14 +295,25 @@ int lirc_register_driver(struct lirc_driver *d)
 			err = -EBADRQC;
 			goto out;
 		}
-	} else if (!(d->fops && d->fops->read)
-		   && !d->get_queue && !d->rbuf) {
+#ifndef LIRC_REMOVE_DURING_EXPORT
+	} else if (!(d->fops && d->fops->read) && !d->get_queue && !d->rbuf) {
+#else
+	} else if (!(d->fops && d->fops->read) && !d->rbuf) {
+#endif
 		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
+#ifndef LIRC_REMOVE_DURING_EXPORT
 		       "fops->read, get_queue and rbuf "
+#else
+		       "fops->read and rbuf "
+#endif
 		       "cannot all be NULL!\n");
 		err = -EBADRQC;
 		goto out;
+#ifndef LIRC_REMOVE_DURING_EXPORT
 	} else if (!d->get_queue && !d->rbuf) {
+#else
+	} else if (!d->rbuf) {
+#endif
 		if (!(d->fops && d->fops->read && d->fops->poll)
 		    || (!d->fops->ioctl && !d->ioctl)) {
 			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
@@ -392,7 +405,11 @@ int lirc_register_driver(struct lirc_driver *d)
 				  MKDEV(IRCTL_DEV_MAJOR, ir->d.minor), NULL,
 				  "lirc%u", ir->d.minor);
 
+#ifndef LIRC_REMOVE_DURING_EXPORT
 	if (d->sample_rate || d->get_queue) {
+#else
+	if (d->sample_rate) {
+#endif
 		/* try to fire up polling thread */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 		ir->t_notify = &tn;

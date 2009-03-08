@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.50 2009/02/23 21:05:28 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.51 2009/03/08 13:29:51 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -611,7 +611,9 @@ static struct lirc_driver driver = {
        .sample_rate	= 0,
        .data		= NULL,
        .add_to_buf	= NULL,
+#ifndef LIRC_REMOVE_DURING_EXPORT
        .get_queue	= NULL,
+#endif
        .set_use_inc	= set_use_inc,
        .set_use_dec	= set_use_dec,
        .fops		= &lirc_fops,

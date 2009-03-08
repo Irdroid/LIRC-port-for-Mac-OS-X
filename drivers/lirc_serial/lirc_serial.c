@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.100 2009/02/14 19:35:53 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.101 2009/03/08 13:29:51 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.100 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.101 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1163,7 +1163,9 @@ static struct lirc_driver driver = {
 	.sample_rate	= 0,
 	.data		= NULL,
 	.add_to_buf	= NULL,
+#ifndef LIRC_REMOVE_DURING_EXPORT
 	.get_queue	= NULL,
+#endif
 	.rbuf		= &rbuf,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,

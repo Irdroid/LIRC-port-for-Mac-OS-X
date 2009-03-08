@@ -458,7 +458,9 @@ static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 	driver->features = LIRC_CAN_REC_MODE2;
 	driver->data = ite8709_dev;
 	driver->add_to_buf = NULL;
+#ifndef LIRC_REMOVE_DURING_EXPORT
 	driver->get_queue = NULL;
+#endif
 	driver->rbuf = &ite8709_dev->buffer;
 	driver->set_use_inc = ite8709_set_use_inc;
 	driver->set_use_dec = ite8709_set_use_dec;

@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.26 2009/02/15 21:34:47 lirc Exp $
+ * $Id: lirc_dev.h,v 1.27 2009/03/08 13:29:50 lirc Exp $
  *
  */
 
@@ -178,7 +178,9 @@ struct lirc_driver {
 	unsigned long features;
 	void *data;
 	int (*add_to_buf) (void *data, struct lirc_buffer *buf);
+#ifndef LIRC_REMOVE_DURING_EXPORT
 	wait_queue_head_t* (*get_queue) (void *data);
+#endif
 	struct lirc_buffer *rbuf;
 	int (*set_use_inc) (void *data);
 	void (*set_use_dec) (void *data);
