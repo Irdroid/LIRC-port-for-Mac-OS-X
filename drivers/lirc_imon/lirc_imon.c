@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.57 2009/03/08 19:41:51 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.58 2009/03/08 19:46:55 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -866,7 +866,7 @@ exit:
 	mutex_unlock(&context->lock);
 
 	mutex_unlock(&disconnect_lock);
-	return 0;
+	return retval;
 }
 
 /**
