@@ -39,9 +39,7 @@
 #error "Sorry, this driver needs kernel version 2.6.5 or higher"
 #error "*******************************************************"
 #endif
-
 #include <linux/autoconf.h>
-
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -56,7 +54,6 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/usb.h>
-#include <linux/poll.h>
 #include <linux/wait.h>
 #include <linux/time.h>
 
@@ -64,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.76 $"
+#define DRIVER_VERSION	"$Revision: 1.77 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -277,7 +274,6 @@ static unsigned long usecs_to_jiffies(const unsigned int u)
 #endif
 }
 #endif
-
 static void mceusb_dev_printdata(struct mceusb2_dev *ir, char *buf, int len)
 {
 	char codes[USB_BUFLEN*3 + 1];
