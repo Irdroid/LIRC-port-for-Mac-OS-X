@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.29 2009/03/08 13:35:17 lirc Exp $
+ * $Id: lirc_dev.h,v 1.30 2009/03/08 14:24:16 lirc Exp $
  *
  */
 
@@ -89,18 +89,6 @@ static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_clear(buf);
-	lirc_buffer_unlock(buf, &flags);
-}
-static inline void _lirc_buffer_remove_1(struct lirc_buffer *buf)
-{
-	buf->head = mod(buf->head+1, buf->size);
-	buf->fill -= 1;
-}
-static inline void lirc_buffer_remove(struct lirc_buffer *buf)
-{
-	unsigned long flags;
-	lirc_buffer_lock(buf, &flags);
-	_lirc_buffer_remove_1(buf);
 	lirc_buffer_unlock(buf, &flags);
 }
 static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
