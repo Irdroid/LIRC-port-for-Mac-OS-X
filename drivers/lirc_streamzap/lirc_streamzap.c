@@ -1,5 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.46 2009/03/08 18:36:04 lirc Exp $      */
-
+/*      $Id: lirc_streamzap.c,v 1.47 2009/03/08 18:40:39 lirc Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -36,7 +35,6 @@
 #error "Sorry, this driver needs kernel version 2.4.0 or higher"
 #error "*******************************************************"
 #endif
-
 #include <linux/autoconf.h>
 #include <linux/kernel.h>
 #include <linux/errno.h>
@@ -56,7 +54,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.46 $"
+#define DRIVER_VERSION	"$Revision: 1.47 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -270,7 +268,7 @@ static void flush_delay_buffer(struct usb_streamzap *sz)
 			lirc_buffer_write(&sz->lirc_buf,
 					    (unsigned char *) &data);
 		} else {
-			dprintk("buffer overflow\n", sz->driver.minor);
+			dprintk("buffer overflow", sz->driver.minor);
 		}
 	}
 	if (!empty)
@@ -609,13 +607,13 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 #endif
 
 	if (udev->descriptor.iManufacturer
-	    && usb_string(udev, udev->descriptor.iManufacturer, buf,
-			  sizeof(buf)) > 0)
+	    && usb_string(udev, udev->descriptor.iManufacturer,
+			  buf, sizeof(buf)) > 0)
 		strlcpy(name, buf, sizeof(name));
 
 	if (udev->descriptor.iProduct
-	    && usb_string(udev,  udev->descriptor.iProduct, buf,
-			  sizeof(buf)) > 0)
+	    && usb_string(udev,  udev->descriptor.iProduct,
+			  buf, sizeof(buf)) > 0)
 		snprintf(name + strlen(name), sizeof(name) - strlen(name),
 			 " %s", buf);
 
@@ -678,7 +676,6 @@ static int streamzap_use_inc(void *data)
 		return -EINVAL;
 	}
 	dprintk("set use inc", sz->driver.minor);
-
 	MOD_INC_USE_COUNT;
 
 	lirc_buffer_clear(&sz->lirc_buf);
@@ -844,7 +841,6 @@ static int streamzap_resume(struct usb_interface *intf)
 #endif
 
 #ifdef MODULE
-
 /**
  *	usb_streamzap_init
  */
@@ -883,7 +879,5 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-
 EXPORT_NO_SYMBOLS;
-
 #endif /* MODULE */
