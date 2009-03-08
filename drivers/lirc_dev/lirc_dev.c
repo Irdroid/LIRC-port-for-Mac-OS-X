@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.83 2009/03/08 15:08:11 lirc Exp $
+ * $Id: lirc_dev.c,v 1.84 2009/03/08 19:13:45 lirc Exp $
  *
  */
 
@@ -960,6 +960,7 @@ static ssize_t irctl_write(struct file *file, const char *buffer,
 
 
 static struct file_operations fops = {
+	.owner		= THIS_MODULE,
 	.read		= irctl_read,
 	.write		= irctl_write,
 	.poll		= irctl_poll,

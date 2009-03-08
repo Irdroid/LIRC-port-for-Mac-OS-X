@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.51 2009/03/08 13:29:51 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.52 2009/03/08 19:13:45 lirc Exp $      */
 
 /*
  * lirc_parallel.c
@@ -586,6 +586,7 @@ static int lirc_close(struct inode *node, struct file *filep)
 }
 
 static struct file_operations lirc_fops = {
+	.owner		= THIS_MODULE,
 	.llseek		= lirc_lseek,
 	.read		= lirc_read,
 	.write		= lirc_write,

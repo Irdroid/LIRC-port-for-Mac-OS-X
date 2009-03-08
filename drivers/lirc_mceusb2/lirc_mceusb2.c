@@ -64,7 +64,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.75 $"
+#define DRIVER_VERSION	"$Revision: 1.76 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -795,6 +795,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 }
 
 static struct file_operations lirc_fops = {
+	.owner	= THIS_MODULE,
 	.write	= lirc_write,
 };
 

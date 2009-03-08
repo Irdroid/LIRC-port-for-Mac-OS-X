@@ -347,6 +347,7 @@ static void add_read_queue(int flag, unsigned long val)
 
 
 static struct file_operations lirc_fops = {
+	.owner		= THIS_MODULE,
 	.read		= lirc_read,
 	.write		= lirc_write,
 	.poll		= lirc_poll,
