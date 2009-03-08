@@ -408,7 +408,7 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       <DD>
 	<P>
 	  Pressing ignored buttons won't cause the mouse daemon to deactivate.
-	  This is useful, for example, if your remote sends seperate press or
+	  This is useful, for example, if your remote sends separate press or
 	  release codes that you have mapped in your lircd.conf.  This only
 	  makes sense if you use ACTIVATE instead of TOGGLE_ACTIVATE.
 	</P>
@@ -448,9 +448,11 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	prog	= ...
 	remote	= ...
 	button	= ...
+	[button	= ...] (optional, for key sequences)
 	repeat	= ...
 	delay	= ...
 	config	= ...
+	[config	= ...] (optional, for toggle button behaviour)
 	mode	= ...
 	flags	= ...
     end</PRE>
@@ -459,21 +461,24 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       (<em>prog</em>) should do what (<em>config</em>, <em>mode</em>,
       <em>flags</em>) if you press a certain button (<em>remote</em>,
       <em>button</em>) a specified time (<em>repeat</em>,
-      <em>delay</em>).
+      <em>delay</em>). By default for each remote signal received the
+      <em>.lircrc </em> config file is read from top to bottom and
+      each matching configuration is executed in order of appearance.
     </P>
     <DL>
       <DT>prog</DT>
       <DD>gives the name of the program that should receive the
 	configstring given in config.
       </DD>
-      <DT>remote, button</DT>
-      <DD>specify a key of a remote control that launches an
-	action. Key sequences can be specified by giving more then one
-	remote/button string. The character '*' can be used as a wild
-	card for remote or button. The default for remote is '*'. The
-	remote name must always be given before its according
-	button. When using key sequences a given remote is valid for
-	all following buttons until you specify another remote.
+      <DT>remote, button</DT> <DD>specify a key of a remote control
+	that launches an action. Key sequences can be specified by
+	giving more then one remote/button string (<em>not</em> on the
+	same line, but using separate remote/button tokens on separate
+	lines). The character '*' can be used as a wild card for remote
+	or button. The default for remote is '*'. The remote name must
+	always be given before its according button. When using key
+	sequences a given remote is valid for all following buttons
+	until you specify another remote.
       </DD>
       <DT>repeat</DT>
       <DD>tells the program what shall happen if a key is repeated.  A
@@ -520,6 +525,11 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
 	inactive until the program enters the given mode by using the
 	mode token. Please note that configurations outside a mode
 	will always stay active even though you enter a specific mode.
+	To prevent the execution of such &quot;global&quot;
+	configurations you can place these at the end of the config
+	file below all mode constructs and use the <em>quit</em> flag
+	described below to stop execution of further configurations
+	when a match happens inside a mode block.
 	
 	If mode is equal to the name of a client application this
 	application will always start in this mode. Consider this
@@ -589,8 +599,9 @@ end</PRE>
       the <em>quit</em> flag in the matching configuration. You should
       also be aware that if a configuration changes the current mode,
       the change takes effect immediately, which means that the
-      further search for matching configurations will take place with
-      the new mode setting.
+      further search for matching configurations beginning at the next
+      configuration further down will take place with the new mode
+      setting.
     </P>
 
     <P>
@@ -630,9 +641,82 @@ include ~/.lirc/xawtv</PRE>
       selected in the <em>button=</em> line and you will see a 'Hello
       world!' on your screen. As you can see irexec is a simple
       program launcher. Of course you can do a lot more than just
-      start programs.
+      start programs. Be aware that irexec will wait for the started
+      program to finish, before it will resume it function. If this is
+      not what you want, you should add a &quot;&amp;&quot; at the end
+      of the config line to start the desired program in background.
     </P>
     
+    <P>
+      Differences in the order of configurations in .lircrc can lead to
+      completely different results, as this example shows:
+    </P>
+    <PRE>
+      begin order
+      begin
+           button = OK
+           prog = irexec
+           config = echo "This is printed last"
+      end
+      end order
+
+      begin
+           button = OK
+           prog = irexec
+           config = echo "This is printed first"
+           mode = order
+           flags = quit
+      end</PRE> 
+    <P>
+      Using this order on first key stroke of OK
+    </P>
+    <PRE>
+      "This is printed first"</PRE>
+    <P>
+      will appear  - the command is executed and the mode 'order' is entered.
+      The second stroke (and every further one) will lead to
+    </P>
+    <PRE>
+      "This is printed last"
+      "This is printed first"</PRE>
+    <P>
+      Both configs are executed, even though the second is outside the mode;
+      the quit flag has no effect  - no other config is following it in
+      the .lircrc file.
+    </P>
+    <P>
+      Changing the order within the .lircrc to
+    </P>
+    <PRE>
+      begin
+           button = OK
+           prog = irexec
+           config = echo "This is printed first"
+           mode = order
+           flags = quit
+      end
+ 
+      begin order
+      begin
+           button = OK
+           prog = irexec
+           config = echo "This is printed last"
+      end
+      end order</PRE>
+    <P>
+      will lead to
+    </P>
+    <PRE>
+      "This is printed first"</PRE>
+    <P>
+      on every stroke. The second config is never executed: even
+      though the mode is changed it can not take effect (because of
+      the quit flag). To achieve unrestricted usage of keys within
+      modes place all mode-configurations <em>before</em> all other
+      configurations; and use quit flags within the mode if you don't
+      want other configurations to be executed.
+    </P>
+
     <P>
       If you start a LIRC client program, it reads your ~/.lircrc and
       reacts only on prog= entries which point to itself. All programs
@@ -641,15 +725,15 @@ include ~/.lirc/xawtv</PRE>
       .lircrc, then start all these programs, they react only to their
       according entries in .lircrc. This also leads to a disadvantage
       of the mode concept. If you don't start all client programs at a
-      time the mode they have to maintain may differ between
+      time the mode they currently are in may differ between
       applications. Also key sequences might not be recognized equally
       because all programs then don't have the same starting point. In
       order to solve this problem there is the new <A
       HREF="lircrcd.html">lircrcd</A> program since version
       0.8.0. lircrcd's purpose is to synchronise all clients and
-      maintain the current mode. In order to use the lircrcd feature
-      you have to explicitly enable it by adding the following line at
-      the beginning of the file:
+      maintain a common mode for all applications. In order to use the
+      lircrcd feature you have to explicitly enable it by adding the
+      following line at the beginning of the file:
 <pre>
 #! lircrcd
 </pre>
