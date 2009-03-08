@@ -170,19 +170,6 @@ static void ite8709_write_register(struct ite8709_device *dev,
 	ite8709_write(dev, ITE8709_MODE, ITE8709_MODE_WRITE);
 }
 
-static unsigned char ite8709_read_register(struct ite8709_device *dev,
-						unsigned char reg_adr)
-{
-	ite8709_wait_device(dev);
-
-	ite8709_write(dev, ITE8709_REG_ADR, reg_adr);
-	ite8709_write(dev, ITE8709_MODE, ITE8709_MODE_READ);
-
-	ite8709_wait_device(dev);
-
-	return ite8709_read(dev, ITE8709_REG_VAL);
-}
-
 static void ite8709_init_hardware(struct ite8709_device *dev)
 {
 	spin_lock_irq(&dev->hardware_lock);
