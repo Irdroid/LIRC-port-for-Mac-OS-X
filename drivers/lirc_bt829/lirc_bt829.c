@@ -22,7 +22,6 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #error "This driver needs kernel version 2.4.0 or higher"
 #endif
-
 #include <linux/autoconf.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -93,11 +92,11 @@ static struct pci_dev *do_pci_probe(void)
 			       (unsigned int)pci_addr_phys);
 		}
 		if (pci_addr_phys == 0) {
-			printk(KERN_ERR DRIVER_NAME ": no memory resource\n");
+			printk(KERN_ERR DRIVER_NAME ": no memory resource ?\n");
 			return NULL;
 		}
 	} else {
-		printk(KERN_ERR DRIVER_NAME ": pci_prob failed\n");
+		printk(KERN_ERR DRIVER_NAME ": pci_probe failed\n");
 		return NULL;
 	}
 	return my_dev;
@@ -397,5 +396,4 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
-
 EXPORT_NO_SYMBOLS;
