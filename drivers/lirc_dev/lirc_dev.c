@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.84 2009/03/08 19:13:45 lirc Exp $
+ * $Id: lirc_dev.c,v 1.85 2009/03/09 18:33:12 lirc Exp $
  *
  */
 
@@ -589,12 +589,16 @@ static int irctl_open(struct inode *inode, struct file *file)
 		return -EBUSY;
 	}
 
+#ifdef LIRC_HAVE_KFIFO
+	lirc_buffer_clear(ir->buf);
+#else
 	/* there is no need for locking here because ir->open is 0
 	 * and lirc_thread isn't using buffer
 	 * drivers which use irq's should allocate them on set_use_inc,
 	 * so there should be no problem with those either.
 	 */
 	_lirc_buffer_clear(ir->buf);
+#endif
 
 	if (ir->d.owner != NULL && try_module_get(ir->d.owner)) {
 		++ir->open;

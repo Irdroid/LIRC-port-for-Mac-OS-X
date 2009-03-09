@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.33 2009/03/08 15:15:14 lirc Exp $
+ * $Id: lirc_dev.h,v 1.34 2009/03/09 18:33:12 lirc Exp $
  *
  */
 
@@ -37,15 +37,24 @@ struct lirc_buffer {
 	unsigned char *data;
 #endif
 };
+#ifndef LIRC_HAVE_KFIFO
 static inline void _lirc_buffer_clear(struct lirc_buffer *buf)
+{
+	buf->head = 0;
+	buf->tail = 0;
+	buf->fill = 0;
+}
+#endif
+static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
 	if (buf->fifo)
 		kfifo_reset(buf->fifo);
 #else
-	buf->head = 0;
-	buf->tail = 0;
-	buf->fill = 0;
+	unsigned long flags;
+	lirc_buffer_lock(buf, &flags);
+	_lirc_buffer_clear(buf);
+	lirc_buffer_unlock(buf, &flags);
 #endif
 }
 static inline int lirc_buffer_init(struct lirc_buffer *buf,
@@ -86,6 +95,7 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 	buf->size = 0;
 #endif
 }
+#ifndef LIRC_HAVE_KFIFO
 static inline void lirc_buffer_lock(struct lirc_buffer *buf,
 				    unsigned long *flags)
 {
@@ -96,109 +106,111 @@ static inline void lirc_buffer_unlock(struct lirc_buffer *buf,
 {
 	spin_unlock_irqrestore(&buf->lock, *flags);
 }
+#endif
+#ifndef LIRC_HAVE_KFIFO
 static inline int  _lirc_buffer_full(struct lirc_buffer *buf)
+{
+	return (buf->fill >= buf->size);
+}
+#endif
+static inline int  lirc_buffer_full(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
 	return kfifo_len(buf->fifo) == buf->fifo->size;
 #else
-	return (buf->fill >= buf->size);
-#endif
-}
-static inline int  lirc_buffer_full(struct lirc_buffer *buf)
-{
 	unsigned long flags;
 	int ret;
 	lirc_buffer_lock(buf, &flags);
 	ret = _lirc_buffer_full(buf);
 	lirc_buffer_unlock(buf, &flags);
 	return ret;
+#endif
 }
+#ifndef LIRC_HAVE_KFIFO
 static inline int  _lirc_buffer_empty(struct lirc_buffer *buf)
+{
+	return !(buf->fill);
+}
+#endif
+static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
 	return !kfifo_len(buf->fifo);
 #else
-	return !(buf->fill);
-#endif
-}
-static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
-{
 	unsigned long flags;
 	int ret;
 	lirc_buffer_lock(buf, &flags);
 	ret = _lirc_buffer_empty(buf);
 	lirc_buffer_unlock(buf, &flags);
 	return ret;
+#endif
 }
+#ifndef LIRC_HAVE_KFIFO
 static inline int  _lirc_buffer_available(struct lirc_buffer *buf)
+{
+	return (buf->size - buf->fill);
+}
+#endif
+static inline int  lirc_buffer_available(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
 	return (buf->fifo->size - kfifo_len(buf->fifo)) / buf->chunk_size;
 #else
-	return (buf->size - buf->fill);
-#endif
-}
-static inline int  lirc_buffer_available(struct lirc_buffer *buf)
-{
 	unsigned long flags;
 	int ret;
 	lirc_buffer_lock(buf, &flags);
 	ret = _lirc_buffer_available(buf);
 	lirc_buffer_unlock(buf, &flags);
 	return ret;
+#endif
 }
-static inline void lirc_buffer_clear(struct lirc_buffer *buf)
-{
-	unsigned long flags;
-	lirc_buffer_lock(buf, &flags);
-	_lirc_buffer_clear(buf);
-	lirc_buffer_unlock(buf, &flags);
-}
+#ifndef LIRC_HAVE_KFIFO
 static inline void _lirc_buffer_read_1(struct lirc_buffer *buf,
 				       unsigned char *dest)
+{
+	memcpy(dest, &buf->data[buf->head*buf->chunk_size], buf->chunk_size);
+	buf->head = mod(buf->head+1, buf->size);
+	buf->fill -= 1;
+}
+#endif
+static inline void lirc_buffer_read(struct lirc_buffer *buf,
+				    unsigned char *dest)
 {
 #ifdef LIRC_HAVE_KFIFO
 	if (kfifo_len(buf->fifo) > buf->chunk_size)
 		kfifo_get(buf->fifo, dest, buf->chunk_size);
 #else
-	memcpy(dest, &buf->data[buf->head*buf->chunk_size], buf->chunk_size);
-	buf->head = mod(buf->head+1, buf->size);
-	buf->fill -= 1;
-#endif
-}
-static inline void lirc_buffer_read(struct lirc_buffer *buf,
-				    unsigned char *dest)
-{
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_read_1(buf, dest);
 	lirc_buffer_unlock(buf, &flags);
+#endif
 }
+#ifndef LIRC_HAVE_KFIFO
 static inline void _lirc_buffer_write_1(struct lirc_buffer *buf,
 				      unsigned char *orig)
+{
+	memcpy(&buf->data[buf->tail*buf->chunk_size], orig, buf->chunk_size);
+	buf->tail = mod(buf->tail+1, buf->size);
+	buf->fill++;
+}
+#endif
+static inline void lirc_buffer_write(struct lirc_buffer *buf,
+				     unsigned char *orig)
 {
 #ifdef LIRC_HAVE_KFIFO
 	kfifo_put(buf->fifo, orig, buf->chunk_size);
 #else
-	memcpy(&buf->data[buf->tail*buf->chunk_size], orig, buf->chunk_size);
-	buf->tail = mod(buf->tail+1, buf->size);
-	buf->fill++;
-#endif
-}
-static inline void lirc_buffer_write(struct lirc_buffer *buf,
-				     unsigned char *orig)
-{
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_write_1(buf, orig);
 	lirc_buffer_unlock(buf, &flags);
+#endif
 }
+#ifndef LIRC_HAVE_KFIFO
 static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
 					unsigned char *orig, int count)
 {
-#ifdef LIRC_HAVE_KFIFO
-	kfifo_put(buf->fifo, orig, count * buf->chunk_size);
-#else
 	int space1;
 	if (buf->head > buf->tail)
 		space1 = buf->head - buf->tail;
@@ -216,15 +228,19 @@ static inline void _lirc_buffer_write_n(struct lirc_buffer *buf,
 	}
 	buf->tail = mod(buf->tail + count, buf->size);
 	buf->fill += count;
-#endif
 }
+#endif
 static inline void lirc_buffer_write_n(struct lirc_buffer *buf,
 				       unsigned char *orig, int count)
 {
+#ifdef LIRC_HAVE_KFIFO
+	kfifo_put(buf->fifo, orig, count * buf->chunk_size);
+#else
 	unsigned long flags;
 	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_write_n(buf, orig, count);
 	lirc_buffer_unlock(buf, &flags);
+#endif
 }
 
 struct lirc_driver {
