@@ -16,7 +16,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.81 2009/02/14 19:35:52 lirc Exp $
+ * $Id: lirc_atiusb.c,v 1.82 2009/03/10 23:56:38 jarodwilson Exp $
  */
 
 /*
@@ -67,14 +67,14 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.81 $"
+#define DRIVER_VERSION		"$Revision: 1.82 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
 
-#define CODE_LENGTH		code_length[ir->remote_type]
-#define CODE_MIN_LENGTH		code_min_length[ir->remote_type]
-#define DECODE_LENGTH		decode_length[ir->remote_type]
+#define CODE_LENGTH		(code_length[ir->remote_type])
+#define CODE_MIN_LENGTH		(code_min_length[ir->remote_type])
+#define DECODE_LENGTH		(decode_length[ir->remote_type])
 
 #define RW2_MODENAV_KEYCODE	0x3F
 #define RW2_NULL_MODE		0xFF
@@ -136,7 +136,7 @@ static int mgradient = 375;	/* 1000*gradient from cardinal direction */
 #define VENDOR_MS2		0x045e
 #define VENDOR_MS3		0xFFFF
 
-static struct usb_device_id usb_remote_table [] = {
+static struct usb_device_id usb_remote_table[] = {
 	/* X10 USB Firecracker Interface */
 	{ USB_DEVICE(VENDOR_ATI1, 0x0002) },
 
@@ -454,7 +454,8 @@ static int code_check_ati1(struct in_endpt *iep, int len)
 	dprintk(DRIVER_NAME "[%d]: accept channel %d\n", ir->devnum, chan+1);
 
 	if (ir->remote_type == ATI1_COMPATIBLE) {
-		for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
+		for (i = len; i < CODE_LENGTH; i++)
+			iep->buf[i] = 0;
 		/* check for repeats */
 		if (memcmp(iep->old, iep->buf, len) == 0) {
 			if (iep->old_jiffies + repeat_jiffies > jiffies)
@@ -557,7 +558,8 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 			ir->devnum, len);
 		return -1;
 	}
-	for (i = len; i < CODE_LENGTH; i++) iep->buf[i] = 0;
+	for (i = len; i < CODE_LENGTH; i++)
+		iep->buf[i] = 0;
 
 	mode = buf[0];
 
@@ -1044,9 +1046,8 @@ static struct irctl *new_irctl(struct usb_interface *intf)
 	struct usb_device *dev = interface_to_usbdev(intf);
 	struct irctl *ir;
 	struct lirc_driver *driver;
-	int type, devnum;
+	int type, devnum, dclen;
 	int mem_failure;
-	int dclen;
 
 	devnum = dev->devnum;
 
@@ -1331,7 +1332,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 #endif
 
 	dprintk(DRIVER_NAME ": disconnecting remote %d:\n",
-		(ir? ir->devnum: -1));
+		(ir ? ir->devnum : -1));
 	if (!ir || !ir->d)
 		return;
 
@@ -1363,7 +1364,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.81 2009/02/14 19:35:52 lirc Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.82 2009/03/10 23:56:38 jarodwilson Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
