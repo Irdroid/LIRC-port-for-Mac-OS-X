@@ -17,7 +17,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.84 2009/03/11 00:15:36 jarodwilson Exp $
+ * $Id: lirc_atiusb.c,v 1.85 2009/03/11 00:21:46 jarodwilson Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.84 $"
+#define DRIVER_VERSION		"$Revision: 1.85 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -197,7 +197,7 @@ static char init2[] = {0x01, 0x00, 0x20, 0x14, 0x20, 0x20, 0x20};
 struct in_endpt {
 	/* inner link in list of endpoints for the remote specified by ir */
 	struct list_head iep_list_link;
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	struct urb *urb;
 	struct usb_endpoint_descriptor *ep;
 	int type;
@@ -215,7 +215,7 @@ struct in_endpt {
 };
 
 struct out_endpt {
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	struct urb *urb;
 	struct usb_endpoint_descriptor *ep;
 
@@ -232,7 +232,7 @@ struct out_endpt {
 
 
 /* data structure for each usb remote */
-struct irctl {
+struct atirf_dev {
 	/* inner link in list of all remotes managed by this module */
 	struct list_head remote_list_link;
 	/* Number of usb interfaces associated with this device */
@@ -263,7 +263,7 @@ struct irctl {
 	struct mutex lock;
 };
 
-/* list of all registered devices via the remote_list_link in irctl */
+/* list of all registered devices via the remote_list_link in atirf_dev */
 static struct list_head remote_list;
 
 /*
@@ -273,12 +273,12 @@ static struct list_head remote_list;
 #define get_iep_from_link(link) \
 		list_entry((link), struct in_endpt, iep_list_link);
 #define get_irctl_from_link(link) \
-		list_entry((link), struct irctl, remote_list_link);
+		list_entry((link), struct atirf_dev, remote_list_link);
 
 /* send packet - used to initialize remote */
 static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 {
-	struct irctl *ir = oep->ir;
+	struct atirf_dev *ir = oep->ir;
 	DECLARE_WAITQUEUE(wait, current);
 	int timeout = HZ; /* 1 second */
 	unsigned char buf[USB_OUTLEN];
@@ -325,7 +325,7 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 	usb_unlink_urb(oep->urb);
 }
 
-static int unregister_from_lirc(struct irctl *ir)
+static int unregister_from_lirc(struct atirf_dev *ir)
 {
 	struct lirc_driver *d = ir->d;
 	int devnum;
@@ -342,7 +342,7 @@ static int unregister_from_lirc(struct irctl *ir)
 
 static int set_use_inc(void *data)
 {
-	struct irctl *ir = data;
+	struct atirf_dev *ir = data;
 	struct list_head *pos, *n;
 	struct in_endpt *iep;
 	int rtn;
@@ -393,7 +393,7 @@ static int set_use_inc(void *data)
 
 static void set_use_dec(void *data)
 {
-	struct irctl *ir = data;
+	struct atirf_dev *ir = data;
 	struct list_head *pos, *n;
 	struct in_endpt *iep;
 
@@ -435,7 +435,7 @@ static void print_data(struct in_endpt *iep, char *buf, int len)
 
 static int code_check_ati1(struct in_endpt *iep, int len)
 {
-	struct irctl *ir = iep->ir;
+	struct atirf_dev *ir = iep->ir;
 	int i, chan;
 
 	/* ATI RW1: some remotes emit both 4 and 5 byte length codes. */
@@ -554,7 +554,7 @@ static int code_check_ati1(struct in_endpt *iep, int len)
  */
 static int code_check_ati2(struct in_endpt *iep, int len)
 {
-	struct irctl *ir = iep->ir;
+	struct atirf_dev *ir = iep->ir;
 	int mode, i;
 	char *buf = iep->buf;
 
@@ -657,7 +657,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 
 static int code_check_xbox(struct in_endpt *iep, int len)
 {
-	struct irctl *ir = iep->ir;
+	struct atirf_dev *ir = iep->ir;
 	const int clen = CODE_LENGTH;
 
 	if (len != clen) {
@@ -792,7 +792,7 @@ static void usb_remote_send(struct urb *urb)
  */
 static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 {
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	dprintk(DRIVER_NAME ": free_in_endpt(%p, %d)\n", iep, mem_failure);
 	if (!iep)
 		return;
@@ -837,7 +837,7 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
  * Construct a new inbound endpoint for this remote, and add it to the list of
  * in_epts in ir.
  */
-static struct in_endpt *new_in_endpt(struct irctl *ir,
+static struct in_endpt *new_in_endpt(struct atirf_dev *ir,
 				     struct usb_endpoint_descriptor *ep)
 {
 	struct usb_device *dev = ir->usbdev;
@@ -900,7 +900,7 @@ new_in_endpt_failure_check:
 
 static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 {
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	dprintk(DRIVER_NAME ": free_out_endpt(%p, %d)\n", oep, mem_failure);
 	if (!oep)
 		return;
@@ -941,7 +941,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 	mutex_unlock(&ir->lock);
 }
 
-static struct out_endpt *new_out_endpt(struct irctl *ir,
+static struct out_endpt *new_out_endpt(struct atirf_dev *ir,
 				       struct usb_endpoint_descriptor *ep)
 {
 #ifdef KERNEL_2_5
@@ -989,7 +989,7 @@ static struct out_endpt *new_out_endpt(struct irctl *ir,
 	return oep;
 }
 
-static void free_irctl(struct irctl *ir, int mem_failure)
+static void free_irctl(struct atirf_dev *ir, int mem_failure)
 {
 	struct list_head *pos, *n;
 	struct in_endpt *in;
@@ -1045,10 +1045,10 @@ static void free_irctl(struct irctl *ir, int mem_failure)
 	mutex_unlock(&ir->lock);
 }
 
-static struct irctl *new_irctl(struct usb_interface *intf)
+static struct atirf_dev *new_irctl(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	struct lirc_driver *driver;
 	int type, devnum, dclen;
 	int mem_failure;
@@ -1144,13 +1144,13 @@ new_irctl_failure_check:
 
 /*
  * Scan the global list of remotes to see if the device listed is one of them.
- * If it is, the corresponding irctl is returned, with its dev_refcount
+ * If it is, the corresponding atirf_dev is returned, with its dev_refcount
  * incremented.  Otherwise, returns null.
  */
-static struct irctl *get_prior_reg_ir(struct usb_device *dev)
+static struct atirf_dev *get_prior_reg_ir(struct usb_device *dev)
 {
 	struct list_head *pos;
-	struct irctl *ir = NULL;
+	struct atirf_dev *ir = NULL;
 
 	dprintk(DRIVER_NAME "[%d]: scanning remote_list...\n", dev->devnum);
 	list_for_each(pos, &remote_list) {
@@ -1173,7 +1173,7 @@ static struct irctl *get_prior_reg_ir(struct usb_device *dev)
  * If the USB interface has an out endpoint for control (eg, the first Remote
  * Wonder) send the appropriate initialization packets.
  */
-static void send_outbound_init(struct irctl *ir)
+static void send_outbound_init(struct atirf_dev *ir)
 {
 	if (ir->out_init) {
 		struct out_endpt *oep = ir->out_init;
@@ -1226,7 +1226,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #endif
 	struct usb_endpoint_descriptor *ep;
 	struct in_endpt *iep;
-	struct irctl *ir;
+	struct atirf_dev *ir;
 	int i, type;
 
 	dprintk(DRIVER_NAME "[%d]: usb_remote_probe: dev:%p, intf:%p, id:%p)\n",
@@ -1333,12 +1333,12 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	/* struct usb_device *dev = interface_to_usbdev(intf); */
-	struct irctl *ir = usb_get_intfdata(intf);
+	struct atirf_dev *ir = usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
 #else
 static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 {
-	struct irctl *ir = ptr;
+	struct atirf_dev *ir = ptr;
 #endif
 
 	dprintk(DRIVER_NAME ": disconnecting remote %d:\n",
@@ -1374,7 +1374,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.84 2009/03/11 00:15:36 jarodwilson Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.85 2009/03/11 00:21:46 jarodwilson Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
