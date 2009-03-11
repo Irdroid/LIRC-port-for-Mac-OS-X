@@ -17,7 +17,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.83 2009/03/11 00:08:36 jarodwilson Exp $
+ * $Id: lirc_atiusb.c,v 1.84 2009/03/11 00:15:36 jarodwilson Exp $
  */
 
 /*
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.83 $"
+#define DRIVER_VERSION		"$Revision: 1.84 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -111,8 +111,8 @@ static const int decode_length[] = {5, 3, 1};
 static int mask = 0xFFFF;	/* channel acceptance bit mask */
 static int unique;		/* enable channel-specific codes */
 static int repeat = 10;		/* repeat time in 1/100 sec */
-static int emit_updown;		/* send seperate press/release codes (rw2) */
-static int emit_modekeys; /* send keycodes for aux1-4, pc, and mouse (rw2) */
+static int emit_updown;		/* send separate press/release codes (rw2) */
+static int emit_modekeys;	/* send keycodes for aux1-4, pc, mouse (rw2) */
 static unsigned long repeat_jiffies; /* repeat timeout */
 static int mdeadzone;		/* mouse sensitivity >= 0 */
 static int mgradient = 375;	/* 1000*gradient from cardinal direction */
@@ -252,7 +252,7 @@ struct irctl {
 		XBOX_COMPATIBLE
 	} remote_type;
 
-	/* rw2 current mode (mirror's remote's state) */
+	/* rw2 current mode (mirrors the state of the remote) */
 	int mode;
 
 	/* lirc */
@@ -476,13 +476,13 @@ static int code_check_ati1(struct in_endpt *iep, int len)
 
 /*
  * Since the ATI Remote Wonder II has quite a different structure from the
- * prior version, this function was seperated out to clarify the sanitization
+ * prior version, this function was separated out to clarify the sanitization
  * process.
  *
  * Here is a summary of the main differences:
  *
  * a. The rw2 has no sense of a transmission channel.  But, it does have an
- *    auxilliary mode state, which is set by the mode buttons Aux1 through
+ *    auxiliary mode state, which is set by the mode buttons Aux1 through
  *    Aux4 and "PC".  These map respectively to 0-4 in the first byte of the
  *    recv buffer.  Any subsequent button press sends this mode number as its
  *    "channel code."  Annoyingly enough, the mode setting buttons all send
@@ -494,7 +494,7 @@ static int code_check_ati1(struct in_endpt *iep, int len)
  *    not do so would cause each remote key to send a different code depending
  *    on the active aux.  Further complicating matters, using the mouse norb
  *    also sends an identical code as would pushing the active aux button.  To
- *    handle this we need a seperate parameter, like rw2modes, with the
+ *    handle this we need a separate parameter, like rw2modes, with the
  *    following values and meanings:
  *
  *	0: Don't squash any channel info
@@ -519,9 +519,9 @@ static int code_check_ati1(struct in_endpt *iep, int len)
  *    release.  This is generally much more responsive than lirc's built-in
  *    timeout handling.
  *
- *    The problem is that the remote can send the release-recieve pair
+ *    The problem is that the remote can send the release-receive pair
  *    (0,1) while one is still holding down the same button if the
- *    transmission is momentarilly interrupted.  (It seems that the receiver
+ *    transmission is momentarily interrupted.  (It seems that the receiver
  *    manages this count instead of the remote.)  By default, this information
  *    is squashed to 2.
  *
@@ -560,7 +560,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 
 	if (len != CODE_LENGTH) {
 		dprintk(DRIVER_NAME
-			"[%d]: Huh?  Abnormal length (%d) buffer recieved.\n",
+			"[%d]: Huh?  Abnormal length (%d) buffer received.\n",
 			ir->devnum, len);
 		return -1;
 	}
@@ -632,7 +632,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 		dir_ew = (x > 0) ? MOUSE_E : MOUSE_W;
 		dir_ns = (y > 0) ? MOUSE_S : MOUSE_N;
 
-		/* convert coordintes(angle) into compass direction */
+		/* convert coordinates(angle) into compass direction */
 		if (x == 0)
 			code = dir_ns;
 		else if (y == 0)
@@ -1374,7 +1374,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.83 2009/03/11 00:08:36 jarodwilson Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.84 2009/03/11 00:15:36 jarodwilson Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
@@ -1416,7 +1416,7 @@ module_param(mdeadzone, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mdeadzone, "rw2 mouse sensitivity threshold (default: 0)");
 
 /*
- * Enabling this will cause the built-in Remote Wonder II repeate coding to
+ * Enabling this will cause the built-in Remote Wonder II repeat coding to
  * not be squashed.  The second byte of the keys output will then be:
  *
  *	1 initial press (button down)
