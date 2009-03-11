@@ -1,4 +1,5 @@
-/* lirc_atiusb - USB remote support for LIRC
+/*
+ * lirc_atiusb - USB remote support for LIRC
  * (currently only supports X10 USB remotes)
  * (supports ATI Remote Wonder and ATI Remote Wonder II, too)
  *
@@ -16,7 +17,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.82 2009/03/10 23:56:38 jarodwilson Exp $
+ * $Id: lirc_atiusb.c,v 1.83 2009/03/11 00:08:36 jarodwilson Exp $
  */
 
 /*
@@ -33,7 +34,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
  */
 
 #include <linux/version.h>
@@ -67,7 +67,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.82 $"
+#define DRIVER_VERSION		"$Revision: 1.83 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -102,8 +102,10 @@ static int debug;
 static const int code_length[] = {5, 3, 6};
 static const int code_min_length[] = {3, 3, 6};
 static const int decode_length[] = {5, 3, 1};
-/* USB_BUFF_LEN must be the maximum value of the code_length array.
- * It is used for static arrays. */
+/*
+ * USB_BUFF_LEN must be the maximum value of the code_length array.
+ * It is used for static arrays.
+ */
 #define USB_BUFF_LEN 6
 
 static int mask = 0xFFFF;	/* channel acceptance bit mask */
@@ -175,8 +177,10 @@ static struct usb_device_id usb_remote_table[] = {
 	/* Microsoft Xbox DVD Movie Playback Kit IR */
 	{ USB_DEVICE(VENDOR_MS2, 0x0284) },
 
-	/* Some chinese manufacturer -- conflicts with the joystick from the
-	 * same manufacturer */
+	/*
+	 * Some Chinese manufacturer -- conflicts with the joystick from the
+	 * same manufacturer
+	 */
 	{ USB_DEVICE(VENDOR_MS3, 0xFFFF) },
 
 	/* Terminating entry */
@@ -262,8 +266,10 @@ struct irctl {
 /* list of all registered devices via the remote_list_link in irctl */
 static struct list_head remote_list;
 
-/* Convenience macros to retrieve a pointer to the surrounding struct from
- * the given list_head reference within, pointed at by link. */
+/*
+ * Convenience macros to retrieve a pointer to the surrounding struct from
+ * the given list_head reference within, pointed at by link.
+ */
 #define get_iep_from_link(link) \
 		list_entry((link), struct in_endpt, iep_list_link);
 #define get_irctl_from_link(link) \
@@ -568,8 +574,7 @@ static int code_check_ati2(struct in_endpt *iep, int len)
 		buf[0] = 0;
 
 	if (iep->ep->bEndpointAddress == EP_KEYS_ADDR) {
-		/* ignore mouse navigation indicator key and
-		 * mode-set (aux) keys */
+		/* ignore mouse nav indicator key and mode-set (aux) keys */
 		if (buf[2] == RW2_MODENAV_KEYCODE) {
 			if (emit_modekeys >= 2) /* emit raw */
 				buf[0] = mode;
@@ -666,8 +671,10 @@ static int code_check_xbox(struct in_endpt *iep, int len)
 		if (iep->old_jiffies + repeat_jiffies > jiffies)
 			return -1;
 	} else {
-		/* the third byte of xbox ir packet seems to contain key info
-		 * the last two bytes are.. some kind of clock? */
+		/*
+		 * the third byte of xbox ir packet seems to contain key info
+		 * the last two bytes are.. some kind of clock?
+		 */
 		iep->buf[0] = iep->buf[2];
 		memset(iep->buf + 1, 0, len - 1);
 		memcpy(iep->old, iep->buf, len);
@@ -705,7 +712,6 @@ static void usb_remote_recv(struct urb *urb)
 
 	switch (urb->status) {
 
-	/* success */
 	case 0:
 		switch (iep->ir->remote_type) {
 		case XBOX_COMPATIBLE:
@@ -724,7 +730,6 @@ static void usb_remote_recv(struct urb *urb)
 		wake_up(&iep->ir->d->rbuf->wait_poll);
 		break;
 
-	/* unlink */
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
@@ -739,7 +744,6 @@ static void usb_remote_recv(struct urb *urb)
 		break;
 	}
 
-	/* resubmit urb */
 #ifdef KERNEL_2_5
 	usb_submit_urb(urb, GFP_ATOMIC);
 #endif
@@ -778,9 +782,9 @@ static void usb_remote_send(struct urb *urb)
 }
 
 
-/***************************************************************************
+/*
  * Initialization and removal
- ***************************************************************************/
+ */
 
 /*
  * Free iep according to mem_failure which specifies a checkpoint into the
@@ -1051,7 +1055,6 @@ static struct irctl *new_irctl(struct usb_interface *intf)
 
 	devnum = dev->devnum;
 
-	/* determine remote type */
 	switch (cpu_to_le16(dev->descriptor.idVendor)) {
 	case VENDOR_ATI1:
 		type = ATI1_COMPATIBLE;
@@ -1070,7 +1073,6 @@ static struct irctl *new_irctl(struct usb_interface *intf)
 	}
 	dprintk(DRIVER_NAME "[%d]: remote type = %d\n", devnum, type);
 
-	/* allocate kernel memory */
 	mem_failure = 0;
 	ir = kzalloc(sizeof(*ir), GFP_KERNEL);
 	if (!ir) {
@@ -1078,11 +1080,15 @@ static struct irctl *new_irctl(struct usb_interface *intf)
 		goto new_irctl_failure_check;
 	}
 
-	/* at this stage we cannot use the macro [DE]CODE_LENGTH: ir
-	 * is not yet setup */
+	/*
+	 * at this stage we cannot use the macro [DE]CODE_LENGTH: ir
+	 * is not yet setup
+	 */
 	dclen = decode_length[type];
-	/* add this infrared remote struct to remote_list, keeping track
-	 * of the number of drivers registered. */
+	/*
+	 * add this infrared remote struct to remote_list, keeping track
+	 * of the number of drivers registered.
+	 */
 	dprintk(DRIVER_NAME "[%d]: adding remote to list\n", devnum);
 	list_add_tail(&ir->remote_list_link, &remote_list);
 	ir->dev_refcount = 1;
@@ -1163,8 +1169,10 @@ static struct irctl *get_prior_reg_ir(struct usb_device *dev)
 	return ir;
 }
 
-/* If the USB interface has an out endpoint for control (eg, the first Remote
- * Wonder) send the appropriate initialization packets. */
+/*
+ * If the USB interface has an out endpoint for control (eg, the first Remote
+ * Wonder) send the appropriate initialization packets.
+ */
 static void send_outbound_init(struct irctl *ir)
 {
 	if (ir->out_init) {
@@ -1244,8 +1252,10 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	}
 	type = ir->remote_type;
 
-	/* step through the endpoints to find first in and first out endpoint
-	 * of type interrupt transfer */
+	/*
+	 * step through the endpoints to find first in and first out endpoint
+	 * of type interrupt transfer
+	 */
 #ifdef KERNEL_2_5
 	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
 		ep = &idesc->endpoint[i].desc;
@@ -1322,7 +1332,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 #ifdef KERNEL_2_5
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
-/*	struct usb_device *dev = interface_to_usbdev(intf); */
+	/* struct usb_device *dev = interface_to_usbdev(intf); */
 	struct irctl *ir = usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
 #else
@@ -1364,7 +1374,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.82 2009/03/10 23:56:38 jarodwilson Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.83 2009/03/11 00:08:36 jarodwilson Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
