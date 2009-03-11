@@ -4,13 +4,19 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.35 2009/03/11 07:40:26 lirc Exp $
+ * $Id: lirc_dev.h,v 1.36 2009/03/11 20:18:40 lirc Exp $
  *
  */
 
 #ifndef _LINUX_LIRC_DEV_H
 #define _LINUX_LIRC_DEV_H
 
+#ifndef LIRC_REMOVE_DURING_EXPORT
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+/* when was it really introduced? */
+#define LIRC_HAVE_KFIFO
+#endif
+#endif
 #define MAX_IRCTL_DEVICES 4
 #define BUFLEN            16
 
@@ -114,7 +120,7 @@ static inline int  _lirc_buffer_full(struct lirc_buffer *buf)
 static inline int  lirc_buffer_full(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
-	return kfifo_len(buf->fifo) == buf->fifo->size;
+	return kfifo_len(buf->fifo) == buf->size * buf->chunk_size;
 #else
 	unsigned long flags;
 	int ret;
@@ -152,7 +158,7 @@ static inline int  _lirc_buffer_available(struct lirc_buffer *buf)
 static inline int  lirc_buffer_available(struct lirc_buffer *buf)
 {
 #ifdef LIRC_HAVE_KFIFO
-	return (buf->fifo->size - kfifo_len(buf->fifo)) / buf->chunk_size;
+	return buf->size - (kfifo_len(buf->fifo) / buf->chunk_size);
 #else
 	unsigned long flags;
 	int ret;
@@ -175,7 +181,7 @@ static inline void lirc_buffer_read(struct lirc_buffer *buf,
 				    unsigned char *dest)
 {
 #ifdef LIRC_HAVE_KFIFO
-	if (kfifo_len(buf->fifo) > buf->chunk_size)
+	if (kfifo_len(buf->fifo) >= buf->chunk_size)
 		kfifo_get(buf->fifo, dest, buf->chunk_size);
 #else
 	unsigned long flags;
