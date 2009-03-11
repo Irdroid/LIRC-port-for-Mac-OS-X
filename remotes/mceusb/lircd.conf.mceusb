@@ -254,3 +254,80 @@ begin remote
 end remote
 
 
+#
+# this config file was automatically generated
+# using lirc-0.8.4a(default) on Tue Mar 10 19:27:09 2009
+#
+# contributed by 
+#
+# brand:  SIIG Vista MCE remote
+# model no. of remote control: 
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name  vista_mce
+  bits           16
+  flags RC6
+  eps            30
+  aeps          100
+
+  header       2654   889
+  one           427   427
+  zero          427   427
+  pre_data_bits   21
+  pre_data       0x37FF0
+  gap          69850
+  toggle_bit_mask 0x8000
+  rc6_mask    0x100000000
+
+      begin codes
+          Power                    0xEBF3
+          Pictures                 0x6BB6
+          Radio                    0xEBAF
+          Videos                   0x6BB5
+          Music                    0xEBB8
+          Rec                      0x6BE8
+          Pause                    0xEBE7
+          Stop                     0x6BE6
+          Skipback                 0xEBE4
+          Play                     0x6BE9
+          Skipfwd                  0xEBE5
+          Rwd                      0x6BEA
+          Fwd                      0xEBEB
+          Start                    0x6BF2
+          Back                     0xEBDC
+          More                     0x6BF0
+          Volup                    0xEBEF
+          Voldown                  0x6BEE
+          Chup                     0xEBED
+          Chdown                   0x6BEC
+          Up                       0xEBE1
+          Down                     0x6BE0
+          Left                     0xEBDF
+          Right                    0x6BDE
+          Mute                     0xEBF1
+          Rectv                    0x6BB7
+          Guide                    0xEBD9
+          Livetv                   0x6BDA
+          Dvdmenu                  0xEBDB
+          1                        0x6BFE
+          2                        0xEBFD
+          3                        0x6BFC
+          4                        0xEBFB
+          5                        0x6BFA
+          6                        0xEBF9
+          7                        0x6BF8
+          8                        0xEBF7
+          9                        0x6BF6
+          *                        0xEBE2
+          0                        0x6BFF
+          #                        0xEBE3
+          Clear                    0x6BF5
+          Enter                    0xEBF4
+      end codes
+
+end remote
+
+
