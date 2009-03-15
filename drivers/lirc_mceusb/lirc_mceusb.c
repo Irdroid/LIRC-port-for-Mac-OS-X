@@ -730,7 +730,6 @@ static void *mceusb_probe(struct usb_device *udev, unsigned int ifnum,
 	driver->features = LIRC_CAN_REC_MODE2; /* | LIRC_CAN_SEND_MODE2; */
 	driver->data = dev;
 	driver->buffer_size = 128;
-	driver->ioctl = NULL;
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 	driver->sample_rate = 80;   /* sample at 100hz (10ms) */

@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.36 2009/03/11 20:18:40 lirc Exp $
+ * $Id: lirc_dev.h,v 1.37 2009/03/15 09:34:00 lirc Exp $
  *
  */
 
@@ -262,8 +262,6 @@ struct lirc_driver {
 	struct lirc_buffer *rbuf;
 	int (*set_use_inc) (void *data);
 	void (*set_use_dec) (void *data);
-	int (*ioctl) (struct inode *, struct file *, unsigned int,
-		      unsigned long);
 	struct file_operations *fops;
 	struct device *dev;
 	struct module *owner;
@@ -311,13 +309,12 @@ struct lirc_driver {
  * set_use_dec:
  * set_use_dec will be called after device is closed
  *
- * ioctl:
- * Some ioctl's can be directly handled by lirc_dev but will be
- * forwared here if not NULL and only handled if it returns
- * -ENOIOCTLCMD (see also lirc_serial.c).
- *
  * fops:
  * file_operations for drivers which don't fit the current driver model.
+ *
+ * Some ioctl's can be directly handled by lirc_dev if the driver's
+ * ioctl function is NULL or if it returns -ENOIOCTLCMD (see also
+ * lirc_serial.c).
  *
  * owner:
  * the module owning this struct

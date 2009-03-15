@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.86 2009/03/13 21:33:12 lirc Exp $
+ * $Id: lirc_dev.c,v 1.87 2009/03/15 09:34:00 lirc Exp $
  *
  */
 
@@ -314,8 +314,8 @@ int lirc_register_driver(struct lirc_driver *d)
 #else
 	} else if (!d->rbuf) {
 #endif
-		if (!(d->fops && d->fops->read && d->fops->poll)
-		    || (!d->fops->ioctl && !d->ioctl)) {
+		if (!(d->fops && d->fops->read && d->fops->poll &&
+		      d->fops->ioctl)) {
 			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "neither read, poll nor ioctl can be NULL!\n");
 			err = -EBADRQC;
@@ -682,8 +682,11 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		ir->d.name, ir->d.minor, cmd);
 
 	/* if the driver has a ioctl function use it instead */
-	if (ir->d.fops && ir->d.fops->ioctl)
-		return ir->d.fops->ioctl(inode, file, cmd, arg);
+	if (ir->d.fops && ir->d.fops->ioctl) {
+		result = ir->d.fops->ioctl(inode, file, cmd, arg);
+		if (result != -ENOIOCTLCMD)
+			return result;
+	}
 
 	if (ir->d.minor == NOPLUG || !ir->attached) {
 		dprintk(LOGHEAD "ioctl result = -ENODEV\n",
@@ -691,12 +694,6 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		return -ENODEV;
 	}
 
-	/* Give the driver a chance to handle the ioctl */
-	if (ir->d.ioctl) {
-		result = ir->d.ioctl(inode, file, cmd, arg);
-		if (result != -ENOIOCTLCMD)
-			return result;
-	}
 	/* The driver can't handle cmd */
 	result = 0;
 
@@ -728,7 +725,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		result = put_user(ir->d.code_length, (unsigned long *) arg);
 		break;
 	default:
-		result = -ENOIOCTLCMD;
+		result = -EINVAL;
 	}
 
 	dprintk(LOGHEAD "ioctl result = %d\n",
@@ -772,9 +769,11 @@ static long irctl_compat_ioctl(struct file *file,
 		if (get_user(val, (__u32 *)compat_ptr(arg)))
 			return -EFAULT;
 		lock_kernel();
-		/* tell irctl_ioctl that it's safe to use the pointer
-		   to val which is in kernel address space and not in
-		   user address space */
+		/*
+		 * tell irctl_ioctl that it's safe to use the pointer
+		 * to val which is in kernel address space and not in
+		 * user address space
+		 */
 		old_fs = get_fs();
 		set_fs(KERNEL_DS);
 

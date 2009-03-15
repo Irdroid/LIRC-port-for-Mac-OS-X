@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.79 $"
+#define DRIVER_VERSION	"$Revision: 1.80 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -789,6 +789,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 static struct file_operations lirc_fops = {
 	.owner	= THIS_MODULE,
 	.write	= lirc_write,
+	.ioctl	= lirc_ioctl,
 };
 
 
@@ -926,7 +927,6 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 	driver->code_length = sizeof(lirc_t) * 8;
-	driver->ioctl = lirc_ioctl;
 	driver->fops  = &lirc_fops;
 	driver->dev   = &intf->dev;
 	driver->owner = THIS_MODULE;

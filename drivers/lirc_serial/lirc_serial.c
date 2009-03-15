@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.103 2009/03/08 20:00:12 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.104 2009/03/15 09:34:00 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -141,7 +141,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.103 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.104 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1162,6 +1162,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 static struct file_operations lirc_fops = {
 	.owner	= THIS_MODULE,
 	.write	= lirc_write,
+	.ioctl	= lirc_ioctl,
 };
 
 static struct lirc_driver driver = {
@@ -1177,7 +1178,6 @@ static struct lirc_driver driver = {
 	.rbuf		= &rbuf,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
-	.ioctl		= lirc_ioctl,
 	.fops		= &lirc_fops,
 	.dev		= NULL,
 	.owner		= THIS_MODULE,

@@ -319,7 +319,6 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	ttusbir->driver.rbuf = &ttusbir->rbuf;
 	ttusbir->driver.set_use_inc = set_use_inc;
 	ttusbir->driver.set_use_dec = set_use_dec;
-	ttusbir->driver.ioctl = NULL;
 	ttusbir->driver.fops = NULL;
 	ttusbir->driver.dev = &intf->dev;
 	ttusbir->driver.owner = THIS_MODULE;

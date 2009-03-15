@@ -444,7 +444,6 @@ static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 	driver->rbuf = &ite8709_dev->buffer;
 	driver->set_use_inc = ite8709_set_use_inc;
 	driver->set_use_dec = ite8709_set_use_dec;
-	driver->ioctl = NULL;
 	driver->fops = NULL;
 	driver->dev = &dev->dev;
 	driver->owner = THIS_MODULE;

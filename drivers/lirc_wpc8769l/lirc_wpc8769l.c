@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.7 2009/02/14 19:35:53 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.8 2009/03/15 09:34:01 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -886,7 +886,6 @@ static struct lirc_driver driver = {
 	.rbuf		= &rbuf,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
-	.ioctl		= NULL,
 	.fops		= NULL,
 	.dev		= NULL,
 	.owner		= THIS_MODULE,
