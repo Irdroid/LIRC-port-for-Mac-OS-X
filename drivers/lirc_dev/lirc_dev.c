@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.87 2009/03/15 09:34:00 lirc Exp $
+ * $Id: lirc_dev.c,v 1.88 2009/03/22 08:45:48 lirc Exp $
  *
  */
 
@@ -558,13 +558,13 @@ static int irctl_open(struct inode *inode, struct file *file)
 	struct irctl *ir;
 	int retval;
 
-	if (MINOR(inode->i_rdev) >= MAX_IRCTL_DEVICES) {
+	if (iminor(inode) >= MAX_IRCTL_DEVICES) {
 		dprintk("lirc_dev [%d]: open result = -ENODEV\n",
-			MINOR(inode->i_rdev));
+			iminor(inode));
 		return -ENODEV;
 	}
 
-	ir = &irctls[MINOR(inode->i_rdev)];
+	ir = &irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "open called\n", ir->d.name, ir->d.minor);
 
@@ -615,7 +615,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 
 static int irctl_close(struct inode *inode, struct file *file)
 {
-	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
+	struct irctl *ir = &irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "close called\n", ir->d.name, ir->d.minor);
 
@@ -641,7 +641,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 
 static unsigned int irctl_poll(struct file *file, poll_table *wait)
 {
-	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
 	unsigned int ret;
 
 	dprintk(LOGHEAD "poll called\n", ir->d.name, ir->d.minor);
@@ -676,7 +676,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 {
 	unsigned long mode;
 	int result;
-	struct irctl *ir = &irctls[MINOR(inode->i_rdev)];
+	struct irctl *ir = &irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
 		ir->d.name, ir->d.minor, cmd);
@@ -831,7 +831,7 @@ static ssize_t irctl_read(struct file *file,
 			  size_t length,
 			  loff_t *ppos)
 {
-	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
 	unsigned char buf[ir->chunk_size];
 	int ret = 0, written = 0;
 	int unlock = 1;
@@ -926,7 +926,7 @@ void *lirc_get_pdata(struct file *file)
 	if (file && file->f_dentry && file->f_dentry->d_inode &&
 	    file->f_dentry->d_inode->i_rdev) {
 		struct irctl *ir;
-		ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+		ir = &irctls[iminor(file->f_dentry->d_inode)];
 		data = ir->d.data;
 	}
 
@@ -938,7 +938,7 @@ EXPORT_SYMBOL(lirc_get_pdata);
 static ssize_t irctl_write(struct file *file, const char *buffer,
 			   size_t length, loff_t *ppos)
 {
-	struct irctl *ir = &irctls[MINOR(file->f_dentry->d_inode->i_rdev)];
+	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
 
 	dprintk(LOGHEAD "write called\n", ir->d.name, ir->d.minor);
 

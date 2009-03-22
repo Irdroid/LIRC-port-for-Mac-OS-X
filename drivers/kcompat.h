@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.43 2009/03/11 07:41:49 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.44 2009/03/22 08:45:47 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -388,6 +388,14 @@ static inline void *kzalloc(size_t size, gfp_t flags)
         if (ret)
                 memset(ret, 0, size);
         return ret;
+}
+#endif
+
+/****************************** fs.h **********************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+static inline unsigned iminor(struct inode *inode)
+{
+	return MINOR(inode->i_rdev);
 }
 #endif
 
