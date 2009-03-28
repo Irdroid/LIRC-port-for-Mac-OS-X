@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.88 2009/03/22 08:45:48 lirc Exp $
+ * $Id: lirc_dev.c,v 1.89 2009/03/28 10:18:03 lirc Exp $
  *
  */
 
@@ -106,7 +106,7 @@ struct irctl {
 #endif
 };
 
-static DECLARE_MUTEX(driver_lock);
+static DEFINE_MUTEX(driver_lock);
 
 static struct irctl irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
@@ -330,7 +330,7 @@ int lirc_register_driver(struct lirc_driver *d)
 		goto out;
 	}
 
-	down(&driver_lock);
+	mutex_lock(&driver_lock);
 
 	minor = d->minor;
 
@@ -431,7 +431,7 @@ int lirc_register_driver(struct lirc_driver *d)
 #endif
 	}
 	ir->attached = 1;
-	up(&driver_lock);
+	mutex_unlock(&driver_lock);
 
 /*
  * Recent kernels should handle this autmatically by increasing/decreasing
@@ -455,7 +455,7 @@ out_sysfs:
 	devfs_remove(DEV_LIRC "/%i", ir->d.minor);
 #endif
 out_lock:
-	up(&driver_lock);
+	mutex_unlock(&driver_lock);
 out:
 	return err;
 }
@@ -476,12 +476,12 @@ int lirc_unregister_driver(int minor)
 
 	ir = &irctls[minor];
 
-	down(&driver_lock);
+	mutex_lock(&driver_lock);
 
 	if (ir->d.minor != minor) {
 		printk(KERN_ERR "lirc_dev: lirc_unregister_driver: "
 		       "minor (%d) device not registered!", minor);
-		up(&driver_lock);
+		mutex_unlock(&driver_lock);
 		return -ENOENT;
 	}
 
@@ -539,7 +539,7 @@ int lirc_unregister_driver(int minor)
 
 	if (!ir->open)
 		cleanup(ir);
-	up(&driver_lock);
+	mutex_unlock(&driver_lock);
 
 /*
  * Recent kernels should handle this autmatically by increasing/decreasing
@@ -572,18 +572,18 @@ static int irctl_open(struct inode *inode, struct file *file)
 	if (ir->d.fops && ir->d.fops->open)
 		return ir->d.fops->open(inode, file);
 
-	if (down_interruptible(&driver_lock))
+	if (mutex_lock_interruptible(&driver_lock))
 		return -ERESTARTSYS;
 
 	if (ir->d.minor == NOPLUG) {
-		up(&driver_lock);
+		mutex_unlock(&driver_lock);
 		dprintk(LOGHEAD "open result = -ENODEV\n",
 			ir->d.name, ir->d.minor);
 		return -ENODEV;
 	}
 
 	if (ir->open) {
-		up(&driver_lock);
+		mutex_unlock(&driver_lock);
 		dprintk(LOGHEAD "open result = -EBUSY\n",
 			ir->d.name, ir->d.minor);
 		return -EBUSY;
@@ -608,7 +608,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 	}
 
 	dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor, retval);
-	up(&driver_lock);
+	mutex_unlock(&driver_lock);
 
 	return retval;
 }
@@ -623,7 +623,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 	if (ir->d.fops && ir->d.fops->release)
 		return ir->d.fops->release(inode, file);
 
-	if (down_interruptible(&driver_lock))
+	if (mutex_lock_interruptible(&driver_lock))
 		return -ERESTARTSYS;
 
 	--ir->open;
@@ -634,7 +634,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 		cleanup(ir);
 	}
 
-	up(&driver_lock);
+	mutex_unlock(&driver_lock);
 
 	return 0;
 }
