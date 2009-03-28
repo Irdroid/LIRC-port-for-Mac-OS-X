@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.89 2009/03/28 10:18:03 lirc Exp $
+ * $Id: lirc_dev.c,v 1.90 2009/03/28 18:42:30 lirc Exp $
  *
  */
 
@@ -108,7 +108,7 @@ struct irctl {
 
 static DEFINE_MUTEX(driver_lock);
 
-static struct irctl irctls[MAX_IRCTL_DEVICES];
+static struct irctl *irctls[MAX_IRCTL_DEVICES];
 static struct file_operations fops;
 
 /* Only used for sysfs but defined to void otherwise */
@@ -119,22 +119,11 @@ static lirc_class_t *lirc_class;
  */
 static void init_irctl(struct irctl *ir)
 {
-	memset(&ir->d, 0, sizeof(struct lirc_driver));
 	mutex_init(&ir->buffer_lock);
 	ir->d.minor = NOPLUG;
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	ir->tpid = -1;
-	ir->t_notify = NULL;
-	ir->t_notify2 = NULL;
-	ir->shutdown = 0;
-#else
-	ir->task = NULL;
 #endif
-	ir->jiffies_to_wait = 0;
-
-	ir->open = 0;
-	ir->attached = 0;
 }
 
 static void cleanup(struct irctl *ir)
@@ -146,8 +135,6 @@ static void cleanup(struct irctl *ir)
 		kfree(ir->buf);
 	}
 	ir->buf = NULL;
-
-	init_irctl(ir);
 }
 
 /*  helper function
@@ -337,7 +324,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	if (minor < 0) {
 		/* find first free slot for driver */
 		for (minor = 0; minor < MAX_IRCTL_DEVICES; minor++)
-			if (irctls[minor].d.minor == NOPLUG)
+			if (!irctls[minor])
 				break;
 		if (MAX_IRCTL_DEVICES == minor) {
 			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
@@ -345,14 +332,20 @@ int lirc_register_driver(struct lirc_driver *d)
 			err = -ENOMEM;
 			goto out_lock;
 		}
-	} else if (irctls[minor].d.minor != NOPLUG) {
+	} else if (irctls[minor]) {
 		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "minor (%d) just registered!\n", minor);
 		err = -EBUSY;
 		goto out_lock;
 	}
 
-	ir = &irctls[minor];
+	ir = kzalloc(sizeof(struct irctl), GFP_KERNEL);
+	if (!ir) {
+		err = -ENOMEM;
+		goto out_lock;
+	}
+	init_irctl(ir);
+	irctls[minor] = ir;
 
 	if (d->sample_rate) {
 		ir->jiffies_to_wait = HZ / d->sample_rate;
@@ -474,7 +467,7 @@ int lirc_unregister_driver(int minor)
 		return -EBADRQC;
 	}
 
-	ir = &irctls[minor];
+	ir = irctls[minor];
 
 	mutex_lock(&driver_lock);
 
@@ -526,6 +519,10 @@ int lirc_unregister_driver(int minor)
 		ir->d.set_use_dec(ir->d.data);
 		module_put(ir->d.owner);
 		mutex_unlock(&ir->buffer_lock);
+	} else {
+		cleanup(ir);
+		irctls[minor] = NULL;
+		kfree(ir);
 	}
 
 #ifdef LIRC_HAVE_DEVFS_24
@@ -537,8 +534,6 @@ int lirc_unregister_driver(int minor)
 	lirc_device_destroy(lirc_class,
 			    MKDEV(IRCTL_DEV_MAJOR, ir->d.minor));
 
-	if (!ir->open)
-		cleanup(ir);
 	mutex_unlock(&driver_lock);
 
 /*
@@ -558,13 +553,13 @@ static int irctl_open(struct inode *inode, struct file *file)
 	struct irctl *ir;
 	int retval;
 
-	if (iminor(inode) >= MAX_IRCTL_DEVICES) {
+	if (iminor(inode) >= MAX_IRCTL_DEVICES || !irctls[iminor(inode)]) {
 		dprintk("lirc_dev [%d]: open result = -ENODEV\n",
 			iminor(inode));
 		return -ENODEV;
 	}
 
-	ir = &irctls[iminor(inode)];
+	ir = irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "open called\n", ir->d.name, ir->d.minor);
 
@@ -615,7 +610,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 
 static int irctl_close(struct inode *inode, struct file *file)
 {
-	struct irctl *ir = &irctls[iminor(inode)];
+	struct irctl *ir = irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "close called\n", ir->d.name, ir->d.minor);
 
@@ -632,6 +627,8 @@ static int irctl_close(struct inode *inode, struct file *file)
 		module_put(ir->d.owner);
 	} else {
 		cleanup(ir);
+		irctls[ir->d.minor] = NULL;
+		kfree(ir);
 	}
 
 	mutex_unlock(&driver_lock);
@@ -641,7 +638,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 
 static unsigned int irctl_poll(struct file *file, poll_table *wait)
 {
-	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
+	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 	unsigned int ret;
 
 	dprintk(LOGHEAD "poll called\n", ir->d.name, ir->d.minor);
@@ -676,7 +673,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 {
 	unsigned long mode;
 	int result;
-	struct irctl *ir = &irctls[iminor(inode)];
+	struct irctl *ir = irctls[iminor(inode)];
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
 		ir->d.name, ir->d.minor, cmd);
@@ -831,7 +828,7 @@ static ssize_t irctl_read(struct file *file,
 			  size_t length,
 			  loff_t *ppos)
 {
-	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
+	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 	unsigned char buf[ir->chunk_size];
 	int ret = 0, written = 0;
 	int unlock = 1;
@@ -926,7 +923,7 @@ void *lirc_get_pdata(struct file *file)
 	if (file && file->f_dentry && file->f_dentry->d_inode &&
 	    file->f_dentry->d_inode->i_rdev) {
 		struct irctl *ir;
-		ir = &irctls[iminor(file->f_dentry->d_inode)];
+		ir = irctls[iminor(file->f_dentry->d_inode)];
 		data = ir->d.data;
 	}
 
@@ -938,7 +935,7 @@ EXPORT_SYMBOL(lirc_get_pdata);
 static ssize_t irctl_write(struct file *file, const char *buffer,
 			   size_t length, loff_t *ppos)
 {
-	struct irctl *ir = &irctls[iminor(file->f_dentry->d_inode)];
+	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 
 	dprintk(LOGHEAD "write called\n", ir->d.name, ir->d.minor);
 
@@ -971,11 +968,6 @@ static struct file_operations fops = {
 
 static int __init lirc_dev_init(void)
 {
-	int i;
-
-	for (i = 0; i < MAX_IRCTL_DEVICES; ++i)
-		init_irctl(&irctls[i]);
-
 	if (register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops)) {
 		printk(KERN_ERR "lirc_dev: register_chrdev failed\n");
 		goto out;
