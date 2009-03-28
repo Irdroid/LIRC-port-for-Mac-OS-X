@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.90 2009/03/28 18:42:30 lirc Exp $
+ * $Id: lirc_dev.c,v 1.91 2009/03/28 18:52:49 lirc Exp $
  *
  */
 
@@ -368,9 +368,9 @@ int lirc_register_driver(struct lirc_driver *d)
 			err = -ENOMEM;
 			goto out_lock;
 		}
-		if (lirc_buffer_init(ir->buf, bytes_in_key, buffer_size)) {
+		err = lirc_buffer_init(ir->buf, bytes_in_key, buffer_size);
+		if (err) {
 			kfree(ir->buf);
-			err = -ENOMEM;
 			goto out_lock;
 		}
 	}
@@ -571,17 +571,13 @@ static int irctl_open(struct inode *inode, struct file *file)
 		return -ERESTARTSYS;
 
 	if (ir->d.minor == NOPLUG) {
-		mutex_unlock(&driver_lock);
-		dprintk(LOGHEAD "open result = -ENODEV\n",
-			ir->d.name, ir->d.minor);
-		return -ENODEV;
+		retval = -ENODEV;
+		goto error;
 	}
 
 	if (ir->open) {
-		mutex_unlock(&driver_lock);
-		dprintk(LOGHEAD "open result = -EBUSY\n",
-			ir->d.name, ir->d.minor);
-		return -EBUSY;
+		retval = -EBUSY;
+		goto error;
 	}
 
 	if (ir->d.owner != NULL && try_module_get(ir->d.owner)) {
@@ -602,7 +598,11 @@ static int irctl_open(struct inode *inode, struct file *file)
 		retval = -ENODEV;
 	}
 
-	dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor, retval);
+ error:
+	if (ir)
+		dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor,
+			retval);
+
 	mutex_unlock(&driver_lock);
 
 	return retval;
