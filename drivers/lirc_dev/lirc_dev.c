@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.91 2009/03/28 18:52:49 lirc Exp $
+ * $Id: lirc_dev.c,v 1.92 2009/03/29 08:52:17 lirc Exp $
  *
  */
 
@@ -457,8 +457,10 @@ EXPORT_SYMBOL(lirc_register_driver);
 int lirc_unregister_driver(int minor)
 {
 	struct irctl *ir;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	DECLARE_COMPLETION(tn);
 	DECLARE_COMPLETION(tn2);
+#endif
 
 	if (minor < 0 || minor >= MAX_IRCTL_DEVICES) {
 		printk(KERN_ERR "lirc_dev: lirc_unregister_driver: "
@@ -501,10 +503,8 @@ int lirc_unregister_driver(int minor)
 		ir->t_notify2 = NULL;
 	}
 #else /* kernel >= 2.6.23 */
-	if (ir->task) {
-		wake_up_process(ir->task);
+	if (ir->task)
 		kthread_stop(ir->task);
-	}
 #endif
 
 	dprintk("lirc_dev: driver %s unregistered from minor number = %d\n",
