@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.92 2009/03/29 08:52:17 lirc Exp $
+ * $Id: lirc_dev.c,v 1.93 2009/03/29 10:55:31 lirc Exp $
  *
  */
 
@@ -168,24 +168,22 @@ static int add_to_buf(struct irctl *ir)
 	return 0;
 }
 
-/*
- * main function of the polling thread
- */
+/* main function of the polling thread */
 static int lirc_thread(void *irctl)
 {
 	struct irctl *ir = irctl;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	/*
 	 * This thread doesn't need any user-level access, so get rid
 	 * of all our resources
 	 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	daemonize("lirc_dev");
 
 	if (ir->t_notify != NULL)
 		complete(ir->t_notify);
+	
 #endif
-
 	dprintk(LOGHEAD "poll thread started\n", ir->d.name, ir->d.minor);
 
 	do {
@@ -208,9 +206,8 @@ static int lirc_thread(void *irctl)
 			if (!add_to_buf(ir))
 				wake_up_interruptible(&ir->buf->wait_poll);
 		} else {
-			/* if device not opened so we can sleep half a second */
 			set_current_state(TASK_INTERRUPTIBLE);
-			schedule_timeout(HZ/2);
+			schedule();
 		}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	} while (!ir->shutdown);
@@ -590,6 +587,17 @@ static int irctl_open(struct inode *inode, struct file *file)
 		} else {
 			lirc_buffer_clear(ir->buf);
 		}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
+		if (ir->tpid >= 0) {
+			struct task_struct *p;
+
+			p = find_task_by_pid(ir->tpid);
+			wake_up_process(p);
+		}
+#else
+		if (ir->task)
+			wake_up_process(ir->task);
+#endif
 	} else {
 		if (ir->d.owner == NULL)
 			dprintk(LOGHEAD "no module owner!!!\n",
