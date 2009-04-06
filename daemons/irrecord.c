@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.90 2009/02/07 17:26:27 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.91 2009/04/06 16:16:08 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.90 $"
+#define IRRECORD_VERSION "$Revision: 5.91 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -591,7 +591,17 @@ int main(int argc,char **argv)
 	printf(
 "This program will record the signals from your remote control\n"
 "and create a config file for lircd.\n\n"
-"\n"
+"\n");
+	if(hw.name && strcmp(hw.name, "devinput") == 0)
+	{
+		printf(
+"Usually it's not necessary to create a new config file for devinput\n"
+"devices. A generic config file can be found at:\n"
+"http://www.lirc.org/remotes/devinput/\n"
+"You should try this config file before creating your own config file.\n"
+"\n");
+	}
+	printf(
 "A proper config file for lircd is maybe the most vital part of this\n"
 "package, so you should invest some time to create a working config\n"
 "file. Although I put a good deal of effort in this program it is often\n"
