@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.37 2008/09/03 20:22:12 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.38 2009/04/06 16:08:54 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -245,8 +245,14 @@ int default_init()
 	{
 		logprintf(LOG_ERR,"could not get hardware features");
 		logprintf(LOG_ERR,"this device driver does not "
-			  "support the new LIRC interface");
-		if(major(s.st_rdev) != LIRC_MAJOR)
+			  "support the LIRC ioctl interface");
+		if(major(s.st_rdev) == 13)
+		{
+			logprintf(LOG_ERR, "did you mean to use the devinput "
+				  "driver instead of the %s driver?",
+				  hw.name);
+		}
+		else if(major(s.st_rdev) != LIRC_MAJOR)
 		{
 			logprintf(LOG_ERR, "major number of %s is %lu",
 				  hw.device,
