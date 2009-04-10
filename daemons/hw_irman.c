@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.10 2009/04/10 16:00:41 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.11 2009/04/10 16:03:08 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -108,7 +108,6 @@ int irman_deinit(void)
 char *irman_rec(struct ir_remote *remotes)
 {
 	static char *text=NULL;
-	char *m;
 	int i;
 	
 	last=end;
