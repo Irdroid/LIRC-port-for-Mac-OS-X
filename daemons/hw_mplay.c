@@ -192,19 +192,13 @@ char *mplay_rec(struct ir_remote *remotes)
         LOGPRINTF(1, "Entering mplay_rec()");
         len = read(hw.fd, &rc_code, 1);
         gettimeofday(&current_time, NULL);
-        if (len == -1) 
+        if (len != 1) 
         {
                 /* Something go wrong during the read, we close the device 
                    for prevent endless looping when the device 
                    is disconnected */
                 LOGPRINTF(1, "Reading error in mplay_rec()");
                 mplay_deinit();
-                return NULL;
-        }
-        else if (len == 0)
-        {
-                /* There is nothing to read */
-                LOGPRINTF(1, "Nothing to read in mplay_rec()");
                 return NULL;
         }
         else
