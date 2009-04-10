@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.91 2009/04/06 16:16:08 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.92 2009/04/10 16:02:35 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.91 $"
+#define IRRECORD_VERSION "$Revision: 5.92 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -2684,8 +2684,6 @@ int get_gap_length(struct ir_remote *remote)
 				if(scan->count>SAMPLES)
 				{
 					remote->gap=calc_signal(scan);
-					/* this does not work very reliably */
-					remote->gap+=100000;
 					printf("\nFound gap length: %lu\n",
 					       (unsigned long) remote->gap);
 					free_lengths(&gaps);
