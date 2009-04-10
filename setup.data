@@ -392,3 +392,62 @@ default_param: \
 	usb_uirt_raw \
 	usbx
 	ttyUSB1:
+
+remote: \
+	hauppauge \
+	hauppauge_dvb \
+	igorplugusb
+	rc5:
+
+remote: \
+	act200l \
+	act220l \
+	animax \
+	audio \
+	audio_alsa \
+	commandir \
+	digimatrix \
+	dsp \
+	ftdi \
+	iguanaIR \
+	imon \
+	irdeo \
+	irdeo_remote \
+	it87 \
+	ite8709 \
+	mceusb \
+	mceusb2 \
+	nslu2 \
+	packard_bell \
+	parallel \
+	sa1100 \
+	serial \
+	sir \
+	slinke \
+	streamzap \
+	tekram \
+	tira \
+	ttusbir \
+	uirt2_raw \
+	udp \
+	usb_uirt_raw \
+	wpc8769l
+	any:
+
+remote: \
+	irman \
+	uirt2
+	special-config:
+
+remote: \
+	devinput \
+	imon_knob \
+	imon_lcd \
+	imon_pad \
+	imon_rsc
+	depends:
+
+remote: \
+	bte \
+	caraca
+	n/a:

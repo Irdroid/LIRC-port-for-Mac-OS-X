@@ -37,4 +37,4 @@ done
 echo
 
 echo "Generating driver overview tables"
-${srcdir}/table.sh lirc.hwdb >${DEST_DIR}/table.html
+${SRCDIR}/table.sh lirc.hwdb >${DEST_DIR}/table.html

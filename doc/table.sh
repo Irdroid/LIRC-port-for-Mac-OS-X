@@ -7,6 +7,9 @@ TOP_SRCDIR=${top_srcdir:-..}
 SRCDIR=${srcdir:-.}
 HTML_SOURCE=${SRCDIR}/html-source
 
+SETUP_DATA="${TOP_SRCDIR}/setup.data"
+. ${TOP_SRCDIR}/setup-functions.sh
+
 write_heuristic="no"
 cat ${TOP_SRCDIR}/configure.ac | while read REPLY; do
     if echo $REPLY|grep "START HARDWARE HEURISTIC" >/dev/null; then
@@ -49,8 +52,8 @@ HWDB_HEADER
 cat ${HTML_SOURCE}/head.html
 
 echo "<table border=\"1\">"
-echo "<tr><th>Hardware</th><th>configure --with-driver option</th><th>Required LIRC kernel modules</th><th>lircd driver</th><th>default lircd and lircmd config files</th></tr>"
-grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
+echo "<tr><th>Hardware</th><th>configure --with-driver option</th><th>Required LIRC kernel modules</th><th>lircd driver</th><th>default lircd and lircmd config files</th><th>Supported remotes</th></tr>"
+grep ".*: \(\".*\"\)\|@" ${SETUP_DATA} | while read REPLY; do
     #echo $REPLY
 
     if echo $REPLY|grep ": @any" >/dev/null; then
@@ -59,10 +62,10 @@ grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
     
     if echo $REPLY|grep ": @" >/dev/null; then
 	entry=`echo $REPLY|sed --expression="s/.*: \(@.*\)/\1/"`
-	desc=`grep "${entry}:" ${TOP_SRCDIR}/setup.data|sed --expression="s/.*\"\(.*\)\".*/\1/"`
+	desc=`grep "${entry}:" ${SETUP_DATA}|sed --expression="s/.*\"\(.*\)\".*/\1/"`
 	echo "" >> "${HWDB}"
 	echo "[$desc]" >> "${HWDB}"
-	echo "<tr><th colspan=\"5\"><a name=\"${entry}\">${desc}</a></th></tr>"
+	echo "<tr><th colspan=\"6\"><a name=\"${entry}\">${desc}</a></th></tr>"
 	continue;
     fi
     
@@ -74,7 +77,7 @@ grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
     fi
 
     if echo $driver|grep @ >/dev/null; then
-	echo "<tr><th colspan=\"5\"><a href=\"#${driver}\">${desc}</a></th></tr>"
+	echo "<tr><th colspan=\"6\"><a href=\"#${driver}\">${desc}</a></th></tr>"
 	true;
     else
 	. ${HEURISTIC}
@@ -96,7 +99,22 @@ grep ".*: \(\".*\"\)\|@" ${TOP_SRCDIR}/setup.data | while read REPLY; do
 	else
 	    echo -n "${driver}"
 	fi
-	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT#???}</td><td>${lircd_conf}<br>${lircmd_conf}</td></tr>"
+	remote=$(query_setup_data 1 2 remote "${driver}")
+	case "$remote" in
+	none)
+		remote="bundled"
+		;;
+	depends)
+		remote="usually only bundled"
+		;;
+	special-config)
+		remote="any, but config file receiver specific, no transmit capability"
+		;;
+	rc5)
+		remote="RC-5 protocol only"
+		;;
+	esac
+	echo "</td><td align=\"center\">${lirc_driver}</td><td align=\"center\">${HW_DEFAULT#???}</td><td>${lircd_conf}<br>${lircmd_conf}</td><td>${remote}</td></tr>"
 	echo "${desc};${driver};${lirc_driver};${HW_DEFAULT};${lircd_conf};" >> "${HWDB}"
     fi
 done
