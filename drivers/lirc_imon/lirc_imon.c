@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.58 2009/03/08 19:46:55 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.59 2009/04/10 20:51:29 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1075,6 +1075,43 @@ static void incoming_packet(struct imon_context *context,
 			buf[2] = dir & 0xFF;
 			buf[3] = (dir >> 8) & 0xFF;
 		}
+	} else if ((len == 8) && (buf[0] & 0x40) &&
+		   !(buf[1] & 0x01 || buf[1] >> 2 & 0x01)) {
+		/*
+		 * Handle on-board decoded pad events for e.g. older
+		 * VFD/iMON-Pad (15c2:ffdc). The remote generates various codes
+		 * from 0x68nnnnB7 to 0x6AnnnnB7, the left mouse button
+		 * generates 0x688301b7 and the right one 0x688481b7. All other
+		 * keys generate 0x2nnnnnnn. Length has been padded to 8
+		 * already, position coordinate is encoded in buf[1] and buf[2]
+		 * with reversed endianess. Extract direction from buffer,
+		 * rotate endianess, adjust sign and feed the values into
+		 * stabilize(). The resulting codes will be 0x01008000,
+		 * 0x01007F00, ..., so one can use the normal imon-pad config
+		 * from the remotes dir.
+		 *
+		 */
+
+		/* buf[1] is x */
+		int rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
+			    (buf[1] & 0x20) >> 4 | (buf[1] & 0x40) >> 6;
+		if(buf[0] & 0x02)
+			rel_x |= ~0x10+1;
+		/* buf[2] is y */
+		int rel_y = (buf[2] & 0x08) | (buf[2] & 0x10) >> 2 |
+			    (buf[2] & 0x20) >> 4 | (buf[2] & 0x40) >> 6;
+		if(buf[0] & 0x01)
+			rel_y |= ~0x10+1;
+
+		buf[0] = 0x01;
+
+		buf[1] = buf[4] = buf[5] = buf[6] = buf[7] = 0;
+
+		dir = stabilize(rel_x, rel_y);
+		if (!dir)
+			return;
+		buf[2] = dir & 0xFF;
+		buf[3] = (dir >> 8) & 0xFF;
 	}
 
 	if (len != 8) {
