@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.9 2007/07/29 18:20:08 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.10 2009/04/10 16:00:41 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -120,7 +120,7 @@ char *irman_rec(struct ir_remote *remotes)
 #               ifdef DEBUG
 		if(errno==IR_EDUPCODE)
 		{
-			LOGPRINTF(1,"received \"%s\" (dup - ignored)",
+			LOGPRINTF(1,"received \"%s\" (dup)",
 				  text ? text:"(null - bug)");
 		}
 		else if(errno==IR_EDISABLED)
@@ -133,14 +133,18 @@ char *irman_rec(struct ir_remote *remotes)
 				  ir_strerror(errno));
 		}
 #               endif
-		return(NULL);
+		if(errno==IR_EDUPCODE)
+		{
+			return decode_all(remotes);
+		}
+		return NULL;
 	}
 	
 	text=ir_code_to_text(codestring);
 	LOGPRINTF(1,"received \"%s\"",text);
 
 	/* this is only historical but it's necessary for
-	   compatibility to older versionns and it's handy to
+	   compatibility to older versions and it's handy to
 	   recognize Irman config files */
 	code=0xffff;
 
@@ -150,6 +154,5 @@ char *irman_rec(struct ir_remote *remotes)
 		code=code|(ir_code) (unsigned char) codestring[i];
 	}
 
-	m=decode_all(remotes);
-	return(m);
+	return decode_all(remotes);
 }
