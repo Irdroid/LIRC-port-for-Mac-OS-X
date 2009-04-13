@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.38 2009/04/06 16:08:54 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.39 2009/04/13 13:06:15 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -541,7 +541,8 @@ char *default_rec(struct ir_remote *remotes)
 			{
 				logprintf(LOG_ERR,"reading in mode "
 					  "LIRC_MODE_STRING failed");
-				return(NULL);
+				default_deinit();
+				return NULL;
 			}
 			if(n>=PACKET_SIZE-1)
 			{
@@ -557,7 +558,11 @@ char *default_rec(struct ir_remote *remotes)
 	}
 	else
 	{
-		if(!clear_rec_buffer()) return(NULL);
+		if(!clear_rec_buffer())
+		{
+			default_deinit();
+		       	return NULL;
+		}
 		return(decode_all(remotes));
 	}
 }
