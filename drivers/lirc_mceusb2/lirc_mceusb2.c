@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.80 $"
+#define DRIVER_VERSION	"$Revision: 1.81 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -127,6 +127,7 @@ static int debug;
 #define VENDOR_ECS		0x1019
 #define VENDOR_WISTRON		0x0fb8
 #define VENDOR_COMPRO		0x185b
+#define VENDOR_NORTHSTAR	0x04eb
 
 static struct usb_device_id mceusb_dev_table[] = {
 	/* Philips Infrared Transceiver - Sahara branded */
@@ -195,6 +196,8 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_WISTRON, 0x0002) },
 	/* Compro K100 */
 	{ USB_DEVICE(VENDOR_COMPRO, 0x3020) },
+	/* Northstar Systems eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_NORTHSTAR, 0xe004) },
 	/* Terminating entry */
 	{ }
 };
