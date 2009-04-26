@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.40 2009/04/26 11:02:30 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.41 2009/04/26 11:06:00 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -395,6 +395,8 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 							{
 								codes->current = get_next_ir_code_node(codes, prev);
 								sequence_match = 1;
+								found_code=1;
+								found=codes;
 								break;
 							}
 						}
