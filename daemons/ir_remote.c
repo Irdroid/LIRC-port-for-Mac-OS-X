@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.39 2009/04/10 07:37:30 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.40 2009/04/26 11:02:30 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -450,7 +450,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 	LOGPRINTF(1,"found: %s",found->name);
 
 	gettimeofday(&current,NULL);
-	if((remote==last_remote || last_remote == NULL) &&
+	if(remote==last_remote &&
 	   (found==remote->last_code || (found->next!=NULL && found->current!=NULL)) &&
 	   repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
