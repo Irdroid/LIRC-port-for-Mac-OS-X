@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.35 2007/07/29 18:20:12 lirc Exp $      */
+/*      $Id: receive.c,v 5.36 2009/04/26 09:20:21 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -621,6 +621,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			logprintf(LOG_ERR,"invalid bit number.");
 			return((ir_code) -1);
 		}
+		if(!sync_pending_space(remote)) return 0;
 		for(i=0;i<bits;i+=2)
 		{
 			code<<=2;
