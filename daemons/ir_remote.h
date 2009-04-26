@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.41 2008/06/03 17:21:29 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.42 2009/04/26 10:44:44 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -45,6 +45,17 @@ static inline int bit_count(struct ir_remote *remote)
 	return remote->pre_data_bits +
 		remote->bits +
 		remote->post_data_bits;
+}
+
+static inline int bits_set(ir_code data)
+{
+	int ret = 0;
+	while(data)
+	{
+		if(data&1) ret++;
+		data >>= 1;
+	}
+	return ret;
 }
 
 static inline ir_code reverse(ir_code data,int bits)

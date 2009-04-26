@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.28 2008/05/11 13:29:47 lirc Exp $      */
+/*      $Id: transmit.c,v 5.29 2009/04/26 10:44:44 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -206,6 +206,7 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 {
 	int i;
 	int all_bits = bit_count(remote);
+	int toggle_bit_mask_bits = bits_set(remote->toggle_bit_mask);
 	ir_code mask;
 	if(is_rcmm(remote))
 	{
@@ -249,12 +250,22 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 	{
 		if(has_toggle_bit_mask(remote) && mask&remote->toggle_bit_mask)
 		{
-			data &= ~((ir_code) 1);
-			if(remote->toggle_bit_mask_state&mask)
+			if(toggle_bit_mask_bits == 1)
 			{
-				data |= (ir_code) 1;
+				/* backwards compatibility */
+				data &= ~((ir_code) 1);
+				if(remote->toggle_bit_mask_state&mask)
+				{
+					data |= (ir_code) 1;
+				}
 			}
-			
+			else
+			{
+				if(remote->toggle_bit_mask_state&mask)
+				{
+					data ^= (ir_code) 1;
+				}
+			}
 		}
 		if(has_toggle_mask(remote) &&
 		   mask&remote->toggle_mask &&
