@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.92 2009/04/10 16:02:35 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.93 2009/04/26 09:13:54 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.92 $"
+#define IRRECORD_VERSION "$Revision: 5.93 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -2225,6 +2225,10 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 	max_length=first;
 	sum=first->count;
 	
+#       ifdef DEBUG
+	if(first->count>0) printf("%u x %lu\n", first->count,
+				  (unsigned long) calc_signal(first));
+#       endif
 	scan=first->next;
 	while(scan)
 	{
