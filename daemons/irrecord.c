@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.93 2009/04/26 09:13:54 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.94 2009/04/28 16:24:36 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.93 $"
+#define IRRECORD_VERSION "$Revision: 5.94 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -493,8 +493,6 @@ int main(int argc,char **argv)
 		remote.codes=NULL;
 		remote.last_code=NULL;
 		remote.next=NULL;
-		remote.toggle_bit=0;
-		remote.toggle_bit_mask=0;
 		if(remote.pre_p==0 && remote.pre_s==0 &&
 		   remote.post_p==0 && remote.post_s==0)
 		{
