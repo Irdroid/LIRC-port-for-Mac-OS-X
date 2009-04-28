@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.83 2008/12/27 11:06:06 lirc Exp $      */
+/*      $Id: lircd.c,v 5.84 2009/04/28 16:25:50 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -742,8 +742,8 @@ int get_peer_message(struct peer_connection *peer)
 	if(length)
 	{
 		buffer[length]=0;
-		end=strchr(buffer,'\n');
-		if(end==NULL)
+		end=strrchr(buffer,'\n');
+		if(end == NULL || end[1] != 0)
 		{
 			logprintf(LOG_ERR,"bad send packet: \"%s\"",buffer);
 			/* remove clients that behave badly */
@@ -751,6 +751,7 @@ int get_peer_message(struct peer_connection *peer)
 		}
 		end++;	/* include the \n */
 		end[0]=0;
+		length=strlen(buffer);
 		LOGPRINTF(1,"received peer message: \"%s\"",buffer);
 		for(i=0;i<clin;i++)
 		{
