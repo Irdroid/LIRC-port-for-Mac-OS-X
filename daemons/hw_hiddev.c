@@ -570,6 +570,7 @@ char *macmini_rec(struct ir_remote *remotes)
 	pre_code = 0;
 	main_code = (ev[0].value << 24) + (ev[1].value << 16) +
 	            (ev[2].value <<  8) + (ev[3].value <<  0);
+	repeat_flag = 0;
 	if (main_code == 0)
 	{
 		/* some variants seem to send 0 to indicate repeats */
