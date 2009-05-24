@@ -127,8 +127,6 @@ Supported drivers:
 &gt; ls -l /dev/lirc*
 crw-r--r--    1 root     root      61,   0 Apr 25  2001 /dev/lirc
 crw-r--r--    1 root     root      61,   1 Nov  6 19:24 /dev/lirc1
-srw-rw-rw-    1 root     root            0 Dez 19 09:44 /dev/lircd
-prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
 </pre>
     <P>
       You can create new entries by running:
@@ -144,13 +142,13 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
       e.g. like this:
     </P>
 <pre>
-&gt; lircd --driver=default --device=/dev/lirc1 --output=/dev/lircd1 \
-    --pidfile=/var/run/lircd1.pid --listen
-&gt; lircd --driver=default --device=/dev/lirc --output=/dev/lircd \
-    --pidfile=/var/run/lircd.pid --connect=localhost:8765
+&gt; lircd --driver=default --device=/dev/lirc1 --output=/var/run/lirc/lircd1 \
+    --pidfile=/var/run/lirc/lircd1.pid --listen
+&gt; lircd --driver=default --device=/dev/lirc --output=/var/run/lirc/lircd \
+    --pidfile=/var/run/lirc/lircd.pid --connect=localhost:8765
 </pre>
     <P>
-      All events will now be visible at /dev/lircd. The second lircd
+      All events will now be visible at /var/run/lirc/lircd. The second lircd
       instance connects to the first instance using a TCP/IP
       socket. The default port is 8765. It can be changed by providing
       an optional parameter to the <em>--listen</em> switch. If you
@@ -164,7 +162,7 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
       being received, just use irw providing the according socket
       interface on the command line:
 <pre>
-&gt; irw /dev/lircd1
+&gt; irw /var/run/lirc/lircd1
 </pre>
     <P>
       Also using a special lircd instance to send infra-red commands
@@ -228,7 +226,7 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
     Section &quot;XInput&quot;
         Subsection &quot;Mouse&quot;
             Protocol    &quot;IntelliMouse&quot;
-            Device      &quot;/dev/lircm&quot;
+            Device      &quot;/var/run/lirc/lircm&quot;
             DeviceName  &quot;Remote&quot;
             AlwaysCore
         EndSubsection
@@ -269,7 +267,7 @@ prw-r--r--    1 root     root            0 Okt 10 21:16 /dev/lircm
 Section &quot;InputDevice&quot;
         Identifier  &quot;LIRC-Mouse&quot;
         Driver      &quot;mouse&quot;
-        Option      &quot;Device&quot; &quot;/dev/lircm&quot;
+        Option      &quot;Device&quot; &quot;/var/run/lirc/lircm&quot;
         Option      &quot;Protocol&quot; &quot;IntelliMouse&quot;
         Option      &quot;SendCoreEvents&quot;
         Option      &quot;Buttons&quot; &quot;5&quot;
@@ -294,13 +292,13 @@ EndSection</PRE>
       mouse. With:
     </P>
     <PRE>
-    gpm -t ps2 -R -M -m /dev/lircm -t ms3</PRE>
+    gpm -t ps2 -R -M -m /var/run/lirc/lircm -t ms3</PRE>
     or<BR>
     <PRE>
-    gpm -t ps2 -R -M -m /dev/lircm -t imps2</PRE>
+    gpm -t ps2 -R -M -m /var/run/lirc/lircm -t imps2</PRE>
     or<BR>
     <PRE>
-    gpm -t ps2 -R -M -m /dev/lircm -t msc</PRE>
+    gpm -t ps2 -R -M -m /var/run/lirc/lircm -t msc</PRE>
     <P>
       I can use my usual PS/2 mouse and my remote control
       (IntelliMouse, IMPS/2 or MouseSystems protocol) at the same time

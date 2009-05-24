@@ -66,8 +66,8 @@ remotes, their infra-red codes and the corresponding timing and
 waveform details.
 
 .SH DIAGNOSTICS
-If \fBlircd\fR is not running (or /dev/lircd lacks write permissions)
-\fBirsend\fR aborts with the following diagnostics:
+If \fBlircd\fR is not running (or /var/run/lirc/lircd lacks write
+permissions) \fBirsend\fR aborts with the following diagnostics:
 .nf
 "irsend: could not connect to socket"
 "irsend: Connection refused" (or "Permission denied").

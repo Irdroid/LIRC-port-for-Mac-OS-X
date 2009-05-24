@@ -4,12 +4,12 @@
     <HR WIDTH="70%">
     
     <PRE>
-  |  +------------------------------------------------------+
-S |  | 'gpm -t msc -m /dev/lircm' or a well configured X    |
-O |  | (see section 'Configuring lircmd') for details       |
-F |  +--------------+---------------------------------------+
+  |  +---------------------------------------------------------------+
+S |  | 'gpm -t msc -m /var/run/lirc/lircm' or a well configured X    |
+O |  | (see section 'Configuring lircmd') for details                |
+F |  +--------------+------------------------------------------------+
 T |                 |
-W |   /dev/lircm (named pipe (FIFO) ==&gt; one connection)
+W |   /var/run/lirc/lircm (named pipe (FIFO) ==&gt; one connection)
 A |                 |
 R |     +-----------+-----------+   +-------------------------------+
 E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
@@ -19,7 +19,7 @@ E |     | mouse daemon (lircmd) |   | tools (irexec, irxevent, ...) |
   |                 |                           |
   |                 +-------------+-------------+
   |                               |
-  |                       /dev/lircd (socket ==&gt; multiple connections)
+  |              /var/run/lirc/lircd (socket ==&gt; multiple connections)
   |                               |
 S |              +----------------+--------------------------+
 O |              | decoder daemon (lircd), irrecord or mode2 |    TCP/IP
@@ -105,7 +105,7 @@ W | +------------------------+ +----------+ +-------------------------+
 	  </DD>
 	</DL>
       </LI>
-      <LI><B>/dev/lircd:</B><BR>
+      <LI><B>/var/run/lirc/lircd:</B><BR>
 	<P>
 	  outputs strings containing all information about the remote and the
 	  pressed button.
@@ -117,7 +117,7 @@ W | +------------------------+ +----------+ +-------------------------+
 	</UL>
 	<BR>
       </LI>
-      <LI><B>/dev/lircm:</B><BR>
+      <LI><B>/var/run/lirc/lircm:</B><BR>
 	<BR>
 	<UL>
 	  <LI>MouseSystems<BR>
@@ -191,8 +191,9 @@ W | +------------------------+ +----------+ +-------------------------+
       receive commands like <em>irexec</em>, <em>irxevent</em> and
       <em>irpty</em>.  Both types of applications will have to connect
       to the lircd daemon using the socket interface usually located
-      in /dev/lircd. Communication on the socket uses human readable
-      format. The end of a line is indicated by a newline character.
+      in /var/run/lirc/lircd. Communication on the socket uses human
+      readable format. The end of a line is indicated by a newline
+      character.
     </P>
     <P>
       Whenever lircd receives a IR signal it will broadcast the
@@ -307,7 +308,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.29 2008/05/16 22:02:13 uzuul Exp $      */
+/*      $Id: technical.html,v 1.30 2009/05/24 20:03:02 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************

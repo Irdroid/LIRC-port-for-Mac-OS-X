@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.25 2009/05/24 10:39:34 lirc Exp $
+dnl $Id: configure.ac,v 1.26 2009/05/24 20:03:02 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1655,8 +1655,10 @@ cur_prefix=$prefix
 test "x${prefix}" = "xNONE" && prefix=$ac_default_prefix 
 test "${sysconfdir}" = "\${prefix}/etc" && sysconfdir=/etc
 test "${localstatedir}" = "\${prefix}/var" && localstatedir=/var
+varrundir="${localstatedir}/run/lirc"
 sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
+varrundir_exp=`eval "echo ${varrundir}"`
 prefix=$cur_prefix
 
 receive=""
@@ -1671,6 +1673,7 @@ AC_SUBST(daemon)
 AC_SUBST(forkpty)
 AC_SUBST(devdir)
 AC_SUBST(sysconfdir)
+AC_SUBST(varrundir)
 AC_SUBST(moduledir)
 AC_SUBST(lirc_major)
 AC_SUBST(driver)
@@ -1689,6 +1692,7 @@ dnl tell the C code what we decided
 AC_DEFINE_UNQUOTED(DEVDIR, "$devdir")
 AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir_exp")
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR, "$localstatedir_exp")
+AC_DEFINE_UNQUOTED([VARRUNDIR], "$varrundir_exp", [/var/run/lirc])
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 
@@ -1739,8 +1743,8 @@ AH_BOTTOM([
 
 #define LIRC_IRTTY		DEVDIR "/" "ttyS0"
 
-#define LIRCD			DEVDIR "/" DEV_LIRCD
-#define LIRCM			DEVDIR "/" DEV_LIRCM
+#define LIRCD			VARRUNDIR "/" DEV_LIRCD
+#define LIRCM			VARRUNDIR "/" DEV_LIRCM
 
 #define LIRCDCFGFILE		SYSCONFDIR "/" CFG_LIRCD
 #define LIRCMDCFGFILE		SYSCONFDIR "/" CFG_LIRCM
@@ -1751,7 +1755,7 @@ AH_BOTTOM([
 #define LOGFILE			LOCALSTATEDIR "/log/" LOG_LIRCD
 #define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND
 
-#define PIDFILE                 LOCALSTATEDIR "/run/" PID_LIRCD
+#define PIDFILE                 VARRUNDIR "/" PID_LIRCD
 
 #define LIRC_RELEASE_SUFFIX     "_UP"
 ])

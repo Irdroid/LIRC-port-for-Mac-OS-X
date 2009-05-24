@@ -301,11 +301,11 @@
     
     <P>
       Now you should adjust the file permissions of
-      <em>/dev/lircd</em> (this is the Unix domain socket that clients
+      <em>/var/run/lirc/lircd</em> (this is the Unix domain socket that clients
       use to connect to lircd) so others than <em>root</em> can
       connect to lircd.</P>
     <PRE>
-        chmod 666 /dev/lircd</PRE>
+        chmod 666 /var/run/lirc/lircd</PRE>
     <P>
       should do. You can also create a special group for this purpose.
     </P>
@@ -773,4 +773,14 @@ lirc_serial: Unknown symbol lirc_register_driver
     probably an old version of <em>lirc_dev</em> loaded. Make sure
     that the <em>lirc_dev</em> version that comes with this release is
     loaded.
+    </P>
+
+    <H1 ALIGN="CENTER">Updating from lirc-0.8.5</H1>
+    <HR WIDTH="70%">
+    
+    <P>
+      The lircd socket was moved from <em>/dev/lircd</em> to
+      <em>/var/run/lirc/lircd</em> to conform to the Filesystem Hierarchy
+      Standard. The default pid file location was moved from
+      <em>/var/run/lircd.pid</em> to <em>/var/run/lirc/lircd.pid</em>.
     </P>

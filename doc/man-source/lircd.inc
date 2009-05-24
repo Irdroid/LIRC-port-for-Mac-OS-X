@@ -3,23 +3,24 @@ LIRC daemon - decodes infrared signals and provides them on a Unix
 domain socket.
 
 [DESCRIPTION]
-The main task of lircd is to decode the infrared signals and provide an
-uniform interface for client applications. Clients can connect to lircd
-through a Unix domain socket which is located in /dev/lircd. Using this
-socket they will get the infrared codes received by lircd and they can
-send commands to lircd.
+The main task of lircd is to decode the infrared signals and provide
+an uniform interface for client applications. Clients can connect to
+lircd through a Unix domain socket which is located in
+/var/run/lirc/lircd.  Using this ocket they will get the infrared
+codes received by lircd and they can send commands to lircd.
 
 [OPTIONS]
-The --permission option gives the file permission of /dev/lircd if it
-has to be created in octal representation. Read the documentation for
-chmod for further details. If no --permission option is given when the
-socket is initially created the default is to give all users read and
-write permissions (0666 in octal representation). If /dev/lircd already
-exists this option has no effect.
+The --permission option gives the file permission of
+/var/run/lirc/lircd if it has to be created in octal
+representation. Read the documentation for chmod for further
+details. If no --permission option is given when the socket is
+initially created the default is to give all users read and write
+permissions (0666 in octal representation). If /var/run/lirc/lircd
+already exists this option has no effect.
 
-With the --device option you can select the character device which lircd
-should read from. The default currently is /dev/lirc but it probably
-will change in future.
+With the --device option you can select the character device which
+lircd should read from. The default currently is /dev/lirc but it
+probably will change in future.
 
 If you're using the dev/input driver, you can use \fIname=STRING\fR or
 \fIphys=STRING\fR to select the device; lircd will look in /dev/input
@@ -40,11 +41,12 @@ of such connections is currently limited to 100.
 The connecting lircd instance will receive IR events from the lircd
 instance it connects to.
 
-With the --output option you can select Unix domain socket, which lircd
-will write remote key codes to. The default currently is /dev/lircd.
+With the --output option you can select Unix domain socket, which
+lircd will write remote key codes to. The default currently is
+/var/run/lirc/lircd.
 
 With the --pidfile option you can select the lircd daemon pid file.
-The default currently is /var/run/lircd.pid.
+The default currently is /var/run/lirc/lircd.pid.
 
 With the --logfile option you can select the lircd daemon log file.
 The default currently is /var/log/lircd. Note that this option will

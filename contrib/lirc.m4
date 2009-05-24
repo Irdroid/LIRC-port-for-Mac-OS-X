@@ -22,11 +22,15 @@ AC_DEFUN([AC_PATH_LIRC],
     lirc_version=none
     lirc_cross_compiling=no
 
-    if test ! -S /dev/lircd; then
+    if test ! \( \( -S /dev/lircd \) -o \( -S /var/run/lirc/lircd \) \); then
       LIRCD=/dev/null
       no_lirc=yes
     else
-      LIRCD=/dev/lircd
+      if test -S /var/run/lirc/lircd; then
+        LIRCD=/var/run/lirc/lircd
+      else
+        LIRCD=/dev/lircd
+      fi
 
       rm -f conf.lirc
       ac_save_cflags="${CFLAGS}"

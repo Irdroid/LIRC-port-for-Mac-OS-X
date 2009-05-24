@@ -1,4 +1,7 @@
 0.8.6-CVS: future
+  * moved lircd socket from /dev/lircd to /var/run/lirc/lircd
+  * moved default pid file location from /var/run/lircd.pid to
+    /var/run/lirc/lircd.pid
   * added support for XMP protocol
 
 0.8.5: 05/21/09
