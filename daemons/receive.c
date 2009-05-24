@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.36 2009/04/26 09:20:21 lirc Exp $      */
+/*      $Id: receive.c,v 5.37 2009/05/24 10:46:52 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -967,6 +967,44 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 			logprintf(LOG_ERR,"failed on bit %d",
 				  done+i+1);
 			return((ir_code) -1);
+		}
+		return code;
+	}
+	else if(is_xmp(remote))
+	{
+		lirc_t deltap,deltas,sum;
+		ir_code n;
+		
+		if(bits%4 || done%4)
+		{
+			logprintf(LOG_ERR,"invalid bit number.");
+			return((ir_code) -1);
+		}
+		if(!sync_pending_space(remote)) return 0;
+		for(i=0;i<bits;i+=4)
+		{
+			code<<=4;
+			deltap=get_next_pulse(remote->pzero);
+			deltas=get_next_space(remote->szero+16*remote->sone);
+			if(deltap==0 || deltas==0) 
+			{
+				logprintf(LOG_ERR,"failed on bit %d",
+					  done+i+1);
+				return((ir_code) -1);
+			}
+			sum=deltap+deltas;
+			
+			sum -= remote->pzero + remote->szero;
+			n = (sum + remote->sone/2)/remote->sone;
+			if(n >= 16)
+			{
+				logprintf(LOG_ERR,"failed on bit %d",
+					  done+i+1);
+				return((ir_code) -1);
+			}
+			LOGPRINTF(1, "%d: %lx", i, n);
+			code |= n;
+
 		}
 		return code;
 	}

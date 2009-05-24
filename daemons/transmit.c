@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.29 2009/04/26 10:44:44 lirc Exp $      */
+/*      $Id: transmit.c,v 5.30 2009/05/24 10:46:52 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -208,9 +208,10 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 	int all_bits = bit_count(remote);
 	int toggle_bit_mask_bits = bits_set(remote->toggle_bit_mask);
 	ir_code mask;
+	
+	data=reverse(data,bits);
 	if(is_rcmm(remote))
 	{
-		data=reverse(data,bits);
 		mask=1<<(all_bits-1-done);
 		if(bits%2 || done%2)
 		{
@@ -243,8 +244,25 @@ inline void send_data(struct ir_remote *remote,ir_code data,int bits,int done)
 		}
 		return;
 	}
+	else if(is_xmp(remote))
+	{
+		if(bits%4 || done%4)
+		{
+			logprintf(LOG_ERR,"invalid bit number.");
+			return;
+		}
+		for(i = 0; i < bits; i += 4)
+		{
+			ir_code nibble;
 
-	data=reverse(data,bits);
+			nibble = reverse(data & 0xf, 4);
+			send_pulse(remote->pzero);
+			send_space(remote->szero + nibble*remote->sone);
+			data >>= 4;
+		}
+		return;
+	}
+
 	mask=((ir_code) 1)<<(all_bits-1-done);
 	for(i=0;i<bits;i++,mask>>=1)
 	{
@@ -508,6 +526,10 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		else
 		{
 			code->transmit_state = code->transmit_state->next;
+			if(is_xmp(remote) && code->transmit_state == NULL)
+			{
+				code->transmit_state = code->next;
+			}
 		}
 	}
 	if((remote->repeat_countdown>0 || code->transmit_state != NULL) &&

@@ -1,4 +1,5 @@
 0.8.6-CVS: future
+  * added support for XMP protocol
 
 0.8.5: 05/21/09
   * added support for Winbond 8769L CIR port (e.g. found on Acer

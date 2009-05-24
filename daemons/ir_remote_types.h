@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.12 2008/06/02 20:48:41 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.13 2009/05/24 10:46:52 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -56,7 +56,7 @@ struct ir_ncode {
 
 /* definitions for flags */
 
-#define IR_PROTOCOL_MASK 0x03ff
+#define IR_PROTOCOL_MASK 0x07ff
 
 /* protocols: must not be combined */
 /* Don't forget to take a look at config_file.h when adding new flags */
@@ -76,15 +76,16 @@ struct ir_ncode {
 #define GRUNDIG         0x0080    /* encoding found on Grundig remote */
 #define BO              0x0100    /* encoding found on Bang & Olufsen remote */
 #define SERIAL          0x0200    /* serial protocol */
+#define XMP             0x0400    /* XMP protocol */
 
 /* additinal flags: can be orred together with protocol flag */
-#define REVERSE		0x0400
-#define NO_HEAD_REP	0x0800	  /* no header for key repeats */
-#define NO_FOOT_REP	0x1000	  /* no foot for key repeats */
-#define CONST_LENGTH    0x2000    /* signal length+gap is always constant */
-#define REPEAT_HEADER   0x4000    /* header is also sent before repeat code */
+#define REVERSE		0x0800
+#define NO_HEAD_REP	0x1000	  /* no header for key repeats */
+#define NO_FOOT_REP	0x2000	  /* no foot for key repeats */
+#define CONST_LENGTH    0x4000    /* signal length+gap is always constant */
+#define REPEAT_HEADER   0x8000    /* header is also sent before repeat code */
 
-#define COMPAT_REVERSE  0x8000    /* compatibility mode for REVERSE flag */
+#define COMPAT_REVERSE  0x00010000    /* compatibility mode for REVERSE flag */
 
 /* stop repeating after 600 signals (approx. 1 minute) */
 /* update technical.html when changing this value */

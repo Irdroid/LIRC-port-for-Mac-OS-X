@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.41 2009/04/26 11:06:00 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.42 2009/05/24 10:46:52 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -588,6 +588,10 @@ char *decode_all(struct ir_remote *remotes)
 				{
 					scan_ncode->current = NULL;
 				}
+			}
+			if(is_xmp(remote))
+			{
+				remote->last_code->current = remote->last_code->next;
 			}
 			register_button_press
 				(remote, remote->last_code,

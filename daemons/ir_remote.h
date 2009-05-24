@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.42 2009/04/26 10:44:44 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.43 2009/05/24 10:46:52 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -158,6 +158,12 @@ static inline int is_bo(struct ir_remote *remote)
 static inline int is_serial(struct ir_remote *remote)
 {
 	if((remote->flags&IR_PROTOCOL_MASK) == SERIAL) return(1);
+	else return(0);
+}
+
+static inline int is_xmp(struct ir_remote *remote)
+{
+	if((remote->flags&IR_PROTOCOL_MASK) == XMP) return(1);
 	else return(0);
 }
 
