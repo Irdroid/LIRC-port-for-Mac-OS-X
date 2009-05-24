@@ -1,9 +1,5 @@
 * HAL
 
-* __init, __exit
-
-* namespace
-
 * GUI for irrecord
 
 * RC-5X support
@@ -11,9 +7,6 @@
 * fix tool command line options for config file
 
 * on_enter, on_leave in .lircrc modes
-
-* make the package portable (you will be able to use LIRC with an
-  Irman on Solaris)
 
 * irrecord: fancy Kenwood repeat code 78 11243 78: repeat_tail?
 
@@ -30,7 +23,5 @@
 * IrDA support (SIR support is available, real CIR support is still missing)
 
 * integrate lircrc_config with lirc source package.
-
-* add 'debian/' directory. (ranty)
 
 * consider min_code_repeat on transmit
