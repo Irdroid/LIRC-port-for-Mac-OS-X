@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.26 2009/05/24 20:03:02 lirc Exp $
+dnl $Id: configure.ac,v 1.27 2009/05/25 15:34:05 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -122,6 +122,8 @@ dnl this could be _much_ more sophisticated!  especially the lirc ones.
 AC_MSG_CHECKING([for which drivers can be installed on this system])
 AC_MSG_RESULT()
 
+# this list must only contain userspace drivers without external
+# (header/library) dependencies!
 possible_drivers="(none) \
 	(userspace) \
 	(accent) \
@@ -129,7 +131,6 @@ possible_drivers="(none) \
 	(creative) \
 	(ea65) \
 	(exaudio) \
-	(ftdi) \
 	(irlink) \
 	(irreal) \
 	(livedrive_midi) \
