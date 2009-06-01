@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.84 2009/04/28 16:25:50 lirc Exp $      */
+/*      $Id: lircd.c,v 5.85 2009/06/01 12:24:56 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -2145,7 +2145,7 @@ void loop()
 {
 	char *message;
 	
-	logprintf(LOG_NOTICE,"lircd(%s) ready", hw.name);
+	logprintf(LOG_NOTICE,"lircd(%s) ready, using %s", hw.name, lircdfile);
 	while(1)
 	{
 		(void) waitfordata(0);
