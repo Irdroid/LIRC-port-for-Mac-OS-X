@@ -101,7 +101,7 @@ hw_menu_entry: @hw-tv-card
 hw_menu_entry: @hw-irda
 	sir: "SIR IrDA (built-in IR ports)"
 	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
-	it87: "ITE IT8712/IT8705 CIR port"
+	it87: "ITE IT8712/IT8705/IT8720 CIR port"
 	ite8709: "ITE8709 CIR port"
 	digimatrix: "Asus Digimatrix IT87xx CIR port"
 	act200l: "Actisys Act200L SIR driver support"
