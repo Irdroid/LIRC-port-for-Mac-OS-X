@@ -153,3 +153,126 @@ begin remote
 
 end remote
 
+#
+# this config file was automatically generated
+# using lirc-0.8.5(default) on Tue May 26 22:07:16 2009
+#
+# contributed by Karl Newman, based on lircd.conf.imon-pad in lirc-0.8.4
+# devices with USB ID 0x15c2, 0x0038 are using 64 codes in 0.8.5
+#
+# brand:                       iMON-New
+# model no. of remote control: iMON-PAD
+# devices being controlled by this remote:
+#
+
+begin remote
+
+  name     iMON-PAD
+  bits           64
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  gap          135993
+  toggle_bit_mask 0x0
+  ignore_mask 0x00000000FFFFFFFF
+
+      begin codes
+          AppExit                  0x288195B700002401
+          Power                    0x289115B700002401
+          Record                   0x298115B700002401
+          Play                     0x2A8115B700002401
+          SlowMotion               0x29B195B700002401
+          Rewind                   0x2A8195B700002401
+          Pause                    0x2A9115B700002401
+          FastForward              0x2B8115B700002401
+          PrevChapter              0x2B9115B700002401
+          Stop                     0x2B9715B700002401
+          NextChapter              0x298195B700002401
+          Esc                      0x2BB715B700002401
+          Eject                    0x299395B700002401
+          AppLauncher              0x29B715B700002401
+          MultiMon                 0x2AB195B700002401
+          TaskSwitcher             0x2A9395B700002401
+          Mute                     0x2B9595B700002401
+          Vol+                     0x28A395B700002401
+          Vol-                     0x28A595B700002401
+          Ch+                      0x289395B700002401
+          Ch-                      0x288795B700002401
+          Timer                    0x2B8395B700002401
+          1                        0x28B595B700002401
+          2                        0x2BB195B700002401
+          3                        0x28B195B700002401
+          4                        0x2A8595B700002401
+          5                        0x299595B700002401
+          6                        0x2AA595B700002401
+          7                        0x2B9395B700002401
+          8                        0x2A8515B700002401
+          9                        0x2AA115B700002401
+          0                        0x2BA595B700002401
+          ShiftTab                 0x28B515B700002401
+          Tab                      0x29A115B700002401
+          MyMovie                  0x2B8515B700002401
+          MyMusic                  0x299195B700002401
+          MyPhoto                  0x2BA115B700002401
+          MyTV                     0x28A515B700002401
+          Bookmark                 0x288515B700002401
+          Thumbnail                0x2AB715B700002401
+          AspectRatio              0x29A595B700002401
+          FullScreen               0x2AA395B700002401
+
+          MyDVD                    0x29A295B700002401
+          Menu                     0x2BA385B700002401
+# different codes
+# These codes are the button release codes, which will cause duplicate
+# events, so they are commented out here.
+#          MyDVD                    0x29A3D5B700002401
+#          Menu                     0x2BA3D5B700002401
+
+          Caption                  0x298595B700002401
+          Language                 0x2B8595B700002401
+          MouseKeyboard            0x299115B700002401
+          SelectSpace              0x2A9315B700002401
+          MouseMenu                0x28B715B700002401
+          MouseRightClick          0x688481B700002401
+          Enter                    0x28A195B700002401
+          MouseLeftClick           0x688301B700002401
+          WindowsKey               0x2B8195B700002401
+          Backspace                0x28A115B700002401
+# Corrin added
+          Space                    0x2B9B15F700002401
+          Up                       0xEB53F9B700002401
+          Left                     0x6ABAFFBF00002401
+          Down                     0x6F9ECBB700002401
+          Right                    0x69A281B700002401
+# Variants and additions of keys reported by Ryan Gardner
+          1                        0x0200001E00000000
+          2                        0x0200001F00000000
+          3                        0x0200002000000000
+          4                        0x0200002100000000
+          5                        0x0200002200000000
+          6                        0x0200002300000000
+          7                        0x0200002400000000
+          8                        0x0200002500000000
+          9                        0x0200002600000000
+          Star                     0x0220002500000000
+          0                        0x0200002700000000
+          Hash                     0x0220002000000000
+          Backspace                0x0200002A00000000
+          Select                   0x0200002C00000000
+          LeftMenu                 0x0280000000000000
+          RightMenu                0x0200006500000000
+          Enter                    0x0200002800000000
+          Escape                   0x0200002900000000
+          LeftClick                0x0101000000000000
+          RightClick               0x0102000000000000
+          Up                       0x0100800000000000
+          Down                     0x01007F0000000000
+          Left                     0x0100008000000000
+          Right                    0x0100007F00000000
+      end codes
+
+end remote
+
+
