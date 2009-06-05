@@ -11,6 +11,10 @@ button from which remote causes a mouse move or a mouse button click.
 [OPTIONS]
 If you provide the --nodaemon option lircmd won't fork to background.
 
+On Linux systems the --uinput option will enable automatic generation
+of Linux input events. lircmd will open /dev/input/uinput and inject
+the simulated mouse events into the Linux kernel rather than creating
+the /dev/lircm device.
 [FILES]
 lircmd will use syslogd to output error messages. It depends on your
 system configuration where they will show up.

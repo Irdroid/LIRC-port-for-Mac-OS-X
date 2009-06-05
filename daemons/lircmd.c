@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.19 2006/10/09 07:22:14 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.20 2009/06/05 19:08:50 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -32,6 +32,11 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#if defined(__linux__)
+#include <linux/input.h>
+#include <linux/uinput.h>
+#endif
+
 #define CLICK_DELAY 50000 /* usecs */
 #define PACKET_SIZE 256
 #define WHITE_SPACE " \t"
@@ -48,6 +53,9 @@
 #define MAP_BUTTON1 0
 #define MAP_BUTTON2 1
 #define MAP_BUTTON3 2
+
+static int uinputfd = -1;
+static int useuinput = 0;
 
 inline int map_buttons(int b)
 {
@@ -139,7 +147,8 @@ char *progname="lircmd";
 static const char *syslogident = "lircmd-" VERSION;
 char *configfile=LIRCMDCFGFILE;
 
-int lircd,lircm;
+int lircd = -1;
+int lircm = -1;
 
 sig_atomic_t hup=0;
 
@@ -167,9 +176,21 @@ void sigterm(int sig)
 	
 	shutdown(lircd,2);
 	close(lircd);
-	shutdown(lircm,2);
-	close(lircm);
+
+	if(lircm != -1)
+	{
+		shutdown(lircm,2);
+		close(lircm);
+		lircm = -1;
+	}
 	
+	if(uinputfd != -1)
+	{
+		ioctl(uinputfd, UI_DEV_DESTROY);
+		close(uinputfd);
+		uinputfd = -1;
+	}
+
 	signal(sig,SIG_DFL);
 	raise(sig);
 }
@@ -217,9 +238,101 @@ void daemonize(void)
 }
 #endif /* DAEMONIZE */
 
+int setup_uinputfd(const char *name)
+{
+#if defined(__linux__)
+	int fd;
+	struct uinput_user_dev dev;
+	
+	/* Open a uinput device. */
+	fd = open("/dev/input/uinput", O_RDWR);
+	if(fd == -1)
+	{
+		fd = open("/dev/uinput", O_RDWR);
+		if(fd == -1)
+		{
+			fd = open("/dev/misc/uinput", O_RDWR);
+			if(fd == -1)
+			{
+				fprintf(stderr, "could not open %s\n",
+					"uinput");
+				perror(NULL);
+				return -1;
+			}
+		}
+	}
+	memset(&dev, 0, sizeof(dev));
+	strncpy(dev.name, name, sizeof(dev.name));
+	dev.name[sizeof(dev.name)-1] = 0;
+	if(write(fd, &dev, sizeof(dev)) != sizeof(dev))
+	{
+		goto setup_error;
+	}
+
+	/* Configure support for the left, right and middle mouse buttons. */
+	if( (ioctl(fd, UI_SET_EVBIT , EV_KEY    ) != 0) ||
+	    (ioctl(fd, UI_SET_KEYBIT, BTN_LEFT  ) != 0) ||
+	    (ioctl(fd, UI_SET_KEYBIT, BTN_MIDDLE) != 0) ||
+	    (ioctl(fd, UI_SET_KEYBIT, BTN_RIGHT ) != 0) )
+	{
+		goto setup_error;
+	}
+
+	/* Configure support for the relative mouse location and scroll wheel */
+	if( (ioctl(fd, UI_SET_EVBIT , EV_REL   ) != 0) ||
+	    (ioctl(fd, UI_SET_RELBIT, REL_X    ) != 0) ||
+	    (ioctl(fd, UI_SET_RELBIT, REL_Y    ) != 0) ||
+	    (ioctl(fd, UI_SET_RELBIT, REL_WHEEL) != 0) )
+	{
+		goto setup_error;
+	}
+
+	/* Register the device with the input subsystem. */
+	if(ioctl(fd, UI_DEV_CREATE) != 0)
+	{
+		goto setup_error;
+	}
+	return fd;
+	
+ setup_error:
+	fprintf(stderr, "could not setup %s\n", "uinput");
+	perror(NULL);
+	close(fd);
+#endif
+	return -1;
+}
+
+void write_uinput(__u16 type, __u16 code, __s32 value)
+{
+#ifdef __linux__
+	struct input_event event;
+
+	memset(&event, 0, sizeof(event));
+	event.type = type;
+	event.code = code;
+	event.value = value;
+
+	if(write(uinputfd, &event, sizeof(event)) != sizeof(event))
+	{
+		static int once=1;
+		
+		if(once)
+		{
+			int errno_save = errno;
+			
+			once=0;
+			syslog(LOG_ERR, "writing to uinput failed");
+			errno = errno_save;
+			syslog(LOG_ERR, "%m");
+		}
+	}
+#endif
+}
+
 void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 {
 	static int buttons=0;
+	int i;
 	int f=1;
 	char buffer[5];
 	
@@ -247,9 +360,8 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 		buffer[2]=dy;
 		buffer[3]=buffer[4]=0;
 
-		while(f>0)
+		for(i = 0; i < f; i++)
 		{
-			f--;
 			write(lircm,buffer,5);
 		}
 		break;
@@ -264,9 +376,8 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 		buffer[2]=dy+(dy>=0 ? 0:256);
 		buffer[3]=dz;
 
-		while(f>0)
+		for(i = 0; i < f; i++)
 		{
-			f--;
 			write(lircm,buffer,4);
 		}
 		break;
@@ -283,12 +394,59 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 			   |((dz > 0) ? 0x01:0x00)
 			   |((buttons&BUTTON2) ? 0x10:0x00);
 
-		while(f>0)
+		for(i = 0; i < f; i++)
 		{
-			f--;
 			write(lircm,buffer,4);
 		}
 		break;
+	}
+
+	if(uinputfd != -1)
+	{
+		for(i = 0; i < f; i++)
+		{
+			if((dx != 0) || (dy != 0))
+			{
+				write_uinput(EV_REL, REL_X, dx);
+				write_uinput(EV_REL, REL_Y, dy);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+        		if(dz != 0)
+			{
+				write_uinput(EV_REL, REL_WHEEL, dz);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttp&BUTTON1)
+			{
+				write_uinput(EV_KEY, BTN_LEFT, 1);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttr&BUTTON1)
+			{
+				write_uinput(EV_KEY, BTN_LEFT, 0);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttp&BUTTON2)
+			{
+				write_uinput(EV_KEY, BTN_MIDDLE, 1);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttr&BUTTON2)
+			{
+				write_uinput(EV_KEY, BTN_MIDDLE, 0);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttp&BUTTON3)
+			{
+				write_uinput(EV_KEY, BTN_RIGHT, 1);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+			if(buttr&BUTTON3)
+			{
+				write_uinput(EV_KEY, BTN_RIGHT, 0);
+				write_uinput(EV_SYN, SYN_REPORT, 0);
+			}
+		}
 	}
 }
 
@@ -725,6 +883,9 @@ int main(int argc,char **argv)
 			{"help",no_argument,NULL,'h'},
 			{"version",no_argument,NULL,'v'},
 			{"nodaemon",no_argument,NULL,'n'},
+#                       if defined(__linux__)
+			{"uinput",no_argument,NULL,'u'},
+#                       endif
 			{0, 0, 0, 0}
 		};
 		c = getopt_long(argc,argv,"hvn",long_options,NULL);
@@ -737,6 +898,9 @@ int main(int argc,char **argv)
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n");
 			printf("\t -n --nodaemon\t\tdon't fork to background\n");
+#                       if defined(__linux__)
+			printf("\t -u --uinput\t\tgenerate Linux input events\n");
+#                       endif
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s %s\n",progname,VERSION);
@@ -744,6 +908,11 @@ int main(int argc,char **argv)
 		case 'n':
 			nodaemon=1;
 			break;
+#               if defined(__linux__)
+		case 'u':
+			useuinput=1;
+			break;
+#               endif
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);
@@ -777,24 +946,37 @@ int main(int argc,char **argv)
 		exit(EXIT_FAILURE);
 	};
 
-	/* open fifo */
-	
-	if(mkfifo(LIRCM,0644)==-1)
+	/* either create uinput device or fifo device */
+	uinputfd = -1;
+	lircm = -1;
+	if(useuinput)
 	{
-		if(errno!=EEXIST)
+		/* create uinput device */
+
+		uinputfd = setup_uinputfd(progname);
+	}
+	else
+	{
+		/* open fifo */
+
+		if(mkfifo(LIRCM,0644)==-1)
 		{
-			fprintf(stderr,"%s: could not create fifo\n",progname);
+			if(errno!=EEXIST)
+			{
+				fprintf(stderr,"%s: could not create fifo\n",
+					progname);
+				perror(progname);
+				exit(EXIT_FAILURE);
+			}
+		}
+	
+		lircm=open(LIRCM,O_RDWR|O_NONBLOCK);
+		if(lircm==-1)
+		{
+			fprintf(stderr,"%s: could not open fifo\n",progname);
 			perror(progname);
 			exit(EXIT_FAILURE);
 		}
-	}
-	
-	lircm=open(LIRCM,O_RDWR|O_NONBLOCK);
-	if(lircm==-1)
-	{
-		fprintf(stderr,"%s: could not open fifo\n",progname);
-		perror(progname);
-		exit(EXIT_FAILURE);
 	}
 
 	/* read config file */
@@ -817,6 +999,7 @@ int main(int argc,char **argv)
 	{
 		ms=new_ms;
 	}
+
 #ifdef DAEMONIZE
 	if(!nodaemon) daemonize();
 #endif
