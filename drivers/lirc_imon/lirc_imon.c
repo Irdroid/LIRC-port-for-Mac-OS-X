@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.62 2009/06/13 17:26:10 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.63 2009/06/13 17:27:52 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -247,8 +247,10 @@ static struct usb_device_id lcd_device_list[] = {
 	{}
 };
 
-/* iMON devices with front panel buttons need a larger buffer */
+/* iMON devices with front panel buttons or touchscreen need a larger buffer */
 static struct usb_device_id large_buffer_list[] = {
+	{ USB_DEVICE(0x15c2, 0x0034) },
+	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
 };
