@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.59 2009/04/10 20:51:29 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.60 2009/06/13 17:20:05 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1539,7 +1539,7 @@ static void *imon_probe(struct usb_device *dev, unsigned int intf,
 	context->subminor = subminor;
 #endif
 
-	if (display_ep_found) {
+	if (context->display_supported) {
 		if (debug)
 			printk(KERN_INFO "Registering display with devfs\n");
 #ifdef KERNEL_2_5
