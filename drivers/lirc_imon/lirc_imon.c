@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.63 2009/06/13 17:27:52 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.64 2009/06/13 17:36:28 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -169,28 +169,68 @@ enum {
 	IMON_DISPLAY_TYPE_NONE,
 };
 
-/* USB Device ID for iMON USB Control Board */
+/*
+ * USB Device ID for iMON USB Control Boards
+ *
+ * The Windows drivers contain 6 different inf files, more or less one for
+ * each new device until the 0x0034-0x0046 devices, which all use the same
+ * driver. Some of the devices in the 34-46 range haven't been definitively
+ * identified yet. Early devices have either a TriGem Computer, Inc. or a
+ * Samsung vendor ID (0x0aa8 and 0x04e8 respectively), while all later
+ * devices use the SoundGraph vendor ID (0x15c2).
+ */
 static struct usb_device_id imon_usb_id_table[] = {
-	/* iMON USB Control Board (IR & VFD) */
-	{ USB_DEVICE(0x0aa8, 0xffda) },
-	/* iMON USB Control Board (IR only) */
+	/* TriGem iMON (IR only) -- TG_iMON.inf */
 	{ USB_DEVICE(0x0aa8, 0x8001) },
-	/* iMON USB Control Board (ext IR only) */
+
+	/* SoundGraph iMON (IR only) -- sg_imon.inf */
 	{ USB_DEVICE(0x04e8, 0xff30) },
-	/* iMON USB Control Board (IR & VFD) */
+
+	/* SoundGraph iMON VFD (IR & VFD) -- iMON_VFD.inf */
+	{ USB_DEVICE(0x0aa8, 0xffda) },
+
+	/* SoundGraph iMON SS (IR & VFD) -- iMON_SS.inf */
 	{ USB_DEVICE(0x15c2, 0xffda) },
-	/* iMON USB Control Board (IR & LCD) *and* iMON Knob (IR only) */
+
+	/*
+	 * Several devices with this same device ID, all use iMON_PAD.inf
+	 * SoundGraph iMON PAD (IR & VFD)
+	 * SoundGraph iMON PAD (IR & LCD)
+	 * SoundGraph iMON Knob (IR only)
+	 */
 	{ USB_DEVICE(0x15c2, 0xffdc) },
-	/* iMON USB Control Board (IR & VGA LCD) */
+
+	/*
+	 * Newer devices, all driven by the latest iMON Windows driver, full
+	 * list of device IDs extracted via 'strings Setup/data1.hdr |grep 15c2'
+	 * Need user input to fill in details on unknown devices.
+	 */
+	/* SoundGraph iMON OEM Touch LCD (IR & 7" VGA LCD) */
 	{ USB_DEVICE(0x15c2, 0x0034) },
-	/* iMON USB Control Board (IR & VGA LCD) */
+	/* SoundGraph iMON OEM Touch LCD (IR & 4.3" VGA LCD) */
 	{ USB_DEVICE(0x15c2, 0x0035) },
-	/* iMON USB Control Board (IR & VFD) */
+	/* SoundGraph iMON OEM VFD (IR & VFD) */
 	{ USB_DEVICE(0x15c2, 0x0036) },
-	/* iMON USB Control Board (IR & LCD) */
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x0037) },
+	/* SoundGraph iMON OEM LCD (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0038) },
-	/* iMON USB Control Board (IR only) */
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x0039) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x003a) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x003b) },
+	/* SoundGraph iMON OEM Inside (IR only) */
 	{ USB_DEVICE(0x15c2, 0x003c) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x003d) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x003e) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x003f) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x0040) },
 	/* SoundGraph iMON MINI (IR only) */
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	/* Antec Veris Multimedia Station EZ External (IR only) */
@@ -201,6 +241,8 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{ USB_DEVICE(0x15c2, 0x0044) },
 	/* Antec Veris Multimedia Station Premiere (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0045) },
+	/* device specifics unknown */
+	{ USB_DEVICE(0x15c2, 0x0046) },
 	{}
 };
 
@@ -211,12 +253,22 @@ static struct usb_device_id display_proto_6p_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
+	{ USB_DEVICE(0x15c2, 0x0037) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0039) },
+	{ USB_DEVICE(0x15c2, 0x003a) },
+	{ USB_DEVICE(0x15c2, 0x003b) },
+	{ USB_DEVICE(0x15c2, 0x003c) },
+	{ USB_DEVICE(0x15c2, 0x003d) },
+	{ USB_DEVICE(0x15c2, 0x003e) },
+	{ USB_DEVICE(0x15c2, 0x003f) },
+	{ USB_DEVICE(0x15c2, 0x0040) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
 	{ USB_DEVICE(0x15c2, 0x0044) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
+	{ USB_DEVICE(0x15c2, 0x0046) },
 	{}
 };
 static unsigned char display_packet6[] = {
@@ -227,21 +279,28 @@ static struct usb_device_id ctl_ep_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
+	{ USB_DEVICE(0x15c2, 0x0037) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0039) },
+	{ USB_DEVICE(0x15c2, 0x003a) },
+	{ USB_DEVICE(0x15c2, 0x003b) },
 	{ USB_DEVICE(0x15c2, 0x003c) },
+	{ USB_DEVICE(0x15c2, 0x003d) },
+	{ USB_DEVICE(0x15c2, 0x003e) },
+	{ USB_DEVICE(0x15c2, 0x003f) },
+	{ USB_DEVICE(0x15c2, 0x0040) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
 	{ USB_DEVICE(0x15c2, 0x0044) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
+	{ USB_DEVICE(0x15c2, 0x0046) },
 	{}
 };
 
 /* iMON LCD models use a different write op */
 static struct usb_device_id lcd_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffdc) },
-	{ USB_DEVICE(0x15c2, 0x0034) },
-	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
 	{}
@@ -261,13 +320,22 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
+	{ USB_DEVICE(0x15c2, 0x0037) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0039) },
+	{ USB_DEVICE(0x15c2, 0x003a) },
+	{ USB_DEVICE(0x15c2, 0x003b) },
 	{ USB_DEVICE(0x15c2, 0x003c) },
+	{ USB_DEVICE(0x15c2, 0x003d) },
+	{ USB_DEVICE(0x15c2, 0x003e) },
+	{ USB_DEVICE(0x15c2, 0x003f) },
+	{ USB_DEVICE(0x15c2, 0x0040) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
 	{ USB_DEVICE(0x15c2, 0x0044) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
+	{ USB_DEVICE(0x15c2, 0x0046) },
 	{}
 };
 
