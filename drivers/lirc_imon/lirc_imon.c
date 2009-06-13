@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.65 2009/06/13 19:34:54 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.66 2009/06/13 19:56:43 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -43,7 +43,9 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/usb.h>
+#include <linux/usb/input.h>
 #include <linux/time.h>
+#include <linux/timer.h>
 
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
@@ -53,7 +55,7 @@
 #define MOD_AUTHOR	"Venky Raju <dev@venky.ws>"
 #define MOD_DESC	"Driver for SoundGraph iMON MultiMedia IR/Display"
 #define MOD_NAME	"lirc_imon"
-#define MOD_VERSION	"0.5"
+#define MOD_VERSION	"0.6"
 
 #define DISPLAY_MINOR_BASE	144	/* Same as LCD */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
@@ -120,6 +122,7 @@ struct imon_context {
 	int dev_present_intf1;		/* USB device presence, interface 1 */
 	struct mutex lock;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
+	int has_touchscreen;		/* touchscreen present? */
 
 	int display_proto_6p;		/* display requires 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
@@ -147,7 +150,18 @@ struct imon_context {
 		atomic_t busy;			/* write in progress */
 		int status;			/* status of tx completion */
 	} tx;
+
+	struct input_dev *mouse;	/* input device for iMON PAD remote */
+	struct input_dev *touch;	/* input device for touchscreen */
+	int is_mouse;			/* toggle between mouse/remote mode */
+	int touch_x;			/* x coordinate on touchscreen */
+	int touch_y;			/* y coordinate on touchscreen */
+	char name[128];
+	char phys[64];
+	struct timer_list timer;
 };
+
+#define TOUCH_TIMEOUT	(HZ/30)
 
 /* display file operations. Nb: lcd_write will be subbed in as needed later */
 static struct file_operations display_fops = {
@@ -1096,6 +1110,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 	unsigned char mask;
 	int chunk_num, dir;
 	int i;
+	int ts_input = 0;
 
 	/*
 	 * we need to add some special handling for
@@ -1163,6 +1178,20 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 			return;
 		buf[2] = dir & 0xFF;
 		buf[3] = (dir >> 8) & 0xFF;
+	} else if (buf[6] == 0x14 && buf[7] == 0x86 && intf == 1) {
+		/*
+		 * this is touchscreen input, which we need to down-sample
+		 * to a 64 button matrix at the moment...
+		 */
+		buf[0] = buf[0] >> 5;
+		buf[1] = 0x00;
+		buf[2] = buf[2] >> 5;
+		buf[3] = 0x00;
+		buf[4] = 0x00;
+		buf[5] = 0x00;
+		buf[6] = 0x14;
+		buf[7] = 0xff;
+		ts_input = 1;
 	}
 
 	if (len != 8) {
@@ -1186,7 +1215,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 
 	chunk_num = buf[7];
 
-	if (chunk_num == 0xFF)
+	if (chunk_num == 0xFF && !ts_input)
 		return;		/* filler frame, no data here */
 
 	if (buf[0] == 0xFF &&
@@ -1264,6 +1293,27 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 }
 
 /**
+ * report touchscreen input
+ */
+
+static void imon_touch_display_timeout(unsigned long data)
+{
+	struct imon_context *context = (struct imon_context *)data;
+	struct input_dev *touch;
+
+	if (!context->has_touchscreen)
+		return;
+
+	touch = context->touch;
+	input_report_abs(touch, ABS_X, context->touch_x);
+	input_report_abs(touch, ABS_Y, context->touch_y);
+	input_report_key(touch, BTN_TOUCH, 0x00);
+	input_sync(touch);
+
+	return;
+}
+
+/**
  * Callback function for USB core API: receive data
  */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
@@ -1273,9 +1323,11 @@ static void usb_rx_callback_intf0(struct urb *urb)
 #endif
 {
 	struct imon_context *context;
+	struct input_dev *mouse = NULL;
 	unsigned char *buf;
 	int len;
 	int intfnum = 0;
+	char rel_x, rel_y;
 
 	if (!urb)
 		return;
@@ -1286,12 +1338,29 @@ static void usb_rx_callback_intf0(struct urb *urb)
 	buf = urb->transfer_buffer;
 	len = urb->actual_length;
 
+	mouse = context->mouse;
+	if (!context->mouse)
+		return;
+
 	switch (urb->status) {
 	case -ENOENT:		/* usbcore unlink successful! */
 		return;
 
 	case 0:
-		if (context->ir_isopen)
+		/* if we're in mouse mode, send input events */
+		if (context->is_mouse && buf[0] & 0x01) {
+			if (debug)
+				printk(KERN_INFO MOD_NAME ": sending mouse "
+				       "data via input subsystem\n");
+			input_report_key(mouse, BTN_LEFT, buf[1] & 0x01);
+			input_report_key(mouse, BTN_RIGHT, buf[1] >> 2 & 0x01);
+			rel_x = buf[2];
+			rel_y = buf[3];
+			input_report_rel(mouse, REL_X, rel_x);
+			input_report_rel(mouse, REL_Y, rel_y);
+			input_sync(mouse);
+		/* otherwise, we're in IR mode, process lirc packets */
+		} else if (context->ir_isopen)
 			imon_incoming_lirc_packet(context, urb, intfnum);
 		break;
 
@@ -1313,9 +1382,11 @@ static void usb_rx_callback_intf1(struct urb *urb)
 #endif
 {
 	struct imon_context *context;
+	struct input_dev *touch = NULL;
 	unsigned char *buf;
 	int len;
 	int intfnum = 1;
+	static unsigned char toggle_button[] = { 0x29, 0x91, 0x15, 0xb7 };
 
 	if (!urb)
 		return;
@@ -1327,12 +1398,38 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	buf = urb->transfer_buffer;
 	len = urb->actual_length;
 
+	if (context->has_touchscreen) {
+		touch = context->touch;
+		if (!context->touch)
+			return;
+	}
+
 	switch (urb->status) {
 	case -ENOENT:           /* usbcore unlink successful! */
 		return;
 
 	case 0:
-		if (context->ir_isopen)
+		/* keyboard/mouse mode toggle button */
+		if (memcmp(buf, toggle_button, 4) == 0) {
+			if (debug)
+				printk(KERN_INFO MOD_NAME ": toggling "
+				       "keyboard/mouse mode (%d)\n",
+				       context->is_mouse);
+			context->is_mouse = ~(context->is_mouse) & 0x1;
+			break;
+		}
+		/* handle touchscreen input */
+		if (context->has_touchscreen &&
+		    buf[6] == 0x14 && buf[7] == 0x86) {
+			mod_timer(&context->timer, jiffies + TOUCH_TIMEOUT);
+			context->touch_x = (buf[0] << 4) | (buf[1] >> 4);
+			context->touch_y = 0xfff - ((buf[2] << 4) |
+					   (buf[1] & 0xf));
+			input_report_abs(touch, ABS_X, context->touch_x);
+			input_report_abs(touch, ABS_Y, context->touch_y);
+			input_report_key(touch, BTN_TOUCH, 0x01);
+			input_sync(touch);
+		} else if (context->ir_isopen)
 			imon_incoming_lirc_packet(context, urb, intfnum);
 		break;
 
@@ -1371,6 +1468,7 @@ static int imon_probe(struct usb_interface *interface,
 	int alloc_status = 0;
 	int display_proto_6p = 0;
 	int ir_onboard_decode = 0;
+	int has_touchscreen = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
 	int code_length;
 	int tx_control = 0;
@@ -1486,6 +1584,7 @@ static int imon_probe(struct usb_interface *interface,
 	if (usb_match_id(interface, imon_touchscreen_list)) {
 		tx_control = 0;
 		display_ep_found = 0;
+		has_touchscreen = 1;
 		if (debug)
 			printk(KERN_INFO "%s: iMON Touch device found\n",
 			       __func__);
@@ -1579,6 +1678,12 @@ static int imon_probe(struct usb_interface *interface,
 		mutex_lock(&context->lock);
 
 		context->driver = driver;
+		/* start out in keyboard mode */
+		context->is_mouse = 0;
+
+		init_timer(&context->timer);
+		context->timer.data = (unsigned long)context;
+		context->timer.function = imon_touch_display_timeout;
 
 		lirc_minor = lirc_register_driver(driver);
 		if (lirc_minor < 0) {
@@ -1619,19 +1724,81 @@ static int imon_probe(struct usb_interface *interface,
 			context->tx_urb = tx_urb;
 			context->tx_control = tx_control;
 		}
+		context->has_touchscreen = has_touchscreen;
+
+		context->mouse = input_allocate_device();
+
+		snprintf(context->name, sizeof(context->name),
+			 "iMON PAD IR Mouse (%04x:%04x)",
+			 vendor, product);
+		context->mouse->name = context->name;
+
+		usb_make_path(usbdev, context->phys, sizeof(context->phys));
+		strlcat(context->phys, "/input0", sizeof(context->phys));
+		context->mouse->phys = context->phys;
+
+		context->mouse->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
+		context->mouse->keybit[BIT_WORD(BTN_MOUSE)] =
+			BIT_MASK(BTN_LEFT) | BIT_MASK(BTN_RIGHT) |
+			BIT_MASK(BTN_MIDDLE) | BIT_MASK(BTN_SIDE) |
+			BIT_MASK(BTN_EXTRA);
+		context->mouse->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y) |
+			BIT_MASK(REL_WHEEL);
+
+		input_set_drvdata(context->mouse, context);
+
+		usb_to_input_id(usbdev, &context->mouse->id);
+		context->mouse->dev.parent = &interface->dev;
+		retval = input_register_device(context->mouse);
+
 	} else {
 		context->usbdev_intf1 = usbdev;
 		context->dev_present_intf1 = 1;
 		context->rx_endpoint_intf1 = rx_endpoint;
 		context->rx_urb_intf1 = rx_urb;
+
+		if (context->has_touchscreen) {
+			context->touch = input_allocate_device();
+
+			snprintf(context->name, sizeof(context->name),
+				 "iMON USB Touchscreen %04x:%04x",
+				 vendor, product);
+			context->touch->name = context->name;
+
+			usb_make_path(usbdev, context->phys,
+				      sizeof(context->phys));
+			strlcat(context->phys, "/input0",
+				sizeof(context->phys));
+				context->touch->phys = context->phys;
+
+			context->touch->evbit[0] =
+				BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+			context->touch->keybit[BIT_WORD(BTN_TOUCH)] =
+				BIT_MASK(BTN_TOUCH);
+			input_set_abs_params(context->touch, ABS_X,
+					     0x00, 0xfff, 0, 0);
+			input_set_abs_params(context->touch, ABS_Y,
+					     0x00, 0xfff, 0, 0);
+
+			input_set_drvdata(context->touch, context);
+
+			usb_to_input_id(usbdev, &context->touch->id);
+			context->touch->dev.parent = &interface->dev;
+			retval = input_register_device(context->touch);
+		} else {
+			context->touch = NULL;
+			retval = 0;
+		}
 	}
+
+	if (retval)
+		printk(KERN_INFO "%s: input device setup on intf%d failed\n",
+		       __func__, ifnum);int err;
 
 	usb_set_intfdata(interface, context);
 
 	/* RF products *also* use 0xffdc... sigh... */
 	if (product == 0xffdc) {
-		int err;
-
 		err = sysfs_create_group(&interface->dev.kobj,
 					 &imon_attribute_group);
 		if (err)
@@ -1719,15 +1886,19 @@ static void imon_disconnect(struct usb_interface *interface)
 	if (ifnum == 0) {
 		context->dev_present_intf0 = 0;
 		usb_kill_urb(context->rx_urb_intf0);
+		input_unregister_device(context->mouse);
 		if (context->display_supported)
 			usb_deregister_dev(interface, &imon_class);
 	} else {
 		context->dev_present_intf1 = 0;
 		usb_kill_urb(context->rx_urb_intf1);
+		if (context->has_touchscreen)
+			input_unregister_device(context->touch);
 	}
 
 	if (!context->ir_isopen && !context->dev_present_intf0 &&
 	    !context->dev_present_intf1) {
+		del_timer_sync(&context->timer);
 		deregister_from_lirc(context);
 		mutex_unlock(&context->lock);
 		if (!context->display_isopen)
