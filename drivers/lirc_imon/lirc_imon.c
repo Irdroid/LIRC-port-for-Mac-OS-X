@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.66 2009/06/13 19:56:43 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.67 2009/06/13 20:01:06 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1476,6 +1476,8 @@ static int imon_probe(struct usb_interface *interface,
 	struct imon_context *first_if_context = NULL;
 	int i;
 	u16 vendor, product;
+	static unsigned char fp_packet[] = { 0x40, 0x00, 0x00, 0x00,
+					     0x00, 0x00, 0x00, 0x88 };
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
@@ -1815,6 +1817,14 @@ static int imon_probe(struct usb_interface *interface,
 			printk(KERN_INFO "%s: could not get a minor number for "
 			       "display\n", __func__);
 		}
+
+		/* Enable front-panel buttons and/or knobs */
+		memcpy(context->usb_tx_buf, &fp_packet, sizeof(fp_packet));
+		retval = send_packet(context);
+		/* Not fatal, but warn about it */
+		if (retval)
+			printk(KERN_INFO "%s: failed to enable front-panel "
+			       "buttons and/or knobs\n", __func__);
 	}
 
 	printk(KERN_INFO MOD_NAME ": iMON device (%04x:%04x, intf%d) on "
@@ -1842,7 +1852,7 @@ alloc_status_switch:
 	case 1:
 		retval = -ENOMEM;
 	case 0:
-		;
+		retval = 0;
 	}
 
 exit:
