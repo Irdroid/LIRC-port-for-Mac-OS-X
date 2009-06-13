@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for Ahanix/Soundgraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.61 2009/06/13 17:22:31 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.62 2009/06/13 17:26:10 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -189,6 +189,8 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	/* iMON USB Control Board (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	/* iMON USB Control Board (IR only) */
+	{ USB_DEVICE(0x15c2, 0x003c) },
 	/* SoundGraph iMON MINI (IR only) */
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	/* Antec Veris Multimedia Station EZ External (IR only) */
@@ -226,6 +228,7 @@ static struct usb_device_id ctl_ep_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x003c) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
@@ -257,6 +260,7 @@ static struct usb_device_id ir_onboard_decode_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x003c) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
@@ -271,6 +275,7 @@ static struct usb_device_id ir_only_list[] = {
 	{ USB_DEVICE(0x04e8, 0xff30) },
 	/* the first imon lcd and the knob share this device id. :\ */
 	/*{ USB_DEVICE(0x15c2, 0xffdc) },*/
+	{ USB_DEVICE(0x15c2, 0x003c) },
 	{ USB_DEVICE(0x15c2, 0x0041) },
 	{ USB_DEVICE(0x15c2, 0x0042) },
 	{ USB_DEVICE(0x15c2, 0x0043) },
