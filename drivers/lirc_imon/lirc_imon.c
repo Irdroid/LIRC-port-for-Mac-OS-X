@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.69 2009/06/15 14:20:44 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.70 2009/06/15 14:38:35 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -122,7 +122,6 @@ struct imon_context {
 	int dev_present_intf1;		/* USB device presence, interface 1 */
 	struct mutex lock;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
-	int has_touchscreen;		/* touchscreen present? */
 
 	int display_proto_6p;		/* display requires 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
@@ -153,6 +152,7 @@ struct imon_context {
 
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
+	int has_touchscreen;		/* touchscreen present? */
 	int is_mouse;			/* toggle between mouse/remote mode */
 	int touch_x;			/* x coordinate on touchscreen */
 	int touch_y;			/* y coordinate on touchscreen */
