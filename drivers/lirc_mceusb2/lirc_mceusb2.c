@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.83 $"
+#define DRIVER_VERSION	"$Revision: 1.84 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -214,8 +214,10 @@ static struct usb_device_id transmitter_mask_list[] = {
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0334) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0001) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0006) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0007) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x000a) },
 	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
 	{}
 };
