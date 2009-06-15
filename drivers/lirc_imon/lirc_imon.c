@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.71 2009/06/15 14:58:25 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.72 2009/06/15 15:43:15 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1712,6 +1712,18 @@ static int imon_probe(struct usb_interface *interface,
 			context->tx_urb = tx_urb;
 			context->tx_control = tx_control;
 		}
+
+		/*
+		 * 0xffdc is recycled many times over... the RF devices need
+		 * the tx bits set up for association to work, so until we
+		 * can query 0xffdc device caps, set up tx for all of them...
+		 */
+		if (product == 0xffdc) {
+			context->tx_endpoint = tx_endpoint;
+			context->tx_urb = tx_urb;
+			context->tx_control = tx_control;
+		}
+
 		context->has_touchscreen = has_touchscreen;
 
 		context->mouse = input_allocate_device();
