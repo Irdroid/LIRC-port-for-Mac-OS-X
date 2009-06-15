@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.73 2009/06/15 17:37:07 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.74 2009/06/15 18:14:26 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -159,7 +159,7 @@ struct imon_context {
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
 	int has_touchscreen;		/* touchscreen present? */
-	int is_mouse;			/* toggle between mouse/remote mode */
+	int pad_mouse;			/* toggle kbd(0)/mouse(1) mode */
 	int touch_x;			/* x coordinate on touchscreen */
 	int touch_y;			/* y coordinate on touchscreen */
 	char name[128];
@@ -1352,7 +1352,7 @@ static void usb_rx_callback_intf0(struct urb *urb)
 
 	case 0:
 		/* if we're in mouse mode, send input events */
-		if (context->is_mouse && buf[0] & 0x01) {
+		if (context->pad_mouse && buf[0] & 0x01) {
 			dprintk("sending mouse data via input subsystem\n");
 			input_report_key(mouse, BTN_LEFT, buf[1] & 0x01);
 			input_report_key(mouse, BTN_RIGHT, buf[1] >> 2 & 0x01);
@@ -1414,8 +1414,8 @@ static void usb_rx_callback_intf1(struct urb *urb)
 		/* keyboard/mouse mode toggle button */
 		if (memcmp(buf, toggle_button, 4) == 0) {
 			dprintk("toggling keyboard/mouse mode (%d)\n",
-				context->is_mouse);
-			context->is_mouse = ~(context->is_mouse) & 0x1;
+				context->pad_mouse);
+			context->pad_mouse = ~(context->pad_mouse) & 0x1;
 			break;
 		}
 		/* handle touchscreen input */
@@ -1670,7 +1670,7 @@ static int imon_probe(struct usb_interface *interface,
 
 		context->driver = driver;
 		/* start out in keyboard mode */
-		context->is_mouse = 0;
+		context->pad_mouse = 0;
 
 		init_timer(&context->timer);
 		context->timer.data = (unsigned long)context;
