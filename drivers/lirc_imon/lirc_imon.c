@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.67 2009/06/13 20:01:06 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.68 2009/06/15 14:12:28 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1386,7 +1386,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	unsigned char *buf;
 	int len;
 	int intfnum = 1;
-	static unsigned char toggle_button[] = { 0x29, 0x91, 0x15, 0xb7 };
+	const unsigned char toggle_button[] = { 0x29, 0x91, 0x15, 0xb7 };
 
 	if (!urb)
 		return;
@@ -1476,8 +1476,8 @@ static int imon_probe(struct usb_interface *interface,
 	struct imon_context *first_if_context = NULL;
 	int i;
 	u16 vendor, product;
-	static unsigned char fp_packet[] = { 0x40, 0x00, 0x00, 0x00,
-					     0x00, 0x00, 0x00, 0x88 };
+	const unsigned char fp_packet[] = { 0x40, 0x00, 0x00, 0x00,
+					    0x00, 0x00, 0x00, 0x88 };
 
 	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
