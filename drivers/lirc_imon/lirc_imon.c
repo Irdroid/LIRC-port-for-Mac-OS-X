@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.70 2009/06/15 14:38:35 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.71 2009/06/15 14:58:25 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -68,6 +68,12 @@
 #define BUF_SIZE	128
 
 #define BIT_DURATION	250	/* each bit received is 250us */
+
+#define dprintk(fmt, args...)						\
+	do {								\
+		if (debug)						\
+			printk(KERN_INFO MOD_NAME ": " fmt, ## args);	\
+	} while (0)
 
 /*** P R O T O T Y P E S ***/
 
@@ -421,8 +427,7 @@ static void free_imon_context(struct imon_context *context)
 	kfree(context->driver);
 	kfree(context);
 
-	if (debug)
-		printk(KERN_INFO "%s: iMON context freed\n", __func__);
+	dprintk("%s: iMON context freed\n", __func__);
 }
 
 static void deregister_from_lirc(struct imon_context *context)
@@ -837,9 +842,8 @@ static ssize_t lcd_write(struct file *file, const char *buf,
 	if (retval) {
 		err("%s: send packet failed!", __func__);
 		goto exit;
-	} else if (debug) {
-		printk(KERN_INFO "%s: write %d bytes to LCD\n",
-		       __func__, (int) n_bytes);
+	} else {
+		dprintk("%s: write %d bytes to LCD\n", __func__, (int) n_bytes);
 	}
 exit:
 	mutex_unlock(&context->lock);
@@ -985,8 +989,7 @@ static void submit_data(struct imon_context *context)
 	int value = context->rx.count;
 	int i;
 
-	if (debug)
-		printk(KERN_INFO MOD_NAME ": submitting data to LIRC\n");
+	dprintk("submitting data to LIRC\n");
 
 	value *= BIT_DURATION;
 	value &= PULSE_MASK;
@@ -1349,9 +1352,7 @@ static void usb_rx_callback_intf0(struct urb *urb)
 	case 0:
 		/* if we're in mouse mode, send input events */
 		if (context->is_mouse && buf[0] & 0x01) {
-			if (debug)
-				printk(KERN_INFO MOD_NAME ": sending mouse "
-				       "data via input subsystem\n");
+			dprintk("sending mouse data via input subsystem\n");
 			input_report_key(mouse, BTN_LEFT, buf[1] & 0x01);
 			input_report_key(mouse, BTN_RIGHT, buf[1] >> 2 & 0x01);
 			rel_x = buf[2];
@@ -1411,10 +1412,8 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	case 0:
 		/* keyboard/mouse mode toggle button */
 		if (memcmp(buf, toggle_button, 4) == 0) {
-			if (debug)
-				printk(KERN_INFO MOD_NAME ": toggling "
-				       "keyboard/mouse mode (%d)\n",
-				       context->is_mouse);
+			dprintk("toggling keyboard/mouse mode (%d)\n",
+				context->is_mouse);
 			context->is_mouse = ~(context->is_mouse) & 0x1;
 			break;
 		}
@@ -1504,9 +1503,8 @@ static int imon_probe(struct usb_interface *interface,
 	vendor     = le16_to_cpu(usbdev->descriptor.idVendor);
 	product    = le16_to_cpu(usbdev->descriptor.idProduct);
 
-	if (debug)
-		printk(KERN_INFO "%s: found iMON device (%04x:%04x, intf%d)\n",
-		       __func__, vendor, product, ifnum);
+	dprintk("%s: found iMON device (%04x:%04x, intf%d)\n",
+		__func__, vendor, product, ifnum);
 
 	/* prevent races probing devices w/multiple interfaces */
 	mutex_lock(&driver_lock);
@@ -1534,18 +1532,14 @@ static int imon_probe(struct usb_interface *interface,
 
 			rx_endpoint = ep;
 			ir_ep_found = 1;
-			if (debug)
-				printk(KERN_INFO "%s: found IR endpoint\n",
-				       __func__);
+			dprintk("%s: found IR endpoint\n", __func__);
 
 		} else if (!display_ep_found &&
 			   ep_dir == USB_DIR_OUT &&
 			   ep_type == USB_ENDPOINT_XFER_INT) {
 			tx_endpoint = ep;
 			display_ep_found = 1;
-			if (debug)
-				printk(KERN_INFO "%s: found display endpoint\n",
-				       __func__);
+			dprintk("%s: found display endpoint\n", __func__);
 		}
 	}
 
@@ -1557,10 +1551,8 @@ static int imon_probe(struct usb_interface *interface,
 		if (usb_match_id(interface, ctl_ep_device_list)) {
 			tx_control = 1;
 			display_ep_found = 1;
-			if (debug)
-				printk(KERN_INFO "%s: LCD device uses control "
-				       "endpoint, not interface OUT "
-				       "endpoint\n", __func__);
+			dprintk("%s: LCD device uses control endpoint, not "
+				"interface OUT endpoint\n", __func__);
 		}
 	}
 
@@ -1574,9 +1566,7 @@ static int imon_probe(struct usb_interface *interface,
 	    display_type == IMON_DISPLAY_TYPE_NONE) {
 		tx_control = 0;
 		display_ep_found = 0;
-		if (debug)
-			printk(KERN_INFO "%s: device has no display\n",
-			       __func__);
+		dprintk("%s: device has no display\n", __func__);
 	}
 
 	/*
@@ -1587,9 +1577,7 @@ static int imon_probe(struct usb_interface *interface,
 		tx_control = 0;
 		display_ep_found = 0;
 		has_touchscreen = 1;
-		if (debug)
-			printk(KERN_INFO "%s: iMON Touch device found\n",
-			       __func__);
+		dprintk("%s: iMON Touch device found\n", __func__);
 	}
 
 	/* Input endpoint is mandatory */
@@ -1602,9 +1590,8 @@ static int imon_probe(struct usb_interface *interface,
 		if (usb_match_id(interface, ir_onboard_decode_list))
 			ir_onboard_decode = 1;
 
-		if (debug)
-			printk(KERN_INFO "%s: ir_onboard_decode: %d\n",
-			       __func__, ir_onboard_decode);
+		dprintk("%s: ir_onboard_decode: %d\n",
+			__func__, ir_onboard_decode);
 	}
 
 	/* Determine if display requires 6 packets */
@@ -1612,9 +1599,8 @@ static int imon_probe(struct usb_interface *interface,
 		if (usb_match_id(interface, display_proto_6p_list))
 			display_proto_6p = 1;
 
-		if (debug)
-			printk(KERN_INFO "%s: display_proto_6p: %d\n",
-			       __func__, display_proto_6p);
+		dprintk("%s: display_proto_6p: %d\n",
+			__func__, display_proto_6p);
 	}
 
 	if (ifnum == 0) {
@@ -1809,9 +1795,7 @@ static int imon_probe(struct usb_interface *interface,
 	}
 
 	if (context->display_supported && ifnum == 0) {
-		if (debug)
-			printk(KERN_INFO "%s: Registering display with "
-			       "sysfs\n", __func__);
+		dprintk("%s: Registering display with sysfs\n", __func__);
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
 			printk(KERN_INFO "%s: could not get a minor number for "
