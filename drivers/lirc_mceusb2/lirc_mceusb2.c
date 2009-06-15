@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.82 $"
+#define DRIVER_VERSION	"$Revision: 1.83 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -105,8 +105,8 @@ static int debug;
 #define RECV_FLAG_IN_PROGRESS	3
 #define RECV_FLAG_COMPLETE	4
 
-#define PHILUSB_INBOUND		1
-#define PHILUSB_OUTBOUND	2
+#define MCEUSB_INBOUND		1
+#define MCEUSB_OUTBOUND		2
 
 #define VENDOR_PHILIPS		0x0471
 #define VENDOR_SMK		0x0609
@@ -332,7 +332,7 @@ static void request_packet_async(struct mceusb2_dev *ir,
 			/* alloc buffer */
 			async_buf = kmalloc(size, GFP_KERNEL);
 			if (async_buf) {
-				if (urb_type == PHILUSB_OUTBOUND) {
+				if (urb_type == MCEUSB_OUTBOUND) {
 					/* outbound data */
 					usb_fill_int_urb(async_urb, ir->usbdev,
 						usb_sndintpipe(ir->usbdev,
@@ -643,7 +643,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 
 	/* Transmit the command to the mce device */
 	request_packet_async(ir, ir->usb_ep_out, cmdbuf,
-			     cmdcount, PHILUSB_OUTBOUND);
+			     cmdcount, MCEUSB_OUTBOUND);
 
 	/*
 	 * The lircd gap calculation expects the write function to
@@ -691,7 +691,7 @@ static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
 				"carrier modulation\n", ir->devnum);
 			request_packet_async(ir, ir->usb_ep_out,
 					     cmdbuf, sizeof(cmdbuf),
-					     PHILUSB_OUTBOUND);
+					     MCEUSB_OUTBOUND);
 			return carrier;
 		}
 
@@ -708,7 +708,7 @@ static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
 				/* Transmit new carrier to mce device */
 				request_packet_async(ir, ir->usb_ep_out,
 						     cmdbuf, sizeof(cmdbuf),
-						     PHILUSB_OUTBOUND);
+						     MCEUSB_OUTBOUND);
 				return carrier;
 			}
 		}
@@ -1022,17 +1022,17 @@ mem_failure_switch:
 		 * its possible we really should wait for a return
 		 * for each of these...
 		 */
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init1, sizeof(pin_init1),
-				     PHILUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+				     MCEUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init2, sizeof(pin_init2),
-				     PHILUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+				     MCEUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
-				     PHILUSB_OUTBOUND);
+				     MCEUSB_OUTBOUND);
 		/* if we don't issue the correct number of receives
-		 * (PHILUSB_INBOUND) for each outbound, then the first few ir
+		 * (MCEUSB_INBOUND) for each outbound, then the first few ir
 		 * pulses will be interpreted by the usb_async_callback routine
 		 * - we should ensure we have the right amount OR less - as the
 		 * mceusb_dev_recv routine will handle the control packets OK -
@@ -1041,13 +1041,13 @@ mem_failure_switch:
 		 */
 		request_packet_async(ir, ep_in, NULL, maxp, 0);
 	} else {
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, init1,
-				     sizeof(init1), PHILUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, PHILUSB_INBOUND);
+				     sizeof(init1), MCEUSB_OUTBOUND);
+		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, init2,
-				     sizeof(init2), PHILUSB_OUTBOUND);
+				     sizeof(init2), MCEUSB_OUTBOUND);
 		request_packet_async(ir, ep_in, NULL, maxp, 0);
 	}
 
