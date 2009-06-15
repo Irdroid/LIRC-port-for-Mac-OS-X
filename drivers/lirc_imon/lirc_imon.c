@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.72 2009/06/15 15:43:15 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.73 2009/06/15 17:37:07 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -178,10 +178,11 @@ static struct file_operations display_fops = {
 };
 
 enum {
-	IMON_DISPLAY_TYPE_AUTO,
-	IMON_DISPLAY_TYPE_VFD,
-	IMON_DISPLAY_TYPE_LCD,
-	IMON_DISPLAY_TYPE_NONE,
+	IMON_DISPLAY_TYPE_AUTO = 0,
+	IMON_DISPLAY_TYPE_VFD  = 1,
+	IMON_DISPLAY_TYPE_LCD  = 2,
+	IMON_DISPLAY_TYPE_VGA  = 3,
+	IMON_DISPLAY_TYPE_NONE = 4,
 };
 
 /*
@@ -414,7 +415,7 @@ MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
 
 module_param(display_type, int, S_IRUGO);
 MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
-		 "1=vfd, 2=lcd, 3=none (default: autodetect)");
+		 "1=vfd, 2=lcd, 3=vga, 4=none (default: autodetect)");
 
 static void free_imon_context(struct imon_context *context)
 {
@@ -1573,7 +1574,9 @@ static int imon_probe(struct usb_interface *interface,
 	 * iMON Touch devices have a VGA touchscreen, but no "display", as
 	 * that refers to e.g. /dev/lcd0 (a character device LCD or VFD).
 	 */
-	if (usb_match_id(interface, imon_touchscreen_list)) {
+	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
+	     usb_match_id(interface, imon_touchscreen_list)) ||
+	    display_type == IMON_DISPLAY_TYPE_VGA) {
 		tx_control = 0;
 		display_ep_found = 0;
 		has_touchscreen = 1;
