@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.79 2009/06/16 20:13:07 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.80 2009/06/16 20:34:58 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -57,12 +57,12 @@
 #define MOD_NAME	"lirc_imon"
 #define MOD_VERSION	"0.6"
 
-#define DISPLAY_MINOR_BASE	144	/* Same as LCD */
+#define DISPLAY_MINOR_BASE	144
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 #define DEVFS_MODE	(S_IFCHR | S_IRUSR | S_IWUSR | \
 			 S_IRGRP | S_IWGRP | S_IROTH)
 #endif
-#define DEVFS_NAME	LIRC_DEVFS_PREFIX "lcd%d"
+#define DEVICE_NAME	LIRC_DEVFS_PREFIX "lcd%d"
 
 #define BUF_CHUNK_SIZE	4
 #define BUF_SIZE	128
@@ -91,6 +91,7 @@ static void usb_rx_callback_intf1(struct urb *urb);
 static void usb_tx_callback(struct urb *urb);
 #endif
 
+/* suspend/resume support */
 static int imon_resume(struct usb_interface *intf);
 static int imon_suspend(struct usb_interface *intf, pm_message_t message);
 
@@ -388,7 +389,7 @@ static struct usb_driver imon_driver = {
 };
 
 static struct usb_class_driver imon_class = {
-	.name		= DEVFS_NAME,
+	.name		= DEVICE_NAME,
 	.fops		= &display_fops,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
 	.mode		= DEVFS_MODE,
@@ -396,7 +397,7 @@ static struct usb_class_driver imon_class = {
 	.minor_base	= DISPLAY_MINOR_BASE,
 };
 
-/* to prevent races between open() and disconnect(), probin, etc */
+/* to prevent races between open() and disconnect(), probing, etc */
 static DEFINE_MUTEX(driver_lock);
 
 static int debug;
@@ -404,16 +405,16 @@ static int debug;
 /* lcd, vfd or none? should be auto-detected, but can be overridden... */
 static int display_type;
 
+
 /***  M O D U L E   C O D E ***/
 
 MODULE_AUTHOR(MOD_AUTHOR);
 MODULE_DESCRIPTION(MOD_DESC);
+MODULE_VERSION(MOD_VERSION);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, imon_usb_id_table);
-
 module_param(debug, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
-
 module_param(display_type, int, S_IRUGO);
 MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 		 "1=vfd, 2=lcd, 3=vga, 4=none (default: autodetect)");
@@ -501,7 +502,7 @@ exit:
 }
 
 /**
- * Called when the display device(e.g. /dev/lcd0)
+ * Called when the display device (e.g. /dev/lcd0)
  * is closed by the application.
  */
 static int display_close(struct inode *inode, struct file *file)
@@ -602,7 +603,10 @@ static int send_packet(struct imon_context *context)
 	} else {
 		/* Wait for transmission to complete (or abort) */
 		mutex_unlock(&context->lock);
-		wait_for_completion(&context->tx.finished);
+		retval = wait_for_completion_interruptible(
+				&context->tx.finished);
+		if (retval)
+			err("%s: task interrupted", __func__);
 		mutex_lock(&context->lock);
 
 		retval = context->tx.status;
@@ -629,6 +633,13 @@ static int send_associate_24g(struct imon_context *context)
 	const unsigned char packet[8] = { 0x01, 0x00, 0x00, 0x00,
 					  0x00, 0x00, 0x00, 0x20 };
 
+	if (!context) {
+		err("%s: no context for device", __func__);
+		return -ENODEV;
+	}
+
+	mutex_lock(&context->lock);
+
 	if (!context->dev_present_intf0) {
 		err("%s: no iMON device present", __func__);
 		retval = -ENODEV;
@@ -639,6 +650,8 @@ static int send_associate_24g(struct imon_context *context)
 	retval = send_packet(context);
 
 exit:
+	mutex_unlock(&context->lock);
+
 	return retval;
 }
 
@@ -656,16 +669,15 @@ static ssize_t show_associate_remote(struct device *d,
 
 	mutex_lock(&context->lock);
 	if (context->ir_isassociating) {
-		strcpy(buf, "The device it associating press some button "
-			    "on the remote.\n");
+		strcpy(buf, "associating\n");
 	} else if (context->ir_isopen) {
-		strcpy(buf, "Device is open and ready to associate.\n"
-			    "Echo something into this file to start "
-			    "the process.\n");
+		strcpy(buf, "open\n");
 	} else {
-		strcpy(buf, "Device is closed, you need to open it to "
-			    "associate the remote(you can use irw).\n");
+		strcpy(buf, "closed\n");
 	}
+	printk(KERN_INFO "Visit http://www.lirc.org/html/imon-24g.html for "
+	       "instructions on how to associate your iMON 2.4G DT/LT "
+	       "remote\n");
 	mutex_unlock(&context->lock);
 	return strlen(buf);
 }
@@ -1008,98 +1020,98 @@ static void submit_data(struct imon_context *context)
 
 static inline int tv2int(const struct timeval *a, const struct timeval *b)
 {
-       int usecs = 0;
-       int sec   = 0;
+	int usecs = 0;
+	int sec   = 0;
 
-       if (b->tv_usec > a->tv_usec) {
-	       usecs = 1000000;
-	       sec--;
-       }
+	if (b->tv_usec > a->tv_usec) {
+		usecs = 1000000;
+		sec--;
+	}
 
-       usecs += a->tv_usec - b->tv_usec;
+	usecs += a->tv_usec - b->tv_usec;
 
-       sec += a->tv_sec - b->tv_sec;
-       sec *= 1000;
-       usecs /= 1000;
-       sec += usecs;
+	sec += a->tv_sec - b->tv_sec;
+	sec *= 1000;
+	usecs /= 1000;
+	sec += usecs;
 
-       if (sec < 0)
-	       sec = 1000;
+	if (sec < 0)
+		sec = 1000;
 
-       return sec;
+	return sec;
 }
 
 /**
  * The directional pad is overly sensitive in keyboard mode, so we do some
  * interesting contortions to make it less touchy.
  */
-#define IMON_PAD_TIMEOUT       1000    /* in msecs */
-#define IMON_PAD_THRESHOLD     80      /* 160x160 square */
+#define IMON_PAD_TIMEOUT	1000	/* in msecs */
+#define IMON_PAD_THRESHOLD	80	/* 160x160 square */
 static int stabilize(int a, int b)
 {
-       struct timeval ct;
-       static struct timeval prev_time = {0, 0};
-       static struct timeval hit_time  = {0, 0};
-       static int x, y, prev_result, hits;
-       int result = 0;
-       int msec, msec_hit;
+	struct timeval ct;
+	static struct timeval prev_time = {0, 0};
+	static struct timeval hit_time  = {0, 0};
+	static int x, y, prev_result, hits;
+	int result = 0;
+	int msec, msec_hit;
 
-       do_gettimeofday(&ct);
-       msec = tv2int(&ct, &prev_time);
-       msec_hit = tv2int(&ct, &hit_time);
+	do_gettimeofday(&ct);
+	msec = tv2int(&ct, &prev_time);
+	msec_hit = tv2int(&ct, &hit_time);
 
-       if (msec > 100) {
-	       x = 0;
-	       y = 0;
-	       hits = 0;
-       }
+	if (msec > 100) {
+		x = 0;
+		y = 0;
+		hits = 0;
+	}
 
-       x += a;
-       y += b;
+	x += a;
+	y += b;
 
-       prev_time = ct;
+	prev_time = ct;
 
-       if (abs(x) > IMON_PAD_THRESHOLD || abs(y) > IMON_PAD_THRESHOLD) {
-	       if (abs(y) > abs(x))
-		       result = (y > 0) ? 0x7F : 0x80;
-	       else
-		       result = (x > 0) ? 0x7F00 : 0x8000;
+	if (abs(x) > IMON_PAD_THRESHOLD || abs(y) > IMON_PAD_THRESHOLD) {
+		if (abs(y) > abs(x))
+			result = (y > 0) ? 0x7F : 0x80;
+		else
+			result = (x > 0) ? 0x7F00 : 0x8000;
 
-	       x = 0;
-	       y = 0;
+		x = 0;
+		y = 0;
 
-	       if (result == prev_result) {
-		       hits++;
+		if (result == prev_result) {
+			hits++;
 
-		       if (hits > 3) {
-			       switch (result) {
-			       case 0x7F:
-				       y = 17 * IMON_PAD_THRESHOLD / 30;
-				       break;
-			       case 0x80:
-				       y -= 17 * IMON_PAD_THRESHOLD / 30;
-				       break;
-			       case 0x7F00:
-				       x = 17 * IMON_PAD_THRESHOLD / 30;
-				       break;
-			       case 0x8000:
-				       x -= 17 * IMON_PAD_THRESHOLD / 30;
-				       break;
-			       }
-		       }
+			if (hits > 3) {
+				switch (result) {
+				case 0x7F:
+					y = 17 * IMON_PAD_THRESHOLD / 30;
+					break;
+				case 0x80:
+					y -= 17 * IMON_PAD_THRESHOLD / 30;
+					break;
+				case 0x7F00:
+					x = 17 * IMON_PAD_THRESHOLD / 30;
+					break;
+				case 0x8000:
+					x -= 17 * IMON_PAD_THRESHOLD / 30;
+					break;
+				}
+			}
 
-		       if (hits == 2 && msec_hit < IMON_PAD_TIMEOUT) {
-			       result = 0;
-			       hits = 1;
-		       }
-	       } else {
-		       prev_result = result;
-		       hits = 1;
-		       hit_time = ct;
-	       }
-       }
+			if (hits == 2 && msec_hit < IMON_PAD_TIMEOUT) {
+				result = 0;
+				hits = 1;
+			}
+		} else {
+			prev_result = result;
+			hits = 1;
+			hit_time = ct;
+		}
+	}
 
-       return result;
+	return result;
 }
 
 /**
@@ -1240,7 +1252,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 		 * stabilize(). The resulting codes will be 0x01008000,
 		 * 0x01007F00, ..., so one can use the normal imon-pad config
 		 * from the remotes dir.
-		 *
 		 */
 
 		/* buf[1] is x */
@@ -1255,7 +1266,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 			rel_y |= ~0x10+1;
 
 		buf[0] = 0x01;
-
 		buf[1] = buf[4] = buf[5] = buf[6] = buf[7] = 0;
 
 		dir = stabilize((int)rel_x, (int)rel_y);
@@ -1263,6 +1273,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 			return;
 		buf[2] = dir & 0xFF;
 		buf[3] = (dir >> 8) & 0xFF;
+
 	} else if (buf[6] == 0x14 && buf[7] == 0x86 && intf == 1) {
 		/*
 		 * this is touchscreen input, which we need to down-sample
@@ -1318,7 +1329,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 			printk("intf%d decoded packet: ", intf);
 		else
 			printk("raw packet: ");
-		for (i = 0; i < 8; ++i)
+		for (i = 0; i < len; ++i)
 			printk("%02x ", buf[i]);
 		printk("\n");
 	}
@@ -1380,7 +1391,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 /**
  * report touchscreen input
  */
-
 static void imon_touch_display_timeout(unsigned long data)
 {
 	struct imon_context *context = (struct imon_context *)data;
@@ -1414,6 +1424,7 @@ static void usb_rx_callback_intf0(struct urb *urb)
 
 	if (!urb)
 		return;
+
 	context = (struct imon_context *)urb->context;
 	if (!context)
 		return;
@@ -1463,7 +1474,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	len = urb->actual_length;
 
 	switch (urb->status) {
-	case -ENOENT:           /* usbcore unlink successful! */
+	case -ENOENT:		/* usbcore unlink successful! */
 		return;
 
 	case 0:
@@ -1473,7 +1484,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 
 	default:
 		printk(KERN_WARNING "imon %s: status(%d): ignored\n",
-		__func__, urb->status);
+		       __func__, urb->status);
 		break;
 	}
 
@@ -1556,8 +1567,7 @@ static int imon_probe(struct usb_interface *interface,
 	 *	first input endpoint = IR endpoint
 	 *	first output endpoint = display endpoint
 	 */
-	for (i = 0; i < num_endpts && !(ir_ep_found && display_ep_found);
-	     ++i) {
+	for (i = 0; i < num_endpts && !(ir_ep_found && display_ep_found); ++i) {
 		struct usb_endpoint_descriptor *ep;
 		int ep_dir;
 		int ep_type;
@@ -1811,7 +1821,7 @@ static int imon_probe(struct usb_interface *interface,
 				      sizeof(context->phys));
 			strlcat(context->phys, "/input0",
 				sizeof(context->phys));
-				context->touch->phys = context->phys;
+			context->touch->phys = context->phys;
 
 			context->touch->evbit[0] =
 				BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
@@ -1851,7 +1861,7 @@ static int imon_probe(struct usb_interface *interface,
 	}
 
 	if (context->display_supported && ifnum == 0) {
-		dprintk("%s: Registering display with sysfs\n", __func__);
+		dprintk("%s: Registering iMON display with sysfs\n", __func__);
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
 			printk(KERN_INFO "%s: could not get a minor number for "
@@ -1918,20 +1928,19 @@ static void imon_disconnect(struct usb_interface *interface)
 
 	mutex_lock(&context->lock);
 
-	printk(KERN_INFO "%s: iMON device disconnected\n", __func__);
-
 	/*
 	 * sysfs_remove_group is safe to call even if sysfs_create_group
 	 * hasn't been called
 	 */
 	sysfs_remove_group(&interface->dev.kobj,
 			   &imon_attribute_group);
+
 	usb_set_intfdata(interface, NULL);
 
 	/* Abort ongoing write */
 	if (atomic_read(&context->tx.busy)) {
 		usb_kill_urb(context->tx_urb);
-		wait_for_completion(&context->tx.finished);
+		complete_all(&context->tx.finished);
 	}
 
 	if (ifnum == 0) {
@@ -2005,6 +2014,7 @@ static int __init imon_init(void)
 		err("%s: usb register failed(%d)", __func__, rc);
 		return -ENODEV;
 	}
+
 	return 0;
 }
 
