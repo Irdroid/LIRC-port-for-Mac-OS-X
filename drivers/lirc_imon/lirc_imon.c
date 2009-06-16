@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.78 2009/06/16 18:34:57 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.79 2009/06/16 20:13:07 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1988,7 +1988,7 @@ static int imon_resume(struct usb_interface *intf)
 		if (ifnum == 0)
 			rc = usb_submit_urb(context->rx_urb_intf0, GFP_ATOMIC);
 		else
-			rc = usb_submit_urb(context->rx_urb_intf0, GFP_ATOMIC);
+			rc = usb_submit_urb(context->rx_urb_intf1, GFP_ATOMIC);
 	}
 
 	return rc;
