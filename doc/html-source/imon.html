@@ -37,7 +37,18 @@ usbhid.quirks=0x15c2:0x0045:0x4
 		      If you're lucky, your device has already been quirked
 		      properly in the usbhid driver itself, but if not, please
 		      let the lirc developers know, so they can submit patches
-		      to the usbhid driver upstream.
+		      to the usbhid driver upstream. You can tell if its
+		      necessary by grepping your dmesg output after booting up,
+		      looking for USB HID and your Device ID, like so:
+		      <pre>
+$ dmesg |grep "USB HID.*15c2"
+input,hidraw0: USB HID v1.01 Mouse [HID 15c2:0045] on usb-0000:00:02.0-2
+hiddev96hidraw1: USB HID v1.00 Device [HID 15c2:0045] on usb-0000:00:02.0-2
+		      </pre>
+
+		      In the above, we can see that the usbhid driver has claimed
+		      our iMON device, and manual quirk addition is required.
+
 		    </P>
 
 		    <P>
