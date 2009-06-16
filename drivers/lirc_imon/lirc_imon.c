@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.74 2009/06/15 18:14:26 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.75 2009/06/16 01:26:44 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -156,6 +156,7 @@ struct imon_context {
 		int status;			/* status of tx completion */
 	} tx;
 
+	int ffdc_dev;			/* is this the overused ffdc ID? */
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
 	int has_touchscreen;		/* touchscreen present? */
@@ -1112,9 +1113,79 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 	char rel_x, rel_y;
 	int octet, bit;
 	unsigned char mask;
-	int chunk_num, dir;
-	int i;
+	int i, chunk_num, dir;
 	int ts_input = 0;
+	int mouse_input;
+	struct input_dev *mouse = NULL;
+	struct input_dev *touch = NULL;
+	const unsigned char ch_up[]   = { 0x28, 0x93, 0x95, 0xb7 };
+	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
+
+	mouse = context->mouse;
+	if (context->has_touchscreen)
+		touch = context->touch;
+
+	/* send mouse events through input subsystem in mouse mode */
+	if (context->pad_mouse) {
+		/* newer iMON device PAD or mouse button */
+		if (!context->ffdc_dev && (buf[0] & 0x01))
+			mouse_input = 1;
+		/* 0xffdc iMON PAD or mouse button */
+		else if (context->ffdc_dev && (buf[0] & 0x40) &&
+			 !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01)))
+			mouse_input = 1;
+		/* ch+/- buttons, which we use for an emulated scroll wheel */
+		else if (!(memcmp(buf, ch_up, 4)) || !(memcmp(buf, ch_down, 4)))
+			mouse_input = 1;
+		else
+			mouse_input = 0;
+
+		if (mouse_input) {
+			if (mouse == NULL) {
+				printk(KERN_WARNING "%s: mouse input device "
+				       "is NULL!\n", __func__);
+				return;
+			}
+			dprintk("sending mouse data via input subsystem\n");
+			if (!memcmp(buf, ch_up, 4))
+				dir = 1;
+			else if (!memcmp(buf, ch_down, 4))
+				dir = -1;
+			else
+				dir = 0;
+
+			if (dir == 0) {
+				input_report_key(mouse, BTN_LEFT,
+						 buf[1] & 0x01);
+				input_report_key(mouse, BTN_RIGHT,
+						 buf[1] >> 2 & 0x01);
+				rel_x = buf[2];
+				rel_y = buf[3];
+				input_report_rel(mouse, REL_X, rel_x);
+				input_report_rel(mouse, REL_Y, rel_y);
+			} else
+				input_report_rel(mouse, REL_WHEEL, dir);
+			input_sync(mouse);
+			return;
+		}
+	}
+
+	/* send touchscreen events through input subsystem if touchpad data */
+	if (context->has_touchscreen && buf[6] == 0x14 && buf[7] == 0x86) {
+		if (mouse == NULL) {
+			printk(KERN_WARNING "%s: touchscreen input device is "
+			       "NULL!\n", __func__);
+			return;
+		}
+		mod_timer(&context->timer, jiffies + TOUCH_TIMEOUT);
+		context->touch_x = (buf[0] << 4) | (buf[1] >> 4);
+		context->touch_y = 0xfff - ((buf[2] << 4) | (buf[1] & 0xf));
+		input_report_abs(touch, ABS_X, context->touch_x);
+		input_report_abs(touch, ABS_Y, context->touch_y);
+		input_report_key(touch, BTN_TOUCH, 0x01);
+		input_sync(touch);
+		return;
+	}
 
 	/*
 	 * we need to add some special handling for
@@ -1327,11 +1398,9 @@ static void usb_rx_callback_intf0(struct urb *urb)
 #endif
 {
 	struct imon_context *context;
-	struct input_dev *mouse = NULL;
 	unsigned char *buf;
 	int len;
 	int intfnum = 0;
-	char rel_x, rel_y;
 
 	if (!urb)
 		return;
@@ -1342,27 +1411,12 @@ static void usb_rx_callback_intf0(struct urb *urb)
 	buf = urb->transfer_buffer;
 	len = urb->actual_length;
 
-	mouse = context->mouse;
-	if (!context->mouse)
-		return;
-
 	switch (urb->status) {
 	case -ENOENT:		/* usbcore unlink successful! */
 		return;
 
 	case 0:
-		/* if we're in mouse mode, send input events */
-		if (context->pad_mouse && buf[0] & 0x01) {
-			dprintk("sending mouse data via input subsystem\n");
-			input_report_key(mouse, BTN_LEFT, buf[1] & 0x01);
-			input_report_key(mouse, BTN_RIGHT, buf[1] >> 2 & 0x01);
-			rel_x = buf[2];
-			rel_y = buf[3];
-			input_report_rel(mouse, REL_X, rel_x);
-			input_report_rel(mouse, REL_Y, rel_y);
-			input_sync(mouse);
-		/* otherwise, we're in IR mode, process lirc packets */
-		} else if (context->ir_isopen)
+		if (context->ir_isopen)
 			imon_incoming_lirc_packet(context, urb, intfnum);
 		break;
 
@@ -1384,7 +1438,6 @@ static void usb_rx_callback_intf1(struct urb *urb)
 #endif
 {
 	struct imon_context *context;
-	struct input_dev *touch = NULL;
 	unsigned char *buf;
 	int len;
 	int intfnum = 1;
@@ -1400,12 +1453,6 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	buf = urb->transfer_buffer;
 	len = urb->actual_length;
 
-	if (context->has_touchscreen) {
-		touch = context->touch;
-		if (!context->touch)
-			return;
-	}
-
 	switch (urb->status) {
 	case -ENOENT:           /* usbcore unlink successful! */
 		return;
@@ -1418,18 +1465,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 			context->pad_mouse = ~(context->pad_mouse) & 0x1;
 			break;
 		}
-		/* handle touchscreen input */
-		if (context->has_touchscreen &&
-		    buf[6] == 0x14 && buf[7] == 0x86) {
-			mod_timer(&context->timer, jiffies + TOUCH_TIMEOUT);
-			context->touch_x = (buf[0] << 4) | (buf[1] >> 4);
-			context->touch_y = 0xfff - ((buf[2] << 4) |
-					   (buf[1] & 0xf));
-			input_report_abs(touch, ABS_X, context->touch_x);
-			input_report_abs(touch, ABS_Y, context->touch_y);
-			input_report_key(touch, BTN_TOUCH, 0x01);
-			input_sync(touch);
-		} else if (context->ir_isopen)
+		if (context->ir_isopen)
 			imon_incoming_lirc_packet(context, urb, intfnum);
 		break;
 
@@ -1722,6 +1758,7 @@ static int imon_probe(struct usb_interface *interface,
 		 * can query 0xffdc device caps, set up tx for all of them...
 		 */
 		if (product == 0xffdc) {
+			context->ffdc_dev = 1;
 			context->tx_endpoint = tx_endpoint;
 			context->tx_urb = tx_urb;
 			context->tx_control = tx_control;
@@ -1796,12 +1833,12 @@ static int imon_probe(struct usb_interface *interface,
 
 	if (retval)
 		printk(KERN_INFO "%s: input device setup on intf%d failed\n",
-		       __func__, ifnum);int err;
+		       __func__, ifnum);
 
 	usb_set_intfdata(interface, context);
 
 	/* RF products *also* use 0xffdc... sigh... */
-	if (product == 0xffdc) {
+	if (context->ffdc_dev) {
 		err = sysfs_create_group(&interface->dev.kobj,
 					 &imon_attribute_group);
 		if (err)
