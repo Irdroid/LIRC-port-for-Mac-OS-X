@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.77 2009/06/16 13:51:14 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.78 2009/06/16 18:34:57 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1118,12 +1118,21 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 	int mouse_input;
 	struct input_dev *mouse = NULL;
 	struct input_dev *touch = NULL;
+	const unsigned char toggle_button[] = { 0x29, 0x91, 0x15, 0xb7 };
 	const unsigned char ch_up[]   = { 0x28, 0x93, 0x95, 0xb7 };
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
 
 	mouse = context->mouse;
 	if (context->has_touchscreen)
 		touch = context->touch;
+
+	/* keyboard/mouse mode toggle button */
+	if (memcmp(buf, toggle_button, 4) == 0) {
+		dprintk("toggling keyboard/mouse mode (%d)\n",
+			context->pad_mouse);
+		context->pad_mouse = ~(context->pad_mouse) & 0x1;
+		return;
+	}
 
 	/* send mouse events through input subsystem in mouse mode */
 	if (context->pad_mouse) {
@@ -1442,7 +1451,6 @@ static void usb_rx_callback_intf1(struct urb *urb)
 	unsigned char *buf;
 	int len;
 	int intfnum = 1;
-	const unsigned char toggle_button[] = { 0x29, 0x91, 0x15, 0xb7 };
 
 	if (!urb)
 		return;
@@ -1459,13 +1467,6 @@ static void usb_rx_callback_intf1(struct urb *urb)
 		return;
 
 	case 0:
-		/* keyboard/mouse mode toggle button */
-		if (memcmp(buf, toggle_button, 4) == 0) {
-			dprintk("toggling keyboard/mouse mode (%d)\n",
-				context->pad_mouse);
-			context->pad_mouse = ~(context->pad_mouse) & 0x1;
-			break;
-		}
 		if (context->ir_isopen)
 			imon_incoming_lirc_packet(context, urb, intfnum);
 		break;
