@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.75 2009/06/16 01:26:44 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.76 2009/06/16 13:47:15 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1839,6 +1839,8 @@ static int imon_probe(struct usb_interface *interface,
 
 	/* RF products *also* use 0xffdc... sigh... */
 	if (context->ffdc_dev) {
+		int err;
+
 		err = sysfs_create_group(&interface->dev.kobj,
 					 &imon_attribute_group);
 		if (err)
