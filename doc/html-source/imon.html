@@ -77,7 +77,9 @@ lircd --driver=default --device=/dev/lirc1 --pidfile=/var/run/lirc1.pid --output
 		      With post-0.8.5 lirc, the dual interface iMON devices
 		      are handled as a single lirc device, greatly
 		      simplifying setup for users -- distribution init
-		      scripts should work out of the box.
+		      scripts should work out of the box. However, it may
+		      still be necessary to manually add a quirk to keep
+		      the usbhid driver from claiming your device.
 		    </P>
 
 		    <P>
