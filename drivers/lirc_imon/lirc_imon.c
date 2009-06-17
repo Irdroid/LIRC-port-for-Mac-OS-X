@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.81 2009/06/17 02:58:06 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.82 2009/06/17 03:07:57 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1122,7 +1122,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 {
 	int len = urb->actual_length;
 	unsigned char *buf = urb->transfer_buffer;
-	char rel_x, rel_y;
+	char rel_x = 0x00, rel_y = 0x00;
 	int octet, bit;
 	unsigned char mask;
 	int i, chunk_num, dir;
@@ -1134,6 +1134,8 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 	const unsigned char toggle_button2[] = { 0x29, 0x91, 0x35, 0xb7 };
 	const unsigned char ch_up[]   = { 0x28, 0x93, 0x95, 0xb7 };
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
+	const unsigned char btn_left[]  = { 0x68, 0x83, 0x01, 0xb7 };
+	const unsigned char btn_right[] = { 0x68, 0x84, 0x81, 0xb7 };
 
 	mouse = context->mouse;
 	if (context->has_touchscreen)
@@ -1151,14 +1153,34 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 	/* send mouse events through input subsystem in mouse mode */
 	if (context->pad_mouse) {
 		/* newer iMON device PAD or mouse button */
-		if (!context->ffdc_dev && (buf[0] & 0x01))
+		if (!context->ffdc_dev && (buf[0] & 0x01)) {
 			mouse_input = 1;
+			rel_x = buf[2];
+			rel_y = buf[3];
 		/* 0xffdc iMON PAD or mouse button */
-		else if (context->ffdc_dev && (buf[0] & 0x40) &&
-			 !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01)))
+		} else if (context->ffdc_dev && (buf[0] & 0x40) &&
+			   !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01))) {
 			mouse_input = 1;
+			rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
+				(buf[1] & 0x20) >> 4 | (buf[1] & 0x40) >> 6;
+			if (buf[0] & 0x02)
+				rel_x |= ~0x11;
+			rel_x = rel_x + rel_x / 2;
+			rel_y = (buf[2] & 0x08) | (buf[2] & 0x10) >> 2 |
+				(buf[2] & 0x20) >> 4 | (buf[2] & 0x40) >> 6;
+			if (buf[0] & 0x01)
+				rel_y |= ~0x11;
+			rel_y = rel_y + rel_y / 2;
+		/* 0xffdc mouse buttons */
+		} else if (context->ffdc_dev && !memcmp(buf, btn_right, 4)) {
+			mouse_input = 1;
+			buf[1] = 0x01;
+		} else if (context->ffdc_dev && !memcmp(buf, btn_left, 4)) {
+			mouse_input = 1;
+			buf[1] = 0x04;
 		/* ch+/- buttons, which we use for an emulated scroll wheel */
-		else if (!(memcmp(buf, ch_up, 4)) || !(memcmp(buf, ch_down, 4)))
+		} else if (!memcmp(buf, ch_up, 4) ||
+			   !memcmp(buf, ch_down, 4))
 			mouse_input = 1;
 		else
 			mouse_input = 0;
@@ -1182,8 +1204,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 						 buf[1] & 0x01);
 				input_report_key(mouse, BTN_RIGHT,
 						 buf[1] >> 2 & 0x01);
-				rel_x = buf[2];
-				rel_y = buf[3];
 				input_report_rel(mouse, REL_X, rel_x);
 				input_report_rel(mouse, REL_Y, rel_y);
 			} else
