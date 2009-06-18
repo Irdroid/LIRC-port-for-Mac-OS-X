@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.83 2009/06/18 03:14:03 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.84 2009/06/18 03:20:47 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -908,42 +908,9 @@ static int ir_open(void *data)
 	context->rx.initial_space = 1;
 	context->rx.prev_bit = 0;
 
-	usb_fill_int_urb(context->rx_urb_intf0, context->usbdev_intf0,
-		usb_rcvintpipe(context->usbdev_intf0,
-				context->rx_endpoint_intf0->bEndpointAddress),
-		context->usb_rx_buf, sizeof(context->usb_rx_buf),
-		usb_rx_callback_intf0, context,
-		context->rx_endpoint_intf0->bInterval);
-
-	retval = usb_submit_urb(context->rx_urb_intf0, GFP_KERNEL);
-
-	if (retval) {
-		err("%s: usb_submit_urb failed for intf0 (%d)",
-		    __func__, retval);
-		goto out;
-	}
-
-	if (context->dev_present_intf1) {
-		usb_fill_int_urb(context->rx_urb_intf1, context->usbdev_intf1,
-			usb_rcvintpipe(context->usbdev_intf1,
-				context->rx_endpoint_intf1->bEndpointAddress),
-			context->usb_rx_buf, sizeof(context->usb_rx_buf),
-			usb_rx_callback_intf1, context,
-			context->rx_endpoint_intf1->bInterval);
-
-		retval = usb_submit_urb(context->rx_urb_intf1, GFP_KERNEL);
-
-		if (retval) {
-			err("%s: usb_submit_urb failed for intf1 (%d)",
-			    __func__, retval);
-			goto out;
-		}
-	}
-
 	context->ir_isopen = 1;
 	printk(KERN_INFO MOD_NAME ": IR port opened\n");
 
-out:
 	mutex_unlock(&driver_lock);
 	return retval;
 }
@@ -963,9 +930,6 @@ static void ir_close(void *data)
 
 	mutex_lock(&context->lock);
 
-	usb_kill_urb(context->rx_urb_intf0);
-	if (context->dev_present_intf1)
-		usb_kill_urb(context->rx_urb_intf1);
 	context->ir_isopen = 0;
 	context->ir_isassociating = 0;
 	MOD_DEC_USE_COUNT;
@@ -1168,7 +1132,7 @@ static void imon_incoming_packet(struct imon_context *context,
 		ts_input = 1;
 
 	/* send mouse events through input subsystem in mouse mode */
-	} else if (context->pad_mouse) {
+	} else if (context->pad_mouse || !context->ir_isopen) {
 		/* newer iMON device PAD or mouse button */
 		if (!context->ffdc_dev && (buf[0] & 0x01) && len == 5) {
 			mouse_input = 1;
@@ -1229,6 +1193,13 @@ static void imon_incoming_packet(struct imon_context *context,
 			return;
 		}
 	}
+
+	/*
+	 * at this point, mouse and touchscreen input has been handled, so
+	 * anything else goes to lirc -- bail out if no listening IR client
+	 */
+	if (!context->ir_isopen)
+		return;
 
 	/*
 	 * we need to add some special handling for
@@ -1457,8 +1428,7 @@ static void usb_rx_callback_intf0(struct urb *urb)
 		return;
 
 	case 0:
-		if (context->ir_isopen)
-			imon_incoming_packet(context, urb, intfnum);
+		imon_incoming_packet(context, urb, intfnum);
 		break;
 
 	default:
@@ -1498,8 +1468,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 		return;
 
 	case 0:
-		if (context->ir_isopen)
-			imon_incoming_packet(context, urb, intfnum);
+		imon_incoming_packet(context, urb, intfnum);
 		break;
 
 	default:
@@ -1822,6 +1791,25 @@ static int imon_probe(struct usb_interface *interface,
 		usb_to_input_id(usbdev, &context->mouse->id);
 		context->mouse->dev.parent = &interface->dev;
 		retval = input_register_device(context->mouse);
+		if (retval)
+			printk(KERN_INFO "%s: pad mouse input device setup failed\n",
+			       __func__);
+
+		usb_fill_int_urb(context->rx_urb_intf0, context->usbdev_intf0,
+			usb_rcvintpipe(context->usbdev_intf0,
+					context->rx_endpoint_intf0->bEndpointAddress),
+			context->usb_rx_buf, sizeof(context->usb_rx_buf),
+			usb_rx_callback_intf0, context,
+			context->rx_endpoint_intf0->bInterval);
+
+		retval = usb_submit_urb(context->rx_urb_intf0, GFP_KERNEL);
+
+		if (retval) {
+			err("%s: usb_submit_urb failed for intf0 (%d)",
+			    __func__, retval);
+			mutex_unlock(&context->lock);
+			goto exit;
+		}
 
 	} else {
 		context->usbdev_intf1 = usbdev;
@@ -1857,15 +1845,28 @@ static int imon_probe(struct usb_interface *interface,
 			usb_to_input_id(usbdev, &context->touch->id);
 			context->touch->dev.parent = &interface->dev;
 			retval = input_register_device(context->touch);
-		} else {
+			if (retval)
+				printk(KERN_INFO "%s: touchscreen input device setup failed\n",
+				       __func__);
+		} else
 			context->touch = NULL;
-			retval = 0;
+
+		usb_fill_int_urb(context->rx_urb_intf1, context->usbdev_intf1,
+			usb_rcvintpipe(context->usbdev_intf1,
+				context->rx_endpoint_intf1->bEndpointAddress),
+			context->usb_rx_buf, sizeof(context->usb_rx_buf),
+			usb_rx_callback_intf1, context,
+			context->rx_endpoint_intf1->bInterval);
+
+		retval = usb_submit_urb(context->rx_urb_intf1, GFP_KERNEL);
+
+		if (retval) {
+			err("%s: usb_submit_urb failed for intf1 (%d)",
+			    __func__, retval);
+			mutex_unlock(&context->lock);
+			goto exit;
 		}
 	}
-
-	if (retval)
-		printk(KERN_INFO "%s: input device setup on intf%d failed\n",
-		       __func__, ifnum);
 
 	usb_set_intfdata(interface, context);
 
@@ -1997,12 +1998,10 @@ static int imon_suspend(struct usb_interface *intf, pm_message_t message)
 	struct imon_context *context = usb_get_intfdata(intf);
 	int ifnum = intf->cur_altsetting->desc.bInterfaceNumber;
 
-	if (context->ir_isopen) {
-		if (ifnum == 0)
-			usb_kill_urb(context->rx_urb_intf0);
-		else
-			usb_kill_urb(context->rx_urb_intf1);
-	}
+	if (ifnum == 0)
+		usb_kill_urb(context->rx_urb_intf0);
+	else
+		usb_kill_urb(context->rx_urb_intf1);
 
 	return 0;
 }
@@ -2013,11 +2012,25 @@ static int imon_resume(struct usb_interface *intf)
 	struct imon_context *context = usb_get_intfdata(intf);
 	int ifnum = intf->cur_altsetting->desc.bInterfaceNumber;
 
-	if (context->ir_isopen) {
-		if (ifnum == 0)
-			rc = usb_submit_urb(context->rx_urb_intf0, GFP_ATOMIC);
-		else
-			rc = usb_submit_urb(context->rx_urb_intf1, GFP_ATOMIC);
+	if (ifnum == 0) {
+		usb_fill_int_urb(context->rx_urb_intf0, context->usbdev_intf0,
+			usb_rcvintpipe(context->usbdev_intf0,
+					context->rx_endpoint_intf0->bEndpointAddress),
+			context->usb_rx_buf, sizeof(context->usb_rx_buf),
+			usb_rx_callback_intf0, context,
+			context->rx_endpoint_intf0->bInterval);
+
+		rc = usb_submit_urb(context->rx_urb_intf0, GFP_ATOMIC);
+
+	} else {
+		usb_fill_int_urb(context->rx_urb_intf1, context->usbdev_intf1,
+			usb_rcvintpipe(context->usbdev_intf1,
+				context->rx_endpoint_intf1->bEndpointAddress),
+			context->usb_rx_buf, sizeof(context->usb_rx_buf),
+			usb_rx_callback_intf1, context,
+			context->rx_endpoint_intf1->bInterval);
+
+		rc = usb_submit_urb(context->rx_urb_intf1, GFP_ATOMIC);
 	}
 
 	return rc;
