@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.87 2009/06/18 03:49:54 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.88 2009/06/18 03:51:19 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1191,10 +1191,10 @@ static void imon_incoming_packet(struct imon_context *context,
 				rel_y |= ~0x11;
 			rel_y = rel_y + rel_y / 2;
 		/* 0xffdc mouse buttons */
-		} else if (context->ffdc_dev && !memcmp(buf, btn_right, 4)) {
+		} else if (context->ffdc_dev && !memcmp(buf, btn_left, 4)) {
 			mouse_input = 1;
 			buf[1] = 0x01;
-		} else if (context->ffdc_dev && !memcmp(buf, btn_left, 4)) {
+		} else if (context->ffdc_dev && !memcmp(buf, btn_right, 4)) {
 			mouse_input = 1;
 			buf[1] = 0x02;
 		/* ch+/- buttons, which we use for an emulated scroll wheel */
