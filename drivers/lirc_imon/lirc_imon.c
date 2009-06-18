@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.84 2009/06/18 03:20:47 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.85 2009/06/18 03:34:58 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -158,6 +158,7 @@ struct imon_context {
 	} tx;
 
 	int ffdc_dev;			/* is this the overused ffdc ID? */
+	int ir_protocol;		/* iMON or MCE (RC6) IR protocol? */
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
 	int has_touchscreen;		/* touchscreen present? */
@@ -187,6 +188,10 @@ enum {
 	IMON_DISPLAY_TYPE_NONE = 4,
 };
 
+enum {
+	IMON_IR_PROTOCOL_IMON = 0,
+	IMON_IR_PROTOCOL_MCE  = 1,
+};
 /*
  * USB Device ID for iMON USB Control Boards
  *
@@ -402,8 +407,11 @@ static DEFINE_MUTEX(driver_lock);
 
 static int debug;
 
-/* lcd, vfd or none? should be auto-detected, but can be overridden... */
+/* lcd, vfd, vga or none? should be auto-detected, but can be overridden... */
 static int display_type;
+
+/* IR protocol: native iMON or Windows MCE (RC-6) */
+static int ir_protocol;
 
 
 /***  M O D U L E   C O D E ***/
@@ -418,11 +426,13 @@ MODULE_PARM_DESC(debug, "Debug messages: 0=no, 1=yes(default: no)");
 module_param(display_type, int, S_IRUGO);
 MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 		 "1=vfd, 2=lcd, 3=vga, 4=none (default: autodetect)");
+module_param(ir_protocol, int, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(ir_protocol, "Which IR protocol to use. 0=native iMON, "
+		 "1=Windows Media Center Ed. (RC-6) (default: native iMON)");
 
 static void free_imon_context(struct imon_context *context)
 {
-	if (context->display_supported)
-		usb_free_urb(context->tx_urb);
+	usb_free_urb(context->tx_urb);
 	usb_free_urb(context->rx_urb_intf0);
 	usb_free_urb(context->rx_urb_intf1);
 	lirc_buffer_free(context->driver->rbuf);
@@ -891,6 +901,47 @@ static void usb_tx_callback(struct urb *urb)
 }
 
 /**
+ * iMON IR receivers support two different signal sets -- those used by
+ * the iMON remotes, and those used by the Windows MCE remotes (which is
+ * really just RC-6), but only one or the other at a time, as the signals
+ * are decoded onboard the receiver.
+ */
+static void imon_set_ir_protocol(struct imon_context *context)
+{
+	int retval;
+	unsigned char ir_proto_packet[] =
+		{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86 };
+
+	/* not supported on devices that don't do onboard decoding */
+	if (!context->ir_onboard_decode)
+		return;
+
+	switch (ir_protocol) {
+	case IMON_IR_PROTOCOL_MCE:
+		dprintk("Configuring IR receiver for MCE protocol\n");
+		ir_proto_packet[0] = 0x01;
+		context->ir_protocol = IMON_IR_PROTOCOL_MCE;
+		break;
+	case IMON_IR_PROTOCOL_IMON:
+		dprintk("Configuring IR receiver for iMON protocol\n");
+		/* ir_proto_packet[0] = 0x00; // already the default */
+		context->ir_protocol = IMON_IR_PROTOCOL_IMON;
+		break;
+	default:
+		printk(KERN_INFO "%s: unknown IR protocol specified, will "
+		       "just default to iMON protocol\n", __func__);
+		context->ir_protocol = IMON_IR_PROTOCOL_MCE;
+		break;
+	}
+	memcpy(context->usb_tx_buf, &ir_proto_packet,
+	       sizeof(ir_proto_packet));
+	retval = send_packet(context);
+	if (retval)
+		printk(KERN_INFO "%s: failed to set remote type\n", __func__);
+}
+
+
+/**
  * Called by lirc_dev when the application opens /dev/lirc
  */
 static int ir_open(void *data)
@@ -907,6 +958,10 @@ static int ir_open(void *data)
 	context->rx.count = 0;
 	context->rx.initial_space = 1;
 	context->rx.prev_bit = 0;
+
+	/* set new IR protocol if it has changed since init or last open */
+	if (ir_protocol != context->ir_protocol)
+		imon_set_ir_protocol(context);
 
 	context->ir_isopen = 1;
 	printk(KERN_INFO MOD_NAME ": IR port opened\n");
@@ -1589,7 +1644,7 @@ static int imon_probe(struct usb_interface *interface,
 		if (usb_match_id(interface, ctl_ep_device_list)) {
 			tx_control = 1;
 			display_ep_found = 1;
-			dprintk("%s: LCD device uses control endpoint, not "
+			dprintk("%s: device uses control endpoint, not "
 				"interface OUT endpoint\n", __func__);
 		}
 	}
@@ -1602,7 +1657,6 @@ static int imon_probe(struct usb_interface *interface,
 	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
 	     usb_match_id(interface, ir_only_list)) ||
 	    display_type == IMON_DISPLAY_TYPE_NONE) {
-		tx_control = 0;
 		display_ep_found = 0;
 		dprintk("%s: device has no display\n", __func__);
 	}
@@ -1614,7 +1668,6 @@ static int imon_probe(struct usb_interface *interface,
 	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
 	     usb_match_id(interface, imon_touchscreen_list)) ||
 	    display_type == IMON_DISPLAY_TYPE_VGA) {
-		tx_control = 0;
 		display_ep_found = 0;
 		has_touchscreen = 1;
 		dprintk("%s: iMON Touch device found\n", __func__);
@@ -1673,14 +1726,12 @@ static int imon_probe(struct usb_interface *interface,
 			alloc_status = 5;
 			goto alloc_status_switch;
 		}
-		if (display_ep_found) {
-			tx_urb = usb_alloc_urb(0, GFP_KERNEL);
-			if (!tx_urb) {
-				err("%s: usb_alloc_urb failed for display urb",
-				    __func__);
-				alloc_status = 6;
-				goto alloc_status_switch;
-			}
+		tx_urb = usb_alloc_urb(0, GFP_KERNEL);
+		if (!tx_urb) {
+			err("%s: usb_alloc_urb failed for display urb",
+			    __func__);
+			alloc_status = 6;
+			goto alloc_status_switch;
 		}
 
 		mutex_init(&context->lock);
@@ -1746,24 +1797,20 @@ static int imon_probe(struct usb_interface *interface,
 		context->dev_present_intf0 = 1;
 		context->rx_endpoint_intf0 = rx_endpoint;
 		context->rx_urb_intf0 = rx_urb;
-		if (display_ep_found) {
-			context->display_supported = 1;
-			context->tx_endpoint = tx_endpoint;
-			context->tx_urb = tx_urb;
-			context->tx_control = tx_control;
-		}
 
 		/*
-		 * 0xffdc is recycled many times over... the RF devices need
-		 * the tx bits set up for association to work, so until we
-		 * can query 0xffdc device caps, set up tx for all of them...
+		 * tx is used to send characters to lcd/vfd, associate RF
+		 * remotes, set IR protocol, and maybe more...
 		 */
-		if (product == 0xffdc) {
+		context->tx_endpoint = tx_endpoint;
+		context->tx_urb = tx_urb;
+		context->tx_control = tx_control;
+
+		if (display_ep_found)
+			context->display_supported = 1;
+
+		if (product == 0xffdc)
 			context->ffdc_dev = 1;
-			context->tx_endpoint = tx_endpoint;
-			context->tx_urb = tx_urb;
-			context->tx_control = tx_control;
-		}
 
 		context->has_touchscreen = has_touchscreen;
 
@@ -1898,6 +1945,9 @@ static int imon_probe(struct usb_interface *interface,
 			       "buttons and/or knobs\n", __func__);
 	}
 
+	/* set IR protocol/remote type */
+	imon_set_ir_protocol(context);
+
 	printk(KERN_INFO MOD_NAME ": iMON device (%04x:%04x, intf%d) on "
 	       "usb<%d:%d> initialized\n", vendor, product, ifnum,
 	       usbdev->bus->busnum, usbdev->devnum);
@@ -1907,8 +1957,7 @@ alloc_status_switch:
 
 	switch (alloc_status) {
 	case 7:
-		if (display_ep_found)
-			usb_free_urb(tx_urb);
+		usb_free_urb(tx_urb);
 	case 6:
 		usb_free_urb(rx_urb);
 	case 5:
