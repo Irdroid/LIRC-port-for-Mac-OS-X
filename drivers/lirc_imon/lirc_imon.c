@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.82 2009/06/17 03:07:57 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.83 2009/06/18 03:14:03 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1117,8 +1117,8 @@ static int stabilize(int a, int b)
 /**
  * Process the incoming packet
  */
-static void imon_incoming_lirc_packet(struct imon_context *context,
-				      struct urb *urb, int intf)
+static void imon_incoming_packet(struct imon_context *context,
+				 struct urb *urb, int intf)
 {
 	int len = urb->actual_length;
 	unsigned char *buf = urb->transfer_buffer;
@@ -1150,10 +1150,27 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 		return;
 	}
 
+	/* send touchscreen events through input subsystem if touchpad data */
+	if (context->has_touchscreen && len == 8 &&
+	    (buf[6] == 0x14 || buf[6] == 0x03) && buf[7] == 0x86) {
+		if (touch == NULL) {
+			printk(KERN_WARNING "%s: touchscreen input device is "
+			       "NULL!\n", __func__);
+			return;
+		}
+		mod_timer(&context->timer, jiffies + TOUCH_TIMEOUT);
+		context->touch_x = (buf[0] << 4) | (buf[1] >> 4);
+		context->touch_y = 0xfff - ((buf[2] << 4) | (buf[1] & 0xf));
+		input_report_abs(touch, ABS_X, context->touch_x);
+		input_report_abs(touch, ABS_Y, context->touch_y);
+		input_report_key(touch, BTN_TOUCH, 0x01);
+		input_sync(touch);
+		ts_input = 1;
+
 	/* send mouse events through input subsystem in mouse mode */
-	if (context->pad_mouse) {
+	} else if (context->pad_mouse) {
 		/* newer iMON device PAD or mouse button */
-		if (!context->ffdc_dev && (buf[0] & 0x01)) {
+		if (!context->ffdc_dev && (buf[0] & 0x01) && len == 5) {
 			mouse_input = 1;
 			rel_x = buf[2];
 			rel_y = buf[3];
@@ -1211,24 +1228,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 			input_sync(mouse);
 			return;
 		}
-	}
-
-	/* send touchscreen events through input subsystem if touchpad data */
-	if (context->has_touchscreen &&
-	    (buf[6] == 0x14 || buf[6] == 0x03) && buf[7] == 0x86) {
-		if (mouse == NULL) {
-			printk(KERN_WARNING "%s: touchscreen input device is "
-			       "NULL!\n", __func__);
-			return;
-		}
-		mod_timer(&context->timer, jiffies + TOUCH_TIMEOUT);
-		context->touch_x = (buf[0] << 4) | (buf[1] >> 4);
-		context->touch_y = 0xfff - ((buf[2] << 4) | (buf[1] & 0xf));
-		input_report_abs(touch, ABS_X, context->touch_x);
-		input_report_abs(touch, ABS_Y, context->touch_y);
-		input_report_key(touch, BTN_TOUCH, 0x01);
-		input_sync(touch);
-		return;
 	}
 
 	/*
@@ -1296,7 +1295,7 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 		buf[2] = dir & 0xFF;
 		buf[3] = (dir >> 8) & 0xFF;
 
-	} else if (buf[6] == 0x14 && buf[7] == 0x86 && intf == 1) {
+	} else if (ts_input) {
 		/*
 		 * this is touchscreen input, which we need to down-sample
 		 * to a 64 button matrix at the moment...
@@ -1309,7 +1308,6 @@ static void imon_incoming_lirc_packet(struct imon_context *context,
 		buf[5] = 0x00;
 		buf[6] = 0x14;
 		buf[7] = 0xff;
-		ts_input = 1;
 	}
 
 	if (len != 8) {
@@ -1460,7 +1458,7 @@ static void usb_rx_callback_intf0(struct urb *urb)
 
 	case 0:
 		if (context->ir_isopen)
-			imon_incoming_lirc_packet(context, urb, intfnum);
+			imon_incoming_packet(context, urb, intfnum);
 		break;
 
 	default:
@@ -1501,7 +1499,7 @@ static void usb_rx_callback_intf1(struct urb *urb)
 
 	case 0:
 		if (context->ir_isopen)
-			imon_incoming_lirc_packet(context, urb, intfnum);
+			imon_incoming_packet(context, urb, intfnum);
 		break;
 
 	default:
