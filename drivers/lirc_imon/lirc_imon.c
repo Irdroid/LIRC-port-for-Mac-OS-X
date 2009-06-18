@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.86 2009/06/18 03:38:15 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.87 2009/06/18 03:49:54 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -130,7 +130,7 @@ struct imon_context {
 	struct mutex lock;		/* to lock this object */
 	wait_queue_head_t remove_ok;	/* For unexpected USB disconnects */
 
-	int display_proto_6p;		/* display requires 6th packet */
+	int vfd_proto_6p;		/* some VFD require a 6th packet */
 	int ir_onboard_decode;		/* IR signals decoded onboard */
 
 	struct lirc_driver *driver;
@@ -269,33 +269,14 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{}
 };
 
-/* Some iMON models requires a 6th packet */
-static struct usb_device_id display_proto_6p_list[] = {
+/* Some iMON VFD models requires a 6th packet for VFD writes */
+static struct usb_device_id vfd_proto_6p_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffda) },
 	{ USB_DEVICE(0x15c2, 0xffdc) },
-	{ USB_DEVICE(0x15c2, 0x0034) },
-	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0036) },
-	{ USB_DEVICE(0x15c2, 0x0037) },
-	{ USB_DEVICE(0x15c2, 0x0038) },
-	{ USB_DEVICE(0x15c2, 0x0039) },
-	{ USB_DEVICE(0x15c2, 0x003a) },
-	{ USB_DEVICE(0x15c2, 0x003b) },
-	{ USB_DEVICE(0x15c2, 0x003c) },
-	{ USB_DEVICE(0x15c2, 0x003d) },
-	{ USB_DEVICE(0x15c2, 0x003e) },
-	{ USB_DEVICE(0x15c2, 0x003f) },
-	{ USB_DEVICE(0x15c2, 0x0040) },
-	{ USB_DEVICE(0x15c2, 0x0041) },
-	{ USB_DEVICE(0x15c2, 0x0042) },
-	{ USB_DEVICE(0x15c2, 0x0043) },
 	{ USB_DEVICE(0x15c2, 0x0044) },
-	{ USB_DEVICE(0x15c2, 0x0045) },
-	{ USB_DEVICE(0x15c2, 0x0046) },
 	{}
 };
-static unsigned char display_packet6[] = {
-	0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
 
 /* newer iMON models use control endpoints */
 static struct usb_device_id ctl_ep_device_list[] = {
@@ -749,6 +730,8 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 	int seq;
 	int retval = 0;
 	struct imon_context *context;
+	const unsigned char vfd_packet6[] = {
+		0x01, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
 
 	context = (struct imon_context *)file->private_data;
 	if (!context) {
@@ -801,9 +784,9 @@ static ssize_t vfd_write(struct file *file, const char *buf,
 
 	} while (offset < 35);
 
-	if (context->display_proto_6p) {
+	if (context->vfd_proto_6p) {
 		/* Send packet #6 */
-		memcpy(context->usb_tx_buf, display_packet6, 7);
+		memcpy(context->usb_tx_buf, &vfd_packet6, sizeof(vfd_packet6));
 		context->usb_tx_buf[7] = (unsigned char) seq;
 		retval = send_packet(context);
 		if (retval)
@@ -1193,7 +1176,7 @@ static void imon_incoming_packet(struct imon_context *context,
 			mouse_input = 1;
 			rel_x = buf[2];
 			rel_y = buf[3];
-		/* 0xffdc iMON PAD or mouse button */
+		/* 0xffdc iMON PAD input */
 		} else if (context->ffdc_dev && (buf[0] & 0x40) &&
 			   !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01))) {
 			mouse_input = 1;
@@ -1558,7 +1541,7 @@ static int imon_probe(struct usb_interface *interface,
 	int display_ep_found = 0;
 	int ir_ep_found = 0;
 	int alloc_status = 0;
-	int display_proto_6p = 0;
+	int vfd_proto_6p = 0;
 	int ir_onboard_decode = 0;
 	int has_touchscreen = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
@@ -1688,11 +1671,11 @@ static int imon_probe(struct usb_interface *interface,
 
 	/* Determine if display requires 6 packets */
 	if (display_ep_found) {
-		if (usb_match_id(interface, display_proto_6p_list))
-			display_proto_6p = 1;
+		if (usb_match_id(interface, vfd_proto_6p_list))
+			vfd_proto_6p = 1;
 
-		dprintk("%s: display_proto_6p: %d\n",
-			__func__, display_proto_6p);
+		dprintk("%s: vfd_proto_6p: %d\n",
+			__func__, vfd_proto_6p);
 	}
 
 	if (ifnum == 0) {
@@ -1734,7 +1717,7 @@ static int imon_probe(struct usb_interface *interface,
 		}
 
 		mutex_init(&context->lock);
-		context->display_proto_6p = display_proto_6p;
+		context->vfd_proto_6p = vfd_proto_6p;
 		context->ir_onboard_decode = ir_onboard_decode;
 
 		strcpy(driver->name, MOD_NAME);
