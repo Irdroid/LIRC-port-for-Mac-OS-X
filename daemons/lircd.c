@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.85 2009/06/01 12:24:56 lirc Exp $      */
+/*      $Id: lircd.c,v 5.86 2009/06/20 17:52:42 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -64,7 +64,7 @@
 #endif
 
 #if defined __APPLE__
-#include <sys/ioccom.h>
+#include <sys/ioctl.h>
 #endif
 
 #ifndef timersub
@@ -328,12 +328,14 @@ void dosigterm(int sig)
 	shutdown(sockfd,2);
 	close(sockfd);
 
+#if defined(__linux__)
 	if(uinputfd != -1)
 	{
 		ioctl(uinputfd, UI_DEV_DESTROY);
 		close(uinputfd);
 		uinputfd = -1;
 	}
+#endif
 	if(listen_tcpip)
 	{
 		shutdown(sockinet,2);
