@@ -1,4 +1,5 @@
 0.8.6-CVS: future
+  * improved iMON driver including touchscreen support
   * Linux input support added to lircmd
   * added support for IT8720 CIR port
   * moved lircd socket from /dev/lircd to /var/run/lirc/lircd
