@@ -6,12 +6,12 @@ domain socket.
 The main task of lircd is to decode the infrared signals and provide
 an uniform interface for client applications. Clients can connect to
 lircd through a Unix domain socket which is located in
-/var/run/lirc/lircd.  Using this ocket they will get the infrared
+\/var/run/lirc/lircd.  Using this ocket they will get the infrared
 codes received by lircd and they can send commands to lircd.
 
 [OPTIONS]
 The --permission option gives the file permission of
-/var/run/lirc/lircd if it has to be created in octal
+\/var/run/lirc/lircd if it has to be created in octal
 representation. Read the documentation for chmod for further
 details. If no --permission option is given when the socket is
 initially created the default is to give all users read and write
@@ -43,7 +43,7 @@ instance it connects to.
 
 With the --output option you can select Unix domain socket, which
 lircd will write remote key codes to. The default currently is
-/var/run/lirc/lircd.
+\/var/run/lirc/lircd.
 
 With the --pidfile option you can select the lircd daemon pid file.
 The default currently is /var/run/lirc/lircd.pid.
