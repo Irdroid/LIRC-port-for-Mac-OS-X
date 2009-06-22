@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.88 2009/06/18 03:51:19 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.89 2009/06/22 14:13:16 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -394,6 +394,12 @@ static int display_type;
 /* IR protocol: native iMON or Windows MCE (RC-6) */
 static int ir_protocol;
 
+/*
+ * In certain use cases, mouse mode isn't really helpful, and could
+ * actually cause confusion, so allow disabling it.
+ */
+static int nomouse;
+
 
 /***  M O D U L E   C O D E ***/
 
@@ -410,6 +416,9 @@ MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 module_param(ir_protocol, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(ir_protocol, "Which IR protocol to use. 0=native iMON, "
 		 "1=Windows Media Center Ed. (RC-6) (default: native iMON)");
+module_param(nomouse, int, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(nomouse, "Disable mouse input device mode. 0=don't disable, "
+		 "1=disable. (default: don't disable)");
 
 static void free_imon_context(struct imon_context *context)
 {
@@ -1146,9 +1155,14 @@ static void imon_incoming_packet(struct imon_context *context,
 	/* keyboard/mouse mode toggle button */
 	if (memcmp(buf, toggle_button1, 4) == 0 ||
 	    memcmp(buf, toggle_button2, 4) == 0) {
-		context->pad_mouse = ~(context->pad_mouse) & 0x1;
-		dprintk("toggling to %s mode\n",
-			context->pad_mouse ? "mouse" : "keyboard");
+		if (!nomouse) {
+			context->pad_mouse = ~(context->pad_mouse) & 0x1;
+			dprintk("toggling to %s mode\n",
+				context->pad_mouse ? "mouse" : "keyboard");
+		} else {
+			context->pad_mouse = 0;
+			dprintk("mouse mode was disabled by modparam\n");
+		}
 		return;
 	}
 
