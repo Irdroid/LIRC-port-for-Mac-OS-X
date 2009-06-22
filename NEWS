@@ -1,4 +1,10 @@
 0.8.6-CVS: future
+  * added support for putting iMON receviers into MCE/RC6 mode
+  * added input subsystem mouse device support to iMON driver
+  * improved iMON driver to handle dual-interface iMON devices
+    via a single lirc device, reducing configuration complexity
+  * added support for more iMON devices, including proper support
+    for touchscreen iMON devices (Rene Harder)
   * improved iMON driver including touchscreen support
   * Linux input support added to lircmd
   * added support for IT8720 CIR port
@@ -14,7 +20,7 @@
   * Linux input event generation using uinput
   * standardised namespace following Linux input conventions
   * added support for Awox RF/IR Remote (Arif)
-  * added support for new iMon LCD devices
+  * added support for new iMON LCD devices
   * added support for Antec-branded iMon LCD and VFD devices
 
 0.8.4a: 10/26/08
