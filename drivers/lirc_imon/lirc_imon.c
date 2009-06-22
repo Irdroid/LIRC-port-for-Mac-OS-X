@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.89 2009/06/22 14:13:16 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.90 2009/06/22 14:57:48 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -395,8 +395,8 @@ static int display_type;
 static int ir_protocol;
 
 /*
- * In certain use cases, mouse mode isn't really helpful, and could
- * actually cause confusion, so allow disabling it.
+ * In certain use cases, mouse mode isn't really helpful, and could actually
+ * cause confusion, so allow disabling it when the IR device is open.
  */
 static int nomouse;
 
@@ -417,8 +417,8 @@ module_param(ir_protocol, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(ir_protocol, "Which IR protocol to use. 0=native iMON, "
 		 "1=Windows Media Center Ed. (RC-6) (default: native iMON)");
 module_param(nomouse, int, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(nomouse, "Disable mouse input device mode. 0=don't disable, "
-		 "1=disable. (default: don't disable)");
+MODULE_PARM_DESC(nomouse, "Disable mouse input device mode when IR device is "
+		 "open. 0=don't disable, 1=disable. (default: don't disable)");
 
 static void free_imon_context(struct imon_context *context)
 {
