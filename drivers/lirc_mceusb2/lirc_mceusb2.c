@@ -76,7 +76,7 @@
 			"Martin Blatter <martin_a_blatter@yahoo.com>, " \
 			"Dan Conti <dconti@acm.wwu.edu>"
 #define DRIVER_DESC	"Windows Media Center Edition USB IR Transceiver " \
-			"driver for LIRC
+			"driver for LIRC"
 #define DRIVER_NAME	"lirc_mceusb2"
 
 #define USB_BUFLEN	32	/* USB reception buffer length */
