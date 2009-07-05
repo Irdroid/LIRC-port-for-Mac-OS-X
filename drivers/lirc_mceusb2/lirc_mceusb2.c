@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.86 $"
+#define DRIVER_VERSION	"$Revision: 1.87 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -475,11 +475,65 @@ static void send_packet_to_lirc(struct mceusb2_dev *ir)
 	}
 }
 
+static void mceusb_process_ir_data(struct mceusb2_dev *ir, int buf_len)
+{
+	int i, j;
+	int packet_len = 0;
+
+	for (i = 0; i < buf_len; i++) {
+		/* decode mce packets of the form (84),AA,BB,CC,DD */
+		if (ir->buf_in[i] >= 0x80 && ir->buf_in[i] <= 0x9e) {
+			/* data headers */
+			/* decode packet data */
+			packet_len = ir->buf_in[i] & MCE_PACKET_LENGTH_MASK;
+			for (j = 1; j <= packet_len && (i + j < buf_len); j++) {
+				/* rising/falling flank */
+				if (ir->is_pulse !=
+				    (ir->buf_in[i + j] & MCE_PULSE_BIT)) {
+					send_packet_to_lirc(ir);
+					ir->is_pulse =
+						ir->buf_in[i + j] &
+							MCE_PULSE_BIT;
+				}
+
+				/* accumulate mce pulse/space values */
+				ir->lircdata +=
+					(ir->buf_in[i + j] & MCE_PULSE_MASK) *
+						MCE_TIME_UNIT;
+				ir->lircdata |= (ir->is_pulse ? PULSE_BIT : 0);
+			}
+
+			i += packet_len;
+		} else if (ir->buf_in[i] == MCE_CONTROL_HEADER) {
+			/* status header (0x9F) */
+			/*
+			 * A transmission containing one or more consecutive ir
+			 * commands always ends with a GAP of 100ms followed by
+			 * the sequence 0x9F 0x01 0x01 0x9F 0x15 0x00 0x00 0x80
+			 */
+
+#if 0
+	Uncomment this if the last 100ms "infinity"-space should be transmitted
+	to lirc directly instead of at the beginning of the next transmission.
+	Changes pulse/space order.
+
+			if (++i < buf_len && ir->buf_in[i]==0x01)
+				send_packet_to_lirc(ir);
+
+#endif
+
+			/* end decode loop */
+			i = buf_len;
+		}
+	}
+
+	return;
+}
+
 static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 {
 	struct mceusb2_dev *ir;
-	int buf_len, packet_len;
-	int i, j;
+	int buf_len;
 
 	if (!urb)
 		return;
@@ -492,7 +546,6 @@ static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 	}
 
 	buf_len = urb->actual_length;
-	packet_len = 0;
 
 	if (debug)
 		mceusb_dev_printdata(ir, urb->transfer_buffer, buf_len);
@@ -506,61 +559,7 @@ static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 	switch (urb->status) {
 	/* success */
 	case 0:
-		for (i = 0; i < buf_len; i++) {
-			/* decode mce packets of the form (84),AA,BB,CC,DD */
-			if (ir->buf_in[i] >= 0x80 && ir->buf_in[i] <= 0x9e) {
-				/* data headers */
-				/* decode packet data */
-				packet_len =
-					ir->buf_in[i] & MCE_PACKET_LENGTH_MASK;
-				for (j = 1;
-				     j <= packet_len && (i+j < buf_len);
-				     j++) {
-					/* rising/falling flank */
-					if (ir->is_pulse !=
-					    (ir->buf_in[i + j] &
-					     MCE_PULSE_BIT)) {
-						send_packet_to_lirc(ir);
-						ir->is_pulse =
-							ir->buf_in[i + j] &
-								MCE_PULSE_BIT;
-					}
-
-					/* accumulate mce pulse/space values */
-					ir->lircdata +=
-						(ir->buf_in[i + j] &
-						 MCE_PULSE_MASK)*MCE_TIME_UNIT;
-					ir->lircdata |=
-						(ir->is_pulse ? PULSE_BIT : 0);
-				}
-
-				i += packet_len;
-			} else if (ir->buf_in[i] == MCE_CONTROL_HEADER) {
-				/* status header (0x9F) */
-				/*
-				 * A transmission containing one or
-				 * more consecutive ir commands always
-				 * ends with a GAP of 100ms followed by the
-				 * sequence 0x9F 0x01 0x01 0x9F 0x15
-				 * 0x00 0x00 0x80
-				 */
-
-		/*
-		Uncomment this if the last 100ms
-		"infinity"-space should be transmitted
-		to lirc directly instead of at the beginning
-		of the next transmission. Changes pulse/space order.
-
-				if (++i < buf_len && ir->buf_in[i]==0x01)
-					send_packet_to_lirc(ir);
-
-		*/
-
-				/* end decode loop */
-				i = buf_len;
-			}
-		}
-
+		mceusb_process_ir_data(ir, buf_len);
 		break;
 
 	case -ECONNRESET:
