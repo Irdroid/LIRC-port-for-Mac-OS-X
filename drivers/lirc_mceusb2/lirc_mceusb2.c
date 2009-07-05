@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.87 $"
+#define DRIVER_VERSION	"$Revision: 1.88 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -225,7 +225,7 @@ static struct usb_device_id transmitter_mask_list[] = {
 };
 
 /* data structure for each usb transceiver */
-struct mceusb2_dev {
+struct mceusb_dev {
 
 	/* usb */
 	struct usb_device *usbdev;
@@ -283,7 +283,7 @@ static unsigned long usecs_to_jiffies(const unsigned int u)
 #endif
 }
 #endif
-static void mceusb_dev_printdata(struct mceusb2_dev *ir, char *buf, int len)
+static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf, int len)
 {
 	char codes[USB_BUFLEN * 3 + 1];
 	int i;
@@ -300,7 +300,7 @@ static void mceusb_dev_printdata(struct mceusb2_dev *ir, char *buf, int len)
 
 static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 {
-	struct mceusb2_dev *ir;
+	struct mceusb_dev *ir;
 	int len;
 
 	if (!urb)
@@ -322,7 +322,7 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 
 
 /* request incoming or send outgoing usb packet - used to initialize remote */
-static void request_packet_async(struct mceusb2_dev *ir,
+static void request_packet_async(struct mceusb_dev *ir,
 				 struct usb_endpoint_descriptor *ep,
 				 unsigned char *data, int size, int urb_type)
 {
@@ -383,7 +383,7 @@ static void request_packet_async(struct mceusb2_dev *ir,
 		ir->devnum, res);
 }
 
-static int unregister_from_lirc(struct mceusb2_dev *ir)
+static int unregister_from_lirc(struct mceusb_dev *ir)
 {
 	struct lirc_driver *d = ir->d;
 	int devnum;
@@ -427,7 +427,7 @@ static int unregister_from_lirc(struct mceusb2_dev *ir)
 
 static int mceusb_ir_open(void *data)
 {
-	struct mceusb2_dev *ir = data;
+	struct mceusb_dev *ir = data;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: %s called with no context\n",
@@ -448,7 +448,7 @@ static int mceusb_ir_open(void *data)
 
 static void mceusb_ir_close(void *data)
 {
-	struct mceusb2_dev *ir = data;
+	struct mceusb_dev *ir = data;
 
 	if (!ir) {
 		printk(DRIVER_NAME "[?]: %s called with no context\n",
@@ -465,7 +465,7 @@ static void mceusb_ir_close(void *data)
 	MOD_DEC_USE_COUNT;
 }
 
-static void send_packet_to_lirc(struct mceusb2_dev *ir)
+static void send_packet_to_lirc(struct mceusb_dev *ir)
 {
 	if (ir->lircdata) {
 		lirc_buffer_write(ir->d->rbuf,
@@ -475,7 +475,7 @@ static void send_packet_to_lirc(struct mceusb2_dev *ir)
 	}
 }
 
-static void mceusb_process_ir_data(struct mceusb2_dev *ir, int buf_len)
+static void mceusb_process_ir_data(struct mceusb_dev *ir, int buf_len)
 {
 	int i, j;
 	int packet_len = 0;
@@ -532,7 +532,7 @@ static void mceusb_process_ir_data(struct mceusb2_dev *ir, int buf_len)
 
 static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 {
-	struct mceusb2_dev *ir;
+	struct mceusb_dev *ir;
 	int buf_len;
 
 	if (!urb)
@@ -582,7 +582,7 @@ static ssize_t mceusb_transmit_ir(struct file *file, const char *buf,
 				  size_t n, loff_t *ppos)
 {
 	int i, count = 0, cmdcount = 0;
-	struct mceusb2_dev *ir = NULL;
+	struct mceusb_dev *ir = NULL;
 	lirc_t wbuf[LIRCBUF_SIZE]; /* Workbuffer with values from lirc */
 	unsigned char cmdbuf[MCE_CMDBUF_SIZE]; /* MCE command buffer */
 	unsigned long signal_duration = 0; /* Singnal length in us */
@@ -666,7 +666,7 @@ static ssize_t mceusb_transmit_ir(struct file *file, const char *buf,
 	return n;
 }
 
-static void set_transmitter_mask(struct mceusb2_dev *ir, unsigned int mask)
+static void set_transmitter_mask(struct mceusb_dev *ir, unsigned int mask)
 {
 	if (ir->flags.transmitter_mask_inverted)
 		/*
@@ -681,7 +681,7 @@ static void set_transmitter_mask(struct mceusb2_dev *ir, unsigned int mask)
 
 
 /* Sets the send carrier frequency */
-static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
+static int set_send_carrier(struct mceusb_dev *ir, int carrier)
 {
 	int clk = 10000000;
 	int prescaler = 0, divisor = 0;
@@ -732,7 +732,7 @@ static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
 	int result;
 	unsigned int ivalue;
 	unsigned long lvalue;
-	struct mceusb2_dev *ir = NULL;
+	struct mceusb_dev *ir = NULL;
 
 	/* Retrieve lirc_driver data for the device */
 	ir = lirc_get_pdata(filep);
@@ -812,7 +812,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	struct usb_endpoint_descriptor *ep_in = NULL;
 	struct usb_endpoint_descriptor *ep_out = NULL;
 	struct usb_host_config *config;
-	struct mceusb2_dev *ir = NULL;
+	struct mceusb_dev *ir = NULL;
 	struct lirc_driver *driver = NULL;
 	struct lirc_buffer *rbuf = NULL;
 	int devnum, pipe, maxp;
@@ -891,7 +891,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
 	mem_failure = 0;
-	ir = kzalloc(sizeof(struct mceusb2_dev), GFP_KERNEL);
+	ir = kzalloc(sizeof(struct mceusb_dev), GFP_KERNEL);
 	if (!ir) {
 		mem_failure = 1;
 		goto mem_failure_switch;
@@ -1065,7 +1065,7 @@ mem_failure_switch:
 static void mceusb_dev_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
-	struct mceusb2_dev *ir = usb_get_intfdata(intf);
+	struct mceusb_dev *ir = usb_get_intfdata(intf);
 
 	usb_set_intfdata(intf, NULL);
 
@@ -1087,7 +1087,7 @@ static void mceusb_dev_disconnect(struct usb_interface *intf)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int mceusb_dev_suspend(struct usb_interface *intf, pm_message_t message)
 {
-	struct mceusb2_dev *ir = usb_get_intfdata(intf);
+	struct mceusb_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: suspend\n", ir->devnum);
 	usb_kill_urb(ir->urb_in);
 	return 0;
@@ -1095,7 +1095,7 @@ static int mceusb_dev_suspend(struct usb_interface *intf, pm_message_t message)
 
 static int mceusb_dev_resume(struct usb_interface *intf)
 {
-	struct mceusb2_dev *ir = usb_get_intfdata(intf);
+	struct mceusb_dev *ir = usb_get_intfdata(intf);
 	printk(DRIVER_NAME "[%d]: resume\n", ir->devnum);
 	if (usb_submit_urb(ir->urb_in, GFP_ATOMIC))
 		return -EIO;
