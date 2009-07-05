@@ -1,14 +1,24 @@
 /*
- * LIRC driver for Philips eHome USB Infrared Transceiver
- * and the Microsoft MCE 2005 Remote Control
+ * LIRC driver for Windows Media Center Edition USB Infrared Transceivers
  *
  * (C) by Martin A. Blatter <martin_a_blatter@yahoo.com>
  *
  * Transmitter support and reception code cleanup.
  * (C) by Daniel Melander <lirc@rajidae.se>
  *
+ * Original lirc_mceusb driver for 1st-gen device:
+ * Copyright (c) 2003-2004 Dan Conti <dconti@acm.wwu.edu>
+ *
+ * Original lirc_mceusb driver deprecated in favor of this driver, which
+ * supports the 1st-gen device now too. Transmitting on the 1st-gen device
+ * is as yet untested, but receiving definitely works.
+ *
+ * Support for 1st-gen mceusb device added in June of 2009,
+ * by Jarod Wilson <jarod@wilsonet.com>
+ *
  * Derived from ATI USB driver by Paul Miller and the original
- * MCE USB driver by Dan Corti
+ * MCE USB driver by Dan Conti ((and now including chunks of the latter
+ * relevant to the 1st-gen device initialization)
  *
  * This driver will only work reliably with kernel version 2.6.10
  * or higher, probably because of differences in USB device enumeration
@@ -61,11 +71,12 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.88 $"
+#define DRIVER_VERSION	"1.90"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
-			"Martin Blatter <martin_a_blatter@yahoo.com>"
-#define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
-			"MCE 2005 Remote Control driver for LIRC"
+			"Martin Blatter <martin_a_blatter@yahoo.com>, " \
+			"Dan Conti <dconti@acm.wwu.edu>"
+#define DRIVER_DESC	"Windows Media Center Edition USB IR Transceiver " \
+			"driver for LIRC
 #define DRIVER_NAME	"lirc_mceusb2"
 
 #define USB_BUFLEN	32	/* USB reception buffer length */
@@ -130,6 +141,8 @@ static int debug;
 #define VENDOR_NORTHSTAR	0x04eb
 
 static struct usb_device_id mceusb_dev_table[] = {
+	/* Original Microsoft MCE IR Transceiver (often HP-branded) */
+	{ USB_DEVICE(VENDOR_MICROSOFT, 0x006d) },
 	/* Philips Infrared Transceiver - Sahara branded */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0608) },
 	/* Philips Infrared Transceiver - HP branded */
@@ -211,6 +224,11 @@ static struct usb_device_id pinnacle_list[] = {
 	{}
 };
 
+static struct usb_device_id microsoft_gen1_list[] = {
+	{ USB_DEVICE(VENDOR_MICROSOFT, 0x006d) },
+	{}
+};
+
 static struct usb_device_id transmitter_mask_list[] = {
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
@@ -239,6 +257,7 @@ struct mceusb_dev {
 	unsigned int len_in;
 	dma_addr_t dma_in;
 	dma_addr_t dma_out;
+	unsigned int overflow_len;
 
 	/* lirc */
 	struct lirc_driver *d;
@@ -248,7 +267,8 @@ struct mceusb_dev {
 		u32 connected:1;
 		u32 pinnacle:1;
 		u32 transmitter_mask_inverted:1;
-		u32 reserved:29;
+		u32 microsoft_gen1:1;
+		u32 reserved:28;
 	} flags;
 
 	unsigned char transmitter_mask;
@@ -291,6 +311,9 @@ static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf, int len)
 	if (len <= 0)
 		return;
 
+	if (ir->flags.microsoft_gen1 && len <= 2)
+		return;
+
 	for (i = 0; i < len && i < USB_BUFLEN; i++)
 		snprintf(codes + i * 3, 4, "%02x ", buf[i] & 0xFF);
 
@@ -320,7 +343,6 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 
 }
 
-
 /* request incoming or send outgoing usb packet - used to initialize remote */
 static void request_packet_async(struct mceusb_dev *ir,
 				 struct usb_endpoint_descriptor *ep,
@@ -341,20 +363,18 @@ static void request_packet_async(struct mceusb_dev *ir,
 					usb_fill_int_urb(async_urb, ir->usbdev,
 						usb_sndintpipe(ir->usbdev,
 							ep->bEndpointAddress),
-					async_buf,
-					size,
-					(usb_complete_t) usb_async_callback,
-					ir, ep->bInterval);
-
+						async_buf, size,
+						(usb_complete_t) usb_async_callback,
+						ir, ep->bInterval);
 					memcpy(async_buf, data, size);
 				} else {
 					/* inbound data */
 					usb_fill_int_urb(async_urb, ir->usbdev,
 						usb_rcvintpipe(ir->usbdev,
 							ep->bEndpointAddress),
-					async_buf, size,
-					(usb_complete_t) usb_async_callback,
-					ir, ep->bInterval);
+						async_buf, size,
+						(usb_complete_t) usb_async_callback,
+						ir, ep->bInterval);
 				}
 				async_urb->transfer_flags = URB_ASYNC_UNLINK;
 			} else {
@@ -367,6 +387,7 @@ static void request_packet_async(struct mceusb_dev *ir,
 		async_urb = ir->urb_in;
 		ir->send_flags = RECV_FLAG_IN_PROGRESS;
 	}
+
 	dprintk(DRIVER_NAME "[%d]: receive request called (size=%#x)\n",
 		ir->devnum, size);
 
@@ -479,13 +500,36 @@ static void mceusb_process_ir_data(struct mceusb_dev *ir, int buf_len)
 {
 	int i, j;
 	int packet_len = 0;
+	int start_index = 0;
 
-	for (i = 0; i < buf_len; i++) {
+	/* skip meaningless 0xb1 0x60 header bytes on orig receiver */
+	if (ir->flags.microsoft_gen1)
+		start_index = 2;
+
+	/* this should only trigger w/the 1st-gen mce receiver */
+	for (i = start_index; i < (start_index + ir->overflow_len) &&
+	     i < buf_len; i++) {
+		/* rising/falling flank */
+		if (ir->is_pulse != (ir->buf_in[i] & MCE_PULSE_BIT)) {
+			send_packet_to_lirc(ir);
+			ir->is_pulse = ir->buf_in[i] & MCE_PULSE_BIT;
+		}
+
+		/* accumulate mce pulse/space values */
+		ir->lircdata += (ir->buf_in[i] & MCE_PULSE_MASK) *
+				MCE_TIME_UNIT;
+		ir->lircdata |= (ir->is_pulse ? PULSE_BIT : 0);
+	}
+	start_index += ir->overflow_len;
+	ir->overflow_len = 0;
+
+	for (i = start_index; i < buf_len; i++) {
 		/* decode mce packets of the form (84),AA,BB,CC,DD */
 		if (ir->buf_in[i] >= 0x80 && ir->buf_in[i] <= 0x9e) {
 			/* data headers */
 			/* decode packet data */
 			packet_len = ir->buf_in[i] & MCE_PACKET_LENGTH_MASK;
+			ir->overflow_len = i + 1 + packet_len - buf_len;
 			for (j = 1; j <= packet_len && (i + j < buf_len); j++) {
 				/* rising/falling flank */
 				if (ir->is_pulse !=
@@ -523,7 +567,14 @@ static void mceusb_process_ir_data(struct mceusb_dev *ir, int buf_len)
 #endif
 
 			/* end decode loop */
-			i = buf_len;
+			dprintk(DRIVER_NAME "[%d] %s: found control header\n",
+				ir->devnum, __func__);
+			ir->overflow_len = 0;
+			break;
+		} else {
+			dprintk(DRIVER_NAME "[%d] %s: stray packet?\n",
+				ir->devnum, __func__);
+			ir->overflow_len = 0;
 		}
 	}
 
@@ -802,6 +853,60 @@ static struct file_operations lirc_fops = {
 	.ioctl	= mceusb_lirc_ioctl,
 };
 
+static int mceusb_gen1_init(struct mceusb_dev *ir)
+{
+	int i, ret;
+	char junk[64], data[8];
+	int partial = 0;
+
+	/*
+	 * Clear off the first few messages. These look like calibration
+	 * or test data, I can't really tell. This also flushes in case
+	 * we have random ir data queued up.
+	 */
+	for (i = 0; i < 40; i++)
+		usb_bulk_msg(ir->usbdev,
+			usb_rcvbulkpipe(ir->usbdev,
+				ir->usb_ep_in->bEndpointAddress),
+			junk, 64, &partial, HZ * 10);
+
+	ir->is_pulse = 1;
+
+	memset(data, 0, 8);
+
+	/* Get Status */
+	ret = usb_control_msg(ir->usbdev, usb_rcvctrlpipe(ir->usbdev, 0),
+			      USB_REQ_GET_STATUS, USB_DIR_IN,
+			      0, 0, data, 2, HZ * 3);
+
+	/*    ret = usb_get_status( ir->usbdev, 0, 0, data ); */
+	dprintk("%s - ret = %d status = 0x%x 0x%x\n", __func__,
+		ret, data[0], data[1]);
+
+	/*
+	 * This is a strange one. They issue a set address to the device
+	 * on the receive control pipe and expect a certain value pair back
+	 */
+	memset(data, 0, 8);
+
+	ret = usb_control_msg(ir->usbdev, usb_rcvctrlpipe(ir->usbdev, 0),
+			      5, USB_TYPE_VENDOR, 0, 0,
+			      data, 2, HZ * 3);
+	dprintk("%s - ret = %d, devnum = %d\n",
+		__func__, ret, ir->usbdev->devnum);
+	dprintk("%s - data[0] = %d, data[1] = %d\n",
+		__func__, data[0], data[1]);
+
+	/* set feature */
+	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
+			      USB_REQ_SET_FEATURE, USB_TYPE_VENDOR,
+			      0xc04e, 0x0000, NULL, 0, HZ * 3);
+
+	dprintk("%s - ret = %d\n", __func__, ret);
+
+	return ret;
+
+};
 
 static int mceusb_dev_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
@@ -821,6 +926,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	char buf[63], name[128] = "";
 	int mem_failure = 0;
 	int is_pinnacle;
+	int is_microsoft_gen1;
 
 	dprintk(DRIVER_NAME ": %s called\n", __func__);
 
@@ -831,6 +937,8 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	idesc = intf->cur_altsetting;
 
 	is_pinnacle = usb_match_id(intf, pinnacle_list) ? 1 : 0;
+
+	is_microsoft_gen1 = usb_match_id(intf, microsoft_gen1_list) ? 1 : 0;
 
 	/* step through the endpoints to find first bulk in and out endpoint */
 	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
@@ -974,8 +1082,10 @@ mem_failure_switch:
 	ir->devnum = devnum;
 	ir->usbdev = dev;
 	ir->len_in = maxp;
+	ir->overflow_len = 0;
 	ir->flags.connected = 0;
 	ir->flags.pinnacle = is_pinnacle;
+	ir->flags.microsoft_gen1 = is_microsoft_gen1;
 	ir->flags.transmitter_mask_inverted =
 		usb_match_id(intf, transmitter_mask_list) ? 0 : 1;
 
@@ -1046,6 +1156,10 @@ mem_failure_switch:
 		 */
 		request_packet_async(ir, ep_in, NULL, maxp, 0);
 	} else {
+		/* original ms mce device requires some additional setup */
+		if (ir->flags.microsoft_gen1)
+			mceusb_gen1_init(ir);
+
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, init1,
@@ -1119,7 +1233,6 @@ static int __init mceusb_dev_init(void)
 {
 	int i;
 
-	printk(KERN_INFO "\n");
 	printk(KERN_INFO DRIVER_NAME ": " DRIVER_DESC " " DRIVER_VERSION "\n");
 	printk(KERN_INFO DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled\n");
