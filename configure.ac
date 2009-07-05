@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.27 2009/05/25 15:34:05 lirc Exp $
+dnl $Id: configure.ac,v 1.28 2009/07/05 21:26:25 jarodwilson Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -168,7 +168,6 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_it87) \
 	(lirc_dev lirc_ite8709) \
 	(lirc_dev lirc_mceusb) \
-	(lirc_dev lirc_mceusb2) \
 	(lirc_dev lirc_parallel) \
 	(lirc_dev lirc_sasem) \
 	(lirc_dev lirc_serial) \
@@ -447,7 +446,7 @@ AC_ARG_WITH(driver,
                           it87, ite8709, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
-                          lptX, macmini, mceusb, mceusb2, mediafocusI,
+                          lptX, macmini, mceusb, mediafocusI,
                           mouseremote, mouseremote_ps2, mp3anywhere,
                           mplay, nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
@@ -605,8 +604,6 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	lirc_dev-lirc_ite8709)
 		;;
 	lirc_dev-lirc_mceusb)
-		;;
-	lirc_dev-lirc_mceusb2)
 		;;
 	lirc_dev-lirc_parallel)
 		;;
@@ -1157,11 +1154,6 @@ if test "$driver" = "mceusb"; then
   lircd_conf="mceusb/lircd.conf.mceusb"
 fi
 
-if test "$driver" = "mceusb2"; then
-  lirc_driver="lirc_dev lirc_mceusb2"
-  lircd_conf="mceusb/lircd.conf.mceusb"
-fi
-
 if test "$driver" = "mediafocusI"; then
   lirc_driver="none"
   lircd_conf="technisat/lircd.conf.mediafocusI"
@@ -1499,7 +1491,6 @@ elif test "$lirc_driver" = "all"; then
 	lirc_it87 \
 	lirc_ite8709 \
 	lirc_mceusb \
-	lirc_mceusb2 \
 	lirc_parallel \
 	lirc_sasem \
 	lirc_serial \
@@ -1779,7 +1770,6 @@ AC_CONFIG_FILES([
   drivers/lirc_it87/Makefile
   drivers/lirc_ite8709/Makefile
   drivers/lirc_mceusb/Makefile
-  drivers/lirc_mceusb2/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile

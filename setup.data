@@ -145,8 +145,7 @@ hw_menu_entry: @hw-usb
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
 	mplay: "VLSystem MPlay Mini"
-	mceusb: "Windows Media Center Remotes (old version, MicroSoft USB ID)"
-	mceusb2: "Windows Media Center Remotes (new version, Philips et al.)"
+	mceusb: "Windows Media Center Transceivers/Remotes (all)"
 
 param_type: \
 	act200l \
@@ -244,7 +243,6 @@ param_type: \
 	livedrive_seq \
 	macmini \
 	mceusb \
-	mceusb2 \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
@@ -317,7 +315,6 @@ default_param: \
 	livedrive_seq \
 	macmini \
 	mceusb \
-	mceusb2 \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
@@ -416,7 +413,6 @@ remote: \
 	it87 \
 	ite8709 \
 	mceusb \
-	mceusb2 \
 	nslu2 \
 	packard_bell \
 	parallel \

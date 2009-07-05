@@ -13,7 +13,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x03ee">
-    <!--  Mitsumi , driver : mceusb2 -->
+    <!--  Mitsumi , driver : mceusb -->
     <match key="usb_device.product_id" int="0x2501">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -31,7 +31,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x043e">
-    <!--  LG eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  LG eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x9803">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -46,7 +46,7 @@
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Microsoft MCE Infrared Transceiver , driver : mceusb2 -->
+    <!--  Microsoft MCE Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x00a0">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -73,19 +73,19 @@
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Philips Infrared Transceiver - HP branded , driver : mceusb2 -->
+    <!--  Philips Infrared Transceiver - HP branded , driver : mceusb -->
     <match key="usb_device.product_id" int="0x060c">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Philips SRM5100 , driver : mceusb2 -->
+    <!--  Philips SRM5100 , driver : mceusb -->
     <match key="usb_device.product_id" int="0x060d">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Philips eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Philips eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0815">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -103,7 +103,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x051c">
-    <!--  Shuttle eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Shuttle eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0xc001">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -112,19 +112,19 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x0609">
-    <!--  SMK/Toshiba G83C0004D410 , driver : mceusb2 -->
+    <!--  SMK/Toshiba G83C0004D410 , driver : mceusb -->
     <match key="usb_device.product_id" int="0x031d">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  SMK eHome Infrared Transceiver (Sony VAIO) , driver : mceusb2 -->
+    <!--  SMK eHome Infrared Transceiver (Sony VAIO) , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0322">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  bundled with Hauppauge PVR-150 , driver : mceusb2 -->
+    <!--  bundled with Hauppauge PVR-150 , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0334">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -253,7 +253,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x107b">
-    <!--  Gateway eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Gateway eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x3009">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -280,7 +280,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x1308">
-    <!--  Shuttle eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Shuttle eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0xc001">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -289,7 +289,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x1460">
-    <!--  Tatung eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Tatung eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x9150">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -298,19 +298,19 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x147a">
-    <!--  Formosa eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Formosa eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0xe015">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Formosa aim / Trust MCE Infrared Receiver , driver : mceusb2 -->
+    <!--  Formosa aim / Trust MCE Infrared Receiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0xe017">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Formosa Industrial Computing / Beanbag Emulation Device , driver : mceusb2 -->
+    <!--  Formosa Industrial Computing / Beanbag Emulation Device , driver : mceusb -->
     <match key="usb_device.product_id" int="0xe018">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -319,7 +319,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x1509">
-    <!--  FIC eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  FIC eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x9242">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -343,25 +343,25 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x1784">
-    <!--  Topseed eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Topseed eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0001">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Topseed HP eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Topseed HP eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0006">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Topseed eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Topseed eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0007">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
       <append key="info.capabilities" type="strlist">input.remote_control</append>
     </match>
-    <!--  Topseed eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Topseed eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0008">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -370,7 +370,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x179d">
-    <!--  Ricavision internal Infrared Transceiver , driver : mceusb2 -->
+    <!--  Ricavision internal Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0010">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -379,7 +379,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x1934">
-    <!--  Fintek eHome Infrared Transceiver , driver : mceusb2 -->
+    <!--  Fintek eHome Infrared Transceiver , driver : mceusb -->
     <match key="usb_device.product_id" int="0x0602">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>
@@ -388,7 +388,7 @@
   </match>
   <!-- vendor -->
   <match key="usb_device.vendor_id" int="0x195d">
-    <!--  Itron ione Libra Q-11 , driver : mceusb2 -->
+    <!--  Itron ione Libra Q-11 , driver : mceusb -->
     <match key="usb_device.product_id" int="0x7002">
       <merge key="info.category" type="string">input</merge>
       <append key="info.capabilities" type="strlist">input</append>

@@ -1,4 +1,6 @@
 0.8.6-CVS: future
+  * merged 1st-gen mceusb device support into lirc_mceusb2,
+    renamed lirc_mceusb2 to lirc_mceusb
   * added support for putting iMON receviers into MCE/RC6 mode
   * added input subsystem mouse device support to iMON driver
   * improved iMON driver to handle dual-interface iMON devices
