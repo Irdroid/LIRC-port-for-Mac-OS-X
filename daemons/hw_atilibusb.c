@@ -1,4 +1,4 @@
-/*      $Id: hw_atilibusb.c,v 5.4 2009/07/05 21:26:25 jarodwilson Exp $      */
+/*      $Id: hw_atilibusb.c,v 5.5 2009/07/05 21:29:24 jarodwilson Exp $      */
 
 /****************************************************************************
  ** hw_atilibusb.c **********************************************************
@@ -88,7 +88,6 @@ static usb_device_id usb_remote_id_table[] = {
 	{ 0x0bc7, 0x000D }, /* X10 USB Transceiver */
 	{ 0x0bc7, 0x000E }, /* X10 USB Transceiver */
 	{ 0x0bc7, 0x000F }, /* X10 USB Transceiver */
-	{ 0x0471, 0x0602 }, /* ATI Remote Wonder II Input Device */
 	{ 0, 0 } /* Terminating entry */
 };
 
