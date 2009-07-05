@@ -354,34 +354,34 @@ static void request_packet_async(struct mceusb_dev *ir,
 
 	if (urb_type) {
 		async_urb = usb_alloc_urb(0, GFP_KERNEL);
-		if (likely(async_urb)) {
-			/* alloc buffer */
-			async_buf = kmalloc(size, GFP_KERNEL);
-			if (async_buf) {
-				if (urb_type == MCEUSB_OUTBOUND) {
-					/* outbound data */
-					usb_fill_int_urb(async_urb, ir->usbdev,
-						usb_sndintpipe(ir->usbdev,
-							ep->bEndpointAddress),
-						async_buf, size,
-						(usb_complete_t) usb_async_callback,
-						ir, ep->bInterval);
-					memcpy(async_buf, data, size);
-				} else {
-					/* inbound data */
-					usb_fill_int_urb(async_urb, ir->usbdev,
-						usb_rcvintpipe(ir->usbdev,
-							ep->bEndpointAddress),
-						async_buf, size,
-						(usb_complete_t) usb_async_callback,
-						ir, ep->bInterval);
-				}
-				async_urb->transfer_flags = URB_ASYNC_UNLINK;
-			} else {
-				usb_free_urb(async_urb);
-				return;
-			}
+		if (unlikely(!async_urb))
+			return;
+
+		async_buf = kmalloc(size, GFP_KERNEL);
+		if (!async_buf) {
+			usb_free_urb(async_urb);
+			return;
 		}
+
+		if (urb_type == MCEUSB_OUTBOUND) {
+			/* outbound data */
+			usb_fill_int_urb(async_urb, ir->usbdev,
+				usb_sndintpipe(ir->usbdev,
+					ep->bEndpointAddress),
+				async_buf, size,
+				(usb_complete_t) usb_async_callback,
+				ir, ep->bInterval);
+			memcpy(async_buf, data, size);
+		} else {
+			/* inbound data */
+			usb_fill_int_urb(async_urb, ir->usbdev,
+				usb_rcvintpipe(ir->usbdev,
+					ep->bEndpointAddress),
+				async_buf, size,
+				(usb_complete_t) usb_async_callback,
+				ir, ep->bInterval);
+		}
+		async_urb->transfer_flags = URB_ASYNC_UNLINK;
 	} else {
 		/* standard request */
 		async_urb = ir->urb_in;
