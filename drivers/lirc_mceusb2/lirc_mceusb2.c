@@ -61,7 +61,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.85 $"
+#define DRIVER_VERSION	"$Revision: 1.86 $"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \
 			"Martin Blatter <martin_a_blatter@yahoo.com>"
 #define DRIVER_DESC	"Philips eHome USB IR Transceiver and Microsoft " \
@@ -285,14 +285,14 @@ static unsigned long usecs_to_jiffies(const unsigned int u)
 #endif
 static void mceusb_dev_printdata(struct mceusb2_dev *ir, char *buf, int len)
 {
-	char codes[USB_BUFLEN*3 + 1];
+	char codes[USB_BUFLEN * 3 + 1];
 	int i;
 
 	if (len <= 0)
 		return;
 
 	for (i = 0; i < len && i < USB_BUFLEN; i++)
-		snprintf(codes+i*3, 4, "%02x ", buf[i] & 0xFF);
+		snprintf(codes + i * 3, 4, "%02x ", buf[i] & 0xFF);
 
 	printk(KERN_INFO "" DRIVER_NAME "[%d]: data received %s (length=%d)\n",
 		ir->devnum, codes, len);
@@ -425,15 +425,16 @@ static int unregister_from_lirc(struct mceusb2_dev *ir)
 	return 0;
 }
 
-static int set_use_inc(void *data)
+static int mceusb_ir_open(void *data)
 {
 	struct mceusb2_dev *ir = data;
 
 	if (!ir) {
-		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
+		printk(DRIVER_NAME "[?]: %s called with no context\n",
+		       __func__);
 		return -EIO;
 	}
-	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
+	dprintk(DRIVER_NAME "[%d]: mceusb IR device opened\n", ir->devnum);
 
 	MOD_INC_USE_COUNT;
 	if (!ir->flags.connected) {
@@ -445,15 +446,16 @@ static int set_use_inc(void *data)
 	return 0;
 }
 
-static void set_use_dec(void *data)
+static void mceusb_ir_close(void *data)
 {
 	struct mceusb2_dev *ir = data;
 
 	if (!ir) {
-		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
+		printk(DRIVER_NAME "[?]: %s called with no context\n",
+		       __func__);
 		return;
 	}
-	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
+	dprintk(DRIVER_NAME "[%d]: mceusb IR device closed\n", ir->devnum);
 
 	if (ir->flags.connected) {
 		mutex_lock(&ir->lock);
@@ -465,7 +467,7 @@ static void set_use_dec(void *data)
 
 static void send_packet_to_lirc(struct mceusb2_dev *ir)
 {
-	if (ir->lircdata != 0) {
+	if (ir->lircdata) {
 		lirc_buffer_write(ir->d->rbuf,
 				  (unsigned char *) &ir->lircdata);
 		wake_up(&ir->d->rbuf->wait_poll);
@@ -577,8 +579,8 @@ static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 }
 
 
-static ssize_t lirc_write(struct file *file, const char *buf,
-			  size_t n, loff_t *ppos)
+static ssize_t mceusb_transmit_ir(struct file *file, const char *buf,
+				  size_t n, loff_t *ppos)
 {
 	int i, count = 0, cmdcount = 0;
 	struct mceusb2_dev *ir = NULL;
@@ -725,8 +727,8 @@ static int set_send_carrier(struct mceusb2_dev *ir, int carrier)
 }
 
 
-static int lirc_ioctl(struct inode *node, struct file *filep,
-		      unsigned int cmd, unsigned long arg)
+static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
+			     unsigned int cmd, unsigned long arg)
 {
 	int result;
 	unsigned int ivalue;
@@ -797,8 +799,8 @@ static int lirc_ioctl(struct inode *node, struct file *filep,
 
 static struct file_operations lirc_fops = {
 	.owner	= THIS_MODULE,
-	.write	= lirc_write,
-	.ioctl	= lirc_ioctl,
+	.write	= mceusb_transmit_ir,
+	.ioctl	= mceusb_lirc_ioctl,
 };
 
 
@@ -821,7 +823,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	int mem_failure = 0;
 	int is_pinnacle;
 
-	dprintk(DRIVER_NAME ": usb probe called\n");
+	dprintk(DRIVER_NAME ": %s called\n", __func__);
 
 	usb_reset_device(dev);
 
@@ -933,8 +935,8 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 		LIRC_CAN_SET_SEND_CARRIER;
 	driver->data = ir;
 	driver->rbuf = rbuf;
-	driver->set_use_inc = &set_use_inc;
-	driver->set_use_dec = &set_use_dec;
+	driver->set_use_inc = &mceusb_ir_open;
+	driver->set_use_dec = &mceusb_ir_close;
 	driver->code_length = sizeof(lirc_t) * 8;
 	driver->fops  = &lirc_fops;
 	driver->dev   = &intf->dev;
