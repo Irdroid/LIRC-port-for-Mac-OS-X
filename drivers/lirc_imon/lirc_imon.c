@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.90 2009/06/22 14:57:48 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.91 2009/07/06 01:55:39 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -165,8 +165,10 @@ struct imon_context {
 	int pad_mouse;			/* toggle kbd(0)/mouse(1) mode */
 	int touch_x;			/* x coordinate on touchscreen */
 	int touch_y;			/* y coordinate on touchscreen */
-	char name[128];
-	char phys[64];
+	char name_mouse[128];
+	char phys_mouse[64];
+	char name_touch[128];
+	char phys_touch[64];
 	struct timer_list timer;
 };
 
@@ -1812,14 +1814,14 @@ static int imon_probe(struct usb_interface *interface,
 
 		context->mouse = input_allocate_device();
 
-		snprintf(context->name, sizeof(context->name),
+		snprintf(context->name_mouse, sizeof(context->name_mouse),
 			 "iMON PAD IR Mouse (%04x:%04x)",
 			 vendor, product);
-		context->mouse->name = context->name;
+		context->mouse->name = context->name_mouse;
 
-		usb_make_path(usbdev, context->phys, sizeof(context->phys));
-		strlcat(context->phys, "/input0", sizeof(context->phys));
-		context->mouse->phys = context->phys;
+		usb_make_path(usbdev, context->phys_mouse, sizeof(context->phys_mouse));
+		strlcat(context->phys_mouse, "/input0", sizeof(context->phys_mouse));
+		context->mouse->phys = context->phys_mouse;
 
 		context->mouse->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
 		context->mouse->keybit[BIT_WORD(BTN_MOUSE)] =
@@ -1863,16 +1865,16 @@ static int imon_probe(struct usb_interface *interface,
 		if (context->has_touchscreen) {
 			context->touch = input_allocate_device();
 
-			snprintf(context->name, sizeof(context->name),
-				 "iMON USB Touchscreen %04x:%04x",
+			snprintf(context->name_touch, sizeof(context->name_touch),
+				 "iMON USB Touchscreen (%04x:%04x)",
 				 vendor, product);
-			context->touch->name = context->name;
+			context->touch->name = context->name_touch;
 
-			usb_make_path(usbdev, context->phys,
-				      sizeof(context->phys));
-			strlcat(context->phys, "/input0",
-				sizeof(context->phys));
-			context->touch->phys = context->phys;
+			usb_make_path(usbdev, context->phys_touch,
+				      sizeof(context->phys_touch));
+			strlcat(context->phys_touch, "/input1",
+				sizeof(context->phys_touch));
+			context->touch->phys = context->phys_touch;
 
 			context->touch->evbit[0] =
 				BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
