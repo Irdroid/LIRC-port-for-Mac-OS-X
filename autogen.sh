@@ -26,4 +26,5 @@ chmod "u=rwx,g=rx,o=rx" configure
 
 echo "Creating setup-driver.sh ..."
 ./data2setup.sh > setup-driver.sh
+(cd contrib/hal/ && ./gen-hal-fdi.pl)
 
