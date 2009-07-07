@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.65 2009/07/07 14:52:39 jarodwilson Exp $      */
+/*      $Id: lirc_i2c.c,v 1.66 2009/07/07 15:39:06 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -369,11 +369,29 @@ static struct lirc_driver lirc_template = {
 	.owner		= THIS_MODULE,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 static int ir_attach(struct i2c_adapter *adap, int addr,
 		      unsigned short flags, int kind);
-static int ir_detach(struct i2c_client *client);
 static int ir_probe(struct i2c_adapter *adap);
+# else
+static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id);
+#endif
+static int ir_remove(struct i2c_client *client);
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+static struct i2c_client client_template = {
+	.name		= "unset",
+	.driver		= &driver
+};
+#else
+static const struct i2c_device_id ir_receiver_id[] = {
+	/* Generic entry for any IR receiver */
+	{ "ir_video", 0 },
+	/* IR device specific entries could be added here */
+	{ }
+};
+#endif
 
 static struct i2c_driver driver = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
@@ -386,34 +404,73 @@ static struct i2c_driver driver = {
 	},
 #endif
 	.id		= I2C_DRIVERID_EXP3, /* FIXME */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 	.attach_adapter	= ir_probe,
-	.detach_client	= ir_detach,
+	.detach_client	= ir_remove,
+#else
+	.probe		= ir_probe,
+	.remove		= ir_remove,
+	.id_table	= ir_receiver_id,
+#endif
 	.command	= ir_command,
 };
 
-static struct i2c_client client_template = {
-	.name		= "unset",
-	.driver		= &driver
-};
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
+#else
+static void pcf_probe(struct i2c_client *client, struct IR *ir)
+{
+	int ret1, ret2, ret3, ret4;
+
+	ret1 = i2c_smbus_write_byte(client, 0xff);
+	ret2 = i2c_smbus_read_byte(client);
+	ret3 = i2c_smbus_write_byte(client, 0x00);
+	ret4 = i2c_smbus_read_byte(client);
+
+	/* in the Asus TV-Box: bit 1-0 */
+	if (((ret2 & 0x03) == 0x03) && ((ret4 & 0x03) == 0x00)) {
+		ir->bits = (unsigned char) ~0x07;
+		ir->flag = 0x04;
+	/* in the Creative/VisionTek BreakOut-Box: bit 7-6 */
+	} else if (((ret2 & 0xc0) == 0xc0) && ((ret4 & 0xc0) == 0x00)) {
+		ir->bits = (unsigned char) ~0xe0;
+		ir->flag = 0x20;
+	}
+
+	return;
+}
+
+static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
+#endif
 {
 	struct IR *ir;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 	int err, retval;
 
 	client_template.adapter = adap;
 	client_template.addr = addr;
+#else
+	struct i2c_adapter *adap = client->adapter;
+	unsigned short addr = client->addr;
+	int retval;
+#endif
 
 	ir = kmalloc(sizeof(struct IR), GFP_KERNEL);
 	if (!ir)
 		return -ENOMEM;
 	memcpy(&ir->l, &lirc_template, sizeof(struct lirc_driver));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 	memcpy(&ir->c, &client_template, sizeof(struct i2c_client));
 
 	ir->c.adapter = adap;
 	ir->c.addr    = addr;
 	i2c_set_clientdata(&ir->c, ir);
+#else
+	memcpy(&ir->c, client, sizeof(struct i2c_client));
+
+	i2c_set_clientdata(client, ir);
+#endif
 	ir->l.data    = ir;
 	ir->l.minor   = minor;
 	ir->l.sample_rate = 10;
@@ -478,11 +535,15 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 		break;
 	case 0x21:
 	case 0x23:
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+		ir->bits = flags & 0xff;
+		ir->flag = (flags >> 8) & 0xff;
+#else
+		pcf_probe(client, ir);
+#endif
 		strlcpy(ir->c.name, "TV-Box IR", I2C_NAME_SIZE);
 		ir->l.code_length = 8;
 		ir->l.add_to_buf = add_to_buf_pcf8574;
-		ir->bits = flags & 0xff;
-		ir->flag = (flags >> 8) & 0xff;
 		break;
 	default:
 		/* shouldn't happen */
@@ -493,12 +554,14 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	printk(KERN_INFO "lirc_i2c: chip 0x%x found @ 0x%02x (%s)\n",
 	       adap->id, addr, ir->c.name);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 	/* register device */
 	err = i2c_attach_client(&ir->c);
 	if (err) {
 		kfree(ir);
 		return err;
 	}
+#endif
 
 	retval = lirc_register_driver(&ir->l);
 
@@ -514,19 +577,22 @@ static int ir_attach(struct i2c_adapter *adap, int addr,
 	return 0;
 }
 
-static int ir_detach(struct i2c_client *client)
+static int ir_remove(struct i2c_client *client)
 {
 	struct IR *ir = i2c_get_clientdata(client);
 
 	/* unregister device */
 	lirc_unregister_driver(ir->l.minor);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 	i2c_detach_client(&ir->c);
+#endif
 
 	/* free memory */
 	kfree(ir);
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 static int ir_probe(struct i2c_adapter *adap)
 {
 	/*
@@ -664,6 +730,7 @@ attach_fail:
 	return rc;
 
 }
+#endif
 
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg)
 {
