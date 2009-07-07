@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.64 2009/02/14 19:35:52 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.65 2009/07/07 14:52:39 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -175,15 +175,18 @@ static int add_to_buf_haup_common(void *data, struct lirc_buffer *buf,
 	struct IR *ir = data;
 	__u16 code;
 	unsigned char codes[2];
+	int ret;
 
 	/* poll IR chip */
-	if (size == i2c_master_recv(&ir->c, keybuf, size)) {
+	ret = i2c_master_recv(&ir->c, keybuf, size);
+	if (ret == size) {
 		ir->b[0] = keybuf[offset];
 		ir->b[1] = keybuf[offset+1];
 		ir->b[2] = keybuf[offset+2];
-		dprintk("key (0x%02x/0x%02x)\n", ir->b[0], ir->b[1]);
+		if (ir->b[0] != 0x00 && ir->b[1] != 0x00)
+			dprintk("key (0x%02x/0x%02x)\n", ir->b[0], ir->b[1]);
 	} else {
-		dprintk("read error\n");
+		dprintk("read error (ret=%d)\n", ret);
 		/* keep last successful read buffer */
 	}
 
@@ -198,6 +201,7 @@ static int add_to_buf_haup_common(void *data, struct lirc_buffer *buf,
 	codes[1] = code & 0xff;
 
 	/* return it */
+	dprintk("sending code 0x%02x%02x to lirc\n", codes[0], codes[1]);
 	lirc_buffer_write(buf, codes);
 	return 0;
 }
@@ -330,6 +334,8 @@ static int set_use_inc(void *data)
 {
 	struct IR *ir = data;
 
+	dprintk("%s called\n", __func__);
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 	i2c_use_client(&ir->c);
 #else
@@ -348,6 +354,8 @@ static int set_use_inc(void *data)
 static void set_use_dec(void *data)
 {
 	struct IR *ir = data;
+
+	dprintk("%s called\n", __func__);
 
 	i2c_release_client(&ir->c);
 	MOD_DEC_USE_COUNT;
