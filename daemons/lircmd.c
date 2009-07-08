@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.20 2009/06/05 19:08:50 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.21 2009/07/08 19:38:22 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -143,9 +143,9 @@ struct state_mouse new_ms,ms=
 	{button_up,button_up,button_up}
 };
 
-char *progname="lircmd";
+const char *progname="lircmd";
 static const char *syslogident = "lircmd-" VERSION;
-char *configfile=LIRCMDCFGFILE;
+const char *configfile = NULL;
 
 int lircd = -1;
 int lircm = -1;
@@ -874,6 +874,7 @@ int main(int argc,char **argv)
 	struct sockaddr_un addr;
 	sigset_t block;
 	int nodaemon=0;
+	const char *filename;
 
 	while(1)
 	{
@@ -980,14 +981,24 @@ int main(int argc,char **argv)
 	}
 
 	/* read config file */
-
-	fd=fopen(configfile,"r");
-	if(fd==NULL)
+	
+	filename = configfile;
+	if(configfile == NULL) filename = LIRCMDCFGFILE;
+	fd=fopen(filename, "r");
+	if(fd == NULL && errno == ENOENT && configfile == NULL)
 	{
-		fprintf(stderr,"%s: could not open config file\n",progname);
+		int save_errno = errno;
+		filename = LIRCMDOLDCFGFILE;
+		fd=fopen(filename, "r");
+		errno = save_errno;
+	}
+	if(fd == NULL)
+	{
+		fprintf(stderr, "%s: could not open config file\n", progname);
 		perror(progname);
 		exit(EXIT_FAILURE);
 	}
+	configfile = filename;
 	tm_first=read_config(fd);
 	fclose(fd);
 	if(tm_first==(void *) -1)

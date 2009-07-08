@@ -60,7 +60,7 @@ irsend SIMULATE "0000000000000476 00 OK TECHNISAT_ST3004S"
 .fi
 [FILES]
 .TP
-.I /etc/lircd.conf
+.I /etc/lirc/lircd.conf
 Default \fBlircd\fR configuration file.  It should contain all the
 remotes, their infra-red codes and the corresponding timing and 
 waveform details.

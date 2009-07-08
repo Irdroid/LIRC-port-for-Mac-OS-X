@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.86 2009/06/20 17:52:42 lirc Exp $      */
+/*      $Id: lircd.c,v 5.87 2009/07/08 19:38:22 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -100,7 +100,7 @@ static char *repeat_message=NULL;
 extern struct hardware hw;
 
 char *progname="lircd";
-char *configfile=LIRCDCFGFILE;
+const char *configfile = NULL;
 #ifndef USE_SYSLOG
 char *logfile=LOGFILE;
 #else
@@ -471,6 +471,8 @@ void config(void)
 {
 	FILE *fd;
 	struct ir_remote *config_remotes;
+	const char *filename = configfile;
+	if(filename == NULL) filename = LIRCDCFGFILE;
 	
 	if(free_remotes!=NULL)
 	{
@@ -478,14 +480,29 @@ void config(void)
 		logprintf(LOG_ERR,"old config is still in use");
 		return;
 	}
-	fd=fopen(configfile,"r");
+	fd=fopen(filename, "r");
+	if(fd == NULL && errno == ENOENT && configfile == NULL)
+	{
+		/* try old lircd.conf location */
+		int save_errno = errno;
+		fd = fopen(LIRCDOLDCFGFILE, "r");
+		if(fd != NULL)
+		{
+			filename = LIRCDOLDCFGFILE;
+		}
+		else
+		{
+			errno = save_errno;
+		}
+	}
 	if(fd==NULL)
 	{
-		logprintf(LOG_ERR,"could not open config file '%s'",
-			  configfile);
-		logperror(LOG_ERR,NULL);
+		logprintf(LOG_ERR, "could not open config file '%s'",
+			  filename);
+		logperror(LOG_ERR, NULL);
 		return;
 	}
+	configfile = filename;
 	config_remotes=read_config(fd, configfile);
 	fclose(fd);
 	if(config_remotes==(void *) -1)

@@ -74,7 +74,7 @@ complete list of possible button names in /usr/include/linux/input.h.
 
 [FILES]
 
-The config file for lircd is located in /etc/lircd.conf. lircd
+The config file for lircd is located in /etc/lirc/lircd.conf. lircd
 has its own log file in /var/log/lircd (beginning with LIRC version
 0.6.1 you can configure lircd to use syslogd for log messages; then it
 depends on your system configuration where log messages will show up).

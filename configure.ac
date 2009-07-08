@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.28 2009/07/05 21:26:25 jarodwilson Exp $
+dnl $Id: configure.ac,v 1.29 2009/07/08 19:38:22 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1647,7 +1647,7 @@ cur_prefix=$prefix
 test "x${prefix}" = "xNONE" && prefix=$ac_default_prefix 
 test "${sysconfdir}" = "\${prefix}/etc" && sysconfdir=/etc
 test "${localstatedir}" = "\${prefix}/var" && localstatedir=/var
-varrundir="${localstatedir}/run/lirc"
+varrundir="${localstatedir}/run"
 sysconfdir_exp=`eval "echo ${sysconfdir}"`
 localstatedir_exp=`eval "echo ${localstatedir}"`
 varrundir_exp=`eval "echo ${varrundir}"`
@@ -1684,7 +1684,7 @@ dnl tell the C code what we decided
 AC_DEFINE_UNQUOTED(DEVDIR, "$devdir")
 AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir_exp")
 AC_DEFINE_UNQUOTED(LOCALSTATEDIR, "$localstatedir_exp")
-AC_DEFINE_UNQUOTED([VARRUNDIR], "$varrundir_exp", [/var/run/lirc])
+AC_DEFINE_UNQUOTED([VARRUNDIR], "$varrundir_exp", [/var/run])
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 
@@ -1735,19 +1735,23 @@ AH_BOTTOM([
 
 #define LIRC_IRTTY		DEVDIR "/" "ttyS0"
 
-#define LIRCD			VARRUNDIR "/" DEV_LIRCD
-#define LIRCM			VARRUNDIR "/" DEV_LIRCM
+#define LIRCD			VARRUNDIR "/" PACKAGE "/" DEV_LIRCD
+#define LIRCM			VARRUNDIR "/" PACKAGE "/" DEV_LIRCM
 
-#define LIRCDCFGFILE		SYSCONFDIR "/" CFG_LIRCD
-#define LIRCMDCFGFILE		SYSCONFDIR "/" CFG_LIRCM
+#define LIRCDCFGFILE		SYSCONFDIR "/" PACKAGE "/" CFG_LIRCD
+#define LIRCMDCFGFILE		SYSCONFDIR "/" PACKAGE "/" CFG_LIRCM
+
+#define LIRCDOLDCFGFILE		SYSCONFDIR "/" CFG_LIRCD
+#define LIRCMDOLDCFGFILE	SYSCONFDIR "/" CFG_LIRCM
 
 #define LIRCRC_USER_FILE	"." CFG_LIRCRC
-#define LIRCRC_ROOT_FILE	SYSCONFDIR "/" CFG_LIRCRC
+#define LIRCRC_ROOT_FILE	SYSCONFDIR "/" PACKAGE "/" CFG_LIRCRC
+#define LIRCRC_OLD_ROOT_FILE	SYSCONFDIR "/" CFG_LIRCRC
 
 #define LOGFILE			LOCALSTATEDIR "/log/" LOG_LIRCD
 #define LIRMAND_LOGFILE		LOCALSTATEDIR "/log/" LOG_LIRMAND
 
-#define PIDFILE                 VARRUNDIR "/" PID_LIRCD
+#define PIDFILE                 VARRUNDIR "/" PACKAGE "/" PID_LIRCD
 
 #define LIRC_RELEASE_SUFFIX     "_UP"
 ])

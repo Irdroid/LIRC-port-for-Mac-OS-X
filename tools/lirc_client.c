@@ -1,4 +1,4 @@
-/*      $Id: lirc_client.c,v 5.28 2009/02/01 21:05:29 lirc Exp $      */
+/*      $Id: lirc_client.c,v 5.29 2009/07/08 19:38:22 lirc Exp $      */
 
 /****************************************************************************
  ** lirc_client.c ***********************************************************
@@ -719,7 +719,15 @@ static FILE *lirc_open(const char *file, const char *current_file,
 	}
 	else if(fin==NULL)
 	{
-		fin=fopen(LIRCRC_ROOT_FILE,"r");
+		const char *root_file = LIRCRC_ROOT_FILE;
+		fin = fopen(root_file, "r");
+		if(fin == NULL && errno == ENOENT)
+		{
+			int save_errno = errno;
+			root_file = LIRCRC_OLD_ROOT_FILE;
+			fin = fopen(root_file, "r");
+			errno = save_errno;
+		}
 		if(fin==NULL && errno!=ENOENT)
 		{
 			lirc_printf("%s: could not open config file %s\n",
@@ -736,7 +744,7 @@ static FILE *lirc_open(const char *file, const char *current_file,
 		else
 		{
 			free(filename);
-			filename = strdup(LIRCRC_ROOT_FILE);
+			filename = strdup(root_file);
 			if(filename==NULL)
 			{
 				fclose(fin);

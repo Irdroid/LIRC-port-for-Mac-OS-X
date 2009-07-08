@@ -6,18 +6,19 @@
     
     <OL>
       <LI>Check if there is already a config file in
-	<em>/etc/lircd.conf</em>. If not</LI>
+	<em>/etc/lirc/lircd.conf</em>. If not</LI>
       
       <LI>check if there is a config file available for your remote control
 	at the LIRC homepage and copy it to
-	<em>/etc/lircd.conf</em>. If not</LI>
+	<em>/etc/lirc/lircd.conf</em>. If not</LI>
       
       <LI>start <em>irrecord</em> (finish all applications that access
 	<em>/dev/lirc</em> first) and follow the instructions given to
 	you by this program. Copy the resulting file to
-	<em>/etc/lircd.conf</em>. If you have trouble creating a working
-	config file please read the chapter about <A
-	  HREF="help.html#new_remote">adding new remote controls</A>.</LI>
+	<em>/etc/lirc/lircd.conf</em>. If you have trouble creating a
+	working config file please read the chapter about <A
+	HREF="help.html#new_remote">adding new remote controls</A>.
+      </LI>
     </OL>
     
     <P>
@@ -430,11 +431,11 @@ MOVE_NE   ANIMAX_MOUSE_PAD   MOUSE_NNE</PRE>
       signals decoded by lircd. To do this you need a file called
       <em>.lircrc</em>. It should be placed in your home
       directory. Optionally you can create a system-wide configuration
-      file located in /etc/lircrc, which will be used when no .lircrc
-      file can be found in the user's home directory. The idea is to
-      have configuration information of all clients in one place. That
-      lets you keep a better overview of clients and simplifies the
-      use of modes explained later.
+      file located in /etc/lirc/lircrc, which will be used when no
+      .lircrc file can be found in the user's home directory. The idea
+      is to have configuration information of all clients in one
+      place. That lets you keep a better overview of clients and
+      simplifies the use of modes explained later.
     </P>
     <P>
       First I will explain the syntax of the .lircrc file itself.  The
