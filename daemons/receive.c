@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.37 2009/05/24 10:46:52 lirc Exp $      */
+/*      $Id: receive.c,v 5.38 2009/07/08 16:05:16 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -1094,7 +1094,7 @@ int receive_decode(struct ir_remote *remote,
 		   int *repeat_flagp,
 		   lirc_t *min_remaining_gapp, lirc_t *max_remaining_gapp)
 {
-	ir_code pre,code,post,code_mask=0,post_mask=0;
+	ir_code pre,code,post;
 	lirc_t sync;
 	int header;
 	struct timeval current;
@@ -1236,13 +1236,13 @@ int receive_decode(struct ir_remote *remote,
 		if(hw.rec_mode==LIRC_MODE_CODE ||
 		   hw.rec_mode==LIRC_MODE_LIRCCODE)
 		{
-			int i;
  			lirc_t sum;
+			ir_code decoded = rec_buffer.decoded;
 
 #                       ifdef LONG_IR_CODE
-			LOGPRINTF(1,"decoded: %llx",rec_buffer.decoded);
+			LOGPRINTF(1,"decoded: %llx", decoded);
 #                       else
-			LOGPRINTF(1,"decoded: %lx",rec_buffer.decoded);
+			LOGPRINTF(1,"decoded: %lx", decoded);
 #                       endif
 			if((hw.rec_mode==LIRC_MODE_CODE &&
 			    hw.code_length<bit_count(remote))
@@ -1253,21 +1253,11 @@ int receive_decode(struct ir_remote *remote,
 				return(0);
 			}
 			
-			for(i=0;i<remote->post_data_bits;i++)
-			{
-				post_mask=(post_mask<<1)+1;
-			}
-			post=rec_buffer.decoded&post_mask;
-			post_mask=0;
-			rec_buffer.decoded=
-			rec_buffer.decoded>>remote->post_data_bits;
-			for(i=0;i<remote->bits;i++)
-			{
-				code_mask=(code_mask<<1)+1;
-			}
-			code=rec_buffer.decoded&code_mask;
-			code_mask=0;
-			pre=rec_buffer.decoded>>remote->bits;
+			post = decoded & gen_mask(remote->post_data_bits);
+			decoded >>= remote->post_data_bits;
+			code = decoded & gen_mask(remote->bits);
+			pre = decoded >> remote->bits;
+			
 			gettimeofday(&current,NULL);
 			sum=remote->phead+remote->shead+
 				lirc_t_max(remote->pone+remote->sone,
