@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.92 2009/07/06 18:05:11 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.93 2009/07/14 18:46:42 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1192,20 +1192,6 @@ static void imon_incoming_packet(struct imon_context *context,
 			mouse_input = 1;
 			rel_x = buf[2];
 			rel_y = buf[3];
-		/* 0xffdc iMON PAD input */
-		} else if (context->ffdc_dev && (buf[0] & 0x40) &&
-			   !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01))) {
-			mouse_input = 1;
-			rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
-				(buf[1] & 0x20) >> 4 | (buf[1] & 0x40) >> 6;
-			if (buf[0] & 0x02)
-				rel_x |= ~0x11;
-			rel_x = rel_x + rel_x / 2;
-			rel_y = (buf[2] & 0x08) | (buf[2] & 0x10) >> 2 |
-				(buf[2] & 0x20) >> 4 | (buf[2] & 0x40) >> 6;
-			if (buf[0] & 0x01)
-				rel_y |= ~0x11;
-			rel_y = rel_y + rel_y / 2;
 		/* 0xffdc mouse buttons */
 		} else if (context->ffdc_dev && !memcmp(buf, btn_left, 4)) {
 			mouse_input = 1;
@@ -1213,6 +1199,20 @@ static void imon_incoming_packet(struct imon_context *context,
 		} else if (context->ffdc_dev && !memcmp(buf, btn_right, 4)) {
 			mouse_input = 1;
 			buf[1] = 0x02;
+		/* 0xffdc iMON PAD input */
+		} else if (context->ffdc_dev && (buf[0] & 0x40) &&
+			   !((buf[1] & 0x01) || ((buf[1] >> 2) & 0x01))) {
+			mouse_input = 1;
+			rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
+				(buf[1] & 0x20) >> 4 | (buf[1] & 0x40) >> 6;
+			if (buf[0] & 0x02)
+				rel_x |= ~0x0f;
+			rel_x = rel_x + rel_x / 2;
+			rel_y = (buf[2] & 0x08) | (buf[2] & 0x10) >> 2 |
+				(buf[2] & 0x20) >> 4 | (buf[2] & 0x40) >> 6;
+			if (buf[0] & 0x01)
+				rel_y |= ~0x0f;
+			rel_y = rel_y + rel_y / 2;
 		/* ch+/- buttons, which we use for an emulated scroll wheel */
 		} else if (!memcmp(buf, ch_up, 4) || !memcmp(buf, ch_down, 4))
 			mouse_input = 1;
