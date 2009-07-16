@@ -99,7 +99,7 @@ end remote
 #	-iMon Ultrabay
 #	-Thermaltake DH-101
 #	-Misc other HTPC cases with built-in iMon IR/LCD
-#begin remote
+begin remote
 
   name  imon_ultrabay_panel
   bits           40
