@@ -3,13 +3,9 @@
 # model no. of remote control:  TSGH-IR01
 # devices being controlled by this remote: HP Slimline S3100y
 #
-# Derived from MCEUSB2 lircd.conf file (lircd.conf.mceusb) found at:
-# https://help.ubuntu.com/community/Install_Lirc_Feisty
-
-#
 # RC-6 config file
 #
-# source: http://home.hccnet.nl/m.majoor/projects__remote_control.htm
+# source: http://home.hccnet.nl/m.majoor/projects_remote_control.htm
 #         http://home.hccnet.nl/m.majoor/pronto.pdf
 #
 # used by: Philips
@@ -188,7 +184,7 @@ end remote
 
 begin remote
 
-  name  mceusb
+  name  mceusb_hauppauge
   bits           13
   flags RC6|CONST_LENGTH
   eps            30
