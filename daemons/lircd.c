@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.87 2009/07/08 19:38:22 lirc Exp $      */
+/*      $Id: lircd.c,v 5.88 2009/07/19 09:12:51 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -2005,7 +2005,7 @@ int waitfordata(long maxusec)
 				tv.tv_sec= maxusec / 1000000;
 				tv.tv_usec=maxusec % 1000000;
 			}
-			if(hw.fd == -1)
+			if(hw.fd == -1 && use_hw())
 			{
 				/* try to reconnect */
 				timerclear(&timeout);
@@ -2030,7 +2030,8 @@ int waitfordata(long maxusec)
 					struct timeval gap;
 					
 					timersub(&release_time, &now, &gap);
-					if(timercmp(&tv, &gap, >))
+					if(!(timerisset(&tv) || reconnect) ||
+					   timercmp(&tv, &gap, >))
 					{
 						tv = gap;
 					}
