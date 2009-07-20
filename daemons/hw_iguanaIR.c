@@ -18,7 +18,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
+#if defined __APPLE__
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#else
 #include <wait.h>
+#endif
 
 #include "lircd.h"
 #include "ir_remote_types.h"
@@ -39,7 +44,7 @@ static void quitHandler(int sig)
 	recvDone = 1;
 }
 
-static void recv_loop(int fd)
+static void recv_loop(int fd, int notify)
 {
 	int conn;
 
@@ -49,6 +54,9 @@ static void recv_loop(int fd)
 	signal(SIGINT, quitHandler);
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGALRM, SIG_IGN);
+
+	/* notify parent by closing notify */
+	close(notify);
 
 	conn = iguanaConnect(hw.device);
 	if (conn != -1)
@@ -61,7 +69,13 @@ static void recv_loop(int fd)
 			while(! recvDone)
 			{
 				/* read from device */
-				response = iguanaReadResponse(conn, 1000);
+				do
+				{
+					response = iguanaReadResponse(conn, 1000);
+				}
+				while (!recvDone &&
+					((response == NULL && errno == ETIMEDOUT)
+					|| (iguanaResponseIsError(response) && errno == ETIMEDOUT)));
 
 				if (iguanaResponseIsError(response))
 				{
@@ -143,37 +157,65 @@ static int iguana_init()
         }
 	else
 	{
-		hw.fd = recv_pipe[0];
+		int notify[2];
 
-		child = fork();
-		if (child == -1)
+		if (pipe(notify) != 0)
 		{
-			logprintf(LOG_ERR, "couldn't fork child process: %s", strerror(errno));
-		}
-		else if (child == 0)
-		{
+			logprintf(LOG_ERR, "couldn't open pipe: %s", strerror(errno));
 			close(recv_pipe[0]);
-			recv_loop(recv_pipe[1]);
-			_exit(0);
+			close(recv_pipe[1]);
 		}
 		else
 		{
-			close(recv_pipe[1]);
-			sendConn = iguanaConnect(hw.device);
-			if (sendConn == -1)
-				logprintf(LOG_ERR, "couldn't open connection to iguanaIR daemon: %s", strerror(errno));
+			hw.fd = recv_pipe[0];
+
+			child = fork();
+			if (child == -1)
+			{
+				logprintf(LOG_ERR, "couldn't fork child process: %s", strerror(errno));
+			}
+			else if (child == 0)
+			{
+				close(recv_pipe[0]);
+				close(notify[0]);
+				recv_loop(recv_pipe[1], notify[1]);
+				_exit(0);
+			}
 			else
-				retval = 1;
+			{
+				int dummy;
+				close(recv_pipe[1]);
+				close(notify[1]);
+				/* make sure child has set its signal handler to avoid race with iguana_deinit() */
+				read(notify[0], &dummy, 1);
+				close(notify[0]);
+				sendConn = iguanaConnect(hw.device);
+				if (sendConn == -1)
+					logprintf(LOG_ERR, "couldn't open connection to iguanaIR daemon: %s", strerror(errno));
+				else
+					retval = 1;
+			}
 		}
         }
 
 	return retval;
 }
 
+static pid_t dowaitpid(pid_t pid, int *stat_loc, int options)
+{
+	pid_t retval;
+
+	do
+	{
+		retval = waitpid(pid, stat_loc, options);
+	}
+	while (retval == (pid_t) -1 && errno == EINTR);
+
+	return retval;
+}
+
 static int iguana_deinit()
 {
-	int retval = 1;
-
 	/* close the connection to the iguana daemon */
 	if (sendConn != -1)
 	{
@@ -183,9 +225,8 @@ static int iguana_deinit()
 
 	/* signal the child process to exit */
 	if (child > 0 && (kill(child, SIGTERM) == -1 ||
-			  waitpid(child, NULL, 0) != 0))
+			  dowaitpid(child, NULL, 0) != (pid_t) -1))
 	{
-		retval = 0;
 		child = 0;
 	}
 
@@ -193,7 +234,7 @@ static int iguana_deinit()
 	close(hw.fd);
         hw.fd = -1;
 
-	return retval;
+	return child == 0;
 }
 
 static char *iguana_rec(struct ir_remote *remotes)
@@ -314,7 +355,7 @@ static int iguana_ioctl(unsigned int code, void *arg)
 static lirc_t readdata(lirc_t timeout)
 {
 	lirc_t code = 0;
-	struct timeval tv = {0, timeout};
+	struct timeval tv = {timeout/1000000, timeout%1000000};
 	fd_set fds;
 
 	FD_ZERO(&fds);
