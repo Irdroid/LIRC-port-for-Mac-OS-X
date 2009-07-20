@@ -199,7 +199,7 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_FORMOSA, 0xe017) },
 	/* Formosa Industrial Computing / Beanbag Emulation Device */
 	{ USB_DEVICE(VENDOR_FORMOSA, 0xe018) },
-	/* Formosa Industrial Computing Transceiver */
+	/* Formosa Industrial Computing AIM IR605/A */
 	{ USB_DEVICE(VENDOR_FORMOSA, 0xe03c) },
 	/* Fintek eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_FINTEK, 0x0602) },
