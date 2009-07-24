@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.95 2009/07/24 04:54:25 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.96 2009/07/24 04:55:31 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -640,19 +640,13 @@ static int send_associate_24g(struct imon_context *context)
 		return -ENODEV;
 	}
 
-	mutex_lock(&context->lock);
-
 	if (!context->dev_present_intf0) {
 		err("%s: no iMON device present", __func__);
-		retval = -ENODEV;
-		goto exit;
+		return -ENODEV;
 	}
 
 	memcpy(context->usb_tx_buf, packet, sizeof(packet));
 	retval = send_packet(context);
-
-exit:
-	mutex_unlock(&context->lock);
 
 	return retval;
 }
