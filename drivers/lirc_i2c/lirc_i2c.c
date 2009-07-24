@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.66 2009/07/07 15:39:06 jarodwilson Exp $      */
+/*      $Id: lirc_i2c.c,v 1.67 2009/07/24 04:21:24 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -567,7 +567,9 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	if (retval < 0) {
 		printk(KERN_ERR "lirc_i2c: failed to register driver!\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 		i2c_detach_client(&ir->c);
+#endif
 		kfree(ir);
 		return retval;
 	}
