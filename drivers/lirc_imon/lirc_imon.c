@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.94 2009/07/24 04:47:17 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.95 2009/07/24 04:54:25 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1055,12 +1055,14 @@ static inline int tv2int(const struct timeval *a, const struct timeval *b)
 }
 
 /**
- * The directional pad is overly sensitive in keyboard mode, so we do some
- * interesting contortions to make it less touchy.
+ * The directional pad behaves a bit differently, depending on whether this is
+ * one of the older ffdc devices or a newer device. Newer devices appear to
+ * have a higher resolution matrix for more precise mouse movement, but it
+ * makes things overly sensitive in keyboard mode, so we do some interesting
+ * contortions to make it less touchy. Older devices run through the same
+ * routine with shorter timeout and a smaller threshold.
  */
-#define IMON_PAD_TIMEOUT	1000	/* in msecs */
-#define IMON_PAD_THRESHOLD	80	/* 160x160 square */
-static int stabilize(int a, int b)
+static int stabilize(int a, int b, u16 timeout, u16 threshold)
 {
 	struct timeval ct;
 	static struct timeval prev_time = {0, 0};
@@ -1084,7 +1086,7 @@ static int stabilize(int a, int b)
 
 	prev_time = ct;
 
-	if (abs(x) > IMON_PAD_THRESHOLD || abs(y) > IMON_PAD_THRESHOLD) {
+	if (abs(x) > threshold || abs(y) > threshold) {
 		if (abs(y) > abs(x))
 			result = (y > 0) ? 0x7F : 0x80;
 		else
@@ -1099,21 +1101,21 @@ static int stabilize(int a, int b)
 			if (hits > 3) {
 				switch (result) {
 				case 0x7F:
-					y = 17 * IMON_PAD_THRESHOLD / 30;
+					y = 17 * threshold / 30;
 					break;
 				case 0x80:
-					y -= 17 * IMON_PAD_THRESHOLD / 30;
+					y -= 17 * threshold / 30;
 					break;
 				case 0x7F00:
-					x = 17 * IMON_PAD_THRESHOLD / 30;
+					x = 17 * threshold / 30;
 					break;
 				case 0x8000:
-					x -= 17 * IMON_PAD_THRESHOLD / 30;
+					x -= 17 * threshold / 30;
 					break;
 				}
 			}
 
-			if (hits == 2 && msec_hit < IMON_PAD_TIMEOUT) {
+			if (hits == 2 && msec_hit < timeout) {
 				result = 0;
 				hits = 1;
 			}
@@ -1143,6 +1145,7 @@ static void imon_incoming_packet(struct imon_context *context,
 	int mouse_input;
 	int right_shift = 1;
 	int dir = 0;
+	u16 timeout, threshold;
 	struct input_dev *mouse = NULL;
 	struct input_dev *touch = NULL;
 	const unsigned char toggle_button1[] = { 0x29, 0x91, 0x15, 0xb7 };
@@ -1255,6 +1258,8 @@ static void imon_incoming_packet(struct imon_context *context,
 		/* first, pad to 8 bytes so it conforms with everything else */
 		buf[5] = buf[6] = buf[7] = 0;
 		len = 8;
+		timeout = 500;	/* in msecs */
+		threshold = 80;	/* 160x160 square */
 		rel_x = buf[2];
 		rel_y = buf[3];
 
@@ -1269,7 +1274,8 @@ static void imon_incoming_packet(struct imon_context *context,
 		 * try to ignore when they get too close
 		 */
 		if ((buf[1] == 0) && ((rel_x != 0) || (rel_y != 0))) {
-			dir = stabilize((int)rel_x, (int)rel_y);
+			dir = stabilize((int)rel_x, (int)rel_y,
+					timeout, threshold);
 			if (!dir)
 				return;
 			buf[2] = dir & 0xFF;
@@ -1291,6 +1297,8 @@ static void imon_incoming_packet(struct imon_context *context,
 		 * 0x01007F00, ..., so one can use the normal imon-pad config
 		 * from the remotes dir.
 		 */
+		timeout = 10;	/* in msecs */
+		threshold = 15;	/* 30x30 square */
 
 		/* buf[1] is x */
 		rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
@@ -1306,7 +1314,7 @@ static void imon_incoming_packet(struct imon_context *context,
 		buf[0] = 0x01;
 		buf[1] = buf[4] = buf[5] = buf[6] = buf[7] = 0;
 
-		dir = stabilize((int)rel_x, (int)rel_y);
+		dir = stabilize((int)rel_x, (int)rel_y, timeout, threshold);
 		if (!dir)
 			return;
 		buf[2] = dir & 0xFF;
