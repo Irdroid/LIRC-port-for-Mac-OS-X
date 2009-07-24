@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.96 2009/07/24 04:55:31 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.97 2009/07/24 05:03:23 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -161,7 +161,7 @@ struct imon_context {
 	int ir_protocol;		/* iMON or MCE (RC6) IR protocol? */
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
-	int has_touchscreen;		/* touchscreen present? */
+	int display_type;		/* store the display type */
 	int pad_mouse;			/* toggle kbd(0)/mouse(1) mode */
 	int touch_x;			/* x coordinate on touchscreen */
 	int touch_y;			/* y coordinate on touchscreen */
@@ -1148,7 +1148,7 @@ static void imon_incoming_packet(struct imon_context *context,
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
 
 	mouse = context->mouse;
-	if (context->has_touchscreen)
+	if (context->display_type == IMON_DISPLAY_TYPE_VGA)
 		touch = context->touch;
 
 	/* keyboard/mouse mode toggle button */
@@ -1166,7 +1166,7 @@ static void imon_incoming_packet(struct imon_context *context,
 	}
 
 	/* send touchscreen events through input subsystem if touchpad data */
-	if (context->has_touchscreen && len == 8 &&
+	if (context->display_type == IMON_DISPLAY_TYPE_VGA && len == 8 &&
 	    (buf[6] == 0x14 || buf[6] == 0x03) && buf[7] == 0x86) {
 		if (touch == NULL) {
 			printk(KERN_WARNING "%s: touchscreen input device is "
@@ -1435,7 +1435,7 @@ static void imon_touch_display_timeout(unsigned long data)
 	struct imon_context *context = (struct imon_context *)data;
 	struct input_dev *touch;
 
-	if (!context->has_touchscreen)
+	if (!context->display_type == IMON_DISPLAY_TYPE_VGA)
 		return;
 
 	touch = context->touch;
@@ -1554,24 +1554,41 @@ static int imon_probe(struct usb_interface *interface,
 	int alloc_status = 0;
 	int vfd_proto_6p = 0;
 	int ir_onboard_decode = 0;
-	int has_touchscreen = 0;
 	int buf_chunk_size = BUF_CHUNK_SIZE;
 	int code_length;
 	int tx_control = 0;
 	struct imon_context *context = NULL;
 	struct imon_context *first_if_context = NULL;
 	int i;
+	int configured_display_type = IMON_DISPLAY_TYPE_VFD;
 	u16 vendor, product;
 	const unsigned char fp_packet[] = { 0x40, 0x00, 0x00, 0x00,
 					    0x00, 0x00, 0x00, 0x88 };
 
 	/*
+	 * Try to auto-detect the type of display if the user hasn't set
+	 * it by hand via the display_type modparam. Default is VFD.
+	 */
+	if (display_type == IMON_DISPLAY_TYPE_AUTO) {
+		if (usb_match_id(interface, lcd_device_list))
+			configured_display_type = IMON_DISPLAY_TYPE_LCD;
+		else if (usb_match_id(interface, imon_touchscreen_list))
+			configured_display_type = IMON_DISPLAY_TYPE_VGA;
+		else if (usb_match_id(interface, ir_only_list))
+			configured_display_type = IMON_DISPLAY_TYPE_NONE;
+		else
+			configured_display_type = IMON_DISPLAY_TYPE_VFD;
+	} else {
+		configured_display_type = display_type;
+		dprintk("%s: overriding display type to %d via modparam\n",
+			__func__, display_type);
+	}
+
+	/*
 	 * If it's the LCD, as opposed to the VFD, we just need to replace
 	 * the "write" file op.
 	 */
-	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
-	     usb_match_id(interface, lcd_device_list)) ||
-	    display_type == IMON_DISPLAY_TYPE_LCD)
+	if (configured_display_type == IMON_DISPLAY_TYPE_LCD)
 		display_fops.write = &lcd_write;
 
 	/*
@@ -1647,9 +1664,7 @@ static int imon_probe(struct usb_interface *interface,
 	 * that SoundGraph recycles device IDs between devices both with
 	 * and without... :\
 	 */
-	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
-	     usb_match_id(interface, ir_only_list)) ||
-	    display_type == IMON_DISPLAY_TYPE_NONE) {
+	if (configured_display_type == IMON_DISPLAY_TYPE_NONE) {
 		display_ep_found = 0;
 		dprintk("%s: device has no display\n", __func__);
 	}
@@ -1658,11 +1673,8 @@ static int imon_probe(struct usb_interface *interface,
 	 * iMON Touch devices have a VGA touchscreen, but no "display", as
 	 * that refers to e.g. /dev/lcd0 (a character device LCD or VFD).
 	 */
-	if ((display_type == IMON_DISPLAY_TYPE_AUTO &&
-	     usb_match_id(interface, imon_touchscreen_list)) ||
-	    display_type == IMON_DISPLAY_TYPE_VGA) {
+	if (configured_display_type == IMON_DISPLAY_TYPE_VGA) {
 		display_ep_found = 0;
-		has_touchscreen = 1;
 		dprintk("%s: iMON Touch device found\n", __func__);
 	}
 
@@ -1805,7 +1817,7 @@ static int imon_probe(struct usb_interface *interface,
 		if (product == 0xffdc)
 			context->ffdc_dev = 1;
 
-		context->has_touchscreen = has_touchscreen;
+		context->display_type = configured_display_type;
 
 		context->mouse = input_allocate_device();
 
@@ -1857,7 +1869,7 @@ static int imon_probe(struct usb_interface *interface,
 		context->rx_endpoint_intf1 = rx_endpoint;
 		context->rx_urb_intf1 = rx_urb;
 
-		if (context->has_touchscreen) {
+		if (context->display_type == IMON_DISPLAY_TYPE_VGA) {
 			context->touch = input_allocate_device();
 
 			snprintf(context->name_touch, sizeof(context->name_touch),
@@ -2016,7 +2028,7 @@ static void imon_disconnect(struct usb_interface *interface)
 	} else {
 		context->dev_present_intf1 = 0;
 		usb_kill_urb(context->rx_urb_intf1);
-		if (context->has_touchscreen)
+		if (context->display_type == IMON_DISPLAY_TYPE_VGA)
 			input_unregister_device(context->touch);
 	}
 
