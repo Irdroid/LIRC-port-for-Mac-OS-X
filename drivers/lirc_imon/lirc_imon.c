@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.97 2009/07/24 05:03:23 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.98 2009/07/24 05:07:32 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -68,6 +68,8 @@
 #define BUF_SIZE	128
 
 #define BIT_DURATION	250	/* each bit received is 250us */
+
+#define IMON_CLOCK_ENABLE_PACKETS	2
 
 #define dprintk(fmt, args...)						\
 	do {								\
@@ -652,6 +654,96 @@ static int send_associate_24g(struct imon_context *context)
 }
 
 /**
+ * Sends packets to setup and show clock on iMON display
+ *
+ * Arguments: year - last 2 digits of year, month - 1..12,
+ * day - 1..31, dow - day of the week (0-Sun...6-Sat),
+ * hour - 0..23, minute - 0..59, second - 0..59
+ */
+static int send_set_imon_clock(struct imon_context *context,
+			       unsigned int year, unsigned int month,
+			       unsigned int day, unsigned int dow,
+			       unsigned int hour, unsigned int minute,
+			       unsigned int second)
+{
+	unsigned char clock_enable_pkt[IMON_CLOCK_ENABLE_PACKETS][8];
+	int retval = 0;
+	int i;
+
+	if (!context) {
+		err("%s: no context for device", __func__);
+		return -ENODEV;
+	}
+
+	switch(context->display_type) {
+	case IMON_DISPLAY_TYPE_LCD:
+		clock_enable_pkt[0][0] = 0x80;
+		clock_enable_pkt[0][1] = year;
+		clock_enable_pkt[0][2] = month-1;
+		clock_enable_pkt[0][3] = day;
+		clock_enable_pkt[0][4] = hour;
+		clock_enable_pkt[0][5] = minute;
+		clock_enable_pkt[0][6] = second;
+
+		clock_enable_pkt[1][0] = 0x80;
+		clock_enable_pkt[1][1] = 0;
+		clock_enable_pkt[1][2] = 0;
+		clock_enable_pkt[1][3] = 0;
+		clock_enable_pkt[1][4] = 0;
+		clock_enable_pkt[1][5] = 0;
+		clock_enable_pkt[1][6] = 0;
+
+		if (context->ffdc_dev) {
+			clock_enable_pkt[0][7] = 0x50;
+			clock_enable_pkt[1][7] = 0x51;
+		} else {
+			clock_enable_pkt[0][7] = 0x88;
+			clock_enable_pkt[1][7] = 0x8a;
+		}
+
+		break;
+
+	case IMON_DISPLAY_TYPE_VFD:
+		clock_enable_pkt[0][0] = year;
+		clock_enable_pkt[0][1] = month-1;
+		clock_enable_pkt[0][2] = day;
+		clock_enable_pkt[0][3] = dow;
+		clock_enable_pkt[0][4] = hour;
+		clock_enable_pkt[0][5] = minute;
+		clock_enable_pkt[0][6] = second;
+		clock_enable_pkt[0][7] = 0x40;
+
+		clock_enable_pkt[1][0] = 0;
+		clock_enable_pkt[1][1] = 0;
+		clock_enable_pkt[1][2] = 1;
+		clock_enable_pkt[1][3] = 0;
+		clock_enable_pkt[1][4] = 0;
+		clock_enable_pkt[1][5] = 0;
+		clock_enable_pkt[1][6] = 0;
+		clock_enable_pkt[1][7] = 0x42;
+
+		break;
+
+	default:
+		return -ENODEV;
+	}
+
+
+	for (i = 0; i < IMON_CLOCK_ENABLE_PACKETS; i++) {
+		memcpy(context->usb_tx_buf, clock_enable_pkt[i], 8);
+		retval = send_packet(context);
+		if (retval) {
+			err("%s: send_packet failed for packet %d",
+			    __func__, i);
+			break;
+		}
+	}
+
+	return retval;
+
+}
+
+/**
  * These are the sysfs functions to handle the association on the iMON 2.4G LT.
  */
 static ssize_t show_associate_remote(struct device *d,
@@ -704,16 +796,104 @@ static ssize_t store_associate_remote(struct device *d,
 	return count;
 }
 
+/**
+ * sysfs functions to control internal imon clock
+ */
+static ssize_t show_imon_clock(struct device *d,
+			       struct device_attribute *attr, char *buf)
+{
+	struct imon_context *context = dev_get_drvdata(d);
+	size_t len;
+
+	if (!context)
+		return -ENODEV;
+
+	mutex_lock(&context->lock);
+
+	if (!context->display_supported) {
+		len = snprintf(buf, PAGE_SIZE, "Not supported.");
+	} else {
+		len = snprintf(buf, PAGE_SIZE,
+			"To set the clock on your iMON display:\n"
+			"# date \"+%%y %%m %%d %%w %%H %%M %%S\" > imon_clock\n"
+			"%s", context->display_isopen ?
+			"\nNOTE: imon device must be closed\n" : "");
+	}
+
+	mutex_unlock(&context->lock);
+
+	return len;
+}
+
+static ssize_t store_imon_clock(struct device *d,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	struct imon_context *context = dev_get_drvdata(d);
+	ssize_t retval;
+	unsigned int year, month, day, dow, hour, minute, second;
+
+	if (!context)
+		return -ENODEV;
+
+	mutex_lock(&context->lock);
+
+	if (!context->display_supported) {
+		retval = -ENODEV;
+		goto exit;
+	} else if (context->display_isopen) {
+		retval = -EBUSY;
+		goto exit;
+	}
+
+	if (sscanf(buf, "%u %u %u %u %u %u %u",	&year, &month, &day, &dow,
+		   &hour, &minute, &second) != 7) {
+		retval = -EINVAL;
+		goto exit;
+	}
+
+	if ((month < 1 || month > 12) ||
+	    (day < 1 || day > 31) || (dow > 6) ||
+	    (hour > 23) || (minute > 59) || (second > 59)) {
+		retval = -EINVAL;
+		goto exit;
+	}
+
+	retval = send_set_imon_clock(context, year, month, day, dow,
+				     hour, minute, second);
+	if (retval)
+		goto exit;
+
+	retval = count;
+exit:
+	mutex_unlock(&context->lock);
+
+	return retval;
+}
+
+
+static DEVICE_ATTR(imon_clock, S_IWUSR | S_IRUGO, show_imon_clock,
+		   store_imon_clock);
+
 static DEVICE_ATTR(associate_remote, S_IWUSR | S_IRUGO, show_associate_remote,
 		   store_associate_remote);
 
-static struct attribute *imon_sysfs_entries[] = {
+static struct attribute *imon_display_sysfs_entries[] = {
+	&dev_attr_imon_clock.attr,
+	NULL
+};
+
+static struct attribute_group imon_display_attribute_group = {
+	.attrs = imon_display_sysfs_entries
+};
+
+static struct attribute *imon_rf_sysfs_entries[] = {
 	&dev_attr_associate_remote.attr,
 	NULL
 };
 
-static struct attribute_group imon_attribute_group = {
-	.attrs = imon_sysfs_entries
+static struct attribute_group imon_rf_attribute_group = {
+	.attrs = imon_rf_sysfs_entries
 };
 
 /**
@@ -1559,7 +1739,7 @@ static int imon_probe(struct usb_interface *interface,
 	int tx_control = 0;
 	struct imon_context *context = NULL;
 	struct imon_context *first_if_context = NULL;
-	int i;
+	int i, sysfs_err;
 	int configured_display_type = IMON_DISPLAY_TYPE_VFD;
 	u16 vendor, product;
 	const unsigned char fp_packet[] = { 0x40, 0x00, 0x00, 0x00,
@@ -1924,17 +2104,23 @@ static int imon_probe(struct usb_interface *interface,
 
 	/* RF products *also* use 0xffdc... sigh... */
 	if (context->ffdc_dev) {
-		int err;
-
-		err = sysfs_create_group(&interface->dev.kobj,
-					 &imon_attribute_group);
-		if (err)
-			err("%s: Could not create sysfs entries(%d)",
-			    __func__, err);
+		sysfs_err = sysfs_create_group(&interface->dev.kobj,
+					       &imon_rf_attribute_group);
+		if (sysfs_err)
+			err("%s: Could not create RF sysfs entries(%d)",
+			    __func__, sysfs_err);
 	}
 
 	if (context->display_supported && ifnum == 0) {
 		dprintk("%s: Registering iMON display with sysfs\n", __func__);
+
+		/* set up sysfs entry for built-in clock */
+		sysfs_err = sysfs_create_group(&interface->dev.kobj,
+					       &imon_display_attribute_group);
+		if (sysfs_err)
+			err("%s: Could not create display sysfs entries(%d)",
+			    __func__, sysfs_err);
+
 		if (usb_register_dev(interface, &imon_class)) {
 			/* Not a fatal error, so ignore */
 			printk(KERN_INFO "%s: could not get a minor number for "
@@ -2009,7 +2195,9 @@ static void imon_disconnect(struct usb_interface *interface)
 	 * hasn't been called
 	 */
 	sysfs_remove_group(&interface->dev.kobj,
-			   &imon_attribute_group);
+			   &imon_display_attribute_group);
+	sysfs_remove_group(&interface->dev.kobj,
+			   &imon_rf_attribute_group);
 
 	usb_set_intfdata(interface, NULL);
 
