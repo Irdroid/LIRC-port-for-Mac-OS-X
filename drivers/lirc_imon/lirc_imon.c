@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.98 2009/07/24 05:07:32 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.99 2009/07/27 15:04:49 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -193,8 +193,9 @@ enum {
 };
 
 enum {
-	IMON_IR_PROTOCOL_IMON = 0,
-	IMON_IR_PROTOCOL_MCE  = 1,
+	IMON_IR_PROTOCOL_IMON       = 0,
+	IMON_IR_PROTOCOL_MCE        = 1,
+	IMON_IR_PROTOCOL_IMON_NOPAD = 2,
 };
 /*
  * USB Device ID for iMON USB Control Boards
@@ -395,7 +396,7 @@ static int debug;
 /* lcd, vfd, vga or none? should be auto-detected, but can be overridden... */
 static int display_type;
 
-/* IR protocol: native iMON or Windows MCE (RC-6) */
+/* IR protocol: native iMON, Windows MCE (RC-6), or iMON w/o PAD stabilize */
 static int ir_protocol;
 
 /*
@@ -419,7 +420,8 @@ MODULE_PARM_DESC(display_type, "Type of attached display. 0=autodetect, "
 		 "1=vfd, 2=lcd, 3=vga, 4=none (default: autodetect)");
 module_param(ir_protocol, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(ir_protocol, "Which IR protocol to use. 0=native iMON, "
-		 "1=Windows Media Center Ed. (RC-6) (default: native iMON)");
+		 "1=Windows Media Center Ed. (RC-6), 2=iMON w/o PAD stabilize "
+		 "(default: native iMON)");
 module_param(nomouse, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nomouse, "Disable mouse input device mode when IR device is "
 		 "open. 0=don't disable, 1=disable. (default: don't disable)");
@@ -1095,6 +1097,12 @@ static void imon_set_ir_protocol(struct imon_context *context)
 		/* ir_proto_packet[0] = 0x00; // already the default */
 		context->ir_protocol = IMON_IR_PROTOCOL_IMON;
 		break;
+	case IMON_IR_PROTOCOL_IMON_NOPAD:
+		dprintk("Configuring IR receiver for iMON protocol without "
+			"PAD stabilize function enabled\n");
+		/* ir_proto_packet[0] = 0x00; // already the default */
+		context->ir_protocol = IMON_IR_PROTOCOL_IMON_NOPAD;
+		break;
 	default:
 		printk(KERN_INFO "%s: unknown IR protocol specified, will "
 		       "just default to iMON protocol\n", __func__);
@@ -1447,13 +1455,15 @@ static void imon_incoming_packet(struct imon_context *context,
 		 * diagonals, it has a tendancy to jump back and forth, so lets
 		 * try to ignore when they get too close
 		 */
-		if ((buf[1] == 0) && ((rel_x != 0) || (rel_y != 0))) {
-			dir = stabilize((int)rel_x, (int)rel_y,
-					timeout, threshold);
-			if (!dir)
-				return;
-			buf[2] = dir & 0xFF;
-			buf[3] = (dir >> 8) & 0xFF;
+		if (context->ir_protocol == IMON_IR_PROTOCOL_IMON) {
+			if ((buf[1] == 0) && ((rel_x != 0) || (rel_y != 0))) {
+				dir = stabilize((int)rel_x, (int)rel_y,
+						timeout, threshold);
+				if (!dir)
+					return;
+				buf[2] = dir & 0xFF;
+				buf[3] = (dir >> 8) & 0xFF;
+			}
 		}
 
 	} else if ((len == 8) && (buf[0] & 0x40) &&
@@ -1488,11 +1498,14 @@ static void imon_incoming_packet(struct imon_context *context,
 		buf[0] = 0x01;
 		buf[1] = buf[4] = buf[5] = buf[6] = buf[7] = 0;
 
-		dir = stabilize((int)rel_x, (int)rel_y, timeout, threshold);
-		if (!dir)
-			return;
-		buf[2] = dir & 0xFF;
-		buf[3] = (dir >> 8) & 0xFF;
+		if (context->ir_protocol == IMON_IR_PROTOCOL_IMON) {
+			dir = stabilize((int)rel_x, (int)rel_y,
+					timeout, threshold);
+			if (!dir)
+				return;
+			buf[2] = dir & 0xFF;
+			buf[3] = (dir >> 8) & 0xFF;
+		}
 
 	} else if (ts_input) {
 		/*
