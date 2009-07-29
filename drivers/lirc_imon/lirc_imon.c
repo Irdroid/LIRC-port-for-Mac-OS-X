@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.100 2009/07/27 16:08:19 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.101 2009/07/29 17:18:34 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1471,6 +1471,7 @@ static void imon_incoming_packet(struct imon_context *context,
 			} else {
 				buf[2] = 0;
 				buf[3] = (rel_x > 0) ? 0x7F : 0x80;
+			}
 		}
 
 	} else if ((len == 8) && (buf[0] & 0x40) &&
