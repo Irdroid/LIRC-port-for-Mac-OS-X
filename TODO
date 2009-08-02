@@ -1,3 +1,5 @@
+* change char *(*rec_func)(struct ir_remote *remotes) to indicate ignored input
+
 * HAL
 
 * GUI for irrecord
