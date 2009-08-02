@@ -775,6 +775,7 @@ lirc_serial: Unknown symbol lirc_register_driver
     loaded.
     </P>
 
+    <A NAME="updating085"></A><HR>
     <H1 ALIGN="CENTER">Updating from lirc-0.8.5</H1>
     <HR WIDTH="70%">
     
@@ -783,4 +784,11 @@ lirc_serial: Unknown symbol lirc_register_driver
       <em>/var/run/lirc/lircd</em> to conform to the Filesystem Hierarchy
       Standard. The default pid file location was moved from
       <em>/var/run/lircd.pid</em> to <em>/var/run/lirc/lircd.pid</em>.
+    </P>
+    <P>
+      The default location of lircd, lircmd and lircrcd config files
+      was moved to <em>/etc/lirc/lircd.conf</em>,
+      <em>/etc/lirc/lircmd.conf</em> and <em>/etc/lirc/lircrc</em>. If
+      the config files are not found in that location, they are still
+      searched at the old location in <em>/etc/</em>.
     </P>
