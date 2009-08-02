@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.101 2009/07/29 17:18:34 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.102 2009/08/02 11:15:28 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -43,7 +43,11 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/usb.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 #include <linux/usb/input.h>
+#else
+#include <linux/input.h>
+#endif
 #include <linux/time.h>
 #include <linux/timer.h>
 

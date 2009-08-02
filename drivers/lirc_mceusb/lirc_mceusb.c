@@ -1227,7 +1227,9 @@ static struct usb_driver mceusb_dev_driver = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	.suspend =	mceusb_dev_suspend,
 	.resume =	mceusb_dev_resume,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
 	.reset_resume =	mceusb_dev_resume,
+#endif
 #endif
 	.id_table =	mceusb_dev_table
 };

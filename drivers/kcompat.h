@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.44 2009/03/22 08:45:47 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.45 2009/08/02 11:15:28 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -397,6 +397,12 @@ static inline unsigned iminor(struct inode *inode)
 {
 	return MINOR(inode->i_rdev);
 }
+#endif
+
+/****************************** bitops.h **********************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
+#define BIT_MASK(nr)            (1UL << ((nr) % BITS_PER_LONG))
+#define BIT_WORD(nr)            ((nr) / BITS_PER_LONG)
 #endif
 
 #endif /* _KCOMPAT_H */

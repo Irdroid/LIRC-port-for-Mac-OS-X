@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.67 2009/07/24 04:21:24 jarodwilson Exp $      */
+/*      $Id: lirc_i2c.c,v 1.68 2009/08/02 11:15:28 lirc Exp $      */
 
 /*
  * lirc_i2c.c
@@ -333,14 +333,15 @@ static int add_to_buf_knc1(void *data, struct lirc_buffer *buf)
 static int set_use_inc(void *data)
 {
 	struct IR *ir = data;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
+	int ret;
+#endif
 
 	dprintk("%s called\n", __func__);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
 	i2c_use_client(&ir->c);
 #else
-	int ret;
-
 	/* lock bttv in memory while /dev/lirc is in use  */
 	ret = i2c_use_client(&ir->c);
 	if (ret != 0)
@@ -379,20 +380,6 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int ir_remove(struct i2c_client *client);
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
-static struct i2c_client client_template = {
-	.name		= "unset",
-	.driver		= &driver
-};
-#else
-static const struct i2c_device_id ir_receiver_id[] = {
-	/* Generic entry for any IR receiver */
-	{ "ir_video", 0 },
-	/* IR device specific entries could be added here */
-	{ }
-};
-#endif
-
 static struct i2c_driver driver = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 	.name		= "i2c ir driver",
@@ -414,6 +401,20 @@ static struct i2c_driver driver = {
 #endif
 	.command	= ir_command,
 };
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+static struct i2c_client client_template = {
+	.name		= "unset",
+	.driver		= &driver
+};
+#else
+static const struct i2c_device_id ir_receiver_id[] = {
+	/* Generic entry for any IR receiver */
+	{ "ir_video", 0 },
+	/* IR device specific entries could be added here */
+	{ }
+};
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 static int ir_attach(struct i2c_adapter *adap, int addr,
