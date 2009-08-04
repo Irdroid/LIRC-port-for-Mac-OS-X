@@ -2,62 +2,65 @@
 select_vars ()
 {
 	PROG=$1
+	SECTION=1
 	case $PROG in
 	irpty)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	irw)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	irexec)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	ircat)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	irxevent)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	mode2)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	lircrcd)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	smode2)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	xmode2)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 		PROG_PRE_PARAMS="--include ${SRCDIR}/man-source/mode2-common.inc"
 	;;
 	irsend)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/tools/
 	;;
 	irrecord)
-		MANPAGE=$PROG.1
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/daemons/
 	;;
 	lircd)
-		MANPAGE=$PROG.8
+		SECTION=8
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/daemons/
 		PROG_PARAMS="--include ${SRCDIR}/man-source/daemons.inc"
 
 	;;
 	lircmd)
-		MANPAGE=$PROG.8
+		SECTION=8
+		MANPAGE=$PROG.$SECTION
 		DIR=$TOPDIR/daemons/
 		PROG_PARAMS="--include ${SRCDIR}/man-source/daemons.inc"
 	;;
@@ -94,6 +97,7 @@ do
 	#make the manpage
 	$HELP2MAN \
 		$PROG_PRE_PARAMS \
+		--section $SECTION \
 		--no-info \
 		--include ${SRCDIR}/man-source/help2man.inc \
 		--opt-include ${SRCDIR}/man-source/$PROG.inc \
