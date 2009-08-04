@@ -49,10 +49,10 @@ enabled in lircd.
 .nf
 .RS 3
 irsend LIST DenonTuner ""
-irsend SEND_ONCE  DenonTuner PROG-SCAN 
-irsend SEND_ONCE  OnkyoAmpli VOL-UP VOL-UP VOL-UP VOL-UP
-irsend SEND_START OnkyoAmpli VOL-DOWN ; sleep 3
-irsend SEND_STOP  OnkyoAmpli VOL-DOWN
+irsend SEND_ONCE  DenonTuner PROG\-SCAN 
+irsend SEND_ONCE  OnkyoAmpli VOL\-UP VOL\-UP VOL\-UP VOL\-UP
+irsend SEND_START OnkyoAmpli VOL\-DOWN ; sleep 3
+irsend SEND_STOP  OnkyoAmpli VOL\-DOWN
 irsend SET_TRANSMITTERS 1
 irsend SET_TRANSMITTERS 1 3 4
 irsend SIMULATE "0000000000000476 00 OK TECHNISAT_ST3004S"

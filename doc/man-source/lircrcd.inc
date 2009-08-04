@@ -17,14 +17,14 @@ beginning of the file:
 [OPTIONS]
 .TP
 .BI \-p,\ \-\-premission= mode
-The --permission option gives the file permission of the Unix domain
+The \-\-permission option gives the file permission of the Unix domain
 socket lircrcd creates on startup in octal representation. Read the
-documentation for chmod for further details. If no --permission option
+documentation for chmod for further details. If no \-\-permission option
 is given when the socket is created the default is to give only the
 user owning the file read and write permissions (0600 in octal
 representation).
 .TP
 .BI \-o,\ \-\-output= socket
-With the --output option you can select the Unix domain socket, which
+With the \-\-output option you can select the Unix domain socket, which
 lircrcd will create. The default is to append a "d" character to the
 config filename given.

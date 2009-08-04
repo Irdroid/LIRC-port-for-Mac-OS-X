@@ -10,7 +10,7 @@ this program it is often not possible to automatically recognize all
 features of a remote control.
 
 If the program fails to recognize the protocol of the remote control you
-should use the --force option to at least create a config file in raw mode.
+should use the \-\-force option to at least create a config file in raw mode.
 
 If \fIfile\fR already exists and contains a valid config irrecord will use the
 protocol description found there and will only try to record the

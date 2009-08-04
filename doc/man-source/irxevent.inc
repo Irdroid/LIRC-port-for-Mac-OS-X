@@ -21,17 +21,17 @@ a complete sample .lircrc look at examples/lircrc.
 begin
         prog = irxevent
         button = VIDEO_UP    
-        config = Key SHIFT-KP_Add CurrentWindow
+        config = Key SHIFT\-KP_Add CurrentWindow
 end
 begin
         prog = irxevent
         button = VIDEO_DOWN
-        config = Key SHIFT-KP_Subtract CurrentWindow
+        config = Key SHIFT\-KP_Subtract CurrentWindow
 end
 begin
         prog = irxevent
         button = STOP
-        config = Key ctrl-c CurrentWindow
+        config = Key ctrl\-c CurrentWindow
 end
 begin
         prog = irxevent
@@ -66,11 +66,11 @@ end
 
 .nf
 .RS 3
-config = Key [shift-][ctrl-][alt-]<key> [Focus] <windowname>
+config = Key [shift\-][ctrl\-][alt\-]<key> [Focus] <windowname>
 	| WindowID <id> | CurrentWindow | RootWindow
 config = Button <button> <x> <y> [Focus] <windowname> | WindowID <id> 
 	| CurrentWindow | RootWindow
-config = xy_Key <x> <y> [shift-][ctrl-][alt-]<key> [Focus]
+config = xy_Key <x> <y> [shift\-][ctrl\-][alt\-]<key> [Focus]
 	<windowname> | WindowID id | CurrentWindow | RootWindow
 .RE
 .fi
@@ -83,8 +83,8 @@ config = Key Up xawtv
 config = Key Down xawtv
 config = Button 1 50 110 xclickme
 config = Key q xawtv
-config = Key ctrl-c mpg123
-config = Key shift-Page_Up rxvt
+config = Key ctrl\-c mpg123
+config = Key shift\-Page_Up rxvt
 .RE
 .fi
 
@@ -96,8 +96,8 @@ LINE    = "config =" <KEY|BUTTON|XYKEY> <TARGET> |
           "config =" <KEY|BUTTON|XYKEY> "Focus" <TARGET>
 XYKEY   = "xy_Key" <x_position> <y_position> <MOD><KEYSPEC>
 KEY     = "Key" <MOD><KEYSPEC>
-MOD     = ["shift-"]["numlock-"]["ctrl-"]["alt-"]["meta-"]
-          ["numlock-"]["mod3-"]["mod4-"]["scrlock-"]
+MOD     = ["shift\-"]["numlock\-"]["ctrl\-"]["alt\-"]["meta\-"]
+          ["numlock\-"]["mod3\-"]["mod4\-"]["scrlock\-"]
 KEYSPEC = Keyname | "KeySym:"KeySym | "KeyCode:"KeyCode
 BUTTON  = "Button" <1..5> <x_position> <y_position>
 TARGET  = Windowname | "WindowID" id | "CurrentWindow" | "RootWindow"
@@ -124,7 +124,7 @@ can be the first characters of the window name displayed by the window manager
 or the name that is displayed below the icon. Some programs use the name
 displayed by the window manager to show a lot of status information but don't
 change the icon name (like xawtv). Others append information to the window
-name ("GQmpeg - kill_windooz.mp3"). If neither window name nor icon name match
+name ("GQmpeg \- kill_windooz.mp3"). If neither window name nor icon name match
 the given Windowname information from XClassHint(3x) will be checked.
 .RE
 .I CurrentWindow:
@@ -154,7 +154,7 @@ CurrentWindow.
 [TROUBLESHOOTING]
 
 If you have problems finding the coordinates for a button click you can try
-xev -id <window_id>. The window_id can be found using xwininfo. If xev and
+xev \-id <window_id>. The window_id can be found using xwininfo. If xev and
 xwininfo are not part of your distribution you can find them at a FTP server
 using the search engine at: http://ftpsearch.ntnu.no/ . xev also reports the
 names of key symbols like "Control_L" (your left control key) or "KP_Subtract"
@@ -176,14 +176,14 @@ XTerm.vt100.allowSendEvents: true
 Yet another possibility is to start xterm like this:
 
 .RS 3
-xterm -xrm "XTerm.vt100.allowSendEvents: true"
+xterm \-xrm "XTerm.vt100.allowSendEvents: true"
 .RE
 
 xemacs will accept events if you set a built-in variable. The following was
 taken from the online help:
 
 .RS 3
-`x-allow-sendevents' is a built-in boolean variable.
+`x\-allow\-sendevents' is a built-in boolean variable.
 
 Value: t
 
@@ -193,12 +193,12 @@ Documentation:
 
 Beware: allowing emacs to process SendEvents opens a big security hole.
 
-In order to allow events you have to evaluate this lisp code (press Meta-x and
+In order to allow events you have to evaluate this lisp code (press Meta\-x and
 enter the following expression):
 
-	 (setq x-allow-sendevents t)
+	 (setq x\-allow\-sendevents t)
 
-Placing this line into your .xemacs-options file should have the same result.
+Placing this line into your .xemacs\-options file should have the same result.
 .RE
 
 If you have problems sending events please drop me an email.

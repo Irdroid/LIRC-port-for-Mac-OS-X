@@ -10,15 +10,15 @@ lircd through a Unix domain socket which is located in
 codes received by lircd and they can send commands to lircd.
 
 [OPTIONS]
-The --permission option gives the file permission of
+The \-\-permission option gives the file permission of
 \/var/run/lirc/lircd if it has to be created in octal
 representation. Read the documentation for chmod for further
-details. If no --permission option is given when the socket is
+details. If no \-\-permission option is given when the socket is
 initially created the default is to give all users read and write
 permissions (0666 in octal representation). If /var/run/lirc/lircd
 already exists this option has no effect.
 
-With the --device option you can select the character device which
+With the \-\-device option you can select the character device which
 lircd should read from. The default currently is /dev/lirc but it
 probably will change in future.
 
@@ -28,36 +28,36 @@ to find a device with a matching description. This is useful in case
 the device name isn't fixed. \fISTRING\fR may contain the '*' and '?' 
 wildcards and '\\' to mark them as literal.
 
-With the --listen option you can let lircd listen for network
+With the \-\-listen option you can let lircd listen for network
 connections on the given address/port. The default address is 0.0.0.0,
 which means that connections on all network interfaces will be accepted.
 The default port is 8765. No security checks are currently implemented.
 The listening lircd instance will send all IR events to the connecting
 lircd instances.
 
-The --connect option allows you to connect to other lircd servers that
+The \-\-connect option allows you to connect to other lircd servers that
 provide a network socket at the given host and port number. The number
 of such connections is currently limited to 100.
 The connecting lircd instance will receive IR events from the lircd
 instance it connects to.
 
-With the --output option you can select Unix domain socket, which
+With the \-\-output option you can select Unix domain socket, which
 lircd will write remote key codes to. The default currently is
 \/var/run/lirc/lircd.
 
-With the --pidfile option you can select the lircd daemon pid file.
+With the \-\-pidfile option you can select the lircd daemon pid file.
 The default currently is /var/run/lirc/lircd.pid.
 
-With the --logfile option you can select the lircd daemon log file.
+With the \-\-logfile option you can select the lircd daemon log file.
 The default currently is /var/log/lircd. Note that this option will
 only be available if you compiled lircd without syslog support.
 
-The --release option enables automatic generation of release events
+The \-\-release option enables automatic generation of release events
 for each button press. lircd will append the given suffix to the button
 name for each release event. If no suffix is given the default suffix
 is '_UP'.
 
-The --allow-simulate option will enable the SIMULATE command which can
+The \-\-allow\-simulate option will enable the SIMULATE command which can
 be issued using irsend(1). This will allow simulating arbitrary IR events
 from the command line. Use this option with caution because it will give all
 users with access to the lircd socket wide control over you system.
@@ -65,7 +65,7 @@ E.g. if you have configured your system to shut down by a button press
 on your remote control, everybody will be able to shut down
 your system from the command line.
 
-On Linux systems the --uinput option will enable automatic generation
+On Linux systems the \-\-uinput option will enable automatic generation
 of Linux input events. lircd will open /dev/input/uinput and inject
 key events to the Linux kernel. The key code depends on the name that
 was given a button in the lircd config file, e.g. if the button is
