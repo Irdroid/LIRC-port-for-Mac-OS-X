@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.102 2009/08/02 11:15:28 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.103 2009/08/05 01:01:25 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1359,7 +1359,7 @@ static void imon_incoming_packet(struct imon_context *context,
 
 	/* send touchscreen events through input subsystem if touchpad data */
 	if (context->display_type == IMON_DISPLAY_TYPE_VGA && len == 8 &&
-	    (buf[6] == 0x14 || buf[6] == 0x03) && buf[7] == 0x86) {
+	    buf[7] == 0x86) {
 		if (touch == NULL) {
 			printk(KERN_WARNING "%s: touchscreen input device is "
 			       "NULL!\n", __func__);
