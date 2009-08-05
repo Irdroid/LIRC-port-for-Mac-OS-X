@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.68 2009/08/02 11:15:28 lirc Exp $      */
+/*      $Id: lirc_i2c.c,v 1.69 2009/08/05 00:31:10 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -370,7 +370,7 @@ static struct lirc_driver lirc_template = {
 	.owner		= THIS_MODULE,
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 static int ir_attach(struct i2c_adapter *adap, int addr,
 		      unsigned short flags, int kind);
 static int ir_probe(struct i2c_adapter *adap);
@@ -391,7 +391,7 @@ static struct i2c_driver driver = {
 	},
 #endif
 	.id		= I2C_DRIVERID_EXP3, /* FIXME */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	.attach_adapter	= ir_probe,
 	.detach_client	= ir_remove,
 #else
@@ -402,7 +402,7 @@ static struct i2c_driver driver = {
 	.command	= ir_command,
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 static struct i2c_client client_template = {
 	.name		= "unset",
 	.driver		= &driver
@@ -416,7 +416,7 @@ static const struct i2c_device_id ir_receiver_id[] = {
 };
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 static int ir_attach(struct i2c_adapter *adap, int addr,
 		     unsigned short flags, int kind)
 #else
@@ -446,7 +446,7 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 #endif
 {
 	struct IR *ir;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	int err, retval;
 
 	client_template.adapter = adap;
@@ -461,7 +461,7 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (!ir)
 		return -ENOMEM;
 	memcpy(&ir->l, &lirc_template, sizeof(struct lirc_driver));
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	memcpy(&ir->c, &client_template, sizeof(struct i2c_client));
 
 	ir->c.adapter = adap;
@@ -536,7 +536,7 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		break;
 	case 0x21:
 	case 0x23:
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 		ir->bits = flags & 0xff;
 		ir->flag = (flags >> 8) & 0xff;
 #else
@@ -555,7 +555,7 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	printk(KERN_INFO "lirc_i2c: chip 0x%x found @ 0x%02x (%s)\n",
 	       adap->id, addr, ir->c.name);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	/* register device */
 	err = i2c_attach_client(&ir->c);
 	if (err) {
@@ -568,7 +568,7 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id)
 
 	if (retval < 0) {
 		printk(KERN_ERR "lirc_i2c: failed to register driver!\n");
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 		i2c_detach_client(&ir->c);
 #endif
 		kfree(ir);
@@ -586,7 +586,7 @@ static int ir_remove(struct i2c_client *client)
 
 	/* unregister device */
 	lirc_unregister_driver(ir->l.minor);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	i2c_detach_client(&ir->c);
 #endif
 
@@ -595,7 +595,7 @@ static int ir_remove(struct i2c_client *client)
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 static int ir_probe(struct i2c_adapter *adap)
 {
 	/*
