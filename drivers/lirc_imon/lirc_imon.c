@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.103 2009/08/05 01:01:25 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.104 2009/08/05 01:16:48 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1086,12 +1086,16 @@ static void imon_set_ir_protocol(struct imon_context *context)
 	unsigned char ir_proto_packet[] =
 		{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86 };
 
-	/* not supported on devices that don't do onboard decoding */
-	if (!context->ir_onboard_decode)
-		return;
 
 	switch (ir_protocol) {
 	case IMON_IR_PROTOCOL_MCE:
+		/* MCE proto not supported on devices without tx control */
+		if (!context->tx_control) {
+			printk(KERN_INFO "%s: MCE IR protocol not supported on "
+			       "this device, using iMON protocol\n", __func__);
+			context->ir_protocol = IMON_IR_PROTOCOL_IMON;
+			return;
+		}
 		dprintk("Configuring IR receiver for MCE protocol\n");
 		ir_proto_packet[0] = 0x01;
 		context->ir_protocol = IMON_IR_PROTOCOL_MCE;
@@ -1110,7 +1114,7 @@ static void imon_set_ir_protocol(struct imon_context *context)
 	default:
 		printk(KERN_INFO "%s: unknown IR protocol specified, will "
 		       "just default to iMON protocol\n", __func__);
-		context->ir_protocol = IMON_IR_PROTOCOL_MCE;
+		context->ir_protocol = IMON_IR_PROTOCOL_IMON;
 		break;
 	}
 	memcpy(context->usb_tx_buf, &ir_proto_packet,
