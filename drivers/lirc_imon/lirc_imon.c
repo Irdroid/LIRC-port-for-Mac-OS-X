@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.104 2009/08/05 01:16:48 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.105 2009/08/05 01:17:26 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1085,7 +1085,6 @@ static void imon_set_ir_protocol(struct imon_context *context)
 	int retval;
 	unsigned char ir_proto_packet[] =
 		{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x86 };
-
 
 	switch (ir_protocol) {
 	case IMON_IR_PROTOCOL_MCE:
