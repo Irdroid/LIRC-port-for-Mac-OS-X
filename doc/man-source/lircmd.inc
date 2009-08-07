@@ -1,5 +1,5 @@
 [NAME]
-LIRC mouse daemon - translates infrared signals into mouse events
+lircmd - LIRC mouse daemon translates infrared signals into mouse events
 
 [DESCRIPTION]
 This daemon can simulate a MouseSystems, IntelliMouse or IMPS/2 type mouse. It

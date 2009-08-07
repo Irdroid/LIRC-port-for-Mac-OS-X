@@ -1,5 +1,5 @@
 [NAME]
-lircrc daemon - handle consistent .lircrc state among client applications
+lircrcd - daemon to handle consistent .lircrc state among client applications
 
 [DESCRIPTION]
 

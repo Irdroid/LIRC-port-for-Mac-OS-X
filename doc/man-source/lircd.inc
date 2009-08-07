@@ -1,5 +1,5 @@
 [NAME]
-LIRC daemon - decodes infrared signals and provides them on a Unix
+lircd - LIRC daemon decodes infrared signals and provides them on a Unix
 domain socket.
 
 [DESCRIPTION]
