@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.89 2009/08/09 11:10:58 lirc Exp $      */
+/*      $Id: lircd.c,v 5.90 2009/08/09 12:06:07 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1134,16 +1134,17 @@ void dosigalrm(int sig)
 }
 
 int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
-	     struct ir_ncode **code,int *reps,int n)
+	     struct ir_ncode **code, int *reps, int n, int *err)
 {
 	char *name=NULL,*command=NULL,*repeats,*end_ptr=NULL;
 
 	*remote=NULL;
 	*code=NULL;
-	if(arguments==NULL) return(1);
+	*err = 1;
+	if(arguments==NULL) goto arg_check;
 
 	name=strtok(arguments,WHITE_SPACE);
-	if(name==NULL) return(1);
+	if(name == NULL) goto arg_check;
 	*remote=get_ir_remote(remotes,name);
 	if(*remote==NULL)
 	{
@@ -1151,11 +1152,11 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 				  name));
 	}
 	command=strtok(NULL,WHITE_SPACE);
-	if(command==NULL) return(1);
+	if(command == NULL) goto arg_check;
 	*code=get_code_by_name(*remote,command);
 	if(*code==NULL)
 	{
-		return(send_error(fd,message,"unknown command: \"%s\"\n",
+		return(send_error(fd,message, "unknown command: \"%s\"\n",
 				  command));
 	}
 	if(reps!=NULL)
@@ -1186,6 +1187,7 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 	{
 		return(send_error(fd,message,"bad send packet\n"));
 	}
+ arg_check:
 	if(n>0 && *remote==NULL)
 	{
 		return(send_error(fd,message,"remote missing\n"));
@@ -1194,6 +1196,7 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 	{
 		return(send_error(fd,message,"code missing\n"));
 	}
+	*err = 0;
 	return(1);
 }
 
@@ -1368,8 +1371,11 @@ int list(int fd,char *message,char *arguments)
 {
 	struct ir_remote *remote;
 	struct ir_ncode *code;
+	int err;
 
-	if(parse_rc(fd,message,arguments,&remote,&code,NULL,0)==0) return(0);
+	if(parse_rc(fd, message, arguments,
+		    &remote, &code, NULL, 0, &err) == 0) return 0;
+	if(err) return 1;
 	
 	if(remote==NULL)
 	{
@@ -1516,14 +1522,15 @@ int send_core(int fd,char *message,char *arguments,int once)
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
 	int reps;
+	int err;
 	
 	if(hw.send_mode==0) return(send_error(fd,message,"hardware does not "
 					      "support sending\n"));
 	
-	if(parse_rc(fd,message,arguments,&remote,&code,
-		    once ? &reps:NULL,2)==0) return(0);
+	if(parse_rc(fd, message, arguments, &remote, &code,
+		    once ? &reps:NULL, 2, &err) == 0) return(0);
+	if(err) return 1;
 	
-	if(remote==NULL || code==NULL) return(1);
 	if(once)
 	{
 		if(repeat_remote!=NULL)
@@ -1604,21 +1611,33 @@ int send_stop(int fd,char *message,char *arguments)
 	struct ir_remote *remote;
 	struct ir_ncode *code;
 	struct itimerval repeat_timer;
+	int err;
 	
-	if(parse_rc(fd,message,arguments,&remote,&code,NULL,2)==0) return(0);
+	if(parse_rc(fd, message, arguments,
+		    &remote, &code, NULL, 0, &err) == 0) return 0;
+	if(err) return 1;
 	
-	if(remote==NULL || code==NULL) return(1);
-	if(repeat_remote && repeat_code &&
-	   strcasecmp(remote->name,repeat_remote->name)==0 && 
-	   strcasecmp(code->name,repeat_code->name)==0)
+	if(repeat_remote && repeat_code)
 	{
 		int done;
+		if(remote &&
+		   strcasecmp(remote->name, repeat_remote->name) != 0)
+		{
+			return(send_error(fd, message, "specified remote "
+					  "does not match\n"));
+		}
+		if(code && strcasecmp(code->name, repeat_code->name) != 0)
+		{
+			return(send_error(fd, message, "specified code "
+					  "does not match\n"));
+		}
 
-		done = repeat_max - remote->repeat_countdown;
-		if(done<remote->min_repeat)
+		done = repeat_max - repeat_remote->repeat_countdown;
+		if(done < repeat_remote->min_repeat)
 		{
 			/* we still have some repeats to do */
-			remote->repeat_countdown=remote->min_repeat-done;
+			repeat_remote->repeat_countdown =
+				repeat_remote->min_repeat - done;
 			return(send_success(fd,message));
 		}
 		repeat_timer.it_value.tv_sec=0;
@@ -2376,7 +2395,7 @@ int main(int argc,char **argv)
 			break;
 #               endif
 		case 'R':
-			repeat_max=atoi(optarg);
+			repeat_max = atoi(optarg);
 			break;
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);
