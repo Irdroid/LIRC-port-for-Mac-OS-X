@@ -232,17 +232,15 @@ W | +------------------------+ +----------+ +-------------------------+
       The SEND_ONCE directive tells lircd to send the IR signal
       associated with the given remote control and button name, and then
       repeat it <var>repeat count</var> times. <var>repeat count</var> is
-      a decimal number between 0 and 600.  If <var>repeat count</var> is
-      not specified or is less than the minimum number of repeats allowed
-      for that remote control, then this minimum value will be used
-      instead. SEND_START tells lircd to start repeating the
-      given button until it receives a SEND_STOP command. As repeating
-      of IR signals is very CPU intensive on most systems there should
-      be a limit on the time for repeating buttons in every
-      application. The number of repeats is internally limited to 600
-      which for most remotes is equal to one minute of
-      repeating. lircd won't accept any new send commands while it is
-      repeating.
+      a decimal number between 0 and <var>repeat_max</var>. The latter
+      can be given as a command line argument to lircd, and defaults
+      to 600.  If <var>repeat count</var> is
+      not specified or is less than the minimum number of repeats
+      for the selected remote control, the minimum value will be
+      used. SEND_START tells lircd to start repeating the 
+      given button until it receives a SEND_STOP command. However, the
+      number of repeats is limited to <var>repeat_max</var>. lircd
+      won't accept any new send commands while it is repeating.
     </P>
     <P>
       lircd also understands the following commands:
@@ -308,7 +306,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.31 2009/06/01 12:19:29 lirc Exp $      */
+/*      $Id: technical.html,v 1.32 2009/08/09 11:10:58 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************

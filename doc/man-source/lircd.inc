@@ -72,6 +72,12 @@ was given a button in the lircd config file, e.g. if the button is
 named KEY_1, the '1' key code will be generated. You will find a
 complete list of possible button names in /usr/include/linux/input.h.
 
+The --repeat-max option sets an upper limit to the number of repeats
+when sending a signal. The current default is 600. A SEND_START
+request will repeat the signal this many times. Also, if the number of
+repeats in a SEND_ONCE request exceeds this number, it will be
+replaced by this number.
+
 [FILES]
 
 The config file for lircd is located in /etc/lirc/lircd.conf. lircd

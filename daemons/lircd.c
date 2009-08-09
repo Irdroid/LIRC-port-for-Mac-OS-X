@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.88 2009/07/19 09:12:51 lirc Exp $      */
+/*      $Id: lircd.c,v 5.89 2009/08/09 11:10:58 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -96,6 +96,7 @@ extern struct ir_ncode *repeat_code;
 
 static int repeat_fd=-1;
 static char *repeat_message=NULL;
+static unsigned int repeat_max = REPEAT_MAX_DEFAULT;
 
 extern struct hardware hw;
 
@@ -1168,11 +1169,12 @@ int parse_rc(int fd,char *message,char *arguments,struct ir_remote **remote,
 				return(send_error(fd,message,
 						  "bad send packet\n"));
 			}
-			if (*reps>REPEAT_MAX)
+			if (*reps > repeat_max)
 			{
 				return(send_error
 				       (fd,message,
-					"too many repeats: \"%d\"\n",*reps));
+					"too many repeats: \"%d\" > \"%u\"\n",
+					*reps, repeat_max));
 			}
 		}
 		else
@@ -1559,7 +1561,7 @@ int send_core(int fd,char *message,char *arguments,int once)
 	else
 	{
 		/* you've been warned, now we have a limit */
-		remote->repeat_countdown=REPEAT_MAX;
+		remote->repeat_countdown = repeat_max;
 	}
 	if(remote->repeat_countdown>0 || code->next != NULL)
 	{
@@ -1612,7 +1614,7 @@ int send_stop(int fd,char *message,char *arguments)
 	{
 		int done;
 
-		done=REPEAT_MAX-remote->repeat_countdown;
+		done = repeat_max - remote->repeat_countdown;
 		if(done<remote->min_repeat)
 		{
 			/* we still have some repeats to do */
@@ -2227,9 +2229,10 @@ int main(int argc,char **argv)
 #                       if defined(__linux__)
 			{"uinput",no_argument,NULL,'u'},
 #                       endif
+			{"repeat-max",required_argument,NULL,'R'},
 			{0, 0, 0, 0}
 		};
-		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::a"
+		c = getopt_long(argc,argv,"hvnp:H:d:o:P:l::c:r::aR:"
 #                               if defined(__linux__)
 				"u"
 #                               endif
@@ -2267,6 +2270,7 @@ int main(int argc,char **argv)
 #                       if defined(__linux__)
 			printf("\t -u --uinput\t\tgenerate Linux input events\n");
 #                       endif
+			printf("\t -R --repeat-max=limit\t\tallow at most this many repeats\n");
 			return(EXIT_SUCCESS);
 		case 'v':
 			printf("%s %s\n",progname,VERSION);
@@ -2371,6 +2375,9 @@ int main(int argc,char **argv)
 			useuinput=1;
 			break;
 #               endif
+		case 'R':
+			repeat_max=atoi(optarg);
+			break;
 		default:
 			printf("Usage: %s [options] [config-file]\n",progname);
 			return(EXIT_FAILURE);

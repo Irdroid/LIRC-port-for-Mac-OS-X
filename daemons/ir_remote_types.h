@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.13 2009/05/24 10:46:52 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.14 2009/08/09 11:10:58 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -89,7 +89,7 @@ struct ir_ncode {
 
 /* stop repeating after 600 signals (approx. 1 minute) */
 /* update technical.html when changing this value */
-#define REPEAT_MAX 600
+#define REPEAT_MAX_DEFAULT 600
 
 #define DEFAULT_FREQ 38000
 
