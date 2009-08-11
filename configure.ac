@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.29 2009/07/08 19:38:22 lirc Exp $
+dnl $Id: configure.ac,v 1.30 2009/08/11 20:59:57 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -160,6 +160,7 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev) \
 	(lirc_dev lirc_atiusb) \
 	(lirc_dev lirc_bt829) \
+	(lirc_dev lirc_ene0100) \
 	(lirc_dev lirc_gpio) \
 	(lirc_dev lirc_i2c) \
 	(lirc_dev lirc_igorplugusb) \
@@ -437,7 +438,7 @@ AC_ARG_WITH(driver,
                           bte, bw6130, caraca, chronos, commandir,
                           comX, cph06x, creative, creative_infracd,
                           devinput, digimatrix, dsp, dvico, ea65,
-                          exaudio, flyvideo, ftdi, gvbctv5pci,
+                          ene0100, exaudio, flyvideo, ftdi, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, i2cuser,
                           igorplugusb, iguanaIR, imon, imon_24g,
@@ -586,6 +587,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		#hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
 		;;
 	lirc_dev-lirc_atiusb)
+		;;
+	lirc_dev-lirc_ene0100)
 		;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
@@ -940,6 +943,10 @@ if test "$driver" = "ea65"; then
   hw_module="hw_ea65.o  serial.o"
   HW_DEFAULT="hw_ea65"
   lircd_conf="ea65/lircd.conf.ea65"
+fi
+
+if test "$driver" = "ene0100"; then
+  lirc_driver="lirc_dev lirc_ene0100"
 fi
 
 if test "$driver" = "exaudio"; then
@@ -1388,6 +1395,7 @@ if test "$driver" = "wpc8769l"; then
   lircd_conf="acer/lircd.conf.Aspire_6530G"
 fi
 
+
 #END HARDWARE HEURISTIC
 
 AC_DEFINE_UNQUOTED(HW_DEFAULT, ${HW_DEFAULT})
@@ -1484,6 +1492,7 @@ elif test "$lirc_driver" = "all"; then
   lirc_driver="lirc_dev \
 	lirc_atiusb \
 	lirc_bt829 \
+	lirc_ene0100 \
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
@@ -1765,6 +1774,7 @@ AC_CONFIG_FILES([
   drivers/Makefile
   drivers/lirc_atiusb/Makefile
   drivers/lirc_bt829/Makefile
+  drivers/lirc_ene0100/Makefile
   drivers/lirc_dev/Makefile
   drivers/lirc_gpio/Makefile
   drivers/lirc_i2c/Makefile

@@ -1,4 +1,6 @@
 0.8.6-CVS: future
+  * added support for ENE KB3924/ENE0100 CIR port (e.g. Acer Aspire 5720G)
+    (Maxim Levitsky)
   * merged 1st-gen mceusb device support into lirc_mceusb2,
     renamed lirc_mceusb2 to lirc_mceusb
   * added support for putting iMON receviers into MCE/RC6 mode

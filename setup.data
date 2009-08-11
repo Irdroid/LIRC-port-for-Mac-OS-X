@@ -99,13 +99,14 @@ hw_menu_entry: @hw-tv-card
 	leadtek_0007: "WinView 601 (card=17)"
 
 hw_menu_entry: @hw-irda
-	sir: "SIR IrDA (built-in IR ports)"
-	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
-	it87: "ITE IT8712/IT8705/IT8720 CIR port"
-	ite8709: "ITE8709 CIR port"
-	digimatrix: "Asus Digimatrix IT87xx CIR port"
 	act200l: "Actisys Act200L SIR driver support"
 	act220l: "Actisys Act220L(+) SIR driver support"
+	digimatrix: "Asus Digimatrix IT87xx CIR port"
+	ene0100: "ENE KB3924/ENE0100 CIR port (e.g. Acer Aspire 5720G)"
+	it87: "ITE IT8712/IT8705/IT8720 CIR port"
+	ite8709: "ITE8709 CIR port"
+	sir: "SIR IrDA (built-in IR ports)"
+	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
 	wpc8769l: "Winbond 8769L CIR port (e.g. Acer Aspire 6530G)"
 
 hw_menu_entry: @hw-pda
@@ -216,6 +217,7 @@ param_type: \
 	digimatrix \
 	dsp \
 	dvico \
+	ene0100 \
 	exaudio \
 	flyvideo \
 	ftdi \
@@ -288,6 +290,7 @@ default_param: \
 	digimatrix \
 	dsp \
 	dvico \
+	ene0100 \
 	exaudio \
 	flyvideo \
 	ftdi \
@@ -405,6 +408,7 @@ remote: \
 	commandir \
 	digimatrix \
 	dsp \
+	ene0100 \
 	ftdi \
 	iguanaIR \
 	imon \
