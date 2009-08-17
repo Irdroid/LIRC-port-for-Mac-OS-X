@@ -224,12 +224,12 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 			hw_sample *= -1;
 
 		/* overflow sample recieved, handle it */
-		if (hw_value == ENE_SAMPLE_OVERFLOW) {
+		if (space && hw_value == ENE_SAMPLE_OVERFLOW) {
 
 			if (dev->idle && !enable_idle)
 				continue;
 
-			if (dev->sample > 0 || abs(dev->sample) <= ENE_MAXGAP)
+			if (abs(dev->sample) <= ENE_MAXGAP)
 				update_sample(dev, hw_sample);
 			else
 				ene_set_idle(dev, 1);
@@ -237,8 +237,8 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 			continue;
 		}
 
-		/* normal first sample recieved*/
 		if (dev->idle) {
+			/* normal first sample recieved*/
 			ene_set_idle(dev, 0);
 
 			/* discard first recieved value, its random
