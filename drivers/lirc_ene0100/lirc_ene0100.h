@@ -75,11 +75,15 @@
 
 #define ENE_DRIVER_NAME 		"enecir"
 
-#define ENE_MAXGAP 			150000	/* this is amount of
-						   time we wait before
-						   turning the
-						   sampler, chosen
-						   arbitry */
+#define ENE_MAXGAP 			250000	/* this is the amount
+						   of time we wait
+						   before turning off
+						   the sampler, chosen
+						   to be higher than
+						   standard gap
+						   values */
+
+#define space(len) 			(-(len))   /* add a space */
 
 
 struct ene_device {

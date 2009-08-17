@@ -31,7 +31,7 @@
 #error "Sorry, this driver needs kernel version 2.6.29 or higher"
 #else
 
-static int sample_period = 50;
+static int sample_period = 75;
 static int enable_idle = 1;
 
 static void ene_set_idle(struct ene_device *dev, int idle);
@@ -160,7 +160,7 @@ static void ene_set_idle(struct ene_device *dev, int idle)
 	struct timeval now;
 
 	ene_hw_write_reg_mask(dev, ENE_ADC_SAMPLE_PERIOD,
-		idle & enable_idle ? 0 : ENE_ADC_SAMPLE_OVERFLOW,
+		idle && enable_idle ? 0 : ENE_ADC_SAMPLE_OVERFLOW,
 		ENE_ADC_SAMPLE_OVERFLOW);
 
 	dev->idle = idle;
@@ -176,13 +176,14 @@ static void ene_set_idle(struct ene_device *dev, int idle)
 	do_gettimeofday(&now);
 
 	if (now.tv_sec - dev->gap_start.tv_sec > 16)
-		dev->sample = PULSE_MASK;
+		dev->sample = space(PULSE_MASK);
 	else
-		dev->sample -= 1000000ull * (now.tv_sec - dev->gap_start.tv_sec)
-		+ (now.tv_usec - dev->gap_start.tv_usec);
+		dev->sample = dev->sample +
+			space(1000000ull * (now.tv_sec - dev->gap_start.tv_sec))
+			+ space(now.tv_usec - dev->gap_start.tv_usec);
 
-	if (dev->sample > PULSE_MASK)
-		dev->sample = PULSE_MASK;
+	if (abs(dev->sample) > PULSE_MASK)
+		dev->sample = space(PULSE_MASK);
 	send_sample(dev);
 }
 
@@ -225,10 +226,10 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 		/* overflow sample recieved, handle it */
 		if (hw_value == ENE_SAMPLE_OVERFLOW) {
 
-			if (dev->idle)
+			if (dev->idle && !enable_idle)
 				continue;
 
-			if (abs(dev->sample) <= ENE_MAXGAP)
+			if (dev->sample > 0 || abs(dev->sample) <= ENE_MAXGAP)
 				update_sample(dev, hw_sample);
 			else
 				ene_set_idle(dev, 1);
@@ -271,14 +272,6 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	dev->pnp_dev = pnp_dev;
 	pnp_set_drvdata(pnp_dev, dev);
 
-	error = -EINVAL;
-	if (sample_period < 5) {
-
-		printk(KERN_ERR ENE_DRIVER_NAME ": sample period must be at "
-		       "least 5 ms, (at least 30 recommended)\n");
-
-		goto err1;
-	}
 
 	/* validate and read resources */
 	error = -ENODEV;
@@ -290,7 +283,6 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 
 	if (pnp_resource_len(res) < ENE_MAX_IO)
 		goto err2;
-
 
 	res = pnp_get_resource(pnp_dev, IORESOURCE_IRQ, 0);
 	if (!pnp_resource_valid(res))
@@ -392,7 +384,6 @@ static int ene_suspend(struct pnp_dev *pnp_dev, pm_message_t state)
 	return 0;
 }
 
-
 static int ene_resume(struct pnp_dev *pnp_dev)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
@@ -404,7 +395,6 @@ static int ene_resume(struct pnp_dev *pnp_dev)
 }
 
 #endif
-
 
 static const struct pnp_device_id ene_ids[] = {
 	{ .id = "ENE0100", },
@@ -425,9 +415,13 @@ static struct pnp_driver ene_driver = {
 #endif
 };
 
-
 static int __init ene_init(void)
 {
+	if (sample_period < 5) {
+		printk(KERN_ERR ENE_DRIVER_NAME ": sample period must be at "
+		       "least 5 us, (at least 30 recommended)\n");
+		return -EINVAL;
+	}
 	return pnp_register_driver(&ene_driver);
 }
 
@@ -437,14 +431,13 @@ static void ene_exit(void)
 }
 
 
-module_param(sample_period, int, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(sample_period, "Hardware sample period (50 us default)");
-
+module_param(sample_period, int, S_IRUGO);
+MODULE_PARM_DESC(sample_period, "Hardware sample period (75 us default)");
 
 module_param(enable_idle, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(enable_idle,
-"Allow hardware to signal when IR pulse starts, disable if your remote"
-"doesn't send a sync pulse");
+"Enables turning off signal sampling after long inactivity time; "
+"if disabled might help detecting input signal (default: enabled)");
 
 
 MODULE_DEVICE_TABLE(pnp, ene_ids);
