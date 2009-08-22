@@ -102,7 +102,7 @@ hw_menu_entry: @hw-irda
 	act200l: "Actisys Act200L SIR driver support"
 	act220l: "Actisys Act220L(+) SIR driver support"
 	digimatrix: "Asus Digimatrix IT87xx CIR port"
-	ene0100: "ENE KB3924/ENE0100 CIR port (e.g. Acer Aspire 5720G)"
+	ene0100: "ENE KB3926 B/C/D (ENE0100) CIR port"
 	it87: "ITE IT8712/IT8705/IT8720 CIR port"
 	ite8709: "ITE8709 CIR port"
 	sir: "SIR IrDA (built-in IR ports)"

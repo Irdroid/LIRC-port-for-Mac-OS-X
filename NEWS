@@ -1,5 +1,6 @@
 0.8.6-CVS: future
-  * added support for ENE KB3924/ENE0100 CIR port (e.g. Acer Aspire 5720G)
+  * added support for ENE KB3926 revision B/C/D (ENE0100) CIR port
+    (found on some notebooks, e.g: Acer Aspire 5720G, HP Pavilion dv5)
     (Maxim Levitsky)
   * merged 1st-gen mceusb device support into lirc_mceusb2,
     renamed lirc_mceusb2 to lirc_mceusb

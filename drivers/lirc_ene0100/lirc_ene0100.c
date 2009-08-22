@@ -1,5 +1,5 @@
 /*
- * driver for ENE KB3924 CIR (also known as ENE0100)
+ * driver for ENE KB3926 B/C/D CIR (also known as ENE0100)
  *
  * Copyright (C) 2009 Maxim Levitsky <maximlevitsky@gmail.com>
  *
@@ -19,7 +19,6 @@
  * USA
  */
 
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/pnp.h>
@@ -33,84 +32,278 @@
 
 static int sample_period = 75;
 static int enable_idle = 1;
+static int enable_learning;
 
 static void ene_set_idle(struct ene_device *dev, int idle);
+static void ene_set_inputs(struct ene_device *dev, int enable);
 
 /* read a hardware register */
 static u8 ene_hw_read_reg(struct ene_device *dev, u16 reg)
 {
-	outb(reg >> 8   , dev->hw_io + ENE_ADDR_HI);
-	outb(reg & 0xFF , dev->hw_io + ENE_ADDR_LO);
+	outb(reg >> 8, dev->hw_io + ENE_ADDR_HI);
+	outb(reg & 0xFF, dev->hw_io + ENE_ADDR_LO);
 	return inb(dev->hw_io + ENE_IO);
 }
 
 /* write a hardware register */
 static void ene_hw_write_reg(struct ene_device *dev, u16 reg, u8 value)
 {
-	outb(reg >> 8   , dev->hw_io + ENE_ADDR_HI);
-	outb(reg & 0xFF , dev->hw_io + ENE_ADDR_LO);
+	outb(reg >> 8, dev->hw_io + ENE_ADDR_HI);
+	outb(reg & 0xFF, dev->hw_io + ENE_ADDR_LO);
 	outb(value, dev->hw_io + ENE_IO);
 }
 
 /* change specific bits in hardware register */
 static void ene_hw_write_reg_mask(struct ene_device *dev,
-						u16 reg, u8 value, u8 mask)
+				  u16 reg, u8 value, u8 mask)
 {
 	u8 regvalue;
 
-	outb(reg >> 8   , dev->hw_io + ENE_ADDR_HI);
-	outb(reg & 0xFF , dev->hw_io + ENE_ADDR_LO);
+	outb(reg >> 8, dev->hw_io + ENE_ADDR_HI);
+	outb(reg & 0xFF, dev->hw_io + ENE_ADDR_LO);
 
 	regvalue = inb(dev->hw_io + ENE_IO) & ~mask;
 	regvalue |= (value & mask);
 	outb(regvalue, dev->hw_io + ENE_IO);
 }
 
-
-/* which half of hardware buffer we read now ?*/
-static int hw_get_buf_pointer(struct ene_device *dev)
-{
-	return 4 * (ene_hw_read_reg(dev, ENE_FW_BUFFER_POINTER)
-				& ENE_FW_BUFFER_POINTER_HIGH);
-}
-
-
 /* read irq status and ack it */
-static int ene_hw_irq_status(struct ene_device *dev)
+static int ene_hw_irq_status(struct ene_device *dev, int *buffer_pointer)
 {
-	u8 irq_status = ene_hw_read_reg(dev, ENE_IRQ_STATUS);
+	u8 irq_status;
+	u8 fw_flags1, fw_flags2;
 
-	if (!irq_status & ENE_IRQ_STATUS_IR)
+	fw_flags2 = ene_hw_read_reg(dev, ENE_FW2);
+
+	if (buffer_pointer)
+		*buffer_pointer = 4 * (fw_flags2 & ENE_FW2_BUF_HIGH);
+
+	if (dev->hw_revision < ENE_HW_C) {
+		irq_status = ene_hw_read_reg(dev, ENEB_IRQ_STATUS);
+
+		if (!irq_status & ENEB_IRQ_STATUS_IR)
+			return 0;
+		ene_hw_write_reg(dev, ENEB_IRQ_STATUS,
+				 irq_status & ~ENEB_IRQ_STATUS_IR);
+
+		/* rev B support only recieving */
+		return ENE_IRQ_RX;
+	}
+
+	irq_status = ene_hw_read_reg(dev, ENEC_IRQ);
+
+	if (!irq_status && ENEC_IRQ_STATUS)
 		return 0;
 
-	ene_hw_write_reg(dev, ENE_IRQ_STATUS, irq_status & ~ENE_IRQ_STATUS_IR);
-	return 1;
+	/* original driver does that twice - a workaround ? */
+	ene_hw_write_reg(dev, ENEC_IRQ, irq_status & ~ENEC_IRQ_STATUS);
+	ene_hw_write_reg(dev, ENEC_IRQ, irq_status & ~ENEC_IRQ_STATUS);
+
+	/* clear unknown flag in F8F9 */
+	if (fw_flags2 & ENE_FW2_IRQ_CLR)
+		ene_hw_write_reg(dev, ENE_FW2, fw_flags2 & ~ENE_FW2_IRQ_CLR);
+
+	/* check if this is a TX interrupt */
+	fw_flags1 = ene_hw_read_reg(dev, ENE_FW1);
+
+	if (fw_flags1 & ENE_FW1_TXIRQ) {
+		ene_hw_write_reg(dev, ENE_FW1, fw_flags1 & ~ENE_FW1_TXIRQ);
+		return ENE_IRQ_TX;
+	} else
+		return ENE_IRQ_RX;
 }
 
+static int ene_hw_detect(struct ene_device *dev)
+{
+	u8 chip_major, chip_minor;
+	u8 hw_revision, old_ver;
+	u8 tmp;
+	u8 fw_capabilities;
+
+	tmp = ene_hw_read_reg(dev, ENE_HW_UNK);
+	ene_hw_write_reg(dev, ENE_HW_UNK, tmp & ~ENE_HW_UNK_CLR);
+
+	chip_major = ene_hw_read_reg(dev, ENE_HW_VER_MAJOR);
+	chip_minor = ene_hw_read_reg(dev, ENE_HW_VER_MINOR);
+
+	ene_hw_write_reg(dev, ENE_HW_UNK, tmp);
+	hw_revision = ene_hw_read_reg(dev, ENE_HW_VERSION);
+	old_ver = ene_hw_read_reg(dev, ENE_HW_VER_OLD);
+
+	if (hw_revision == 0xFF) {
+		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+			"device seems to be disabled\n");
+
+		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+			"send a mail to lirc-list@lists.sourceforge.net\n");
+
+		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+			"please attach output of acpidump\n");
+
+		return -ENODEV;
+	}
+
+	if (chip_major == 0x33) {
+		printk(KERN_NOTICE ENE_DRIVER_NAME ": "
+		       "chips 0x33xx aren't supported yet\n");
+		return -ENODEV;
+	}
+
+	if (chip_major == 0x39 && chip_minor == 0x26 && hw_revision == 0xC0) {
+		dev->hw_revision = ENE_HW_C;
+		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+		       "KB3926C detected, driver support is not complete!\n");
+
+	} else if (old_ver == 0x24 && hw_revision == 0xC0) {
+		dev->hw_revision = ENE_HW_B;
+
+		printk(KERN_NOTICE ENE_DRIVER_NAME ": "
+		       "KB3926B detected\n");
+	} else {
+		dev->hw_revision = ENE_HW_D;
+
+		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+		       "unknown ENE chip detected, assuming KB3926D\n");
+	}
+
+	printk(KERN_NOTICE ENE_DRIVER_NAME ": "
+	       "chip is 0x%02x%02x - 0x%02x, 0x%02x\n",
+	       chip_major, chip_minor, old_ver, hw_revision);
+
+	/* detect features hardware supports */
+
+	if (dev->hw_revision < ENE_HW_C)
+		return 0;
+
+	fw_capabilities = ene_hw_read_reg(dev, ENE_FW2);
+
+	dev->hw_gpio40_learning = fw_capabilities & ENE_FW2_GP40_AS_LEARN;
+	dev->hw_learning_and_tx_capable = fw_capabilities & ENE_FW2_LEARNING;
+
+	dev->hw_fan_as_normal_input = dev->hw_learning_and_tx_capable &&
+	    fw_capabilities & ENE_FW2_FAN_AS_NRML_IN;
+
+	printk(KERN_NOTICE ENE_DRIVER_NAME ": hardware features:\n");
+	printk(KERN_NOTICE ENE_DRIVER_NAME
+	       ": learning and tx %s, gpio40_learn %s, fan_in %s\n",
+	       dev->hw_learning_and_tx_capable ? "on" : "off",
+	       dev->hw_gpio40_learning ? "on" : "off",
+	       dev->hw_fan_as_normal_input ? "on" : "off");
+	return 0;
+}
 
 /* hardware initialization */
 static int ene_hw_init(void *data)
 {
+	u8 reg_value;
 	struct ene_device *dev = (struct ene_device *)data;
 	dev->in_use = 1;
 
-	ene_hw_write_reg(dev, ENE_IRQ, dev->irq << 1);
-	ene_hw_write_reg(dev, ENE_ADC_UNK2, 0x00);
-	ene_hw_write_reg(dev, ENE_ADC_SAMPLE_PERIOD, sample_period);
-	ene_hw_write_reg(dev, ENE_ADC_UNK1, 0x07);
-	ene_hw_write_reg(dev, ENE_UNK1, 0x01);
-	ene_hw_write_reg_mask(dev, ENE_FW_SETTINGS, ENE_FW_ENABLE | ENE_FW_IRQ,
-		ENE_FW_ENABLE | ENE_FW_IRQ);
+	if (dev->hw_revision < ENE_HW_C) {
+		ene_hw_write_reg(dev, ENEB_IRQ, dev->irq << 1);
+		ene_hw_write_reg(dev, ENEB_IRQ_UNK1, 0x01);
+	} else {
+		reg_value = ene_hw_read_reg(dev, ENEC_IRQ) & 0xF0;
+		reg_value |= ENEC_IRQ_UNK_EN;
+		reg_value &= ~ENEC_IRQ_STATUS;
+		reg_value |= (dev->irq & ENEC_IRQ_MASK);
+		ene_hw_write_reg(dev, ENEC_IRQ, reg_value);
+		ene_hw_write_reg(dev, ENE_TX_UNK1, 0x63);
+	}
+
+	ene_hw_write_reg(dev, ENE_CIR_CONF2, 0x00);
+
+	if (!dev->hw_learning_and_tx_capable && enable_learning) {
+		printk(KERN_ERR ENE_DRIVER_NAME ": "
+		      "Device doesn't support wide band (learning) reciever\n");
+		enable_learning = 0;
+	}
+
+	ene_set_inputs(dev, enable_learning);
+
+	/* set sampling period */
+	ene_hw_write_reg(dev, ENE_CIR_SAMPLE_PERIOD, sample_period);
 
 	/* ack any pending irqs - just in case */
-	ene_hw_irq_status(dev);
+	ene_hw_irq_status(dev, NULL);
 
 	/* enter idle mode */
 	ene_set_idle(dev, 1);
 
+	/* enable firmware bits */
+	ene_hw_write_reg_mask(dev, ENE_FW1,
+			      ENE_FW1_ENABLE | ENE_FW1_IRQ,
+			      ENE_FW1_ENABLE | ENE_FW1_IRQ);
 	/* clear stats */
 	dev->sample = 0;
 	return 0;
+}
+
+/* this enables gpio40 signal, used if connected to wide band input*/
+static void ene_enable_gpio40(struct ene_device *dev, int enable)
+{
+	ene_hw_write_reg_mask(dev, ENE_CIR_CONF1, enable ?
+			      0 : ENE_CIR_CONF2_GPIO40DIS,
+			      ENE_CIR_CONF2_GPIO40DIS);
+}
+
+/* this enables the classic sampler */
+static void ene_enable_normal_recieve(struct ene_device *dev, int enable)
+{
+	ene_hw_write_reg(dev, ENE_CIR_CONF1, enable ? ENE_CIR_CONF1_ADC_ON : 0);
+}
+
+/* this enables recieve via fan input */
+static void ene_enable_fan_recieve(struct ene_device *dev, int enable)
+{
+	if (!enable)
+		ene_hw_write_reg(dev, ENE_FAN_AS_IN1, 0);
+	else {
+		ene_hw_write_reg(dev, ENE_FAN_AS_IN1, ENE_FAN_AS_IN1_EN);
+		ene_hw_write_reg(dev, ENE_FAN_AS_IN2, ENE_FAN_AS_IN2_EN);
+	}
+
+	dev->fan_input_inuse = enable;
+}
+
+/* determine which input to use*/
+static void ene_set_inputs(struct ene_device *dev, int learning_enable)
+{
+	ene_enable_normal_recieve(dev, 1);
+
+	/* old hardware doesn't support learning mode for sure */
+	if (dev->hw_revision <= ENE_HW_B)
+		return;
+
+	/* reciever not learning capable, still set gpio40 correctly */
+	if (!dev->hw_learning_and_tx_capable) {
+		ene_enable_gpio40(dev, !dev->hw_gpio40_learning);
+		return;
+	}
+
+	/* enable learning mode */
+	if (learning_enable) {
+		ene_enable_gpio40(dev, dev->hw_gpio40_learning);
+
+		/* fan input is not used for learning */
+		if (dev->hw_fan_as_normal_input)
+			ene_enable_fan_recieve(dev, 0);
+
+	/* disable learning mode */
+	} else {
+		if (dev->hw_fan_as_normal_input) {
+			ene_enable_fan_recieve(dev, 1);
+			ene_enable_normal_recieve(dev, 0);
+		} else
+			ene_enable_gpio40(dev, !dev->hw_gpio40_learning);
+	}
+
+	/* set few additional settings for this mode */
+	ene_hw_write_reg_mask(dev, ENE_CIR_CONF1, learning_enable ?
+			      ENE_CIR_CONF1_LEARN1 : 0, ENE_CIR_CONF1_LEARN1);
+
+	ene_hw_write_reg_mask(dev, ENE_CIR_CONF2, learning_enable ?
+			      ENE_CIR_CONF2_LEARN2 : 0, ENE_CIR_CONF2_LEARN2);
 }
 
 /* deinitialization */
@@ -118,9 +311,14 @@ static void ene_hw_deinit(void *data)
 {
 	struct ene_device *dev = (struct ene_device *)data;
 
+	/* disable samplers */
+	ene_enable_normal_recieve(dev, 0);
+
+	if (dev->hw_fan_as_normal_input)
+		ene_enable_fan_recieve(dev, 0);
+
 	/* disable hardware IRQ and firmware flag */
-	ene_hw_write_reg_mask(dev, ENE_FW_SETTINGS, 0,
-		ENE_FW_ENABLE | ENE_FW_IRQ);
+	ene_hw_write_reg_mask(dev, ENE_FW1, 0, ENE_FW1_ENABLE | ENE_FW1_IRQ);
 
 	ene_set_idle(dev, 1);
 	dev->in_use = 0;
@@ -135,7 +333,7 @@ static void send_sample(struct ene_device *dev)
 		value |= PULSE_BIT;
 
 	if (!lirc_buffer_full(dev->lirc_driver->rbuf)) {
-		lirc_buffer_write(dev->lirc_driver->rbuf, (void *) &value);
+		lirc_buffer_write(dev->lirc_driver->rbuf, (void *)&value);
 		wake_up(&dev->lirc_driver->rbuf->wait_poll);
 	}
 	dev->sample = 0;
@@ -158,13 +356,12 @@ static void update_sample(struct ene_device *dev, int sample)
 static void ene_set_idle(struct ene_device *dev, int idle)
 {
 	struct timeval now;
+	int disable = idle && enable_idle && (dev->hw_revision < ENE_HW_C);
 
-	ene_hw_write_reg_mask(dev, ENE_ADC_SAMPLE_PERIOD,
-		idle && enable_idle ? 0 : ENE_ADC_SAMPLE_OVERFLOW,
-		ENE_ADC_SAMPLE_OVERFLOW);
-
+	ene_hw_write_reg_mask(dev, ENE_CIR_SAMPLE_PERIOD,
+			      disable ? 0 : ENE_CIR_SAMPLE_OVERFLOW,
+			      ENE_CIR_SAMPLE_OVERFLOW);
 	dev->idle = idle;
-
 
 	/* remember when we have entered the idle mode */
 	if (idle) {
@@ -179,14 +376,13 @@ static void ene_set_idle(struct ene_device *dev, int idle)
 		dev->sample = space(PULSE_MASK);
 	else
 		dev->sample = dev->sample +
-			space(1000000ull * (now.tv_sec - dev->gap_start.tv_sec))
-			+ space(now.tv_usec - dev->gap_start.tv_usec);
+		    space(1000000ull * (now.tv_sec - dev->gap_start.tv_sec))
+		    + space(now.tv_usec - dev->gap_start.tv_usec);
 
 	if (abs(dev->sample) > PULSE_MASK)
 		dev->sample = space(PULSE_MASK);
 	send_sample(dev);
 }
-
 
 /* interrupt handler */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
@@ -195,41 +391,60 @@ static irqreturn_t ene_hw_irq(int irq, void *data)
 static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 #endif
 {
-	u16 hw_address;
-	u8 hw_value;
+	u16 hw_value;
 	int i, hw_sample;
 	int space;
+	int buffer_pointer;
+	int irq_status;
 
 	struct ene_device *dev = (struct ene_device *)data;
+	irq_status = ene_hw_irq_status(dev, &buffer_pointer);
 
-	if (!ene_hw_irq_status(dev))
+	if (!irq_status)
 		return IRQ_NONE;
 
-	hw_address = ENE_SAMPLE_BUFFER + hw_get_buf_pointer(dev);
+	/* TODO: only RX for now */
+	if (irq_status == ENE_IRQ_TX)
+		return IRQ_HANDLED;
 
-	for (i = 0 ; i < ENE_SAMPLES_SIZE ; i++) {
+	for (i = 0; i < ENE_SAMPLES_SIZE; i++) {
 
-		hw_value = ene_hw_read_reg(dev, hw_address + i);
-		space = hw_value & ENE_SAMPLE_LOW_MASK;
-		hw_value &= ~ENE_SAMPLE_LOW_MASK;
+		hw_value = ene_hw_read_reg(dev,
+				ENE_SAMPLE_BUFFER + buffer_pointer + i);
+
+		if (dev->fan_input_inuse) {
+			/* read high part of the sample */
+			hw_value |= ene_hw_read_reg(dev,
+			    ENE_SAMPLE_BUFFER_FAN + buffer_pointer + i) << 8;
+
+			/* test for _space_ bit */
+			space = !(hw_value & ENE_FAN_SMPL_PULS_MSK);
+
+			/* clear space bit, and other unused bits */
+			hw_value &= ENE_FAN_VALUE_MASK;
+			hw_sample = hw_value * ENE_SAMPLE_PERIOD_FAN;
+
+		} else {
+			space = hw_value & ENE_SAMPLE_SPC_MASK;
+			hw_value &= ENE_SAMPLE_VALUE_MASK;
+			hw_sample = hw_value * sample_period;
+		}
 
 		/* no more data */
 		if (!(hw_value))
 			break;
 
-		/* calculate hw sample */
-		hw_sample = hw_value * sample_period;
-
 		if (space)
 			hw_sample *= -1;
 
 		/* overflow sample recieved, handle it */
-		if (space && hw_value == ENE_SAMPLE_OVERFLOW) {
 
-			if (dev->idle && !enable_idle)
+		if (!dev->fan_input_inuse && hw_value == ENE_SAMPLE_OVERFLOW) {
+
+			if (dev->idle)
 				continue;
 
-			if (abs(dev->sample) <= ENE_MAXGAP)
+			if (dev->sample > 0 || abs(dev->sample) <= ENE_MAXGAP)
 				update_sample(dev, hw_sample);
 			else
 				ene_set_idle(dev, 1);
@@ -237,8 +452,8 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 			continue;
 		}
 
-		if (dev->idle) {
-			/* normal first sample recieved*/
+		/* normal first sample recieved */
+		if (!dev->fan_input_inuse && dev->idle) {
 			ene_set_idle(dev, 0);
 
 			/* discard first recieved value, its random
@@ -249,7 +464,6 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 			if (!enable_idle)
 				continue;
 		}
-
 		update_sample(dev, hw_sample);
 		send_sample(dev);
 	}
@@ -257,7 +471,7 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 }
 
 static int ene_probe(struct pnp_dev *pnp_dev,
-					const struct pnp_device_id *dev_id)
+		     const struct pnp_device_id *dev_id)
 {
 	struct resource *res;
 	struct ene_device *dev;
@@ -271,7 +485,6 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 
 	dev->pnp_dev = pnp_dev;
 	pnp_set_drvdata(pnp_dev, dev);
-
 
 	/* validate and read resources */
 	error = -ENODEV;
@@ -314,8 +527,7 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	if (!lirc_driver->rbuf)
 		goto err3;
 
-	if (lirc_buffer_init(lirc_driver->rbuf,
-					sizeof(int), sizeof(int) * 256))
+	if (lirc_buffer_init(lirc_driver->rbuf, sizeof(int), sizeof(int) * 256))
 		goto err4;
 
 	error = -ENODEV;
@@ -331,14 +543,10 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 			IRQF_SHARED, ENE_DRIVER_NAME, (void *)dev))
 		goto err7;
 
-
-	/* check firmware version */
-	error = -ENODEV;
-	if (ene_hw_read_reg(dev, ENE_FW_VERSION) != ENE_FW_VER_SUPP) {
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
-		       "unsupported firmware found, aborting\n");
+	/* detect hardware version and features */
+	error = ene_hw_detect(dev);
+	if (error)
 		goto err8;
-	}
 
 	printk(KERN_NOTICE ENE_DRIVER_NAME ": "
 	       "driver has been succesfully loaded\n");
@@ -362,7 +570,6 @@ err1:
 	return error;
 }
 
-
 static void ene_remove(struct pnp_dev *pnp_dev)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
@@ -375,12 +582,15 @@ static void ene_remove(struct pnp_dev *pnp_dev)
 	kfree(dev);
 }
 
-
 #ifdef CONFIG_PM
+
+/* TODO: make 'wake on IR' configurable and add .shutdown */
+/* currently impossible due to lack of kernel support */
+
 static int ene_suspend(struct pnp_dev *pnp_dev, pm_message_t state)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
-	ene_hw_write_reg_mask(dev, ENE_FW_SETTINGS, ENE_FW_WAKE, ENE_FW_WAKE);
+	ene_hw_write_reg_mask(dev, ENE_FW1, ENE_FW1_WAKE, ENE_FW1_WAKE);
 	return 0;
 }
 
@@ -390,15 +600,15 @@ static int ene_resume(struct pnp_dev *pnp_dev)
 	if (dev->in_use)
 		ene_hw_init(dev);
 
-	ene_hw_write_reg_mask(dev, ENE_FW_SETTINGS, 0, ENE_FW_WAKE);
+	ene_hw_write_reg_mask(dev, ENE_FW1, 0, ENE_FW1_WAKE);
 	return 0;
 }
 
 #endif
 
 static const struct pnp_device_id ene_ids[] = {
-	{ .id = "ENE0100", },
-	{ },
+	{.id = "ENE0100",},
+	{},
 };
 
 static struct pnp_driver ene_driver = {
@@ -430,18 +640,20 @@ static void ene_exit(void)
 	pnp_unregister_driver(&ene_driver);
 }
 
-
 module_param(sample_period, int, S_IRUGO);
 MODULE_PARM_DESC(sample_period, "Hardware sample period (75 us default)");
 
 module_param(enable_idle, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(enable_idle,
-"Enables turning off signal sampling after long inactivity time; "
-"if disabled might help detecting input signal (default: enabled)");
+	"Enables turning off signal sampling after long inactivity time; "
+	"if disabled might help detecting input signal (default: enabled)");
 
+module_param(enable_learning, bool, S_IRUGO);
+MODULE_PARM_DESC(enable_learning, "Use wide band (learning) reciever");
 
 MODULE_DEVICE_TABLE(pnp, ene_ids);
-MODULE_DESCRIPTION("LIRC driver for KB3924/ENE0100 CIR port");
+MODULE_DESCRIPTION
+    ("LIRC driver for KB3926B/KB3926C/KB3926D (aka ENE0100) CIR port");
 MODULE_AUTHOR("Maxim Levitsky");
 MODULE_LICENSE("GPL");
 
