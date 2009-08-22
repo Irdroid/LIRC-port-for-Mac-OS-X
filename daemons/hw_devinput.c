@@ -279,7 +279,8 @@ char *devinput_rec(struct ir_remote *remotes)
 		  event.time.tv_sec, event.time.tv_usec,
 		  event.type, event.code, event.value);
 	
-	code = (event.type == EV_KEY && event.value != 0) ? 0x80000000 : 0;
+	code = ((event.type == EV_KEY || event.type == EV_SW) &&
+		event.value != 0) ? 0x80000000 : 0;
 	code |= ((event.type & 0x7fff) << 16);
 	code |= event.code;
 
