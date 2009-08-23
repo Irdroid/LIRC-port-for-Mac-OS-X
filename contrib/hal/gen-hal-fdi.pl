@@ -67,6 +67,18 @@ sub find_ub
 	my $nameFile=$_;
 	my $lastComment="";
 	
+	if(!($nameFile =~/\.c$/))
+	{
+		return;
+	}
+	if($nameFile =~/^\./)
+	{
+		return;
+	}
+	if($nameFile =~/\.mod\.c$/)
+	{
+		return;
+	}
 	open my $file,$nameFile or die "error open file $nameFile";
 	while(my $line=<$file>)
 	{
