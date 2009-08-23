@@ -85,7 +85,7 @@ sub find_ub
 		#catch comment (should permit comment on the precedent or on the current line of USB_DEVICE declaration)
 		if($line =~/\s*\/\*(.+)\*\/\s*$/)
 		{
-			$lastComment=$1;
+			$lastComment=trim($1);
 		}
 
 		if($line =~/^\s*\{\s*USB_DEVICE\((.+)\,(.+)\)\s*\}/) # for example : { USB_DEVICE(VENDOR_ATI1, 0x0002) }
@@ -120,10 +120,16 @@ sub find_ub
 			}
 			
 			# FIXME: To be optimized for looking in ../../daemons
-			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
-			my $driver="";
-			if($nameFile=~/lirc_(.+)\.c/){ $driver=$1 };
-			$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
+			if(!($vendor{$VendorID}{$ProductID}{"comment"}))
+			{
+				$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
+			}
+			if(!($vendor{$VendorID}{$ProductID}{"driver"}))
+			{
+				my $driver="";
+				if($nameFile=~/lirc_(.+)\.c/){ $driver=$1 };
+				$vendor{$VendorID}{$ProductID}{"driver"}=$driver;
+			}
 		}
 	}
 }
