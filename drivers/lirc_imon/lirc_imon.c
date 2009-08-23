@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.105 2009/08/05 01:17:26 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.106 2009/08/23 07:48:29 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -230,6 +230,7 @@ static struct usb_device_id imon_usb_id_table[] = {
 	 * SoundGraph iMON PAD (IR & LCD)
 	 * SoundGraph iMON Knob (IR only)
 	 */
+	/* SoundGraph iMON PAD (IR & VFD/LCD), iMON Knob */
 	{ USB_DEVICE(0x15c2, 0xffdc) },
 
 	/*
