@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.107 2009/08/24 14:54:59 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.108 2009/08/24 15:02:11 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -412,6 +412,9 @@ static int ir_protocol;
  */
 static int nomouse;
 
+/* threshold at which a pad push registers as an arrow key in kbd mode */
+static int pad_thresh;
+
 
 /***  M O D U L E   C O D E ***/
 
@@ -432,6 +435,9 @@ MODULE_PARM_DESC(ir_protocol, "Which IR protocol to use. 0=native iMON, "
 module_param(nomouse, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nomouse, "Disable mouse input device mode when IR device is "
 		 "open. 0=don't disable, 1=disable. (default: don't disable)");
+module_param(pad_thresh, int, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(pad_thresh, "Threshold at which a pad push registers as an "
+		 "arrow key in kbd mode (default: 28)");
 
 static void free_imon_context(struct imon_context *context)
 {
@@ -1455,7 +1461,8 @@ static void imon_incoming_packet(struct imon_context *context,
 		buf[5] = buf[6] = buf[7] = 0;
 		len = 8;
 		timeout = 500;	/* in msecs */
-		threshold = 80;	/* 160x160 square */
+		/* (2*threshold) x (2*threshold) square */
+		threshold = pad_thresh ? pad_thresh : 28;
 		rel_x = buf[2];
 		rel_y = buf[3];
 
@@ -1504,7 +1511,8 @@ static void imon_incoming_packet(struct imon_context *context,
 		 * from the remotes dir.
 		 */
 		timeout = 10;	/* in msecs */
-		threshold = 15;	/* 30x30 square */
+		/* (2*threshold) x (2*threshold) square */
+		threshold = pad_thresh ? pad_thresh : 15;
 
 		/* buf[1] is x */
 		rel_x = (buf[1] & 0x08) | (buf[1] & 0x10) >> 2 |
