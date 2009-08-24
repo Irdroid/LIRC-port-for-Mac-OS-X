@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.106 2009/08/23 07:48:29 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.107 2009/08/24 14:54:59 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -165,8 +165,10 @@ struct imon_context {
 
 	int ffdc_dev;			/* is this the overused ffdc ID? */
 	int ir_protocol;		/* iMON or MCE (RC6) IR protocol? */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	struct input_dev *mouse;	/* input device for iMON PAD remote */
 	struct input_dev *touch;	/* input device for touchscreen */
+#endif
 	int display_type;		/* store the display type */
 	int pad_mouse;			/* toggle kbd(0)/mouse(1) mode */
 	int touch_x;			/* x coordinate on touchscreen */
@@ -1336,13 +1338,16 @@ static void imon_incoming_packet(struct imon_context *context,
 	int right_shift = 1;
 	int dir = 0;
 	u16 timeout, threshold;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	struct input_dev *mouse = NULL;
 	struct input_dev *touch = NULL;
+#endif
 	const unsigned char toggle_button1[] = { 0x29, 0x91, 0x15, 0xb7 };
 	const unsigned char toggle_button2[] = { 0x29, 0x91, 0x35, 0xb7 };
 	const unsigned char ch_up[]   = { 0x28, 0x93, 0x95, 0xb7 };
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	mouse = context->mouse;
 	if (context->display_type == IMON_DISPLAY_TYPE_VGA)
 		touch = context->touch;
@@ -1432,6 +1437,7 @@ static void imon_incoming_packet(struct imon_context *context,
 			return;
 		}
 	}
+#endif
 
 	/*
 	 * at this point, mouse and touchscreen input has been handled, so
@@ -1649,6 +1655,7 @@ static void imon_incoming_packet(struct imon_context *context,
  */
 static void imon_touch_display_timeout(unsigned long data)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	struct imon_context *context = (struct imon_context *)data;
 	struct input_dev *touch;
 
@@ -1660,6 +1667,7 @@ static void imon_touch_display_timeout(unsigned long data)
 	input_report_abs(touch, ABS_Y, context->touch_y);
 	input_report_key(touch, BTN_TOUCH, 0x00);
 	input_sync(touch);
+#endif
 
 	return;
 }
@@ -2036,6 +2044,7 @@ static int imon_probe(struct usb_interface *interface,
 
 		context->display_type = configured_display_type;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 		context->mouse = input_allocate_device();
 
 		snprintf(context->name_mouse, sizeof(context->name_mouse),
@@ -2063,6 +2072,7 @@ static int imon_probe(struct usb_interface *interface,
 		if (retval)
 			printk(KERN_INFO "%s: pad mouse input device setup failed\n",
 			       __func__);
+#endif
 
 		usb_fill_int_urb(context->rx_urb_intf0, context->usbdev_intf0,
 			usb_rcvintpipe(context->usbdev_intf0,
@@ -2086,6 +2096,7 @@ static int imon_probe(struct usb_interface *interface,
 		context->rx_endpoint_intf1 = rx_endpoint;
 		context->rx_urb_intf1 = rx_urb;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 		if (context->display_type == IMON_DISPLAY_TYPE_VGA) {
 			context->touch = input_allocate_device();
 
@@ -2119,6 +2130,7 @@ static int imon_probe(struct usb_interface *interface,
 				       __func__);
 		} else
 			context->touch = NULL;
+#endif
 
 		usb_fill_int_urb(context->rx_urb_intf1, context->usbdev_intf1,
 			usb_rcvintpipe(context->usbdev_intf1,
@@ -2247,14 +2259,18 @@ static void imon_disconnect(struct usb_interface *interface)
 	if (ifnum == 0) {
 		context->dev_present_intf0 = 0;
 		usb_kill_urb(context->rx_urb_intf0);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 		input_unregister_device(context->mouse);
+#endif
 		if (context->display_supported)
 			usb_deregister_dev(interface, &imon_class);
 	} else {
 		context->dev_present_intf1 = 0;
 		usb_kill_urb(context->rx_urb_intf1);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 		if (context->display_type == IMON_DISPLAY_TYPE_VGA)
 			input_unregister_device(context->touch);
+#endif
 	}
 
 	if (!context->ir_isopen && !context->dev_present_intf0 &&
