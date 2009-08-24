@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.108 2009/08/24 15:02:11 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.109 2009/08/24 17:15:56 lirc Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1340,18 +1340,18 @@ static void imon_incoming_packet(struct imon_context *context,
 	unsigned char mask;
 	int i, chunk_num;
 	int ts_input = 0;
-	int mouse_input;
-	int right_shift = 1;
 	int dir = 0;
 	u16 timeout, threshold;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+	int mouse_input;
+	int right_shift = 1;
 	struct input_dev *mouse = NULL;
 	struct input_dev *touch = NULL;
-#endif
 	const unsigned char toggle_button1[] = { 0x29, 0x91, 0x15, 0xb7 };
 	const unsigned char toggle_button2[] = { 0x29, 0x91, 0x35, 0xb7 };
 	const unsigned char ch_up[]   = { 0x28, 0x93, 0x95, 0xb7 };
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	mouse = context->mouse;
