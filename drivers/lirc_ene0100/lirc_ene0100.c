@@ -518,10 +518,10 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 
 	/* validate resources */
 	if (!pnp_port_valid(pnp_dev, 0) || pnp_port_len(pnp_dev, 0) < ENE_MAX_IO)
-		goto err2;
+		goto err6;
 
 	if (!pnp_irq_valid(pnp_dev, 0))
-		goto err2;
+		goto err6;
 
 	dev->hw_io = pnp_port_start(pnp_dev, 0);
 	dev->irq = pnp_irq(pnp_dev, 0);
