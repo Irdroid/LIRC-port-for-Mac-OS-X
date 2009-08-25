@@ -26,8 +26,8 @@
 #include <linux/interrupt.h>
 #include "lirc_ene0100.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
-#error "Sorry, this driver needs kernel version 2.6.29 or higher"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
+#error "Sorry, this driver needs kernel version 2.6.16 or higher"
 #else
 
 static int sample_period = 75;
@@ -131,44 +131,39 @@ static int ene_hw_detect(struct ene_device *dev)
 	old_ver = ene_hw_read_reg(dev, ENE_HW_VER_OLD);
 
 	if (hw_revision == 0xFF) {
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
-			"device seems to be disabled\n");
 
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+		ene_printk(KERN_WARNING, "device seems to be disabled\n");
+		ene_printk(KERN_WARNING,
 			"send a mail to lirc-list@lists.sourceforge.net\n");
-
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
-			"please attach output of acpidump\n");
+		ene_printk(KERN_WARNING, "please attach output of acpidump\n");
 
 		return -ENODEV;
 	}
 
 	if (chip_major == 0x33) {
-		printk(KERN_NOTICE ENE_DRIVER_NAME ": "
-		       "chips 0x33xx aren't supported yet\n");
+		ene_printk(KERN_WARNING, "chips 0x33xx aren't supported yet\n");
 		return -ENODEV;
 	}
 
 	if (chip_major == 0x39 && chip_minor == 0x26 && hw_revision == 0xC0) {
 		dev->hw_revision = ENE_HW_C;
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
+		ene_printk(KERN_WARNING,
 		       "KB3926C detected, driver support is not complete!\n");
 
 	} else if (old_ver == 0x24 && hw_revision == 0xC0) {
 		dev->hw_revision = ENE_HW_B;
-
-		printk(KERN_NOTICE ENE_DRIVER_NAME ": "
-		       "KB3926B detected\n");
+		ene_printk(KERN_NOTICE, "KB3926B detected\n");
 	} else {
 		dev->hw_revision = ENE_HW_D;
+		ene_printk(KERN_WARNING,
+			"unknown ENE chip detected, assuming KB3926D\n");
+		ene_printk(KERN_WARNING, "driver support incomplete");
 
-		printk(KERN_WARNING ENE_DRIVER_NAME ": "
-		       "unknown ENE chip detected, assuming KB3926D\n");
 	}
 
-	printk(KERN_NOTICE ENE_DRIVER_NAME ": "
-	       "chip is 0x%02x%02x - 0x%02x, 0x%02x\n",
-	       chip_major, chip_minor, old_ver, hw_revision);
+	ene_printk(KERN_DEBUG, "chip is 0x%02x%02x - 0x%02x, 0x%02x\n",
+		chip_major, chip_minor, old_ver, hw_revision);
+
 
 	/* detect features hardware supports */
 
@@ -183,12 +178,24 @@ static int ene_hw_detect(struct ene_device *dev)
 	dev->hw_fan_as_normal_input = dev->hw_learning_and_tx_capable &&
 	    fw_capabilities & ENE_FW2_FAN_AS_NRML_IN;
 
-	printk(KERN_NOTICE ENE_DRIVER_NAME ": hardware features:\n");
-	printk(KERN_NOTICE ENE_DRIVER_NAME
-	       ": learning and tx %s, gpio40_learn %s, fan_in %s\n",
+	ene_printk(KERN_NOTICE, "hardware features:\n");
+	ene_printk(KERN_NOTICE,
+		"learning and tx %s, gpio40_learn %s, fan_in %s\n",
 	       dev->hw_learning_and_tx_capable ? "on" : "off",
 	       dev->hw_gpio40_learning ? "on" : "off",
 	       dev->hw_fan_as_normal_input ? "on" : "off");
+
+	if (!dev->hw_learning_and_tx_capable && enable_learning)
+		enable_learning = 0;
+
+	if (dev->hw_learning_and_tx_capable) {
+		ene_printk(KERN_WARNING,
+		"Device supports transmitting, but the driver doesn't\n");
+		ene_printk(KERN_WARNING,
+		"due to lack of hardware to test against.\n");
+		ene_printk(KERN_WARNING,
+		"Send a mail to: lirc-list@lists.sourceforge.net\n");
+	}
 	return 0;
 }
 
@@ -212,13 +219,6 @@ static int ene_hw_init(void *data)
 	}
 
 	ene_hw_write_reg(dev, ENE_CIR_CONF2, 0x00);
-
-	if (!dev->hw_learning_and_tx_capable && enable_learning) {
-		printk(KERN_ERR ENE_DRIVER_NAME ": "
-		      "Device doesn't support wide band (learning) reciever\n");
-		enable_learning = 0;
-	}
-
 	ene_set_inputs(dev, enable_learning);
 
 	/* set sampling period */
@@ -262,7 +262,6 @@ static void ene_enable_fan_recieve(struct ene_device *dev, int enable)
 		ene_hw_write_reg(dev, ENE_FAN_AS_IN1, ENE_FAN_AS_IN1_EN);
 		ene_hw_write_reg(dev, ENE_FAN_AS_IN2, ENE_FAN_AS_IN2_EN);
 	}
-
 	dev->fan_input_inuse = enable;
 }
 
@@ -473,7 +472,6 @@ static irqreturn_t ene_hw_irq(int irq, void *data, struct pt_regs *regs)
 static int ene_probe(struct pnp_dev *pnp_dev,
 		     const struct pnp_device_id *dev_id)
 {
-	struct resource *res;
 	struct ene_device *dev;
 	struct lirc_driver *lirc_driver;
 	int error = -ENOMEM;
@@ -486,22 +484,6 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	dev->pnp_dev = pnp_dev;
 	pnp_set_drvdata(pnp_dev, dev);
 
-	/* validate and read resources */
-	error = -ENODEV;
-	res = pnp_get_resource(pnp_dev, IORESOURCE_IO, 0);
-	if (!pnp_resource_valid(res))
-		goto err2;
-
-	dev->hw_io = res->start;
-
-	if (pnp_resource_len(res) < ENE_MAX_IO)
-		goto err2;
-
-	res = pnp_get_resource(pnp_dev, IORESOURCE_IRQ, 0);
-	if (!pnp_resource_valid(res))
-		goto err2;
-
-	dev->irq = res->start;
 
 	/* prepare lirc interface */
 	error = -ENOMEM;
@@ -534,6 +516,16 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	if (lirc_register_driver(lirc_driver))
 		goto err5;
 
+	/* validate resources */
+	if (!pnp_port_valid(pnp_dev, 0) || pnp_port_len(pnp_dev, 0) < ENE_MAX_IO)
+		goto err2;
+
+	if (!pnp_irq_valid(pnp_dev, 0))
+		goto err2;
+
+	dev->hw_io = pnp_port_start(pnp_dev, 0);
+	dev->irq = pnp_irq(pnp_dev, 0);
+
 	/* claim the resources */
 	error = -EBUSY;
 	if (!request_region(dev->hw_io, ENE_MAX_IO, ENE_DRIVER_NAME))
@@ -548,8 +540,7 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	if (error)
 		goto err8;
 
-	printk(KERN_NOTICE ENE_DRIVER_NAME ": "
-	       "driver has been succesfully loaded\n");
+	ene_printk(KERN_NOTICE, "driver has been succesfully loaded\n");
 	return 0;
 
 err8:
@@ -628,8 +619,8 @@ static struct pnp_driver ene_driver = {
 static int __init ene_init(void)
 {
 	if (sample_period < 5) {
-		printk(KERN_ERR ENE_DRIVER_NAME ": sample period must be at "
-		       "least 5 us, (at least 30 recommended)\n");
+		ene_printk(KERN_ERR, "sample period must be at\n");
+		ene_printk(KERN_ERR, "least 5 us, (at least 30 recommended)\n");
 		return -EINVAL;
 	}
 	return pnp_register_driver(&ene_driver);

@@ -143,6 +143,9 @@
 #define  ENE_HW_C		2	/* 3926C */
 #define  ENE_HW_D		3	/* 3926D */
 
+#define ene_printk(level, text, ...) \
+	printk(level ENE_DRIVER_NAME ": " text, ## __VA_ARGS__)
+
 struct ene_device {
 	struct pnp_dev *pnp_dev;
 	struct lirc_driver *lirc_driver;
