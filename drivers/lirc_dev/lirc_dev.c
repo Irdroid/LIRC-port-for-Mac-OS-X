@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.94 2009/07/24 04:49:23 jarodwilson Exp $
+ * $Id: lirc_dev.c,v 1.95 2009/08/28 01:51:41 maximlevitsky Exp $
  *
  */
 
@@ -307,13 +307,6 @@ int lirc_register_driver(struct lirc_driver *d)
 		}
 	}
 
-	if (d->owner == NULL) {
-		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
-				    "no module owner registered\n");
-		err = -EBADRQC;
-		goto out;
-	}
-
 	mutex_lock(&lirc_dev_lock);
 
 	minor = d->minor;
@@ -577,7 +570,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 		goto error;
 	}
 
-	if (ir->d.owner != NULL && try_module_get(ir->d.owner)) {
+	if (try_module_get(ir->d.owner)) {
 		++ir->open;
 		retval = ir->d.set_use_inc(ir->d.data);
 
@@ -598,14 +591,7 @@ static int irctl_open(struct inode *inode, struct file *file)
 		if (ir->task)
 			wake_up_process(ir->task);
 #endif
-	} else {
-		if (ir->d.owner == NULL)
-			dprintk(LOGHEAD "no module owner!!!\n",
-				ir->d.name, ir->d.minor);
-
-		retval = -ENODEV;
 	}
-
  error:
 	if (ir)
 		dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor,
