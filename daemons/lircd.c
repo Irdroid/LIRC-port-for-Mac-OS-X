@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.90 2009/08/09 12:06:07 lirc Exp $      */
+/*      $Id: lircd.c,v 5.91 2009/08/29 07:46:44 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -156,10 +156,9 @@ char hostname[HOSTNAME_LEN+1];
 FILE *lf=NULL;
 #endif
 
-/* quite arbitrary limits */
-#define MAX_PEERS	100
 /* substract one for lirc, sockfd, sockinet, logfile, pidfile, uinput */
-#define MAX_CLIENTS     (FD_SETSIZE-6-MAX_PEERS)
+#define MAX_PEERS	((FD_SETSIZE-6)/2)
+#define MAX_CLIENTS     ((FD_SETSIZE-6)/2)
 
 int sockfd, sockinet;
 static int uinputfd = -1;
