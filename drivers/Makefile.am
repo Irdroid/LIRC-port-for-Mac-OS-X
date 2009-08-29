@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.34 2009/07/05 21:26:25 jarodwilson Exp $
+## $Id: Makefile.am,v 5.35 2009/08/29 09:22:30 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -11,6 +11,7 @@ DIST_SUBDIRS = \
 	lirc_dev \
 	lirc_atiusb \
 	lirc_bt829 \
+	lirc_ene0100 \
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
