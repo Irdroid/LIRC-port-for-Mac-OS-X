@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.15 2008/07/01 20:51:43 lirc Exp $      */
+/*      $Id: mode2.c,v 5.16 2009/08/29 07:52:41 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -13,6 +13,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifdef _CYGWIN_
+#define __USE_LINUX_IOCTL_DEFS
 #endif
 
 #include <stdio.h>
