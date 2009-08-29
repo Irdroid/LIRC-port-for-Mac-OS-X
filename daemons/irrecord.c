@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.94 2009/04/28 16:24:36 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.95 2009/08/29 07:47:31 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.94 $"
+#define IRRECORD_VERSION "$Revision: 5.95 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -244,7 +244,7 @@ struct hardware hw_emulation=
 	"emulation"
 };
 
-static int iprintf(int interactive, char *format_str, ...)
+static int i_printf(int interactive, char *format_str, ...)
 {
 	va_list ap;
 	int ret = 0;
@@ -1771,7 +1771,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 						{
 							remote->gap=calc_signal(scan);
 							remote->flags|=CONST_LENGTH;
-							iprintf(interactive, "\nFound const length: %lu\n",(unsigned long) remote->gap);
+							i_printf(interactive, "\nFound const length: %lu\n",(unsigned long) remote->gap);
 							break;
 						}
 						scan=scan->next;
@@ -1786,7 +1786,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 							if(scan->count>SAMPLES)
 							{
 								remote->gap=calc_signal(scan);
-								iprintf(interactive, "\nFound gap: %lu\n",(unsigned long) remote->gap);
+								i_printf(interactive, "\nFound gap: %lu\n",(unsigned long) remote->gap);
 								break;
 							}
 							scan=scan->next;
@@ -1794,7 +1794,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 					}
 					if(scan!=NULL)
 					{
-						iprintf(interactive, "Please keep on pressing buttons like described above.\n");
+						i_printf(interactive, "Please keep on pressing buttons like described above.\n");
 						mode=MODE_HAVE_GAP;
 						sum=0;
 						count=0;
@@ -1968,7 +1968,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 #endif
 				if(count_signals>=SAMPLES)
 				{
-					iprintf(interactive, "\n");
+					i_printf(interactive, "\n");
 					get_scheme(remote, interactive);
 					if(!get_header_length(remote, interactive) ||
 					   !get_trail_length(remote, interactive) ||
@@ -2151,8 +2151,8 @@ void get_scheme(struct ir_remote *remote, int interactive)
 	if(lengths[length]>=TH_SPACE_ENC*sum/100)
 	{
 		length++;
-		iprintf(interactive, "Space/pulse encoded remote control found.\n");
-		iprintf(interactive, "Signal length is %u.\n",length);
+		i_printf(interactive, "Space/pulse encoded remote control found.\n");
+		i_printf(interactive, "Signal length is %u.\n",length);
 		/* this is not yet the
 		   number of bits */
 		remote->bits=length;
@@ -2195,12 +2195,12 @@ void get_scheme(struct ir_remote *remote, int interactive)
 				   (calc_signal(maxs)<TH_RC6_SIGNAL ||
 				    calc_signal(max2s)<TH_RC6_SIGNAL))
 				{
-					iprintf(interactive, "RC-6 remote control found.\n");
+					i_printf(interactive, "RC-6 remote control found.\n");
 					set_protocol(remote, RC6);
 				}
 				else
 				{
-					iprintf(interactive, "RC-5 remote control found.\n");
+					i_printf(interactive, "RC-5 remote control found.\n");
 					set_protocol(remote, RC5);
 				}
 				return;
@@ -2208,7 +2208,7 @@ void get_scheme(struct ir_remote *remote, int interactive)
 		}
 	}
 	length++;
-	iprintf(interactive, "Suspicious data length: %u.\n",length);
+	i_printf(interactive, "Suspicious data length: %u.\n",length);
 	/* this is not yet the number of bits */
 	remote->bits=length;
 	set_protocol(remote, SPACE_ENC);
@@ -2259,12 +2259,12 @@ int get_trail_length(struct ir_remote *remote, int interactive)
 #       endif
 	if(max_count>=sum*TH_TRAIL/100)
 	{
-		iprintf(interactive, "Found trail pulse: %lu\n",
+		i_printf(interactive, "Found trail pulse: %lu\n",
 			(unsigned long) calc_signal(max_length));
 		remote->ptrail=calc_signal(max_length);
 		return(1);
 	}
-	iprintf(interactive, "No trail pulse found.\n");
+	i_printf(interactive, "No trail pulse found.\n");
 	return(1);
 }
 
@@ -2285,7 +2285,7 @@ int get_lead_length(struct ir_remote *remote, int interactive)
 #       endif
 	if(max_count>=sum*TH_LEAD/100)
 	{
-		iprintf(interactive, "Found lead pulse: %lu\n",
+		i_printf(interactive, "Found lead pulse: %lu\n",
 		       (unsigned long) calc_signal(max_length));
 		remote->plead=calc_signal(max_length);
 		return(1);
@@ -2302,12 +2302,12 @@ int get_lead_length(struct ir_remote *remote, int interactive)
 	}
 	if(abs(2*a-b)<b*eps/100 || abs(2*a-b)<aeps)
 	{
-		iprintf(interactive, "Found hidden lead pulse: %lu\n",
+		i_printf(interactive, "Found hidden lead pulse: %lu\n",
 		       (unsigned long) a);
 		remote->plead=a;
 		return(1);
 	}
-	iprintf(interactive, "No lead pulse found.\n");
+	i_printf(interactive, "No lead pulse found.\n");
 	return(1);
 }
 
@@ -2324,7 +2324,7 @@ int get_header_length(struct ir_remote *remote, int interactive)
 	}
 	else
 	{
-		iprintf(interactive, "No header data.\n");
+		i_printf(interactive, "No header data.\n");
 		return(1);
 	}
 #       ifdef DEBUG
@@ -2344,20 +2344,20 @@ int get_header_length(struct ir_remote *remote, int interactive)
 			headerp=calc_signal(max_plength);
 			headers=calc_signal(max_slength);
 
-			iprintf(interactive, "Found possible header: %lu %lu\n",
+			i_printf(interactive, "Found possible header: %lu %lu\n",
 				(unsigned long) headerp,
 				(unsigned long) headers);
 			remote->phead=headerp;
 			remote->shead=headers;
 			if(first_lengths<second_lengths)
 			{
-				iprintf(interactive, "Header is not being repeated.\n");
+				i_printf(interactive, "Header is not being repeated.\n");
 				remote->flags|=NO_HEAD_REP;
 			}
 			return(1);
 		}
 	}
-	iprintf(interactive, "No header found.\n");
+	i_printf(interactive, "No header found.\n");
 	return(1);
 }
 
@@ -2375,7 +2375,7 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 			printf("Repeat inconsitentcy.\n");
 			return(0);
 		}
-		iprintf(interactive, "No repeat code found.\n");
+		i_printf(interactive, "No repeat code found.\n");
 		return(1);
 	}
 
@@ -2410,7 +2410,7 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 			repeatp=calc_signal(max_plength);
 			repeats=calc_signal(max_slength);
 			
-			iprintf(interactive, "Found repeat code: %lu %lu\n",
+			i_printf(interactive, "Found repeat code: %lu %lu\n",
 				(unsigned long) repeatp,
 				(unsigned long) repeats);
 			remote->prepeat=repeatp;
@@ -2420,7 +2420,7 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 				max_slength=get_max_length(first_repeat_gap,
 							   NULL);
 				repeat_gap=calc_signal(max_slength);
-				iprintf(interactive, "Found repeat gap: %lu\n",
+				i_printf(interactive, "Found repeat gap: %lu\n",
 					(unsigned long) repeat_gap);
 				remote->repeat_gap=repeat_gap;
 				
@@ -2428,7 +2428,7 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 			return(1);
 		}
 	}
-	iprintf(interactive, "No repeat header found.\n");
+	i_printf(interactive, "No repeat header found.\n");
 	return(1);
 
 }
@@ -2533,7 +2533,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 					printf("Unknown encoding found.\n");
 					return(0);
 				}
-				iprintf(interactive, "Signals are biphase encoded.\n");
+				i_printf(interactive, "Signals are biphase encoded.\n");
 				p1=calc_signal(max_plength);
 				p2=calc_signal(max2_plength);
 				s1=calc_signal(max_slength);
@@ -2562,7 +2562,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 				if(max2_plength)
 				{
 					p2=calc_signal(max2_plength);
-					iprintf(interactive, "Signals are pulse encoded.\n");
+					i_printf(interactive, "Signals are pulse encoded.\n");
 					remote->pone=max(p1,p2);
 					remote->sone=s1;
 					remote->pzero=min(p1,p2);
@@ -2576,7 +2576,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 				else
 				{
 					s2=calc_signal(max2_slength);
-					iprintf(interactive, "Signals are space encoded.\n");
+					i_printf(interactive, "Signals are space encoded.\n");
 					remote->pone=p1;
 					remote->sone=max(s1,s2);
 					remote->pzero=p1;
@@ -2595,7 +2595,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 				{
 					remote->phead=remote->shead=0;
 					remote->flags&=~NO_HEAD_REP;
-					iprintf(interactive, "Removed header.\n");
+					i_printf(interactive, "Removed header.\n");
 				}
 				if(is_biphase(remote) &&
 				   expect(remote,remote->shead,remote->sone))
@@ -2603,7 +2603,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 					remote->plead=remote->phead;
 					remote->phead=remote->shead=0;
 					remote->flags&=~NO_HEAD_REP;
-					iprintf(interactive, "Removed header.\n");
+					i_printf(interactive, "Removed header.\n");
 				}
 			}
 			if(is_biphase(remote))
@@ -2630,7 +2630,7 @@ int get_data_length(struct ir_remote *remote, int interactive)
 					      (has_header(remote) ? 2:0)+
 					      1-(remote->ptrail>0 ? 2:0))/2;
 			}
-			iprintf(interactive, "Signal length is %d\n",remote->bits);
+			i_printf(interactive, "Signal length is %d\n",remote->bits);
 			free_lengths(&max_plength);
 			free_lengths(&max_slength);
 			return(1);
