@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.69 2009/08/05 00:31:10 jarodwilson Exp $      */
+/*      $Id: lirc_i2c.c,v 1.70 2009/08/30 16:59:53 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -380,6 +380,15 @@ static int ir_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int ir_remove(struct i2c_client *client);
 static int ir_command(struct i2c_client *client, unsigned int cmd, void *arg);
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 30)
+static const struct i2c_device_id ir_receiver_id[] = {
+	/* Generic entry for any IR receiver */
+	{ "ir_video", 0 },
+	/* IR device specific entries could be added here */
+	{ }
+};
+#endif
+
 static struct i2c_driver driver = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
 	.name		= "i2c ir driver",
@@ -406,13 +415,6 @@ static struct i2c_driver driver = {
 static struct i2c_client client_template = {
 	.name		= "unset",
 	.driver		= &driver
-};
-#else
-static const struct i2c_device_id ir_receiver_id[] = {
-	/* Generic entry for any IR receiver */
-	{ "ir_video", 0 },
-	/* IR device specific entries could be added here */
-	{ }
 };
 #endif
 
