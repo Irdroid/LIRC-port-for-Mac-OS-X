@@ -71,7 +71,9 @@ begin remote
           Zoom                     0x29a595b700000201 # Zoom
           FullScreen               0x2aa395b700000201 # Full Screen
           KEY_DVD                  0x29a395b700000201 # DVD
+          KEY_DVD                  0x29a295b700000201 # DVD, version 2
           KEY_MENU                 0x2ba395b700000201 # Menu
+          KEY_MENU                 0x2ba385b700000201 # Menu, version 2
           Subtitle                 0x298595b700000201 # Subtitle
           KEY_LANGUAGE             0x2b8595b700000201 # Audio
           MouseKeyboard            0x299115b700000201 # Mouse/Keyboard
