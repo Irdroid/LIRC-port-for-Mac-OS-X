@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.95 2009/08/28 01:51:41 maximlevitsky Exp $
+ * $Id: lirc_dev.c,v 1.96 2009/08/31 16:57:55 lirc Exp $
  *
  */
 
@@ -770,7 +770,7 @@ static long irctl_compat_ioctl(struct file *file,
 
 		cmd = _IOC(_IOC_DIR(cmd32), _IOC_TYPE(cmd32), _IOC_NR(cmd32),
 			   (_IOC_TYPECHECK(unsigned long)));
-		ret = irctl_ioctl(file->f_path.dentry->d_inode, file,
+		ret = irctl_ioctl(file->f_dentry->d_inode, file,
 				  cmd, (unsigned long)(&val));
 
 		set_fs(old_fs);
@@ -804,7 +804,7 @@ static long irctl_compat_ioctl(struct file *file,
 		 */
 		lock_kernel();
 		cmd = cmd32;
-		ret = irctl_ioctl(file->f_path.dentry->d_inode,
+		ret = irctl_ioctl(file->f_dentry->d_inode,
 				  file, cmd, arg);
 		unlock_kernel();
 		return ret;
