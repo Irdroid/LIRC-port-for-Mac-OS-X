@@ -11,10 +11,13 @@
  *
  * Original lirc_mceusb driver deprecated in favor of this driver, which
  * supports the 1st-gen device now too. Transmitting on the 1st-gen device
- * is as yet untested, but receiving definitely works.
+ * only functions on port #2 at the moment.
  *
- * Support for 1st-gen mceusb device added in June of 2009,
+ * Support for 1st-gen device added June 2009,
  * by Jarod Wilson <jarod@wilsonet.com>
+ *
+ * Initial transmission support for 1st-gen device added August 2009,
+ * by Patrick Calhoun <phineas@ou.edu>
  *
  * Derived from ATI USB driver by Paul Miller and the original
  * MCE USB driver by Dan Conti ((and now including chunks of the latter
@@ -894,7 +897,7 @@ static int mceusb_gen1_init(struct mceusb_dev *ir)
 	memset(data, 0, 8);
 
 	ret = usb_control_msg(ir->usbdev, usb_rcvctrlpipe(ir->usbdev, 0),
-			      5, USB_TYPE_VENDOR, 0, 0,
+			      USB_REQ_SET_ADDRESS, USB_TYPE_VENDOR, 0, 0,
 			      data, 2, HZ * 3);
 	dprintk("%s - ret = %d, devnum = %d\n",
 		__func__, ret, ir->usbdev->devnum);
@@ -907,6 +910,18 @@ static int mceusb_gen1_init(struct mceusb_dev *ir)
 			      0xc04e, 0x0000, NULL, 0, HZ * 3);
 
 	dprintk("%s - ret = %d\n", __func__, ret);
+
+	/* strange: bRequest == 4 */
+	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
+			      4, USB_TYPE_VENDOR,
+			      0x0808, 0x0000, NULL, 0, HZ * 3);
+	dprintk("%s - retB = %d\n", __func__, ret);
+
+	/* strange: bRequest == 2 */
+	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
+			      2, USB_TYPE_VENDOR,
+			      0x0000, 0x0100, NULL, 0, HZ * 3);
+	dprintk("%s - retC = %d\n", __func__, ret);
 
 	return ret;
 
@@ -1150,19 +1165,10 @@ mem_failure_switch:
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
 				     MCEUSB_OUTBOUND);
-		/* if we don't issue the correct number of receives
-		 * (MCEUSB_INBOUND) for each outbound, then the first few ir
-		 * pulses will be interpreted by the usb_async_callback routine
-		 * - we should ensure we have the right amount OR less - as the
-		 * mceusb_dev_recv routine will handle the control packets OK -
-		 * they start with 0x9f - but the async callback doesn't handle
-		 * ir pulse packets
-		 */
-		request_packet_async(ir, ep_in, NULL, maxp, 0);
-	} else {
+	} else if (ir->flags.microsoft_gen1) {
 		/* original ms mce device requires some additional setup */
-		if (ir->flags.microsoft_gen1)
-			mceusb_gen1_init(ir);
+		mceusb_gen1_init(ir);
+	} else {
 
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
@@ -1171,8 +1177,17 @@ mem_failure_switch:
 		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
 		request_packet_async(ir, ep_out, init2,
 				     sizeof(init2), MCEUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, 0);
 	}
+
+	/*
+	 * if we don't issue the correct number of receives (MCEUSB_INBOUND)
+	 * for each outbound, then the first few ir pulses will be interpreted
+	 * by the usb_async_callback routine - we should ensure we have the
+	 * right amount OR less - as the meusb_dev_recv routine will handle
+	 * the control packets OK - they start with 0x9f - but the async
+	 * callback doesn't handle ir pulse packets
+	 */
+	request_packet_async(ir, ep_in, NULL, maxp, 0);
 
 	usb_set_intfdata(intf, ir);
 
