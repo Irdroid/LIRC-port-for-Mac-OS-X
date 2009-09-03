@@ -114,6 +114,9 @@ begin remote
           Down                     0x01007F00
           Left                     0x01000080
           Right                    0x0100007F
+# Variations on the mouse buttons from Jan Schneider
+          LeftClick                0x01010080
+          RightClick               0x01020080
 
       end codes
 

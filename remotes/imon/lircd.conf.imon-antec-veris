@@ -84,8 +84,10 @@ begin remote
           LeftMenu                 0x0280000000000201 # Left Menu
           RightMenu                0x0200006500000201 # Right Menu
           BTN_LEFT                 0x0101000000000201 # L. Click
+          BTN_LEFT                 0x0101008000000201 # L. Click, version 2
 # LeftClick flips to 01010001 when held
           BTN_RIGHT                0x0102000000000201 # R. Click
+          BTN_RIGHT                0x0102008000000201 # R. Click, version 2
 # Un-click for both right and left is 01000000
           KEY_ENTER                0x0200002800000201 # ENTER
 # Un-click for all 0x02foo buttons is 02000000
