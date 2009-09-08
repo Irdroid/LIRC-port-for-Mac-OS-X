@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.109 2009/08/24 17:15:56 lirc Exp $
+ *   $Id: lirc_imon.c,v 1.110 2009/09/08 00:56:46 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1430,15 +1430,16 @@ static void imon_incoming_packet(struct imon_context *context,
 			}
 			dprintk("sending mouse data via input subsystem\n");
 
-			if (dir == 0) {
-				input_report_key(mouse, BTN_LEFT,
-						 buf[1] & 0x01);
-				input_report_key(mouse, BTN_RIGHT,
-						 buf[1] >> right_shift & 0x01);
+			if (dir) {
+				input_report_rel(mouse, REL_WHEEL, dir);
+			} else if (rel_x || rel_y) {
 				input_report_rel(mouse, REL_X, rel_x);
 				input_report_rel(mouse, REL_Y, rel_y);
-			} else
-				input_report_rel(mouse, REL_WHEEL, dir);
+			} else {
+				input_report_key(mouse, BTN_LEFT, buf[1] & 0x1);
+				input_report_key(mouse, BTN_RIGHT,
+						 buf[1] >> right_shift & 0x1);
+			}
 			input_sync(mouse);
 			return;
 		}
