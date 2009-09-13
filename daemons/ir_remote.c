@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.42 2009/05/24 10:46:52 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.43 2009/09/13 11:48:58 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -448,11 +448,21 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 {
 	unsigned long long code;
 	struct timeval current;
+	static struct ir_remote *last_decoded = NULL;
 
 	LOGPRINTF(1,"found: %s",found->name);
 
 	gettimeofday(&current,NULL);
-	if(remote==last_remote &&
+	LOGPRINTF(1,"%lx %lx %lx %d %d %d %d %d %d %d",
+		  remote,last_remote,last_decoded,
+		  remote==last_decoded,
+		  found==remote->last_code,
+		  found->next!=NULL,
+		  found->current!=NULL,
+		  repeat_flag,
+		  time_elapsed(&remote->last_send,&current)<1000000,
+		  (!has_toggle_bit_mask(remote) || toggle_bit_mask_state==remote->toggle_bit_mask_state));
+	if(remote==last_decoded &&
 	   (found==remote->last_code || (found->next!=NULL && found->current!=NULL)) &&
 	   repeat_flag &&
 	   time_elapsed(&remote->last_send,&current)<1000000 &&
@@ -493,6 +503,7 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		}
 	}
 	last_remote=remote;
+	last_decoded=remote;
 	if(found->current==NULL) remote->last_code=found;
 	remote->last_send=current;
 	remote->min_remaining_gap=min_remaining_gap;
