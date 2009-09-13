@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.19 2007/03/30 07:13:47 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.20 2009/09/13 11:00:00 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -465,8 +465,10 @@ static void sendkey(char *keyname,int x,int y,Window w,Window s)
   if (s) sendfocus(s,FocusIn);
 
   XSendEvent(dpy,w,True,KeyPressMask,&xev);
+  XFlush(dpy);
+
   xev.type = KeyRelease;
-  usleep(2000);
+  usleep(20000);
   xev.xkey.time = fake_timestamp();
   if (s) sendfocus(s,FocusOut);
   XSendEvent(dpy,w,True,KeyReleaseMask,&xev);
