@@ -1,4 +1,4 @@
-0.8.6-CVS: future
+0.8.6: 09/13/09
   * added support for ENE KB3926 revision B/C/D (ENE0100) CIR port
     (found on some notebooks, e.g: Acer Aspire 5720G, HP Pavilion dv5)
     (Maxim Levitsky)
