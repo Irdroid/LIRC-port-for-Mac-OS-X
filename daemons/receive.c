@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.38 2009/07/08 16:05:16 lirc Exp $      */
+/*      $Id: receive.c,v 5.39 2009/09/13 11:47:52 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -1219,14 +1219,14 @@ int receive_decode(struct ir_remote *remote,
 				}
 			}
 			codes++;
-		}
-		if(found!=NULL)
-		{
-			if(!get_gap(remote,
-				    is_const(remote) ? 
-				    min_gap(remote)-rec_buffer.sum:
-				    min_gap(remote))) 
-				found=NULL;
+			if(found!=NULL)
+			{
+				if(!get_gap(remote,
+					    is_const(remote) ? 
+					    min_gap(remote)-rec_buffer.sum:
+					    min_gap(remote))) 
+					found=NULL;
+			}
 		}
 		if(found==NULL) return(0);
 		code=found->code;
