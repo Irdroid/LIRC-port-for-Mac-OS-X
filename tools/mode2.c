@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.16 2009/08/29 07:52:41 lirc Exp $      */
+/*      $Id: mode2.c,v 5.17 2009/09/19 06:38:53 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -206,6 +206,12 @@ int main(int argc,char **argv)
 	{
 		fprintf(stderr,"%s: too many arguments\n",progname);
 		return(EXIT_FAILURE);
+	}
+	if(strcmp(device, LIRCD) == 0)
+	{
+		fprintf(stderr, "%s: refusing to connect to lircd socket\n",
+			progname);
+		return EXIT_FAILURE;		
 	}
 	
 	if(use_raw_access)
