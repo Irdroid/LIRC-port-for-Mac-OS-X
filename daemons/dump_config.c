@@ -1,4 +1,4 @@
-/*      $Id: dump_config.c,v 5.23 2009/02/12 21:14:48 lirc Exp $      */
+/*      $Id: dump_config.c,v 5.24 2009/09/19 06:41:56 lirc Exp $      */
 
 /****************************************************************************
  ** dump_config.c ***********************************************************
@@ -190,9 +190,18 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		fprintf(f, "  repeat_gap   %lu\n",
 			(unsigned long) rem->repeat_gap);
 	}
+	if(rem->suppress_repeat>0)
+	{
+		fprintf(f, "  suppress_repeat %d\n",rem->suppress_repeat);
+	}
 	if(rem->min_repeat>0)
 	{
 		fprintf(f, "  min_repeat      %d\n",rem->min_repeat);
+		if(rem->suppress_repeat == 0)
+		{
+			fprintf(f, "#  suppress_repeat %d\n", rem->min_repeat);
+			fprintf(f, "#  uncomment to suppress unwanted repeats\n");
+		}
 	}
 	if(!is_raw(rem))
 	{

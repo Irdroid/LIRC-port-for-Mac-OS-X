@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.14 2009/08/09 11:10:58 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.15 2009/09/19 06:41:56 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -144,6 +144,7 @@ struct ir_remote
 	int toggle_bit;             /* obsolete */
 	ir_code toggle_bit_mask;    /* previously only one bit called
 				       toggle_bit */
+	int suppress_repeat;        /* suppress unwanted repeats */
 	int min_repeat;             /* code is repeated at least x times
 				       code sent once -> min_repeat=0 */
 	unsigned int min_code_repeat;/*meaningful only if remote sends

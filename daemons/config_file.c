@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.30 2009/01/31 09:46:47 lirc Exp $      */
+/*      $Id: config_file.c,v 5.31 2009/09/19 06:41:56 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -440,6 +440,10 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	/* obsolete name */
 	else if (strcasecmp("repeat_bit",key)==0){
 		rem->toggle_bit=s_strtoi(val);
+		return(1);
+	}
+	else if (strcasecmp("suppress_repeat",key)==0){
+		rem->suppress_repeat=s_strtoi(val);
 		return(1);
 	}
 	else if (strcasecmp("min_repeat",key)==0){

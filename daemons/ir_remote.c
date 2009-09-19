@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.43 2009/09/13 11:48:58 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.44 2009/09/19 06:41:56 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -580,6 +580,7 @@ char *decode_all(struct ir_remote *remotes)
 		   (ncode=get_code(remote,pre,code,post,&toggle_bit_mask_state)))
 		{
 			int len;
+			int reps;
 
 			code=set_code(remote,ncode,toggle_bit_mask_state,
 				      repeat_flag,
@@ -604,14 +605,27 @@ char *decode_all(struct ir_remote *remotes)
 			{
 				remote->last_code->current = remote->last_code->next;
 			}
+			reps =  remote->reps-(ncode->next ? 1:0);
+			if(reps > 0)
+			{
+				if(reps <= remote->suppress_repeat)
+				{
+					decoding=NULL;
+					return NULL;
+				}
+				else
+				{
+					reps -= remote->suppress_repeat;
+				}
+			}
 			register_button_press
 				(remote, remote->last_code,
-				 code, remote->reps-(ncode->next ? 1:0));
+				 code, reps);
 			
 			len = write_message(message, PACKET_SIZE+1,
 					    remote->name,
 					    remote->last_code->name, "", code,
-					    remote->reps-(ncode->next ? 1:0));
+					    reps);
 			decoding=NULL;
 			if(len>=PACKET_SIZE+1)
 			{
