@@ -7,6 +7,8 @@ gets the received buttons from lircd and converts them to mouse events. To
 make this possible, lircmd needs a config file located
 in /etc/lircmd.conf. In this file you have to determine which
 button from which remote causes a mouse move or a mouse button click.
+You can also specify a special button which activates or deactivates the mouse
+mode.
 
 [OPTIONS]
 If you provide the \-\-nodaemon option lircmd won't fork to background.
