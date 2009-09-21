@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.21 2009/07/08 19:38:22 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.22 2009/09/21 18:16:53 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -889,7 +889,11 @@ int main(int argc,char **argv)
 #                       endif
 			{0, 0, 0, 0}
 		};
+#               if defined(__linux__)
+		c = getopt_long(argc,argv,"hvnu",long_options,NULL);
+#               else
 		c = getopt_long(argc,argv,"hvn",long_options,NULL);
+#               endif
 		if(c==-1)
 			break;
 		switch (c)
