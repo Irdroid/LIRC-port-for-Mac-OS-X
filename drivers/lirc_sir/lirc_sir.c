@@ -433,7 +433,7 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 	case LIRC_SET_SEND_DUTY_CYCLE:
 		retval = get_user(ivalue, (unsigned int *) arg);
 		if (retval)
-			return reetval;
+			return retval;
 		if (ivalue <= 0 || ivalue > 100)
 			return -EINVAL;
 		/* (ivalue/100)*(1000000/freq) */
