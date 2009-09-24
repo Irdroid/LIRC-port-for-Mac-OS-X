@@ -81,7 +81,7 @@ static int ene_hw_irq_status(struct ene_device *dev, int *buffer_pointer)
 	if (dev->hw_revision < ENE_HW_C) {
 		irq_status = ene_hw_read_reg(dev, ENEB_IRQ_STATUS);
 
-		if (!irq_status & ENEB_IRQ_STATUS_IR)
+		if (!(irq_status & ENEB_IRQ_STATUS_IR))
 			return 0;
 		ene_hw_write_reg(dev, ENEB_IRQ_STATUS,
 				 irq_status & ~ENEB_IRQ_STATUS_IR);
@@ -92,7 +92,7 @@ static int ene_hw_irq_status(struct ene_device *dev, int *buffer_pointer)
 
 	irq_status = ene_hw_read_reg(dev, ENEC_IRQ);
 
-	if (!irq_status && ENEC_IRQ_STATUS)
+	if (!(irq_status & ENEC_IRQ_STATUS))
 		return 0;
 
 	/* original driver does that twice - a workaround ? */
