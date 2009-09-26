@@ -13,11 +13,8 @@
  * supports the 1st-gen device now too. Transmitting on the 1st-gen device
  * only functions on port #2 at the moment.
  *
- * Support for 1st-gen device added June 2009,
- * by Jarod Wilson <jarod@wilsonet.com>
- *
- * Initial transmission support for 1st-gen device added August 2009,
- * by Patrick Calhoun <phineas@ou.edu>
+ * Transmit and receive support for 1st-gen device added June-September 2009,
+ * by Jarod Wilson <jarod@wilsonet.com> and Patrick Calhoun <phineas@ou.edu>
  *
  * Derived from ATI USB driver by Paul Miller and the original
  * MCE USB driver by Dan Conti ((and now including chunks of the latter
@@ -237,6 +234,7 @@ static struct usb_device_id microsoft_gen1_list[] = {
 };
 
 static struct usb_device_id transmitter_mask_list[] = {
+	{ USB_DEVICE(VENDOR_MICROSOFT, 0x006d) },
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0334) },
@@ -904,20 +902,20 @@ static int mceusb_gen1_init(struct mceusb_dev *ir)
 	dprintk("%s - data[0] = %d, data[1] = %d\n",
 		__func__, data[0], data[1]);
 
-	/* set feature */
+	/* set feature: bit rate 38400 bps */
 	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
 			      USB_REQ_SET_FEATURE, USB_TYPE_VENDOR,
 			      0xc04e, 0x0000, NULL, 0, HZ * 3);
 
 	dprintk("%s - ret = %d\n", __func__, ret);
 
-	/* strange: bRequest == 4 */
+	/* bRequest 4: set char length to 8 bits */
 	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
 			      4, USB_TYPE_VENDOR,
 			      0x0808, 0x0000, NULL, 0, HZ * 3);
 	dprintk("%s - retB = %d\n", __func__, ret);
 
-	/* strange: bRequest == 2 */
+	/* bRequest 2: set handshaking to use DTR/DSR */
 	ret = usb_control_msg(ir->usbdev, usb_sndctrlpipe(ir->usbdev, 0),
 			      2, USB_TYPE_VENDOR,
 			      0x0000, 0x0100, NULL, 0, HZ * 3);
