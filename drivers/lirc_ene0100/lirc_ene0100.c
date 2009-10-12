@@ -24,6 +24,7 @@
 #include <linux/pnp.h>
 #include <linux/io.h>
 #include <linux/interrupt.h>
+#include <linux/sched.h>
 #include "lirc_ene0100.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
