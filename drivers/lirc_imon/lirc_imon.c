@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.111 2009/09/11 04:56:18 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.112 2009/10/12 16:21:52 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -565,7 +565,8 @@ static int display_close(struct inode *inode, struct file *file)
 }
 
 /**
- * Sends a packet to the device
+ * Sends a packet to the device -- this function must be called
+ * with context->lock held.
  */
 static int send_packet(struct imon_context *context)
 {
@@ -743,7 +744,6 @@ static int send_set_imon_clock(struct imon_context *context,
 		return -ENODEV;
 	}
 
-
 	for (i = 0; i < IMON_CLOCK_ENABLE_PACKETS; i++) {
 		memcpy(context->usb_tx_buf, clock_enable_pkt[i], 8);
 		retval = send_packet(context);
@@ -755,7 +755,6 @@ static int send_set_imon_clock(struct imon_context *context,
 	}
 
 	return retval;
-
 }
 
 /**
@@ -1152,8 +1151,11 @@ static int ir_open(void *data)
 	context->rx.prev_bit = 0;
 
 	/* set new IR protocol if it has changed since init or last open */
-	if (ir_protocol != context->ir_protocol)
+	if (ir_protocol != context->ir_protocol) {
+		mutex_lock(&context->lock);
 		imon_set_ir_protocol(context);
+		mutex_unlock(&context->lock);
+	}
 
 	context->ir_isopen = 1;
 	printk(KERN_INFO MOD_NAME ": IR port opened\n");
