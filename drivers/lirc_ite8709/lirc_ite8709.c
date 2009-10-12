@@ -21,6 +21,9 @@
 
 #include <linux/version.h>
 #include <linux/module.h>
+#include <linux/interrupt.h>
+#include <linux/sched.h>
+#include <linux/delay.h>
 #include <linux/pnp.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 #include <asm/io.h>
