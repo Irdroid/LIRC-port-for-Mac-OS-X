@@ -2286,3 +2286,1056 @@ begin remote
       end codes
 
 end remote
+#
+# this config file was hand crafted for
+# lirc-0.8.5(atiusb) 2009-10-17
+#
+# original medion 8802 (which seems very similar): 
+# contributed by Ted Schipper <t.schipper@tsux.org>
+#
+# channels added by Michael Markstaller mm at elabnet.de
+#
+# brand:                       Pollin PC-Fernbedienung X10 (Art# 721379)
+# Remote P/N:                  2002 9725
+# Receiver P/N:                20017629
+# devices being controlled by this remote: EIB-Installation/Multiroom-Audio/Homecinema
+# Other numbers: CD0536 (remote) 
+# You can use 16 remotes with 16 channels separately using only one USB-receiver!
+#
+# - ATTENTION! multiple channels are broken with lirc <0.8.6!
+# - load lirc_atiusb with param unique=1 (/etc/modules.conf)
+# - change channel on remote by:
+#     - pressing the blue "world"-button approx 3secs until the blue light blinks
+#     - select channel by numbers (01-16)
+#     -  press the blue button again (the number of blinks is the channel number)
+#
+# also similar:
+# Medion 40005927 different: TV/DVD 0x012c
+# PC 0x032e
+# DVD_Menu = Photo-Key on this 0x5984
+# Only 1 channel!
+
+# Ch2 Kueche
+# Ch3 Terasse/Garten
+# Ch4 Wohnzimmer
+# Ch5 Bad
+# Ch6 WC
+# Ch7 Schlafen
+# Ch8 Ankl
+# Ch9 Gast
+# Ch10 Hobby/Kino
+# Ch11 DG Sued (res.)
+# Ch12 DG No (res.)
+# Ch16 Abstellraum
+
+begin remote
+  name  X10_Ch1
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          227999
+  min_repeat      5
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                   0x719C
+          Rec_TV                    0x6D98
+          Power                    0xD702
+          Photo                    0x5A85
+          Music                    0x5B86
+          Guide                    0x0631
+          DVD_Menu                 0x5984
+          Video                    0x022D
+          Text                     0x6B96
+          RED/Audio                0x0732
+          YELLOW/Angle             0x0934
+          BLUE/Title               0x0A35
+          GREEN/Subtitle           0x0833
+          Vol+                     0x5E89
+          Vol-                     0x5D88
+          Up                       0x6F9A
+          Down                     0x77A2
+          Left                     0x729D
+          Right                    0x749F
+          Ok                       0x739E
+          Mute                     0x5580
+          Ch+                      0x608B
+          Ch-                      0x618C
+          1                        0x628D
+          2                        0x638E
+          3                        0x648F
+          4                        0x6590
+          5                        0x6691
+          6                        0x6792
+          7                        0x6893
+          8                        0x6994
+          9                        0x6A95
+          Asterisk                 0x0C37
+          0                        0x6C97
+          #                        0x0D38
+          Back                     0x75A0
+          Info                     0x042F
+          Select                   0x709B
+          Rewind                   0x79A4
+          Play                     0x7AA5
+          FastFwd                  0x7BA6
+          Pause                    0x7EA9
+          SkipBack                 0x76A1
+          SkipFwd                  0x78A3
+          Stop                     0x7DA8
+          Record                   0x7CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch2
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x1000
+  gap          347976
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x819C
+          Rec_TV                   0xFD18
+          Power                    0xE702
+          Photo                    0x6A85
+          Music                    0xEB06
+          Guide                    0x96B1
+          DVD_Menu                 0x6984
+          Video                    0x122D
+          Text                     0xFB16
+          RED/Audio                0x97B2
+          YELLOW/Angle             0x1934
+          BLUE/Title               0x9AB5
+          GREEN/Subtitle           0x1833
+          Vol+                     0x6E89
+          Vol-                     0xED08
+          Up                       0x7F9A
+          Down                     0x87A2
+          Left                     0x021D
+          Right                    0x041F
+          Ok                       0x839E
+          Mute                     0xE500
+          Ch+                      0xF00B
+          Ch-                      0x718C
+          1                        0x728D
+          2                        0xF30E
+          3                        0x748F
+          4                        0xF510
+          5                        0x7691
+          6                        0xF712
+          7                        0x7893
+          8                        0xF914
+          9                        0x7A95
+          Asterisk                 0x9CB7
+          0                        0xFC17
+          #                        0x1D38
+          Back                     0x0520
+          Info                     0x94AF
+          Select                   0x001B
+          Rewind                   0x89A4
+          Play                     0x0A25
+          FastFwd                  0x8BA6
+          Pause                    0x0E29
+          SkipBack                 0x86A1
+          SkipFwd                  0x0823
+          Stop                     0x8DA8
+          Rec                      0x0C27
+      end codes
+end remote
+
+
+begin remote
+  name  X10_Ch3
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x2000
+  gap          347976
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x919C
+          Rec_TV                   0x0D18
+          Power                    0xF702
+          Photo                    0xFA05
+          Music                    0x7B86
+          Guide                    0x2631
+          DVD_Menu                 0x7984
+          Video                    0x222D
+          Text                     0x8B96
+          RED/Audio                0x2732
+          YELLOW/Angle             0xA9B4
+          BLUE/Title               0x2A35
+          GREEN/Subtitle           0xA8B3
+          Vol+                     0xFE09
+          Vol-                     0x7D88
+          Up                       0x0F1A
+          Down                     0x97A2
+          Left                     0x121D
+          Right                    0x949F
+          Ok                       0x131E
+          Mute                     0x7580
+          Ch+                      0x000B
+          Ch-                      0x818C
+          1                        0x020D
+          2                        0x838E
+          3                        0x040F
+          4                        0x8590
+          5                        0x0611
+          6                        0x8792
+          7                        0x0813
+          8                        0x8994
+          9                        0x0A15
+          Asterisk                 0xACB7
+          0                        0x0C17
+          #                        0xADB8
+          Back                     0x1520
+          Info                     0xA4AF
+          Select                   0x101B
+          Rewind                   0x99A4
+          Play                     0x1A25
+          FastFwd                  0x9BA6
+          Pause                    0x1E29
+          SkipBack                 0x96A1
+          SkipFwd                  0x1B26
+          SkipFwd                  0x98A3
+          FastFwd                  0x1B26
+          Stop                     0x9DA8
+          Rec                      0x1C27
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch4
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x3000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xA19C
+          Rec_TV                   0x1D18
+          Power                    0x0702
+          Photo                    0x0A05
+          Music                    0x8B86
+          Guide                    0xB6B1
+          DVD_Menu                 0x0904
+          Video                    0xB2AD
+          Text                     0x1B16
+          RED/Audio                0xB7B2
+          YELLOW/Angle             0x3934
+          BLUE/Title               0xBAB5
+          GREEN/Subtitle           0x3833
+          Vol+                     0x8E89
+          Vol-                     0x0D08
+          Up                       0x9F9A
+          Down                     0x2722
+          Left                     0xA29D
+          Right                    0x241F
+          Ok                       0xA39E
+          Mute                     0x0500
+          Ch+                      0x100B
+          Ch-                      0x918C
+          1                        0x928D
+          2                        0x130E
+          3                        0x140F
+          4                        0x1510
+          5                        0x9691
+          6                        0x1712
+          7                        0x9893
+          8                        0x1914
+          9                        0x9A95
+          Asterisk                 0x3C37
+          0                        0x9C97
+          #                        0x3D38
+          Back                     0xA5A0
+          Info                     0x342F
+          Select                   0xA09B
+          Rewind                   0x2924
+          Play                     0xAAA5
+          FastFwd                  0x2B26
+          Pause                    0xAEA9
+          SkipBack                 0x2621
+          SkipFwd                  0xA8A3
+          Stop                     0x2D28
+          Record                   0xACA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch5
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x4000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xB19C
+          Rec_TV                   0x2D18
+          Power                    0x1702
+          Photo                    0x1A05
+          Music                    0x9B86
+          Guide                    0xC6B1
+          DVD_Menu                 0x1904
+          Video                    0xC2AD
+          Text                     0x2B16
+          RED/Audio                0xC7B2
+          YELLOW/Angle             0x4934
+          BLUE/Title               0xCAB5
+          GREEN/Subtitle           0x4833
+          Vol+                     0x9E89
+          Vol-                     0x1D08
+          Up                       0xAF9A
+          Down                     0x3722
+          Left                     0xB29D
+          Right                    0x341F
+          Ok                       0xB39E
+          Mute                     0x1500
+          Ch+                      0x200B
+          Ch-                      0xA18C
+          1                        0xA28D
+          2                        0x230E
+          3                        0x240F
+          4                        0x2510
+          5                        0xA691
+          6                        0x2712
+          7                        0xA893
+          8                        0x2914
+          9                        0xAA95
+          Asterisk                 0x4C37
+          0                        0xAC97
+          #                        0x4D38
+          Back                     0xB5A0
+          Info                     0x442F
+          Select                   0xB09B
+          Rewind                   0x3924
+          Play                     0xBAA5
+          FastFwd                  0x3B26
+          Pause                    0xBEA9
+          SkipBack                 0x3621
+          SkipFwd                  0xB8A3
+          Stop                     0x3D28
+          Record                   0xBCA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch6
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x5000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xC19C
+          Rec_TV                   0x3D18
+          Power                    0x2702
+          Photo                    0x2A05
+          Music                    0xAB86
+          Guide                    0xD6B1
+          DVD_Menu                 0x2904
+          Video                    0xD2AD
+          Text                     0x3B16
+          RED/Audio                0xD7B2
+          YELLOW/Angle             0x5934
+          BLUE/Title               0xDAB5
+          GREEN/Subtitle           0x5833
+          Vol+                     0xAE89
+          Vol-                     0x2D08
+          Up                       0xBF9A
+          Down                     0x4722
+          Left                     0xC29D
+          Right                    0x441F
+          Ok                       0xC39E
+          Mute                     0x2500
+          Ch+                      0x300B
+          Ch-                      0xB18C
+          1                        0xB28D
+          2                        0x330E
+          3                        0x340F
+          4                        0x3510
+          5                        0xB691
+          6                        0x3712
+          7                        0xB893
+          8                        0x3914
+          9                        0xBA95
+          Asterisk                 0x5C37
+          0                        0xBC97
+          #                        0x5D38
+          Back                     0xC5A0
+          Info                     0x542F
+          Select                   0xC09B
+          Rewind                   0x4924
+          Play                     0xCAA5
+          FastFwd                  0x4B26
+          Pause                    0xCEA9
+          SkipBack                 0x4621
+          SkipFwd                  0xC8A3
+          Stop                     0x4D28
+          Record                   0xCCA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch7
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x6000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xD19C
+          Rec_TV                   0x4D18
+          Power                    0x3702
+          Photo                    0x3A05
+          Music                    0xBB86
+          Guide                    0xE6B1
+          DVD_Menu                 0x3904
+          Video                    0xE2AD
+          Text                     0x4B16
+          RED/Audio                0xE7B2
+          YELLOW/Angle             0x6934
+          BLUE/Title               0xEAB5
+          GREEN/Subtitle           0x6833
+          Vol+                     0xBE89
+          Vol-                     0x3D08
+          Up                       0xCF9A
+          Down                     0x5722
+          Left                     0xD29D
+          Right                    0x541F
+          Ok                       0xD39E
+          Mute                     0x3500
+          Ch+                      0x400B
+          Ch-                      0xC18C
+          1                        0xC28D
+          2                        0x430E
+          3                        0x440F
+          4                        0x4510
+          5                        0xC691
+          6                        0x4712
+          7                        0xC893
+          8                        0x4914
+          9                        0xCA95
+          Asterisk                 0x6C37
+          0                        0xCC97
+          #                        0x6D38
+          Back                     0xD5A0
+          Info                     0x642F
+          Select                   0xD09B
+          Rewind                   0x5924
+          Play                     0xDAA5
+          FastFwd                  0x5B26
+          Pause                    0xDEA9
+          SkipBack                 0x5621
+          SkipFwd                  0xD8A3
+          Stop                     0x5D28
+          Record                   0xDCA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch8
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x7000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xE19C
+          Rec_TV                   0x5D18
+          Power                    0x4702
+          Photo                    0x4A05
+          Music                    0xCB86
+          Guide                    0xF6B1
+          DVD_Menu                 0x4904
+          Video                    0xF2AD
+          Text                     0x5B16
+          RED/Audio                0xF7B2
+          YELLOW/Angle             0x7934
+          BLUE/Title               0xFAB5
+          GREEN/Subtitle           0x7833
+          Vol+                     0xCE89
+          Vol-                     0x4D08
+          Up                       0xDF9A
+          Down                     0x6722
+          Left                     0xE29D
+          Right                    0x641F
+          Ok                       0xE39E
+          Mute                     0x4500
+          Ch+                      0x500B
+          Ch-                      0xD18C
+          1                        0xD28D
+          2                        0x530E
+          3                        0x540F
+          4                        0x5510
+          5                        0xD691
+          6                        0x5712
+          7                        0xD893
+          8                        0x5914
+          9                        0xDA95
+          Asterisk                 0x7C37
+          0                        0xDC97
+          #                        0x7D38
+          Back                     0xE5A0
+          Info                     0x742F
+          Select                   0xE09B
+          Rewind                   0x6924
+          Play                     0xEAA5
+          FastFwd                  0x6B26
+          Pause                    0xEEA9
+          SkipBack                 0x6621
+          SkipFwd                  0xE8A3
+          Stop                     0x6D28
+          Record                   0xECA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch9
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x8000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0xF19C
+          Rec_TV                   0x6D18
+          Power                    0x5702
+          Photo                    0x5A05
+          Music                    0xDB86
+          Guide                    0x06B1
+          DVD_Menu                 0x5904
+          Video                    0x02AD
+          Text                     0x6B16
+          RED/Audio                0x07B2
+          YELLOW/Angle             0x8934
+          BLUE/Title               0x0AB5
+          GREEN/Subtitle           0x8833
+          Vol+                     0xDE89
+          Vol-                     0x5D08
+          Up                       0xEF9A
+          Down                     0x7722
+          Left                     0xF29D
+          Right                    0x741F
+          Ok                       0xF39E
+          Mute                     0x5500
+          Ch+                      0x600B
+          Ch-                      0xE18C
+          1                        0xE28D
+          2                        0x630E
+          3                        0x640F
+          4                        0x6510
+          5                        0xE691
+          6                        0x6712
+          7                        0xE893
+          8                        0x6914
+          9                        0xEA95
+          Asterisk                 0x8C37
+          0                        0xEC97
+          #                        0x8D38
+          Back                     0xF5A0
+          Info                     0x842F
+          Select                   0xF09B
+          Rewind                   0x7924
+          Play                     0xFAA5
+          FastFwd                  0x7B26
+          Pause                    0xFEA9
+          SkipBack                 0x7621
+          SkipFwd                  0xF8A3
+          Stop                     0x7D28
+          Record                   0xFCA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch10
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x9000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x019C
+          Rec_TV                   0x7D18
+          Power                    0x6702
+          Photo                    0x6A05
+          Music                    0xEB86
+          Guide                    0x16B1
+          DVD_Menu                 0x6904
+          Video                    0x12AD
+          Text                     0x7B16
+          RED/Audio                0x17B2
+          YELLOW/Angle             0x9934
+          BLUE/Title               0x1AB5
+          GREEN/Subtitle           0x9833
+          Vol+                     0xEE89
+          Vol-                     0x6D08
+          Up                       0xFF9A
+          Down                     0x8722
+          Left                     0x029D
+          Right                    0x841F
+          Ok                       0x039E
+          Mute                     0x6500
+          Ch+                      0x700B
+          Ch-                      0xF18C
+          1                        0xF28D
+          2                        0x730E
+          3                        0x740F
+          4                        0x7510
+          5                        0xF691
+          6                        0x7712
+          7                        0xF893
+          8                        0x7914
+          9                        0xFA95
+          Asterisk                 0x9C37
+          0                        0xFC97
+          #                        0x9D38
+          Back                     0x05A0
+          Info                     0x942F
+          Select                   0x009B
+          Rewind                   0x8924
+          Play                     0x0AA5
+          FastFwd                  0x8B26
+          Pause                    0x0EA9
+          SkipBack                 0x8621
+          SkipFwd                  0x08A3
+          Stop                     0x8D28
+          Record                   0x0CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch11
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xA000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x119C
+          Rec_TV                   0x8D18
+          Power                    0x7702
+          Photo                    0x7A05
+          Music                    0xFB86
+          Guide                    0x26B1
+          DVD_Menu                 0x7904
+          Video                    0x22AD
+          Text                     0x8B16
+          RED/Audio                0x27B2
+          YELLOW/Angle             0xA934
+          BLUE/Title               0x2AB5
+          GREEN/Subtitle           0xA833
+          Vol+                     0xFE89
+          Vol-                     0x7D08
+          Up                       0x0F9A
+          Down                     0x9722
+          Left                     0x129D
+          Right                    0x941F
+          Ok                       0x139E
+          Mute                     0x7500
+          Ch+                      0x800B
+          Ch-                      0x018C
+          1                        0x028D
+          2                        0x830E
+          3                        0x840F
+          4                        0x8510
+          5                        0x0691
+          6                        0x8712
+          7                        0x0893
+          8                        0x8914
+          9                        0x0A95
+          Asterisk                 0xAC37
+          0                        0x0C97
+          #                        0xAD38
+          Back                     0x15A0
+          Info                     0xA42F
+          Select                   0x109B
+          Rewind                   0x9924
+          Play                     0x1AA5
+          FastFwd                  0x9B26
+          Pause                    0x1EA9
+          SkipBack                 0x9621
+          SkipFwd                  0x18A3
+          Stop                     0x9D28
+          Record                   0x1CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch12
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xB000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x219C
+          Rec_TV                   0x9D18
+          Power                    0x8702
+          Photo                    0x8A05
+          Music                    0x0B86
+          Guide                    0x36B1
+          DVD_Menu                 0x8904
+          Video                    0x32AD
+          Text                     0x9B16
+          RED/Audio                0x37B2
+          YELLOW/Angle             0xB934
+          BLUE/Title               0x3AB5
+          GREEN/Subtitle           0xB833
+          Vol+                     0x0E89
+          Vol-                     0x8D08
+          Up                       0x1F9A
+          Down                     0xA722
+          Left                     0x229D
+          Right                    0xA41F
+          Ok                       0x239E
+          Mute                     0x8500
+          Ch+                      0x900B
+          Ch-                      0x118C
+          1                        0x128D
+          2                        0x930E
+          3                        0x940F
+          4                        0x9510
+          5                        0x1691
+          6                        0x9712
+          7                        0x1893
+          8                        0x9914
+          9                        0x1A95
+          Asterisk                 0xBC37
+          0                        0x1C97
+          #                        0xBD38
+          Back                     0x25A0
+          Info                     0xB42F
+          Select                   0x209B
+          Rewind                   0xA924
+          Play                     0x2AA5
+          FastFwd                  0xAB26
+          Pause                    0x2EA9
+          SkipBack                 0xA621
+          SkipFwd                  0x28A3
+          Stop                     0xAD28
+          Record                   0x2CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch13
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xC000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x319C
+          Rec_TV                   0xAD18
+          Power                    0x9702
+          Photo                    0x9A05
+          Music                    0x1B86
+          Guide                    0x46B1
+          DVD_Menu                 0x9904
+          Video                    0x42AD
+          Text                     0xAB16
+          RED/Audio                0x47B2
+          YELLOW/Angle             0xC934
+          BLUE/Title               0x4AB5
+          GREEN/Subtitle           0xC833
+          Vol+                     0x1E89
+          Vol-                     0x9D08
+          Up                       0x2F9A
+          Down                     0xB722
+          Left                     0x329D
+          Right                    0xB41F
+          Ok                       0x339E
+          Mute                     0x9500
+          Ch+                      0xA00B
+          Ch-                      0x218C
+          1                        0x228D
+          2                        0xA30E
+          3                        0xA40F
+          4                        0xA510
+          5                        0x2691
+          6                        0xA712
+          7                        0x2893
+          8                        0xA914
+          9                        0x2A95
+          Asterisk                 0xCC37
+          0                        0x2C97
+          #                        0xCD38
+          Back                     0x35A0
+          Info                     0xC42F
+          Select                   0x309B
+          Rewind                   0xB924
+          Play                     0x3AA5
+          FastFwd                  0xBB26
+          Pause                    0x3EA9
+          SkipBack                 0xB621
+          SkipFwd                  0x38A3
+          Stop                     0xBD28
+          Record                   0x3CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch14
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xD000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x419C
+          Rec_TV                   0xBD18
+          Power                    0xA702
+          Photo                    0xAA05
+          Music                    0x2B86
+          Guide                    0x56B1
+          DVD_Menu                 0xA904
+          Video                    0x52AD
+          Text                     0xBB16
+          RED/Audio                0x57B2
+          YELLOW/Angle             0xD934
+          BLUE/Title               0x5AB5
+          GREEN/Subtitle           0xD833
+          Vol+                     0x2E89
+          Vol-                     0xAD08
+          Up                       0x3F9A
+          Down                     0xC722
+          Left                     0x429D
+          Right                    0xC41F
+          Ok                       0x439E
+          Mute                     0xA500
+          Ch+                      0xB00B
+          Ch-                      0x318C
+          1                        0x328D
+          2                        0xB30E
+          3                        0xB40F
+          4                        0xB510
+          5                        0x3691
+          6                        0xB712
+          7                        0x3893
+          8                        0xB914
+          9                        0x3A95
+          Asterisk                 0xDC37
+          0                        0x3C97
+          #                        0xDD38
+          Back                     0x45A0
+          Info                     0xD42F
+          Select                   0x409B
+          Rewind                   0xC924
+          Play                     0x4AA5
+          FastFwd                  0xCB26
+          Pause                    0x4EA9
+          SkipBack                 0xC621
+          SkipFwd                  0x48A3
+          Stop                     0xCD28
+          Record                   0x4CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch15
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xE000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x519C
+          Rec_TV                   0xCD18
+          Power                    0xB702
+          Photo                    0xBA05
+          Music                    0x3B86
+          Guide                    0x66B1
+          DVD_Menu                 0xB904
+          Video                    0x62AD
+          Text                     0xCB16
+          RED/Audio                0x67B2
+          YELLOW/Angle             0xE934
+          BLUE/Title               0x6AB5
+          GREEN/Subtitle           0xE833
+          Vol+                     0x3E89
+          Vol-                     0xBD08
+          Up                       0x4F9A
+          Down                     0xD722
+          Left                     0x529D
+          Right                    0xD41F
+          Ok                       0x539E
+          Mute                     0xB500
+          Ch+                      0xC00B
+          Ch-                      0x418C
+          1                        0x428D
+          2                        0xC30E
+          3                        0xC40F
+          4                        0xC510
+          5                        0x4691
+          6                        0xC712
+          7                        0x4893
+          8                        0xC914
+          9                        0x4A95
+          Asterisk                 0xEC37
+          0                        0x4C97
+          #                        0xED38
+          Back                     0x55A0
+          Info                     0xE42F
+          Select                   0x509B
+          Rewind                   0xD924
+          Play                     0x5AA5
+          FastFwd                  0xDB26
+          Pause                    0x5EA9
+          SkipBack                 0xD621
+          SkipFwd                  0x58A3
+          Stop                     0xDD28
+          Record                   0x5CA7
+      end codes
+end remote
+
+begin remote
+  name  X10_Ch16
+  bits           16
+  eps            30
+  aeps          100
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0xF000
+  gap          348000
+  toggle_bit_mask 0x80800000
+      begin codes
+          Live_TV                  0x619C
+          Rec_TV                   0xDD18
+          Power                    0xC702
+          Photo                    0xCA05
+          Music                    0x4B86
+          Guide                    0x76B1
+          DVD_Menu                 0xC904
+          Video                    0x72AD
+          Text                     0xDB16
+          RED/Audio                0x77B2
+          YELLOW/Angle             0xF934
+          BLUE/Title               0x7AB5
+          GREEN/Subtitle           0xF833
+          Vol+                     0x4E89
+          Vol-                     0xCD08
+          Up                       0x5F9A
+          Down                     0xE722
+          Left                     0x629D
+          Right                    0xE41F
+          Ok                       0x639E
+          Mute                     0xC500
+          Ch+                      0xD00B
+          Ch-                      0x518C
+          1                        0x528D
+          2                        0xD30E
+          3                        0xD40F
+          4                        0xD510
+          5                        0x5691
+          6                        0xD712
+          7                        0x5893
+          8                        0xD914
+          9                        0x5A95
+          Asterisk                 0xFC37
+          0                        0x5C97
+          #                        0xFD38
+          Back                     0x65A0
+          Info                     0xF42F
+          Select                   0x609B
+          Rewind                   0xE924
+          Play                     0x6AA5
+          FastFwd                  0xEB26
+          Pause                    0x6EA9
+          SkipBack                 0xE621
+          SkipFwd                  0x68A3
+          Stop                     0xED28
+          Record                   0x6CA7
+      end codes
+end remote
