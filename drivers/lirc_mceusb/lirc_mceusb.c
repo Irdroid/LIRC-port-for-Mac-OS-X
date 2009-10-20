@@ -10,10 +10,8 @@
  * Copyright (c) 2003-2004 Dan Conti <dconti@acm.wwu.edu>
  *
  * Original lirc_mceusb driver deprecated in favor of this driver, which
- * supports the 1st-gen device now too. Transmitting on the 1st-gen device
- * only functions on port #2 at the moment.
- *
- * Transmit and receive support for 1st-gen device added June-September 2009,
+ * supports the 1st-gen device now too. Transmit and receive support for
+ * the 1st-gen device added June-September 2009,
  * by Jarod Wilson <jarod@wilsonet.com> and Patrick Calhoun <phineas@ou.edu>
  *
  * Derived from ATI USB driver by Paul Miller and the original
