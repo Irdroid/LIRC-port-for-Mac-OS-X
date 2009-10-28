@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.5 2008/09/14 18:04:37 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.6 2009/10/28 19:20:41 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -90,7 +90,7 @@ void addCode( lirc_t data)
 
 static int recordCallback( void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
-                           PaStreamCallbackTimeInfo outTime,
+                           PaStreamCallbackTimeInfo* outTime,
                            PaStreamCallbackFlags status,
                            void *userData )
 {
