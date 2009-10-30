@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.112 2009/10/12 16:21:52 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.113 2009/10/30 04:00:30 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1096,13 +1096,6 @@ static void imon_set_ir_protocol(struct imon_context *context)
 
 	switch (ir_protocol) {
 	case IMON_IR_PROTOCOL_MCE:
-		/* MCE proto not supported on devices without tx control */
-		if (!context->tx_control) {
-			printk(KERN_INFO "%s: MCE IR protocol not supported on "
-			       "this device, using iMON protocol\n", __func__);
-			context->ir_protocol = IMON_IR_PROTOCOL_IMON;
-			return;
-		}
 		dprintk("Configuring IR receiver for MCE protocol\n");
 		ir_proto_packet[0] = 0x01;
 		context->ir_protocol = IMON_IR_PROTOCOL_MCE;
@@ -1124,11 +1117,18 @@ static void imon_set_ir_protocol(struct imon_context *context)
 		context->ir_protocol = IMON_IR_PROTOCOL_IMON;
 		break;
 	}
-	memcpy(context->usb_tx_buf, &ir_proto_packet,
-	       sizeof(ir_proto_packet));
+
+	memcpy(context->usb_tx_buf, &ir_proto_packet, sizeof(ir_proto_packet));
+
 	retval = send_packet(context);
-	if (retval)
-		printk(KERN_INFO "%s: failed to set remote type\n", __func__);
+	if (retval) {
+		printk(KERN_INFO "%s: failed to set IR protocol, falling back "
+		       "to standard iMON protocol mode\n", __func__);
+		ir_protocol = IMON_IR_PROTOCOL_IMON;
+		context->ir_protocol = IMON_IR_PROTOCOL_IMON;
+	}
+
+	return;
 }
 
 
