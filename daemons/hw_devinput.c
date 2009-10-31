@@ -31,8 +31,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <fnmatch.h>
+#include <limits.h>
 
 #include <linux/input.h>
+#include <linux/uinput.h>
 
 #ifndef EV_SYN
 /* previous name */
@@ -44,8 +46,15 @@
 #include "lircd.h"
 #include "receive.h"
 
+/* from evtest.c - Copyright (c) 1999-2000 Vojtech Pavlik */
+#define BITS_PER_LONG (sizeof(long) * CHAR_BIT)
+#define OFF(x)  ((x)%BITS_PER_LONG)
+#define BIT(x)  (1UL<<OFF(x))
+#define LONG(x) ((x)/BITS_PER_LONG)
+#define test_bit(bit, array)	((array[LONG(bit)] >> OFF(bit)) & 1)
 
 static int devinput_init();
+static int devinput_init_fwd();
 static int devinput_deinit(void);
 static int devinput_decode(struct ir_remote *remote,
 			   ir_code *prep, ir_code *codep, ir_code *postp,
@@ -67,7 +76,7 @@ struct hardware hw_devinput=
 	0,			/* send_mode */
 	LIRC_MODE_LIRCCODE,	/* rec_mode */
 	32,			/* code_length */
-	devinput_init,		/* init_func */
+	devinput_init_fwd,	/* init_func */
 	NULL,			/* config_func */
 	devinput_deinit,	/* deinit_func */
 	NULL,			/* send_func */
@@ -80,6 +89,141 @@ struct hardware hw_devinput=
 
 static ir_code code;
 static int repeat_flag=0;
+static int exclusive = 0;
+static int uinputfd = -1;
+
+static int setup_uinputfd(const char *name, int source)
+{
+	int fd;
+	int key;
+	struct uinput_user_dev dev;
+	long events[NBITS(EV_MAX)];
+	long bits[NBITS(KEY_MAX)];
+	
+	if(ioctl(source, EVIOCGBIT(0, EV_MAX), events) == -1)
+	{
+		return -1;
+	}
+	if(!test_bit(EV_REL, events) && !test_bit(EV_ABS, events))
+	{
+		/* no move events, don't forward anything */
+		return -1;
+	}
+	fd = open("/dev/input/uinput", O_RDWR);
+	if(fd == -1)
+	{
+		fd = open("/dev/uinput", O_RDWR);
+		if(fd == -1)
+		{
+			fd = open("/dev/misc/uinput", O_RDWR);
+			if(fd == -1)
+			{
+				logprintf(LOG_WARNING, "could not open %s\n",
+					  "uinput");
+				logperror(LOG_WARNING, NULL);
+				return -1;
+			}
+		}
+	}
+	memset(&dev, 0, sizeof(dev));
+	if(ioctl(source, EVIOCGNAME(sizeof(dev.name)), dev.name) >= 0)
+	{
+		dev.name[sizeof(dev.name)-1] = 0;
+		if(strlen(dev.name) > 0)
+		{
+			strncat(dev.name, " ", sizeof(dev.name) -
+				strlen(dev.name));
+			dev.name[sizeof(dev.name)-1] = 0;
+		}
+	}
+	strncat(dev.name, name, sizeof(dev.name) - strlen(dev.name));
+	dev.name[sizeof(dev.name)-1] = 0;
+
+	if(write(fd, &dev, sizeof(dev)) != sizeof(dev))
+	{
+		goto setup_error;
+	}
+	
+	if(test_bit(EV_KEY, events))
+	{
+		if(ioctl(source, EVIOCGBIT(EV_KEY, KEY_MAX), bits) == -1)
+		{
+			goto setup_error;
+		}
+		
+		if(ioctl(fd, UI_SET_EVBIT, EV_KEY) == -1)
+		{
+			goto setup_error;
+		}
+		
+		/* only forward mouse button events */
+		for(key = BTN_MISC; key <= BTN_GEAR_UP; key++)
+		{
+			if(test_bit(key, bits))
+			{
+				if(ioctl(fd, UI_SET_KEYBIT, key) == -1)
+				{
+					goto setup_error;
+				}
+			}
+		}
+	}
+	if(test_bit(EV_REL, events))
+	{
+		if(ioctl(source, EVIOCGBIT(EV_REL, REL_MAX), bits) == -1)
+		{
+			goto setup_error;
+		}
+		if(ioctl(fd, UI_SET_EVBIT, EV_REL) == -1)
+		{
+			goto setup_error;
+		}
+		for(key = 0; key <= REL_MAX; key++)
+		{
+			if(test_bit(key, bits))
+			{
+				if(ioctl(fd, UI_SET_RELBIT, key) == -1)
+				{
+					goto setup_error;
+				}
+			}
+		}
+	}
+	if(test_bit(EV_ABS, events))
+	{
+		if(ioctl(source, EVIOCGBIT(EV_ABS, ABS_MAX), bits) == -1)
+		{
+			goto setup_error;
+		}
+		if(ioctl(fd, UI_SET_EVBIT, EV_ABS) == -1)
+		{
+			goto setup_error;
+		}
+		for(key = 0; key <= ABS_MAX; key++)
+		{
+			if(test_bit(key, bits))
+			{
+				if(ioctl(fd, UI_SET_ABSBIT, key) == -1)
+				{
+					goto setup_error;
+				}
+			}
+		}
+	}
+	
+
+	if(ioctl(fd, UI_DEV_CREATE) == -1)
+	{
+		goto setup_error;
+	}
+	return fd;
+	
+ setup_error:
+	logprintf(LOG_ERR, "could not setup %s\n", "uinput");
+	logperror(LOG_ERR, NULL);
+	close(fd);
+	return -1;
+}
 
 #if 0
 /* using fnmatch */
@@ -217,13 +361,26 @@ int devinput_init()
 	}
 	
 #ifdef EVIOCGRAB
+	exclusive = 1;
 	if (ioctl(hw.fd, EVIOCGRAB, 1) == -1)
 	{
+		exclusive = 0;
 		logprintf(LOG_WARNING, "can't get exclusive access to events "
 			  "coming from `%s' interface",
 			  hw.device);
 	}
 #endif
+	return 1;
+}
+
+int devinput_init_fwd()
+{
+	if(!devinput_init()) return 0;
+	
+	if(exclusive)
+	{
+		uinputfd = setup_uinputfd("(lircd bypass)", hw.fd);
+	}
 	
 	return 1;
 }
@@ -232,6 +389,12 @@ int devinput_init()
 int devinput_deinit(void)
 {
 	logprintf(LOG_INFO, "closing '%s'", hw.device);
+	if(uinputfd != -1)
+	{
+		ioctl(uinputfd, UI_DEV_DESTROY);
+		close(uinputfd);
+		uinputfd = -1;
+	}
 	close(hw.fd);
 	hw.fd=-1;
 	return 1;
@@ -271,7 +434,10 @@ char *devinput_rec(struct ir_remote *remotes)
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
-		if(rd <= 0 && errno != EINTR) raise(SIGTERM);
+		if(rd <= 0 && errno != EINTR)
+		{
+			devinput_deinit();
+		}
 		return 0;
 	}
 
@@ -292,6 +458,25 @@ char *devinput_rec(struct ir_remote *remotes)
 
 	LOGPRINTF(1, "code %.8llx", code);
 
+	if(uinputfd != -1)
+	{
+		if(event.type == EV_REL ||
+		   event.type == EV_ABS ||
+		   (event.type == EV_KEY &&
+		    event.code >= BTN_MISC &&
+		    event.code <= BTN_GEAR_UP) ||
+		   event.type == EV_SYN)
+		{
+			LOGPRINTF(1, "forwarding: %04x %04x", event.type, event.code);
+			if(write(uinputfd, &event, sizeof(event)) != sizeof(event))
+			{
+				logprintf(LOG_ERR, "writing to uinput failed");
+				logperror(LOG_ERR, NULL);
+			}
+			return NULL;
+		}
+	}
+	
 	/* ignore EV_SYN */
 	if(event.type == EV_SYN) return NULL;
 
