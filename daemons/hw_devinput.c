@@ -48,6 +48,9 @@
 
 /* from evtest.c - Copyright (c) 1999-2000 Vojtech Pavlik */
 #define BITS_PER_LONG (sizeof(long) * CHAR_BIT)
+/* NBITS was defined in linux/uinput.h */
+#undef NBITS
+#define NBITS(x) ((((x)-1)/BITS_PER_LONG)+1)
 #define OFF(x)  ((x)%BITS_PER_LONG)
 #define BIT(x)  (1UL<<OFF(x))
 #define LONG(x) ((x)/BITS_PER_LONG)
