@@ -53,6 +53,11 @@ begin remote
 
       begin codes
 
+#seen on HP Pavilion dv3t remote  --Tim Mann, 3 Nov 2009
+	Media         0x00007b7f
+	PlayPause     0x00007b91
+
+
 #unused by HP remote
 	Blue	      0x00007ba1
 	Yellow	      0x00007ba2
