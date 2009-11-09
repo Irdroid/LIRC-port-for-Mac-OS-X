@@ -363,7 +363,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 			       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
 			       ir->devnum, ret);
 		return 0;
-	} else
+	} else if (ret < 0)
 		printk(KERN_WARNING DRIVER_NAME
 		       "[%d]: GET_INFRACODE: error %d\n",
 			ir->devnum, ret);
@@ -562,9 +562,6 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	       "[%d]: usb remote disconnected\n", ir->devnum);
 
 	lirc_unregister_driver(ir->d->minor);
-
-	lirc_buffer_free(ir->d->rbuf);
-	kfree(ir->d->rbuf);
 	kfree(ir->d);
 
 
