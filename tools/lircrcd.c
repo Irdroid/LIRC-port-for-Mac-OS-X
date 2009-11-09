@@ -1,4 +1,4 @@
-/*      $Id: lircrcd.c,v 5.3 2006/05/06 09:40:07 lirc Exp $      */
+/*      $Id: lircrcd.c,v 5.4 2009/11/09 19:13:24 lirc Exp $      */
 
 /****************************************************************************
  ** lircrcd.c ***************************************************************
@@ -313,7 +313,7 @@ static void remove_client(int i)
 void add_client(int sock)
 {
 	int fd;
-	int clilen;
+	socklen_t clilen;
 	struct sockaddr client_addr;
 	int flags;
 
