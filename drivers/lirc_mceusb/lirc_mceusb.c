@@ -159,6 +159,8 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
 	/* bundled with Hauppauge PVR-150 */
 	{ USB_DEVICE(VENDOR_SMK, 0x0334) },
+	/* SMK eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_SMK, 0x0338) },
 	/* Tatung eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_TATUNG, 0x9150) },
 	/* Shuttle eHome Infrared Transceiver */
