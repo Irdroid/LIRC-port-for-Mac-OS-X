@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.68 2009/07/25 15:30:57 lirc Exp $
+## $Id: Makefile.am,v 5.69 2009/11/15 17:43:59 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -48,6 +48,7 @@ EXTRA_libhw_module_a_SOURCES = \
 			hw_pixelview.c hw_pixelview.h \
 			hw_silitek.c hw_silitek.h \
 			hw_slinke.c hw_slinke.h \
+			hw_srm7500libusb.c hw_srm7500libusb.h \
 			hw_tira.c hw_tira.h \
 			hw_udp.c \
 			hw_uirt2.c hw_uirt2_raw.c \

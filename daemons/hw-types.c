@@ -43,6 +43,7 @@ extern struct hardware hw_samsung;
 extern struct hardware hw_sb0540;
 extern struct hardware hw_silitek;
 extern struct hardware hw_slinke;
+extern struct hardware hw_srm7500libusb;
 extern struct hardware hw_tira;
 extern struct hardware hw_udp;
 extern struct hardware hw_uirt2;
@@ -151,6 +152,9 @@ struct hardware *hw_list[] =
 	&hw_sb0540,
 #endif
 	&hw_silitek,
+#ifdef HAVE_LIBUSB
+	&hw_srm7500libusb,
+#endif
 	/*	&hw_slinke,*/
 	&hw_tira,
 	&hw_udp,

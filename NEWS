@@ -1,6 +1,7 @@
 0.8.7-CVS: future
-  * support for simple transmitter circuit connected to soundcard (Bob
-    van Loosen)
+  * added support for simple transmitter circuit connected to
+    soundcard (Bob van Loosen)
+  * added support for Philips SRM 7500 RF remote (Henning Glawe)
 
 0.8.6: 09/13/09
   * added support for ENE KB3926 revision B/C/D (ENE0100) CIR port

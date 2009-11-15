@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.33 2009/11/15 13:38:03 lirc Exp $
+dnl $Id: configure.ac,v 1.34 2009/11/15 17:43:58 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -323,7 +323,7 @@ AH_TEMPLATE([USE_SYSLOG],
 
 if test -n "${LIBUSB_CONFIG}"; then
   AC_DEFINE(HAVE_LIBUSB)
-  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (commandir)"
+  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (commandir) (srm7500libusb)"
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -454,9 +454,10 @@ AC_ARG_WITH(driver,
                           pixelview_pak, pixelview_pro, provideo,
                           realmagic, remotemaster, sa1100, samsung,
                           sasem, sb0540, serial, silitek, sir, slinke,
-                          streamzap, tekram, tekram_bt829, tira,
-			  ttusbir, tuxbox, tvbox, udp, uirt2,
-			  uirt2_raw, usb_uirt_raw, usbx, wpc8769l],
+                          srm7500libusb, streamzap, tekram,
+                          tekram_bt829, tira, ttusbir, tuxbox, tvbox,
+                          udp, uirt2, uirt2_raw, usb_uirt_raw, usbx,
+                          wpc8769l],
 driver=${withval},
 driver="unset"
 )
@@ -475,6 +476,7 @@ portaudio_lib=""
 alsa_lib=""
 atilibusb_lib=""
 awlibusb_lib=""
+srm7500libusb_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
 kernel_module=""
@@ -669,6 +671,11 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	#slinke)
 		#hw_module="${hw_module} hw_slinke.o serial.o receive.o"
 		#;;
+	srm7500libusb)
+		hw_module="${hw_module} hw_srm7500libusb.o receive.o"
+		srm7500libusb_lib=`${LIBUSB_CONFIG} --libs`
+		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+		;;
 	tira)
 		hw_module="${hw_module} hw_tira.o"
 		;;
@@ -1325,6 +1332,17 @@ if test "$driver" = "slinke"; then
   HW_DEFAULT="hw_slinke"
 fi
 
+if test "$driver" = "srm7500libusb"; then
+  lirc_driver="$driver"
+  hw_module="hw_srm7500libusb.o receive.o"
+  HW_DEFAULT="hw_srm7500libusb"
+  lircd_conf="philips/lircd.conf.srm7500libusb"
+  if test -n "${LIBUSB_CONFIG}"; then
+    srm7500libusb_lib=`${LIBUSB_CONFIG} --libs`
+    CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+  fi
+fi
+
 if test "$driver" = "streamzap"; then
   lirc_driver="lirc_dev lirc_streamzap"
   lircd_conf="streamzap/lircd.conf.streamzap"
@@ -1426,7 +1444,7 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
-  atilibusb|awlibusb|commandir)
+  atilibusb|awlibusb|commandir|srm7500libusb)
     AC_MSG_ERROR([*** you need to have libusb installed for this driver.
 
 Get it at:
@@ -1486,6 +1504,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "macmini" || \
 	test "$lirc_driver" = "samsung" || \
 	test "$lirc_driver" = "sb0540" || \
+	test "$lirc_driver" = "srm7500libusb" || \
 	test "$lirc_driver" = "userspace"; then
   lirc_driver=
 elif test "$lirc_driver" = "all"; then
@@ -1667,7 +1686,7 @@ if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
 	receive="receive.o"
 fi
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib} ${srm7500libusb_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)

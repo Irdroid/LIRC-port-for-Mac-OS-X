@@ -130,6 +130,7 @@ hw_menu_entry: @hw-usb
 	iguanaIR: "Iguanaworks USB IR Transceiver"
 	irlink: "IRLink VS USB IR Receiver"
 	pcmak_usb: "PCMAK USB receiver"
+	srm7500libusb: "Philips SRM 7500 RF remote"
 	bw6130: "Remotec Multimedia PC Remote BW6130"
 	samsung: "Samsung USB IR Receiver"
 	sasem: "Sasem OnAir Remocon-V"
@@ -257,6 +258,7 @@ param_type: \
 	samsung \
 	sasem \
 	sb0540 \
+	srm7500libusb \
 	streamzap \
 	tekram_bt829 \
 	ttusbir \
@@ -329,6 +331,7 @@ default_param: \
 	samsung \
 	sasem \
 	sb0540 \
+	srm7500libusb \
 	streamzap \
 	tekram_bt829 \
 	ttusbir \
