@@ -13,7 +13,7 @@ hw_menu_entry: @any
 
 hw_menu_entry: @hw-soundcard
 	dsp: "Simple IR diode (EXPERIMENTAL)"
-	audio: "IR receiver IC connected to audio input (EXPERIMENTAL)"
+	audio: "Receiver/transmitter using PortAudio (EXPERIMENTAL)"
 	audio_alsa: "IR receiver IC connected to audio input using ALSA (EXPERIMENTAL)"
 
 hw_menu_entry: @hw-other

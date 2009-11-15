@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.6 2009/10/28 19:20:41 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.7 2009/11/15 13:38:04 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -49,9 +49,9 @@ static int ptyfd;        /* the pty */
 /* PortAudio Includes */
 #include <portaudio.h>
 
-#define SAMPLE_RATE  (44100)
-#define NUM_CHANNELS    (2)
-#define DITHER_FLAG     (0) /**/
+#define DEFAULT_SAMPLERATE (48000)
+#define NUM_CHANNELS           (2)
+#define PI           (3.141592654)
 
 /* Select sample format. */
 #define PA_SAMPLE_TYPE  paUInt8
@@ -62,23 +62,36 @@ typedef struct
 	int				lastFrames[3];
 	int				lastSign;
 	int				pulseSign;
-	unsigned int	lastCount;
+	unsigned int			lastCount;
+	lirc_t				carrierFreq;
+	/* position the sine generator is in */
+	double				carrierPos;
+	/* length of the remaining signal is stored here when the
+	   callback exits */
+	double				remainingSignal;
+	/* 1 = pulse, 0 = space */
+	int				signalPhase;
+	int				signaledDone;
+	int				samplesToIgnore;
+	int				samplerate;
 }
 paTestData;
 
-PaStream *stream;
+static PaStream *stream;
 
 
 extern struct ir_remote *repeat_remote;
 extern struct rbuf rec_buffer;
 
-char ptyName[256];
-int master;
+static char ptyName[256];
+static int master;
+static int sendPipe[2];      /* signals are written from audio_send
+				and read from the callback */
+static int completedPipe[2]; /* a byte is written here when the
+				callback has processed all signals */
+static int outputLatency;
 
-
-int myfd = -1;
-
-void addCode( lirc_t data)
+static void addCode( lirc_t data)
 {
 	write( master, &data, sizeof( lirc_t ) );
 }
@@ -88,9 +101,9 @@ void addCode( lirc_t data)
 ** that could mess up the system like calling malloc() or free().
 */
 
-static int recordCallback( void *inputBuffer, void *outputBuffer,
+static int recordCallback( const void *inputBuffer, void *outputBuffer,
                            unsigned long framesPerBuffer,
-                           PaStreamCallbackTimeInfo* outTime,
+                           const PaStreamCallbackTimeInfo* outTime,
                            PaStreamCallbackFlags status,
                            void *userData )
 {
@@ -101,21 +114,32 @@ static int recordCallback( void *inputBuffer, void *outputBuffer,
 	SAMPLE	*myPtr = rptr;
 
 	unsigned int time;
-	int samplerate = SAMPLE_RATE;
 	int	diff;
 
-	(void) outputBuffer; /* Prevent unused variable warnings. */
+	SAMPLE* outptr = (SAMPLE*)outputBuffer;
+	int     out;
+	double  currentSignal = data->remainingSignal;
+	lirc_t  signal;
+
+	/* Prevent unused variable warnings. */
 	(void) outTime;
 
 	for ( i=0; i < framesPerBuffer; i++, myPtr++)
 	{
+		/* check if we have to ignore this sample */
+		if (data->samplesToIgnore)
+		{
+			*myPtr = 128;
+			data->samplesToIgnore--;
+		}
+
 		/* New Algo */
 		diff = abs(data->lastFrames[0] - *myPtr);
 		if ( diff > 100)
 		{
 			if (data->pulseSign == 0)
 			{
-				// we got the first signal, this is a PULSE
+				/* we got the first signal, this is a PULSE */
 				if ( *myPtr > data->lastFrames[0] )
 				{
 					data->pulseSign = 1;
@@ -130,37 +154,37 @@ static int recordCallback( void *inputBuffer, void *outputBuffer,
 			{
 				if ( *myPtr > data->lastFrames[0] && data->lastSign <= 0)
 				{
-					// printf("CHANGE ++ ");
+					/* printf("CHANGE ++ "); */
 					data->lastSign = 1;
 	
-					time = data->lastCount * 1000000 / samplerate;
+					time = data->lastCount * 1000000 / data->samplerate;
 					if (data->lastSign == data->pulseSign)
 					{
 						addCode( time );
-						// printf("Pause: %d us, %d \n", time, data->lastCount);
+						/* printf("Pause: %d us, %d \n", time, data->lastCount); */
 					}
 					else
 					{
 						addCode( time | PULSE_BIT );
-						// printf("Pulse: %d us, %d \n", time, data->lastCount);
+						/* printf("Pulse: %d us, %d \n", time, data->lastCount); */
 					}
 					data->lastCount = 0;
 				}
 				
 				else if (  *myPtr < data->lastFrames[0] && data->lastSign >= 0)
 				{
-					// printf("CHANGE -- ");
+					/* printf("CHANGE -- "); */
 					data->lastSign = -1;
 	
-					time = data->lastCount * 1000000 / samplerate;
+					time = data->lastCount * 1000000 / data->samplerate;
 					if (data->lastSign == data->pulseSign)
 					{
-						// printf("Pause: %d us, %d \n", time, data->lastCount);
+						/* printf("Pause: %d us, %d \n", time, data->lastCount); */
 						addCode( time );
 					}
 					else
 					{
-						// printf("Pulse: %d us, %d \n", time, data->lastCount);
+						/* printf("Pulse: %d us, %d \n", time, data->lastCount); */
 						addCode( time | PULSE_BIT);
 					}data->lastCount = 0;
 				}
@@ -175,10 +199,97 @@ static int recordCallback( void *inputBuffer, void *outputBuffer,
 		data->lastFrames[0] = data->lastFrames[1];
 		data->lastFrames[1] = *myPtr;
 		
-		// skip 2. channel
+		/* skip 2. channel */
 		if (NUM_CHANNELS == 2)
 			myPtr++;
 	}
+
+	/* generate output */
+	for (i = 0; i < framesPerBuffer; i++)
+	{
+		if (currentSignal <= 0.0) /* last signal we sent went out */
+		{
+			/* try to read a new signal, non blocking */
+			if (read(sendPipe[0], &signal, sizeof(signal)) > 0)
+			{
+				if (data->signaledDone)
+				{
+					/* first one sent is the
+					   carrier frequency */
+					data->carrierFreq = signal;
+					data->signaledDone = 0;
+				}
+				else
+				{
+					/* when a new signal is read,
+					   add it */
+					currentSignal += signal;
+					/* invert the phase */
+					data->signalPhase =
+						data->signalPhase ? 0 : 1;
+				}
+
+				/* when transmitting, ignore input
+				   samples for one second */
+				data->samplesToIgnore = data->samplerate;
+			}
+			else
+			{
+				/* no more signals, reset phase */
+				data->signalPhase = 0;
+				/* signal that we have written all
+				   signals */
+				if (!data->signaledDone)
+				{
+					char done = 0;
+					data->signaledDone = 1;
+					(void) write(completedPipe[1], &done,
+						     sizeof(done));
+				}
+			}
+		}
+
+		if (currentSignal > 0.0)
+		{
+			if (data->signalPhase)
+			{
+				/* write carrier */
+				out = rint(sin(data->carrierPos / 
+					       (180.0 / PI)) * 127.0 + 128.0);
+			}
+			else
+			{
+				out = 128;
+			}
+
+			/* one channel is inverted, so both channels
+			   can be used to double the voltage */
+			*outptr++ = out; 
+			if (NUM_CHANNELS == 2)
+				*outptr++ = 256 - out;
+
+			/* subtract how much of the current signal was sent */
+			currentSignal -= 1000000.0 / data->samplerate;
+		}
+		else
+		{
+			*outptr++ = 128;
+			if (NUM_CHANNELS == 2)
+				*outptr++ = 128;
+		}
+
+		/* increase carrier position */
+		/* carrier frequency is halved */
+		data->carrierPos += (double)data->carrierFreq /
+			data->samplerate * 360.0 / 2.0;
+		
+		if (data->carrierPos >= 360.0)
+			data->carrierPos -= 360.0;
+	}
+
+	/* save how much we still have to write */
+	data->remainingSignal = currentSignal;
+
 	return 0;
 }
 
@@ -209,19 +320,170 @@ lirc_t audio_readdata(lirc_t timeout)
 	return(data);
 }
 
+int audio_send(struct ir_remote *remote,struct ir_ncode *code)
+{
+	int     length;
+	lirc_t* signals;
+	int     flags;
+	char    completed;
+	lirc_t  freq;
+	static  lirc_t prevfreq = 0;
+
+	if(!init_send(remote, code)) 
+		return 0;
+
+	length = send_buffer.wptr;
+	signals = send_buffer.data;
+
+	if (length <= 0 || signals == NULL)
+	{
+		LOGPRINTF(1, "nothing to send");
+		return 0;
+	}
+
+	/* set completed pipe to non blocking */
+	flags = fcntl(completedPipe[0], F_GETFL, 0);
+	fcntl(completedPipe[0], F_SETFL, flags | O_NONBLOCK);
+
+	/* remove any unwanted completed bytes */
+	while (read(completedPipe[0], &completed, sizeof(completed)) == 1);
+
+	/* set completed pipe to blocking */
+	fcntl(completedPipe[0], F_SETFL, flags & ~O_NONBLOCK);
+
+	/* write carrier frequency */
+	freq = remote->freq ? remote->freq : DEFAULT_FREQ;
+	write(sendPipe[1], &freq, sizeof(freq));
+	if (freq != prevfreq)
+	{
+		prevfreq = freq;
+		logprintf(LOG_INFO, "Using carrier frequency %i", freq);
+	}
+
+	/* write signals to sendpipe */
+	if (write(sendPipe[1], signals, length * sizeof(lirc_t)) == -1)
+	{
+		logprintf(LOG_ERR,"write failed");
+		logperror(LOG_ERR,"write()");
+		return 0;
+	}
+
+	/* wait for the callback to signal us that all signals are written */
+	read(completedPipe[0], &completed, sizeof(completed));
+
+	return 1;
+}
+
+static void audio_parsedevicestr(char* api, char* device, int* rate)
+{
+	int ret;
+
+	/* empty device string means default */
+	if (strlen(hw.device))
+	{
+		/* device string is api:device[@rate] or @rate */
+		ret = sscanf(hw.device, "%1023[^:]:%1023[^@]@%i",
+			     api, device, rate);
+
+		if (ret == 2 || (ret == 3 && *rate <= 0))
+			*rate = DEFAULT_SAMPLERATE;
+
+		if (ret >= 2)
+			return;
+
+		/* check for @rate */
+		if (sscanf(hw.device, "@%i", rate) == 1)
+		{
+			api[0] = 0;
+			device[0] = 0;
+			if (*rate <= 0)
+				*rate = DEFAULT_SAMPLERATE;
+
+			return;
+		}
+
+		logprintf(LOG_ERR, "malformed device string %s, "
+			  "syntax is api:device[@rate] or @rate", hw.device);
+	}
+
+	api[0] = 0;
+	device[0] = 0;
+	*rate = DEFAULT_SAMPLERATE;
+}
+
+static void audio_choosedevice(PaStreamParameters* streamparameters, int input,
+			char* api, char* device)
+{
+	char* direction = input ? "input" : "output";
+
+	if (strlen(api) && strlen(device))
+	{
+		int   i;
+		int   nrdevices;
+		const PaDeviceInfo*  deviceinfo;
+		const PaHostApiInfo* hostapiinfo;
+
+		nrdevices = Pa_GetDeviceCount();
+		for (i = 0; i < nrdevices; i++)
+		{
+			deviceinfo = Pa_GetDeviceInfo(i);
+
+			/* check if device can do input or output if
+			   we need it */
+			if ((deviceinfo->maxOutputChannels >= NUM_CHANNELS &&
+			     !input) ||
+			    (deviceinfo->maxInputChannels >= NUM_CHANNELS &&
+			     input))
+			{
+				hostapiinfo = Pa_GetHostApiInfo
+					(deviceinfo->hostApi);
+				if (strcmp(api, hostapiinfo->name) == 0 &&
+				    strcmp(device, deviceinfo->name) == 0)
+				{
+					streamparameters->device = i;
+					logprintf(LOG_INFO, "Using %s device "
+						  "%i: %s:%s",
+						  direction, i,
+						  hostapiinfo->name,
+						  deviceinfo->name);
+					return;
+				}
+			}
+		}
+
+		logprintf(LOG_ERR, "Device %s %s:%s not found",
+			  direction, api, device);
+	}
+
+	logprintf(LOG_INFO, "Using default %s device", direction);
+
+	if (input)
+	{
+		/* default input device */
+		streamparameters->device = Pa_GetDefaultInputDevice();
+	}
+	else
+	{
+		/* default output device */
+		streamparameters->device = Pa_GetDefaultOutputDevice();
+	}
+}
 
 /*
   interface functions
 */
-paTestData data;
+static paTestData data;
 
 int audio_init()
 {
 
 	PaStreamParameters inputParameters;
+	PaStreamParameters outputParameters;
 	PaError    err;
 	int 		flags;
 	struct termios	t;
+	char api[1024];
+	char device[1024];
 
 	LOGPRINTF(1,"hw_audio_init()");
 	
@@ -230,20 +492,30 @@ int audio_init()
 	init_rec_buffer();
 	rewind_rec_buffer();
 	
-	// new
+	/* new */
 	data.lastFrames[0] = 128;
 	data.lastFrames[1] = 128;
 	data.lastFrames[2] = 128;
 	data.lastSign = 0;
 	data.lastCount = 0;
 	data.pulseSign = 0;
+	data.carrierPos = 0.0;
+	data.remainingSignal = 0.0;
+	data.signalPhase = 0;
+	data.signaledDone = 1;
+	data.samplesToIgnore = 0;
+	data.carrierFreq = DEFAULT_FREQ;
 	
 	err = Pa_Initialize();
 	if( err != paNoError ) goto error;
 
-	inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+	audio_parsedevicestr(api, device, &data.samplerate);
+	logprintf(LOG_INFO, "Using samplerate %i", data.samplerate);
+
+	/* choose input device */
+	audio_choosedevice(&inputParameters, 1, api, device);
 	if (inputParameters.device == paNoDevice) {
-		logprintf(LOG_ERR, "No default input device");
+		logprintf(LOG_ERR, "No input device found");
 		goto error;
 	}
 	inputParameters.channelCount = NUM_CHANNELS;	/* stereo input */
@@ -252,22 +524,35 @@ int audio_init()
 		Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
 
+	/* choose output device */
+	audio_choosedevice(&outputParameters, 0, api, device);
+	if (outputParameters.device == paNoDevice) {
+		logprintf(LOG_ERR, "No output device found");
+		goto error;
+	}
+	outputParameters.channelCount = NUM_CHANNELS;	/* stereo output */
+	outputParameters.sampleFormat = PA_SAMPLE_TYPE;
+	outputParameters.suggestedLatency =
+		Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
+	outputParameters.hostApiSpecificStreamInfo = NULL;
 
-	// Record some audio. --------------------------------------------
+	outputLatency = outputParameters.suggestedLatency * 1000000;
+
+	/* Record some audio. -------------------------------------------- */
 	err = Pa_OpenStream
 		(
 		 &stream,
 		 &inputParameters,
-		 NULL,		  // output parameters
-		 SAMPLE_RATE,
-		 512,             // frames per buffer 
-		 0, 		  // flags 
+		 &outputParameters,
+		 data.samplerate,
+		 512,             /* frames per buffer */
+		 paPrimeOutputBuffersUsingStreamCallback,
 		 recordCallback,
 		 &data );
 
 	if( err != paNoError ) goto error;
 
-	// open pty
+	/* open pty */
 	if ( openpty( &master, &ptyfd, ptyName, 0, 0) == -1)
 	{
 		logprintf(LOG_ERR,"openpty failed");
@@ -275,7 +560,7 @@ int audio_init()
 		goto error;
 	}
 	
-	// regular device file
+	/* regular device file */
 	if( tcgetattr( master, &t ) < 0 ) {
 		logprintf(LOG_ERR,"tcgetattr failed");
 		logperror(LOG_ERR,"tcgetattr()");
@@ -283,7 +568,7 @@ int audio_init()
 	
 	cfmakeraw( &t );
 	
-	// apply file descriptor options
+	/* apply file descriptor options */
 	if( tcsetattr( master, TCSANOW, &t ) < 0) {  
 		logprintf(LOG_ERR,"tcsetattr failed");
 		logperror(LOG_ERR,"tcsetattr()");
@@ -299,14 +584,39 @@ int audio_init()
 
 	hw.fd=ptyfd;
 
+	/* make a pipe for sending signals to the callback */
+	/* make a pipe for signaling from the callback that everything
+	   was sent */
+	if (pipe(sendPipe) == -1 || pipe(completedPipe) == -1)
+	{
+		logprintf(LOG_ERR,"pipe failed");
+		logperror(LOG_ERR,"pipe()");
+	}
+
+	/* make the readable end non-blocking */
+	flags = fcntl(sendPipe[0], F_GETFL, 0);
+	if(flags != -1)
+	{
+		fcntl(sendPipe[0], F_SETFL, flags | O_NONBLOCK);
+	}
+	else
+	{
+		logprintf(LOG_ERR,"fcntl failed");
+		logperror(LOG_ERR,"fcntl()");
+	}
+
 	err = Pa_StartStream( stream );
 	if( err != paNoError ) goto error;
+
+	/* wait for portaudio to settle */
+	usleep(50000);
 
 	return(1);
 
  error:
 	Pa_Terminate();
-	logprintf(LOG_ERR, "an error occured while using the portaudio stream" );
+	logprintf(LOG_ERR,
+		  "an error occured while using the portaudio stream" );
 	logprintf(LOG_ERR, "error number: %d", err );
 	logprintf(LOG_ERR, "error message: %s", Pa_GetErrorText( err ) );
 
@@ -319,19 +629,30 @@ int audio_deinit(void)
 
 	LOGPRINTF(1,"hw_audio_deinit()");
 	
-	// close port audio
+	/* make absolutely sure the full output buffer has played out
+	   even though portaudio should wait for it, it doesn't always
+	   happen */
+	sleep(outputLatency / 1000000);
+	usleep(outputLatency % 1000000);
+
+	/* close port audio */
 	err = Pa_CloseStream( stream );
 	if( err != paNoError ) goto error;
 
 	Pa_Terminate();
 	
-	// wair for terminaton
+	/* wait for terminaton */
 	usleep(20000);
 
-	// close pty
+	/* close pty */
 	close(master);
 	close(ptyfd);
 	
+	close(sendPipe[0]);
+	close(sendPipe[1]);
+	close(completedPipe[0]);
+	close(completedPipe[1]);
+
 	return 1;
 
  error:
@@ -351,16 +672,16 @@ char *audio_rec(struct ir_remote *remotes)
 
 struct hardware hw_audio=
 {
-	"pty",	    /* simple device */
+	"",	            /* default device */
 	-1,                 /* fd */
-	LIRC_CAN_REC_MODE2, /* features */
-	0,                  /* send_mode */
+	LIRC_CAN_REC_MODE2 | LIRC_CAN_SEND_PULSE, /* features */
+	LIRC_MODE_PULSE,    /* send_mode */
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	audio_init,         /* init_func */
 	NULL,		    /* config_func */
 	audio_deinit,       /* deinit_func */
-	NULL,		    /* send_func */
+	audio_send,         /* send_func */
 	audio_rec,          /* rec_func */
 	receive_decode,     /* decode_func */
 	NULL,               /* ioctl_func */

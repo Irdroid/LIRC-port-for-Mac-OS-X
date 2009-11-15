@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.32 2009/09/13 10:49:09 lirc Exp $
+dnl $Id: configure.ac,v 1.33 2009/11/15 13:38:03 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -510,7 +510,7 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
 	audio)
-		hw_module="${hw_module} hw_audio.o receive.o"
+		hw_module="${hw_module} hw_audio.o transmit.o receive.o"
 		portaudio_lib="-lportaudio ${portaudio_lib_other}"
 		;;
 	audio_alsa)
@@ -777,7 +777,7 @@ fi
 
 if test "$driver" = "audio"; then
   lirc_driver="audio"
-  hw_module="hw_audio.o receive.o"
+  hw_module="hw_audio.o transmit.o receive.o"
   HW_DEFAULT="hw_audio"
   portaudio_lib="-lportaudio ${portaudio_lib_other}"
 fi
