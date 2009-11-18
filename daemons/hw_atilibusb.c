@@ -1,4 +1,4 @@
-/*      $Id: hw_atilibusb.c,v 5.5 2009/07/05 21:29:24 jarodwilson Exp $      */
+/*      $Id: hw_atilibusb.c,v 5.6 2009/11/18 22:10:11 lirc Exp $      */
 
 /****************************************************************************
  ** hw_atilibusb.c **********************************************************
@@ -107,7 +107,7 @@ static int ati_init()
 	struct usb_device *usb_dev;
 	int pipe_fd[2] = { -1, -1 };
 	
-	LOGPRINTF(LOG_INFO, "initializing USB receiver");
+	LOGPRINTF(1, "initializing USB receiver");
 	
 	init_rec_buffer();
 	
@@ -116,7 +116,7 @@ static int ati_init()
 	 * end of this pipe. */
 	if (pipe(pipe_fd) != 0)
 	{
-		logprintf(LOG_ERR, "couldn't open pipe: %s", strerror(errno));
+		logperror(LOG_ERR, "couldn't open pipe");
 		return 0;
 	}
 	hw.fd = pipe_fd[0];
@@ -137,15 +137,13 @@ static int ati_init()
 	dev_handle = usb_open(usb_dev);
 	if (dev_handle == NULL)
 	{
-		logprintf(LOG_ERR, "couldn't open USB receiver: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't open USB receiver");
 		goto fail;
 	}
 	
 	if (usb_claim_interface(dev_handle, 0) != 0)
 	{
-		logprintf(LOG_ERR, "couldn't claim USB interface: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't claim USB interface");
 		goto fail;
 	}
 	
@@ -163,8 +161,7 @@ static int ati_init()
 	child = fork();
 	if (child == -1)
 	{
-		logprintf(LOG_ERR, "couldn't fork child process: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't fork child process");
 		goto fail;
 	}
 	else if (child == 0)
@@ -172,7 +169,7 @@ static int ati_init()
 		usb_read_loop(pipe_fd[1]);
 	}
 	
-	LOGPRINTF(LOG_INFO, "USB receiver initialized");
+	LOGPRINTF(1, "USB receiver initialized");
 	return 1;
 
 fail:
@@ -214,7 +211,11 @@ static int ati_deinit()
 
 static char *ati_rec(struct ir_remote *remotes)
 {
-	if (!clear_rec_buffer()) return NULL;
+	if (!clear_rec_buffer())
+	{
+		ati_deinit();
+		return NULL;
+	}
 	return decode_all(remotes);
 }
 
@@ -312,9 +313,9 @@ static void usb_read_loop(int fd)
 				&buf[0], sizeof(buf), USB_TIMEOUT);
 		if (bytes_r < 0)
 		{
-			if (errno == EAGAIN) continue;
-			logprintf(LOG_ERR, "can't read from USB device: %s",
-					strerror(errno));
+			if (errno == EAGAIN || errno == ETIMEDOUT) continue;
+			
+			logperror(LOG_ERR, "can't read from USB device");
 			err = 1; goto done;
 		}
 		
@@ -340,14 +341,14 @@ static void usb_read_loop(int fd)
 			bytes_w = write(fd, buf + pos, bytes_r - pos);
 			if (bytes_w < 0)
 			{
-				logprintf(LOG_ERR, "can't write to pipe: %s",
-						strerror(errno));
+				logperror(LOG_ERR, "can't write to pipe");
 				err = 1; goto done;
 			}
 		}
 	}
 	
 done:
+	close(fd);
 	if (!usb_close(dev_handle)) err = 1;
 	_exit(err);
 }
