@@ -335,7 +335,7 @@ static void usb_read_loop(int fd)
 					     USB_TIMEOUT);
 		if (bytes_r < 0)
 		{
-			if (errno == EAGAIN) continue;
+			if (errno == EAGAIN || errno == ETIMEDOUT) continue;
 			logprintf(LOG_ERR, "can't read from USB device: %s",
 				  strerror(errno));
 			err = 1; goto done;
