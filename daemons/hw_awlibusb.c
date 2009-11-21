@@ -136,7 +136,7 @@ static int awlibusb_init()
 	struct usb_device *usb_dev;
 	int pipe_fd[2] = { -1, -1 };
 	
-	LOGPRINTF(LOG_INFO, "initializing USB receiver");
+	LOGPRINTF(1, "initializing USB receiver");
 	
 	init_rec_buffer();
 	
@@ -145,7 +145,7 @@ static int awlibusb_init()
 	 * end of this pipe. */
 	if (pipe(pipe_fd) != 0)
 	{
-		logprintf(LOG_ERR, "couldn't open pipe: %s", strerror(errno));
+		logperror(LOG_ERR, "couldn't open pipe");
 		return 0;
 	}
 	hw.fd = pipe_fd[0];
@@ -166,23 +166,20 @@ static int awlibusb_init()
 	dev_handle = usb_open(usb_dev);
 	if (dev_handle == NULL)
 	{
-		logprintf(LOG_ERR, "couldn't open USB receiver: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't open USB receiver");
 		goto fail;
 	}
 	
 	if (usb_claim_interface(dev_handle, 0) != 0)
 	{
-		logprintf(LOG_ERR, "couldn't claim USB interface: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't claim USB interface");
 		goto fail;
 	}
 	
 	child = fork();
 	if (child == -1)
 	{
-		logprintf(LOG_ERR, "couldn't fork child process: %s",
-				strerror(errno));
+		logperror(LOG_ERR, "couldn't fork child process");
 		goto fail;
 	}
 	else if (child == 0)
@@ -190,7 +187,7 @@ static int awlibusb_init()
 		usb_read_loop(pipe_fd[1]);
 	}
 	
-	LOGPRINTF(LOG_INFO, "USB receiver initialized");
+	LOGPRINTF(1, "USB receiver initialized");
 	return 1;
 
 fail:
@@ -336,8 +333,7 @@ static void usb_read_loop(int fd)
 		if (bytes_r < 0)
 		{
 			if (errno == EAGAIN || errno == ETIMEDOUT) continue;
-			logprintf(LOG_ERR, "can't read from USB device: %s",
-				  strerror(errno));
+			logperror(LOG_ERR, "can't read from USB device");
 			err = 1; goto done;
 		}
 		
@@ -353,8 +349,7 @@ static void usb_read_loop(int fd)
 		/* ignore first byte */
 		if (bytes_w < 0)
 		{
-			logprintf(LOG_ERR, "can't write to pipe: %s",
-				  strerror(errno));
+			logperror(LOG_ERR, "can't write to pipe");
 			err = 1;
 			goto done;
 		}
@@ -373,8 +368,7 @@ static void usb_read_loop(int fd)
 			bytes_w = write(fd, &code, 1);
 			if (bytes_w < 0)
 			{
-				logprintf(LOG_ERR, "can't write to pipe: %s",
-					  strerror(errno));
+				logperror(LOG_ERR, "can't write to pipe");
 				err = 1;
 				goto done;
 			}
