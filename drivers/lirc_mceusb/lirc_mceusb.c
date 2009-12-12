@@ -235,6 +235,7 @@ static struct usb_device_id microsoft_gen1_list[] = {
 
 static struct usb_device_id transmitter_mask_list[] = {
 	{ USB_DEVICE(VENDOR_MICROSOFT, 0x006d) },
+	{ USB_DEVICE(VENDOR_PHILIPS, 0x060c) },
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0322) },
 	{ USB_DEVICE(VENDOR_SMK, 0x0334) },
