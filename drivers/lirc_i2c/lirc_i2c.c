@@ -1,4 +1,4 @@
-/*      $Id: lirc_i2c.c,v 1.70 2009/08/30 16:59:53 jarodwilson Exp $      */
+/*      $Id: lirc_i2c.c,v 1.71 2009/12/15 05:37:00 jarodwilson Exp $      */
 
 /*
  * lirc_i2c.c
@@ -399,8 +399,8 @@ static struct i2c_driver driver = {
 		.name	= "i2c ir driver",
 	},
 #endif
-	.id		= I2C_DRIVERID_EXP3, /* FIXME */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+	.id		= I2C_DRIVERID_EXP3, /* FIXME */
 	.attach_adapter	= ir_probe,
 	.detach_client	= ir_remove,
 #else
