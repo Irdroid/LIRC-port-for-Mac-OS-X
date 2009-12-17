@@ -1,4 +1,4 @@
-/*      $Id: lircmd.c,v 5.22 2009/09/21 18:16:53 lirc Exp $      */
+/*      $Id: lircmd.c,v 5.23 2009/12/17 20:12:45 lirc Exp $      */
 
 /****************************************************************************
  ** lircmd.c ****************************************************************
@@ -667,8 +667,16 @@ struct trans_mouse *read_config(FILE *fd)
 			freetm(tm_list);
 			return((void *) -1);
 		}
-		len--;
-		if(buffer[len]=='\n') buffer[len]=0;
+		if(len>0)
+		{
+			len--;
+			if(buffer[len]=='\n') buffer[len]=0;
+		}
+		if(len>0)
+		{
+			len--;
+			if(buffer[len]=='\r') buffer[len]=0;
+		}
 
 		/* ignore comments */
 		if(buffer[0]=='#') continue;
