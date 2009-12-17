@@ -137,6 +137,7 @@ static int debug;
 #define VENDOR_WISTRON		0x0fb8
 #define VENDOR_COMPRO		0x185b
 #define VENDOR_NORTHSTAR	0x04eb
+#define VENDOR_REALTEK		0x0bda
 
 static struct usb_device_id mceusb_dev_table[] = {
 	/* Original Microsoft MCE IR Transceiver (often HP-branded) */
@@ -153,6 +154,8 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0613) },
 	/* Philips eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_PHILIPS, 0x0815) },
+	/* Realtek MCE IR Receiver */
+	{ USB_DEVICE(VENDOR_REALTEK, 0x0161) },
 	/* SMK/Toshiba G83C0004D410 */
 	{ USB_DEVICE(VENDOR_SMK, 0x031d) },
 	/* SMK eHome Infrared Transceiver (Sony VAIO) */
