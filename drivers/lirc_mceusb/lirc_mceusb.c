@@ -138,6 +138,7 @@ static int debug;
 #define VENDOR_COMPRO		0x185b
 #define VENDOR_NORTHSTAR	0x04eb
 #define VENDOR_REALTEK		0x0bda
+#define VENDOR_TIVO		0x105a
 
 static struct usb_device_id mceusb_dev_table[] = {
 	/* Original Microsoft MCE IR Transceiver (often HP-branded) */
@@ -222,6 +223,8 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_COMPRO, 0x3082) },
 	/* Northstar Systems eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_NORTHSTAR, 0xe004) },
+	/* TiVo PC IR Receiver */
+	{ USB_DEVICE(VENDOR_TIVO, 0x2000) },
 	/* Terminating entry */
 	{ }
 };
