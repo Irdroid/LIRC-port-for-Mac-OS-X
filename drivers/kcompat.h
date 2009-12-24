@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.45 2009/08/02 11:15:28 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.46 2009/12/24 12:05:36 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -377,6 +377,9 @@ typedef u32 pm_message_t;
 /* added in 2.6.11 */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 #define DEFINE_SPINLOCK(x) spinlock_t x = SPIN_LOCK_UNLOCKED
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+#define __SPIN_LOCK_UNLOCKED(x) SPIN_LOCK_UNLOCKED;
 #endif
 
 /***************************** slab.h *********************************/
