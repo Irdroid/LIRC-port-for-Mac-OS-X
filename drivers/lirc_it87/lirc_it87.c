@@ -28,6 +28,9 @@
  * 2005/06/05 Andrew Calkin implemented support for Asus Digimatrix,
  *   based on work of the following member of the Outertrack Digimatrix
  *   Forum: Art103 <r_tay@hotmail.com>
+ * 2009/12/24 James Edwards <jimbo-lirc@edwardsclan.net> implemeted support 
+ *   for ITE8704/ITE8718, on my machine, the DSDT reports 8704, but the 
+ *   chip identifies as 18.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -541,7 +544,7 @@ static irqreturn_t it87_interrupt(int irq, void *dev_id)
 				del_timer(&timerlist);
 				data = inb(io + IT87_CIR_DR);
 
-				dprintk("data=%.2x\n", data);
+				dprintk("data=%02x\n", data);
 				do_gettimeofday(&curr_tv);
 				deltv = delta(&last_tv, &curr_tv);
 				deltintrtv = delta(&last_intr_tv, &curr_tv);
@@ -816,20 +819,22 @@ static int init_port(void)
 		return retval;
 	}
 	it87_chipid = it87_read(IT87_CHIP_ID2);
-	if ((it87_chipid != 0x12) &&
-		(it87_chipid != 0x05) &&
-		(it87_chipid != 0x20)) {
+	if ((it87_chipid != 0x05) &&
+	    (it87_chipid != 0x12) &&
+	    (it87_chipid != 0x18) &&
+	    (it87_chipid != 0x20)) {
 		printk(KERN_INFO LIRC_DRIVER_NAME
-		       ": no IT8705/12/20 found, exiting..\n");
+		       ": no IT8704/05/12/18/20 found (claimed IT87%02x), "
+		       "exiting..\n", it87_chipid);
 		retval = -ENXIO;
 		return retval;
 	}
 	printk(KERN_INFO LIRC_DRIVER_NAME
-	       ": found IT87%.2x.\n",
+	       ": found IT87%02x.\n",
 	       it87_chipid);
 
 	/* get I/O-Port and IRQ */
-	if (it87_chipid == 0x12)
+	if (it87_chipid == 0x12 || it87_chipid == 0x18)
 		ldn = IT8712_CIR_LDN;
 	else
 		ldn = IT8705_CIR_LDN;
@@ -970,7 +975,7 @@ static void __exit lirc_it87_exit(void)
 module_init(lirc_it87_init);
 module_exit(lirc_it87_exit);
 
-MODULE_DESCRIPTION("LIRC driver for ITE IT8712/IT8705 CIR port");
+MODULE_DESCRIPTION("LIRC driver for ITE IT8704/05/12/18/20 CIR port");
 MODULE_AUTHOR("Hans-Günter Lütke Uphues");
 MODULE_LICENSE("GPL");
 
