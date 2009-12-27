@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.19 2008/07/03 21:33:53 lirc Exp $
+## $Id: Makefile.am,v 5.20 2009/12/27 19:04:10 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -36,7 +36,8 @@ irxevent_SOURCES = irxevent.c
 irxevent_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@ liblirc_client.la
 irxevent_DEPENDENCIES = liblirc_client.la
 xmode2_SOURCES = xmode2.c
-xmode2_LDADD = @X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@
+xmode2_LDADD = ../daemons/libhw_module.a @hw_module_libs@ \
+	@X_LIBS@ @X_PRE_LIBS@ -lX11 @X_EXTRA_LIBS@
 
 ## lircrcd
 
