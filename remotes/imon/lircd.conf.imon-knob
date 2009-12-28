@@ -49,6 +49,16 @@ begin remote
           CursorUp                 0x6902F9B7
           CursorRight              0x68A281B7
           CursorDown               0x6882A1B7
+# version 2 of keypad
+          CursorUp                 0x2aa515b7
+          CursorDown               0x289515b7
+          CursorLeft               0x29a515b7
+          CursorRight              0x2ba515b7
+# version 3 of keypad
+          CursorUp                 0x01008000
+          CursorDown               0x01007f00
+          CursorLeft               0x01000080
+          CursorRight              0x0100007f
           Esc                      0x2BB715B7
           Eject                    0x299395B7
           AppLauncher              0x29B715B7
@@ -140,6 +150,16 @@ begin remote
           CursorUp                 0x6902F9B7
           CursorRight              0x68A281B7
           CursorDown               0x6882A1B7
+# version 2 of keypad
+          CursorUp                 0x2aa515b7
+          CursorDown               0x289515b7
+          CursorLeft               0x29a515b7
+          CursorRight              0x2ba515b7
+# version 3 of keypad
+          CursorUp                 0x01008000
+          CursorDown               0x01007f00
+          CursorLeft               0x01000080
+          CursorRight              0x0100007f
           Esc                      0x2BB715B7
           Eject                    0x299395B7
           AppLauncher              0x29B715B7
