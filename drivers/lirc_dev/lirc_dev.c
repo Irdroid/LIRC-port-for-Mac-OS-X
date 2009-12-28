@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.97 2009/12/28 13:05:30 lirc Exp $
+ * $Id: lirc_dev.c,v 1.98 2009/12/28 13:07:07 lirc Exp $
  *
  */
 
@@ -590,6 +590,8 @@ static int irctl_open(struct inode *inode, struct file *file)
 		if (ir->task)
 			wake_up_process(ir->task);
 #endif
+	} else {
+		retval = -ENODEV;
 	}
  error:
 	if (ir)
