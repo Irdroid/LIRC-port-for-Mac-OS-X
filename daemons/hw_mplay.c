@@ -114,9 +114,9 @@ static struct {
 struct hardware hw_mplay = {
         LIRC_DRIVER_DEVICE,     /* default device */
         -1,                     /* fd */
-        LIRC_CAN_REC_CODE,      /* features */
+        LIRC_CAN_REC_LIRCCODE,  /* features */
         0,                      /* send_mode */
-        LIRC_MODE_CODE,         /* rec_mode */
+        LIRC_MODE_LIRCCODE,     /* rec_mode */
         MPLAY_CODE_LENGTH,      /* code_length */
         mplay_init,             /* init_func */
         NULL,                   /* config_func */

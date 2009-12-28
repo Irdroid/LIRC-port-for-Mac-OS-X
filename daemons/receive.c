@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.39 2009/09/13 11:47:52 lirc Exp $      */
+/*      $Id: receive.c,v 5.40 2009/12/28 13:05:29 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -125,18 +125,6 @@ int clear_rec_buffer(void)
 			rec_buffer.decoded=(rec_buffer.decoded<<CHAR_BIT)+
 			((ir_code) buffer[i]);
 		}
-	}
-	else if(hw.rec_mode==LIRC_MODE_CODE)
-	{
-		unsigned char c;
-		
-		if(read(hw.fd,&c,1)!=1)
-		{
-			logprintf(LOG_ERR,"reading in mode LIRC_MODE_CODE "
-				  "failed");
-			return(0);
-		}
-		rec_buffer.decoded=(ir_code) c;
 	}
 	else
 	{
@@ -1191,8 +1179,7 @@ int receive_decode(struct ir_remote *remote,
 		struct ir_ncode *codes,*found;
 		int i;
 
-		if(hw.rec_mode==LIRC_MODE_CODE ||
-		   hw.rec_mode==LIRC_MODE_LIRCCODE)
+		if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 			return(0);
 
 		codes=remote->codes;
@@ -1233,8 +1220,7 @@ int receive_decode(struct ir_remote *remote,
 	}
 	else
 	{
-		if(hw.rec_mode==LIRC_MODE_CODE ||
-		   hw.rec_mode==LIRC_MODE_LIRCCODE)
+		if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 		{
  			lirc_t sum;
 			ir_code decoded = rec_buffer.decoded;
@@ -1244,11 +1230,8 @@ int receive_decode(struct ir_remote *remote,
 #                       else
 			LOGPRINTF(1,"decoded: %lx", decoded);
 #                       endif
-			if((hw.rec_mode==LIRC_MODE_CODE &&
-			    hw.code_length<bit_count(remote))
-			   ||
-			   (hw.rec_mode==LIRC_MODE_LIRCCODE && 
-			    hw.code_length!=bit_count(remote)))
+			if(hw.rec_mode==LIRC_MODE_LIRCCODE && 
+			   hw.code_length!=bit_count(remote))
 			{
 				return(0);
 			}
@@ -1366,8 +1349,7 @@ int receive_decode(struct ir_remote *remote,
 		*repeat_flagp=1;
 	else
 		*repeat_flagp=0;
-	if(hw.rec_mode==LIRC_MODE_CODE ||
-	   hw.rec_mode==LIRC_MODE_LIRCCODE)
+	if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 	{
 		/* Most TV cards don't pass each signal to the
                    driver. This heuristic should fix repeat in such

@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.20 2009/12/28 12:54:36 lirc Exp $      */
+/*      $Id: lirc.h,v 5.21 2009/12/28 13:05:30 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -27,7 +27,7 @@ typedef int lirc_t;
 #define LIRC_MODE_RAW                  0x00000001
 #define LIRC_MODE_PULSE                0x00000002
 #define LIRC_MODE_MODE2                0x00000004
-#define LIRC_MODE_CODE                 0x00000008
+/* obsolete: #define LIRC_MODE_CODE                 0x00000008 */
 #define LIRC_MODE_LIRCCODE             0x00000010
 /* obsolete: #define LIRC_MODE_STRING               0x00000020 */
 
@@ -35,7 +35,7 @@ typedef int lirc_t;
 #define LIRC_CAN_SEND_RAW              LIRC_MODE2SEND(LIRC_MODE_RAW)
 #define LIRC_CAN_SEND_PULSE            LIRC_MODE2SEND(LIRC_MODE_PULSE)
 #define LIRC_CAN_SEND_MODE2            LIRC_MODE2SEND(LIRC_MODE_MODE2)
-#define LIRC_CAN_SEND_CODE             LIRC_MODE2SEND(LIRC_MODE_CODE)
+/* obsolete: #define LIRC_CAN_SEND_CODE             LIRC_MODE2SEND(LIRC_MODE_CODE) */
 #define LIRC_CAN_SEND_LIRCCODE         LIRC_MODE2SEND(LIRC_MODE_LIRCCODE)
 /* obsolete: #define LIRC_CAN_SEND_STRING           LIRC_MODE2SEND(LIRC_MODE_STRING) */
 
@@ -48,7 +48,7 @@ typedef int lirc_t;
 #define LIRC_CAN_REC_RAW               LIRC_MODE2REC(LIRC_MODE_RAW)
 #define LIRC_CAN_REC_PULSE             LIRC_MODE2REC(LIRC_MODE_PULSE)
 #define LIRC_CAN_REC_MODE2             LIRC_MODE2REC(LIRC_MODE_MODE2)
-#define LIRC_CAN_REC_CODE              LIRC_MODE2REC(LIRC_MODE_CODE)
+/* obsolete: #define LIRC_CAN_REC_CODE              LIRC_MODE2REC(LIRC_MODE_CODE) */
 #define LIRC_CAN_REC_LIRCCODE          LIRC_MODE2REC(LIRC_MODE_LIRCCODE)
 /* obsolete: #define LIRC_CAN_REC_STRING            LIRC_MODE2REC(LIRC_MODE_STRING) */
 

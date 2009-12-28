@@ -1,4 +1,4 @@
-/*      $Id: mode2.c,v 5.18 2009/12/27 19:04:10 lirc Exp $      */
+/*      $Id: mode2.c,v 5.19 2009/12/28 13:05:30 lirc Exp $      */
 
 /****************************************************************************
  ** mode2.c *****************************************************************
@@ -279,11 +279,7 @@ int main(int argc,char **argv)
 
 	}
 	
-	if(mode==LIRC_MODE_CODE)
-	{
-		count = 1;
-	}
-	else if(mode==LIRC_MODE_LIRCCODE)
+	if(mode==LIRC_MODE_LIRCCODE)
 	{
 		if(use_raw_access)
 		{

@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.97 2009/12/28 12:54:36 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.98 2009/12/28 13:05:29 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.97 $"
+#define IRRECORD_VERSION "$Revision: 5.98 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -557,7 +557,6 @@ int main(int argc,char **argv)
 	aeps = (hw.resolution>aeps ? hw.resolution:aeps);
 	
 	if(hw.rec_mode!=LIRC_MODE_MODE2 &&
-	   hw.rec_mode!=LIRC_MODE_CODE &&
 	   hw.rec_mode!=LIRC_MODE_LIRCCODE)
 	{
 		fprintf(stderr,"%s: mode not supported\n",progname);
@@ -653,10 +652,8 @@ int main(int argc,char **argv)
 		       (unsigned long) remote.gap);
 #               endif
 		break;
-	case LIRC_MODE_CODE:
 	case LIRC_MODE_LIRCCODE:
-		if(hw.rec_mode==LIRC_MODE_CODE) remote.bits=CHAR_BIT;
-		else remote.bits=hw.code_length;
+		remote.bits=hw.code_length;
 		if(!using_template && !get_gap_length(&remote))
 		{
 			fprintf(stderr,"%s: gap not found,"
@@ -987,9 +984,6 @@ void flushhw(void)
 	case LIRC_MODE_MODE2:
 		while(availabledata()) hw.readdata(0);
 		return;
-	case LIRC_MODE_CODE:
-		size=sizeof(unsigned char);
-		break;
 	case LIRC_MODE_LIRCCODE:
 		size=hw.code_length/CHAR_BIT;
 		if(hw.code_length%CHAR_BIT) size++;

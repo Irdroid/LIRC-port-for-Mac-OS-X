@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.40 2009/12/28 12:54:36 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.41 2009/12/28 13:05:29 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -42,10 +42,7 @@ extern struct ir_remote *repeat_remote;
 
 static unsigned long supported_send_modes[]=
 {
-	/* LIRC_CAN_SEND_STRING, I don't think there ever will be a driver 
-	   that supports that */
 	/* LIRC_CAN_SEND_LIRCCODE, */
-        /* LIRC_CAN_SEND_CODE, */
 	/* LIRC_CAN_SEND_MODE2, this one would be very easy */
 	LIRC_CAN_SEND_PULSE,
 	/* LIRC_CAN_SEND_RAW, */
@@ -54,7 +51,6 @@ static unsigned long supported_send_modes[]=
 static unsigned long supported_rec_modes[]=
 {
 	LIRC_CAN_REC_LIRCCODE,
-        LIRC_CAN_REC_CODE,
 	LIRC_CAN_REC_MODE2,
 	/* LIRC_CAN_REC_PULSE, shouldn't be too hard */
 	/* LIRC_CAN_REC_RAW, */
@@ -363,10 +359,6 @@ int default_init()
 				  hw.resolution);
 		}
 		
-	}
-	else if(hw.rec_mode==LIRC_MODE_CODE)
-	{
-		hw.code_length=8;
 	}
 	else if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 	{
