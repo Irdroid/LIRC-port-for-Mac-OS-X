@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.98 2009/12/28 13:07:07 lirc Exp $
+ * $Id: lirc_dev.c,v 1.99 2009/12/28 15:20:32 jarodwilson Exp $
  *
  */
 
@@ -540,7 +540,7 @@ EXPORT_SYMBOL(lirc_unregister_driver);
 static int irctl_open(struct inode *inode, struct file *file)
 {
 	struct irctl *ir;
-	int retval;
+	int retval = 0;
 
 	if (iminor(inode) >= MAX_IRCTL_DEVICES || !irctls[iminor(inode)]) {
 		dprintk("lirc_dev [%d]: open result = -ENODEV\n",
