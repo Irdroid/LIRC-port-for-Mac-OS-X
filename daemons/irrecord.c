@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.96 2009/11/21 16:48:18 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.97 2009/12/28 12:54:36 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.96 $"
+#define IRRECORD_VERSION "$Revision: 5.97 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -556,14 +556,6 @@ int main(int argc,char **argv)
 	}
 	aeps = (hw.resolution>aeps ? hw.resolution:aeps);
 	
-	if(hw.rec_mode==LIRC_MODE_STRING)
-	{
-		fprintf(stderr,"%s: no config file necessary\n",progname);
-		fclose(fout);
-		unlink(filename);
-		if(hw.deinit_func) hw.deinit_func();
-		exit(EXIT_SUCCESS);
-	}
 	if(hw.rec_mode!=LIRC_MODE_MODE2 &&
 	   hw.rec_mode!=LIRC_MODE_CODE &&
 	   hw.rec_mode!=LIRC_MODE_LIRCCODE)

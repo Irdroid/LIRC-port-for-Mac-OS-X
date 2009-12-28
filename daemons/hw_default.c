@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.39 2009/04/13 13:06:15 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.40 2009/12/28 12:54:36 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -53,7 +53,6 @@ static unsigned long supported_send_modes[]=
 };
 static unsigned long supported_rec_modes[]=
 {
-	LIRC_CAN_REC_STRING,
 	LIRC_CAN_REC_LIRCCODE,
         LIRC_CAN_REC_CODE,
 	LIRC_CAN_REC_MODE2,
@@ -524,47 +523,12 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 
 char *default_rec(struct ir_remote *remotes)
 {
-	char c;
-	int n;
-	static char message[PACKET_SIZE+1];
-
-
-	if(hw.rec_mode==LIRC_MODE_STRING)
+	if(!clear_rec_buffer())
 	{
-		int failed=0;
-
-		/* inefficient but simple, fix this if you want */
-		n=0;
-		do
-		{
-			if(read(hw.fd,&c,1)!=1)
-			{
-				logprintf(LOG_ERR,"reading in mode "
-					  "LIRC_MODE_STRING failed");
-				default_deinit();
-				return NULL;
-			}
-			if(n>=PACKET_SIZE-1)
-			{
-				failed=1;
-				n=0;
-			}
-			message[n++]=c;
-		}
-		while(c!='\n');
-		message[n]=0;
-		if(failed) return(NULL);
-		return(message);
+		default_deinit();
+		return NULL;
 	}
-	else
-	{
-		if(!clear_rec_buffer())
-		{
-			default_deinit();
-		       	return NULL;
-		}
-		return(decode_all(remotes));
-	}
+	return(decode_all(remotes));
 }
 
 static int default_config_frequency()

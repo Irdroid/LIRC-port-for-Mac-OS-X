@@ -66,14 +66,14 @@ struct hardware hw_bte=
 	LIRC_DRIVER_DEVICE,       /* default device */
 	-1,                       /* fd */
 #if BTE_CAN_SEND
-	LIRC_CAN_REC_STRING|LIRC_CAN_SEND_STRING,    /* features */
-	LIRC_MODE_STRING,         /* send_mode */
+	LIRC_CAN_REC_LIRCCODE|LIRC_CAN_SEND_LIRCCODE,    /* features */
+	LIRC_MODE_LIRCCODE,       /* send_mode */
 #else
-	LIRC_CAN_REC_STRING,      /* features */
+	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
 #endif
 
-	LIRC_MODE_STRING,         /* rec_mode */
+	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	16,                       /* code_length */
 	bte_init,	          /* init_func */
 	NULL,                     /* config_func */
