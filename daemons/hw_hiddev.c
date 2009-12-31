@@ -74,7 +74,16 @@ static int main_code_length = 32;
 static unsigned int pre_code;
 static signed int main_code = 0;
 
-static int repeat_flag = 0;
+static struct timeval start,end,last;
+
+enum
+{
+	RPT_UNKNOWN = -1,
+	RPT_NO = 0,
+	RPT_YES = 1,
+};
+
+static int repeat_state = RPT_UNKNOWN;
 
 /* Remotec Mediamaster specific */
 struct hardware hw_bw6130=
@@ -236,9 +245,20 @@ int hiddev_decode(struct ir_remote *remote,
 	
 	LOGPRINTF(1, "lirc code: 0x%X", *codep);
 
-	*repeat_flagp = repeat_flag;
-	*min_remaining_gapp = 0;
-	*max_remaining_gapp = 0;
+	map_gap(remote, &start, &last, 0, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
+	/* override repeat */
+	switch( repeat_state )
+	{
+	case RPT_NO:
+		*repeat_flagp = 0;
+		break;
+	case RPT_YES:
+		*repeat_flagp = 1;
+		break;
+	default:
+		break;
+	}
 	
 	return 1;
 }
@@ -259,7 +279,9 @@ char *hiddev_rec(struct ir_remote *remotes)
 	int i;
 	
 	LOGPRINTF(1, "hiddev_rec");
-	
+
+	last=end;
+	gettimeofday(&start,NULL);	
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
@@ -306,10 +328,11 @@ char *hiddev_rec(struct ir_remote *remotes)
 		pre_code = event.hid;
 		main_code = event.value;
 	}
+	gettimeofday(&end,NULL);
 
 	if (event.hid == 0x10046) {
 		struct timeval now;
-		repeat_flag = (main_code & dvico_repeat_mask);
+		repeat_state = (main_code & dvico_repeat_mask) ? RPT_YES : RPT_NO;
 		main_code = (main_code & ~dvico_repeat_mask);
 		
 		gettimeofday (&now, NULL);
@@ -323,7 +346,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 		/* previous valid code because it is likely that they are  */
 		/* spurious.                                               */
 
-		if(repeat_flag)
+		if(repeat_state == RPT_YES)
 		{
 			if(time_elapsed(&time_of_last_code, &now) > 500000)
 			{
@@ -332,7 +355,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 		}
 		time_of_last_code = now;
 		
-		LOGPRINTF(1, "main 0x%X  repeat flag 0x%X", main_code, repeat_flag);
+		LOGPRINTF(1, "main 0x%X  repeat state 0x%X", main_code, repeat_state);
 		return decode_all(remotes);
 #if 0
 		/* the following code could be used to recreate the
@@ -346,7 +369,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 		pre = event.value&0xff;
 		pre_code = reverse(~pre, 8)<<8 | reverse(pre, 8);
 		
-		repeat_flag = (event.value & dvico_repeat_mask);
+		repeat_state = (event.value & dvico_repeat_mask) ? RPT_YES : RPT_NO;
 		
 		main = (event.value&0x7f00) >> 8;
 		main_code = reverse(main, 8)<<8 | reverse(~main, 8);
@@ -426,7 +449,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 	    (event.value != 0xFFFFFFFF) &&
 	    (event.value != 0xFFFFFFAA))
 	{
-		if (old_main_code == main_code) repeat_flag = 1;
+		if (old_main_code == main_code) repeat_state = RPT_YES;
 		old_main_code = main_code;
 		if (main_code==0x40) {  /* the mousedial has been touched */
 			wheel_count=1;
@@ -435,7 +458,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 		return decode_all(remotes);
 	}
 	else if ((event.hid == 0xFFA10003) && (event.value == 0xFFFFFFAA)) {
-		repeat_flag = 0;
+		repeat_state = RPT_NO;
 		old_main_code = 0;
 	}
 
@@ -485,7 +508,10 @@ char *sb0540_rec(struct ir_remote *remotes)
 	pre_code_length = 16;
 	main_code_length = 16;
 	pre_code = 0x8322;
-	repeat_flag = 0;
+	repeat_state = RPT_NO;
+
+	last=end;
+	gettimeofday(&start,NULL);
 
 	rd = read(hw.fd, &uref, sizeof(uref));
 	if (rd < 0) {
@@ -494,6 +520,8 @@ char *sb0540_rec(struct ir_remote *remotes)
 		hiddev_deinit();
 		return 0;
 	}
+
+	gettimeofday(&end,NULL);
 
 	if (uref.field_index == HID_FIELD_INDEX_NONE) {
 		/*
@@ -549,6 +577,8 @@ char *macmini_rec(struct ir_remote *remotes)
 
 	LOGPRINTF(1, "macmini_rec");
 
+	last=end;
+	gettimeofday(&start,NULL);
 	for (i=0;i<4;i++)
 	{
 		if(i>0 && !waitfordata(TIMEOUT))
@@ -563,18 +593,18 @@ char *macmini_rec(struct ir_remote *remotes)
 			return 0;
 		}
 	}
+	gettimeofday(&end,NULL);
 
-	gettimeofday (&now, NULL);
 	/* Record the code */
 	pre_code_length = 0;
 	pre_code = 0;
 	main_code = (ev[0].value << 24) + (ev[1].value << 16) +
 	            (ev[2].value <<  8) + (ev[3].value <<  0);
-	repeat_flag = 0;
+	repeat_state = RPT_UNKNOWN;
 	if (main_code == 0)
 	{
 		/* some variants seem to send 0 to indicate repeats */
-		if(time_elapsed(&time_of_last_code, &now) > 500000)
+		if(time_elapsed(&time_of_last_code, &end) > 500000)
 		{
 			/* but some send 0 if they receive codes from
 			   a different remote, so only send repeats if
@@ -582,13 +612,10 @@ char *macmini_rec(struct ir_remote *remotes)
 			return NULL;
 		}
 		main_code = old_main_code;
-	}
-	if (old_main_code == main_code)
-	{
-		repeat_flag = 1;
+		repeat_state = RPT_YES;
 	}
 	old_main_code = main_code;
-	time_of_last_code = now;
+	time_of_last_code = end;
 
 	return decode_all(remotes);
 }
@@ -634,8 +661,10 @@ char *samsung_rec(struct ir_remote *remotes)
 	pre_code_length = 0;
 	main_code_length = 32;
 	pre_code = 0;
-	repeat_flag = 0;
+	repeat_state = RPT_NO;
 
+	last=end;
+	gettimeofday(&start,NULL);
 	rd = read(hw.fd, &uref, sizeof(uref));
 	if (rd < 0) {
 		logprintf(LOG_ERR, "error reading '%s'", hw.device);
@@ -643,6 +672,7 @@ char *samsung_rec(struct ir_remote *remotes)
 		hiddev_deinit();
 		return 0;
 	}
+	gettimeofday(&end,NULL);
 
 	if (uref.field_index == HID_FIELD_INDEX_NONE) {
 		/*
