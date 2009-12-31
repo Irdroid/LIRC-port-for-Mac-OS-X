@@ -570,7 +570,6 @@ char *sb0540_rec(struct ir_remote *remotes)
 char *macmini_rec(struct ir_remote *remotes)
 {
 	static struct timeval time_of_last_code;
-	struct timeval now;
 	struct hiddev_event ev[4];
 	int rd;
 	int i;
