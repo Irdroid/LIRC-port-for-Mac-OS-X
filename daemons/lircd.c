@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.91 2009/08/29 07:46:44 lirc Exp $      */
+/*      $Id: lircd.c,v 5.92 2010/01/01 11:21:12 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1907,6 +1907,17 @@ void input_message(const char *message, const char *remote_name,
 			if(write(uinputfd, &event, sizeof(event)) != sizeof(event))
 			{
 				logprintf(LOG_ERR, "writing to uinput failed");
+				logperror(LOG_ERR, NULL);
+			}
+
+			/* Need to write sync event */
+			memset(&event, 0, sizeof(event));
+			event.type = EV_SYN;
+			event.code = SYN_REPORT;
+			event.value = 0;
+			if(write(uinputfd, &event, sizeof(event)) != sizeof(event))
+			{
+				logprintf(LOG_ERR, "writing EV_SYN to uinput failed");
 				logperror(LOG_ERR, NULL);
 			}
 		}
