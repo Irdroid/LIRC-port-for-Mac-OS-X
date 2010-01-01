@@ -1,4 +1,4 @@
-/*      $Id: hw_alsa_usb.c,v 5.3 2007/07/29 18:20:06 lirc Exp $   */
+/*      $Id: hw_alsa_usb.c,v 5.4 2010/01/01 10:10:35 lirc Exp $   */
 
 /****************************************************************************
  ** hw_alsa_usb.c ***********************************************************
@@ -37,9 +37,9 @@ static int repeat_flag;
 struct hardware hw_alsa_usb = {
 	"",			/* default device */
 	-1,			/* fd */
-	LIRC_CAN_REC_CODE,	/* features */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
-	LIRC_MODE_CODE,		/* rec_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
 	8,			/* code_length */
 	init,			/* init_func */
 	NULL,			/* config_func */
