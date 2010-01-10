@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.113 2009/10/30 04:00:30 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.114 2010/01/10 21:24:08 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -250,7 +250,7 @@ static struct usb_device_id imon_usb_id_table[] = {
 	{ USB_DEVICE(0x15c2, 0x0037) },
 	/* SoundGraph iMON OEM LCD (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0038) },
-	/* device specifics unknown */
+	/* SoundGraph iMON UltraBay (IR & LCD) */
 	{ USB_DEVICE(0x15c2, 0x0039) },
 	/* device specifics unknown */
 	{ USB_DEVICE(0x15c2, 0x003a) },
@@ -318,6 +318,7 @@ static struct usb_device_id ctl_ep_device_list[] = {
 static struct usb_device_id lcd_device_list[] = {
 	{ USB_DEVICE(0x15c2, 0xffdc) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0039) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
 	{}
 };
@@ -327,6 +328,7 @@ static struct usb_device_id large_buffer_list[] = {
 	{ USB_DEVICE(0x15c2, 0x0034) },
 	{ USB_DEVICE(0x15c2, 0x0035) },
 	{ USB_DEVICE(0x15c2, 0x0038) },
+	{ USB_DEVICE(0x15c2, 0x0039) },
 	{ USB_DEVICE(0x15c2, 0x0045) },
 };
 
