@@ -28,8 +28,8 @@
  * 2005/06/05 Andrew Calkin implemented support for Asus Digimatrix,
  *   based on work of the following member of the Outertrack Digimatrix
  *   Forum: Art103 <r_tay@hotmail.com>
- * 2009/12/24 James Edwards <jimbo-lirc@edwardsclan.net> implemeted support 
- *   for ITE8704/ITE8718, on my machine, the DSDT reports 8704, but the 
+ * 2009/12/24 James Edwards <jimbo-lirc@edwardsclan.net> implemeted support
+ *   for ITE8704/ITE8718, on my machine, the DSDT reports 8704, but the
  *   chip identifies as 18.
  */
 
@@ -67,6 +67,7 @@
 #endif
 
 #include <linux/timer.h>
+#include <linux/pnp.h>
 
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
@@ -127,6 +128,8 @@ static DEFINE_SPINLOCK(dev_lock);
 static lirc_t rx_buf[RBUF_LEN];
 unsigned int rx_tail, rx_head;
 static lirc_t tx_buf[WBUF_LEN];
+
+static struct pnp_driver it87_pnp_driver;
 
 /* SECTION: Prototypes */
 
@@ -952,15 +955,26 @@ static int __init lirc_it87_init(void)
 {
 	int retval;
 
-	retval = init_chrdev();
+	retval = pnp_register_driver(&it87_pnp_driver);
 	if (retval < 0)
 		return retval;
+
+	retval = init_chrdev();
+	if (retval < 0)
+		goto init_chrdev_failed;
+
 	retval = init_lirc_it87();
-	if (retval) {
-		drop_chrdev();
-		return retval;
-	}
+	if (retval)
+		goto init_lirc_it87_failed;
+
 	return 0;
+
+ init_lirc_it87_failed:
+	drop_chrdev();
+
+ init_chrdev_failed:
+	pnp_unregister_driver(&it87_pnp_driver);
+	return retval;
 }
 
 
@@ -969,8 +983,23 @@ static void __exit lirc_it87_exit(void)
 	drop_hardware();
 	drop_chrdev();
 	drop_port();
+	pnp_unregister_driver(&it87_pnp_driver);
 	printk(KERN_INFO LIRC_DRIVER_NAME ": Uninstalled.\n");
 }
+
+/* SECTION: PNP for ITE8704/18 */
+
+static const struct pnp_device_id pnp_dev_table[] = {
+	{"ITE8704", 0},
+	{}
+};
+
+MODULE_DEVICE_TABLE(pnp, pnp_dev_table);
+
+static struct pnp_driver it87_pnp_driver = {
+	.name           = LIRC_DRIVER_NAME,
+	.id_table       = pnp_dev_table,
+};
 
 module_init(lirc_it87_init);
 module_exit(lirc_it87_exit);
