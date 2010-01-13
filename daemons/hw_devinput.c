@@ -10,15 +10,6 @@
  *
  */
 
-/*
-  TODO:
-
-  - use more than 32 bits (?)
-  
-  CB
-  
- */
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -78,7 +69,7 @@ struct hardware hw_devinput=
 	LIRC_CAN_REC_LIRCCODE,	/* features */
 	0,			/* send_mode */
 	LIRC_MODE_LIRCCODE,	/* rec_mode */
-	32,			/* code_length */
+	64,			/* code_length */
 	devinput_init_fwd,	/* init_func */
 	NULL,			/* config_func */
 	devinput_deinit,	/* deinit_func */
@@ -91,6 +82,7 @@ struct hardware hw_devinput=
 };
 
 static ir_code code;
+static ir_code code_compat;
 static int repeat_flag=0;
 static int exclusive = 0;
 static int uinputfd = -1;
@@ -415,7 +407,19 @@ int devinput_decode(struct ir_remote *remote,
         if(!map_code(remote,prep,codep,postp,
                      0,0,hw_devinput.code_length,code,0,0))
         {
-                return(0);
+		static int print_warning = 1;
+		
+		if(!map_code(remote,prep,codep,postp,
+			     0,0,32,code_compat,0,0))
+		{
+			return(0);
+		}
+                if(print_warning)
+		{
+			print_warning = 0;
+			logperror(LOG_WARNING, "you are using an obsolete devinput config file");
+			logperror(LOG_WARNING, "get the new version at http://lirc.sourceforge.net/remotes/devinput/lircd.conf.devinput");
+		}
         }
 	
 	*repeat_flagp = repeat_flag;
@@ -430,7 +434,7 @@ char *devinput_rec(struct ir_remote *remotes)
 {
 	struct input_event event;
 	int rd;
-
+	ir_code value;
 
 	LOGPRINTF(1, "devinput_rec");
 	
@@ -448,17 +452,31 @@ char *devinput_rec(struct ir_remote *remotes)
 		  event.time.tv_sec, event.time.tv_usec,
 		  event.type, event.code, event.value);
 	
+	value = (unsigned) event.value;
 #ifdef EV_SW
-	code = ((event.type == EV_KEY || event.type == EV_SW) &&
+	if(value == 2 && (event.type == EV_KEY || event.type == EV_SW))
+	{
+		value = 1;
+	}
+	code_compat = ((event.type == EV_KEY || event.type == EV_SW) &&
+		       event.value != 0) ? 0x80000000 : 0;
 #else
-	code = ((event.type == EV_KEY) &&
+	if(value == 2 && event.type == EV_KEY)
+	{
+		value = 1;
+	}
+	code_compat = ((event.type == EV_KEY) &&
+		       event.value != 0) ? 0x80000000 : 0;
 #endif
-		event.value != 0) ? 0x80000000 : 0;
-	code |= ((event.type & 0x7fff) << 16);
-	code |= event.code;
+	code_compat |= ((event.type & 0x7fff) << 16);
+	code_compat |= event.code;
 
 	repeat_flag = (event.type == EV_KEY && event.value == 2) ? 1:0;
-
+	
+	code = ((ir_code) (unsigned) event.type) << 48 |
+		((ir_code) (unsigned) event.code) << 32 |
+		value;
+	
 	LOGPRINTF(1, "code %.8llx", code);
 
 	if(uinputfd != -1)
