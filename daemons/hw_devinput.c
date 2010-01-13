@@ -83,9 +83,18 @@ struct hardware hw_devinput=
 
 static ir_code code;
 static ir_code code_compat;
-static int repeat_flag=0;
 static int exclusive = 0;
 static int uinputfd = -1;
+static struct timeval start,end,last;
+
+enum
+{
+	RPT_UNKNOWN = -1,
+	RPT_NO = 0,
+	RPT_YES = 1,
+};
+
+static int repeat_state = RPT_UNKNOWN;
 
 static int setup_uinputfd(const char *name, int source)
 {
@@ -422,9 +431,20 @@ int devinput_decode(struct ir_remote *remote,
 		}
         }
 	
-	*repeat_flagp = repeat_flag;
-	*min_remaining_gapp = 0;
-	*max_remaining_gapp = 0;
+	map_gap(remote, &start, &last, 0, repeat_flagp,
+		min_remaining_gapp, max_remaining_gapp);
+	/* override repeat */
+	switch( repeat_state )
+	{
+	case RPT_NO:
+		*repeat_flagp = 0;
+		break;
+	case RPT_YES:
+		*repeat_flagp = 1;
+		break;
+	default:
+		break;
+	}
 	
 	return 1;
 }
@@ -437,6 +457,9 @@ char *devinput_rec(struct ir_remote *remotes)
 	ir_code value;
 
 	LOGPRINTF(1, "devinput_rec");
+	
+	last=end;
+	gettimeofday(&start,NULL);
 	
 	rd = read(hw.fd, &event, sizeof event);
 	if (rd != sizeof event) {
@@ -471,7 +494,21 @@ char *devinput_rec(struct ir_remote *remotes)
 	code_compat |= ((event.type & 0x7fff) << 16);
 	code_compat |= event.code;
 
-	repeat_flag = (event.type == EV_KEY && event.value == 2) ? 1:0;
+	if(event.type == EV_KEY)
+	{
+		if(event.value == 2)
+		{
+			repeat_state = RPT_YES;
+		}
+		else
+		{
+			repeat_state = RPT_NO;
+		}
+	}
+	else
+	{
+		repeat_state = RPT_UNKNOWN;
+	}
 	
 	code = ((ir_code) (unsigned) event.type) << 48 |
 		((ir_code) (unsigned) event.code) << 32 |
@@ -501,5 +538,6 @@ char *devinput_rec(struct ir_remote *remotes)
 	/* ignore EV_SYN */
 	if(event.type == EV_SYN) return NULL;
 
+	gettimeofday(&end,NULL);
 	return decode_all(remotes);
 }
