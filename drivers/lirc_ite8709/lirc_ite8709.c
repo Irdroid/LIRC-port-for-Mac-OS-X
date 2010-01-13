@@ -420,8 +420,8 @@ static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
 	ite8709_dev->use_count = 0;
 	ite8709_dev->irq = pnp_irq(dev, 0);
 	ite8709_dev->io = pnp_port_start(dev, 2);
-	ite8709_dev->hardware_lock = __SPIN_LOCK_UNLOCKED(
-					ite8709_dev->hardware_lock);
+	ite8709_dev->hardware_lock =
+		__SPIN_LOCK_UNLOCKED(ite8709_dev->hardware_lock);
 	ite8709_dev->acc_pulse = 0;
 	ite8709_dev->acc_space = 0;
 	ite8709_dev->lastbit = 0;
