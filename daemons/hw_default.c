@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.41 2009/12/28 13:05:29 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.42 2010/01/16 17:17:42 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -442,8 +442,6 @@ static int write_send_buffer(int lirc)
 
 int default_send(struct ir_remote *remote,struct ir_ncode *code)
 {
-	lirc_t remaining_gap;
-
 	/* things are easy, because we only support one mode */
 	if(hw.send_mode!=LIRC_MODE_PULSE)
 		return(0);
@@ -475,29 +473,8 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 		}
 	}
 #endif
-	remaining_gap=remote->min_remaining_gap;
 	if(!init_send(remote,code)) return(0);
 	
-#if !defined(SIM_SEND) || defined(DAEMONIZE)
-	if(remote->last_code!=NULL)
-	{
-		struct timeval current;
-		unsigned long usecs;
-		
-		gettimeofday(&current,NULL);
-		usecs=time_left(&current,&remote->last_send,remaining_gap*2);
-		if(usecs>0) 
-		{
-			if(repeat_remote==NULL ||
-			   remote!=repeat_remote ||
-			   remote->last_code!=code)
-			{
-				usleep(usecs);
-			}
-		}
-	}
-#endif
-
 	if(write_send_buffer(hw.fd)==-1)
 	{
 		logprintf(LOG_ERR,"write failed");
@@ -537,7 +514,7 @@ static int default_config_frequency()
 		if(default_ioctl(LIRC_SET_REC_CARRIER_RANGE, &min_freq)==-1)
 		{
 			logprintf(LOG_ERR,"could not set receive carrier");
-			logperror(LOG_ERR,"default_init()");
+			logperror(LOG_ERR, __FUNCTION__);
 			return(0);
 		}
 		freq=max_freq;
@@ -548,8 +525,8 @@ static int default_config_frequency()
 	}
 	if(default_ioctl(LIRC_SET_REC_CARRIER, &freq)==-1)
 	{
-		logprintf(LOG_ERR,"could not set receive carrier");
-		logperror(LOG_ERR,"default_init()");
+		logprintf(LOG_ERR, "could not set receive carrier");
+		logperror(LOG_ERR, __FUNCTION__);
 		return(0);
 	}
 	return(1);

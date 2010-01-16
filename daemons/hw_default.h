@@ -1,4 +1,4 @@
-/*      $Id: hw_default.h,v 5.11 2007/07/29 18:20:07 lirc Exp $      */
+/*      $Id: hw_default.h,v 5.12 2010/01/16 17:17:42 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.h ************************************************************
@@ -14,9 +14,6 @@
 #define _HW_DEFAULT_H
 
 #include "ir_remote.h"
-
-inline lirc_t time_left(struct timeval *current,struct timeval *last,
-			lirc_t gap);
 
 int default_init(void);
 int default_config(struct ir_remote *remotes);

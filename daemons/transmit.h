@@ -1,4 +1,4 @@
-/*      $Id: transmit.h,v 5.5 2004/11/20 11:43:35 lirc Exp $      */
+/*      $Id: transmit.h,v 5.6 2010/01/16 17:17:41 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.h **************************************************************
@@ -28,18 +28,6 @@ struct sbuf
 	lirc_t pendings;
 	lirc_t sum;
 };
-
-static inline lirc_t time_left(struct timeval *current,struct timeval *last,
-			lirc_t gap)
-{
-	unsigned long secs,diff;
-	
-	secs=current->tv_sec-last->tv_sec;
-	
-	diff=1000000*secs+current->tv_usec-last->tv_usec;
-	
-	return((lirc_t) (diff<gap ? gap-diff:0));
-}
 
 void init_send_buffer(void);
 inline void set_bit(ir_code *code,int bit,int data);
