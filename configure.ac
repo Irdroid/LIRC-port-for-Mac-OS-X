@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.34 2009/11/15 17:43:58 lirc Exp $
+dnl $Id: configure.ac,v 1.35 2010/01/17 17:02:08 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -560,7 +560,7 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	exaudio)
 		;;
 	ftdi)
-		hw_module="${hw_module} hw_ftdi.o receive.o"
+		hw_module="${hw_module} hw_ftdi.o receive.o transmit.o"
 		ftdi_lib="-lftdi"
 		;;
 	i2cuser)
@@ -970,7 +970,7 @@ fi
 
 if test "$driver" = "ftdi"; then
   lirc_driver="none"
-  hw_module="hw_ftdi.o receive.o"
+  hw_module="hw_ftdi.o receive.o transmit.o"
   HW_DEFAULT="hw_ftdi"
   ftdi_lib="-lftdi"
 fi
