@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.22 2010/01/17 16:39:10 lirc Exp $      */
+/*      $Id: lirc.h,v 5.23 2010/01/23 16:25:28 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -25,10 +25,10 @@
 #define LIRC_VALUE_MASK      0x00FFFFFF
 #define LIRC_MODE2_MASK      0xFF000000
 
-#define LIRC_SPACE(val) ((val)&LIRC_VALUE_MASK | LIRC_MODE2_SPACE)
-#define LIRC_PULSE(val) ((val)&LIRC_VALUE_MASK | LIRC_MODE2_PULSE)
-#define LIRC_FREQUENCY(val) ((val)&LIRC_VALUE_MASK | LIRC_MODE2_FREQUENCY)
-#define LIRC_TIMEOUT(val) ((val)&LIRC_VALUE_MASK | LIRC_MODE2_TIMEOUT)
+#define LIRC_SPACE(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_SPACE)
+#define LIRC_PULSE(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_PULSE)
+#define LIRC_FREQUENCY(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_FREQUENCY)
+#define LIRC_TIMEOUT(val) (((val)&LIRC_VALUE_MASK) | LIRC_MODE2_TIMEOUT)
 
 typedef int lirc_t;
 
