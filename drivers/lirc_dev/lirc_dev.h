@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.38 2009/12/28 15:21:17 jarodwilson Exp $
+ * $Id: lirc_dev.h,v 1.39 2010/01/23 16:28:07 lirc Exp $
  *
  */
 
@@ -68,13 +68,13 @@ static inline void _lirc_buffer_clear(struct lirc_buffer *buf)
 #endif
 static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 {
-	unsigned long flags;
-
 #ifdef LIRC_HAVE_KFIFO
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 	if (buf->fifo)
 		kfifo_reset(buf->fifo);
 #else
+	unsigned long flags;
+
 	if (buf->fifo_initialized) {
 		spin_lock_irqsave(&buf->fifo_lock, flags);
 		kfifo_reset(&buf->fifo);
@@ -82,6 +82,8 @@ static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 	}
 #endif
 #else
+	unsigned long flags;
+
 	lirc_buffer_lock(buf, &flags);
 	_lirc_buffer_clear(buf);
 	lirc_buffer_unlock(buf, &flags);
