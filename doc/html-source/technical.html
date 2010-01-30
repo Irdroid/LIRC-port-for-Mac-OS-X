@@ -73,9 +73,16 @@ W | +------------------------+ +----------+ +-------------------------+
 	    <UL>
 	      <LI>bits 0-23 contain the length of the pulse/space in
 		microseconds</LI>
-	      <LI>bit 24 is either 0, meaning space, or 1, meaning
-		pulse</LI> 
-	      <LI>all other bits are unused</LI>
+	      <LI>bits 31-24 can be:
+		<UL>
+		  <LI>0: space</LI>
+		  <LI>1: pulse</LI>
+		  <LI>2: timeout (has to be enabled using
+		    LIRC_SET_REC_TIMEOUT ioctl and is not supported by
+		    all receivers)</LI>
+		</UL>
+	      </LI> 
+	      <LI>all other values are reserved</LI>
 	    </UL>
 	    <P>
 	      Lengths greater than or equal to 16 seconds are clamped to
@@ -300,7 +307,7 @@ W | +------------------------+ +----------+ +-------------------------+
       can look as simple as this:
     </P>
     <PRE>
-/*      $Id: technical.html,v 1.33 2009/12/28 13:05:29 lirc Exp $      */
+/*      $Id: technical.html,v 1.34 2010/01/30 15:01:29 lirc Exp $      */
 
 /****************************************************************************
  ** irexec.c ****************************************************************

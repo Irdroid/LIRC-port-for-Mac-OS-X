@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.40 2009/12/28 13:05:29 lirc Exp $      */
+/*      $Id: receive.c,v 5.41 2010/01/30 15:01:29 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -63,6 +63,24 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 			if(!data)
 			{
 				LOGPRINTF(3,"timeout: %u", maxusec);
+				return 0;
+			}
+			if(LIRC_IS_TIMEOUT(data))
+			{
+				static int print_once = 1;
+				
+				if(LIRC_VALUE(data) < maxusec && print_once)
+				{
+					print_once = 0;
+					logprintf(LOG_WARNING,
+						  "timeout value is smaller "
+						  "than requested: %lu < %lu",
+						  (unsigned long)
+						  LIRC_VALUE(data),
+						  (unsigned long) maxusec);
+				}
+				LOGPRINTF(1,"timeout received: %lu",
+					  (unsigned long) LIRC_VALUE(data));
 				return 0;
 			}
 

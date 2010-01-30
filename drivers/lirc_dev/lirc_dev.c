@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.99 2009/12/28 15:20:32 jarodwilson Exp $
+ * $Id: lirc_dev.c,v 1.100 2010/01/30 15:01:29 lirc Exp $
  *
  */
 
@@ -715,6 +715,20 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		break;
 	case LIRC_GET_LENGTH:
 		result = put_user(ir->d.code_length, (unsigned long *) arg);
+		break;
+	case LIRC_GET_MIN_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.min_timeout == 0)
+			return -ENOSYS;
+		
+		result = put_user(ir->d.min_timeout, (lirc_t *) arg);
+		break;
+	case LIRC_GET_MAX_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.max_timeout == 0)
+			return -ENOSYS;
+		
+		result = put_user(ir->d.max_timeout, (lirc_t *) arg);
 		break;
 	default:
 		result = -EINVAL;

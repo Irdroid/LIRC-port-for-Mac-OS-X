@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.48 2009/03/15 09:34:00 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.49 2010/01/30 15:01:29 lirc Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -54,7 +54,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.48 $"
+#define DRIVER_VERSION	"$Revision: 1.49 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -83,6 +83,7 @@ MODULE_DEVICE_TABLE(usb, streamzap_table);
 
 #define STREAMZAP_PULSE_MASK 0xf0
 #define STREAMZAP_SPACE_MASK 0x0f
+#define STREAMZAP_TIMEOUT    0xff
 #define STREAMZAP_RESOLUTION 256
 
 /* number of samples buffered */
@@ -154,6 +155,7 @@ struct usb_streamzap {
 	struct timer_list	flush_timer;
 	int			flush;
 	int			in_use;
+	int			timeout_enabled;
 };
 
 
@@ -317,12 +319,14 @@ static void push_full_pulse(struct usb_streamzap *sz,
 
 		deltv = sz->signal_start.tv_sec-sz->signal_last.tv_sec;
 		if (deltv > 15) {
-			tmp = PULSE_MASK; /* really long time */
+			/* really long time */
+			tmp = LIRC_SPACE(LIRC_VALUE_MASK);
 		} else {
 			tmp = (lirc_t) (deltv*1000000+
 					sz->signal_start.tv_usec -
 					sz->signal_last.tv_usec);
 			tmp -= sz->sum;
+			tmp = LIRC_SPACE(tmp);
 		}
 		dprintk("ls %u", sz->driver.minor, tmp);
 		push(sz, (char *)&tmp);
@@ -334,7 +338,7 @@ static void push_full_pulse(struct usb_streamzap *sz,
 	pulse = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	pulse += STREAMZAP_RESOLUTION/2;
 	sz->sum += pulse;
-	pulse |= PULSE_BIT;
+	pulse =  LIRC_PULSE(pulse);
 
 	dprintk("p %u", sz->driver.minor, pulse&PULSE_MASK);
 	push(sz, (char *)&pulse);
@@ -354,6 +358,7 @@ static void push_full_space(struct usb_streamzap *sz,
 	space = ((lirc_t) value)*STREAMZAP_RESOLUTION;
 	space += STREAMZAP_RESOLUTION/2;
 	sz->sum += space;
+	space = LIRC_SPACE(space);
 	dprintk("s %u", sz->driver.minor, space);
 	push(sz, (char *)&space);
 }
@@ -426,9 +431,16 @@ static void usb_streamzap_irq(struct urb *urb)
 				sz->decoder_state = IgnorePulse;
 				break;
 			case FullSpace:
-				if (sz->buf_in[i] == 0xff) {
+				if (sz->buf_in[i] == STREAMZAP_TIMEOUT) {
 					sz->idle = 1;
 					stop_timer(sz);
+					if (sz->timeout_enabled) {
+						lirc_t timeout =
+							LIRC_TIMEOUT
+							(STREAMZAP_TIMEOUT *
+							 STREAMZAP_RESOLUTION);
+						push(sz, (char *)&timeout);
+					}
 					flush_delay_buffer(sz);
 				} else
 					push_full_space(sz, sz->buf_in[i]);
@@ -579,8 +591,12 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	sz->driver.minor = -1;
 	sz->driver.sample_rate = 0;
 	sz->driver.code_length = sizeof(lirc_t) * 8;
-	sz->driver.features = LIRC_CAN_REC_MODE2 | LIRC_CAN_GET_REC_RESOLUTION;
+	sz->driver.features = LIRC_CAN_REC_MODE2 |
+		LIRC_CAN_GET_REC_RESOLUTION |
+		LIRC_CAN_SET_REC_TIMEOUT;
 	sz->driver.data = sz;
+	sz->driver.min_timeout = STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION;
+	sz->driver.max_timeout = STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION;
 	sz->driver.rbuf = &sz->lirc_buf;
 	sz->driver.set_use_inc = &streamzap_use_inc;
 	sz->driver.set_use_dec = &streamzap_use_dec;
@@ -733,18 +749,29 @@ static void streamzap_use_dec(void *data)
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg)
 {
-	int result;
+	int result = 0;
+	lirc_t val;
+	struct usb_streamzap *sz = lirc_get_pdata(filep);
 
 	switch (cmd) {
 	case LIRC_GET_REC_RESOLUTION:
 		result = put_user(STREAMZAP_RESOLUTION, (unsigned int *) arg);
-		if (result)
-			return result;
+		break;
+	case LIRC_SET_REC_TIMEOUT:
+		result = get_user(val, (lirc_t *)arg);
+		if (result == 0) {
+			if (val == STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION)
+				sz->timeout_enabled = 1;
+			else if (val == 0)
+				sz->timeout_enabled = 0;
+			else 
+				result = -EINVAL;
+		}
 		break;
 	default:
 		return -ENOIOCTLCMD;
 	}
-	return 0;
+	return result;
 }
 
 /**

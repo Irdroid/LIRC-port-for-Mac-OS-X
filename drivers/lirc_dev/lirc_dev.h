@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.39 2010/01/23 16:28:07 lirc Exp $
+ * $Id: lirc_dev.h,v 1.40 2010/01/30 15:01:29 lirc Exp $
  *
  */
 
@@ -27,6 +27,8 @@
 #ifdef LIRC_HAVE_KFIFO
 #include <linux/kfifo.h>
 #endif
+
+#include "drivers/lirc.h"
 
 struct lirc_buffer {
 	wait_queue_head_t wait_poll;
@@ -333,6 +335,8 @@ struct lirc_driver {
 	int sample_rate;
 	unsigned long features;
 	void *data;
+	lirc_t min_timeout;
+	lirc_t max_timeout;
 	int (*add_to_buf) (void *data, struct lirc_buffer *buf);
 #ifndef LIRC_REMOVE_DURING_EXPORT
 	wait_queue_head_t* (*get_queue) (void *data);
