@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.114 2010/01/10 21:24:08 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.115 2010/02/02 02:16:32 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -579,6 +579,10 @@ static int send_packet(struct imon_context *context)
 
 	/* Check if we need to use control or interrupt urb */
 	if (!context->tx_control) {
+		if (!context->tx_endpoint) {
+			err("%s: device has no tx endpoint", __func__);
+			return -EINVAL;
+		}
 		pipe = usb_sndintpipe(context->usbdev_intf0,
 				      context->tx_endpoint->bEndpointAddress);
 		interval = context->tx_endpoint->bInterval;
@@ -2203,7 +2207,8 @@ static int imon_probe(struct usb_interface *interface,
 	}
 
 	/* set IR protocol/remote type */
-	imon_set_ir_protocol(context);
+	if (context->tx_control || context->tx_endpoint)
+		imon_set_ir_protocol(context);
 
 	printk(KERN_INFO MOD_NAME ": iMON device (%04x:%04x, intf%d) on "
 	       "usb<%d:%d> initialized\n", vendor, product, ifnum,
