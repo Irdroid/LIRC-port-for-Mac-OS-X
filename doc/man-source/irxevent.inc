@@ -97,7 +97,7 @@ LINE    = "config =" <KEY|BUTTON|XYKEY> <TARGET> |
 XYKEY   = "xy_Key" <x_position> <y_position> <MOD><KEYSPEC>
 KEY     = "Key" <MOD><KEYSPEC>
 MOD     = ["shift\-"]["numlock\-"]["ctrl\-"]["alt\-"]["meta\-"]
-          ["numlock\-"]["mod3\-"]["mod4\-"]["scrlock\-"]
+          ["numlock\-"]["mod3\-"]["mod4\-"]["mod5\-"]["altgr\-"]["scrlock\-"]
 KEYSPEC = Keyname | "KeySym:"KeySym | "KeyCode:"KeyCode
 BUTTON  = "Button" <1..5> <x_position> <y_position>
 TARGET  = Windowname | "WindowID" id | "CurrentWindow" | "RootWindow"

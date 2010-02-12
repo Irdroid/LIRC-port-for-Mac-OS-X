@@ -1,4 +1,4 @@
-/*      $Id: irxevent.c,v 5.20 2009/09/13 11:00:00 lirc Exp $      */
+/*      $Id: irxevent.c,v 5.21 2010/02/12 08:03:41 lirc Exp $      */
 
 /****************************************************************************
  ** irxevent.c **************************************************************
@@ -123,7 +123,7 @@ static struct keymodlist_t keymodlist[]=
   {"NUMLOCK", Mod2Mask},
   {"MOD3",    Mod3Mask},  /* I don't have a clue what key maps to this. */
   {"MOD4",    Mod4Mask},  /* I don't have a clue what key maps to this. */
-  {"SCRLOCK", Mod5Mask},
+  {"MOD5",    Mod5Mask},{"ALTGR",   Mod5Mask},{"SCRLOCK", Mod5Mask},
   {NULL,0},
 };
 
