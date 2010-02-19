@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.115 2010/02/02 02:16:32 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.116 2010/02/19 16:01:39 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1361,6 +1361,9 @@ static void imon_incoming_packet(struct imon_context *context,
 	const unsigned char ch_down[] = { 0x28, 0x87, 0x95, 0xb7 };
 #endif
 
+	if (!context->ir_onboard_decode && context->ir_isopen)
+		goto handle_rawir;
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	mouse = context->mouse;
 	if (context->display_type == IMON_DISPLAY_TYPE_VGA)
@@ -1606,6 +1609,8 @@ static void imon_incoming_packet(struct imon_context *context,
 	    ((buf[6] == 0x4E && buf[7] == 0xAF) ||	/* LT */
 	     (buf[6] == 0x5E && buf[7] == 0xAF)))	/* DT */
 		return;		/* filler frame, no data here */
+
+handle_rawir:
 
 	if (debug) {
 		if (context->ir_onboard_decode)
