@@ -1,4 +1,4 @@
-/*      $Id: lircrcd.c,v 5.4 2009/11/09 19:13:24 lirc Exp $      */
+/*      $Id: lircrcd.c,v 5.5 2010/02/27 08:02:28 lirc Exp $      */
 
 /****************************************************************************
  ** lircrcd.c ***************************************************************
@@ -445,6 +445,10 @@ static int code_func(int fd,char *message,char *arguments)
 	struct config_info *ci;
 	int ret;
 	
+	if(arguments == NULL)
+	{
+		return send_error(fd, message, "protocol error\n");
+	}
 	index = get_client_index(fd);
 	if(index == -1)
 	{
