@@ -20,6 +20,7 @@ extern struct hardware hw_creative;
 extern struct hardware hw_creative_infracd;
 extern struct hardware hw_default;
 extern struct hardware hw_devinput;
+extern struct hardware hw_dfclibusb;
 extern struct hardware hw_dsp;
 extern struct hardware hw_dvico;
 extern struct hardware hw_ea65;
@@ -112,6 +113,9 @@ struct hardware *hw_list[] =
 	&hw_default,
 #ifdef HAVE_LINUX_DEVINPUT
 	&hw_devinput,
+#endif
+#ifdef HAVE_LIBUSB
+	&hw_dfclibusb,
 #endif
 #ifdef HAVE_SOUNDCARD
 	&hw_dsp,

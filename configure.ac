@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.35 2010/01/17 17:02:08 lirc Exp $
+dnl $Id: configure.ac,v 1.36 2010/02/27 19:20:44 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -323,7 +323,7 @@ AH_TEMPLATE([USE_SYSLOG],
 
 if test -n "${LIBUSB_CONFIG}"; then
   AC_DEFINE(HAVE_LIBUSB)
-  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (commandir) (srm7500libusb)"
+  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (dfclibusb) (commandir) (srm7500libusb)" 
 fi
 
 AC_CHECK_LIB(caraca_client, caraca_init,
@@ -437,7 +437,7 @@ AC_ARG_WITH(driver,
                           awlibusb, bestbuy, bestbuy2, breakoutbox,
                           bte, bw6130, caraca, chronos, commandir,
                           comX, cph06x, creative, creative_infracd,
-                          devinput, digimatrix, dsp, dvico, ea65,
+                          devinput, dfclibusb, digimatrix, dsp, dvico, ea65,
                           ene0100, exaudio, flyvideo, ftdi, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, i2cuser,
@@ -463,7 +463,6 @@ driver="unset"
 )
 
 #START HARDWARE HEURISTIC
-
 lirc_driver="$driver"
 lircd_conf=""
 lircmd_conf=""
@@ -476,6 +475,7 @@ portaudio_lib=""
 alsa_lib=""
 atilibusb_lib=""
 awlibusb_lib=""
+dfclibusb_lib=""
 srm7500libusb_lib=""
 hw_module="hw_default.o receive.o transmit.o"
 HW_DEFAULT="hw_default"
@@ -547,6 +547,11 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	devinput)
 		hw_module="${hw_module} hw_devinput.o"
+		;;
+	dfclibusb)
+		hw_module="${hw_module} hw_dfclibusb.o receive.o"
+		dfclibusb_lib=`${LIBUSB_CONFIG} --libs`
+		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
 	dsp)
 		hw_module="${hw_module} hw_dsp.o receive.o"
@@ -924,6 +929,16 @@ if test "$driver" = "devinput"; then
   hw_module="hw_devinput.o"
   HW_DEFAULT="hw_devinput"
   lircd_conf="devinput/lircd.conf.devinput"
+fi
+
+if test "$driver" = "dfclibusb"; then
+  lirc_driver="$driver"
+  hw_module="hw_dfclibusb.o receive.o"
+  HW_DEFAULT="hw_dfclibusb"
+  if test -n "${LIBUSB_CONFIG}"; then
+    dfclibusb_lib=`${LIBUSB_CONFIG} --libs`
+    CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+  fi
 fi
 
 if test "$driver" = "digimatrix"; then
@@ -1444,7 +1459,7 @@ else
     AC_MSG_ERROR([*** you need to have the Linux kernel source installed
 	for this driver])
     ;;
-  atilibusb|awlibusb|commandir|srm7500libusb)
+  atilibusb|awlibusb|commandir|dfclibusb|srm7500libusb)
     AC_MSG_ERROR([*** you need to have libusb installed for this driver.
 
 Get it at:
@@ -1497,6 +1512,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "bw6130" || \
 	test "$lirc_driver" = "caraca" || \
 	test "$lirc_driver" = "commandir" || \
+	test "$lirc_driver" = "dfclibusb" || \
 	test "$lirc_driver" = "dvico" || \
 	test "$lirc_driver" = "iguanaIR" || \
 	test "$lirc_driver" = "irman" || \
@@ -1686,7 +1702,7 @@ if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
 	receive="receive.o"
 fi
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib} ${srm7500libusb_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${dfclibusb_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib} ${srm7500libusb_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)

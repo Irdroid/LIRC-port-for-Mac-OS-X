@@ -122,6 +122,7 @@ hw_menu_entry: @hw-usb
 	awlibusb: "Awox RF/IR Remote (userspace)"
 	sb0540: "Creative USB IR Receiver (SB0540)"
 	commandir: "CommandIR Multi-IR Transceiver (userspace)"
+	dfclibusb: "DFC USB InfraRed Remote Control (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
 	ftdi: "FTDI FT232-based IR Receiver"
@@ -215,6 +216,7 @@ param_type: \
 	cph06x \
 	creative_infracd \
 	devinput \
+	dfclibusb \
 	digimatrix \
 	dsp \
 	dvico \
@@ -289,6 +291,7 @@ default_param: \
 	cph06x \
 	creative_infracd \
 	devinput \
+	dfclibusb \
 	digimatrix \
 	dsp \
 	dvico \
@@ -409,6 +412,7 @@ remote: \
 	audio \
 	audio_alsa \
 	commandir \
+	dfclibusb \
 	digimatrix \
 	dsp \
 	ene0100 \

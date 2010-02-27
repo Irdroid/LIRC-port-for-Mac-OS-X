@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.69 2009/11/15 17:43:59 lirc Exp $
+## $Id: Makefile.am,v 5.70 2010/02/27 19:20:44 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -29,6 +29,7 @@ EXTRA_libhw_module_a_SOURCES = \
 			hw_creative_infracd.c hw_creative_infracd.h \
 			hw_default.c hw_default.h \
 			hw_devinput.c \
+			hw_dfclibusb.c \
 			hw_dsp.c \
 			hw_ea65.c hw_ea65.h \
 			hw_ftdi.c \

@@ -1,4 +1,5 @@
 0.8.7-CVS: future
+  * added support for DFC USB InfraRed Remote Control (Davio Franke)
   * added support for simple transmitter circuit connected to
     soundcard (Bob van Loosen)
   * added support for Philips SRM 7500 RF remote (Henning Glawe)
