@@ -185,6 +185,8 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
 	/* Topseed eHome Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x000a) },
+	/* Topseed eHome Infrared Transceiver */
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0011) },
 	/* Ricavision internal Infrared Transceiver */
 	{ USB_DEVICE(VENDOR_RICAVISION, 0x0010) },
 	/* Itron ione Libra Q-11 */
@@ -250,6 +252,7 @@ static struct usb_device_id transmitter_mask_list[] = {
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0007) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x000a) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0011) },
 	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
 	{}
 };
