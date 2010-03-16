@@ -132,3 +132,72 @@ begin remote
       end codes
 
 end remote
+
+#
+# lircd.conf for MCE Remote with 0xffdc device id IMON IR:
+#
+#Configuration for MCE Remote using the Soundgraph iMON IR/LCD:
+begin remote
+
+  name         MCE_via_iMON_ffdc
+  bits         32
+  eps          30
+  aeps        100
+
+  one             0     0
+  zero            0     0
+  gap         203992
+  toggle_bit_mask 0x8000
+
+      begin codes
+          Power                0x800F040C
+          TV_power             0x800F0465
+          Home                 0x800F040D
+          Guide                0x800F0426
+          LiveTV               0x800F0425
+          DVD                  0x800F0424
+          Teletext             0x800F045A
+          RecordTV             0x800F0448
+          Back                 0x800F0423
+          Forward              0x800F0414
+          Stop                 0x800F0419
+          Replay               0x800F041B
+          Skip                 0x800F041A
+          Play                 0x800F0416
+          Record               0x800F0417
+          Rewind               0x800F0415
+          Pause                0x800F0418
+          More                 0x800F040F
+          Left                 0x800F0420
+          Right                0x800F0421
+          Up                   0x800F041E
+          Down                 0x800F041F
+          OK                   0x800F0422
+          Chan_Down            0x800F0413
+          Chan_Up              0x800F0412
+          Vol_Down             0x800F0411
+          Vol_Up               0x800F0410
+          Mute                 0x800F040E
+          1                    0x800F0401
+          2                    0x800F0402
+          3                    0x800F0403
+          4                    0x800F0404
+          5                    0x800F0405
+          6                    0x800F0406
+          7                    0x800F0407
+          8                    0x800F0408
+          9                    0x800F0409
+          Zero                 0x800F0400
+          *                    0x800F041D
+          Clear                0x800F040A
+          #                    0x800F041C
+          Enter                0x800F040B
+          Red                  0x800F045B
+          Green                0x800F045C
+          Yellow               0x800F045D
+          Blue                 0x800F045E
+          Antec_knob_left      0x01000000
+          Antec_knob_right     0x00010000
+      end codes
+
+end remote
