@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.53 2009/03/08 19:22:28 lirc Exp $      */
+/*      $Id: lirc_parallel.c,v 5.54 2010/03/17 14:16:16 jarodwilson Exp $      */
 /*
  * lirc_parallel.c
  *
@@ -34,7 +34,9 @@
 #error "**********************************************************"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #ifdef CONFIG_SMP
 #error "--- Sorry, this driver is not SMP safe. ---"
 #endif
@@ -43,7 +45,6 @@
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>
-#include <linux/autoconf.h>
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/ioport.h>

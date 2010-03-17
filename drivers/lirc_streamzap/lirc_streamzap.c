@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.49 2010/01/30 15:01:29 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.50 2010/03/17 14:16:16 jarodwilson Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -35,7 +35,9 @@
 #error "Sorry, this driver needs kernel version 2.4.0 or higher"
 #error "*******************************************************"
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -54,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.49 $"
+#define DRIVER_VERSION	"$Revision: 1.50 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 

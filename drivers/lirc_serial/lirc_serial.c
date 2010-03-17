@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.104 2009/03/15 09:34:00 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.105 2010/03/17 14:16:16 jarodwilson Exp $      */
 /*
  * lirc_serial.c
  *
@@ -60,7 +60,9 @@
 #error "**********************************************************"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 
 #if defined(CONFIG_SERIAL) || defined(CONFIG_SERIAL_8250)
 #warning "******************************************"
@@ -141,7 +143,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.104 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.105 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {

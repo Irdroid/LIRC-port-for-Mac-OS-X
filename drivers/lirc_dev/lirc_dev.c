@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.100 2010/01/30 15:01:29 lirc Exp $
+ * $Id: lirc_dev.c,v 1.101 2010/03/17 14:16:15 jarodwilson Exp $
  *
  */
 
@@ -32,7 +32,9 @@
 #error "**********************************************************"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>

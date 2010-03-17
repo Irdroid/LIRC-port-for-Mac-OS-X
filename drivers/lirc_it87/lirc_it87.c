@@ -39,7 +39,9 @@
 
 #include <linux/version.h>
 #include <linux/module.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #include <linux/sched.h>
 #include <linux/errno.h>
 #include <linux/signal.h>

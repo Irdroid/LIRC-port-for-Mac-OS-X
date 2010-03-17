@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.116 2010/02/19 16:01:39 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.117 2010/03/17 14:16:15 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -30,7 +30,9 @@
 #error "*** Sorry, this driver requires a 2.6 kernel"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 
 #include <linux/errno.h>
 #include <linux/init.h>

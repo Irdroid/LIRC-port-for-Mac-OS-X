@@ -1,4 +1,4 @@
-/*      $Id: lirc_wpc8769l.c,v 1.8 2009/03/15 09:34:01 lirc Exp $      */
+/*      $Id: lirc_wpc8769l.c,v 1.9 2010/03/17 14:16:16 jarodwilson Exp $      */
 
 /****************************************************************************
  ** lirc_wpc8769l.c ****************************************************
@@ -37,7 +37,9 @@
 #error "**********************************************************"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 
 #include <linux/module.h>
 #include <linux/errno.h>

@@ -47,7 +47,9 @@
 #error "*******************************************************"
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/kmod.h>

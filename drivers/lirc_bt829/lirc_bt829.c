@@ -22,7 +22,9 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #error "This driver needs kernel version 2.4.0 or higher"
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
+#endif
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/threads.h>
