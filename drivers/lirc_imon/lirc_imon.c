@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.117 2010/03/17 14:16:15 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.118 2010/03/17 14:27:19 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -1378,11 +1378,11 @@ static void imon_incoming_packet(struct imon_context *context,
 			context->pad_mouse = ~(context->pad_mouse) & 0x1;
 			dprintk("toggling to %s mode\n",
 				context->pad_mouse ? "mouse" : "keyboard");
+			return;
 		} else {
 			context->pad_mouse = 0;
-			dprintk("mouse mode was disabled by modparam\n");
+			dprintk("mouse mode disabled, passing key value\n");
 		}
-		return;
 	}
 
 	/* send touchscreen events through input subsystem if touchpad data */
