@@ -348,7 +348,8 @@ static unsigned long usecs_to_jiffies(const unsigned int u)
 #endif
 }
 #endif
-static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf, int len)
+static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf,
+				 int len, bool out)
 {
 	char codes[USB_BUFLEN * 3 + 1];
 	int i;
@@ -362,8 +363,8 @@ static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf, int len)
 	for (i = 0; i < len && i < USB_BUFLEN; i++)
 		snprintf(codes + i * 3, 4, "%02x ", buf[i] & 0xFF);
 
-	printk(KERN_INFO "" DRIVER_NAME "[%d]: data received %s (length=%d)\n",
-		ir->devnum, codes, len);
+	printk(KERN_INFO "" DRIVER_NAME "[%d]: %sbound data: %s (length=%d)\n",
+		ir->devnum, (out ? "out" : " in"), codes, len);
 }
 
 static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
@@ -383,7 +384,7 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 			ir->devnum, urb->status, len);
 
 		if (debug)
-			mceusb_dev_printdata(ir, urb->transfer_buffer, len);
+			mceusb_dev_printdata(ir, urb->transfer_buffer, len, true);
 	}
 
 }
@@ -648,7 +649,7 @@ static void mceusb_dev_recv(struct urb *urb, struct pt_regs *regs)
 	buf_len = urb->actual_length;
 
 	if (debug)
-		mceusb_dev_printdata(ir, urb->transfer_buffer, buf_len);
+		mceusb_dev_printdata(ir, urb->transfer_buffer, buf_len, false);
 
 	if (ir->send_flags == RECV_FLAG_IN_PROGRESS) {
 		ir->send_flags = SEND_FLAG_COMPLETE;
