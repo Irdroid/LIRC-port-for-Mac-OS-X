@@ -511,3 +511,64 @@ begin remote
 end remote
 
 
+#
+# http://www.pollin.de/shop/dt/NDY1ODcyOTk-/Computer_und_Zubehoer/Hardware/Maeuse_Unterlagen_Joystick/PC_Funkfernbedienung_40005929.html
+#
+# "Medion", "P/N: 40005927" und "NBC Remote Control".
+#
+
+begin remote
+
+  name  Medion_MD8800_X10
+  bits           16
+  eps            30
+  aeps          100
+
+  one             0     0
+  zero            0     0
+  pre_data_bits   8
+  pre_data       0x14
+  post_data_bits  16
+  post_data      0x0
+  gap          139995
+  min_repeat      2
+  toggle_bit_mask 0x80800000
+
+      begin codes
+          TV                       0x81AC
+          Video                    0x82AD
+          Photo                    0x5984
+          Music                    0x5B86
+          PC                       0x83AE
+          Text                     0xEB16
+          Up                       0x6F9A
+          Down                     0xF722
+          Left                     0x729D
+          Right                    0xF41F
+          Vol_Up                   0x5E89
+          Vol_Down                 0xDD08
+          OK                       0x739E
+          Mute                     0xD500
+          Prog_Up                  0x608B
+          Prog_Down                0xE10C
+          1                        0x628D
+          2                        0xE30E
+          3                        0x648F
+          4                        0xE510
+          5                        0x6691
+          6                        0xE712
+          7                        0x6893
+          8                        0xE914
+          9                        0x6A95
+          0                        0xEC17
+          Info                     0x84AF
+          Rewind                   0xF924
+          Play                     0x7AA5
+          Forward                  0xFB26
+          Prev                     0xF621
+          Next                     0x78A3
+          Stop                     0xFD28
+          Rec                      0x7CA7
+      end codes
+end remote
+
