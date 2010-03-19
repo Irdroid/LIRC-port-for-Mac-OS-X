@@ -375,7 +375,7 @@ static void request_packet_async(struct mceusb_dev *ir,
 		if (unlikely(!async_urb))
 			return;
 
-		async_buf = kmalloc(size, GFP_KERNEL);
+		async_buf = kzalloc(size, GFP_KERNEL);
 		if (!async_buf) {
 			usb_free_urb(async_urb);
 			return;
@@ -1037,7 +1037,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	if (!driver)
 		goto mem_alloc_fail;
 
-	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
+	rbuf = kzalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 	if (!rbuf)
 		goto mem_alloc_fail;
 
