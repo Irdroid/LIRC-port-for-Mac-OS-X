@@ -233,9 +233,14 @@ static struct usb_device_id mceusb_dev_table[] = {
 	{ }
 };
 
-static struct usb_device_id pinnacle_list[] = {
+static struct usb_device_id gen3_list[] = {
 	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
+	{}
+};
+
+static struct usb_device_id pinnacle_list[] = {
+	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
 	{}
 };
 
@@ -283,7 +288,7 @@ struct mceusb_dev {
 	unsigned char is_pulse;
 	struct {
 		u32 connected:1;
-		u32 pinnacle:1;
+		u32 gen3:1;
 		u32 transmitter_mask_inverted:1;
 		u32 microsoft_gen1:1;
 		u32 reserved:28;
@@ -1084,7 +1089,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	int i;
 	char buf[63], name[128] = "";
 	int mem_failure = 0;
-	int is_pinnacle;
+	int is_gen3;
 	int is_microsoft_gen1;
 
 	dprintk(DRIVER_NAME ": %s called\n", __func__);
@@ -1095,7 +1100,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 
 	idesc = intf->cur_altsetting;
 
-	is_pinnacle = usb_match_id(intf, pinnacle_list) ? 1 : 0;
+	is_gen3 = usb_match_id(intf, gen3_list) ? 1 : 0;
 
 	is_microsoft_gen1 = usb_match_id(intf, microsoft_gen1_list) ? 1 : 0;
 
@@ -1115,13 +1120,12 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (is_pinnacle)
+			if (!is_gen3)
 				/*
-				 * setting seems to 1 seem to cause issues with
-				 * Pinnacle timing out on transfer.
+				 * ideally, we'd use what the device offers up,
+				 * but that leads to non-functioning first and
+				 * second-gen devices.
 				 */
-				ep_in->bInterval = ep->bInterval;
-			else
 				ep_in->bInterval = 1;
 		}
 
@@ -1137,13 +1141,12 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (is_pinnacle)
+			if (!is_gen3)
 				/*
-				 * setting seems to 1 seem to cause issues with
-				 * Pinnacle timing out on transfer.
+				 * ideally, we'd use what the device offers up,
+				 * but that leads to non-functioning first and
+				 * second-gen devices.
 				 */
-				ep_out->bInterval = ep->bInterval;
-			else
 				ep_out->bInterval = 1;
 		}
 	}
@@ -1210,7 +1213,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	ir->len_in = maxp;
 	ir->overflow_len = 0;
 	ir->flags.connected = 0;
-	ir->flags.pinnacle = is_pinnacle;
+	ir->flags.gen3 = is_gen3;
 	ir->flags.microsoft_gen1 = is_microsoft_gen1;
 	ir->flags.transmitter_mask_inverted =
 		usb_match_id(intf, transmitter_mask_list) ? 0 : 1;
@@ -1242,8 +1245,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	ir->urb_in->transfer_dma = ir->dma_in;
 	ir->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
-	/* initialize device */
-	if (ir->flags.pinnacle) {
+	if (usb_match_id(intf, pinnacle_list)) {
 		int usbret;
 
 		/*
@@ -1258,7 +1260,14 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 		usbret = usb_reset_configuration(dev);
 		printk(DRIVER_NAME "[%d]: usb reset config ret %x\n",
 		       devnum, usbret);
+	}
 
+	/* initialize device */
+	if (ir->flags.gen3) {
+		mce_sync_in(ir, NULL, maxp);
+
+		/* device reset */
+		mce_async_out(ir, DEVICE_RESET, sizeof(DEVICE_RESET));
 		mce_sync_in(ir, NULL, maxp);
 
 		/* get the carrier and frequency */
@@ -1271,6 +1280,10 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 
 		/* get receiver timeout value */
 		mce_async_out(ir, GET_RX_TIMEOUT, sizeof(GET_RX_TIMEOUT));
+		mce_sync_in(ir, NULL, maxp);
+
+		/* get receiver sensor setting */
+		mce_async_out(ir, GET_RX_SENSOR, sizeof(GET_RX_SENSOR));
 		mce_sync_in(ir, NULL, maxp);
 
 	} else if (ir->flags.microsoft_gen1) {
