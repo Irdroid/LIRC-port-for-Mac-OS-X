@@ -352,7 +352,9 @@ static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf,
 				 int len, bool out)
 {
 	char codes[USB_BUFLEN * 3 + 1];
+	char inout[9];
 	int i;
+	u8 cmd, subcmd, data1, data2;
 
 	if (len <= 0)
 		return;
@@ -365,6 +367,106 @@ static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf,
 
 	printk(KERN_INFO "" DRIVER_NAME "[%d]: %sbound data: %s (length=%d)\n",
 		ir->devnum, (out ? "out" : " in"), codes, len);
+
+	if (out)
+		strcpy(inout, "Request\0");
+	else
+		strcpy(inout, "Got\0");
+
+	cmd    = buf[0] & 0xff;
+	subcmd = buf[1] & 0xff;
+	data1  = buf[2] & 0xff;
+	data2  = buf[3] & 0xff;
+
+	switch (cmd) {
+	case 0x00:
+		if (subcmd == 0xff && data1 == 0xaa)
+			printk(KERN_INFO "Device reset requested\n");
+		else
+			printk(KERN_INFO "Unknown command 0x%02x 0x%02x\n",
+				cmd, subcmd);
+		break;
+	case 0xff:
+		switch (subcmd) {
+		case 0x0b:
+			if (len == 2)
+				printk(KERN_INFO "Get hw/sw rev?\n");
+			else
+				printk(KERN_INFO "hw/sw rev 0x%02x 0x%02x "
+					"0x%02x 0x%02x\n", data1, data2,
+					buf[4], buf[5]);
+			break;
+		case 0xaa:
+			printk(KERN_INFO "Device reset requested\n");
+			break;
+		case 0xfe:
+			printk(KERN_INFO "Previous command not supported\n");
+			break;
+		case 0x18:
+		case 0x1b:
+		default:
+			printk(KERN_INFO "Unknown command 0x%02x 0x%02x\n",
+				cmd, subcmd);
+			break;
+		}
+		break;
+	case 0x9f:
+		switch (subcmd) {
+		case 0x03:
+			printk(KERN_INFO "Ping\n");
+			break;
+		case 0x04:
+			printk(KERN_INFO "Resp to 9f 05 of 0x%02x 0x%02x\n",
+				data1, data2);
+			break;
+		case 0x06:
+			printk(KERN_INFO "%s carrier mode and freq of 0x%02x 0x%02x\n",
+				inout, data1, data2);
+			break;
+		case 0x07:
+			printk(KERN_INFO "Get carrier mode and freq\n");
+			break;
+		case 0x08:
+			printk(KERN_INFO "%s transmit blaster mask of 0x%02x\n",
+				inout, data1);
+			break;
+		case 0x0c:
+			/* value is in units of 50us, so x*50/100 or x/2 ms */
+			printk(KERN_INFO "%s receive timeout of %d ms\n",
+				inout, ((data1 << 8) | data2) / 2);
+			break;
+		case 0x0d:
+			printk(KERN_INFO "Get receive timeout\n");
+			break;
+		case 0x13:
+			printk(KERN_INFO "Get transmit blaster mask\n");
+			break;
+		case 0x14:
+			printk(KERN_INFO "%s %s-range receive sensor in use\n",
+				inout, data1 == 0x02 ? "short" : "long");
+			break;
+		case 0x15:
+			if (len == 2)
+				printk(KERN_INFO "Get receive sensor\n");
+			else
+				printk(KERN_INFO "Received pulse count is %d\n",
+					((data1 << 8) | data2));
+			break;
+		case 0xfe:
+			printk(KERN_INFO "Error! Hardware is likely wedged...\n");
+			break;
+		case 0x05:
+		case 0x09:
+		case 0x0f:
+		default:
+			printk(KERN_INFO "Unknown command 0x%02x 0x%02x\n",
+				cmd, subcmd);
+			break;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
