@@ -362,48 +362,42 @@ static void usb_async_callback(struct urb *urb, struct pt_regs *regs)
 }
 
 /* request incoming or send outgoing usb packet - used to initialize remote */
-static void request_packet_async(struct mceusb_dev *ir,
-				 struct usb_endpoint_descriptor *ep,
-				 unsigned char *data, int size, int urb_type)
+static void mce_request_packet(struct mceusb_dev *ir,
+			       struct usb_endpoint_descriptor *ep,
+			       unsigned char *data, int size, int urb_type)
 {
 	int res;
 	struct urb *async_urb;
 	unsigned char *async_buf;
 
-	if (urb_type) {
+	if (urb_type == MCEUSB_OUTBOUND) {
 		async_urb = usb_alloc_urb(0, GFP_KERNEL);
-		if (unlikely(!async_urb))
+		if (unlikely(!async_urb)) {
+			printk(KERN_ERR "Error, couldn't allocate urb!\n");
 			return;
+		}
 
 		async_buf = kzalloc(size, GFP_KERNEL);
 		if (!async_buf) {
+			printk(KERN_ERR "Error, couldn't allocate buf!\n");
 			usb_free_urb(async_urb);
 			return;
 		}
 
-		if (urb_type == MCEUSB_OUTBOUND) {
-			/* outbound data */
-			usb_fill_int_urb(async_urb, ir->usbdev,
-				usb_sndintpipe(ir->usbdev,
-					ep->bEndpointAddress),
-				async_buf, size,
-				(usb_complete_t) usb_async_callback,
-				ir, ep->bInterval);
-			memcpy(async_buf, data, size);
-		} else {
-			/* inbound data */
-			usb_fill_int_urb(async_urb, ir->usbdev,
-				usb_rcvintpipe(ir->usbdev,
-					ep->bEndpointAddress),
-				async_buf, size,
-				(usb_complete_t) usb_async_callback,
-				ir, ep->bInterval);
-		}
-		async_urb->transfer_flags = URB_ASYNC_UNLINK;
-	} else {
+		/* outbound data */
+		usb_fill_int_urb(async_urb, ir->usbdev,
+			usb_sndintpipe(ir->usbdev, ep->bEndpointAddress),
+			async_buf, size, (usb_complete_t) usb_async_callback,
+			ir, ep->bInterval);
+		memcpy(async_buf, data, size);
+
+	} else if (urb_type == MCEUSB_INBOUND) {
 		/* standard request */
 		async_urb = ir->urb_in;
 		ir->send_flags = RECV_FLAG_IN_PROGRESS;
+	} else {
+		printk(KERN_ERR "Error! Unknown urb type %d\n", urb_type);
+		return;
 	}
 
 	dprintk(DRIVER_NAME "[%d]: receive request called (size=%#x)\n",
@@ -420,6 +414,16 @@ static void request_packet_async(struct mceusb_dev *ir,
 	}
 	dprintk(DRIVER_NAME "[%d]: receive request complete (res=%d)\n",
 		ir->devnum, res);
+}
+
+static void mce_async_out(struct mceusb_dev *ir, unsigned char *data, int size)
+{
+	mce_request_packet(ir, ir->usb_ep_out, data, size, MCEUSB_OUTBOUND);
+}
+
+static void mce_sync_in(struct mceusb_dev *ir, unsigned char *data, int size)
+{
+	mce_request_packet(ir, ir->usb_ep_in, data, size, MCEUSB_INBOUND);
 }
 
 static int unregister_from_lirc(struct mceusb_dev *ir)
@@ -716,8 +720,7 @@ static ssize_t mceusb_transmit_ir(struct file *file, const char *buf,
 	cmdbuf[cmdcount++] = 0x80;
 
 	/* Transmit the command to the mce device */
-	request_packet_async(ir, ir->usb_ep_out, cmdbuf,
-			     cmdcount, MCEUSB_OUTBOUND);
+	mce_async_out(ir, cmdbuf, cmdcount);
 
 	/*
 	 * The lircd gap calculation expects the write function to
@@ -763,9 +766,7 @@ static int set_send_carrier(struct mceusb_dev *ir, int carrier)
 			ir->carrier_freq = carrier;
 			dprintk(DRIVER_NAME "[%d]: SET_CARRIER disabling "
 				"carrier modulation\n", ir->devnum);
-			request_packet_async(ir, ir->usb_ep_out,
-					     cmdbuf, sizeof(cmdbuf),
-					     MCEUSB_OUTBOUND);
+			mce_async_out(ir, cmdbuf, sizeof(cmdbuf));
 			return carrier;
 		}
 
@@ -780,9 +781,7 @@ static int set_send_carrier(struct mceusb_dev *ir, int carrier)
 					ir->devnum, carrier);
 
 				/* Transmit new carrier to mce device */
-				request_packet_async(ir, ir->usb_ep_out,
-						     cmdbuf, sizeof(cmdbuf),
-						     MCEUSB_OUTBOUND);
+				mce_async_out(ir, cmdbuf, sizeof(cmdbuf));
 				return carrier;
 			}
 		}
@@ -1134,27 +1133,22 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 		 * its possible we really should wait for a return
 		 * for each of these...
 		 */
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_out, pin_init1, sizeof(pin_init1),
-				     MCEUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_out, pin_init2, sizeof(pin_init2),
-				     MCEUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_out, pin_init3, sizeof(pin_init3),
-				     MCEUSB_OUTBOUND);
+		mce_sync_in(ir, NULL, maxp);
+		mce_async_out(ir, pin_init1, sizeof(pin_init1));
+		mce_sync_in(ir, NULL, maxp);
+		mce_async_out(ir, pin_init2, sizeof(pin_init2));
+		mce_sync_in(ir, NULL, maxp);
+		mce_async_out(ir, pin_init3, sizeof(pin_init3));
 	} else if (ir->flags.microsoft_gen1) {
 		/* original ms mce device requires some additional setup */
 		mceusb_gen1_init(ir);
 	} else {
 
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_out, init1,
-				     sizeof(init1), MCEUSB_OUTBOUND);
-		request_packet_async(ir, ep_in, NULL, maxp, MCEUSB_INBOUND);
-		request_packet_async(ir, ep_out, init2,
-				     sizeof(init2), MCEUSB_OUTBOUND);
+		mce_sync_in(ir, NULL, maxp);
+		mce_sync_in(ir, NULL, maxp);
+		mce_async_out(ir, init1, sizeof(init1));
+		mce_sync_in(ir, NULL, maxp);
+		mce_async_out(ir, init2, sizeof(init2));
 	}
 
 	/*
@@ -1165,7 +1159,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	 * the control packets OK - they start with 0x9f - but the async
 	 * callback doesn't handle ir pulse packets
 	 */
-	request_packet_async(ir, ep_in, NULL, maxp, 0);
+	mce_sync_in(ir, NULL, maxp);
 
 	usb_set_intfdata(intf, ir);
 
