@@ -299,13 +299,40 @@ struct mceusb_dev {
 	struct mutex dev_lock;
 };
 
-/* init strings */
-static char init1[] = {0x00, 0xff, 0xaa, 0xff, 0x0b};
-static char init2[] = {0xff, 0x18};
-
-static char pin_init1[] = { 0x9f, 0x07};
-static char pin_init2[] = { 0x9f, 0x13};
-static char pin_init3[] = { 0x9f, 0x0d};
+/*
+ * MCE Device Command Strings
+ * Device command responses vary from device to device...
+ * - DEVICE_RESET resets the hardware to its default state
+ * - GET_REVISION fetches the hardware/software revision, common
+ *   replies are ff 0b 45 ff 1b 08 and ff 0b 50 ff 1b 42
+ * - GET_CARRIER_FREQ gets the carrier mode and frequency of the
+ *   device, with replies in the form of 9f 06 MM FF, where MM is 0-3,
+ *   meaning clk of 10000000, 2500000, 625000 or 156250, and FF is
+ *   ((clk / frequency) - 1)
+ * - GET_RX_TIMEOUT fetches the receiver timeout in units of 50us,
+ *   response in the form of 9f 0c msb lsb
+ * - GET_TX_BITMASK fetches the transmitter bitmask, replies in
+ *   the form of 9f 08 bm, where bm is the bitmask
+ * - GET_RX_SENSOR fetches the RX sensor setting -- long-range
+ *   general use one or short-range learning one, in the form of
+ *   9f 14 ss, where ss is either 01 for long-range or 02 for short
+ * - SET_CARRIER_FREQ sets a new carrier mode and frequency
+ * - SET_TX_BITMASK sets the transmitter bitmask
+ * - SET_RX_TIMEOUT sets the receiver timeout
+ * - SET_RX_SENSOR sets which receiver sensor to use
+ */
+static char DEVICE_RESET[]	= {0x00, 0xff, 0xaa};
+static char GET_REVISION[]	= {0xff, 0x0b};
+static char GET_UNKNOWN[]	= {0xff, 0x18};
+static char GET_CARRIER_FREQ[]	= {0x9f, 0x07};
+static char GET_RX_TIMEOUT[]	= {0x9f, 0x0d};
+static char GET_TX_BITMASK[]	= {0x9f, 0x13};
+static char GET_RX_SENSOR[]	= {0x9f, 0x15};
+/* sub in desired values in lower byte or bytes for full command */
+//static char SET_CARRIER_FREQ[]	= {0x9f, 0x06, 0x00, 0x00};
+//static char SET_TX_BITMASK[]	= {0x9f, 0x08, 0x00};
+//static char SET_RX_TIMEOUT[]	= {0x9f, 0x0c, 0x00, 0x00};
+//static char SET_RX_SENSOR[]	= {0x9f, 0x14, 0x00};
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
 static unsigned long usecs_to_jiffies(const unsigned int u)
@@ -1129,26 +1156,40 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 		printk(DRIVER_NAME "[%d]: usb reset config ret %x\n",
 		       devnum, usbret);
 
-		/*
-		 * its possible we really should wait for a return
-		 * for each of these...
-		 */
 		mce_sync_in(ir, NULL, maxp);
-		mce_async_out(ir, pin_init1, sizeof(pin_init1));
+
+		/* get the carrier and frequency */
+		mce_async_out(ir, GET_CARRIER_FREQ, sizeof(GET_CARRIER_FREQ));
 		mce_sync_in(ir, NULL, maxp);
-		mce_async_out(ir, pin_init2, sizeof(pin_init2));
+
+		/* get the transmitter bitmask */
+		mce_async_out(ir, GET_TX_BITMASK, sizeof(GET_TX_BITMASK));
 		mce_sync_in(ir, NULL, maxp);
-		mce_async_out(ir, pin_init3, sizeof(pin_init3));
+
+		/* get receiver timeout value */
+		mce_async_out(ir, GET_RX_TIMEOUT, sizeof(GET_RX_TIMEOUT));
+		mce_sync_in(ir, NULL, maxp);
+
 	} else if (ir->flags.microsoft_gen1) {
 		/* original ms mce device requires some additional setup */
 		mceusb_gen1_init(ir);
+
 	} else {
 
 		mce_sync_in(ir, NULL, maxp);
 		mce_sync_in(ir, NULL, maxp);
-		mce_async_out(ir, init1, sizeof(init1));
+
+		/* device reset */
+		mce_async_out(ir, DEVICE_RESET, sizeof(DEVICE_RESET));
 		mce_sync_in(ir, NULL, maxp);
-		mce_async_out(ir, init2, sizeof(init2));
+
+		/* get hw/sw revision? */
+		mce_async_out(ir, GET_REVISION, sizeof(GET_REVISION));
+		mce_sync_in(ir, NULL, maxp);
+
+		/* unknown what this actually returns... */
+		mce_async_out(ir, GET_UNKNOWN, sizeof(GET_UNKNOWN));
+		mce_sync_in(ir, NULL, maxp);
 	}
 
 	/*
