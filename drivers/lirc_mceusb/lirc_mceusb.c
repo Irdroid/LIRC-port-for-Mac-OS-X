@@ -296,7 +296,7 @@ struct mceusb_dev {
 	int send_flags;
 	wait_queue_head_t wait_out;
 
-	struct mutex lock;
+	struct mutex dev_lock;
 };
 
 /* init strings */
@@ -497,9 +497,9 @@ static void mceusb_ir_close(void *data)
 	dprintk(DRIVER_NAME "[%d]: mceusb IR device closed\n", ir->devnum);
 
 	if (ir->flags.connected) {
-		mutex_lock(&ir->lock);
+		mutex_lock(&ir->dev_lock);
 		ir->flags.connected = 0;
-		mutex_unlock(&ir->lock);
+		mutex_unlock(&ir->dev_lock);
 	}
 	MOD_DEC_USE_COUNT;
 }
@@ -1067,7 +1067,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	driver->dev   = &intf->dev;
 	driver->owner = THIS_MODULE;
 
-	mutex_init(&ir->lock);
+	mutex_init(&ir->dev_lock);
 	init_waitqueue_head(&ir->wait_out);
 
 	minor = lirc_register_driver(driver);
@@ -1201,11 +1201,11 @@ static void mceusb_dev_disconnect(struct usb_interface *intf)
 	ir->usbdev = NULL;
 	wake_up_all(&ir->wait_out);
 
-	mutex_lock(&ir->lock);
+	mutex_lock(&ir->dev_lock);
 	usb_kill_urb(ir->urb_in);
 	usb_free_urb(ir->urb_in);
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
-	mutex_unlock(&ir->lock);
+	mutex_unlock(&ir->dev_lock);
 
 	unregister_from_lirc(ir);
 }
