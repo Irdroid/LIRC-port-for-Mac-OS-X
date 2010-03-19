@@ -235,6 +235,7 @@ static struct usb_device_id mceusb_dev_table[] = {
 
 static struct usb_device_id pinnacle_list[] = {
 	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
+	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
 	{}
 };
 
@@ -252,7 +253,7 @@ static struct usb_device_id transmitter_mask_list[] = {
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0001) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0006) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0007) },
-	{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
+	//{ USB_DEVICE(VENDOR_TOPSEED, 0x0008) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x000a) },
 	{ USB_DEVICE(VENDOR_TOPSEED, 0x0011) },
 	{ USB_DEVICE(VENDOR_PINNACLE, 0x0225) },
@@ -1029,39 +1030,27 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 
 	mem_failure = 0;
 	ir = kzalloc(sizeof(struct mceusb_dev), GFP_KERNEL);
-	if (!ir) {
-		mem_failure = 1;
-		goto mem_failure_switch;
-	}
+	if (!ir)
+		goto mem_alloc_fail;
 
 	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
-	if (!driver) {
-		mem_failure = 2;
-		goto mem_failure_switch;
-	}
+	if (!driver)
+		goto mem_alloc_fail;
 
 	rbuf = kmalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
-	if (!rbuf) {
-		mem_failure = 3;
-		goto mem_failure_switch;
-	}
+	if (!rbuf)
+		goto mem_alloc_fail;
 
-	if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE)) {
-		mem_failure = 4;
-		goto mem_failure_switch;
-	}
+	if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE))
+		goto mem_alloc_fail;
 
 	ir->buf_in = usb_buffer_alloc(dev, maxp, GFP_ATOMIC, &ir->dma_in);
-	if (!ir->buf_in) {
-		mem_failure = 5;
-		goto mem_failure_switch;
-	}
+	if (!ir->buf_in)
+		goto buf_in_alloc_fail;
 
 	ir->urb_in = usb_alloc_urb(0, GFP_KERNEL);
-	if (!ir->urb_in) {
-		mem_failure = 7;
-		goto mem_failure_switch;
-	}
+	if (!ir->urb_in)
+		goto urb_in_alloc_fail;
 
 	strcpy(driver->name, DRIVER_NAME " ");
 	driver->minor = -1;
@@ -1083,28 +1072,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 
 	minor = lirc_register_driver(driver);
 	if (minor < 0)
-		mem_failure = 9;
-
-mem_failure_switch:
-
-	switch (mem_failure) {
-	case 9:
-		usb_free_urb(ir->urb_in);
-	case 7:
-		usb_buffer_free(dev, maxp, ir->buf_in, ir->dma_in);
-	case 5:
-		lirc_buffer_free(rbuf);
-	case 4:
-		kfree(rbuf);
-	case 3:
-		kfree(driver);
-	case 2:
-		kfree(ir);
-	case 1:
-		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n",
-			devnum, mem_failure);
-		return -ENOMEM;
-	}
+		goto lirc_register_fail;
 
 	driver->minor = minor;
 	ir->d = driver;
@@ -1202,6 +1170,21 @@ mem_failure_switch:
 	usb_set_intfdata(intf, ir);
 
 	return 0;
+
+	/* Error-handling path */
+lirc_register_fail:
+	usb_free_urb(ir->urb_in);
+urb_in_alloc_fail:
+	usb_buffer_free(dev, maxp, ir->buf_in, ir->dma_in);
+buf_in_alloc_fail:
+	lirc_buffer_free(rbuf);
+mem_alloc_fail:
+	kfree(rbuf);
+	kfree(driver);
+	kfree(ir);
+	printk(KERN_ERR, "out of memory (code=%d)\n", mem_failure);
+
+	return -ENOMEM;
 }
 
 
