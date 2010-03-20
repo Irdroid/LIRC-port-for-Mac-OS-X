@@ -14,6 +14,10 @@
 # include <config.h>
 #endif
 
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -42,7 +46,7 @@ static ir_code pre,code;
 
 struct hardware hw_mp3anywhere=
 {
-	LIRC_DRIVER_DEVICE,      	/* default device */
+	LIRC_IRTTY,			/* default device */
 	-1,                       	/* fd */
 	LIRC_CAN_REC_LIRCCODE,    	/* features */
 	0,                        	/* send_mode */

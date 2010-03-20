@@ -1,4 +1,4 @@
-/*      $Id: hw_pcmak.c,v 5.3 2007/07/29 18:20:08 lirc Exp $      */
+/*      $Id: hw_pcmak.c,v 5.4 2010/03/20 10:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pcmak.c ***********************************************************
@@ -13,6 +13,11 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+/* could also be /dev/ttyS0 if it's a serial receiver */
+#define LIRC_IRTTY "/dev/ttyUSB0"
 #endif
 
 #include <stdio.h>
@@ -43,7 +48,7 @@ static int repeat_counter, pressed_key;
 
 struct hardware hw_pcmak=
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

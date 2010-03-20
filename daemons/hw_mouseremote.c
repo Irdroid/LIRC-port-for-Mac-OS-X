@@ -1,4 +1,4 @@
-/*      $Id: hw_mouseremote.c,v 5.5 2007/07/29 18:20:08 lirc Exp $      */
+/*      $Id: hw_mouseremote.c,v 5.6 2010/03/20 10:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_mouseremote.c ********************************************************
@@ -16,6 +16,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
 #endif
 
 #include <stdio.h>
@@ -48,7 +52,7 @@ static int serial_input;
 
 struct hardware hw_mouseremote=
 {
-	LIRC_DRIVER_DEVICE,		/* default device */
+	LIRC_IRTTY,			/* default device */
 	-1,                       	/* fd */
 	LIRC_CAN_REC_LIRCCODE,    	/* features */
 	0,                        	/* send_mode */

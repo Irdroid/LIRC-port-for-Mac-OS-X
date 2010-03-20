@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.c,v 5.6 2007/07/29 18:20:09 lirc Exp $  */
+/*   $Id: hw_tira.c,v 5.7 2010/03/20 10:15:10 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.c ****************************************************************
  *****************************************************************************
@@ -29,6 +29,10 @@
 #include <config.h>
 #endif
 
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyUSB0"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -54,7 +58,7 @@ static ir_code code;
 
 #define CODE_LENGTH 64
 struct hardware hw_tira = {
-	"/dev/ttyUSB0",                  /* Default device */
+	LIRC_IRTTY,                      /* Default device */
 	-1,                              /* fd */
 	LIRC_CAN_REC_LIRCCODE,           /* Features */
 	0,                               /* send_mode */

@@ -79,6 +79,10 @@
 #include <config.h>
 #endif
 
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -123,7 +127,7 @@ static ir_code code, last_code = 0;
 
 
 struct hardware hw_accent = {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

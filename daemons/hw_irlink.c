@@ -46,7 +46,7 @@
 #include "hw_irlink.h"
 
 struct hardware hw_irlink = {
-        LIRC_DRIVER_DEVICE,        /* Default device */
+        LIRC_IRTTY,                /* Default device */
         -1,                        /* fd */
         LIRC_CAN_REC_MODE2,        /* Features */
         0,                         /* send_mode */

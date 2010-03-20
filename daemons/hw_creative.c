@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.10 2007/07/29 18:20:07 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.11 2010/03/20 10:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -12,6 +12,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
 #endif
 
 #include <stdio.h>
@@ -42,7 +46,7 @@ ir_code pre,code;
 
 struct hardware hw_creative=
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

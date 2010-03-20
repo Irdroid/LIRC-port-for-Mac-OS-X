@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.35 2009/08/29 09:22:30 lirc Exp $
+## $Id: Makefile.am,v 5.36 2010/03/20 10:15:10 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -36,12 +36,6 @@ else
 install-exec-local: mklink mkdev
 uninstall-local: rmlink mkdev
 endif
-
-mklink:
-	test "@irtty@" = "" || test -L $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && cd `dirname $(DESTDIR)@irtty@` && $(LN_S) `basename @irtty@` lirc)
-
-rmlink:
-	-test "@irtty@" = "" || $(RM) $(DESTDIR)$(devdir)/lirc
 
 mkdev:
 	test "@driver@" != "mediafocusI" || test -c $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)

@@ -57,6 +57,10 @@
 #  include <config.h>
 #endif
 
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyUSB0"
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -112,7 +116,7 @@ static struct {
  * use by lirc for the mplay device
  **************************************************************************/
 struct hardware hw_mplay = {
-        LIRC_DRIVER_DEVICE,     /* default device */
+        LIRC_IRTTY,             /* default device */
         -1,                     /* fd */
         LIRC_CAN_REC_LIRCCODE,  /* features */
         0,                      /* send_mode */

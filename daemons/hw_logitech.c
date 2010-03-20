@@ -1,4 +1,4 @@
-/*      $Id: hw_logitech.c,v 1.16 2007/07/29 18:20:08 lirc Exp $      */
+/*      $Id: hw_logitech.c,v 1.17 2010/03/20 10:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_logitech.c ***********************************************************
@@ -13,6 +13,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
 #endif
 
 #include <stdio.h>
@@ -43,7 +47,7 @@ static ir_code pre,code;
 
 struct hardware hw_logitech=
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.11 2007/07/29 18:20:12 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.12 2010/03/20 10:15:10 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -80,7 +80,11 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 
 struct hardware hw_uirt2_raw =
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+#ifndef LIRC_IRTTY
+	"/dev/ttyS0",
+#else
+	LIRC_IRTTY,               /* default device */
+#endif
 	-1,                       /* fd */
 	LIRC_CAN_REC_MODE2 | LIRC_CAN_SEND_PULSE, /* features */
 	LIRC_MODE_PULSE,          /* send_mode */
@@ -99,7 +103,11 @@ struct hardware hw_uirt2_raw =
 
 struct hardware hw_usb_uirt_raw =
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+#ifndef LIRC_IRTTY
+	"/dev/ttyUSB0",
+#else
+	LIRC_IRTTY,               /* default device */	
+#endif
 	-1,                       /* fd */
 	LIRC_CAN_REC_MODE2 | LIRC_CAN_SEND_PULSE, /* features */
 	LIRC_MODE_PULSE,          /* send_mode */

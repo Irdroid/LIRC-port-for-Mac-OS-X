@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2.c,v 5.4 2007/07/29 18:20:11 lirc Exp $      */
+/*      $Id: hw_uirt2.c,v 5.5 2010/03/20 10:15:10 lirc Exp $      */
 
 /****************************************************************************
  ** hw_uirt2.c **************************************************************
@@ -29,6 +29,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
 #endif
 
 #include <stdio.h>
@@ -65,7 +69,7 @@ static char *uirt2_rec(struct ir_remote *remotes);
 
 struct hardware hw_uirt2=
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */

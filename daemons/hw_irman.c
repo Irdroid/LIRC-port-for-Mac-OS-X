@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.11 2009/04/10 16:03:08 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.12 2010/03/20 10:15:09 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -12,6 +12,10 @@
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
+#endif
+
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyS0"
 #endif
 
 #include <stdio.h>
@@ -44,7 +48,7 @@ ir_code code;
 
 struct hardware hw_irman=
 {
-	LIRC_DRIVER_DEVICE,       /* default device */
+	LIRC_IRTTY,               /* default device */
 	-1,                       /* fd */
 	LIRC_CAN_REC_LIRCCODE,    /* features */
 	0,                        /* send_mode */
