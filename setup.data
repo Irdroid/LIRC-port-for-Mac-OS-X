@@ -167,7 +167,6 @@ param_type: parallel
 
 param_type: \
 	accent \
-	caraca \
 	creative \
 	ea65 \
 	irman \
@@ -210,6 +209,7 @@ param_type: \
 	breakoutbox \
 	bte \
 	bw6130 \
+	caraca \
 	chronos \
 	commandir \
 	cph03x \
@@ -285,6 +285,7 @@ default_param: \
 	bestbuy2 \
 	breakoutbox \
 	bw6130 \
+	caraca \
 	chronos \
 	commandir \
 	cph03x \
@@ -349,7 +350,6 @@ default_param: \
 
 default_param: \
 	accent \
-	caraca \
 	creative \
 	irman \
 	logitech \
