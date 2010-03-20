@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.37 2010/03/20 10:23:04 lirc Exp $
+dnl $Id: configure.ac,v 1.38 2010/03/20 16:18:30 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -148,6 +148,7 @@ possible_drivers="(none) \
 	(silitek) \
 	(slinke) \
 	(tira) \
+	(tira_raw) \
 	(uirt2) \
 	(uirt2_raw) \
 	(usb_uirt_raw) \
@@ -455,9 +456,9 @@ AC_ARG_WITH(driver,
                           realmagic, remotemaster, sa1100, samsung,
                           sasem, sb0540, serial, silitek, sir, slinke,
                           srm7500libusb, streamzap, tekram,
-                          tekram_bt829, tira, ttusbir, tuxbox, tvbox,
-                          udp, uirt2, uirt2_raw, usb_uirt_raw, usbx,
-                          wpc8769l],
+                          tekram_bt829, tira, tira_raw, ttusbir,
+                          tuxbox, tvbox, udp, uirt2, uirt2_raw,
+                          usb_uirt_raw, usbx, wpc8769l],
 driver=${withval},
 driver="unset"
 )
@@ -681,8 +682,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		srm7500libusb_lib=`${LIBUSB_CONFIG} --libs`
 		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
-	tira)
-		hw_module="${hw_module} hw_tira.o"
+	tira|tira_raw)
+		hw_module="${hw_module} hw_tira.o receive.o transmit.o"
 		;;
 	udp)
 		hw_module="${hw_module} hw_udp.o receive.o"
@@ -1376,8 +1377,14 @@ fi
 
 if test "$driver" = "tira"; then
   lirc_driver="none"
-  hw_module="hw_tira.o serial.o"
+  hw_module="hw_tira.o serial.o receive.o transmit.o"
   HW_DEFAULT="hw_tira"
+fi
+
+if test "$driver" = "tira_raw"; then
+  lirc_driver="none"
+  hw_module="hw_tira.o serial.o receive.o transmit.o"
+  HW_DEFAULT="hw_tira_raw"
 fi
 
 if test "$driver" = "ttusbir"; then

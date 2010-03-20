@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.h,v 5.2 2007/07/29 18:20:09 lirc Exp $  */
+/*   $Id: hw_tira.h,v 5.3 2010/03/20 16:18:30 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.h ****************************************************************
  *****************************************************************************
@@ -40,6 +40,9 @@ int     tira_decode                  (struct ir_remote   *remote,
 int     tira_init                    (void);
 int     tira_deinit                  (void);
 char    *tira_rec                    (struct ir_remote   *remotes);
+char    *tira_rec_mode2              (struct ir_remote   *remotes);
+static int tira_send(struct ir_remote *remote, struct ir_ncode *code);
+lirc_t	tira_readdata(lirc_t timeout);
 
 #endif
 

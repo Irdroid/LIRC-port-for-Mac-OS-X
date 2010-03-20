@@ -61,17 +61,17 @@
  * you cannot control the amount of debug info sent to syslog,
  * even the LOG_DEBUG messages will be logged.
  *
- * void logprintf(int priority, char *format, ...)
+ * void logprintf(int priority, const char *format, ...)
  * 	Calls the syslog(3) function.
  *
- * void logperror(int priority, char *s)
+ * void logperror(int priority, const char *s)
  *	Uses the syslog(3) to print a message followed by the error message
  *	strerror (%m) associated to the present errno.
  *
- * void LOGPRINTF(int priority, char *format, ...)
+ * void LOGPRINTF(int priority, const char *format, ...)
  *	Calls logprintf(), but only if compiled with DEBUG option.
  *
- * void LOGPERROR(int priority, char *s)
+ * void LOGPERROR(int priority, const char *s)
  *	Calls logperror(), but only if compiled with DEBUG option.
 */
 

@@ -1,4 +1,7 @@
 0.8.7-CVS: future
+  * added tira_raw driver for the Ira/Tira receivers that supports
+    receiving in timing mode, the tira driver now supports transmit
+    (Arnold Pakolitz)
   * added support for DFC USB InfraRed Remote Control (Davio Franke)
   * added support for simple transmitter circuit connected to
     soundcard (Bob van Loosen)

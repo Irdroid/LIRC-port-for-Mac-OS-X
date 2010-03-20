@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.92 2010/01/01 11:21:12 lirc Exp $      */
+/*      $Id: lircd.c,v 5.93 2010/03/20 16:18:30 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -978,7 +978,7 @@ void log_enable(int enabled)
 }
 
 #ifdef USE_SYSLOG
-void logprintf(int prio,char *format_str, ...)
+void logprintf(int prio, const char *format_str, ...)
 {
 	int save_errno = errno;
 	va_list ap;
@@ -1000,7 +1000,7 @@ void logperror(int prio,const char *s)
 	else syslog(prio,"%m\n");
 }
 #else
-void logprintf(int prio,char *format_str, ...)
+void logprintf(int prio,const char *format_str, ...)
 {
 	int save_errno = errno;
 	va_list ap;  

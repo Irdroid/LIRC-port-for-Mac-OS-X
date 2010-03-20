@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.98 2009/12/28 13:05:29 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.99 2010/03/20 16:18:30 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.98 $"
+#define IRRECORD_VERSION "$Revision: 5.99 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -260,7 +260,7 @@ static int i_printf(int interactive, char *format_str, ...)
 	return ret;
 }
 
-void logprintf(int prio,char *format_str, ...)
+void logprintf(int prio,const char *format_str, ...)
 {
 	va_list ap;  
 	

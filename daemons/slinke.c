@@ -1,4 +1,4 @@
-/*      $Id: slinke.c,v 5.4 2007/08/17 18:58:48 lirc Exp $      */
+/*      $Id: slinke.c,v 5.5 2010/03/20 16:18:30 lirc Exp $      */
 
 /****************************************************************************
  ** slinke.c ****************************************************************
@@ -56,7 +56,7 @@ struct hardware hw=
 
 int debug=0;
 
-void logprintf(int prio,char *format_str, ...) {}
+void logprintf(int prio,const char *format_str, ...) {}
 void logperror(int prio,const char *s) {}
 
 int get_val(char *buffer, ...)

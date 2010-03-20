@@ -1,4 +1,4 @@
-/*      $Id: lircd.h,v 5.18 2009/08/09 12:06:08 lirc Exp $      */
+/*      $Id: lircd.h,v 5.19 2010/03/20 16:18:30 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.h *****************************************************************
@@ -54,7 +54,7 @@ void start_server(mode_t permission,int nodaemon);
   do {} while(0)
 #endif
 
-void logprintf(int prio,char *format_str, ...);
+void logprintf(int prio,const char *format_str, ...);
 void logperror(int prio,const char *s);
 
 void daemonize(void);

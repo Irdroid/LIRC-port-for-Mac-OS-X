@@ -127,6 +127,7 @@ hw_menu_entry: @hw-usb
 	dvico: "DViCO USB Remote"
 	ftdi: "FTDI FT232-based IR Receiver"
 	tira: "Home Electronics Tira USB device"
+	tira_raw: "Home Electronics Tira USB device (timing mode)"
 	igorplugusb: "Igor Cesko's USB IR Receiver"
 	iguanaIR: "Iguanaworks USB IR Transceiver"
 	irlink: "IRLink VS USB IR Receiver"
@@ -188,6 +189,7 @@ param_type: \
 	mplay \
 	pcmak_usb \
 	tira \
+	tira_raw \
 	usb_uirt_raw \
 	usbx
 	ttyUSB:
@@ -395,6 +397,7 @@ default_param: \
 	mplay \
 	pcmak_usb \
 	tira \
+	tira_raw \
 	usb_uirt_raw \
 	usbx
 	ttyUSB1:
@@ -434,6 +437,7 @@ remote: \
 	streamzap \
 	tekram \
 	tira \
+	tira_raw \
 	ttusbir \
 	uirt2_raw \
 	udp \
