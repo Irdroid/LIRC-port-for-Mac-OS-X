@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.36 2010/02/27 19:20:44 lirc Exp $
+dnl $Id: configure.ac,v 1.37 2010/03/20 10:23:04 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -253,7 +253,7 @@ AH_TEMPLATE([LIRC_IRQ],
 	[Set the IRQ for the lirc driver])
 
 AH_TEMPLATE([LIRC_IRTTY],
-	[Set the default tty used by the irman/remotemaster driver])
+	[Set the default tty used by the drivers accessing /dev/ttyX])
 
 AH_TEMPLATE([LIRC_IT87_DIGIMATRIX],
 	[Define if you want to use lirc_it87 with an Asus Digimatrix])
@@ -1610,7 +1610,6 @@ AC_ARG_WITH(timer,
 [  --with-timer=value      specify the timer value for the parallel driver],
 timer=${withval})
 
-dnl I dont think libirman  will accept this at the moment
 AC_ARG_WITH(tty,
 [  --with-tty=file         specify the tty to use (Irman, RemoteMaster, etc.)],
 irtty=${withval})
@@ -1719,7 +1718,6 @@ AC_SUBST(vga_progs)
 AC_SUBST(x_progs)
 AC_SUBST(hw_module)
 AC_SUBST(receive)
-AC_SUBST(irtty)
 AC_SUBST(lircd_conf)
 AC_SUBST(lircmd_conf)
 AC_SUBST(maintmode_daemons_extra)
@@ -1743,7 +1741,9 @@ fi
 if test "$timer" != ""; then
   AC_DEFINE_UNQUOTED(LIRC_TIMER, $timer)
 fi
-AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
+if test "$irtty" != ""; then
+  AC_DEFINE_UNQUOTED(LIRC_IRTTY, "$irtty")
+fi
 AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
 AH_TOP([
@@ -1776,8 +1776,6 @@ AH_BOTTOM([
 #else
 #define LIRC_DRIVER_DEVICE      DEVDIR "/" DEV_LIRC
 #endif /* LIRC_HAVE_DEVFS */
-
-#define LIRC_IRTTY		DEVDIR "/" "ttyS0"
 
 #define LIRCD			VARRUNDIR "/" PACKAGE "/" DEV_LIRCD
 #define LIRCM			VARRUNDIR "/" PACKAGE "/" DEV_LIRCM

@@ -25,6 +25,10 @@
 #include <config.h>
 #endif
 
+#ifndef LIRC_IRTTY
+#define LIRC_IRTTY "/dev/ttyUSB0"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
