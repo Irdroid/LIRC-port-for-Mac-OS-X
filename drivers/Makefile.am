@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.36 2010/03/20 10:15:10 lirc Exp $
+## $Id: Makefile.am,v 5.37 2010/03/21 11:57:49 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -33,8 +33,8 @@ CLEANFILES = *~
 
 if SANDBOXED
 else
-install-exec-local: mklink mkdev
-uninstall-local: rmlink mkdev
+install-exec-local: mkdev
+uninstall-local: mkdev
 endif
 
 mkdev:
