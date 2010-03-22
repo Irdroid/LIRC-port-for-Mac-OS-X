@@ -1089,8 +1089,9 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	int i;
 	char buf[63], name[128] = "";
 	int mem_failure = 0;
-	int is_gen3;
-	int is_microsoft_gen1;
+	bool is_gen3;
+	bool is_microsoft_gen1;
+	bool is_pinnacle;
 
 	dprintk(DRIVER_NAME ": %s called\n", __func__);
 
@@ -1103,6 +1104,8 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	is_gen3 = usb_match_id(intf, gen3_list) ? 1 : 0;
 
 	is_microsoft_gen1 = usb_match_id(intf, microsoft_gen1_list) ? 1 : 0;
+
+	is_pinnacle = usb_match_id(intf, pinnacle_list) ? 1 : 0;
 
 	/* step through the endpoints to find first bulk in and out endpoint */
 	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
@@ -1120,11 +1123,13 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_in = ep;
 			ep_in->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (!is_gen3)
+			if (!is_pinnacle)
 				/*
-				 * ideally, we'd use what the device offers up,
+				 * Ideally, we'd use what the device offers up,
 				 * but that leads to non-functioning first and
-				 * second-gen devices.
+				 * second-gen devices, and many devices have an
+				 * invalid bInterval of 0. Pinnacle devices
+				 * don't work witha  bInterval of 1 though.
 				 */
 				ep_in->bInterval = 1;
 		}
@@ -1141,11 +1146,13 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 				"found\n");
 			ep_out = ep;
 			ep_out->bmAttributes = USB_ENDPOINT_XFER_INT;
-			if (!is_gen3)
+			if (!is_pinnacle)
 				/*
-				 * ideally, we'd use what the device offers up,
+				 * Ideally, we'd use what the device offers up,
 				 * but that leads to non-functioning first and
-				 * second-gen devices.
+				 * second-gen devices, and many devices have an
+				 * invalid bInterval of 0. Pinnacle devices
+				 * don't work witha  bInterval of 1 though.
 				 */
 				ep_out->bInterval = 1;
 		}
@@ -1245,7 +1252,7 @@ static int mceusb_dev_probe(struct usb_interface *intf,
 	ir->urb_in->transfer_dma = ir->dma_in;
 	ir->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
-	if (usb_match_id(intf, pinnacle_list)) {
+	if (is_pinnacle) {
 		int usbret;
 
 		/*
