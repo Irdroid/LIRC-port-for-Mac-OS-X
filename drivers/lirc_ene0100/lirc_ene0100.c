@@ -600,6 +600,8 @@ static int ene_resume(struct pnp_dev *pnp_dev)
 
 static const struct pnp_device_id ene_ids[] = {
 	{.id = "ENE0100",},
+	{.id = "ENE0200",},
+	{.id = "ENE0201",},
 	{},
 };
 
