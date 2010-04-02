@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.70 2010/02/27 19:20:44 lirc Exp $
+## $Id: Makefile.am,v 5.71 2010/04/02 10:26:57 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -66,7 +66,8 @@ sbin_PROGRAMS = lircd lircmd
 
 lircd_SOURCES = lircd.c lircd.h \
 		config_file.c config_file.h \
-		input_map.c input_map.h
+		input_map.c input_map.h \
+		transmit.c transmit.h
 lircd_LDADD = @daemon@ libhw_module.a @hw_module_libs@
 
 lircmd_SOURCES = lircmd.c
@@ -77,7 +78,8 @@ bin_PROGRAMS = irrecord
 irrecord_SOURCES = irrecord.c \
 		config_file.c config_file.h \
 		dump_config.c dump_config.h \
-		input_map.c input_map.h
+		input_map.c input_map.h \
+		transmit.c transmit.h
 
 irrecord_LDADD = libhw_module.a @hw_module_libs@ @receive@
 irrecord_DEPENDENCIES = @receive@
@@ -105,7 +107,8 @@ lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
 lircd_simrec_CFLAGS = -DSIM_REC
 
 slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
-		dump_config.c dump_config.h
+		dump_config.c dump_config.h transmit.c transmit.h
+
 
 if SANDBOXED
 else

@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.15 2009/09/19 06:41:56 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.16 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -180,6 +180,14 @@ struct ir_remote
 	struct timeval last_send;   /* time last_code was received or sent */
 	lirc_t min_remaining_gap;   /* remember gap for CONST_LENGTH remotes */
 	lirc_t max_remaining_gap;   /* gap range */
+	
+	lirc_t min_total_signal_length; /* how long is the shortest
+					   signal including gap */
+	lirc_t max_total_signal_length; /* how long is the longest
+					   signal including gap */
+	lirc_t min_gap_length;      /* how long is the shortest gap */
+	lirc_t max_gap_length;      /* how long is the longest gap */
+	int release_detected;       /* set by release generator */
         struct ir_remote *next;
 };
 

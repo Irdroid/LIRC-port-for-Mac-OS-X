@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.45 2010/01/16 17:17:42 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.46 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -474,6 +474,16 @@ unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
 		  repeat_flag,
 		  time_elapsed(&remote->last_send,&current)<1000000,
 		  (!has_toggle_bit_mask(remote) || toggle_bit_mask_state==remote->toggle_bit_mask_state));
+	if(remote->release_detected)
+	{
+		remote->release_detected = 0;
+		if(repeat_flag)
+		{
+			LOGPRINTF(0, "repeat indicated although release was "
+				  "detected before");
+		}
+		repeat_flag = 0;
+	}
 	if(remote==last_decoded &&
 	   (found==remote->last_code || (found->next!=NULL && found->current!=NULL)) &&
 	   repeat_flag &&

@@ -1,4 +1,4 @@
-/*      $Id: release.c,v 1.4 2008/12/06 20:00:03 lirc Exp $      */
+/*      $Id: release.c,v 1.5 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** release.c ***************************************************************
@@ -41,7 +41,7 @@ void register_input(void)
 	if(release_remote == NULL) return;
 	
 	timerclear(&gap);
-	gap.tv_usec = 3*release_gap;
+	gap.tv_usec = release_gap;
 	
 	gettimeofday(&release_time,NULL);
 	timeradd(&release_time, &gap, &release_time);
@@ -61,8 +61,12 @@ void register_button_press(struct ir_remote *remote, struct ir_ncode *ncode,
 	release_ncode = ncode;
 	release_code = code;
 	release_reps = reps;
-	release_gap = remote->max_remaining_gap;
+	release_gap = remote->max_total_signal_length *
+		(100 + remote->eps) / 100;
+	if(release_gap < 100000) release_gap = 100000;
 	
+	LOGPRINTF(1, "release_gap: %lu", release_gap);
+
 	register_input();
 }
 
@@ -121,6 +125,7 @@ const char *trigger_release_event(const char **remote_name,
 	
 	if(release_remote != NULL)
 	{
+		release_remote->release_detected = 1;
 		*remote_name = release_remote->name;
 		*button_name = release_ncode->name;
 		len = write_message(message, PACKET_SIZE+1,

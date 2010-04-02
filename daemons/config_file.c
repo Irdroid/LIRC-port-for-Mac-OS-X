@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.31 2009/09/19 06:41:56 lirc Exp $      */
+/*      $Id: config_file.c,v 5.32 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -31,6 +31,7 @@
 #include "lircd.h"
 #include "ir_remote.h"
 #include "config_file.h"
+#include "transmit.h"
 
 #define LINE_LEN 1024
 #define MAX_INCLUDES 10
@@ -41,6 +42,7 @@ static int line;
 static int parse_error;
 
 static struct ir_remote * read_config_recursive(FILE *f, const char *name, int depth);
+static void calculate_signal_lengths(struct ir_remote *remote);
 
 void **init_void_array(struct void_array *ar,size_t chunk_size, size_t item_size)
 {
@@ -1215,6 +1217,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 				rem->min_code_repeat = 0;
 			}
 		}
+		calculate_signal_lengths(rem);
 		rem=rem->next;
 	}
 
@@ -1223,6 +1226,114 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
         /*fprint_remotes(stderr, top_rem);*/
 #       endif
         return (top_rem);
+}
+
+void calculate_signal_lengths(struct ir_remote *remote)
+{
+	if(is_const(remote))
+	{
+		remote->min_total_signal_length = min_gap(remote);
+		remote->max_total_signal_length = max_gap(remote);
+	}
+	else
+	{
+		remote->min_gap_length = min_gap(remote);
+		remote->max_gap_length = max_gap(remote);
+	}
+
+	lirc_t min_signal_length = 0, max_signal_length = 0;
+	int first_sum = 1;
+	struct ir_ncode *c = remote->codes;
+	
+	while(c->name)
+	{
+		struct ir_ncode code = *c;
+		struct ir_code_node *next = code.next;
+		int first = 1;
+		int repeat = 0;
+		do{
+			if(first)
+			{
+				first = 0;
+			}
+			else
+			{
+				code.code = next->code;
+				next = next->next;
+			}
+			for(repeat = 0; repeat < 2; repeat++)
+			{
+				if(init_sim(remote, &code, repeat))
+				{
+					lirc_t sum = send_buffer.sum;
+					
+					if(sum)
+					{
+						if(first_sum ||
+						   sum < min_signal_length)
+						{
+							min_signal_length = sum;
+						}
+						if(first_sum ||
+						   sum > max_signal_length)
+						{
+							max_signal_length = sum;
+						}
+						first_sum = 0;
+					}
+				}
+			}
+		} while(next);
+		c++;
+	}
+	if(first_sum)
+	{
+		/* no timing data, so assume gap is the actual total
+		   length */
+		remote->min_total_signal_length = min_gap(remote);
+		remote->max_total_signal_length = max_gap(remote);
+		remote->min_gap_length = min_gap(remote);
+		remote->max_gap_length = max_gap(remote);
+	}
+	else if(is_const(remote))
+	{
+		if(remote->min_total_signal_length > max_signal_length)
+		{
+			remote->min_gap_length =
+				remote->min_total_signal_length
+				- max_signal_length;
+		}
+		else
+		{
+			logprintf(LOG_WARNING, "min_gap_length is 0 for "
+				  "'%s' remote", remote->name);
+			remote->min_gap_length = 0;
+		}
+		if(remote->max_total_signal_length > min_signal_length)
+		{
+			remote->max_gap_length =
+				remote->max_total_signal_length
+				- min_signal_length;
+		}
+		else
+		{
+			logprintf(LOG_WARNING, "max_gap_length is 0 for "
+				  "'%s' remote", remote->name);
+			remote->max_gap_length = 0;
+		}
+	}
+	else
+	{
+		remote->min_total_signal_length = min_signal_length +
+			remote->min_gap_length;
+		remote->max_total_signal_length = max_signal_length +
+			remote->max_gap_length;
+	}
+	LOGPRINTF(1, "lengths: %lu %lu %lu %lu",
+		  remote->min_total_signal_length,
+		  remote->max_total_signal_length,
+		  remote->min_gap_length,
+		  remote->max_gap_length);
 }
 
 void free_config(struct ir_remote *remotes)

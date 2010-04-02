@@ -1,4 +1,4 @@
-/*      $Id: transmit.h,v 5.6 2010/01/16 17:17:41 lirc Exp $      */
+/*      $Id: transmit.h,v 5.7 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.h **************************************************************
@@ -32,6 +32,7 @@ struct sbuf
 void init_send_buffer(void);
 inline void set_bit(ir_code *code,int bit,int data);
 int init_send(struct ir_remote *remote,struct ir_ncode *code);
+int init_sim(struct ir_remote *remote,struct ir_ncode *code,int repeat_preset);
 
 extern struct sbuf send_buffer;
 

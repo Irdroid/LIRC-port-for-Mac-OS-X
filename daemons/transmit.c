@@ -1,4 +1,4 @@
-/*      $Id: transmit.c,v 5.30 2009/05/24 10:46:52 lirc Exp $      */
+/*      $Id: transmit.c,v 5.31 2010/04/02 10:26:57 lirc Exp $      */
 
 /****************************************************************************
  ** transmit.c **************************************************************
@@ -25,6 +25,9 @@ extern struct ir_remote *repeat_remote;
 struct sbuf send_buffer;
 
 static void send_signals(lirc_t *signals, int n);
+static int init_send_or_sim(struct ir_remote *remote,struct ir_ncode *code,
+			    int sim, int repeat_preset);
+
 
 inline void set_bit(ir_code *code,int bit,int data)
 {
@@ -407,12 +410,26 @@ static void send_signals(lirc_t *signals, int n)
 
 int init_send(struct ir_remote *remote,struct ir_ncode *code)
 {
-	int i, repeat=0;
+	return init_send_or_sim(remote, code, 0, 0);
+}
+
+int init_sim(struct ir_remote *remote,struct ir_ncode *code,int repeat_preset)
+{
+	return init_send_or_sim(remote, code, 1, repeat_preset);
+}
+
+int init_send_or_sim(struct ir_remote *remote,struct ir_ncode *code, int sim, int repeat_preset)
+{
+	int i, repeat=repeat_preset;
 	
 	if(is_grundig(remote) || 
 	   is_goldstar(remote) || is_serial(remote) || is_bo(remote))
 	{
-		logprintf(LOG_ERR,"sorry, can't send this protocol yet");
+		if(!sim)
+		{
+			logprintf(LOG_ERR,
+				  "sorry, can't send this protocol yet");
+		}
 		return(0);
 	}
 	clear_send_buffer();
@@ -420,13 +437,16 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	{
 		send_buffer.is_biphase=1;
 	}
-	if(repeat_remote==NULL)
+	if(!sim)
 	{
-		remote->repeat_countdown=remote->min_repeat;
-	}
-	else
-	{
-		repeat = 1;
+		if(repeat_remote==NULL)
+		{
+			remote->repeat_countdown=remote->min_repeat;
+		}
+		else
+		{
+			repeat = 1;
+		}
 	}
 	
  init_send_loop:
@@ -444,7 +464,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		{
 			ir_code next_code;
 			
-			if(code->transmit_state == NULL)
+			if(sim || code->transmit_state == NULL)
 			{
 				next_code = code->code;
 			}
@@ -453,7 +473,7 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 				next_code = code->transmit_state->code;
 			}
 			send_code(remote, next_code, repeat);
-			if(has_toggle_mask(remote))
+			if(!sim && has_toggle_mask(remote))
 			{
 				remote->toggle_mask_state++;
 				if(remote->toggle_mask_state==4)
@@ -467,7 +487,11 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		{
 			if(code->signals==NULL)
 			{
-				logprintf(LOG_ERR, "no signals for raw send");
+				if(!sim)
+				{
+					logprintf(LOG_ERR,
+						  "no signals for raw send");
+				}
 				return 0;
 			}
 			if(send_buffer.wptr>0)
@@ -488,9 +512,11 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 	sync_send_buffer();
 	if(bad_send_buffer())
 	{
-		logprintf(LOG_ERR,"buffer too small");
+		if(!sim) logprintf(LOG_ERR,"buffer too small");
 		return(0);
 	}
+	if(sim) goto final_check;
+	
 	if(has_repeat_gap(remote) && repeat && has_repeat(remote))
 	{
 		remote->min_remaining_gap=remote->repeat_gap;
@@ -561,12 +587,17 @@ int init_send(struct ir_remote *remote,struct ir_ncode *code)
 		goto init_send_loop;
 	}
 	LOGPRINTF(3, "transmit buffer ready");
+	
+ final_check:
 	if(!check_send_buffer())
 	{
-		logprintf(LOG_ERR, "invalid send buffer");
-		logprintf(LOG_ERR,
-			  "this remote configuration cannot be used "
-			  "to transmit");
+		if(!sim)
+		{
+			logprintf(LOG_ERR, "invalid send buffer");
+			logprintf(LOG_ERR,
+				  "this remote configuration cannot be used "
+				  "to transmit");
+		}
 		return 0;
 	}
 	return 1;
