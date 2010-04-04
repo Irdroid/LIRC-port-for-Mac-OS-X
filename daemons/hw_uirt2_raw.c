@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.13 2010/04/04 18:57:59 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.14 2010/04/04 19:16:10 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -393,7 +393,7 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 			if(val > UCHAR_MAX)
 			{
 				tmp[dest++] = UCHAR_MAX;
-				tmp[dest++] = 0; /* no idea wheter this will work, maybe set to 1 */
+				tmp[dest++] = 1; /* 0 won't work */
 				val -= UCHAR_MAX;
 				length += 2;
 			}
