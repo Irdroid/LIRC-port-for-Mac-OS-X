@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.12 2010/03/20 10:15:10 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.13 2010/04/04 18:57:59 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -374,18 +374,11 @@ static int uirt2_send(struct ir_remote *remote,struct ir_ncode *code)
 static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 				lirc_t *buf, int length)
 {
-	byte_t tmp[1024];
-	int i;
+	byte_t tmp[64];
+	int i, dest;
 	int ir_length = 0;
 	int res;
 	int repeats = 1;
-
-	if (length > 48) {
-		logprintf(LOG_ERR, 
-			  "uirt2_raw: too long RAW transmission %d > 48", length);
-		return 0;
-	}
-
 
 	LOGPRINTF(1, "uirt2_send_mode2_raw %d %p",
 		  length, buf);
@@ -393,14 +386,34 @@ static int uirt2_send_mode2_raw(uirt2_t *dev, struct ir_remote *remote,
 	tmp[0] = 0;
 	tmp[1] = 0;
 
-	for (i = 0; i < length; i++) {
-		tmp[2 + i] = buf[i] / UIRT2_UNIT;
+	for (i = 0, dest = 2; i < length; i++) {
+		int val = buf[i] / UIRT2_UNIT;
+		while(val > 0)
+		{
+			if(val > UCHAR_MAX)
+			{
+				tmp[dest++] = UCHAR_MAX;
+				tmp[dest++] = 0; /* no idea wheter this will work, maybe set to 1 */
+				val -= UCHAR_MAX;
+				length += 2;
+			}
+			else
+			{
+				tmp[dest++] = val;
+				val = 0;
+			}
+			if (dest - 2 > 48) {
+				logprintf(LOG_ERR, 
+					  "uirt2_raw: too long RAW transmission %d > 48", dest - 2);
+				return 0;
+			}
+		}
 		ir_length += buf[i];
 	}
 
-	tmp[2 + length] = uirt2_calc_freq(remote->freq) + (repeats & 0x1f);
+	tmp[dest++] = uirt2_calc_freq(remote->freq) + (repeats & 0x1f);
 
-	res = uirt2_send_raw(dev, tmp, length + 3);
+	res = uirt2_send_raw(dev, tmp, dest);
 
 	if (!res) {
 		return 0;
@@ -507,6 +520,11 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
                 int bit;
                 int len = buf[i] / tUnit;
 
+		if(len > UCHAR_MAX)
+		{
+			LOGPRINTF(0, "signal too long for transmission %lu", (unsigned long) buf[i]);
+			return 0;
+		}
                 if (i == 0)
                 {
                         rem.bHdr1 = len;
