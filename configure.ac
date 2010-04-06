@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.38 2010/03/20 16:18:30 lirc Exp $
+dnl $Id: configure.ac,v 1.39 2010/04/06 19:47:03 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1481,11 +1481,9 @@ Or install these packages from your distro:
 ])
     ;;
   audio)
-    AC_MSG_ERROR([*** you need to have the PortAudio library V18 installed
+    AC_MSG_ERROR([*** you need to have the PortAudio library V19 installed
 to use the audio driver. You can get it at:
-  http://www.inf.ethz.ch/~mringwal/downloads/portaudio_v18_with_configure.zip
-Extract the package and do a \"./configure && make && sudo make install\"
-in its directory.
+  http://www.portaudio.com/
 ])
     ;;
   audio_alsa)
