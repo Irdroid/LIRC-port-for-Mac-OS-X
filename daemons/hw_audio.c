@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.7 2009/11/15 13:38:04 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.8 2010/04/06 19:43:20 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -90,6 +90,8 @@ static int sendPipe[2];      /* signals are written from audio_send
 static int completedPipe[2]; /* a byte is written here when the
 				callback has processed all signals */
 static int outputLatency;
+static int inDevicesPrinted = 0;
+static int outDevicesPrinted = 0;
 
 static void addCode( lirc_t data)
 {
@@ -123,6 +125,12 @@ static int recordCallback( const void *inputBuffer, void *outputBuffer,
 
 	/* Prevent unused variable warnings. */
 	(void) outTime;
+
+	if (status & paOutputUnderflow)
+		logprintf(LOG_WARNING, "Output underflow %s", hw.device);
+	if (status & paInputOverflow)
+		logprintf(LOG_WARNING, "Input overflow %s", hw.device);
+
 
 	for ( i=0; i < framesPerBuffer; i++, myPtr++)
 	{
@@ -374,7 +382,7 @@ int audio_send(struct ir_remote *remote,struct ir_ncode *code)
 	return 1;
 }
 
-static void audio_parsedevicestr(char* api, char* device, int* rate)
+static void audio_parsedevicestr(char* api, char* device, int* rate, double* latency)
 {
 	int ret;
 
@@ -382,91 +390,137 @@ static void audio_parsedevicestr(char* api, char* device, int* rate)
 	if (strlen(hw.device))
 	{
 		/* device string is api:device[@rate] or @rate */
-		ret = sscanf(hw.device, "%1023[^:]:%1023[^@]@%i",
-			     api, device, rate);
+		ret = sscanf(hw.device, "%1023[^:]:%1023[^@]@%i:%lf",
+			     api, device, rate, latency);
 
-		if (ret == 2 || (ret == 3 && *rate <= 0))
+		if (ret == 2 || *rate <= 0)
 			*rate = DEFAULT_SAMPLERATE;
+
+		if (ret <= 3)
+			*latency = -1.0;
 
 		if (ret >= 2)
 			return;
 
-		/* check for @rate */
-		if (sscanf(hw.device, "@%i", rate) == 1)
+		/* check for @rate:latency */
+		ret = sscanf(hw.device, "@%i:%lf", rate, latency);
+		if (ret >= 1)
 		{
 			api[0] = 0;
 			device[0] = 0;
 			if (*rate <= 0)
 				*rate = DEFAULT_SAMPLERATE;
 
+			if (ret == 1)
+				*latency = -1.0;
+
 			return;
 		}
 
 		logprintf(LOG_ERR, "malformed device string %s, "
-			  "syntax is api:device[@rate] or @rate", hw.device);
+			  "syntax is api:device[@rate[:latency]] or @rate[:latency]", hw.device);
 	}
 
 	api[0] = 0;
 	device[0] = 0;
 	*rate = DEFAULT_SAMPLERATE;
+	*latency = -1.0;
 }
 
 static void audio_choosedevice(PaStreamParameters* streamparameters, int input,
-			char* api, char* device)
+			char* api, char* device, double latency)
 {
 	char* direction = input ? "input" : "output";
+	int   chosendevice = -1;
+	int   i;
+	int   nrdevices = Pa_GetDeviceCount();
+	const PaDeviceInfo*  deviceinfo;
+	const PaHostApiInfo* hostapiinfo;
+	const char* devicetype = "custom";
+	const char* latencytype = "custom";
 
-	if (strlen(api) && strlen(device))
+	for (i = 0; i < nrdevices; i++)
 	{
-		int   i;
-		int   nrdevices;
-		const PaDeviceInfo*  deviceinfo;
-		const PaHostApiInfo* hostapiinfo;
+		deviceinfo = Pa_GetDeviceInfo(i);
 
-		nrdevices = Pa_GetDeviceCount();
-		for (i = 0; i < nrdevices; i++)
+		/* check if device can do input or output if
+			 we need it */
+		if ((deviceinfo->maxOutputChannels >= NUM_CHANNELS &&
+				 !input) ||
+				(deviceinfo->maxInputChannels >= NUM_CHANNELS &&
+				 input))
 		{
-			deviceinfo = Pa_GetDeviceInfo(i);
-
-			/* check if device can do input or output if
-			   we need it */
-			if ((deviceinfo->maxOutputChannels >= NUM_CHANNELS &&
-			     !input) ||
-			    (deviceinfo->maxInputChannels >= NUM_CHANNELS &&
-			     input))
+			hostapiinfo = Pa_GetHostApiInfo
+				(deviceinfo->hostApi);
+			/*check if this matches the custom device*/
+			if (strlen(api) && strlen(device))
 			{
-				hostapiinfo = Pa_GetHostApiInfo
-					(deviceinfo->hostApi);
 				if (strcmp(api, hostapiinfo->name) == 0 &&
-				    strcmp(device, deviceinfo->name) == 0)
-				{
-					streamparameters->device = i;
-					logprintf(LOG_INFO, "Using %s device "
-						  "%i: %s:%s",
-						  direction, i,
-						  hostapiinfo->name,
-						  deviceinfo->name);
-					return;
-				}
+						strcmp(device, deviceinfo->name) == 0)
+					chosendevice = i;
+			}
+
+			/*allow devices to be printed to the log twice*/
+			/*once for input, once for output*/
+			if ((!inDevicesPrinted && input) || (!outDevicesPrinted && !input))
+			{
+				logprintf(LOG_INFO, "Found %s device %i %s:%s",
+						direction, i, hostapiinfo->name, deviceinfo->name);
 			}
 		}
-
-		logprintf(LOG_ERR, "Device %s %s:%s not found",
-			  direction, api, device);
 	}
 
-	logprintf(LOG_INFO, "Using default %s device", direction);
-
 	if (input)
+		inDevicesPrinted = 1;
+	else
+		outDevicesPrinted = 1;
+
+	if (chosendevice == -1)
 	{
-		/* default input device */
-		streamparameters->device = Pa_GetDefaultInputDevice();
+		devicetype = "default";
+
+		if (strlen(api) && strlen(device))
+			logprintf(LOG_ERR, "Device %s %s:%s not found",
+					direction, api, device);
+
+		if (input)
+			chosendevice = Pa_GetDefaultInputDevice();
+		else
+			chosendevice = Pa_GetDefaultOutputDevice();
+	}
+
+	streamparameters->device = chosendevice;
+	if (latency < 0.0)
+	{
+		if (input)
+		{
+			streamparameters->suggestedLatency =
+				Pa_GetDeviceInfo(chosendevice)->defaultHighInputLatency;
+			latencytype = "default high input";
+		}
+		else
+		{
+			streamparameters->suggestedLatency =
+				Pa_GetDeviceInfo(chosendevice)->defaultHighOutputLatency;
+			latencytype = "default high output";
+		}
 	}
 	else
 	{
-		/* default output device */
-		streamparameters->device = Pa_GetDefaultOutputDevice();
+		streamparameters->suggestedLatency = latency;
 	}
+
+
+	deviceinfo = Pa_GetDeviceInfo(chosendevice);
+	hostapiinfo = Pa_GetHostApiInfo(deviceinfo->hostApi);
+	logprintf(LOG_INFO, "Using %s %s device "
+			"%i: %s:%s with %s latency %f",
+			devicetype,
+			direction, chosendevice,
+			hostapiinfo->name,
+			deviceinfo->name,
+			latencytype,
+			streamparameters->suggestedLatency);
 }
 
 /*
@@ -484,6 +538,7 @@ int audio_init()
 	struct termios	t;
 	char api[1024];
 	char device[1024];
+	double latency;
 
 	LOGPRINTF(1,"hw_audio_init()");
 	
@@ -509,31 +564,27 @@ int audio_init()
 	err = Pa_Initialize();
 	if( err != paNoError ) goto error;
 
-	audio_parsedevicestr(api, device, &data.samplerate);
+	audio_parsedevicestr(api, device, &data.samplerate, &latency);
 	logprintf(LOG_INFO, "Using samplerate %i", data.samplerate);
 
 	/* choose input device */
-	audio_choosedevice(&inputParameters, 1, api, device);
+	audio_choosedevice(&inputParameters, 1, api, device, latency);
 	if (inputParameters.device == paNoDevice) {
 		logprintf(LOG_ERR, "No input device found");
 		goto error;
 	}
 	inputParameters.channelCount = NUM_CHANNELS;	/* stereo input */
 	inputParameters.sampleFormat = PA_SAMPLE_TYPE;
-	inputParameters.suggestedLatency =
-		Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
 	inputParameters.hostApiSpecificStreamInfo = NULL;
 
 	/* choose output device */
-	audio_choosedevice(&outputParameters, 0, api, device);
+	audio_choosedevice(&outputParameters, 0, api, device, latency);
 	if (outputParameters.device == paNoDevice) {
 		logprintf(LOG_ERR, "No output device found");
 		goto error;
 	}
 	outputParameters.channelCount = NUM_CHANNELS;	/* stereo output */
 	outputParameters.sampleFormat = PA_SAMPLE_TYPE;
-	outputParameters.suggestedLatency =
-		Pa_GetDeviceInfo( outputParameters.device )->defaultLowOutputLatency;
 	outputParameters.hostApiSpecificStreamInfo = NULL;
 
 	outputLatency = outputParameters.suggestedLatency * 1000000;
@@ -629,6 +680,8 @@ int audio_deinit(void)
 
 	LOGPRINTF(1,"hw_audio_deinit()");
 	
+	logprintf(LOG_INFO,"Deinitializing %s...",hw.device);
+
 	/* make absolutely sure the full output buffer has played out
 	   even though portaudio should wait for it, it doesn't always
 	   happen */
