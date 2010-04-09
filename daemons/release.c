@@ -1,4 +1,4 @@
-/*      $Id: release.c,v 1.5 2010/04/02 10:26:57 lirc Exp $      */
+/*      $Id: release.c,v 1.6 2010/04/09 20:32:38 lirc Exp $      */
 
 /****************************************************************************
  ** release.c ***************************************************************
@@ -61,9 +61,11 @@ void register_button_press(struct ir_remote *remote, struct ir_ncode *ncode,
 	release_ncode = ncode;
 	release_code = code;
 	release_reps = reps;
-	release_gap = remote->max_total_signal_length *
+	/* must take into account that the decoder waits at least
+	   100ms for the end of signal */
+	release_gap = 100000 +
+		(remote->max_total_signal_length - remote->min_gap_length) *
 		(100 + remote->eps) / 100;
-	if(release_gap < 100000) release_gap = 100000;
 	
 	LOGPRINTF(1, "release_gap: %lu", release_gap);
 
