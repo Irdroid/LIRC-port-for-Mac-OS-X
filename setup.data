@@ -136,6 +136,7 @@ hw_menu_entry: @hw-usb
 	bw6130: "Remotec Multimedia PC Remote BW6130"
 	samsung: "Samsung USB IR Receiver"
 	sasem: "Sasem OnAir Remocon-V"
+	atiusb: "Snapstream Firefly"
 	exaudio: "Sound Blaster Extigy USB sound card (exaudio)"
 	alsa_usb: "Sound Blaster Extigy/Audigy 2 NX (ALSA snd-usb-audio)"
 	imon_24g: "Soundgraph iMON 2.4G DT & LT"
