@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.99 2010/03/20 16:18:30 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.100 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.99 $"
+#define IRRECORD_VERSION "$Revision: 5.100 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -234,7 +234,6 @@ struct hardware hw_emulation=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	NULL,               /* init_func */
-	NULL,               /* config_func */
 	NULL,               /* deinit_func */
 	NULL,               /* send_func */
 	NULL,               /* rec_func */

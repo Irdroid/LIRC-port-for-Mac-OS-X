@@ -1,4 +1,4 @@
-/*      $Id: receive.h,v 5.4 2007/07/29 18:20:13 lirc Exp $      */
+/*      $Id: receive.h,v 5.5 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** receive.h ***************************************************************
@@ -20,6 +20,8 @@
 
 #define REC_SYNC 8
 
+#define MIN_RECEIVE_TIMEOUT 100000
+
 struct rbuf
 {
 	lirc_t data[RBUF_SIZE];
@@ -32,6 +34,8 @@ struct rbuf
 	lirc_t pendings;
 	lirc_t sum;
 };
+
+lirc_t receive_timeout(lirc_t usec);
 
 inline lirc_t lirc_t_max(lirc_t a,lirc_t b);
 void init_rec_buffer();

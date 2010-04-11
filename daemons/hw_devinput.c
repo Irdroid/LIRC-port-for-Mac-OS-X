@@ -71,7 +71,6 @@ struct hardware hw_devinput=
 	LIRC_MODE_LIRCCODE,	/* rec_mode */
 	64,			/* code_length */
 	devinput_init_fwd,	/* init_func */
-	NULL,			/* config_func */
 	devinput_deinit,	/* deinit_func */
 	NULL,			/* send_func */
 	devinput_rec,		/* rec_func */

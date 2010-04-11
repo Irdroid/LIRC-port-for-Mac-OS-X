@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.24 2010/01/30 14:55:16 lirc Exp $      */
+/*      $Id: lirc.h,v 5.25 2010/04/11 18:50:39 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -116,6 +116,9 @@ typedef int lirc_t;
 /* code length in bits, currently only for LIRC_MODE_LIRCCODE */
 #define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, unsigned long)
 
+/* all values set should be reset by the driver when the device is
+   reopened */
+
 #define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, unsigned long)
 #define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, unsigned long)
 /* Note: these can reset the according pulse_width */
@@ -125,20 +128,25 @@ typedef int lirc_t;
 #define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, unsigned int)
 #define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, unsigned int)
 
-/* when a timeout != 0 is set the driver will send a
-   LIRC_MODE2_TIMEOUT data packet, otherwise LIRC_MODE2_TIMEOUT is
-   never sent, timeout is disabled by default */
+/* a value of 0 disables all hardware timeouts and data should be
+   reported as soon as possible */
 #define LIRC_SET_REC_TIMEOUT           _IOW('i', 0x00000018, lirc_t)
+/* 1 enables, 0 disables timeout reports in MODE2 */
+#define LIRC_SET_REC_TIMEOUT_REPORTS   _IOW('i', 0x00000019, unsigned int)
 
 /* pulses shorter than this are filtered out by hardware (software
-   emulation in lirc_dev?) */
-#define LIRC_SET_REC_FILTER_PULSE      _IOW('i', 0x00000019, lirc_t)
+   emulation in lirc_dev/lircd?) */
+#define LIRC_SET_REC_FILTER_PULSE      _IOW('i', 0x0000001a, lirc_t)
 /* spaces shorter than this are filtered out by hardware (software
-   emulation in lirc_dev?) */
-#define LIRC_SET_REC_FILTER_SPACE      _IOW('i', 0x0000001a, lirc_t)
+   emulation in lirc_dev/lircd?) */
+#define LIRC_SET_REC_FILTER_SPACE      _IOW('i', 0x0000001b, lirc_t)
 /* if filter cannot be set independantly for pulse/space, this should
    be used */
-#define LIRC_SET_REC_FILTER            _IOW('i', 0x0000001b, lirc_t)
+#define LIRC_SET_REC_FILTER            _IOW('i', 0x0000001c, lirc_t)
+
+/* if enabled from the next key press on the driver will send
+   LIRC_MODE2_FREQUENCY packets */
+#define LIRC_SET_MEASURE_CARRIER_MODE  _IOW('i', 0x0000001d, unsigned int)
 
 /*
  * to set a range use
@@ -152,9 +160,10 @@ typedef int lirc_t;
 
 #define LIRC_NOTIFY_DECODE             _IO('i', 0x00000020)
 
-/* from the next key press on the driver will send
-   LIRC_MODE2_FREQUENCY packets */
-#define LIRC_MEASURE_CARRIER_ENABLE    _IO('i', 0x00000021)
-#define LIRC_MEASURE_CARRIER_DISABLE   _IO('i', 0x00000022)
+#define LIRC_SETUP_START               _IO('i', 0x00000021)
+#define LIRC_SETUP_END                 _IO('i', 0x00000022)
+
+#define LIRC_GET_MIN_REC_CARRIER       _IOR('i', 0x00000040, unsigned int)
+#define LIRC_GET_MAX_REC_CARRIER       _IOR('i', 0x00000041, unsigned int)
 
 #endif

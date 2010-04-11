@@ -1,4 +1,4 @@
-/*      $Id: hardware.h,v 5.12 2009/01/04 22:17:39 lirc Exp $      */
+/*      $Id: hardware.h,v 5.13 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hardware.h **************************************************************
@@ -25,7 +25,6 @@ struct hardware
 	unsigned long rec_mode;
 	unsigned long code_length;
 	int (*init_func)(void);
-	int (*config_func)(struct ir_remote *remotes);
 	int (*deinit_func)(void);
 	int (*send_func)(struct ir_remote *remote,struct ir_ncode *code);
 	char *(*rec_func)(struct ir_remote *remotes);

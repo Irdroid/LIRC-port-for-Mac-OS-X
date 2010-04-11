@@ -1,4 +1,4 @@
-/*      $Id: hw_creative.c,v 5.11 2010/03/20 10:15:09 lirc Exp $      */
+/*      $Id: hw_creative.c,v 5.12 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_creative.c ***********************************************************
@@ -53,7 +53,6 @@ struct hardware hw_creative=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	32,                       /* code_length */
 	creative_init,            /* init_func */
-	NULL,                     /* config_func */
 	creative_deinit,          /* deinit_func */
 	NULL,                     /* send_func */
 	creative_rec,             /* rec_func */

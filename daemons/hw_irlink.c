@@ -57,7 +57,6 @@ struct hardware hw_irlink = {
         LIRC_MODE_MODE2,           /* rec_mode */
         0,                         /* code_length */
         irlink_init,               /* init_func */
-        NULL,                      /* config_func */
         irlink_deinit,             /* deinit_func */
         NULL,                      /* send_func */
         irlink_rec,                /* rec_func */

@@ -123,7 +123,6 @@ struct hardware hw_mplay = {
         LIRC_MODE_LIRCCODE,     /* rec_mode */
         MPLAY_CODE_LENGTH,      /* code_length */
         mplay_init,             /* init_func */
-        NULL,                   /* config_func */
         mplay_deinit,           /* deinit_func */
         NULL,                   /* send_func */
         mplay_rec,              /* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: hw_srm7500libusb.c,v 5.1 2009/11/15 17:43:59 lirc Exp $      */
+/*      $Id: hw_srm7500libusb.c,v 5.2 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_srm7500libusb.c ******************************************************
@@ -81,7 +81,6 @@ struct hardware hw_srm7500libusb =
 	LIRC_MODE_LIRCCODE,         /* rec_mode */
 	CODE_BYTES * CHAR_BIT,      /* code_length */
 	srm7500_init,               /* init_func */
-	NULL,                       /* config_func */
 	srm7500_deinit,             /* deinit_func */
 	NULL,                       /* send_func */
 	srm7500_rec,                /* rec_func */

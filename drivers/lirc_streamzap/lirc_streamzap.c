@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.50 2010/03/17 14:16:16 jarodwilson Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.51 2010/04/11 18:50:39 lirc Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.50 $"
+#define DRIVER_VERSION	"$Revision: 1.51 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -709,6 +709,8 @@ static int streamzap_use_inc(void *data)
 	sz->flush = 1;
 	add_timer(&sz->flush_timer);
 
+	sz->timeout_enabled = 0;
+
 	sz->urb_in->dev = sz->udev;
 #ifdef KERNEL_2_5
 	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC)) {
@@ -753,6 +755,7 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 {
 	int result = 0;
 	lirc_t val;
+	unsigned int flag = 0;
 	struct usb_streamzap *sz = lirc_get_pdata(filep);
 
 	switch (cmd) {
@@ -762,12 +765,17 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 	case LIRC_SET_REC_TIMEOUT:
 		result = get_user(val, (lirc_t *)arg);
 		if (result == 0) {
-			if (val == STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION)
-				sz->timeout_enabled = 1;
-			else if (val == 0)
-				sz->timeout_enabled = 0;
-			else 
+			if (val != STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION)
 				result = -EINVAL;
+		}
+		break;
+	case LIRC_SET_REC_TIMEOUT_REPORTS:
+		result = get_user(flag, (unsigned int *)arg);
+		if (result == 0) {
+			if (flag != 0)
+				sz->timeout_enabled = 1;
+			else
+				sz->timeout_enabled = 0;
 		}
 		break;
 	default:

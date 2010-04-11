@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.46 2010/04/02 10:26:57 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.47 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -65,8 +65,8 @@ void get_frequency_range(struct ir_remote *remotes,
 	scan=remotes;
 	if(scan==NULL)
 	{
-		*min_freq=DEFAULT_FREQ;
-		*max_freq=DEFAULT_FREQ;
+		*min_freq=0;
+		*max_freq=0;
 	}
 	else
 	{
@@ -89,6 +89,55 @@ void get_frequency_range(struct ir_remote *remotes,
 		}
 		scan=scan->next;
 	}
+}
+
+void get_filter_parameters(struct ir_remote *remotes,
+			   lirc_t *max_gap_lengthp,
+			   lirc_t *min_pulse_lengthp,
+			   lirc_t *min_space_lengthp,
+			   lirc_t *max_pulse_lengthp,
+			   lirc_t *max_space_lengthp)
+{
+	struct ir_remote *scan = remotes;
+	lirc_t max_gap_length = 0;
+	lirc_t min_pulse_length = 0, min_space_length = 0;
+	lirc_t max_pulse_length = 0, max_space_length = 0;
+	
+	while(scan)
+	{
+		lirc_t val;
+		val = upper_limit(scan, scan->max_gap_length);
+		if(val > max_gap_length)
+		{
+			max_gap_length = val;
+		}
+		val = lower_limit(scan, scan->min_pulse_length);
+		if(min_pulse_length == 0 || val < min_pulse_length)
+		{
+			min_pulse_length = val;
+		}
+		val = lower_limit(scan, scan->min_space_length);
+		if(min_space_length == 0 || val > min_space_length)
+		{
+			min_space_length = val;
+		}
+		val = upper_limit(scan, scan->max_pulse_length);
+		if(val > max_pulse_length)
+		{
+			max_pulse_length = val;
+		}
+		val = upper_limit(scan, scan->max_space_length);
+		if(val > max_space_length)
+		{
+			max_space_length = val;
+		}
+		scan=scan->next;
+	}
+	*max_gap_lengthp = max_gap_length;
+	*min_pulse_lengthp = min_pulse_length;
+	*min_space_lengthp = min_space_length;
+	*max_pulse_lengthp = max_pulse_length;
+	*max_space_lengthp = max_space_length;
 }
 
 struct ir_remote *is_in_remotes(struct ir_remote *remotes,

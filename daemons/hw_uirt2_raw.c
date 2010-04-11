@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_raw.c,v 5.15 2010/04/05 17:36:17 lirc Exp $   */
+/*      $Id: hw_uirt2_raw.c,v 5.16 2010/04/11 18:50:38 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_raw.c **********************************************************
@@ -91,7 +91,6 @@ struct hardware hw_uirt2_raw =
 	LIRC_MODE_MODE2,          /* rec_mode */
 	0,                        /* code_length */
 	uirt2_raw_init,           /* init_func */
-	NULL,                     /* config_func */
 	uirt2_raw_deinit,         /* deinit_func */
 	uirt2_send,               /* send_func */
 	uirt2_raw_rec,            /* rec_func */
@@ -114,7 +113,6 @@ struct hardware hw_usb_uirt_raw =
 	LIRC_MODE_MODE2,          /* rec_mode */
 	0,                        /* code_length */
 	uirt2_raw_init,           /* init_func */
-	NULL,                     /* config_func */
 	uirt2_raw_deinit,         /* deinit_func */
 	uirt2_send,               /* send_func */
 	uirt2_raw_rec,            /* rec_func */

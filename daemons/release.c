@@ -1,4 +1,4 @@
-/*      $Id: release.c,v 1.6 2010/04/09 20:32:38 lirc Exp $      */
+/*      $Id: release.c,v 1.7 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** release.c ***************************************************************
@@ -19,6 +19,7 @@
 #include <sys/time.h>
 
 #include "release.h"
+#include "receive.h"
 #include "lircd.h"
 
 static struct timeval release_time;
@@ -63,9 +64,9 @@ void register_button_press(struct ir_remote *remote, struct ir_ncode *ncode,
 	release_reps = reps;
 	/* must take into account that the decoder waits at least
 	   100ms for the end of signal */
-	release_gap = 100000 +
-		(remote->max_total_signal_length - remote->min_gap_length) *
-		(100 + remote->eps) / 100;
+	release_gap = receive_timeout
+		(upper_limit(remote, remote->max_total_signal_length -
+			     remote->min_gap_length));
 	
 	LOGPRINTF(1, "release_gap: %lu", release_gap);
 

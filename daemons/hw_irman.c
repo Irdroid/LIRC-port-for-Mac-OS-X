@@ -1,4 +1,4 @@
-/*      $Id: hw_irman.c,v 5.12 2010/03/20 10:15:09 lirc Exp $      */
+/*      $Id: hw_irman.c,v 5.13 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_irman.c **********************************************************
@@ -55,7 +55,6 @@ struct hardware hw_irman=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	CODE_LENGTH,              /* code_length */
 	irman_init,               /* init_func */
-	NULL,                     /* config_func */
 	irman_deinit,             /* deinit_func */
 	NULL,                     /* send_func */
 	irman_rec,                /* rec_func */

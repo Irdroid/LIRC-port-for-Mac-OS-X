@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.93 2010/03/20 16:18:30 lirc Exp $      */
+/*      $Id: lircd.c,v 5.94 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -185,6 +185,11 @@ static int useuinput=0;
 
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
+
+static unsigned int setup_min_freq=0, setup_max_freq=0;
+static lirc_t setup_max_gap=0;
+static lirc_t setup_min_pulse=0, setup_min_space=0;
+static lirc_t setup_max_pulse=0, setup_max_space=0;
 
 inline int use_hw()
 {
@@ -467,6 +472,168 @@ int setup_uinputfd(const char *name)
 	return -1;
 }
 
+static int setup_frequency()
+{
+	unsigned int freq;
+	
+	if(!(hw.features&LIRC_CAN_SET_REC_CARRIER))
+	{
+		return(1);
+	}
+	if(setup_min_freq == 0 || setup_max_freq == 0)
+	{
+		setup_min_freq = DEFAULT_FREQ;
+		setup_max_freq = DEFAULT_FREQ;
+	}
+	if(hw.features&LIRC_CAN_SET_REC_CARRIER_RANGE &&
+	   setup_min_freq!=setup_max_freq)
+	{
+		if(hw.ioctl_func(LIRC_SET_REC_CARRIER_RANGE, &setup_min_freq)==-1)
+		{
+			logprintf(LOG_ERR,"could not set receive carrier");
+			logperror(LOG_ERR, __FUNCTION__);
+			return(0);
+		}
+		freq=setup_max_freq;
+	}
+	else
+	{
+		freq=(setup_min_freq+setup_max_freq)/2;
+	}
+	if(hw.ioctl_func(LIRC_SET_REC_CARRIER, &freq)==-1)
+	{
+		logprintf(LOG_ERR, "could not set receive carrier");
+		logperror(LOG_ERR, __FUNCTION__);
+		return(0);
+	}
+	return(1);
+}
+
+static int setup_timeout()
+{
+	lirc_t val, min_timeout, max_timeout;
+	
+	if(!(hw.features&LIRC_CAN_SET_REC_TIMEOUT))
+	{
+		return 1;
+	}
+	
+	if(setup_max_space == 0)
+	{
+		return 1;
+	}
+	if(hw.ioctl_func(LIRC_GET_MIN_TIMEOUT, &min_timeout) == -1 ||
+	   hw.ioctl_func(LIRC_GET_MAX_TIMEOUT, &max_timeout) == -1)
+	{
+		return 0;
+	}
+	if(setup_max_gap >= min_timeout && setup_max_gap <= max_timeout)
+	{
+		/* may help to detect end of signal faster */
+		val = setup_max_gap;
+	}
+	else
+	{
+		/* keep timeout to a minimum */
+		val = setup_max_space + 1;
+		if(val < min_timeout)
+		{
+			val = min_timeout;
+		}
+		else if(val > max_timeout)
+		{
+			/* maximum timeout smaller than maximum possible
+			   space, hmm */
+			val = max_timeout;
+		}
+	}
+	
+	if(hw.ioctl_func(LIRC_SET_REC_TIMEOUT, &val) == -1)
+	{
+		logprintf(LOG_ERR, "could not set timeout");
+		logperror(LOG_ERR, __FUNCTION__);
+		return 0;
+	}
+	else
+	{
+		unsigned int enable = 1;
+		hw.ioctl_func(LIRC_SET_REC_TIMEOUT_REPORTS, &enable);
+	}
+	return 1;
+}
+
+static int setup_filter()
+{
+	int ret1, ret2;
+	lirc_t min_pulse_supported, max_pulse_supported;
+	lirc_t min_space_supported, max_space_supported;
+	
+	if(!(hw.features&LIRC_CAN_SET_REC_FILTER))
+	{
+		return 1;
+	}
+	if(hw.ioctl_func(LIRC_GET_MIN_FILTER_PULSE,
+			 &min_pulse_supported) == -1 ||
+	   hw.ioctl_func(LIRC_GET_MAX_FILTER_PULSE,
+			 &max_pulse_supported) == -1 ||
+	   hw.ioctl_func(LIRC_GET_MIN_FILTER_SPACE,
+			 &min_space_supported) == -1 ||
+	   hw.ioctl_func(LIRC_GET_MAX_FILTER_SPACE,
+			 &max_space_supported) == -1)
+	{
+		logprintf(LOG_ERR, "could not get filter range");
+		logperror(LOG_ERR, __FUNCTION__);
+	}
+	
+	if(setup_min_pulse > max_pulse_supported)
+	{
+		setup_min_pulse = max_pulse_supported;
+	}
+	else if(setup_min_pulse < min_pulse_supported)
+	{
+		setup_min_pulse = 0; /* disable filtering */
+	}
+	
+	if(setup_min_space > max_space_supported)
+	{
+		setup_min_space = max_space_supported;
+	}
+	else if(setup_min_space < min_space_supported)
+	{
+		setup_min_space = 0; /* disable filtering */
+	}
+	
+	ret1 = hw.ioctl_func(LIRC_SET_REC_FILTER_PULSE, &setup_min_pulse);
+	ret2 = hw.ioctl_func(LIRC_SET_REC_FILTER_SPACE, &setup_min_space);
+	if(ret1 == -1 || ret2 == -1)
+	{
+		if(hw.ioctl_func(LIRC_SET_REC_FILTER,
+				 setup_min_pulse < setup_min_space ?
+				 &setup_min_pulse:&setup_min_space) == -1)
+		{
+			logprintf(LOG_ERR, "could not set filter");
+			logperror(LOG_ERR, __FUNCTION__);
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int setup_hardware()
+{
+	int ret = 1;
+	
+	if(hw.fd != -1 && hw.ioctl_func)
+	{
+		(void) hw.ioctl_func(LIRC_SETUP_START, NULL);
+		ret = setup_frequency() &&
+			setup_timeout() &&
+			setup_filter();
+		(void) hw.ioctl_func(LIRC_SETUP_END, NULL);
+	}
+	return ret;
+}
+
 void config(void)
 {
 	FILE *fd;
@@ -521,7 +688,14 @@ void config(void)
 		   as they could still be in use */
 		free_remotes=remotes;
 		remotes=config_remotes;
-		if(hw.config_func) (void) hw.config_func(remotes);
+		
+		
+		get_frequency_range(remotes,&setup_min_freq,&setup_max_freq);
+		get_filter_parameters(remotes,&setup_max_gap,
+				      &setup_min_pulse,&setup_min_space,
+				      &setup_max_pulse,&setup_max_space);
+		
+		setup_hardware();
 	}
 }
 
@@ -617,6 +791,10 @@ void add_client(int sock)
 				 * it impossible to connect to when we
 				 * have a device actually plugged
 				 * in. */
+			}
+			else
+			{
+				setup_hardware();
 			}
 		}
 	}
@@ -2141,6 +2319,7 @@ int waitfordata(long maxusec)
 		{
 			log_enable(0);
 			hw.init_func();
+			setup_hardware();
 			log_enable(1);
 		}
 		for(i=0;i<clin;i++)

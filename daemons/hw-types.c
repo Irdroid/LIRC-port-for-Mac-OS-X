@@ -68,7 +68,6 @@ struct hardware hw_null=
 	0,                  /* rec_mode */
 	0,                  /* code_length */
 	NULL,               /* init_func */
-	NULL,               /* config_func */
 	NULL,               /* deinit_func */
 	NULL,               /* send_func */
 	NULL,               /* rec_func */

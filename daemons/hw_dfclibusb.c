@@ -1,4 +1,4 @@
-/*      $Id: hw_dfclibusb.c,v 5.1 2010/02/27 19:20:44 lirc Exp $      */
+/*      $Id: hw_dfclibusb.c,v 5.2 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dfclibusb.c **********************************************************
@@ -58,7 +58,6 @@ struct hardware hw_dfclibusb =
 	LIRC_MODE_LIRCCODE,         /* rec_mode */
 	CODE_BYTES * CHAR_BIT,      /* code_length */
 	dfc_init,                   /* init_func */
-	NULL,                       /* config_func */
 	dfc_deinit,                 /* deinit_func */
 	NULL,                       /* send_func */
 	dfc_rec,                    /* rec_func */

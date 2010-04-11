@@ -1,4 +1,4 @@
-/*      $Id: hw_dsp.c,v 5.5 2007/07/29 18:20:07 lirc Exp $      */
+/*      $Id: hw_dsp.c,v 5.6 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_dsp.c ****************************************************************
@@ -166,7 +166,6 @@ struct hardware hw_dsp=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	dsp_init,           /* init_func */
-	NULL,               /* config_func */
 	dsp_deinit,         /* deinit_func */
 	NULL,               /* send_func */
 	dsp_rec,            /* rec_func */

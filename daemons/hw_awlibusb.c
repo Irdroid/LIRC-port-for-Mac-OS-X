@@ -82,7 +82,6 @@ struct hardware hw_awlibusb =
 	LIRC_MODE_LIRCCODE,         /* rec_mode */
 	(AWUSB_RECEIVE_BYTES-1) * CHAR_BIT,     /* code_length */
 	awlibusb_init,              /* init_func */
-	NULL,                       /* config_func */
 	awlibusb_deinit,            /* deinit_func */
 	NULL,                       /* send_func */
 	awlibusb_rec,               /* rec_func */
@@ -101,7 +100,6 @@ struct hardware hw_awlibusb =
 	LIRC_MODE_CODE,             /* rec_mode */
 	CHAR_BIT,                   /* code_length */
 	awlibusb_init,              /* init_func */
-	NULL,                       /* config_func */
 	awlibusb_deinit,            /* deinit_func */
 	NULL,                       /* send_func */
 	awlibusb_rec,               /* rec_func */

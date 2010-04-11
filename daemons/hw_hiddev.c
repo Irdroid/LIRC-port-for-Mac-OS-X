@@ -56,7 +56,6 @@ struct hardware hw_dvico=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	64,			/* code_length */
 	hiddev_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	hiddev_rec,		/* rec_func */
@@ -95,7 +94,6 @@ struct hardware hw_bw6130=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	64,			/* code_length */
 	hiddev_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	hiddev_rec,		/* rec_func */
@@ -114,7 +112,6 @@ struct hardware hw_asusdh=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	64,			/* code_length */
 	hiddev_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	hiddev_rec,		/* rec_func */
@@ -135,7 +132,6 @@ struct hardware hw_sb0540=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	32,			/* code_length */
 	sb0540_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	sb0540_rec,		/* rec_func */
@@ -156,7 +152,6 @@ struct hardware hw_macmini=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	32,			/* code_length */
 	hiddev_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	macmini_rec,		/* rec_func */
@@ -177,7 +172,6 @@ struct hardware hw_samsung=
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	32,			/* code_length */
 	samsung_init,		/* init_func */
-	NULL,			/* config_func */
 	hiddev_deinit,          /* deinit_func */
 	NULL,			/* send_func */
 	samsung_rec,		/* rec_func */

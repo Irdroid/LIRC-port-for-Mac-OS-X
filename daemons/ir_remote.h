@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.h,v 5.43 2009/05/24 10:46:52 lirc Exp $      */
+/*      $Id: ir_remote.h,v 5.44 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.h *************************************************************
@@ -283,6 +283,26 @@ static inline int expect_at_most(struct ir_remote *remote,
 	return 0;
 }
 
+static inline lirc_t upper_limit(struct ir_remote *remote, lirc_t val)
+{
+	int aeps = hw.resolution>remote->aeps ? hw.resolution:remote->aeps;
+	lirc_t eps_val = val * (100 + remote->eps) / 100;
+	lirc_t aeps_val = val + aeps;
+	return eps_val > aeps_val ? eps_val:aeps_val;
+}
+
+static inline lirc_t lower_limit(struct ir_remote *remote, lirc_t val)
+{
+	int aeps = hw.resolution>remote->aeps ? hw.resolution:remote->aeps;
+	lirc_t eps_val = val * (100 - remote->eps) / 100;
+	lirc_t aeps_val = val - aeps;
+	
+	if(eps_val <= 0) eps_val = 1;
+	if(aeps_val <= 0) aeps_val = 1;
+	
+	return eps_val < aeps_val ? eps_val:aeps_val;
+}
+
 /* only works if last <= current */
 static inline unsigned long time_elapsed(struct timeval *last,
 					 struct timeval *current)
@@ -325,6 +345,12 @@ static inline ir_code gen_ir_code(struct ir_remote *remote, ir_code pre, ir_code
 
 void get_frequency_range(struct ir_remote *remotes,
 			 unsigned int *min_freq,unsigned int *max_freq);
+void get_filter_parameters(struct ir_remote *remotes,
+			   lirc_t *max_gap_lengthp,
+			   lirc_t *min_pulse_lengthp,
+			   lirc_t *min_space_lengthp,
+			   lirc_t *max_pulse_lengthp,
+			   lirc_t *max_space_lengthp);
 struct ir_remote *is_in_remotes(struct ir_remote *remotes,
 				struct ir_remote *remote);
 struct ir_remote *get_ir_remote(struct ir_remote *remotes,char *name);

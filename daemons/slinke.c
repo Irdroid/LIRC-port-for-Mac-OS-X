@@ -1,4 +1,4 @@
-/*      $Id: slinke.c,v 5.5 2010/03/20 16:18:30 lirc Exp $      */
+/*      $Id: slinke.c,v 5.6 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** slinke.c ****************************************************************
@@ -40,7 +40,6 @@ struct hardware hw=
 	        0,                  /* rec_mode */
 	        0,                  /* code_length */
 	        NULL,               /* init_func */
-	        NULL,               /* config_func */
 	        NULL,               /* deinit_func */
 	        NULL,               /* send_func */
 	        NULL,               /* rec_func */

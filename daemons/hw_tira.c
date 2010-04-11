@@ -1,4 +1,4 @@
-/*   $Id: hw_tira.c,v 5.8 2010/03/20 16:18:30 lirc Exp $  */
+/*   $Id: hw_tira.c,v 5.9 2010/04/11 18:50:38 lirc Exp $  */
 /*****************************************************************************
  ** hw_tira.c ****************************************************************
  *****************************************************************************
@@ -86,7 +86,6 @@ struct hardware hw_tira = {
 	LIRC_MODE_LIRCCODE,              /* rec_mode */
 	CODE_LENGTH,                     /* code_length */
 	tira_init,                       /* init_func */
-	NULL,                            /* config_func */
 	tira_deinit,                     /* deinit_func */
 	tira_send,                       /* send_func */
 	tira_rec,                        /* rec_func */
@@ -105,7 +104,6 @@ struct hardware hw_tira_raw = {
 	LIRC_MODE_MODE2,              	 /* rec_mode */
 	CODE_LENGTH,                     /* code_length */
 	tira_init,                       /* init_func */
-	NULL,                            /* config_func */
 	tira_deinit,                     /* deinit_func */
 	NULL,                       	 /* send_func, tira cannot
 					    transmit in timing mode */

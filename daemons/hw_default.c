@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.42 2010/01/16 17:17:42 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.43 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -66,7 +66,6 @@ struct hardware hw_default=
 	0,                  /* rec_mode */
 	0,                  /* code_length */
 	default_init,       /* init_func */
-	default_config,     /* config_func */
 	default_deinit,     /* deinit_func */
 	default_send,       /* send_func */
 	default_rec,        /* rec_func */
@@ -76,15 +75,12 @@ struct hardware hw_default=
 	"default"
 };
 
-static unsigned int min_freq=0,max_freq=0;
-
 /**********************************************************************
  *
  * internal function prototypes
  *
  **********************************************************************/
 
-static int default_config_frequency();
 static int write_send_buffer(int lirc);
 
 /**********************************************************************
@@ -382,21 +378,7 @@ int default_init()
 		default_deinit();
 		return(0);
 	}
-	if(min_freq!=0 && max_freq!=0)
-	{
-		(void) default_config_frequency();
-	}
 #endif
-	return(1);
-}
-
-int default_config(struct ir_remote *remotes)
-{
-	get_frequency_range(remotes,&min_freq,&max_freq);
-	if(hw.fd!=-1)
-	{
-		return(default_config_frequency());
-	}
 	return(1);
 }
 
@@ -498,38 +480,6 @@ char *default_rec(struct ir_remote *remotes)
 		return NULL;
 	}
 	return(decode_all(remotes));
-}
-
-static int default_config_frequency()
-{
-	unsigned int freq;
-	
-	if(!(hw.features&LIRC_CAN_SET_REC_CARRIER))
-	{
-		return(1);
-	}
-	if(hw.features&LIRC_CAN_SET_REC_CARRIER_RANGE &&
-	   min_freq!=max_freq)
-	{
-		if(default_ioctl(LIRC_SET_REC_CARRIER_RANGE, &min_freq)==-1)
-		{
-			logprintf(LOG_ERR,"could not set receive carrier");
-			logperror(LOG_ERR, __FUNCTION__);
-			return(0);
-		}
-		freq=max_freq;
-	}
-	else
-	{
-		freq=(min_freq+max_freq)/2;
-	}
-	if(default_ioctl(LIRC_SET_REC_CARRIER, &freq)==-1)
-	{
-		logprintf(LOG_ERR, "could not set receive carrier");
-		logperror(LOG_ERR, __FUNCTION__);
-		return(0);
-	}
-	return(1);
 }
 
 int default_ioctl(unsigned int cmd, void *arg)

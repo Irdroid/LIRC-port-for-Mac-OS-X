@@ -71,7 +71,6 @@ struct hardware hw_usbx = {
 	LIRC_MODE_LIRCCODE,              /* rec_mode */
 	CODE_LENGTH,                     /* code_length */
 	usbx_init,                       /* init_func */
-	NULL,                            /* config_func */
 	usbx_deinit,                     /* deinit_func */
 	NULL,                            /* send_func */
 	usbx_rec,                        /* rec_func */

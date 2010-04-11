@@ -1,4 +1,4 @@
-/*      $Id: hw_mouseremote.c,v 5.6 2010/03/20 10:15:09 lirc Exp $      */
+/*      $Id: hw_mouseremote.c,v 5.7 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_mouseremote.c ********************************************************
@@ -59,7 +59,6 @@ struct hardware hw_mouseremote=
 	LIRC_MODE_LIRCCODE,       	/* rec_mode */
 	32,				/* code_length */
 	mouseremote_init,          	/* init_func */
-	NULL,                     	/* config_func */
 	mouseremote_deinit,        	/* deinit_func */
 	NULL,                     	/* send_func */
 	mouseremote_rec,           	/* rec_func */
@@ -77,7 +76,6 @@ struct hardware hw_mouseremote_ps2=
 	LIRC_MODE_LIRCCODE,       	/* rec_mode */
 	32,				/* code_length */
 	mouseremote_ps2_init,          	/* init_func */
-	NULL,                     	/* config_func */
 	mouseremote_deinit,        	/* deinit_func */
 	NULL,                     	/* send_func */
 	mouseremote_rec,           	/* rec_func */

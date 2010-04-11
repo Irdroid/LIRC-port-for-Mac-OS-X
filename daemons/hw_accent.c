@@ -134,7 +134,6 @@ struct hardware hw_accent = {
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	ACCENT_CODE_LENGTH,       /* code_length */
 	accent_init,              /* init_func */
-	NULL,                     /* config_func */
 	accent_deinit,            /* deinit_func */
 	NULL,                     /* send_func */
 	accent_rec,               /* rec_func */

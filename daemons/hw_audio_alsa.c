@@ -1,4 +1,4 @@
-/*	$Id: hw_audio_alsa.c,v 5.5 2008/07/03 21:33:52 lirc Exp $	*/
+/*	$Id: hw_audio_alsa.c,v 5.6 2010/04/11 18:50:38 lirc Exp $	*/
 
 /****************************************************************************
  ** hw_audio_alsa.c *********************************************************
@@ -578,7 +578,6 @@ struct hardware hw_audio_alsa=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	audio_alsa_init,    /* init_func */
-	NULL,               /* config_func */
 	audio_alsa_deinit,  /* deinit_func */
 	NULL,               /* send_func */
 	audio_alsa_rec,     /* rec_func */

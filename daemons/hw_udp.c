@@ -161,7 +161,6 @@ struct hardware hw_udp=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	udp_init,	    /* init_func */
-	NULL,		    /* config_func */
 	udp_deinit,         /* deinit_func */
 	NULL,		    /* send_func */
 	udp_rec,            /* rec_func */

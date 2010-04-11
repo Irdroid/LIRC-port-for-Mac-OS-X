@@ -1,4 +1,4 @@
-/*      $Id: ir_remote_types.h,v 5.16 2010/04/02 10:26:57 lirc Exp $      */
+/*      $Id: ir_remote_types.h,v 5.17 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote_types.h *******************************************************
@@ -187,6 +187,8 @@ struct ir_remote
 					   signal including gap */
 	lirc_t min_gap_length;      /* how long is the shortest gap */
 	lirc_t max_gap_length;      /* how long is the longest gap */
+	lirc_t min_pulse_length, max_pulse_length;
+	lirc_t min_space_length, max_space_length;
 	int release_detected;       /* set by release generator */
         struct ir_remote *next;
 };

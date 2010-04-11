@@ -382,7 +382,6 @@ struct hardware hw_iguanaIR =
 	LIRC_MODE_MODE2,		/* rec_mode */
 	sizeof(int),			/* code_length */
 	iguana_init,			/* init_func */
-	NULL,				/* config_func */
 	iguana_deinit,			/* deinit_func */
 	iguana_send,			/* send_func */
 	iguana_rec,			/* rec_func */

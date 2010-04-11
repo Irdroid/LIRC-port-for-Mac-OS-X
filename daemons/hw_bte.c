@@ -76,7 +76,6 @@ struct hardware hw_bte=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	16,                       /* code_length */
 	bte_init,	          /* init_func */
-	NULL,                     /* config_func */
 	bte_deinit,	          /* deinit_func */
 #if BTE_CAN_SEND
 	bte_send,                 /* send_func */

@@ -1,4 +1,4 @@
-/*      $Id: hw_audio.c,v 5.8 2010/04/06 19:43:20 lirc Exp $      */
+/*      $Id: hw_audio.c,v 5.9 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_audio.c **************************************************************
@@ -732,7 +732,6 @@ struct hardware hw_audio=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	audio_init,         /* init_func */
-	NULL,		    /* config_func */
 	audio_deinit,       /* deinit_func */
 	audio_send,         /* send_func */
 	audio_rec,          /* rec_func */

@@ -75,7 +75,6 @@ struct hardware hw_livedrive_seq = {
 	LIRC_MODE_LIRCCODE,	/* rec_mode */
 	32,			/* code_length */
 	livedrive_init,		/* init_func */
-	NULL,			/* config_func */
 	livedrive_deinit,	/* deinit_func */
 	NULL,			/* send_func */
 	livedrive_rec_seq,	/* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: hw_pcmak.c,v 5.4 2010/03/20 10:15:09 lirc Exp $      */
+/*      $Id: hw_pcmak.c,v 5.5 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_pcmak.c ***********************************************************
@@ -55,7 +55,6 @@ struct hardware hw_pcmak=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	16,                       /* code_length */
 	pcmak_init,               /* init_func */
-	NULL,                     /* config_func */
 	pcmak_deinit,             /* deinit_func */
 	NULL,                     /* send_func */
 	pcmak_rec,                /* rec_func */

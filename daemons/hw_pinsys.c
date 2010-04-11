@@ -74,7 +74,6 @@ struct hardware hw_pinsys=
 	/* remember to change signal_length if you correct this one */
 	BITS_COUNT,                       /* code_length */
 	pinsys_init,              /* init_func */
-	NULL,                     /* config_func */
 	pinsys_deinit,            /* deinit_func */
 	NULL,                     /* send_func */
 	pinsys_rec,               /* rec_func */

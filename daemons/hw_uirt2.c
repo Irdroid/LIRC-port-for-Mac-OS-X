@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2.c,v 5.5 2010/03/20 10:15:10 lirc Exp $      */
+/*      $Id: hw_uirt2.c,v 5.6 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_uirt2.c **************************************************************
@@ -76,7 +76,6 @@ struct hardware hw_uirt2=
 	LIRC_MODE_LIRCCODE,       /* rec_mode */
 	8*NUMBYTES,               /* code_length */
 	uirt2_init,               /* init_func */
-	NULL,                     /* config_func */
 	uirt2_deinit,             /* deinit_func */
 	NULL,                     /* send_func */
 	uirt2_rec,                /* rec_func */

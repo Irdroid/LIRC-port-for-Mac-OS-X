@@ -53,7 +53,6 @@ struct hardware hw_mp3anywhere=
 	LIRC_MODE_LIRCCODE,       	/* rec_mode */
 	8,                       	/* code_length */
 	mp3anywhere_init,            	/* init_func */
-	NULL,                     	/* config_func */
 	mp3anywhere_deinit,          	/* deinit_func */
 	NULL,                     	/* send_func */
 	mp3anywhere_rec,             	/* rec_func */

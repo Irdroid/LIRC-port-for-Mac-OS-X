@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.32 2010/04/02 10:26:57 lirc Exp $      */
+/*      $Id: config_file.c,v 5.33 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -1242,8 +1242,10 @@ void calculate_signal_lengths(struct ir_remote *remote)
 	}
 
 	lirc_t min_signal_length = 0, max_signal_length = 0;
+	lirc_t max_pulse = 0, max_space = 0;
 	int first_sum = 1;
 	struct ir_ncode *c = remote->codes;
+	int i;
 	
 	while(c->name)
 	{
@@ -1280,6 +1282,23 @@ void calculate_signal_lengths(struct ir_remote *remote)
 							max_signal_length = sum;
 						}
 						first_sum = 0;
+					}
+					for(i=0; i<send_buffer.wptr; i++)
+					{
+						if(i&1) /* space */
+						{
+							if(send_buffer.data[i] > max_space)
+							{
+								max_space = send_buffer.data[i];
+							}
+						}
+						else /* pulse */
+						{
+							if(send_buffer.data[i] > max_pulse)
+							{
+								max_pulse = send_buffer.data[i];
+							}
+						}
 					}
 				}
 			}
@@ -1374,3 +1393,4 @@ void free_config(struct ir_remote *remotes)
 		remotes=next;
 	}
 }
+

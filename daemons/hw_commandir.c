@@ -1,4 +1,4 @@
-/* CommandIR transceivers driver 0.96 CVS $Revision: 5.6 $
+/* CommandIR transceivers driver 0.96 CVS $Revision: 5.7 $
  * Supporting CommandIR II and CommandIR Mini (and multiple of both)
  * April-June 2008, Matthew Bodkin
  */
@@ -129,7 +129,6 @@ struct hardware hw_commandir =
 	LIRC_MODE_MODE2,            /* rec_mode */
 	sizeof(lirc_t),        		/* code_length in BITS */
 	commandir_init,       		/* init_func */
-	NULL,     			  		/* config_func */
 	commandir_deinit,     		/* deinit_func */
 	commandir_send,				/* send_func */
  	commandir_rec,        		/* rec_func  */

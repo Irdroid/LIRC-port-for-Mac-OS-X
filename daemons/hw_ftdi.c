@@ -575,7 +575,6 @@ struct hardware hw_ftdi=
 	LIRC_MODE_MODE2,    /* rec_mode */
 	0,                  /* code_length */
 	hwftdi_init,	    /* init_func */
-	NULL,		    /* config_func */
 	hwftdi_deinit,      /* deinit_func */
 	hwftdi_send,	    /* send_func */
 	hwftdi_rec,         /* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: hw_alsa_usb.c,v 5.4 2010/01/01 10:10:35 lirc Exp $   */
+/*      $Id: hw_alsa_usb.c,v 5.5 2010/04/11 18:50:38 lirc Exp $   */
 
 /****************************************************************************
  ** hw_alsa_usb.c ***********************************************************
@@ -42,7 +42,6 @@ struct hardware hw_alsa_usb = {
 	LIRC_MODE_LIRCCODE,	/* rec_mode */
 	8,			/* code_length */
 	init,			/* init_func */
-	NULL,			/* config_func */
 	deinit,			/* deinit_func */
 	NULL,			/* send_func */
 	rec,			/* rec_func */

@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.41 2010/01/30 15:01:29 lirc Exp $      */
+/*      $Id: receive.c,v 5.42 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -25,6 +25,11 @@ extern struct ir_remote *last_remote;
 
 struct rbuf rec_buffer;
 
+lirc_t receive_timeout(lirc_t usec)
+{
+	return 2*usec<MIN_RECEIVE_TIMEOUT ? MIN_RECEIVE_TIMEOUT:2*usec;
+}
+
 inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
 {
 	return(a>b ? a:b);
@@ -42,7 +47,7 @@ inline void set_pending_space(lirc_t deltas)
 	rec_buffer.pendings=deltas;
 }
 
-lirc_t get_next_rec_buffer(lirc_t maxusec)
+static lirc_t get_next_rec_buffer_internal(lirc_t maxusec)
 {
 	if(rec_buffer.rptr<rec_buffer.wptr)
 	{
@@ -59,7 +64,7 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 		{
 			lirc_t data;
 			
-			data=hw.readdata(2*maxusec<100000 ? 100000:2*maxusec);
+			data=hw.readdata(maxusec);
 			if(!data)
 			{
 				LOGPRINTF(3,"timeout: %u", maxusec);
@@ -67,20 +72,12 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 			}
 			if(LIRC_IS_TIMEOUT(data))
 			{
-				static int print_once = 1;
-				
-				if(LIRC_VALUE(data) < maxusec && print_once)
-				{
-					print_once = 0;
-					logprintf(LOG_WARNING,
-						  "timeout value is smaller "
-						  "than requested: %lu < %lu",
-						  (unsigned long)
-						  LIRC_VALUE(data),
-						  (unsigned long) maxusec);
-				}
 				LOGPRINTF(1,"timeout received: %lu",
 					  (unsigned long) LIRC_VALUE(data));
+				if(LIRC_VALUE(data) < maxusec)
+				{
+					return get_next_rec_buffer_internal(maxusec - LIRC_VALUE(data));
+				}
 				return 0;
 			}
 
@@ -104,6 +101,11 @@ lirc_t get_next_rec_buffer(lirc_t maxusec)
 		}
 	}
 	return(0);
+}
+
+lirc_t get_next_rec_buffer(lirc_t maxusec)
+{
+	return get_next_rec_buffer_internal(receive_timeout(maxusec));
 }
 
 void init_rec_buffer(void)

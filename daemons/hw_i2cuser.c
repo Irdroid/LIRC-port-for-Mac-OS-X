@@ -1,4 +1,4 @@
-/*      $Id: hw_i2cuser.c,v 5.2 2008/06/30 16:15:04 lirc Exp $      */
+/*      $Id: hw_i2cuser.c,v 5.3 2010/04/11 18:50:38 lirc Exp $      */
 
 /*
  * Remote control driver for I2C-attached devices from userspace
@@ -85,7 +85,6 @@ struct hardware hw_i2cuser = {
 	LIRC_MODE_LIRCCODE,     /* rec_mode */
 	CODE_SIZE_BITS,         /* code_length */
 	i2cuser_init,           /* init_func */
-	NULL,                   /* config_func */
 	i2cuser_deinit,         /* deinit_func */
 	NULL,                   /* send_func */
 	i2cuser_rec,            /* rec_func */

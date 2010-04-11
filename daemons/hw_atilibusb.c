@@ -1,4 +1,4 @@
-/*      $Id: hw_atilibusb.c,v 5.6 2009/11/18 22:10:11 lirc Exp $      */
+/*      $Id: hw_atilibusb.c,v 5.7 2010/04/11 18:50:38 lirc Exp $      */
 
 /****************************************************************************
  ** hw_atilibusb.c **********************************************************
@@ -57,7 +57,6 @@ struct hardware hw_atilibusb =
 	LIRC_MODE_LIRCCODE,         /* rec_mode */
 	CODE_BYTES * CHAR_BIT,      /* code_length */
 	ati_init,                   /* init_func */
-	NULL,                       /* config_func */
 	ati_deinit,                 /* deinit_func */
 	NULL,                       /* send_func */
 	ati_rec,                    /* rec_func */
