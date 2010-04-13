@@ -1,4 +1,4 @@
-/*      $Id: receive.c,v 5.42 2010/04/11 18:50:38 lirc Exp $      */
+/*      $Id: receive.c,v 5.43 2010/04/13 16:28:10 lirc Exp $      */
 
 /****************************************************************************
  ** receive.c ***************************************************************
@@ -24,11 +24,6 @@ extern struct hardware hw;
 extern struct ir_remote *last_remote;
 
 struct rbuf rec_buffer;
-
-lirc_t receive_timeout(lirc_t usec)
-{
-	return 2*usec<MIN_RECEIVE_TIMEOUT ? MIN_RECEIVE_TIMEOUT:2*usec;
-}
 
 inline lirc_t lirc_t_max(lirc_t a,lirc_t b)
 {
