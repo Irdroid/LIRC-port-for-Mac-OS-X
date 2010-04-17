@@ -1,7 +1,7 @@
 /*
- * driver for ENE KB3926 B/C/D CIR (also known as ENE0100)
+ * driver for ENE KB3926 B/C/D CIR (also known as ENE0100/ENE0200/ENE0201)
  *
- * Copyright (C) 2009 Maxim Levitsky <maximlevitsky@gmail.com>
+ * Copyright (C) 2010 Maxim Levitsky <maximlevitsky@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,123 +19,144 @@
  * USA
  */
 
+#include <linux/spinlock.h>
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
 /* hardware address */
-#define ENE_STATUS		0	 /* hardware status - unused */
-#define ENE_ADDR_HI 		1	 /* hi byte of register address */
-#define ENE_ADDR_LO 		2	 /* low byte of register address */
-#define ENE_IO 			3	 /* read/write window */
+#define ENE_STATUS		0	/* hardware status - unused */
+#define ENE_ADDR_HI		1	/* hi byte of register address */
+#define ENE_ADDR_LO		2	/* low byte of register address */
+#define ENE_IO			3	/* read/write window */
 #define ENE_MAX_IO		4
 
 /* 8 bytes of samples, divided in 2 halfs*/
-#define ENE_SAMPLE_BUFFER 	0xF8F0	 /* regular sample buffer */
-#define ENE_SAMPLE_SPC_MASK 	(1 << 7) /* sample is space */
+#define ENE_SAMPLE_BUFFER	0xF8F0	/* regular sample buffer */
+#define ENE_SAMPLE_SPC_MASK	0x80	/* sample is space */
 #define ENE_SAMPLE_VALUE_MASK	0x7F
 #define ENE_SAMPLE_OVERFLOW	0x7F
 #define ENE_SAMPLES_SIZE	4
 
 /* fan input sample buffer */
-#define ENE_SAMPLE_BUFFER_FAN	0xF8FB	 /* this buffer holds high byte of */
-					 /* each sample of normal buffer */
+#define ENE_SAMPLE_BUFFER_FAN	0xF8FB	/* this buffer holds high byte of */
+					/* each sample of normal buffer */
 
-#define ENE_FAN_SMPL_PULS_MSK	0x8000	 /* this bit of combined sample */
-					 /* if set, says that sample is pulse */
-#define ENE_FAN_VALUE_MASK	0x0FFF   /* mask for valid bits of the value */
+#define ENE_FAN_SMPL_PULS_MSK	0x8000	/* this bit of combined sample */
+					/* if set, says that sample is pulse */
+#define ENE_FAN_VALUE_MASK	0x0FFF  /* mask for valid bits of the value */
 
 /* first firmware register */
 #define ENE_FW1			0xF8F8
-#define	ENE_FW1_ENABLE		(1 << 0) /* enable fw processing */
-#define ENE_FW1_TXIRQ		(1 << 1) /* TX interrupt pending */
-#define ENE_FW1_WAKE		(1 << 6) /* enable wake from S3 */
-#define ENE_FW1_IRQ		(1 << 7) /* enable interrupt */
+#define	ENE_FW1_ENABLE		0x01	/* enable fw processing */
+#define ENE_FW1_TXIRQ		0x02	/* TX interrupt pending */
+#define ENE_FW1_WAKE		0x40	/* enable wake from S3 */
+#define ENE_FW1_IRQ		0x80	/* enable interrupt */
 
 /* second firmware register */
 #define ENE_FW2			0xF8F9
-#define ENE_FW2_BUF_HIGH	(1 << 0) /* which half of the buffer to read */
-#define ENE_FW2_IRQ_CLR		(1 << 2) /* clear this on IRQ */
-#define ENE_FW2_GP40_AS_LEARN	(1 << 4) /* normal input is used as */
-					 /* learning input */
-#define ENE_FW2_FAN_AS_NRML_IN	(1 << 6) /* fan is used as normal input */
-#define ENE_FW2_LEARNING	(1 << 7) /* hardware supports learning and TX */
+#define ENE_FW2_BUF_HIGH	0x01	/* which half of the buffer to read */
+#define ENE_FW2_IRQ_CLR		0x04	/* clear this on IRQ */
+#define ENE_FW2_GP40_AS_LEARN	0x08	/* normal input is used as */
+					/* learning input */
+#define ENE_FW2_FAN_AS_NRML_IN	0x40	/* fan is used as normal input */
+#define ENE_FW2_LEARNING	0x80	/* hardware supports learning and TX */
 
 /* fan as input settings - only if learning capable */
-#define ENE_FAN_AS_IN1		0xFE30   /* fan init reg 1 */
+#define ENE_FAN_AS_IN1		0xFE30  /* fan init reg 1 */
 #define ENE_FAN_AS_IN1_EN	0xCD
-#define ENE_FAN_AS_IN2		0xFE31   /* fan init reg 2 */
+#define ENE_FAN_AS_IN2		0xFE31  /* fan init reg 2 */
 #define ENE_FAN_AS_IN2_EN	0x03
-#define ENE_SAMPLE_PERIOD_FAN   61	 /* fan input has fixed sample period */
+#define ENE_SAMPLE_PERIOD_FAN   61	/* fan input has fixed sample period */
 
 /* IRQ registers block (for revision B) */
-#define ENEB_IRQ		0xFD09	 /* IRQ number */
-#define ENEB_IRQ_UNK1		0xFD17	 /* unknown setting = 1 */
-#define ENEB_IRQ_STATUS		0xFD80	 /* irq status */
-#define ENEB_IRQ_STATUS_IR	(1 << 5) /* IR irq */
+#define ENEB_IRQ		0xFD09	/* IRQ number */
+#define ENEB_IRQ_UNK1		0xFD17	/* unknown setting = 1 */
+#define ENEB_IRQ_STATUS		0xFD80	/* irq status */
+#define ENEB_IRQ_STATUS_IR	0x20	/* IR irq */
 
 /* IRQ registers block (for revision C,D) */
-#define ENEC_IRQ		0xFE9B	 /* new irq settings register */
-#define ENEC_IRQ_MASK		0x0F	 /* irq number mask */
-#define ENEC_IRQ_UNK_EN		(1 << 4) /* always enabled */
-#define ENEC_IRQ_STATUS		(1 << 5) /* irq status and ACK */
+#define ENEC_IRQ		0xFE9B	/* new irq settings register */
+#define ENEC_IRQ_MASK		0x0F	/* irq number mask */
+#define ENEC_IRQ_UNK_EN		0x10	/* always enabled */
+#define ENEC_IRQ_STATUS		0x20	/* irq status and ACK */
 
 /* CIR block settings */
 #define ENE_CIR_CONF1		0xFEC0
-#define ENE_CIR_CONF1_ADC_ON	0x7	 /* reciever on gpio40 enabled */
-#define ENE_CIR_CONF1_LEARN1	(1 << 3) /* enabled on learning mode */
-#define ENE_CIR_CONF1_TX_ON	0x30	 /* enabled on transmit */
-#define ENE_CIR_CONF1_TX_CARR	(1 << 7) /* send TX carrier or not */
+#define ENE_CIR_CONF1_ADC_ON	0x07	/* reciever on gpio40 enabled */
+#define ENE_CIR_CONF1_TX_CLEAR	0x01	/* clear that on revC */
+					/* while transmitting */
+#define ENE_CIR_CONF1_LEARN1	0x08	/* enabled on learning mode */
+#define ENE_CIR_CONF1_TX_ON	0x30	/* enabled on transmit */
+#define ENE_CIR_CONF1_TX_CARR	0x80	/* send TX carrier or not */
 
-#define ENE_CIR_CONF2		0xFEC1	 /* unknown setting = 0 */
-#define ENE_CIR_CONF2_LEARN2	(1 << 4) /* set on enable learning */
-#define ENE_CIR_CONF2_GPIO40DIS	(1 << 5) /* disable normal input via gpio40 */
+#define ENE_CIR_CONF2		0xFEC1	/* unknown setting = 0 */
+#define ENE_CIR_CONF2_LEARN2	0x10	/* set on enable learning */
+#define ENE_CIR_CONF2_GPIO40DIS	0x20	/* disable normal input via gpio40 */
 
-#define ENE_CIR_SAMPLE_PERIOD	0xFEC8	 /* sample period in us */
-#define ENE_CIR_SAMPLE_OVERFLOW	(1 << 7) /* interrupt on overflows if set */
-
-
-/* transmitter - not implemented yet */
-/* KB3926C and higher */
-/* transmission is very similiar to recieving, a byte is written to */
-/* ENE_TX_INPUT, in same manner as it is read from sample buffer */
-/* sample period is fixed*/
+#define ENE_CIR_SAMPLE_PERIOD	0xFEC8	/* sample period in us */
+#define ENE_CIR_SAMPLE_OVERFLOW	0x80	/* interrupt on overflows if set */
 
 
 /* transmitter ports */
-#define ENE_TX_PORT1		0xFC01	 /* this enables one or both */
-#define ENE_TX_PORT1_EN		(1 << 5) /* TX ports */
-#define ENE_TX_PORT2		0xFC08
-#define ENE_TX_PORT2_EN		(1 << 1)
+#define ENE_TX_PORT1		0xFC08	/* this enables one or both */
+#define ENE_TX_PORT1_EN		0x02	/* TX ports */
+#define ENE_TX_PORT2		0xFC01
+#define ENE_TX_PORT2_EN		0x20
 
-#define ENE_TX_INPUT		0xFEC9	 /* next byte to transmit */
-#define ENE_TX_SPC_MASK 	(1 << 7) /* Transmitted sample is space */
-#define ENE_TX_UNK1		0xFECB	 /* set to 0x63 */
-#define ENE_TX_SMPL_PERIOD	50	 /* transmit sample period */
+/* two byte tx buffer */
+#define ENE_TX_INPUT1		0xFEC9
+#define ENE_TX_INPUT2		0xFECA
+#define ENE_TX_PULSE_MASK	0x80	/* Transmitted sample is pulse */
+#define ENE_TX_SMLP_MASK	0x7F
 
+/* Unknown TX setting */
+#define ENE_TX_UNK1		0xFECB	/* set to 0x63 */
+#define ENE_TX_SMPL_PERIOD	50	/* transmit sample period - fixed */
 
-#define ENE_TX_CARRIER		0xFECE	 /* TX carrier * 2 (khz) */
-#define ENE_TX_CARRIER_UNKBIT	0x80	 /* This bit set on transmit */
-#define ENE_TX_CARRIER_LOW	0xFECF	 /* TX carrier / 2 */
+/* TX period (1/carrier) */
+#define ENE_TX_PERIOD		0xFECE	/* TX period *RC5 2 (usec) */
+#define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit */
+#define ENE_TX_PERIOD_LOW	0xFECF	/* TX period / 2 (usec)*/
+#define ENE_TX_PERIOD_MAX	63
+#define ENE_TX_PERIOD_MIN	29
 
 /* Hardware versions */
-#define ENE_HW_VERSION		0xFF00	 /* hardware revision */
-#define ENE_HW_UNK 		0xFF1D
-#define ENE_HW_UNK_CLR		(1 << 2)
-#define ENE_HW_VER_MAJOR	0xFF1E	 /* chip version */
+#define ENE_HW_VERSION		0xFF00	/* hardware revision */
+#define ENE_HW_UNK		0xFF1D
+#define ENE_HW_UNK_CLR		0x04
+#define ENE_HW_VER_MAJOR	0xFF1E	/* chip version */
 #define ENE_HW_VER_MINOR	0xFF1F
 #define ENE_HW_VER_OLD		0xFD00
 
-#define same_sign(a, b) ((((a) > 0) && (b) > 0) || ((a) < 0 && (b) < 0))
+/* Normal/Learning carrier ranges - only valid if we have learning input*/
+/* TODO: test */
+#define ENE_NORMAL_RX_LOW	28
+#define ENE_NORMAL_RX_HI	32
 
-#define ENE_DRIVER_NAME 	"enecir"
-#define ENE_MAXGAP 		250000	 /* this is amount of time we wait
-					 before turning the sampler, chosen
-					 arbitry */
 
-#define space(len) 	       (-(len))	 /* add a space */
+/* Minimal and maximal gaps */
 
-/* software defines */
+/* Normal case:
+	Minimal gap is 0x7F * sample period
+	Maximum gap depends on hardware.
+	For KB3926B, it is unlimited, for newer models its around
+	250000, after which HW stops sending samples, and that is
+	not possible to change */
+
+/* Fan case:
+	Both minimal and maximal gaps are same, and equal to 0xFFF * 0x61
+	And there is nothing to change this setting
+*/
+
+#define ENE_MAXGAP		250000
+#define ENE_MINGAP		(127 * sample_period)
+
+/******************************************************************************/
+
+#define ENE_DRIVER_NAME		"enecir"
+#define ENE_TXBUF_SIZE (500 * sizeof(int))	/* 500 samples (arbitary) */
+
 #define ENE_IRQ_RX		1
 #define ENE_IRQ_TX		2
 
@@ -146,25 +167,63 @@
 #define ene_printk(level, text, ...) \
 	printk(level ENE_DRIVER_NAME ": " text, ## __VA_ARGS__)
 
+#define ene_dbg(text, ...) \
+	if (debug) \
+		printk(KERN_DEBUG \
+			ENE_DRIVER_NAME ": " text "\n" , ## __VA_ARGS__)
+
+#define ene_dbg_verbose(text, ...) \
+	if (debug > 1) \
+		printk(KERN_DEBUG \
+			ENE_DRIVER_NAME ": " text "\n" , ## __VA_ARGS__)
+
+
 struct ene_device {
 	struct pnp_dev *pnp_dev;
 	struct lirc_driver *lirc_driver;
+	int in_use;
 
-	/* hw settings */
+	/* hw IO settings */
 	unsigned long hw_io;
 	int irq;
+	spinlock_t hw_lock;
 
+	/* HW features */
 	int hw_revision;			/* hardware revision */
 	int hw_learning_and_tx_capable;		/* learning capable */
 	int hw_gpio40_learning;			/* gpio40 is learning */
-	int hw_fan_as_normal_input;	/* fan input is used as regular input */
+	int hw_fan_as_normal_input;		/* fan input is used as */
+						/* regular input */
+	/* HW state*/
+	int rx_pointer;				/* hw pointer to rx buffer */
+	int rx_fan_input_inuse;			/* is fan input in use for rx*/
+	int tx_reg;				/* current reg used for TX */
+	u8  saved_conf1;			/* saved FEC0 reg */
+	int learning_enabled;			/* learning input enabled */
 
-	/* device data */
-	int idle;
-	int fan_input_inuse;
+	/* RX sample handling */
+	int rx_sample;				/* current recieved sample */
+	int rx_sample_pulse;			/* recieved sample is pulse */
+	int rx_idle;				/* idle mode for RX activated */
+	struct timeval rx_gap_start;		/* time of start of idle */
+	int rx_timeout;				/* time in ms of RX timeout */
+	int rx_send_timeout_packet;		/* do we send RX timeout */
 
-	int sample;
-	int in_use;
+	/* TX sample handling */
+	unsigned int tx_sample;			/* current sample for TX */
+	int tx_sample_pulse;			/* current sample is pulse */
 
-	struct timeval gap_start;
+	/* TX buffer */
+	int tx_buffer[ENE_TXBUF_SIZE];		/* input samples buffer*/
+	int tx_pos;				/* position in that bufer */
+	int tx_len;				/* current len of tx buffer */
+	int tx_underway;			/* TX is under way*/
+	int tx_done;				/* done transmitting */
+						/* one more sample pending*/
+	struct completion tx_complete;		/* TX completion */
+	struct timer_list tx_sim_timer;
+
+	/*TX settings */
+	int tx_period;
+	int transmitter_mask;
 };

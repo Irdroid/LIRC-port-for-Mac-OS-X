@@ -1,4 +1,6 @@
 0.8.7-CVS: future
+  * added transmit support to driver for ENE CIR port
+    (only few devices support that)
   * made generation of automatic release events in lircd more robust
   * added tira_raw driver for the Ira/Tira receivers that supports
     receiving in timing mode, the tira driver now supports transmit
