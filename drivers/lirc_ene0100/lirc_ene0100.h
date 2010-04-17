@@ -118,8 +118,6 @@
 #define ENE_TX_PERIOD		0xFECE	/* TX period *RC5 2 (usec) */
 #define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit */
 #define ENE_TX_PERIOD_LOW	0xFECF	/* TX period / 2 (usec)*/
-#define ENE_TX_PERIOD_MAX	63
-#define ENE_TX_PERIOD_MIN	29
 
 /* Hardware versions */
 #define ENE_HW_VERSION		0xFF00	/* hardware revision */
@@ -133,6 +131,13 @@
 /* TODO: test */
 #define ENE_NORMAL_RX_LOW	28
 #define ENE_NORMAL_RX_HI	32
+
+/* Tx carrier range */
+/* Hardware might be able to do more, but this range is enough for
+   all purposes */
+#define ENE_TX_PERIOD_MAX	32	/* corresponds to 29.4 kHz */
+#define ENE_TX_PERIOD_MIN	16	/* corrsponds to 62.5 kHz */
+
 
 
 /* Minimal and maximal gaps */

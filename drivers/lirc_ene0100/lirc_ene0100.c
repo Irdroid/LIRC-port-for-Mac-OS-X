@@ -274,7 +274,12 @@ static void ene_rx_flush(struct ene_device *dev, int timeout)
 	value =	dev->rx_sample_pulse ? LIRC_PULSE(dev->rx_sample) :
 					LIRC_SPACE(dev->rx_sample);
 
-	if (timeout && dev->rx_send_timeout_packet) {
+	if (timeout) {
+
+		/* Don't flush sample if we have no timeout report */
+		if (!dev->rx_send_timeout_packet)
+			return;
+
 		ene_dbg("RX: sending timeout sample");
 		value = LIRC_TIMEOUT(dev->rx_sample);
 	}
@@ -324,18 +329,12 @@ static void ene_rx_sample(struct ene_device *dev, int sample, int is_pulse)
 
 	if (!dev->rx_fan_input_inuse) {
 
-		/* User set timeout */
-		if (dev->rx_timeout && dev->rx_sample > dev->rx_timeout) {
-			ene_rx_flush(dev, 1);
-			ene_rx_set_idle(dev, 1);
-			return;
-		}
-
 		/* too large sample accumulated via normal input.
 		note that on revC, hardware idle mode turns on automaticly,
-			so ENE_MAXGAP should be less that the gap after which
+			so max gap should be less that the gap after which
 			hw stops sending samples */
-		if (dev->rx_sample >= ENE_MAXGAP) {
+		if (dev->rx_timeout && dev->rx_sample > dev->rx_timeout) {
+			ene_rx_flush(dev, 1);
 			ene_rx_set_idle(dev, 1);
 			return;
 		}
@@ -650,6 +649,12 @@ static void ene_setup_settings(struct ene_device *dev)
 		let user set it with LIRC_SET_REC_CARRIER */
 	dev->learning_enabled =
 		(input == 2 && dev->hw_learning_and_tx_capable);
+
+	/* Clear accumulated sample bufer */
+	dev->rx_sample = 0;
+	dev->rx_sample_pulse = 0;
+	dev->rx_pointer = -1;
+
 }
 
 /* outside interface: called on first open*/
@@ -662,11 +667,6 @@ static int ene_open(void *data)
 	dev->in_use = 1;
 	ene_setup_settings(dev);
 	ene_rx_enable(dev);
-
-	/* clear stats */
-	dev->rx_sample = 0;
-	dev->rx_sample_pulse = 0;
-	dev->rx_pointer = -1;
 	spin_unlock_irqrestore(&dev->hw_lock, flags);
 	return 0;
 }
@@ -675,6 +675,9 @@ static int ene_open(void *data)
 static void ene_close(void *data)
 {
 	struct ene_device *dev = (struct ene_device *)data;
+	unsigned long flags;
+
+	spin_lock_irqsave(&dev->hw_lock, flags);
 
 	/* disable samplers */
 	ene_enable_normal_recieve(dev, 0);
@@ -687,6 +690,7 @@ static void ene_close(void *data)
 
 	ene_rx_set_idle(dev, 1);
 	dev->in_use = 0;
+	spin_unlock_irqrestore(&dev->hw_lock, flags);	
 }
 
 /* outside interface for settings */
@@ -704,18 +708,20 @@ static int ene_ioctl(struct inode *node, struct file *file,
 			return retval;
 
 		ene_dbg("TX: attempt to set tx carrier to %d kHz", lvalue);
-		lvalue = 1000000 / lvalue; /* (1 / freq) (* # usec in 1 sec) */
+		tmp = 1000000 / lvalue; /* (1 / freq) (* # usec in 1 sec) */
 
-		if (lvalue > ENE_TX_PERIOD_MAX ||
-				lvalue < ENE_TX_PERIOD_MIN) {
+		if (tmp > ENE_TX_PERIOD_MAX ||
+				tmp < ENE_TX_PERIOD_MIN) {
 
 			ene_dbg("TX: out of range %d-%d carrier, "
 				"falling back to 32 kHz",
-				ENE_TX_PERIOD_MIN, ENE_TX_PERIOD_MAX);
+				1000 / ENE_TX_PERIOD_MIN,
+				1000 / ENE_TX_PERIOD_MAX);
 
-			lvalue = 32;
+			tmp = 32; /* this is just a coincidence!!! */
 		}
-		dev->tx_period = lvalue;
+		ene_dbg("TX: set carrier period time to %d usec", tmp);
+		dev->tx_period = tmp;
 		return 0;
 
 	case LIRC_SET_TRANSMITTER_MASK:
@@ -758,6 +764,12 @@ static int ene_ioctl(struct inode *node, struct file *file,
 
 		if (retval)
 			return retval;
+
+		ene_dbg("RX: attempt to set rx timeout to %d", lvalue);
+
+		/* Can't disable gap timeout on revC+ hardware */
+		if (lvalue && dev->hw_revision > ENE_HW_B)
+			return -EINVAL;
 
 		dev->rx_timeout = lvalue;
 		ene_dbg("RX: set timeout to %d", dev->rx_timeout);
@@ -843,7 +855,9 @@ static ssize_t ene_transmit(struct file *file, const char *buf,
 		spin_lock_irqsave(&dev->hw_lock, flags);
 		ene_tx_complete(dev);
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
-	}
+	} else
+		ene_dbg("TX: done");
+
 	return n;
 }
 
@@ -892,9 +906,6 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 	lirc_driver->fops = &ene_fops;
 	lirc_driver->min_timeout = ENE_MINGAP;
 	lirc_driver->max_timeout = ENE_MAXGAP;
-
-	dev->rx_timeout = ENE_MAXGAP;
-
 	lirc_driver->rbuf = kzalloc(sizeof(struct lirc_buffer), GFP_KERNEL);
 
 	if (!lirc_driver->rbuf)
