@@ -710,8 +710,8 @@ static int ene_ioctl(struct inode *node, struct file *file,
 		ene_dbg("TX: attempt to set tx carrier to %d kHz", lvalue);
 		tmp = 1000000 / lvalue; /* (1 / freq) (* # usec in 1 sec) */
 
-		if (tmp > ENE_TX_PERIOD_MAX ||
-				tmp < ENE_TX_PERIOD_MIN) {
+		if (tmp && (tmp > ENE_TX_PERIOD_MAX ||
+				tmp < ENE_TX_PERIOD_MIN)) {
 
 			ene_dbg("TX: out of range %d-%d carrier, "
 				"falling back to 32 kHz",
