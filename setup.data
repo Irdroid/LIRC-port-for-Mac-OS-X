@@ -150,6 +150,7 @@ hw_menu_entry: @hw-usb
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
 	mplay: "VLSystem MPlay Mini"
+	atwf83: "Aureal ATWF@83-W001 ESKY.CC remote"
 	mceusb: "Windows Media Center Transceivers/Remotes (all)"
 
 param_type: \
@@ -201,6 +202,7 @@ param_type: \
 	asusdh \
 	atilibusb \
 	atiusb \
+	atwf83 \
 	audio \
 	audio_alsa \
 	avermedia \
@@ -278,6 +280,7 @@ default_param: \
 	asusdh \
 	atilibusb \
 	atiusb \
+	atwf83 \
 	audio \
 	audio_alsa \
 	avermedia \

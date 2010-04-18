@@ -44,6 +44,7 @@ static char *hiddev_rec(struct ir_remote *remotes);
 static int sb0540_init();
 static char *sb0540_rec(struct ir_remote *remotes);
 static char *macmini_rec(struct ir_remote *remotes);
+static char *atwf83_rec(struct ir_remote *remotes);
 static int samsung_init();
 static char *samsung_rec(struct ir_remote *remotes);
 
@@ -160,6 +161,26 @@ struct hardware hw_macmini=
 	NULL,			/* readdata */
 	"macmini"		/* name */
 };
+
+/* Aureal USB iR Receiver */
+struct hardware hw_atwf83=
+{
+	"/dev/hidraw0",		/* "device" */
+	-1,			/* fd (device) */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	32,			/* code_length */
+	hiddev_init,		/* init_func */
+	hiddev_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	atwf83_rec,		/* rec_func */
+	hiddev_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
+	NULL,			/* readdata */
+	"atwf83"		/* name */
+};
+
 
 #ifdef HAVE_LINUX_HIDDEV_FLAG_UREF
 /* Samsung USB IR Receiver */
@@ -610,6 +631,38 @@ char *macmini_rec(struct ir_remote *remotes)
 	old_main_code = main_code;
 	time_of_last_code = end;
 
+	return decode_all(remotes);
+}
+
+/*
+*  Aureal Technology ATWF@83 cheap remote
+*  specific code.
+*/
+
+char *atwf83_rec(struct ir_remote *remotes)
+{
+	static struct timeval time_of_last_code;
+	struct timeval now;
+	unsigned ev[2];
+	int rd;
+
+	rd = read(hw.fd, ev, sizeof(ev));
+
+	if (rd < 7 || ev[1]!=0 || (rd==7 && (ev[0]==0x200 || ev[0]==0x300))
+	    || (rd==8 && ev[0]==0))
+	{
+		return 0;
+	}
+
+	LOGPRINTF(1, "atwf83 : %x", ev[0]);
+
+	gettimeofday (&now, NULL);
+	/* Record the code */
+	pre_code_length = 0;
+	pre_code = 0;
+	main_code = ev[0];
+	time_of_last_code = now;
+	repeat_state = RPT_UNKNOWN;
 	return decode_all(remotes);
 }
 

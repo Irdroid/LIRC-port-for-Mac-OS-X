@@ -10,6 +10,7 @@ extern struct hardware hw_accent;
 extern struct hardware hw_alsa_usb;
 extern struct hardware hw_asusdh;
 extern struct hardware hw_atilibusb;
+extern struct hardware hw_atwf83;
 extern struct hardware hw_audio;
 extern struct hardware hw_audio_alsa;
 extern struct hardware hw_awlibusb;
@@ -89,6 +90,9 @@ struct hardware *hw_list[] =
 #endif
 #ifdef HAVE_LIBUSB
 	&hw_atilibusb,
+#endif
+#ifdef HAVE_LINUX_HIDDEV_H
+	&hw_atwf83,
 #endif
 #ifdef HAVE_LIBPORTAUDIO
 	&hw_audio,

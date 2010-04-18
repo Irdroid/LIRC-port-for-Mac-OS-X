@@ -1,4 +1,5 @@
 0.8.7-CVS: future
+  * added support for Aureal ATWF@83-W001 ESKY.CC remote (Romain Henriet)
   * added transmit support to driver for ENE CIR port
     (only few devices support that)
   * made generation of automatic release events in lircd more robust

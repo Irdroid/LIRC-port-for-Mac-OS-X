@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.39 2010/04/06 19:47:03 lirc Exp $
+dnl $Id: configure.ac,v 1.40 2010/04/18 09:55:15 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -395,7 +395,7 @@ AC_CHECK_HEADERS(linux/input.h,[
 dnl check if hiddev is available
 AC_CHECK_HEADERS([linux/types.h])
 AC_CHECK_HEADERS([linux/hiddev.h],[
-  possible_drivers="${possible_drivers} (dvico) (asusdh) (bw6130) (macmini)"
+  possible_drivers="${possible_drivers} (asusdh) (atwf83) (bw6130) (dvico) (macmini)"
   AC_MSG_CHECKING(for HIDDEV_FLAG_UREF support)
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <linux/types.h>
@@ -433,7 +433,7 @@ AC_ARG_WITH(driver,
 [  --with-driver=X         specify the driver to use, where X is one of:
                           all, none, userspace, accent, act200l,
                           act220l, adaptec, alsa_usb, animax, asusdh,
-                          atilibusb, atiusb, audio, audio_alsa
+                          atilibusb, atiusb, atwf83, audio, audio_alsa
                           avermedia, avermedia_vdomate, avermedia98,
                           awlibusb, bestbuy, bestbuy2, breakoutbox,
                           bte, bw6130, caraca, chronos, commandir,
@@ -511,6 +511,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		hw_module="${hw_module} hw_atilibusb.o receive.o"
 		atilibusb_lib=`${LIBUSB_CONFIG} --libs`
 		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
+		;;
+	atwf83)
+		hw_module="${hw_module} hw_hiddev.o"
 		;;
 	audio)
 		hw_module="${hw_module} hw_audio.o transmit.o receive.o"
@@ -775,6 +778,13 @@ if test "$driver" = "atilibusb"; then
     atilibusb_lib=`${LIBUSB_CONFIG} --libs`
     CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
   fi
+fi
+
+if test "$driver" = "atwf83"; then
+  lirc_driver="$driver"
+  hw_module="hw_hiddev.o"
+  HW_DEFAULT="hw_atwf83"
+  lircd_conf="aureal/lircd.conf.atwf83"
 fi
 
 if test "$driver" = "awlibusb"; then
@@ -1511,6 +1521,7 @@ if test "$lirc_driver" = "none" || \
 	test "$lirc_driver" = "alsa_usb" || \
 	test "$lirc_driver" = "asusdh" || \
 	test "$lirc_driver" = "atilibusb" || \
+	test "$lirc_driver" = "atwf83" || \
 	test "$lirc_driver" = "audio" || \
 	test "$lirc_driver" = "audio_alsa" || \
 	test "$lirc_driver" = "awlibusb" || \
