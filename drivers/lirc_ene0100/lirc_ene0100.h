@@ -129,8 +129,8 @@
 
 /* Normal/Learning carrier ranges - only valid if we have learning input*/
 /* TODO: test */
-#define ENE_NORMAL_RX_LOW	28
-#define ENE_NORMAL_RX_HI	32
+#define ENE_NORMAL_RX_LOW	34
+#define ENE_NORMAL_RX_HI	38
 
 /* Tx carrier range */
 /* Hardware might be able to do more, but this range is enough for
@@ -213,6 +213,7 @@ struct ene_device {
 	struct timeval rx_gap_start;		/* time of start of idle */
 	int rx_timeout;				/* time in ms of RX timeout */
 	int rx_send_timeout_packet;		/* do we send RX timeout */
+	int rx_timeout_sent;			/* we sent the timeout packet */
 
 	/* TX sample handling */
 	unsigned int tx_sample;			/* current sample for TX */

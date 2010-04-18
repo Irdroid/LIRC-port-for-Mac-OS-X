@@ -40,7 +40,7 @@ static int txsim;
 
 static void ene_rx_set_idle(struct ene_device *dev, int idle);
 static int ene_irq_status(struct ene_device *dev);
-
+static void ene_send_sample(struct ene_device *dev, unsigned long sample);
 
 /* read a hardware register */
 static u8 ene_hw_read_reg(struct ene_device *dev, u16 reg)
@@ -273,21 +273,7 @@ static void ene_rx_flush(struct ene_device *dev, int timeout)
 
 	value =	dev->rx_sample_pulse ? LIRC_PULSE(dev->rx_sample) :
 					LIRC_SPACE(dev->rx_sample);
-
-	if (timeout) {
-
-		/* Don't flush sample if we have no timeout report */
-		if (!dev->rx_send_timeout_packet)
-			return;
-
-		ene_dbg("RX: sending timeout sample");
-		value = LIRC_TIMEOUT(dev->rx_sample);
-	}
-
-	if (!lirc_buffer_full(dev->lirc_driver->rbuf)) {
-		lirc_buffer_write(dev->lirc_driver->rbuf, (void *)&value);
-		wake_up(&dev->lirc_driver->rbuf->wait_poll);
-	}
+	ene_send_sample(dev, value);
 	dev->rx_sample = 0;
 	dev->rx_sample_pulse = 0;
 }
@@ -328,13 +314,20 @@ static void ene_rx_sample(struct ene_device *dev, int sample, int is_pulse)
 	}
 
 	if (!dev->rx_fan_input_inuse) {
+		/* Report timeout if enabled */
+		if (dev->rx_timeout && dev->rx_send_timeout_packet &&
+			!dev->rx_timeout_sent &&
+				dev->rx_sample > dev->rx_timeout) {
+			ene_dbg("RX: sending timeout sample");
+			ene_send_sample(dev, LIRC_TIMEOUT(dev->rx_sample));
+			dev->rx_timeout_sent = 1;
+		}
 
 		/* too large sample accumulated via normal input.
 		note that on revC, hardware idle mode turns on automaticly,
 			so max gap should be less that the gap after which
 			hw stops sending samples */
-		if (dev->rx_timeout && dev->rx_sample > dev->rx_timeout) {
-			ene_rx_flush(dev, 1);
+		if (dev->rx_sample > ENE_MAXGAP) {
 			ene_rx_set_idle(dev, 1);
 			return;
 		}
@@ -350,9 +343,8 @@ static void ene_rx_set_idle(struct ene_device *dev, int idle)
 
 	/* Also put hardware sampler in 'idle' mode on revB*/
 	/* revC and higher do that automaticly (firmware does?) */
-
 	if ((dev->hw_revision < ENE_HW_C) && enable_idle)
-		if (idle && dev->rx_timeout)
+		if (idle)
 			disable_sampler = 1;
 
 	ene_hw_write_reg_mask(dev, ENE_CIR_SAMPLE_PERIOD,
@@ -389,6 +381,7 @@ static void ene_rx_set_idle(struct ene_device *dev, int idle)
 		dev->rx_sample = LIRC_SPACE(LIRC_VALUE_MASK);
 
 	ene_rx_flush(dev, 0);
+	dev->rx_timeout_sent = 0;
 }
 
 /* prepare transmission */
@@ -765,14 +758,8 @@ static int ene_ioctl(struct inode *node, struct file *file,
 		if (retval)
 			return retval;
 
-		ene_dbg("RX: attempt to set rx timeout to %d", lvalue);
-
-		/* Can't disable gap timeout on revC+ hardware */
-		if (lvalue && dev->hw_revision > ENE_HW_B)
-			return -EINVAL;
-
 		dev->rx_timeout = lvalue;
-		ene_dbg("RX: set timeout to %d", dev->rx_timeout);
+		ene_dbg("RX: set rx report timeout to %d", dev->rx_timeout);
 		return 0;
 
 	case LIRC_SET_REC_TIMEOUT_REPORTS:
@@ -860,6 +847,16 @@ static ssize_t ene_transmit(struct file *file, const char *buf,
 
 	return n;
 }
+
+/* Sends one sample to the user */
+static void ene_send_sample(struct ene_device *dev, unsigned long sample)
+{
+	if (!lirc_buffer_full(dev->lirc_driver->rbuf)) {
+		lirc_buffer_write(dev->lirc_driver->rbuf, (void *)&sample);
+		wake_up(&dev->lirc_driver->rbuf->wait_poll);
+	}
+}
+
 
 static const struct file_operations ene_fops = {
 	.owner		= THIS_MODULE,
