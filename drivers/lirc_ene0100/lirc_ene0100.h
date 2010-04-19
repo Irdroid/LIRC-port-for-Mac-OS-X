@@ -18,7 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  */
-
 #include <linux/spinlock.h>
 #include "drivers/kcompat.h"
 #include "drivers/lirc.h"
@@ -41,7 +40,6 @@
 /* fan input sample buffer */
 #define ENE_SAMPLE_BUFFER_FAN	0xF8FB	/* this buffer holds high byte of */
 					/* each sample of normal buffer */
-
 #define ENE_FAN_SMPL_PULS_MSK	0x8000	/* this bit of combined sample */
 					/* if set, says that sample is pulse */
 #define ENE_FAN_VALUE_MASK	0x0FFF  /* mask for valid bits of the value */
@@ -62,18 +60,24 @@
 #define ENE_FW2_FAN_AS_NRML_IN	0x40	/* fan is used as normal input */
 #define ENE_FW2_LEARNING	0x80	/* hardware supports learning and TX */
 
-/* fan as input settings - only if learning capable */
-#define ENE_FAN_AS_IN1		0xFE30  /* fan init reg 1 */
-#define ENE_FAN_AS_IN1_EN	0xCD
-#define ENE_FAN_AS_IN2		0xFE31  /* fan init reg 2 */
-#define ENE_FAN_AS_IN2_EN	0x03
-#define ENE_SAMPLE_PERIOD_FAN   61	/* fan input has fixed sample period */
+/* transmitter ports */
+#define ENE_TX_PORT2		0xFC01	/* this enables one or both */
+#define ENE_TX_PORT2_EN		0x20	/* TX ports */
+#define ENE_TX_PORT1		0xFC08	
+#define ENE_TX_PORT1_EN		0x02
 
 /* IRQ registers block (for revision B) */
 #define ENEB_IRQ		0xFD09	/* IRQ number */
 #define ENEB_IRQ_UNK1		0xFD17	/* unknown setting = 1 */
 #define ENEB_IRQ_STATUS		0xFD80	/* irq status */
 #define ENEB_IRQ_STATUS_IR	0x20	/* IR irq */
+
+/* fan as input settings - only if learning capable */
+#define ENE_FAN_AS_IN1		0xFE30  /* fan init reg 1 */
+#define ENE_FAN_AS_IN1_EN	0xCD
+#define ENE_FAN_AS_IN2		0xFE31  /* fan init reg 2 */
+#define ENE_FAN_AS_IN2_EN	0x03
+#define ENE_SAMPLE_PERIOD_FAN   61	/* fan input has fixed sample period */
 
 /* IRQ registers block (for revision C,D) */
 #define ENEC_IRQ		0xFE9B	/* new irq settings register */
@@ -83,9 +87,9 @@
 
 /* CIR block settings */
 #define ENE_CIR_CONF1		0xFEC0
-#define ENE_CIR_CONF1_ADC_ON	0x07	/* reciever on gpio40 enabled */
 #define ENE_CIR_CONF1_TX_CLEAR	0x01	/* clear that on revC */
 					/* while transmitting */
+#define ENE_CIR_CONF1_ADC_ON	0x07	/* reciever on gpio40 enabled */
 #define ENE_CIR_CONF1_LEARN1	0x08	/* enabled on learning mode */
 #define ENE_CIR_CONF1_TX_ON	0x30	/* enabled on transmit */
 #define ENE_CIR_CONF1_TX_CARR	0x80	/* send TX carrier or not */
@@ -98,25 +102,24 @@
 #define ENE_CIR_SAMPLE_OVERFLOW	0x80	/* interrupt on overflows if set */
 
 
-/* transmitter ports */
-#define ENE_TX_PORT1		0xFC08	/* this enables one or both */
-#define ENE_TX_PORT1_EN		0x02	/* TX ports */
-#define ENE_TX_PORT2		0xFC01
-#define ENE_TX_PORT2_EN		0x20
-
-/* two byte tx buffer */
+/* Two byte tx buffer */
 #define ENE_TX_INPUT1		0xFEC9
 #define ENE_TX_INPUT2		0xFECA
 #define ENE_TX_PULSE_MASK	0x80	/* Transmitted sample is pulse */
 #define ENE_TX_SMLP_MASK	0x7F
-
-/* Unknown TX setting */
-#define ENE_TX_UNK1		0xFECB	/* set to 0x63 */
 #define ENE_TX_SMPL_PERIOD	50	/* transmit sample period - fixed */
 
+
+/* Unknown TX setting - TX sample period ??? */
+#define ENE_TX_UNK1		0xFECB	/* set to 0x63 */
+
+/* Current recieved carrier period */
+#define ENE_RX_CARRIER		0xFECC	/* RX period * 2 (usec) */
+#define ENE_RX_CARRIER_VALID	0x80	/* Register content valid */
+
 /* TX period (1/carrier) */
-#define ENE_TX_PERIOD		0xFECE	/* TX period *RC5 2 (usec) */
-#define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit */
+#define ENE_TX_PERIOD		0xFECE	/* TX period * 2 (usec) */
+#define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit - enable transmit ???*/
 #define ENE_TX_PERIOD_LOW	0xFECF	/* TX period / 2 (usec)*/
 
 /* Hardware versions */
