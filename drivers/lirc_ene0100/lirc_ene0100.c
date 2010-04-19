@@ -187,11 +187,27 @@ static void ene_enable_fan_recieve(struct ene_device *dev, int enable)
 	dev->rx_fan_input_inuse = enable;
 }
 
+
+/* Sense current recieved carrier */
+static int ene_rx_sense_carrier(struct ene_device *dev)
+{
+	int period = ene_hw_read_reg(dev, ENE_RX_CARRIER);
+	ene_dbg("RX: hardware carrier period = %02x", period);
+
+	if (!(period & ENE_RX_CARRIER_VALID))
+		return 0;
+
+	period &= ~ENE_RX_CARRIER_VALID;
+	period >>= 1;
+	return 1000000 / period;
+}
+
 /* determine which input to use*/
 static void ene_rx_set_inputs(struct ene_device *dev)
 {
-	ene_dbg("RX: setup reciever, learning mode = %d",
-						dev->learning_enabled);
+	int learning_mode = dev->learning_enabled || dev->rx_carrier_sense;
+
+	ene_dbg("RX: setup reciever, learning mode = %d", learning_mode);
 
 	ene_enable_normal_recieve(dev, 1);
 
@@ -206,7 +222,7 @@ static void ene_rx_set_inputs(struct ene_device *dev)
 	}
 
 	/* enable learning mode */
-	if (dev->learning_enabled) {
+	if (learning_mode) {
 		ene_enable_gpio40_recieve(dev, dev->hw_gpio40_learning);
 
 		/* fan input is not used for learning */
@@ -224,10 +240,10 @@ static void ene_rx_set_inputs(struct ene_device *dev)
 	}
 
 	/* set few additional settings for this mode */
-	ene_hw_write_reg_mask(dev, ENE_CIR_CONF1, dev->learning_enabled ?
+	ene_hw_write_reg_mask(dev, ENE_CIR_CONF1, learning_mode ?
 			      ENE_CIR_CONF1_LEARN1 : 0, ENE_CIR_CONF1_LEARN1);
 
-	ene_hw_write_reg_mask(dev, ENE_CIR_CONF2, dev->learning_enabled ?
+	ene_hw_write_reg_mask(dev, ENE_CIR_CONF2, learning_mode ?
 			      ENE_CIR_CONF2_LEARN2 : 0, ENE_CIR_CONF2_LEARN2);
 }
 
@@ -599,6 +615,17 @@ static irqreturn_t ene_isr(int irq, void *data, struct pt_regs *regs)
 	if (!(irq_status & ENE_IRQ_RX))
 		goto unlock;
 
+
+	if (debug && dev->learning_enabled)
+		ene_dbg("RX: sensed carrier = %d Hz",
+					ene_rx_sense_carrier(dev));
+
+	if (dev->rx_carrier_sense) {
+		ene_send_sample(dev, LIRC_FREQUENCY(ene_rx_sense_carrier(dev)));
+		goto unlock;
+	}
+
+
 	for (i = 0; i < ENE_SAMPLES_SIZE; i++) {
 		hw_value = ene_hw_read_reg(dev,
 				ENE_SAMPLE_BUFFER + dev->rx_pointer * 4 + i);
@@ -647,6 +674,7 @@ static void ene_setup_settings(struct ene_device *dev)
 	dev->rx_sample = 0;
 	dev->rx_sample_pulse = 0;
 	dev->rx_pointer = -1;
+	dev->rx_carrier_sense = 0;
 
 }
 
@@ -771,6 +799,18 @@ static int ene_ioctl(struct inode *node, struct file *file,
 		dev->rx_send_timeout_packet = lvalue;
 		ene_dbg("RX: %sable timeout reports",
 				dev->rx_send_timeout_packet ? "en" : "dis");
+		return 0;
+	case LIRC_SET_MEASURE_CARRIER_MODE:
+		retval = get_user(lvalue, (unsigned int *) arg);
+
+		if (retval)
+			return retval;
+
+		if (dev->rx_carrier_sense == lvalue)
+			return 0;
+
+		dev->rx_carrier_sense = lvalue;
+		ene_rx_set_inputs(dev);
 		return 0;
 
 	case LIRC_GET_REC_RESOLUTION:
