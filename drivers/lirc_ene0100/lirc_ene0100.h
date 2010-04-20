@@ -117,10 +117,6 @@
 #define ENE_RX_CARRIER		0xFECC	/* RX period * 2 (usec) */
 #define ENE_RX_CARRIER_VALID	0x80	/* Register content valid */
 
-/* Current recieved carrier revC+*/
-/* Highest bit = 1 to be valid, must be shifted right by one place */
-#define ENE_RX_CARRIER		0xFECC
-#define ENE_RX_CARRIER_VALID	0x80
 
 /* TX period (1/carrier) */
 #define ENE_TX_PERIOD		0xFECE	/* TX period * 2 (usec) */

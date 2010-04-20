@@ -192,6 +192,7 @@ static void ene_enable_fan_recieve(struct ene_device *dev, int enable)
 static int ene_rx_sense_carrier(struct ene_device *dev)
 {
 	int period = ene_hw_read_reg(dev, ENE_RX_CARRIER);
+	int carrier;
 	ene_dbg("RX: hardware carrier period = %02x", period);
 
 	if (!(period & ENE_RX_CARRIER_VALID))
@@ -199,7 +200,9 @@ static int ene_rx_sense_carrier(struct ene_device *dev)
 
 	period &= ~ENE_RX_CARRIER_VALID;
 	period >>= 1;
-	return 1000000 / period;
+	carrier = 1000000 / period;
+	ene_dbg("RX: sensed carrier = %d Hz", carrier);
+	return carrier;
 }
 
 /* determine which input to use*/
@@ -591,6 +594,7 @@ static irqreturn_t ene_isr(int irq, void *data, struct pt_regs *regs)
 	int pulse;
 	int irq_status;
 	unsigned long flags;
+	int carrier = 0;
 	irqreturn_t retval = IRQ_NONE;
 	struct ene_device *dev = (struct ene_device *)data;
 
@@ -616,12 +620,12 @@ static irqreturn_t ene_isr(int irq, void *data, struct pt_regs *regs)
 		goto unlock;
 
 
-	if (debug && dev->learning_enabled)
-		ene_dbg("RX: sensed carrier = %d Hz",
-					ene_rx_sense_carrier(dev));
+	if ((debug && dev->learning_enabled) || dev->rx_carrier_sense)
+		carrier = ene_rx_sense_carrier(dev);
 
 	if (dev->rx_carrier_sense) {
-		ene_send_sample(dev, LIRC_FREQUENCY(ene_rx_sense_carrier(dev)));
+		if (carrier)
+			ene_send_sample(dev, LIRC_FREQUENCY(carrier));
 		goto unlock;
 	}
 
