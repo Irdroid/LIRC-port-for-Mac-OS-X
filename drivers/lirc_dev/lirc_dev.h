@@ -4,7 +4,7 @@
  * (L) by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
  *
- * $Id: lirc_dev.h,v 1.40 2010/01/30 15:01:29 lirc Exp $
+ * $Id: lirc_dev.h,v 1.41 2010/04/25 08:33:52 lirc Exp $
  *
  */
 
@@ -344,7 +344,7 @@ struct lirc_driver {
 	struct lirc_buffer *rbuf;
 	int (*set_use_inc) (void *data);
 	void (*set_use_dec) (void *data);
-	struct file_operations *fops;
+	const struct file_operations *fops;
 	struct device *dev;
 	struct module *owner;
 };
