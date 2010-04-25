@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.46 2009/12/24 12:05:36 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.47 2010/04/25 08:26:56 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -406,6 +406,16 @@ static inline unsigned iminor(struct inode *inode)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
 #define BIT_MASK(nr)            (1UL << ((nr) % BITS_PER_LONG))
 #define BIT_WORD(nr)            ((nr) / BITS_PER_LONG)
+#endif
+
+/****************************** kernel.h **********************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
+#define DIV_ROUND_CLOSEST(x, divisor)(                  \
+{                                                       \
+        typeof(divisor) __divisor = divisor;            \
+        (((x) + ((__divisor) / 2)) / (__divisor));      \
+}                                                       \
+)
 #endif
 
 #endif /* _KCOMPAT_H */
