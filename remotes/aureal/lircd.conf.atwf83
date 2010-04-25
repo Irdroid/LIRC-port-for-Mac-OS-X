@@ -7,7 +7,7 @@ begin remote
 
   name  Aureal_ATWF@83
   bits           32
-  gap          132799
+  gap          1000000
 
       begin codes
           KEY_0                    0x00270000

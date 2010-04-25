@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.71 2010/04/02 10:26:57 lirc Exp $
+## $Id: Makefile.am,v 5.72 2010/04/25 08:25:52 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -19,6 +19,7 @@ EXTRA_libhw_module_a_SOURCES = \
 			hw_accent.c hw_accent.h \
 			hw_alsa_usb.c \
 			hw_atilibusb.c \
+			hw_atwf83.c \
 			hw_audio.c \
 			hw_audio_alsa.c \
 			hw_awlibusb.c \

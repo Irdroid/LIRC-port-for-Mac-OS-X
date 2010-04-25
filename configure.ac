@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.40 2010/04/18 09:55:15 lirc Exp $
+dnl $Id: configure.ac,v 1.41 2010/04/25 08:25:52 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -127,6 +127,7 @@ AC_MSG_RESULT()
 possible_drivers="(none) \
 	(userspace) \
 	(accent) \
+	(atwf83) \
 	(bte) \
 	(creative) \
 	(ea65) \
@@ -395,7 +396,7 @@ AC_CHECK_HEADERS(linux/input.h,[
 dnl check if hiddev is available
 AC_CHECK_HEADERS([linux/types.h])
 AC_CHECK_HEADERS([linux/hiddev.h],[
-  possible_drivers="${possible_drivers} (asusdh) (atwf83) (bw6130) (dvico) (macmini)"
+  possible_drivers="${possible_drivers} (asusdh) (bw6130) (dvico) (macmini)"
   AC_MSG_CHECKING(for HIDDEV_FLAG_UREF support)
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <linux/types.h>
@@ -475,6 +476,7 @@ commandir_lib=""
 portaudio_lib=""
 alsa_lib=""
 atilibusb_lib=""
+atwf83_lib=""
 awlibusb_lib=""
 dfclibusb_lib=""
 srm7500libusb_lib=""
@@ -513,7 +515,8 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		CFLAGS="$CFLAGS `${LIBUSB_CONFIG} --cflags`"
 		;;
 	atwf83)
-		hw_module="${hw_module} hw_hiddev.o"
+		hw_module="${hw_module} hw_atwf83.o"
+		atwf83_lib=-lpthread
 		;;
 	audio)
 		hw_module="${hw_module} hw_audio.o transmit.o receive.o"
@@ -782,9 +785,10 @@ fi
 
 if test "$driver" = "atwf83"; then
   lirc_driver="$driver"
-  hw_module="hw_hiddev.o"
+  hw_module="hw_atwf83.o"
   HW_DEFAULT="hw_atwf83"
   lircd_conf="aureal/lircd.conf.atwf83"
+  atwf83_lib=-lpthread
 fi
 
 if test "$driver" = "awlibusb"; then
@@ -1717,7 +1721,7 @@ if ! echo ${hw_module}|grep " receive.o" >/dev/null; then
 	receive="receive.o"
 fi
 
-hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${dfclibusb_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib} ${srm7500libusb_lib}"
+hw_module_libs="${alsa_lib} ${atilibusb_lib} ${awlibusb_lib} ${caraca_lib} ${commandir_lib} ${dfclibusb_lib} ${ftdi_lib} ${iguanaIR_lib} ${irman_lib} ${portaudio_lib} ${srm7500libusb_lib} ${atwf83_lib}"
 
 dnl tell the Makefiles what we decided
 AC_SUBST(daemon)
