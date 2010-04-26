@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_gpio.c,v 1.57 2009/02/14 19:35:52 lirc Exp $
+ * $Id: lirc_gpio.c,v 1.58 2010/04/26 19:47:37 lirc Exp $
  *
  */
 
@@ -76,7 +76,7 @@ static unsigned long gpio_mask;
 static unsigned long gpio_enable;
 static unsigned long gpio_lock_mask;
 static unsigned long gpio_xor_mask;
-static int soft_gap;
+static int soft_gap = 50;
 static int sample_rate = 10;
 
 #define dprintk(fmt, args...)					\
