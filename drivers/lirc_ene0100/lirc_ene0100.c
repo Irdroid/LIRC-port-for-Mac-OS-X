@@ -34,6 +34,7 @@
 
 static int sample_period = -1;
 static int enable_idle = 1;
+static int enable_duty_carrier;
 static int input = 1;
 static int debug;
 static int txsim;
@@ -172,7 +173,7 @@ static void ene_enable_gpio40_recieve(struct ene_device *dev, int enable)
 /* this enables/disables IR via standard input */
 static void ene_enable_normal_recieve(struct ene_device *dev, int enable)
 {
-	ene_hw_write_reg(dev, ENE_CIR_CONF1, enable ? ENE_CIR_CONF1_ADC_ON : 0);
+	ene_hw_write_reg(dev, ENE_CIR_CONF1, enable ? ENE_CIR_CONF1_RX_ON : 0);
 }
 
 /* this enables/disables IR input via unused fan tachtometer input */
@@ -199,8 +200,11 @@ static int ene_rx_sense_carrier(struct ene_device *dev)
 		return 0;
 
 	period &= ~ENE_RX_CARRIER_VALID;
-	period >>= 1;
-	carrier = 1000000 / period;
+
+	if (!period)
+		return 0;
+
+	carrier = 2000000 / period;
 	ene_dbg("RX: sensed carrier = %d Hz", carrier);
 	return carrier;
 }
@@ -419,12 +423,26 @@ static void ene_tx_prepare(struct ene_device *dev)
 
 	/* Set carrier */
 	if (dev->tx_period) {
-		conf1 |= ENE_CIR_CONF1_TX_CARR;
-		ene_hw_write_reg(dev, ENE_TX_PERIOD, ENE_TX_PERIOD_UNKBIT |
-					(dev->tx_period << 1));
 
-		ene_hw_write_reg(dev, ENE_TX_PERIOD_LOW,
-					dev->tx_period >> 1);
+		int tx_period_in500ns = dev->tx_period * 2;
+
+		int tx_pulse_width_in_500ns =
+			tx_period_in500ns / (100 / dev->tx_duty_cycle);
+
+		if (!tx_pulse_width_in_500ns)
+			tx_pulse_width_in_500ns = 1;
+
+		ene_dbg("TX: pulse distance = %d * 500 ns", tx_period_in500ns);
+		ene_dbg("TX: pulse width = %d * 500 ns",
+						tx_pulse_width_in_500ns);
+
+		ene_hw_write_reg(dev, ENE_TX_PERIOD, ENE_TX_PERIOD_UNKBIT |
+					tx_period_in500ns);
+
+		ene_hw_write_reg(dev, ENE_TX_PERIOD_PULSE,
+					tx_pulse_width_in_500ns);
+
+		conf1 |= ENE_CIR_CONF1_TX_CARR;
 	} else
 		conf1 &= ~ENE_CIR_CONF1_TX_CARR;
 
@@ -667,6 +685,7 @@ static void ene_setup_settings(struct ene_device *dev)
 	dev->rx_send_timeout_packet = 0;
 	dev->rx_timeout = ENE_MAXGAP;
 	dev->tx_period = 32;
+	dev->tx_duty_cycle = 25; /*%*/
 	dev->transmitter_mask = 3;
 
 	/* Force learning mode if (input == 2), otherwise
@@ -747,6 +766,19 @@ static int ene_ioctl(struct inode *node, struct file *file,
 		}
 		ene_dbg("TX: set carrier period time to %d usec", tmp);
 		dev->tx_period = tmp;
+		return 0;
+	case LIRC_SET_SEND_DUTY_CYCLE:
+		retval = get_user(lvalue, (unsigned int *) arg);
+
+		if (retval)
+			return retval;
+
+		ene_dbg("TX: attempt to set duty cycle to %d%%", lvalue);
+
+		if ((lvalue >= 100) || (lvalue <= 0))
+			return -EINVAL;
+
+		dev->tx_duty_cycle = lvalue;
 		return 0;
 
 	case LIRC_SET_TRANSMITTER_MASK:
@@ -996,6 +1028,9 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 					 LIRC_CAN_SET_SEND_CARRIER |
 					 LIRC_CAN_SET_TRANSMITTER_MASK;
 
+		if (enable_duty_carrier)
+			lirc_driver->features |= LIRC_CAN_SET_SEND_DUTY_CYCLE;
+
 		if (input == 0)
 			lirc_driver->features |= LIRC_CAN_SET_REC_CARRIER;
 
@@ -1124,6 +1159,10 @@ MODULE_PARM_DESC(debug, "Enable debug (debug=2 verbose debug output)");
 module_param(txsim, bool, S_IRUGO);
 MODULE_PARM_DESC(txsim,
 	"Simulate TX features on unsupported hardware (dangerous)");
+
+module_param(enable_duty_carrier, bool, S_IRUGO);
+MODULE_PARM_DESC(enable_duty_carrier,
+	"Enable a code that might allow to to set TX carrier duty cycle");
 
 MODULE_DEVICE_TABLE(pnp, ene_ids);
 MODULE_DESCRIPTION

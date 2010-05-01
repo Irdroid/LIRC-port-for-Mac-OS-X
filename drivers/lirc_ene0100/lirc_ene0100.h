@@ -89,14 +89,14 @@
 #define ENE_CIR_CONF1		0xFEC0
 #define ENE_CIR_CONF1_TX_CLEAR	0x01	/* clear that on revC */
 					/* while transmitting */
-#define ENE_CIR_CONF1_ADC_ON	0x07	/* reciever on gpio40 enabled */
+#define ENE_CIR_CONF1_RX_ON	0x07	/* normal reciever enabled */
 #define ENE_CIR_CONF1_LEARN1	0x08	/* enabled on learning mode */
 #define ENE_CIR_CONF1_TX_ON	0x30	/* enabled on transmit */
 #define ENE_CIR_CONF1_TX_CARR	0x80	/* send TX carrier or not */
 
 #define ENE_CIR_CONF2		0xFEC1	/* unknown setting = 0 */
 #define ENE_CIR_CONF2_LEARN2	0x10	/* set on enable learning */
-#define ENE_CIR_CONF2_GPIO40DIS	0x20	/* disable normal input via gpio40 */
+#define ENE_CIR_CONF2_GPIO40DIS	0x20	/* disable input via gpio40 */
 
 #define ENE_CIR_SAMPLE_PERIOD	0xFEC8	/* sample period in us */
 #define ENE_CIR_SAMPLE_OVERFLOW	0x80	/* interrupt on overflows if set */
@@ -114,14 +114,14 @@
 #define ENE_TX_UNK1		0xFECB	/* set to 0x63 */
 
 /* Current recieved carrier period */
-#define ENE_RX_CARRIER		0xFECC	/* RX period * 2 (usec) */
+#define ENE_RX_CARRIER		0xFECC	/* RX period (500 ns) */
 #define ENE_RX_CARRIER_VALID	0x80	/* Register content valid */
 
 
 /* TX period (1/carrier) */
-#define ENE_TX_PERIOD		0xFECE	/* TX period * 2 (usec) */
-#define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit - enable transmit ???*/
-#define ENE_TX_PERIOD_LOW	0xFECF	/* TX period / 2 (usec)*/
+#define ENE_TX_PERIOD		0xFECE	/* TX period (500 ns) */
+#define ENE_TX_PERIOD_UNKBIT	0x80	/* This bit set on transmit*/
+#define ENE_TX_PERIOD_PULSE	0xFECF	/* TX pulse period (500 ns)*/
 
 /* Hardware versions */
 #define ENE_HW_VERSION		0xFF00	/* hardware revision */
@@ -236,5 +236,6 @@ struct ene_device {
 
 	/*TX settings */
 	int tx_period;
+	int tx_duty_cycle;
 	int transmitter_mask;
 };
