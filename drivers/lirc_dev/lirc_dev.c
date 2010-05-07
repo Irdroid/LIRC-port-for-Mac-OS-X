@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.102 2010/05/07 12:53:43 maximlevitsky Exp $
+ * $Id: lirc_dev.c,v 1.103 2010/05/07 22:07:27 lirc Exp $
  *
  */
 
@@ -712,8 +712,6 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 
 		result = put_user(ir->d.max_timeout, (lirc_t *) arg);
 		break;
-
-	/*obsolete */
 	case LIRC_GET_REC_MODE:
 		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
@@ -730,6 +728,8 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 				  (ir->d.features & LIRC_CAN_SEND_MASK),
 				  (unsigned long *)arg);
 		break;
+
+	/*obsolete */
 	case LIRC_SET_REC_MODE:
 		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
@@ -751,12 +751,10 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	}
 
 	switch (cmd) {
-	case LIRC_GET_REC_MODE:
-	case LIRC_GET_SEND_MODE:
 	case LIRC_SET_REC_MODE:
 	case LIRC_SET_SEND_MODE:
 		printk(KERN_NOTICE LOGHEAD "userspace uses outdated ioctl "
-			"please update your lirc instalation\n");
+			"please update your lirc installation\n");
 		break;
 	default:
 		break;

@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.25 2010/04/11 18:50:39 lirc Exp $      */
+/*      $Id: lirc.h,v 5.26 2010/05/07 22:07:26 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -119,7 +119,9 @@ typedef int lirc_t;
 /* all values set should be reset by the driver when the device is
    reopened */
 
+/* obsolete: drivers only support one mode */
 #define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, unsigned long)
+/* obsolete: drivers only support one mode */
 #define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, unsigned long)
 /* Note: these can reset the according pulse_width */
 #define LIRC_SET_SEND_CARRIER          _IOW('i', 0x00000013, unsigned int)
