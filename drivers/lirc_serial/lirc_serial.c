@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.105 2010/03/17 14:16:16 jarodwilson Exp $      */
+/*      $Id: lirc_serial.c,v 5.106 2010/05/07 12:53:43 maximlevitsky Exp $      */
 /*
  * lirc_serial.c
  *
@@ -143,7 +143,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.105 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.106 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1102,29 +1102,6 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 	unsigned int ivalue;
 
 	switch (cmd) {
-	case LIRC_GET_SEND_MODE:
-		if (!(hardware[type].features&LIRC_CAN_SEND_MASK))
-			return -ENOIOCTLCMD;
-
-		result = put_user(LIRC_SEND2MODE
-				  (hardware[type].features&LIRC_CAN_SEND_MASK),
-				  (unsigned long *) arg);
-		if (result)
-			return result;
-		break;
-
-	case LIRC_SET_SEND_MODE:
-		if (!(hardware[type].features&LIRC_CAN_SEND_MASK))
-			return -ENOIOCTLCMD;
-
-		result = get_user(value, (unsigned long *) arg);
-		if (result)
-			return result;
-		/* only LIRC_MODE_PULSE supported */
-		if (value != LIRC_MODE_PULSE)
-			return -ENOSYS;
-		break;
-
 	case LIRC_GET_LENGTH:
 		return -ENOSYS;
 		break;

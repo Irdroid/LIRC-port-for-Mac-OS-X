@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.101 2010/03/17 14:16:15 jarodwilson Exp $
+ * $Id: lirc_dev.c,v 1.102 2010/05/07 12:53:43 maximlevitsky Exp $
  *
  */
 
@@ -695,12 +695,39 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	case LIRC_GET_FEATURES:
 		result = put_user(ir->d.features, (unsigned long *)arg);
 		break;
+	case LIRC_GET_LENGTH:
+		result = put_user(ir->d.code_length, (unsigned long *) arg);
+		break;
+	case LIRC_GET_MIN_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.min_timeout == 0)
+			return -ENOSYS;
+
+		result = put_user(ir->d.min_timeout, (lirc_t *) arg);
+		break;
+	case LIRC_GET_MAX_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.max_timeout == 0)
+			return -ENOSYS;
+
+		result = put_user(ir->d.max_timeout, (lirc_t *) arg);
+		break;
+
+	/*obsolete */
 	case LIRC_GET_REC_MODE:
 		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
 		result = put_user(LIRC_REC2MODE
 				  (ir->d.features & LIRC_CAN_REC_MASK),
+				  (unsigned long *)arg);
+		break;
+	case LIRC_GET_SEND_MODE:
+		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
+			return -ENOSYS;
+
+		result = put_user(LIRC_SEND2MODE
+				  (ir->d.features & LIRC_CAN_SEND_MASK),
 				  (unsigned long *)arg);
 		break;
 	case LIRC_SET_REC_MODE:
@@ -710,30 +737,29 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 		result = get_user(mode, (unsigned long *)arg);
 		if (!result && !(LIRC_MODE2REC(mode) & ir->d.features))
 			result = -EINVAL;
-		/*
-		 * FIXME: We should actually set the mode somehow but
-		 * for now, lirc_serial doesn't support mode changing either
-		 */
 		break;
-	case LIRC_GET_LENGTH:
-		result = put_user(ir->d.code_length, (unsigned long *) arg);
-		break;
-	case LIRC_GET_MIN_TIMEOUT:
-		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
-		    ir->d.min_timeout == 0)
+	case LIRC_SET_SEND_MODE:
+		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
 			return -ENOSYS;
-		
-		result = put_user(ir->d.min_timeout, (lirc_t *) arg);
-		break;
-	case LIRC_GET_MAX_TIMEOUT:
-		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
-		    ir->d.max_timeout == 0)
-			return -ENOSYS;
-		
-		result = put_user(ir->d.max_timeout, (lirc_t *) arg);
+
+		result = get_user(mode, (unsigned long *)arg);
+		if (!result && !(LIRC_MODE2SEND(mode) & ir->d.features))
+			result = -EINVAL;
 		break;
 	default:
 		result = -EINVAL;
+	}
+
+	switch (cmd) {
+	case LIRC_GET_REC_MODE:
+	case LIRC_GET_SEND_MODE:
+	case LIRC_SET_REC_MODE:
+	case LIRC_SET_SEND_MODE:
+		printk(KERN_NOTICE LOGHEAD "userspace uses outdated ioctl "
+			"please update your lirc instalation\n");
+		break;
+	default:
+		break;
 	}
 
 	dprintk(LOGHEAD "ioctl result = %d\n",

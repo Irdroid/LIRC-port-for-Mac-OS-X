@@ -854,18 +854,6 @@ static int ene_ioctl(struct inode *node, struct file *file,
 			ENE_SAMPLE_PERIOD_FAN : sample_period;
 		return put_user(tmp, (unsigned long *) arg);
 
-	/*Ugh - this has to be moved to generic section*/
-	case LIRC_GET_SEND_MODE:
-		return put_user(LIRC_CAN_SEND_PULSE, (unsigned long *) arg);
-
-	case LIRC_SET_SEND_MODE:
-		retval = get_user(lvalue, (unsigned long *) arg);
-		if (retval)
-			return retval;
-
-		if (lvalue != LIRC_MODE_PULSE)
-			return -EINVAL;
-		return 0;
 	default:
 		return -ENOIOCTLCMD;
 	}

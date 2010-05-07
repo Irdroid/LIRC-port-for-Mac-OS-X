@@ -965,26 +965,6 @@ static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
 		dprintk(DRIVER_NAME ": SET_TRANSMITTERS mask=%d\n", ivalue);
 		break;
 
-	case LIRC_GET_SEND_MODE:
-
-		result = put_user(LIRC_SEND2MODE(LIRC_CAN_SEND_PULSE &
-						 LIRC_CAN_SEND_MASK),
-				  (unsigned long *) arg);
-
-		if (result)
-			return result;
-		break;
-
-	case LIRC_SET_SEND_MODE:
-
-		result = get_user(lvalue, (unsigned long *) arg);
-
-		if (result)
-			return result;
-		if (lvalue != (LIRC_MODE_PULSE&LIRC_CAN_SEND_MASK))
-			return -EINVAL;
-		break;
-
 	case LIRC_SET_SEND_CARRIER:
 
 		result = get_user(ivalue, (unsigned int *) arg);

@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.43 2010/04/11 18:50:38 lirc Exp $      */
+/*      $Id: hw_default.c,v 5.44 2010/05/07 12:53:43 maximlevitsky Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -294,17 +294,6 @@ int default_init()
 		{
 			if(hw.features&supported_send_modes[i])
 			{
-				unsigned long mode;
-
-				mode=LIRC_SEND2MODE(supported_send_modes[i]);
-				if(default_ioctl(LIRC_SET_SEND_MODE, &mode)==-1)
-				{
-					logprintf(LOG_ERR,"could not set "
-						  "send mode");
-					logperror(LOG_ERR,"default_init()");
-					default_deinit();
-					return(0);
-				}
 				hw.send_mode=LIRC_SEND2MODE
 				(supported_send_modes[i]);
 				break;
@@ -323,16 +312,6 @@ int default_init()
 		{
 			if(hw.features&supported_rec_modes[i])
 			{
-				unsigned long mode;
-
-				mode=LIRC_REC2MODE(supported_rec_modes[i]);
-				if(default_ioctl(LIRC_SET_REC_MODE, &mode)==-1)
-				{
-					logprintf(LOG_ERR,"could not set "
-						  "receive mode");
-					logperror(LOG_ERR,"default_init()");
-					return(0);
-				}
 				hw.rec_mode=LIRC_REC2MODE
 				(supported_rec_modes[i]);
 				break;
