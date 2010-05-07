@@ -741,16 +741,30 @@ static void ene_close(void *data)
 static int ene_ioctl(struct inode *node, struct file *file,
 		      unsigned int cmd, unsigned long arg)
 {
-	int lvalue, retval, tmp;
+	int lvalue = 0, retval, tmp;
+	unsigned long flags;
 	struct ene_device *dev = lirc_get_pdata(file);
+
 
 	switch (cmd) {
 	case LIRC_SET_SEND_CARRIER:
+	case LIRC_SET_SEND_DUTY_CYCLE:
+	case LIRC_SET_TRANSMITTER_MASK:
+	case LIRC_SET_MEASURE_CARRIER_MODE:
+	case LIRC_SET_REC_CARRIER:
+		/* All these aren't possible without this */
+		if (!dev->hw_learning_and_tx_capable)
+			return -ENOSYS;
+		/* Fall through */
+	case LIRC_SET_REC_TIMEOUT:
+	case LIRC_SET_REC_TIMEOUT_REPORTS:
 		retval = get_user(lvalue, (unsigned int *) arg);
-
 		if (retval)
 			return retval;
+	}
 
+	switch (cmd) {
+	case LIRC_SET_SEND_CARRIER:
 		ene_dbg("TX: attempt to set tx carrier to %d kHz", lvalue);
 		tmp = 1000000 / lvalue; /* (1 / freq) (* # usec in 1 sec) */
 
@@ -764,99 +778,79 @@ static int ene_ioctl(struct inode *node, struct file *file,
 
 			tmp = 32; /* this is just a coincidence!!! */
 		}
-		ene_dbg("TX: set carrier period time to %d usec", tmp);
+		ene_dbg("TX: set carrier to %d kHz", lvalue);
+
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->tx_period = tmp;
-		return 0;
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
+		break;
 	case LIRC_SET_SEND_DUTY_CYCLE:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
 		ene_dbg("TX: attempt to set duty cycle to %d%%", lvalue);
 
-		if ((lvalue >= 100) || (lvalue <= 0))
-			return -EINVAL;
-
+		if ((lvalue >= 100) || (lvalue <= 0)) {
+			retval = -EINVAL;
+			break;
+		}
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->tx_duty_cycle = lvalue;
-		return 0;
-
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
+		break;
 	case LIRC_SET_TRANSMITTER_MASK:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
 		ene_dbg("TX: attempt to set transmitter mask %02x", lvalue);
 
 		/* invalid txmask */
 		if (!lvalue || lvalue & ~0x3) {
 			ene_dbg("TX: invalid mask");
 			/* this supposed to return num of transmitters */
-			return 2;
+			retval =  2;
+			break;
 		}
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->transmitter_mask = lvalue;
-		return 0;
-
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
+		break;
 	case LIRC_SET_REC_CARRIER:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
-		/* Shouldn't happen */
-		if (!dev->hw_learning_and_tx_capable)
-			return -ENOSYS;
-
 		tmp = (lvalue > ENE_NORMAL_RX_HI || lvalue < ENE_NORMAL_RX_LOW);
 
 		if (tmp != dev->learning_enabled) {
+			spin_lock_irqsave(&dev->hw_lock, flags);
 			dev->learning_enabled = tmp;
 			ene_rx_set_inputs(dev);
+			spin_unlock_irqrestore(&dev->hw_lock, flags);
 		}
-		return 0;
-
+		break;
 	case LIRC_SET_REC_TIMEOUT:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->rx_timeout = lvalue;
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		ene_dbg("RX: set rx report timeout to %d", dev->rx_timeout);
-		return 0;
-
+		break;
 	case LIRC_SET_REC_TIMEOUT_REPORTS:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->rx_send_timeout_packet = lvalue;
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		ene_dbg("RX: %sable timeout reports",
 				dev->rx_send_timeout_packet ? "en" : "dis");
-		return 0;
+		break;
 	case LIRC_SET_MEASURE_CARRIER_MODE:
-		retval = get_user(lvalue, (unsigned int *) arg);
-
-		if (retval)
-			return retval;
-
 		if (dev->rx_carrier_sense == lvalue)
-			return 0;
-
+			break;
+		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->rx_carrier_sense = lvalue;
 		ene_rx_set_inputs(dev);
-		return 0;
-
+		spin_unlock_irqrestore(&dev->hw_lock, flags);
+		break;
 	case LIRC_GET_REC_RESOLUTION:
 		tmp = dev->rx_fan_input_inuse ?
 			ENE_SAMPLE_PERIOD_FAN : sample_period;
-		return put_user(tmp, (unsigned long *) arg);
-
+		retval = put_user(tmp, (unsigned long *) arg);
+		break;
 	default:
-		return -ENOIOCTLCMD;
+		retval = -ENOIOCTLCMD;
+		break;
 	}
+
+	return retval;
 }
 
 /* outside interface: transmit */
