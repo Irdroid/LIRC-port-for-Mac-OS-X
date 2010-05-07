@@ -289,6 +289,21 @@ static void ene_rx_enable(struct ene_device *dev)
 			      ENE_FW1_ENABLE | ENE_FW1_IRQ);
 }
 
+/* Disable the device reciever */
+static void ene_rx_disable(struct ene_device *dev)
+{
+	/* disable inputs */
+	ene_enable_normal_recieve(dev, 0);
+
+	if (dev->hw_fan_as_normal_input)
+		ene_enable_fan_recieve(dev, 0);
+
+	/* disable hardware IRQ and firmware flag */
+	ene_hw_write_reg_mask(dev, ENE_FW1, 0, ENE_FW1_ENABLE | ENE_FW1_IRQ);
+
+	ene_rx_set_idle(dev, 1);
+}
+
 /*  send current sample to the user */
 static void ene_rx_flush(struct ene_device *dev, int timeout)
 {
@@ -717,21 +732,11 @@ static void ene_close(void *data)
 {
 	struct ene_device *dev = (struct ene_device *)data;
 	unsigned long flags;
-
 	spin_lock_irqsave(&dev->hw_lock, flags);
 
-	/* disable samplers */
-	ene_enable_normal_recieve(dev, 0);
-
-	if (dev->hw_fan_as_normal_input)
-		ene_enable_fan_recieve(dev, 0);
-
-	/* disable hardware IRQ and firmware flag */
-	ene_hw_write_reg_mask(dev, ENE_FW1, 0, ENE_FW1_ENABLE | ENE_FW1_IRQ);
-
-	ene_rx_set_idle(dev, 1);
+	ene_rx_disable(dev);
 	dev->in_use = 0;
-	spin_unlock_irqrestore(&dev->hw_lock, flags);	
+	spin_unlock_irqrestore(&dev->hw_lock, flags);
 }
 
 /* outside interface for settings */
@@ -1031,6 +1036,9 @@ static int ene_probe(struct pnp_dev *pnp_dev,
 			sample_period = 75;
 	}
 
+	device_set_wakeup_capable(&pnp_dev->dev, 1);
+	device_set_wakeup_enable(&pnp_dev->dev, 1);
+
 	error = -ENODEV;
 	if (lirc_register_driver(lirc_driver))
 		goto err7;
@@ -1058,7 +1066,12 @@ err1:
 static void ene_remove(struct pnp_dev *pnp_dev)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
-	ene_close(dev);
+	unsigned long flags;
+
+	spin_lock_irqsave(&dev->hw_lock, flags);
+	ene_rx_disable(dev);
+	spin_unlock_irqrestore(&dev->hw_lock, flags);
+
 	free_irq(dev->irq, dev);
 	release_region(dev->hw_io, ENE_MAX_IO);
 	lirc_unregister_driver(dev->lirc_driver->minor);
@@ -1067,14 +1080,22 @@ static void ene_remove(struct pnp_dev *pnp_dev)
 	kfree(dev);
 }
 
-#ifdef CONFIG_PM
-/* TODO: make 'wake on IR' configurable and add .shutdown */
-/* currently impossible due to lack of kernel support */
+/* enable wake on IR (wakes on specific button on original remote) */
+static void ene_enable_wake(struct ene_device *dev, int enable)
+{
+	enable = enable && device_may_wakeup(&dev->pnp_dev->dev);
 
+	ene_dbg("wake on IR %s", enable ? "enabled" : "disabled");
+
+	ene_hw_write_reg_mask(dev, ENE_FW1, enable ?
+		ENE_FW1_WAKE : 0, ENE_FW1_WAKE);
+}
+
+#ifdef CONFIG_PM
 static int ene_suspend(struct pnp_dev *pnp_dev, pm_message_t state)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
-	ene_hw_write_reg_mask(dev, ENE_FW1, ENE_FW1_WAKE, ENE_FW1_WAKE);
+	ene_enable_wake(dev, 1);
 	return 0;
 }
 
@@ -1084,10 +1105,16 @@ static int ene_resume(struct pnp_dev *pnp_dev)
 	if (dev->in_use)
 		ene_rx_enable(dev);
 
-	ene_hw_write_reg_mask(dev, ENE_FW1, 0, ENE_FW1_WAKE);
+	ene_enable_wake(dev, 0);
 	return 0;
 }
 #endif
+
+static void ene_shutdown(struct pnp_dev *pnp_dev)
+{
+	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
+	ene_enable_wake(dev, 1);
+}
 
 static const struct pnp_device_id ene_ids[] = {
 	{.id = "ENE0100",},
@@ -1106,6 +1133,10 @@ static struct pnp_driver ene_driver = {
 #ifdef CONFIG_PM
 	.suspend = ene_suspend,
 	.resume = ene_resume,
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+	.shutdown = ene_shutdown,
 #endif
 };
 
