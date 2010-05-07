@@ -641,11 +641,8 @@ static irqreturn_t ene_isr(int irq, void *data, struct pt_regs *regs)
 	if ((debug && dev->learning_enabled) || dev->rx_carrier_sense)
 		carrier = ene_rx_sense_carrier(dev);
 
-	if (dev->rx_carrier_sense) {
-		if (carrier)
-			ene_send_sample(dev, LIRC_FREQUENCY(carrier));
-		goto unlock;
-	}
+	if (dev->rx_carrier_sense && carrier)
+		ene_send_sample(dev, LIRC_FREQUENCY(carrier));
 
 
 	for (i = 0; i < ENE_SAMPLES_SIZE; i++) {
