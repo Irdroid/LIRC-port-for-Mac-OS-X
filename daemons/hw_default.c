@@ -1,4 +1,4 @@
-/*      $Id: hw_default.c,v 5.44 2010/05/07 12:53:43 maximlevitsky Exp $      */
+/*      $Id: hw_default.c,v 5.45 2010/05/07 22:08:16 lirc Exp $      */
 
 /****************************************************************************
  ** hw_default.c ************************************************************
@@ -292,7 +292,8 @@ int default_init()
 	{
 		for(i=0;supported_send_modes[i]!=0;i++)
 		{
-			if(hw.features&supported_send_modes[i])
+			if(LIRC_CAN_SEND(hw.features) ==
+			   supported_send_modes[i])
 			{
 				hw.send_mode=LIRC_SEND2MODE
 				(supported_send_modes[i]);
@@ -310,7 +311,7 @@ int default_init()
 	{
 		for(i=0;supported_rec_modes[i]!=0;i++)
 		{
-			if(hw.features&supported_rec_modes[i])
+			if(LIRC_CAN_REC(hw.features) == supported_rec_modes[i])
 			{
 				hw.rec_mode=LIRC_REC2MODE
 				(supported_rec_modes[i]);
