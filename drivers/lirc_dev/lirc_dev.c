@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.103 2010/05/07 22:07:27 lirc Exp $
+ * $Id: lirc_dev.c,v 1.104 2010/05/12 19:54:29 lirc Exp $
  *
  */
 
@@ -754,7 +754,8 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 	case LIRC_SET_REC_MODE:
 	case LIRC_SET_SEND_MODE:
 		printk(KERN_NOTICE LOGHEAD "userspace uses outdated ioctl "
-			"please update your lirc installation\n");
+			"please update your lirc installation\n",
+			ir->d.name, ir->d.minor);
 		break;
 	default:
 		break;
