@@ -1,4 +1,4 @@
-## $Id: Makefile.am,v 5.72 2010/04/25 08:25:52 lirc Exp $
+## $Id: Makefile.am,v 5.73 2010/05/13 16:23:23 lirc Exp $
 
 ## Process this file with automake to produce Makefile.in 
 
@@ -107,8 +107,11 @@ lircd_simrec_SOURCES = lircd.c ir_remote.c config_file.c \
 		transmit.c transmit.h
 lircd_simrec_CFLAGS = -DSIM_REC
 
-slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h ir_remote.h \
-		dump_config.c dump_config.h transmit.c transmit.h
+slinke_SOURCES = slinke.c slinke.h config_file.c config_file.h \
+		ir_remote.c ir_remote.h ir_remote_types.h \
+		dump_config.c dump_config.h \
+		release.c release.h \
+		transmit.c transmit.h
 
 
 if SANDBOXED
