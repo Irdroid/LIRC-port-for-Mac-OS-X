@@ -1,4 +1,4 @@
-/*      $Id: lirc.h,v 5.26 2010/05/07 22:07:26 lirc Exp $      */
+/*      $Id: lirc.h,v 5.27 2010/05/13 15:45:48 lirc Exp $      */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
@@ -142,7 +142,7 @@ typedef int lirc_t;
 /* spaces shorter than this are filtered out by hardware (software
    emulation in lirc_dev/lircd?) */
 #define LIRC_SET_REC_FILTER_SPACE      _IOW('i', 0x0000001b, lirc_t)
-/* if filter cannot be set independantly for pulse/space, this should
+/* if filter cannot be set independently for pulse/space, this should
    be used */
 #define LIRC_SET_REC_FILTER            _IOW('i', 0x0000001c, lirc_t)
 
@@ -164,8 +164,5 @@ typedef int lirc_t;
 
 #define LIRC_SETUP_START               _IO('i', 0x00000021)
 #define LIRC_SETUP_END                 _IO('i', 0x00000022)
-
-#define LIRC_GET_MIN_REC_CARRIER       _IOR('i', 0x00000040, unsigned int)
-#define LIRC_GET_MAX_REC_CARRIER       _IOR('i', 0x00000041, unsigned int)
 
 #endif

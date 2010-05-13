@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.104 2010/05/12 19:54:29 lirc Exp $
+ * $Id: lirc_dev.c,v 1.105 2010/05/13 15:45:48 lirc Exp $
  *
  */
 
@@ -833,16 +833,31 @@ static long irctl_compat_ioctl(struct file *file,
 	case LIRC_GET_SEND_DUTY_CYCLE:
 	case LIRC_GET_REC_DUTY_CYCLE:
 	case LIRC_GET_REC_RESOLUTION:
+	case LIRC_GET_MIN_TIMEOUT:
+	case LIRC_GET_MAX_TIMEOUT:
+	case LIRC_GET_MIN_FILTER_PULSE:
+	case LIRC_GET_MAX_FILTER_PULSE:
+	case LIRC_GET_MIN_FILTER_SPACE:
+	case LIRC_GET_MAX_FILTER_SPACE:
 	case LIRC_SET_SEND_CARRIER:
 	case LIRC_SET_REC_CARRIER:
 	case LIRC_SET_SEND_DUTY_CYCLE:
 	case LIRC_SET_REC_DUTY_CYCLE:
 	case LIRC_SET_TRANSMITTER_MASK:
+	case LIRC_SET_REC_TIMEOUT:
+	case LIRC_SET_REC_TIMEOUT_REPORTS:
+	case LIRC_SET_REC_FILTER_PULSE:
+	case LIRC_SET_REC_FILTER_SPACE:
+	case LIRC_SET_REC_FILTER:
+	case LIRC_SET_MEASURE_CARRIER_MODE:
 	case LIRC_SET_REC_DUTY_CYCLE_RANGE:
 	case LIRC_SET_REC_CARRIER_RANGE:
+	case LIRC_NOTIFY_DECODE:
+	case LIRC_SETUP_START:
+	case LIRC_SETUP_END:
 		/*
-		 * These commands expect (unsigned int *)arg
-		 * so no problems here. Just handle the locking.
+		 * These commands expect (unsigned int *) or (lirc_t *)
+		 * arg so no problems here. Just handle the locking.
 		 */
 		lock_kernel();
 		cmd = cmd32;
