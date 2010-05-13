@@ -1,4 +1,4 @@
-/*      $Id: ir_remote.c,v 5.48 2010/04/23 17:28:58 lirc Exp $      */
+/*      $Id: ir_remote.c,v 5.49 2010/05/13 16:24:29 lirc Exp $      */
 
 /****************************************************************************
  ** ir_remote.c *************************************************************
@@ -728,7 +728,7 @@ int send_ir_ncode(struct ir_remote *remote,struct ir_ncode *code)
 {
 	int ret;
 
-#if !defined(SIM_SEND) || defined(DAEMONIZE)
+#if !defined(SIM_SEND)
 	/* insert pause when needed: */
 	if(remote->last_code!=NULL)
 	{
