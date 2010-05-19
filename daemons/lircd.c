@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.94 2010/04/11 18:50:38 lirc Exp $      */
+/*      $Id: lircd.c,v 5.95 2010/05/19 16:23:40 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -1880,6 +1880,11 @@ int get_command(int fd)
 		packet_length=strlen(buffer)+1;
 
 		strcpy(backup,buffer);strcat(backup,"\n");
+		
+		/* remove DOS line endings */
+		end = strrchr(buffer, '\r');
+		if(end && end[1] == 0) *end = 0;
+		
 		directive=strtok(buffer,WHITE_SPACE);
 		if(directive==NULL)
 		{
