@@ -743,7 +743,7 @@ static void ene_close(void *data)
 static int ene_ioctl(struct inode *node, struct file *file,
 		      unsigned int cmd, unsigned long arg)
 {
-	int lvalue = 0, retval, tmp;
+	int lvalue = 0, retval = 0, tmp;
 	unsigned long flags;
 	struct ene_device *dev = lirc_get_pdata(file);
 
@@ -1110,11 +1110,13 @@ static int ene_resume(struct pnp_dev *pnp_dev)
 }
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
 static void ene_shutdown(struct pnp_dev *pnp_dev)
 {
 	struct ene_device *dev = pnp_get_drvdata(pnp_dev);
 	ene_enable_wake(dev, 1);
 }
+#endif
 
 static const struct pnp_device_id ene_ids[] = {
 	{.id = "ENE0100",},
