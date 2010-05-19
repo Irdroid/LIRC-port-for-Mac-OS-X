@@ -1,4 +1,4 @@
-dnl $Id: configure.ac,v 1.41 2010/04/25 08:25:52 lirc Exp $
+dnl $Id: configure.ac,v 1.42 2010/05/19 17:17:03 lirc Exp $
 
 dnl Process this file with autoconf to produce a configure script.
 dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
@@ -1548,7 +1548,6 @@ elif test "$lirc_driver" = "all"; then
 	lirc_atiusb \
 	lirc_bt829 \
 	lirc_ene0100 \
-	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
 	lirc_imon \
