@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.47 2010/04/25 08:26:56 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.48 2010/05/19 17:13:04 lirc Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -363,6 +363,11 @@ static inline int usb_kill_urb(struct urb *urb)
 typedef u32 pm_message_t;
 #endif /* kernel < 2.6.11 */
 #endif /* kernel >= 2.6.0 */
+
+/*************************** pm_wakeup.h ******************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
+static inline void device_set_wakeup_capable(struct device *dev, int val) {}
+#endif /* kernel < 2.6.27 */
 
 /*************************** interrupt.h ******************************/
 /* added in 2.6.18, old defines removed in 2.6.24 */
