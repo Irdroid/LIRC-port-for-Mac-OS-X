@@ -6,7 +6,7 @@ domain socket.
 The main task of lircd is to decode the infrared signals and provide
 an uniform interface for client applications. Clients can connect to
 lircd through a Unix domain socket which is located in
-\/var/run/lirc/lircd.  Using this ocket they will get the infrared
+\/var/run/lirc/lircd.  Using this socket they will get the infrared
 codes received by lircd and they can send commands to lircd.
 
 [OPTIONS]
