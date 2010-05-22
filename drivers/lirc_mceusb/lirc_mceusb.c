@@ -936,7 +936,6 @@ static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
 {
 	int result;
 	unsigned int ivalue;
-	unsigned long lvalue;
 	struct mceusb_dev *ir = NULL;
 
 	/* Retrieve lirc_driver data for the device */
@@ -1322,7 +1321,7 @@ mem_alloc_fail:
 	kfree(rbuf);
 	kfree(driver);
 	kfree(ir);
-	printk(KERN_ERR, "out of memory (code=%d)\n", mem_failure);
+	printk(KERN_ERR "out of memory (code=%d)\n", mem_failure);
 
 	return -ENOMEM;
 }
