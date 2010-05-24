@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.51 2010/04/11 18:50:39 lirc Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.52 2010/05/24 09:01:03 lirc Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.51 $"
+#define DRIVER_VERSION	"$Revision: 1.52 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -89,7 +89,7 @@ MODULE_DEVICE_TABLE(usb, streamzap_table);
 #define STREAMZAP_RESOLUTION 256
 
 /* number of samples buffered */
-#define STREAMZAP_BUFFER_SIZE 128
+#define STREAMZAP_BUFFER_SIZE 256
 
 enum StreamzapDecoderState {
 	PulseSpace,
