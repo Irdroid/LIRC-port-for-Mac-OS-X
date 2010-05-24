@@ -12,9 +12,6 @@
 
 * irrecord: fancy Kenwood repeat code 78 11243 78: repeat_tail?
 
-* Pioneer protocol:
-  add irrecord support
-
 * Grundig/Motorola (context?) protocol (maybe?)
 
 * echostar protocol reported by John.colburn@shaw.ca:

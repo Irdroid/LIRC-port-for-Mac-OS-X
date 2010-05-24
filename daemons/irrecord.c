@@ -1,4 +1,4 @@
-/*      $Id: irrecord.c,v 5.100 2010/04/11 18:50:38 lirc Exp $      */
+/*      $Id: irrecord.c,v 5.101 2010/05/24 09:02:30 lirc Exp $      */
 
 /****************************************************************************
  ** irrecord.c **************************************************************
@@ -97,7 +97,7 @@ const char *usage="Usage: %s [options] file\n";
 struct ir_remote remote;
 struct ir_ncode ncode;
 
-#define IRRECORD_VERSION "$Revision: 5.100 $"
+#define IRRECORD_VERSION "$Revision: 5.101 $"
 #define BUTTON 80+1
 #define RETRIES 10
 
@@ -862,9 +862,32 @@ int main(int argc,char **argv)
 			}
 			if(flag)
 			{
+				ir_code code2;
+				
 				ncode.name=buffer;
 				ncode.code=code;
+				hw.rec_func(NULL);
+				if(hw.decode_func(&remote,&pre,&code2,&post,
+						  &repeat_flag,
+						  &min_remaining_gap,
+						  &max_remaining_gap))
+				{
+					if(code != code2)
+					{
+						ncode.next = malloc(sizeof(*(ncode.next)));
+						if(ncode.next)
+						{
+							memset(ncode.next, 0, sizeof(*(ncode.next)));
+							ncode.next->code = code2;
+						}
+					}
+				}
 				fprint_remote_signal(fout,&remote,&ncode);
+				if(ncode.next)
+				{
+					free(ncode.next);
+					ncode.next = NULL;
+				}
 				break;
 			}
 			else
@@ -1093,6 +1116,22 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 	ir_code first, last;
 	int seq,repeats;
 	int found;
+	
+	struct ir_ncode *codes;
+	if(remote->codes)
+	{
+		codes=remote->codes;
+		while(codes->name!=NULL)
+		{
+			if(codes->next)
+			{
+				/* asume no toggle bit mask when key
+				   sequences are used */
+				return 1;
+			}
+			codes++;
+		}
+	}
 	
 	printf("Checking for toggle bit mask.\n");
 	printf(
@@ -2233,7 +2272,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 
 int get_trail_length(struct ir_remote *remote, int interactive)
 {
-	unsigned int sum,max_count;
+	unsigned int sum = 0,max_count;
 	struct lengths *max_length;
 
 	if(is_biphase(remote)) return(1);
@@ -2256,7 +2295,7 @@ int get_trail_length(struct ir_remote *remote, int interactive)
 
 int get_lead_length(struct ir_remote *remote, int interactive)
 {
-	unsigned int sum,max_count;
+	unsigned int sum = 0,max_count;
 	struct lengths *first_lead,*max_length,*max2_length;
 	lirc_t a,b,swap;
 	
@@ -2349,7 +2388,7 @@ int get_header_length(struct ir_remote *remote, int interactive)
 
 int get_repeat_length(struct ir_remote *remote, int interactive)
 {
-	unsigned int sum,max_count;
+	unsigned int sum = 0,max_count;
 	lirc_t repeatp,repeats,repeat_gap;
 	struct lengths *max_plength,*max_slength;
 
@@ -2450,7 +2489,7 @@ void unlink_length(struct lengths **first,struct lengths *remove)
 
 int get_data_length(struct ir_remote *remote, int interactive)
 {
-	unsigned int sum,max_count;
+	unsigned int sum = 0,max_count;
 	lirc_t p1,p2,s1,s2;
 	struct lengths *max_plength,*max_slength;
 	struct lengths *max2_plength,*max2_slength;
