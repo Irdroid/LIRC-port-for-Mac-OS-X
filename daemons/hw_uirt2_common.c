@@ -1,4 +1,4 @@
-/*      $Id: hw_uirt2_common.c,v 5.6 2008/03/30 14:52:04 lirc Exp $   */
+/*      $Id: hw_uirt2_common.c,v 5.7 2010/05/25 19:12:26 lirc Exp $   */
 
 /****************************************************************************
  ** hw_uirt2_common.c *******************************************************
@@ -658,6 +658,7 @@ lirc_t uirt2_read_raw(uirt2_t *dev, lirc_t timeout)
 			dev->new_signal = 0;
 		} else {
 			data = UIRT2_UNIT * b;
+			if(data == 0) data = 1;
 			if (pulse) {
 				data = data | PULSE_BIT;
 			}
