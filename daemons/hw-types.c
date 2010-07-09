@@ -2,6 +2,11 @@
 # include <config.h>
 #endif
 
+#if defined(SIM_REC) || defined (SIM_SEND)
+#undef HW_DEFAULT
+#undef LIRC_DRIVER_ANY
+#endif
+
 #include <stdio.h>
 #include "hardware.h"
 #include "hw-types.h"
