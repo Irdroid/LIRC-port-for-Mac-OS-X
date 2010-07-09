@@ -1,4 +1,4 @@
-/*      $Id: lircd.c,v 5.95 2010/05/19 16:23:40 lirc Exp $      */
+/*      $Id: lircd.c,v 5.96 2010/07/09 16:54:48 lirc Exp $      */
 
 /****************************************************************************
  ** lircd.c *****************************************************************
@@ -625,11 +625,16 @@ static int setup_hardware()
 	
 	if(hw.fd != -1 && hw.ioctl_func)
 	{
-		(void) hw.ioctl_func(LIRC_SETUP_START, NULL);
-		ret = setup_frequency() &&
-			setup_timeout() &&
-			setup_filter();
-		(void) hw.ioctl_func(LIRC_SETUP_END, NULL);
+		if((hw.features&LIRC_CAN_SET_REC_CARRIER) ||
+		   (hw.features&LIRC_CAN_SET_REC_TIMEOUT) ||
+		   (hw.features&LIRC_CAN_SET_REC_FILTER))
+		{
+			(void) hw.ioctl_func(LIRC_SETUP_START, NULL);
+			ret = setup_frequency() &&
+				setup_timeout() &&
+				setup_filter();
+			(void) hw.ioctl_func(LIRC_SETUP_END, NULL);
+		}
 	}
 	return ret;
 }
