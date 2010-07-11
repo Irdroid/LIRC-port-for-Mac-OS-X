@@ -2,7 +2,7 @@
  *   lirc_imon.c:  LIRC/VFD/LCD driver for SoundGraph iMON IR/VFD/LCD
  *		   including the iMON PAD model
  *
- *   $Id: lirc_imon.c,v 1.118 2010/03/17 14:27:19 jarodwilson Exp $
+ *   $Id: lirc_imon.c,v 1.119 2010/07/11 02:59:43 jarodwilson Exp $
  *
  *   Copyright(C) 2004  Venky Raju(dev@venky.ws)
  *
@@ -575,6 +575,7 @@ static int display_close(struct inode *inode, struct file *file)
 static int send_packet(struct imon_context *context)
 {
 	unsigned int pipe;
+	unsigned long timeout;
 	int interval = 0;
 	int retval = 0;
 	struct usb_ctrlrequest *control_req = NULL;
@@ -643,6 +644,15 @@ static int send_packet(struct imon_context *context)
 	}
 
 	kfree(control_req);
+
+	/*
+	 * Induce a mandatory 5ms delay before returning, as otherwise,
+	 * send_packet can get called so rapidly as to overwhelm the device,
+	 * particularly on faster systems and/or those with quirky usb.
+	 */
+	timeout = msecs_to_jiffies(5);
+	set_current_state(TASK_UNINTERRUPTIBLE);
+	schedule_timeout(timeout);
 
 	return retval;
 }
