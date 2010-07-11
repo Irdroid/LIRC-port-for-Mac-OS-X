@@ -1,4 +1,4 @@
-/*      $Id: config_file.c,v 5.33 2010/04/11 18:50:38 lirc Exp $      */
+/*      $Id: config_file.c,v 5.34 2010/07/11 03:28:21 jarodwilson Exp $      */
 
 /****************************************************************************
  ** config_file.c ***********************************************************
@@ -167,7 +167,7 @@ int s_strtoi(char *val)
 	char *endptr;
 	long n;
 	int h;
-	
+
 	n=strtol(val,&endptr,0);
 	h=(int) n;
 	if(!*val || *endptr || n!=((long) h))
@@ -186,7 +186,7 @@ unsigned int s_strtoui(char *val)
 	char *endptr;
 	unsigned long n;
 	unsigned int h;
-	
+
 	n=strtoul(val,&endptr,0);
 	h=(unsigned int) n;
 	if(!*val || *endptr || n!=((unsigned long) h))
@@ -205,7 +205,7 @@ lirc_t s_strtolirc_t(char *val)
 	unsigned long n;
 	lirc_t h;
 	char *endptr;
-	
+
 	n=strtoul(val,&endptr,0);
 	h=(lirc_t) n;
 	if(!*val || *endptr || n!=((unsigned long) h))
@@ -240,16 +240,17 @@ int checkMode(int is_mode, int c_mode, char *error)
 
 int addSignal(struct void_array *signals, char *val)
 {
-	lirc_t t;
-	
-	t=s_strtolirc_t(val);
-	if(parse_error) return(0);
-	if(!add_void_array(signals, &t)){
-		return(0);
-	}
-        return(1);
+	unsigned int t;
+
+	t = s_strtoui(val);
+	if (parse_error)
+		return 0;
+	if (!add_void_array(signals, &t))
+		return 0;
+
+        return 1;
 }
-	      
+
 struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
 {
 	memset(code, 0, sizeof(*code));
@@ -266,13 +267,13 @@ struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
 struct ir_code_node *defineNode(struct ir_ncode *code, const char *val)
 {
 	struct ir_code_node *node;
-	
+
 	node=s_malloc(sizeof(*node));
 	if(node==NULL) return NULL;
-	
+
 	node->code=s_strtocode(val);
 	node->next=NULL;
-	
+
 #       ifdef LONG_IR_CODE
         LOGPRINTF(3,"                           0x%016llX", node->code);
 #       else
@@ -310,7 +311,7 @@ int parseFlags(char *val)
 		{
 			help=NULL;
 		}
-	
+
 		flaglptr=all_flags;
 		while(flaglptr->name!=NULL){
 			if(strcasecmp(flaglptr->name,flag)==0){
@@ -418,7 +419,7 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 		rem->repeat_gap=s_strtoul(val);
 		return(1);
 	}
-       	/* obsolete: use toggle_bit_mask instead */
+	/* obsolete: use toggle_bit_mask instead */
 	else if (strcasecmp("toggle_bit",key)==0){
 		rem->toggle_bit = s_strtoi(val);
 		return 1;
@@ -566,12 +567,12 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	parse_error=1;
 	return(0);
 }
-    
+
 static int sanityChecks(struct ir_remote *rem)
 {
 	struct ir_ncode *codes;
 	struct ir_code_node *node;
-	
+
 	if (!rem->name)
 	{
 		logprintf(LOG_ERR,"you must specify a remote name");
@@ -620,20 +621,20 @@ static int sanityChecks(struct ir_remote *rem)
 			}
 		}
 	}
-	
+
 	return 1;
 }
 
 struct ir_remote *sort_by_bit_count(struct ir_remote *remotes)
 {
 	struct ir_remote *top, *rem, *next, *prev, *scan;
-	
+
 	rem = remotes;
 	top = NULL;
 	while(rem!=NULL)
 	{
 		next = rem->next;
-		
+
 		scan = top;
 		prev = NULL;
 		while(scan && bit_count(scan)<=bit_count(rem))
@@ -657,10 +658,10 @@ struct ir_remote *sort_by_bit_count(struct ir_remote *remotes)
 		{
 			rem->next = NULL;
 		}
-		
+
 		rem = next;
 	}
-	
+
 	return top;
 }
 
@@ -668,7 +669,7 @@ static const char *lirc_parse_include(char *s)
 {
 	char *last;
 	size_t len;
-	
+
 	len=strlen(s);
 	if(len<2)
 	{
@@ -732,7 +733,7 @@ static const char *lirc_parse_relative(char *dst, size_t dst_size,
 	}
 	strcat(dst, "/");
 	strcat(dst, child);
-	
+
 	return dst;
 }
 
@@ -826,7 +827,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 				}
 				else{
 					int save_line = line;
-					
+
 					if (!top_rem){
 						/* create first remote */
 						LOGPRINTF(2,"creating first remote");
@@ -861,7 +862,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 						parse_error=1;
 						break;
 					}
-					
+
                                         init_void_array(&codes_list,30, sizeof(struct ir_ncode));
                                         mode=ID_codes;
                                 }else if(strcasecmp("raw_codes",val)==0){
@@ -900,7 +901,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 					while(!parse_error && val2!=NULL)
 					{
 						struct ir_code_node *node;
-						
+
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
 						val2=strtok(NULL, whitespace);
@@ -931,7 +932,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
                                 }else if(strcasecmp("raw_codes",val)==0){
                                         /* end raw codes mode */
 					LOGPRINTF(2,"    end raw_codes");
-					
+
 					if(mode==ID_raw_name){
 						raw_code.signals=get_void_array(&signals);
 						raw_code.length=signals.nr_items;
@@ -978,7 +979,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 					while(!parse_error && val2!=NULL)
 					{
 						struct ir_code_node *node;
-						
+
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
 						val2=strtok(NULL, whitespace);
@@ -1013,7 +1014,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 					while(!parse_error && val2!=NULL)
 					{
 						struct ir_code_node *node;
-						
+
 						if(val2[0]=='#') break; /* comment */
 						node=defineNode(code, val2);
 						val2=strtok(NULL, whitespace);
@@ -1110,7 +1111,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 	}
         if (parse_error){
 		static int print_error = 1;
-		
+
 		if(print_error) {
 			logprintf(LOG_ERR, "reading of file '%s' failed",
 				  name);
@@ -1129,7 +1130,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 		if((!is_raw(rem)) && rem->flags&REVERSE)
 		{
 			struct ir_ncode *codes;
-			
+
 			if(has_pre(rem))
 			{
 				rem->pre_data=reverse(rem->pre_data,
@@ -1155,13 +1156,13 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 		if(rem->flags&RC6 && rem->rc6_mask==0 && rem->toggle_bit>0)
 		{
 			int all_bits=bit_count(rem);
-			
+
 			rem->rc6_mask=((ir_code) 1)<<(all_bits-rem->toggle_bit);
 		}
 		if(rem->toggle_bit > 0)
 		{
 			int all_bits=bit_count(rem);
-			
+
 			if(has_toggle_bit_mask(rem))
 			{
 				logprintf(LOG_WARNING,
@@ -1189,7 +1190,7 @@ static struct ir_remote * read_config_recursive(FILE *f, const char *name, int d
 		if(is_serial(rem))
 		{
 			lirc_t base;
-			
+
 			if(rem->baud>0)
 			{
 				base=1000000/rem->baud;
@@ -1246,7 +1247,7 @@ void calculate_signal_lengths(struct ir_remote *remote)
 	int first_sum = 1;
 	struct ir_ncode *c = remote->codes;
 	int i;
-	
+
 	while(c->name)
 	{
 		struct ir_ncode code = *c;
@@ -1268,7 +1269,7 @@ void calculate_signal_lengths(struct ir_remote *remote)
 				if(init_sim(remote, &code, repeat))
 				{
 					lirc_t sum = send_buffer.sum;
-					
+
 					if(sum)
 					{
 						if(first_sum ||
@@ -1359,7 +1360,7 @@ void free_config(struct ir_remote *remotes)
 {
 	struct ir_remote *next;
 	struct ir_ncode *codes;
-	
+
 	while(remotes!=NULL)
 	{
 		next=remotes->next;
@@ -1374,7 +1375,7 @@ void free_config(struct ir_remote *remotes)
 			while(codes->name!=NULL)
 			{
 				struct ir_code_node *node,*next_node;
-				
+
 				free(codes->name);
 				if(codes->signals!=NULL)
 					free(codes->signals);
