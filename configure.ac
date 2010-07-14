@@ -5,6 +5,7 @@ dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 
 AC_INIT
 AC_CONFIG_SRCDIR([daemons/lircd.c])
+AC_CONFIG_MACRO_DIR([m4])
 
 AM_INIT_AUTOMAKE(lirc, 0.9.0-git)
 AM_CONFIG_HEADER(config.h)
