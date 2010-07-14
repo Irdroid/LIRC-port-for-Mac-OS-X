@@ -115,6 +115,7 @@ do
 		-e 's/lt-irxevent/irxevent/' \
 		-e 's/LT-IRXEVENT/IRXEVENT/' \
 		-e 's/\([0-9]\)-CVS/\1/' \
+		-e 's/\([0-9]\)-git/\1/' \
 			man/$MANPAGE > man/$MANPAGE.tmp
 
 	mv man/$MANPAGE.tmp man/$MANPAGE
