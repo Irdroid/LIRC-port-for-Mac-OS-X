@@ -59,9 +59,6 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
 #include <linux/kthread.h>
 #endif
-#ifdef CONFIG_COMPAT
-#include <linux/compat.h>
-#endif
 
 #include "drivers/kcompat.h"
 
@@ -784,121 +781,6 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return result;
 }
 
-#ifdef CONFIG_COMPAT
-#define LIRC_GET_FEATURES_COMPAT32     _IOR('i', 0x00000000, __u32)
-
-#define LIRC_GET_SEND_MODE_COMPAT32    _IOR('i', 0x00000001, __u32)
-#define LIRC_GET_REC_MODE_COMPAT32     _IOR('i', 0x00000002, __u32)
-
-#define LIRC_GET_LENGTH_COMPAT32       _IOR('i', 0x0000000f, __u32)
-
-#define LIRC_SET_SEND_MODE_COMPAT32    _IOW('i', 0x00000011, __u32)
-#define LIRC_SET_REC_MODE_COMPAT32     _IOW('i', 0x00000012, __u32)
-
-static long irctl_compat_ioctl(struct file *file,
-			       unsigned int cmd32,
-			       unsigned long arg)
-{
-	mm_segment_t old_fs;
-	int ret;
-	unsigned long val;
-	unsigned int cmd;
-
-	switch (cmd32) {
-	case LIRC_GET_FEATURES_COMPAT32:
-	case LIRC_GET_SEND_MODE_COMPAT32:
-	case LIRC_GET_REC_MODE_COMPAT32:
-	case LIRC_GET_LENGTH_COMPAT32:
-	case LIRC_SET_SEND_MODE_COMPAT32:
-	case LIRC_SET_REC_MODE_COMPAT32:
-		/*
-		 * These commands expect (unsigned long *) arg
-		 * but the 32-bit app supplied (__u32 *).
-		 * Conversion is required.
-		 */
-		if (get_user(val, (__u32 *)compat_ptr(arg)))
-			return -EFAULT;
-		lock_kernel();
-		/*
-		 * tell irctl_ioctl that it's safe to use the pointer
-		 * to val which is in kernel address space and not in
-		 * user address space
-		 */
-		old_fs = get_fs();
-		set_fs(KERNEL_DS);
-
-		cmd = _IOC(_IOC_DIR(cmd32), _IOC_TYPE(cmd32), _IOC_NR(cmd32),
-			   (_IOC_TYPECHECK(unsigned long)));
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-		ret = irctl_ioctl(file->f_dentry->d_inode, file,
-				  cmd, (unsigned long)(&val));
-#else
-		ret = irctl_ioctl(file, cmd, (unsigned long)(&val));
-#endif
-
-		set_fs(old_fs);
-		unlock_kernel();
-		switch (cmd) {
-		case LIRC_GET_FEATURES:
-		case LIRC_GET_SEND_MODE:
-		case LIRC_GET_REC_MODE:
-		case LIRC_GET_LENGTH:
-			if (!ret && put_user(val, (__u32 *)compat_ptr(arg)))
-				return -EFAULT;
-			break;
-		}
-		return ret;
-
-	case LIRC_GET_SEND_CARRIER:
-	case LIRC_GET_REC_CARRIER:
-	case LIRC_GET_SEND_DUTY_CYCLE:
-	case LIRC_GET_REC_DUTY_CYCLE:
-	case LIRC_GET_REC_RESOLUTION:
-	case LIRC_GET_MIN_TIMEOUT:
-	case LIRC_GET_MAX_TIMEOUT:
-	case LIRC_GET_MIN_FILTER_PULSE:
-	case LIRC_GET_MAX_FILTER_PULSE:
-	case LIRC_GET_MIN_FILTER_SPACE:
-	case LIRC_GET_MAX_FILTER_SPACE:
-	case LIRC_SET_SEND_CARRIER:
-	case LIRC_SET_REC_CARRIER:
-	case LIRC_SET_SEND_DUTY_CYCLE:
-	case LIRC_SET_REC_DUTY_CYCLE:
-	case LIRC_SET_TRANSMITTER_MASK:
-	case LIRC_SET_REC_TIMEOUT:
-	case LIRC_SET_REC_TIMEOUT_REPORTS:
-	case LIRC_SET_REC_FILTER_PULSE:
-	case LIRC_SET_REC_FILTER_SPACE:
-	case LIRC_SET_REC_FILTER:
-	case LIRC_SET_MEASURE_CARRIER_MODE:
-	case LIRC_SET_REC_DUTY_CYCLE_RANGE:
-	case LIRC_SET_REC_CARRIER_RANGE:
-	case LIRC_NOTIFY_DECODE:
-	case LIRC_SETUP_START:
-	case LIRC_SETUP_END:
-		/*
-		 * These commands expect (unsigned int *) or (lirc_t *)
-		 * arg so no problems here. Just handle the locking.
-		 */
-		lock_kernel();
-		cmd = cmd32;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-		ret = irctl_ioctl(file->f_dentry->d_inode,
-				  file, cmd, arg);
-#else
-		ret = irctl_ioctl(file, cmd, arg);
-#endif
-		unlock_kernel();
-		return ret;
-	default:
-		/* unknown */
-		printk(KERN_ERR "lirc_dev: %s(%s:%d): Unknown cmd %08x\n",
-		       __func__, current->comm, current->pid, cmd32);
-		return -ENOIOCTLCMD;
-	}
-}
-#endif
-
 static ssize_t irctl_read(struct file *file,
 			  char *buffer,
 			  size_t length,
@@ -1035,9 +917,6 @@ static struct file_operations fops = {
 	.ioctl		= irctl_ioctl,
 #else
 	.unlocked_ioctl	= irctl_ioctl,
-#endif
-#ifdef CONFIG_COMPAT
-	.compat_ioctl	= irctl_compat_ioctl,
 #endif
 	.open		= irctl_open,
 	.release	= irctl_close
