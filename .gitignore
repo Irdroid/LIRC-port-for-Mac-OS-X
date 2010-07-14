@@ -20,6 +20,7 @@ contrib/hal/20-ircontrol-lirc.fdi
 doc/man2html
 doc/man2html.o
 
+INSTALL
 autom4te.cache
 Makefile
 Makefile.in
