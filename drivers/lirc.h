@@ -1,21 +1,16 @@
-/*      $Id: lirc.h,v 5.27 2010/05/13 15:45:48 lirc Exp $      */
+/*
+ * lirc.h - linux infrared remote control header file
+ * last modified 2010/06/03 by Jarod Wilson
+ */
 
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
 
-#if defined(__linux__)
+#include <linux/types.h>
 #include <linux/ioctl.h>
-#elif defined(_NetBSD_)
-#include <sys/ioctl.h> 
-#elif defined(_CYGWIN_)
-#define __USE_LINUX_IOCTL_DEFS
-#include <sys/ioctl.h>
-#endif
 
-/* <obsolete> */
 #define PULSE_BIT       0x01000000
 #define PULSE_MASK      0x00FFFFFF
-/* </obsolete> */
 
 #define LIRC_MODE2_SPACE     0x00000000
 #define LIRC_MODE2_PULSE     0x01000000
@@ -38,7 +33,7 @@
 #define LIRC_IS_FREQUENCY(val) (LIRC_MODE2(val) == LIRC_MODE2_FREQUENCY)
 #define LIRC_IS_TIMEOUT(val) (LIRC_MODE2(val) == LIRC_MODE2_TIMEOUT)
 
-typedef int lirc_t;
+#define lirc_t int
 
 /*** lirc compatible hardware features ***/
 
@@ -50,17 +45,13 @@ typedef int lirc_t;
 #define LIRC_MODE_RAW                  0x00000001
 #define LIRC_MODE_PULSE                0x00000002
 #define LIRC_MODE_MODE2                0x00000004
-/* obsolete: #define LIRC_MODE_CODE                 0x00000008 */
 #define LIRC_MODE_LIRCCODE             0x00000010
-/* obsolete: #define LIRC_MODE_STRING               0x00000020 */
 
 
 #define LIRC_CAN_SEND_RAW              LIRC_MODE2SEND(LIRC_MODE_RAW)
 #define LIRC_CAN_SEND_PULSE            LIRC_MODE2SEND(LIRC_MODE_PULSE)
 #define LIRC_CAN_SEND_MODE2            LIRC_MODE2SEND(LIRC_MODE_MODE2)
-/* obsolete: #define LIRC_CAN_SEND_CODE             LIRC_MODE2SEND(LIRC_MODE_CODE) */
 #define LIRC_CAN_SEND_LIRCCODE         LIRC_MODE2SEND(LIRC_MODE_LIRCCODE)
-/* obsolete: #define LIRC_CAN_SEND_STRING           LIRC_MODE2SEND(LIRC_MODE_STRING) */
 
 #define LIRC_CAN_SEND_MASK             0x0000003f
 
@@ -71,9 +62,7 @@ typedef int lirc_t;
 #define LIRC_CAN_REC_RAW               LIRC_MODE2REC(LIRC_MODE_RAW)
 #define LIRC_CAN_REC_PULSE             LIRC_MODE2REC(LIRC_MODE_PULSE)
 #define LIRC_CAN_REC_MODE2             LIRC_MODE2REC(LIRC_MODE_MODE2)
-/* obsolete: #define LIRC_CAN_REC_CODE              LIRC_MODE2REC(LIRC_MODE_CODE) */
 #define LIRC_CAN_REC_LIRCCODE          LIRC_MODE2REC(LIRC_MODE_LIRCCODE)
-/* obsolete: #define LIRC_CAN_REC_STRING            LIRC_MODE2REC(LIRC_MODE_STRING) */
 
 #define LIRC_CAN_REC_MASK              LIRC_MODE2REC(LIRC_CAN_SEND_MASK)
 
@@ -95,60 +84,71 @@ typedef int lirc_t;
 
 /*** IOCTL commands for lirc driver ***/
 
-#define LIRC_GET_FEATURES              _IOR('i', 0x00000000, unsigned long)
+#define LIRC_GET_FEATURES              _IOR('i', 0x00000000, __u32)
 
-#define LIRC_GET_SEND_MODE             _IOR('i', 0x00000001, unsigned long)
-#define LIRC_GET_REC_MODE              _IOR('i', 0x00000002, unsigned long)
-#define LIRC_GET_SEND_CARRIER          _IOR('i', 0x00000003, unsigned int)
-#define LIRC_GET_REC_CARRIER           _IOR('i', 0x00000004, unsigned int)
-#define LIRC_GET_SEND_DUTY_CYCLE       _IOR('i', 0x00000005, unsigned int)
-#define LIRC_GET_REC_DUTY_CYCLE        _IOR('i', 0x00000006, unsigned int)
-#define LIRC_GET_REC_RESOLUTION        _IOR('i', 0x00000007, unsigned int)
+#define LIRC_GET_SEND_MODE             _IOR('i', 0x00000001, __u32)
+#define LIRC_GET_REC_MODE              _IOR('i', 0x00000002, __u32)
+#define LIRC_GET_SEND_CARRIER          _IOR('i', 0x00000003, __u32)
+#define LIRC_GET_REC_CARRIER           _IOR('i', 0x00000004, __u32)
+#define LIRC_GET_SEND_DUTY_CYCLE       _IOR('i', 0x00000005, __u32)
+#define LIRC_GET_REC_DUTY_CYCLE        _IOR('i', 0x00000006, __u32)
+#define LIRC_GET_REC_RESOLUTION        _IOR('i', 0x00000007, __u32)
 
-#define LIRC_GET_MIN_TIMEOUT           _IOR('i', 0x00000008, lirc_t)
-#define LIRC_GET_MAX_TIMEOUT           _IOR('i', 0x00000009, lirc_t)
+#define LIRC_GET_MIN_TIMEOUT           _IOR('i', 0x00000008, __u32)
+#define LIRC_GET_MAX_TIMEOUT           _IOR('i', 0x00000009, __u32)
 
-#define LIRC_GET_MIN_FILTER_PULSE      _IOR('i', 0x0000000a, lirc_t)
-#define LIRC_GET_MAX_FILTER_PULSE      _IOR('i', 0x0000000b, lirc_t)
-#define LIRC_GET_MIN_FILTER_SPACE      _IOR('i', 0x0000000c, lirc_t)
-#define LIRC_GET_MAX_FILTER_SPACE      _IOR('i', 0x0000000d, lirc_t)
+#if 0	/* these ioctls are not used at the moment */
+#define LIRC_GET_MIN_FILTER_PULSE      _IOR('i', 0x0000000a, __u32)
+#define LIRC_GET_MAX_FILTER_PULSE      _IOR('i', 0x0000000b, __u32)
+#define LIRC_GET_MIN_FILTER_SPACE      _IOR('i', 0x0000000c, __u32)
+#define LIRC_GET_MAX_FILTER_SPACE      _IOR('i', 0x0000000d, __u32)
+#endif
 
 /* code length in bits, currently only for LIRC_MODE_LIRCCODE */
-#define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, unsigned long)
+#define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, __u32)
 
-/* all values set should be reset by the driver when the device is
-   reopened */
-
-/* obsolete: drivers only support one mode */
-#define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, unsigned long)
-/* obsolete: drivers only support one mode */
-#define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, unsigned long)
+#define LIRC_SET_SEND_MODE             _IOW('i', 0x00000011, __u32)
+#define LIRC_SET_REC_MODE              _IOW('i', 0x00000012, __u32)
 /* Note: these can reset the according pulse_width */
-#define LIRC_SET_SEND_CARRIER          _IOW('i', 0x00000013, unsigned int)
-#define LIRC_SET_REC_CARRIER           _IOW('i', 0x00000014, unsigned int)
-#define LIRC_SET_SEND_DUTY_CYCLE       _IOW('i', 0x00000015, unsigned int)
-#define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, unsigned int)
-#define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, unsigned int)
+#define LIRC_SET_SEND_CARRIER          _IOW('i', 0x00000013, __u32)
+#define LIRC_SET_REC_CARRIER           _IOW('i', 0x00000014, __u32)
+#define LIRC_SET_SEND_DUTY_CYCLE       _IOW('i', 0x00000015, __u32)
+#define LIRC_SET_REC_DUTY_CYCLE        _IOW('i', 0x00000016, __u32)
+#define LIRC_SET_TRANSMITTER_MASK      _IOW('i', 0x00000017, __u32)
 
-/* a value of 0 disables all hardware timeouts and data should be
-   reported as soon as possible */
-#define LIRC_SET_REC_TIMEOUT           _IOW('i', 0x00000018, lirc_t)
+/*
+ * when a timeout != 0 is set the driver will send a
+ * LIRC_MODE2_TIMEOUT data packet, otherwise LIRC_MODE2_TIMEOUT is
+ * never sent, timeout is disabled by default
+ */
+#define LIRC_SET_REC_TIMEOUT           _IOW('i', 0x00000018, __u32)
+
+#if 0	/* these ioctls are not used at the moment */
 /* 1 enables, 0 disables timeout reports in MODE2 */
-#define LIRC_SET_REC_TIMEOUT_REPORTS   _IOW('i', 0x00000019, unsigned int)
+#define LIRC_SET_REC_TIMEOUT_REPORTS   _IOW('i', 0x00000019, __u32)
 
-/* pulses shorter than this are filtered out by hardware (software
-   emulation in lirc_dev/lircd?) */
-#define LIRC_SET_REC_FILTER_PULSE      _IOW('i', 0x0000001a, lirc_t)
-/* spaces shorter than this are filtered out by hardware (software
-   emulation in lirc_dev/lircd?) */
-#define LIRC_SET_REC_FILTER_SPACE      _IOW('i', 0x0000001b, lirc_t)
-/* if filter cannot be set independently for pulse/space, this should
-   be used */
-#define LIRC_SET_REC_FILTER            _IOW('i', 0x0000001c, lirc_t)
+/*
+ * pulses shorter than this are filtered out by hardware (software
+ * emulation in lirc_dev?)
+ */
+#define LIRC_SET_REC_FILTER_PULSE      _IOW('i', 0x0000001a, __u32)
+/*
+ * spaces shorter than this are filtered out by hardware (software
+ * emulation in lirc_dev?)
+ */
+#define LIRC_SET_REC_FILTER_SPACE      _IOW('i', 0x0000001b, __u32)
+/*
+ * if filter cannot be set independantly for pulse/space, this should
+ * be used
+ */
+#define LIRC_SET_REC_FILTER            _IOW('i', 0x0000001c, __u32)
 
-/* if enabled from the next key press on the driver will send
-   LIRC_MODE2_FREQUENCY packets */
-#define LIRC_SET_MEASURE_CARRIER_MODE  _IOW('i', 0x0000001d, unsigned int)
+/*
+ * if enabled from the next key press on the driver will send
+ * LIRC_MODE2_FREQUENCY packets
+ */
+#define LIRC_SET_MEASURE_CARRIER_MODE  _IOW('i', 0x0000001d, __u32)
+#endif
 
 /*
  * to set a range use
@@ -157,8 +157,8 @@ typedef int lirc_t;
  * LIRC_SET_REC_DUTY_CYCLE/LIRC_SET_REC_CARRIER with the upper bound
  */
 
-#define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, unsigned int)
-#define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, unsigned int)
+#define LIRC_SET_REC_DUTY_CYCLE_RANGE  _IOW('i', 0x0000001e, __u32)
+#define LIRC_SET_REC_CARRIER_RANGE     _IOW('i', 0x0000001f, __u32)
 
 #define LIRC_NOTIFY_DECODE             _IO('i', 0x00000020)
 
