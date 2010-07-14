@@ -97,12 +97,10 @@
 #define LIRC_GET_MIN_TIMEOUT           _IOR('i', 0x00000008, __u32)
 #define LIRC_GET_MAX_TIMEOUT           _IOR('i', 0x00000009, __u32)
 
-#if 0	/* these ioctls are not used at the moment */
 #define LIRC_GET_MIN_FILTER_PULSE      _IOR('i', 0x0000000a, __u32)
 #define LIRC_GET_MAX_FILTER_PULSE      _IOR('i', 0x0000000b, __u32)
 #define LIRC_GET_MIN_FILTER_SPACE      _IOR('i', 0x0000000c, __u32)
 #define LIRC_GET_MAX_FILTER_SPACE      _IOR('i', 0x0000000d, __u32)
-#endif
 
 /* code length in bits, currently only for LIRC_MODE_LIRCCODE */
 #define LIRC_GET_LENGTH                _IOR('i', 0x0000000f, __u32)
@@ -123,7 +121,6 @@
  */
 #define LIRC_SET_REC_TIMEOUT           _IOW('i', 0x00000018, __u32)
 
-#if 0	/* these ioctls are not used at the moment */
 /* 1 enables, 0 disables timeout reports in MODE2 */
 #define LIRC_SET_REC_TIMEOUT_REPORTS   _IOW('i', 0x00000019, __u32)
 
@@ -148,7 +145,6 @@
  * LIRC_MODE2_FREQUENCY packets
  */
 #define LIRC_SET_MEASURE_CARRIER_MODE  _IOW('i', 0x0000001d, __u32)
-#endif
 
 /*
  * to set a range use
