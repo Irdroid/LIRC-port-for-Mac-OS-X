@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.106 2010/05/07 12:53:43 maximlevitsky Exp $      */
+/*      $Id: lirc_serial.c,v 5.107 2010/07/14 19:01:36 lirc Exp $      */
 /*
  * lirc_serial.c
  *
@@ -143,7 +143,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.106 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.107 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -989,6 +989,12 @@ static int init_port(void)
 		sense = (nlow >= nhigh ? 1 : 0);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
 		       "%s receiver\n", sense ? "low" : "high");
+		if(sense == 0)
+		{
+			printk(KERN_INFO  LIRC_DRIVER_NAME  ": this usually "
+			       "means that there is no receiver attached to "
+			       "the selected port");
+		}
 	} else
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": Manually using active "
 		       "%s receiver\n", sense ? "low" : "high");
