@@ -452,9 +452,15 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	}
 
 #if defined(KERNEL_2_5)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+	ir->buf_in = usb_alloc_coherent(dev,
+			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
+			      GFP_ATOMIC, &ir->dma_in);
+#else
 	ir->buf_in = usb_buffer_alloc(dev,
 			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
 			      GFP_ATOMIC, &ir->dma_in);
+#endif
 #else
 	ir->buf_in = kmalloc(DEVICE_BUFLEN+DEVICE_HEADERLEN,
 			     GFP_KERNEL);
@@ -488,8 +494,13 @@ mem_failure_switch:
 	switch (mem_failure) {
 	case 9:
 #if defined(KERNEL_2_5)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+		usb_free_coherent(dev, DEVICE_BUFLEN+DEVICE_HEADERLEN,
+			ir->buf_in, ir->dma_in);
+#else
 		usb_buffer_free(dev, DEVICE_BUFLEN+DEVICE_HEADERLEN,
 			ir->buf_in, ir->dma_in);
+#endif
 #else
 		kfree(ir->buf_in);
 #endif
@@ -568,7 +579,11 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 
 
 #if defined(KERNEL_2_5)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+	usb_free_coherent(dev, ir->len_in, ir->buf_in, ir->dma_in);
+#else
 	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
+#endif
 #else
 	kfree(ir->buf_in);
 #endif

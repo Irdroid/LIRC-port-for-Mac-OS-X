@@ -17,7 +17,7 @@
  *   Vassilis Virvilis <vasvir@iit.demokritos.gr> 2006
  *      reworked the patch for lirc submission
  *
- * $Id: lirc_atiusb.c,v 1.86 2010/03/17 14:16:15 jarodwilson Exp $
+ * $Id: lirc_atiusb.c,v 1.87 2010/07/24 14:35:58 jarodwilson Exp $
  */
 
 /*
@@ -69,7 +69,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION		"$Revision: 1.86 $"
+#define DRIVER_VERSION		"$Revision: 1.87 $"
 #define DRIVER_AUTHOR		"Paul Miller <pmiller9@users.sourceforge.net>"
 #define DRIVER_DESC		"USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_atiusb"
@@ -824,7 +824,11 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 				ir->devnum);
 	case 3:
 #ifdef KERNEL_2_5
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+		usb_free_coherent(iep->ir->usbdev, iep->len, iep->buf, iep->dma);
+#else
 		usb_buffer_free(iep->ir->usbdev, iep->len, iep->buf, iep->dma);
+#endif
 #else
 		kfree(iep->buf);
 #endif
@@ -869,7 +873,11 @@ static struct in_endpt *new_in_endpt(struct atirf_dev *ir,
 	iep->len = len;
 
 #ifdef KERNEL_2_5
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+	iep->buf = usb_alloc_coherent(dev, len, GFP_ATOMIC, &iep->dma);
+#else
 	iep->buf = usb_buffer_alloc(dev, len, GFP_ATOMIC, &iep->dma);
+#endif
 #else
 	iep->buf = kmalloc(len, GFP_KERNEL);
 #endif
@@ -931,8 +939,13 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 		}
 	case 3:
 #ifdef KERNEL_2_5
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+		usb_free_coherent(oep->ir->usbdev, USB_OUTLEN,
+				  oep->buf, oep->dma);
+#else
 		usb_buffer_free(oep->ir->usbdev, USB_OUTLEN,
 				oep->buf, oep->dma);
+#endif
 #else
 		kfree(oep->buf);
 #endif
@@ -965,8 +978,13 @@ static struct out_endpt *new_out_endpt(struct atirf_dev *ir,
 		init_waitqueue_head(&oep->wait);
 
 #ifdef KERNEL_2_5
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
+		oep->buf = usb_alloc_coherent(dev, USB_OUTLEN,
+					      GFP_ATOMIC, &oep->dma);
+#else
 		oep->buf = usb_buffer_alloc(dev, USB_OUTLEN,
 					    GFP_ATOMIC, &oep->dma);
+#endif
 #else
 		oep->buf = kmalloc(USB_OUTLEN, GFP_KERNEL);
 #endif
@@ -1376,7 +1394,7 @@ static int __init usb_remote_init(void)
 	       DRIVER_VERSION "\n");
 	printk(DRIVER_NAME ": " DRIVER_AUTHOR "\n");
 	dprintk(DRIVER_NAME ": debug mode enabled: "
-		"$Id: lirc_atiusb.c,v 1.86 2010/03/17 14:16:15 jarodwilson Exp $\n");
+		"$Id: lirc_atiusb.c,v 1.87 2010/07/24 14:35:58 jarodwilson Exp $\n");
 
 	repeat_jiffies = repeat*HZ/100;
 
