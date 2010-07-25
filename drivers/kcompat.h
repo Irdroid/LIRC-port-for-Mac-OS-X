@@ -1,4 +1,4 @@
-/*      $Id: kcompat.h,v 5.48 2010/05/19 17:13:04 lirc Exp $      */
+/*      $Id: kcompat.h,v 5.49 2010/07/25 16:43:32 jarodwilson Exp $      */
 
 #ifndef _KCOMPAT_H
 #define _KCOMPAT_H
@@ -7,6 +7,11 @@
 
 #ifndef __func__
 #define __func__ __FUNCTION__
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+#define usb_alloc_coherent usb_buffer_alloc
+#define usb_free_coherent usb_buffer_free
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)

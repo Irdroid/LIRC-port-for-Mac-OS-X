@@ -1168,11 +1168,7 @@ static int __devinit mceusb_dev_probe(struct usb_interface *intf,
 	if (lirc_buffer_init(rbuf, sizeof(lirc_t), LIRCBUF_SIZE))
 		goto mem_alloc_fail;
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 	ir->buf_in = usb_alloc_coherent(dev, maxp, GFP_ATOMIC, &ir->dma_in);
-#else
-	ir->buf_in = usb_buffer_alloc(dev, maxp, GFP_ATOMIC, &ir->dma_in);
-#endif
 	if (!ir->buf_in)
 		goto buf_in_alloc_fail;
 
@@ -1261,11 +1257,7 @@ static int __devinit mceusb_dev_probe(struct usb_interface *intf,
 lirc_register_fail:
 	usb_free_urb(ir->urb_in);
 urb_in_alloc_fail:
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 	usb_free_coherent(dev, maxp, ir->buf_in, ir->dma_in);
-#else
-	usb_buffer_free(dev, maxp, ir->buf_in, ir->dma_in);
-#endif
 buf_in_alloc_fail:
 	lirc_buffer_free(rbuf);
 mem_alloc_fail:
@@ -1294,11 +1286,7 @@ static void __devexit mceusb_dev_disconnect(struct usb_interface *intf)
 	mutex_lock(&ir->dev_lock);
 	usb_kill_urb(ir->urb_in);
 	usb_free_urb(ir->urb_in);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 	usb_free_coherent(dev, ir->len_in, ir->buf_in, ir->dma_in);
-#else
-	usb_buffer_free(dev, ir->len_in, ir->buf_in, ir->dma_in);
-#endif
 	mutex_unlock(&ir->dev_lock);
 
 	unregister_from_lirc(ir);

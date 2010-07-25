@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.53 2010/07/24 14:35:59 jarodwilson Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.54 2010/07/25 16:43:33 jarodwilson Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.53 $"
+#define DRIVER_VERSION	"$Revision: 1.54 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -560,13 +560,8 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 
 	sz->buf_in_len = sz->endpoint->wMaxPacketSize;
 #ifdef KERNEL_2_5
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 	sz->buf_in = usb_alloc_coherent(sz->udev, sz->buf_in_len,
 					GFP_ATOMIC, &sz->dma_in);
-#else
-	sz->buf_in = usb_buffer_alloc(sz->udev, sz->buf_in_len,
-				      GFP_ATOMIC, &sz->dma_in);
-#endif
 #else
 	sz->buf_in = kmalloc(sz->buf_in_len, GFP_KERNEL);
 #endif
@@ -680,11 +675,7 @@ error:
 	if (sz) {
 		usb_free_urb(sz->urb_in);
 #ifdef KERNEL_2_5
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 		usb_free_coherent(udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#else
-		usb_buffer_free(udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#endif
 #else
 		if (sz->buf_in) {
 			kfree(sz->buf_in);
@@ -834,11 +825,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	usb_free_urb(sz->urb_in);
 
 #ifdef KERNEL_2_5
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 34)
 	usb_free_coherent(sz->udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#else
-	usb_buffer_free(sz->udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#endif
 #else
 	kfree(sz->buf_in);
 #endif
