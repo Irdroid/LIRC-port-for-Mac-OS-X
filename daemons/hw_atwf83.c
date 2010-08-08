@@ -174,6 +174,7 @@ void* atwf83_repeat()
 		case 1:
 			// Data ready in device's file
 			rd = read(fd_hidraw, ev, sizeof(ev));
+			
 			if (rd==-1)
 			{
 				// Error
@@ -181,22 +182,19 @@ void* atwf83_repeat()
 					  __FUNCTION__, hw.device);
 				goto exit_loop;
 			}
-			if (rd < 7 ||
-			    ev[1]!=0 ||
-			    (rd==7 && ev[0]==0x200) ||
-			    (rd==8 && ev[0]==0))
-			{
-				// Release code : stop repetitions
-				pressed = 0;
-				current_code = release_code;
-			}
-			else
+			if ((rd==8 && ev[0]!=0) || (rd==6 && ev[0]>2) )	
 			{
 				// Key code : forward it to main thread
 				pressed = 1;
 				delay.tv_sec = 0;
 				delay.tv_usec = repeat_time1_us;
 				current_code = ev[0];
+			}
+			else
+			{
+				// Release code : stop repetitions
+				pressed = 0;
+				current_code = release_code;
 			}
 			break;
 		case 0:

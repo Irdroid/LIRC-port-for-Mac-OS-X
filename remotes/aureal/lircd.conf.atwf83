@@ -28,34 +28,34 @@ begin remote
           KEY_ENTER                0x00280000
           KEY_INFO                 0x00650000
           KEY_LEFT                 0x00500000
-          KEY_MAIL                 0x018A0200
-          KEY_MUTE                 0x00E20200
-          KEY_PLAYPAUSE            0x00CD0200
-          KEY_POWER                0x008303FF
+          KEY_MAIL                 0x00018A02
+          KEY_MUTE                 0x0000E202
+          KEY_PLAYPAUSE            0x0000CD02
+          KEY_POWER                0x00008303
           KEY_RADIO                0x00040001
           KEY_RECORD               0x00150001
           KEY_RIGHT                0x004F0000
           KEY_AUDIO                0x00100001
           KEY_TV                   0x00170003
-          KEY_STOP                 0x00B70200
+          KEY_STOP                 0x0000B702
           KEY_UP                   0x00520000
           KEY_VIDEO                0x00080001
-          KEY_VOLUMEDOWN           0x00EA0200
-          KEY_VOLUMEUP             0x00E90200
-          KEY_WWW                  0x02230200
+          KEY_VOLUMEDOWN           0x0000EA02
+          KEY_VOLUMEUP             0x0000E902
+          KEY_WWW                  0x00022302
           KEY_CALENDAR             0x000C0001
-          KEY_PREVIOUS             0x02240200
-          KEY_NEXT                 0x02250200
+          KEY_PREVIOUS             0x00022402
+          KEY_NEXT                 0x00022502
           KEY_SCREEN               0x00280004
           KEY_CHANNELDOWN          0x004E0000
           KEY_CHANNELUP            0x004B0000
           KEY_KPASTERISK           0x00250002
           KEY_KPPLUSMINUS          0x00200002
           KEY_REWIND               0x00050003
-          KEY_FORWARD              0x00B30200
-          KEY_NEXTSONG             0x00B50200
+          KEY_FORWARD              0x0000B302
+          KEY_NEXTSONG             0x0000B502
           KEY_MEDIA                0x0028000C
-          KEY_PREVIOUSSONG         0x00B60200
+          KEY_PREVIOUSSONG         0x0000B602
           KEY_HOME                 0x00070008
       end codes
 
