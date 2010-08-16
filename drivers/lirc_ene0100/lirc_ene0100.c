@@ -740,8 +740,12 @@ static void ene_close(void *data)
 }
 
 /* outside interface for settings */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int ene_ioctl(struct inode *node, struct file *file,
 		      unsigned int cmd, unsigned long arg)
+#else
+static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int lvalue = 0, retval = 0, tmp;
 	unsigned long flags;
@@ -921,7 +925,11 @@ static void ene_send_sample(struct ene_device *dev, unsigned long sample)
 static const struct file_operations ene_fops = {
 	.owner		= THIS_MODULE,
 	.write		= ene_transmit,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= ene_ioctl,
+#else
+	.unlocked_ioctl	= ene_ioctl,
+#endif
 };
 
 /* main load function */

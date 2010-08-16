@@ -928,8 +928,13 @@ static int set_send_carrier(struct mceusb_dev *ir, int carrier)
 }
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
 			     unsigned int cmd, unsigned long arg)
+#else
+static long mceusb_lirc_ioctl(struct file *filep, unsigned int cmd,
+			      unsigned long arg)
+#endif
 {
 	int result;
 	unsigned int ivalue;
@@ -980,7 +985,11 @@ static int mceusb_lirc_ioctl(struct inode *node, struct file *filep,
 static struct file_operations lirc_fops = {
 	.owner	= THIS_MODULE,
 	.write	= mceusb_transmit_ir,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl	= mceusb_lirc_ioctl,
+#else
+	.unlocked_ioctl	= mceusb_lirc_ioctl,
+#endif
 };
 
 static void mceusb_gen1_init(struct mceusb_dev *ir)

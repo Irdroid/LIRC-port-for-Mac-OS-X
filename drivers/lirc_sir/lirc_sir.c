@@ -226,8 +226,12 @@ static ssize_t lirc_read(struct file *file, char *buf, size_t count,
 		loff_t *ppos);
 static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 		loff_t *pos);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		unsigned long arg);
+#else
+static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
+#endif
 static void add_read_queue(int flag, unsigned long val);
 #ifdef MODULE
 static int init_chrdev(void);
@@ -394,8 +398,12 @@ static ssize_t lirc_write(struct file *file, const char *buf, size_t n,
 	return n;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		unsigned long arg)
+#else
+static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int retval = 0;
 	unsigned long value = 0;
@@ -518,7 +526,11 @@ static struct file_operations lirc_fops = {
 	.read		= lirc_read,
 	.write		= lirc_write,
 	.poll		= lirc_poll,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= lirc_ioctl,
+#else
+	.unlocked_ioctl	= lirc_ioctl,
+#endif
 	.open		= lirc_open,
 	.release	= lirc_close,
 };

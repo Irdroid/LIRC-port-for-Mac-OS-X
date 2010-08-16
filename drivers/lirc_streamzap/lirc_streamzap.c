@@ -1,4 +1,4 @@
-/*      $Id: lirc_streamzap.c,v 1.54 2010/07/25 16:43:33 jarodwilson Exp $      */
+/*      $Id: lirc_streamzap.c,v 1.55 2010/08/16 20:20:48 jarodwilson Exp $      */
 /*
  * Streamzap Remote Control driver
  *
@@ -56,7 +56,7 @@
 #include "drivers/kcompat.h"
 #include "drivers/lirc_dev/lirc_dev.h"
 
-#define DRIVER_VERSION	"$Revision: 1.54 $"
+#define DRIVER_VERSION	"$Revision: 1.55 $"
 #define DRIVER_NAME	"lirc_streamzap"
 #define DRIVER_DESC	"Streamzap Remote Control driver"
 
@@ -179,8 +179,13 @@ static void usb_streamzap_irq(struct urb *urb);
 #endif
 static int streamzap_use_inc(void *data);
 static void streamzap_use_dec(void *data);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg);
+#else
+static long streamzap_ioctl(struct file *filep, unsigned int cmd,
+			    unsigned long arg);
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int streamzap_suspend(struct usb_interface *intf, pm_message_t message);
 static int streamzap_resume(struct usb_interface *intf);
@@ -470,7 +475,11 @@ static void usb_streamzap_irq(struct urb *urb)
 
 static struct file_operations streamzap_fops = {
 	.owner		= THIS_MODULE,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= streamzap_ioctl,
+#else
+	.unlocked_ioctl	= streamzap_ioctl,
+#endif
 };
 
 
@@ -750,8 +759,13 @@ static void streamzap_use_dec(void *data)
 	sz->in_use--;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int streamzap_ioctl(struct inode *node, struct file *filep,
 			   unsigned int cmd, unsigned long arg)
+#else
+static long streamzap_ioctl(struct file *filep, unsigned int cmd,
+			    unsigned long arg)
+#endif
 {
 	int result = 0;
 	lirc_t val;

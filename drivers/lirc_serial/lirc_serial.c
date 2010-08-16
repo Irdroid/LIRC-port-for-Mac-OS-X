@@ -1,4 +1,4 @@
-/*      $Id: lirc_serial.c,v 5.107 2010/07/14 19:01:36 lirc Exp $      */
+/*      $Id: lirc_serial.c,v 5.108 2010/08/16 20:20:47 jarodwilson Exp $      */
 /*
  * lirc_serial.c
  *
@@ -143,7 +143,7 @@
 #endif
 #endif
 
-#define LIRC_DRIVER_VERSION "$Revision: 5.107 $"
+#define LIRC_DRIVER_VERSION "$Revision: 5.108 $"
 #define LIRC_DRIVER_NAME "lirc_serial"
 
 struct lirc_serial {
@@ -1100,8 +1100,12 @@ static ssize_t lirc_write(struct file *file, const char *buf,
 	return n;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		      unsigned long arg)
+#else
+static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int result;
 	unsigned long value;
@@ -1147,7 +1151,11 @@ static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 static struct file_operations lirc_fops = {
 	.owner	= THIS_MODULE,
 	.write	= lirc_write,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl	= lirc_ioctl,
+#else
+	.unlocked_ioctl	= lirc_ioctl,
+#endif
 };
 
 static struct lirc_driver driver = {

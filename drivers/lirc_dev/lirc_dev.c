@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.105 2010/05/13 15:45:48 lirc Exp $
+ * $Id: lirc_dev.c,v 1.106 2010/08/16 20:20:45 jarodwilson Exp $
  *
  */
 
@@ -595,6 +595,9 @@ static int irctl_open(struct inode *inode, struct file *file)
 	} else {
 		retval = -ENODEV;
 	}
+
+	file->private_data = ir;
+
  error:
 	if (ir)
 		dprintk(LOGHEAD "open result = %d\n", ir->d.name, ir->d.minor,
@@ -665,19 +668,28 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 /*
  *
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int irctl_ioctl(struct inode *inode, struct file *file,
 		       unsigned int cmd, unsigned long arg)
+#else
+static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+#endif
 {
 	unsigned long mode;
 	int result;
-	struct irctl *ir = irctls[iminor(inode)];
+	struct irctl *ir = file->private_data;
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
 		ir->d.name, ir->d.minor, cmd);
 
 	/* if the driver has a ioctl function use it instead */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	if (ir->d.fops && ir->d.fops->ioctl) {
 		result = ir->d.fops->ioctl(inode, file, cmd, arg);
+#else
+	if (ir->d.fops && ir->d.fops->unlocked_ioctl) {
+		result = ir->d.fops->unlocked_ioctl(file, cmd, arg);
+#endif
 		if (result != -ENOIOCTLCMD)
 			return result;
 	}
@@ -1006,7 +1018,11 @@ static struct file_operations fops = {
 	.read		= irctl_read,
 	.write		= irctl_write,
 	.poll		= irctl_poll,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= irctl_ioctl,
+#else
+	.unlocked_ioctl	= irctl_ioctl,
+#endif
 #ifdef CONFIG_COMPAT
 	.compat_ioctl	= irctl_compat_ioctl,
 #endif

@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.c,v 5.54 2010/03/17 14:16:16 jarodwilson Exp $      */
+/*      $Id: lirc_parallel.c,v 5.55 2010/08/16 20:20:47 jarodwilson Exp $      */
 /*
  * lirc_parallel.c
  *
@@ -501,8 +501,12 @@ static unsigned int lirc_poll(struct file *file, poll_table *wait)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int lirc_ioctl(struct inode *node, struct file *filep, unsigned int cmd,
 		      unsigned long arg)
+#else
+static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+#endif
 {
 	int result;
 	unsigned long features = LIRC_CAN_SET_TRANSMITTER_MASK |
@@ -588,7 +592,11 @@ static struct file_operations lirc_fops = {
 	.read		= lirc_read,
 	.write		= lirc_write,
 	.poll		= lirc_poll,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= lirc_ioctl,
+#else
+	.unlocked_ioctl	= lirc_ioctl,
+#endif
 	.open		= lirc_open,
 	.release	= lirc_close
 };

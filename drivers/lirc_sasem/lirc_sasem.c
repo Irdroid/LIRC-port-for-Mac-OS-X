@@ -1,4 +1,4 @@
-/*      $Id: lirc_sasem.c,v 1.41 2010/03/17 14:16:16 jarodwilson Exp $      */
+/*      $Id: lirc_sasem.c,v 1.42 2010/08/16 20:20:47 jarodwilson Exp $      */
 /*
  * lirc_sasem.c - USB remote support for LIRC
  * Version 0.5
@@ -103,8 +103,12 @@ static void usb_tx_callback(struct urb *urb);
 
 /* VFD file_operations function prototypes */
 static int vfd_open(struct inode *inode, struct file *file);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int vfd_ioctl(struct inode *inode, struct file *file,
 				unsigned cmd, unsigned long arg);
+#else
+static long vfd_ioctl(struct file *file, unsigned cmd, unsigned long arg);
+#endif
 static int vfd_close(struct inode *inode, struct file *file);
 static ssize_t vfd_write(struct file *file, const char *buf,
 				size_t n_bytes, loff_t *pos);
@@ -160,7 +164,11 @@ static struct file_operations vfd_fops = {
 	.owner		= THIS_MODULE,
 	.open		= &vfd_open,
 	.write		= &vfd_write,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	.ioctl		= &vfd_ioctl,
+#else
+	.unlocked_ioctl	= &vfd_ioctl,
+#endif
 	.release	= &vfd_close
 };
 
@@ -313,8 +321,12 @@ exit:
  * Called when the VFD device (e.g. /dev/usb/lcd)
  * is closed by the application.
  */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 static int vfd_ioctl(struct inode *inode, struct file *file,
 		     unsigned cmd, unsigned long arg)
+#else
+static long vfd_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+#endif
 {
 	struct sasem_context *context = NULL;
 
