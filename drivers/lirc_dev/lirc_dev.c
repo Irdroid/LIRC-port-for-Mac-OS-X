@@ -17,7 +17,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: lirc_dev.c,v 1.106 2010/08/16 20:20:45 jarodwilson Exp $
+ * $Id: lirc_dev.c,v 1.107 2010/08/17 21:03:23 jarodwilson Exp $
  *
  */
 
@@ -300,8 +300,13 @@ int lirc_register_driver(struct lirc_driver *d)
 #else
 	} else if (!d->rbuf) {
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 		if (!(d->fops && d->fops->read && d->fops->poll &&
 		      d->fops->ioctl)) {
+#else
+		if (!(d->fops && d->fops->read && d->fops->poll &&
+		      d->fops->unlocked_ioctl)) {
+#endif
 			printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 			       "neither read, poll nor ioctl can be NULL!\n");
 			err = -EBADRQC;
@@ -824,8 +829,12 @@ static long irctl_compat_ioctl(struct file *file,
 
 		cmd = _IOC(_IOC_DIR(cmd32), _IOC_TYPE(cmd32), _IOC_NR(cmd32),
 			   (_IOC_TYPECHECK(unsigned long)));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 		ret = irctl_ioctl(file->f_dentry->d_inode, file,
 				  cmd, (unsigned long)(&val));
+#else
+		ret = irctl_ioctl(file, cmd, (unsigned long)(&val));
+#endif
 
 		set_fs(old_fs);
 		unlock_kernel();
@@ -873,8 +882,12 @@ static long irctl_compat_ioctl(struct file *file,
 		 */
 		lock_kernel();
 		cmd = cmd32;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 		ret = irctl_ioctl(file->f_dentry->d_inode,
 				  file, cmd, arg);
+#else
+		ret = irctl_ioctl(file, cmd, arg);
+#endif
 		unlock_kernel();
 		return ret;
 	default:
