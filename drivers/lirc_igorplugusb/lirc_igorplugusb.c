@@ -63,8 +63,13 @@
 #include <linux/time.h>
 
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 #if !defined(KERNEL_2_5)
 #define USB_CTRL_GET_TIMEOUT    5

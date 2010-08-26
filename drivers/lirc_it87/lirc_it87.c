@@ -71,9 +71,14 @@
 #include <linux/timer.h>
 #include <linux/pnp.h>
 
+#include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
-#include "drivers/kcompat.h"
+#endif
 
 #include "lirc_it87.h"
 

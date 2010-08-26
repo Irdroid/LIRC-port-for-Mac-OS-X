@@ -34,7 +34,13 @@
 #include <linux/delay.h>
 
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
+#include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 static int poll_main(void);
 static int atir_init_start(void);

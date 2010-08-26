@@ -60,15 +60,19 @@
 #include <linux/kthread.h>
 #endif
 
-#include "drivers/kcompat.h"
-
 /* SysFS header */
 #if defined(LIRC_HAVE_SYSFS)
 #include <linux/device.h>
 #endif
 
+#include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
 #include "drivers/lirc.h"
 #include "lirc_dev.h"
+#endif
 
 static int debug;
 #define dprintk(fmt, args...)					\

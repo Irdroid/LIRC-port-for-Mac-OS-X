@@ -67,9 +67,14 @@
 #include <linux/wait.h>
 #include <linux/time.h>
 
-#include "drivers/lirc.h"
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
+#include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 #define DRIVER_VERSION	"1.90"
 #define DRIVER_AUTHOR	"Daniel Melander <lirc@rajidae.se>, " \

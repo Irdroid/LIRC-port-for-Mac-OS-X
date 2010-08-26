@@ -38,9 +38,14 @@
 #include <linux/slab.h>
 #include <linux/usb.h>
 
-#include "drivers/lirc.h"
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
+#include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 MODULE_DESCRIPTION("TechnoTrend USB IR device driver for LIRC");
 MODULE_AUTHOR("Stefan Macher (st_maker-lirc@yahoo.de)");

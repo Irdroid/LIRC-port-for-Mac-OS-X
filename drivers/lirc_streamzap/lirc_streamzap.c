@@ -52,9 +52,14 @@
 #endif
 #include <linux/usb.h>
 
-#include "drivers/lirc.h"
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
+#include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 #define DRIVER_VERSION	"$Revision: 1.55 $"
 #define DRIVER_NAME	"lirc_streamzap"

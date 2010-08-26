@@ -66,9 +66,14 @@
 #include <linux/platform_device.h>
 #endif
 
-#include "drivers/lirc.h"
 #include "drivers/kcompat.h"
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
+#include <media/lirc.h>
+#include <media/lirc_dev.h>
+#else
+#include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
+#endif
 
 #include "lirc_wpc8769l.h"
 
