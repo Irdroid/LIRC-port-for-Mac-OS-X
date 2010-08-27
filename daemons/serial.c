@@ -528,6 +528,11 @@ int tty_delete_lock(void)
 	{
 		while((ep=readdir(dp)))
 		{
+			if (strcmp(ep->d_name,".") == 0 || strcmp(ep->d_name,"..") == 0)
+			{
+				retval = 0;
+				continue;
+			}
 			strcpy(filename,"/var/lock/");
 			if(strlen(filename)+strlen(ep->d_name)>FILENAME_MAX) 
 			{retval=0;continue;}
@@ -539,7 +544,7 @@ int tty_delete_lock(void)
 			if(len<=0) {retval=0;continue;}
 			id[len]=0;
 			pid=strtol(id,&endptr,10);
-			if(!*id || *endptr!='\n')
+			if(!*id || (*endptr && *endptr!='\n'))
 			{
 				logprintf(LOG_WARNING,"invalid lockfile (%s) "
 					  "detected",filename);
