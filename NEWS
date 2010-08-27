@@ -1,4 +1,7 @@
 0.8.7-CVS: current
+  * improved usb-uirt support for FreeBSD (John Wehle)
+  * spurious locking complaint fixes for FreeBSD (John Wehle)
+  * added support for new Command IR III hardware (Matthew Bodkin)
   * added support for Aureal ATWF@83-W001 ESKY.CC remote (Romain Henriet)
   * added transmit support to driver for ENE CIR port
     (only few devices support that)
