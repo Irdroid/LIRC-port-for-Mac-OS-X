@@ -37,9 +37,6 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
-#ifdef CONFIG_SMP
-#error "--- Sorry, this driver is not SMP safe. ---"
-#endif
 
 #include <linux/module.h>
 #include <linux/sched.h>
