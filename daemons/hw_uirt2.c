@@ -131,6 +131,18 @@ static int uirt2_init(void)
 		uirt2_deinit();
 		return(0);
 	}
+	if(!tty_setcsize(hw.fd,8))
+	{
+		logprintf(LOG_ERR,"uirt2: could not set csize");
+		uirt2_deinit();
+		return(0);
+	}
+	if (!tty_setrtscts(hw.fd,1))
+	{
+		logprintf(LOG_ERR,"uirt2: could not enable hardware flow");
+		uirt2_deinit();
+		return(0);
+	}
 	return(1);
 }
 

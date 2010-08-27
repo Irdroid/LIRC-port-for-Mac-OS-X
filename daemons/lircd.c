@@ -63,7 +63,7 @@
 #include "input_map.h"
 #endif
 
-#if defined __APPLE__
+#if defined __APPLE__  || defined __FreeBSD__
 #include <sys/ioctl.h>
 #endif
 

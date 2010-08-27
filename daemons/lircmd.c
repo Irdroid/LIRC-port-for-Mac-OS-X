@@ -184,12 +184,14 @@ void sigterm(int sig)
 		lircm = -1;
 	}
 	
+#if defined(__linux__)
 	if(uinputfd != -1)
 	{
 		ioctl(uinputfd, UI_DEV_DESTROY);
 		close(uinputfd);
 		uinputfd = -1;
 	}
+#endif
 
 	signal(sig,SIG_DFL);
 	raise(sig);
@@ -401,6 +403,7 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 		break;
 	}
 
+#if defined(__linux__)
 	if(uinputfd != -1)
 	{
 		for(i = 0; i < f; i++)
@@ -448,6 +451,7 @@ void msend(int dx,int dy,int dz,int rep,int buttp,int buttr)
 			}
 		}
 	}
+#endif
 }
 
 void mouse_move(int dx,int dy,int dz,int rep)

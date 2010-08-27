@@ -144,8 +144,8 @@ static int mywaitfordata(uirt2_t *dev, long usec) {
 	FD_ZERO(&fds);
 	FD_SET(fd,&fds);
 
-	tv.tv_sec = 0;
-	tv.tv_usec = usec;
+	tv.tv_sec = usec / 1000000;
+	tv.tv_usec = usec % 1000000;
 
 	ret = select(maxfd + 1, &fds, NULL, NULL, &tv);
 

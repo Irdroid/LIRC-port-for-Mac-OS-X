@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>

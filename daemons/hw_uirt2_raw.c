@@ -247,6 +247,22 @@ static int uirt2_raw_init(void)
 		return(0);
 	}
 
+	if(!tty_setcsize(hw.fd,8))
+	{
+		logprintf(LOG_ERR,"uirt2_raw: could not set csize");
+		close(hw.fd);
+		tty_delete_lock();
+		return(0);
+	}
+
+	if (!tty_setrtscts(hw.fd,1))
+	{
+		logprintf(LOG_ERR,"uirt2_raw: could not enable hardware flow");
+		close(hw.fd);
+		tty_delete_lock();
+		return(0);
+	}
+
 	if((dev = uirt2_init(hw.fd)) == NULL)
 	{
 		logprintf(LOG_ERR, 
