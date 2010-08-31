@@ -293,7 +293,7 @@ static int commandir_ioctl(unsigned int cmd, void *arg)
 		send_this_mask.numBytes[0] = sizeof(struct send_tx_mask);
 		send_this_mask.numBytes[1] = 0;
 		send_this_mask.idByte = CHANNEL_EN_MASK;
-		send_this_mask.new_tx_mask = *(unsigned long*)arg;
+		send_this_mask.new_tx_mask = *(unsigned int*)arg;
 		
 		j = write(tochild_write, &send_this_mask, sizeof(send_this_mask));
 		return (0);
