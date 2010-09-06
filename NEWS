@@ -1,4 +1,4 @@
-0.8.7-CVS: current
+0.8.7: 09/06/10
   * improved usb-uirt support for FreeBSD (John Wehle)
   * spurious locking complaint fixes for FreeBSD (John Wehle)
   * added support for new Command IR III hardware (Matthew Bodkin)

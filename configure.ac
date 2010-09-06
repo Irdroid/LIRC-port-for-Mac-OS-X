@@ -6,7 +6,7 @@ dnl configure.ac, (c)1999 Tom Wheeley <tw104@york.ac.uk>
 AC_INIT
 AC_CONFIG_SRCDIR([daemons/lircd.c])
 
-AM_INIT_AUTOMAKE(lirc, 0.8.7-CVS)
+AM_INIT_AUTOMAKE(lirc, 0.8.7)
 AM_CONFIG_HEADER(config.h)
 
 CFLAGS="${CFLAGS--O2 -g -Wall}"
