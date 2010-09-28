@@ -17,6 +17,8 @@ drivers/*/*.ko
 drivers/*/*.mod.*
 
 contrib/hal/20-ircontrol-lirc.fdi
+doc/man-html
+doc/man/*.[1-9]
 doc/man2html
 doc/man2html.o
 
