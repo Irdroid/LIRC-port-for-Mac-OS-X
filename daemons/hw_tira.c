@@ -192,7 +192,7 @@ int child_process(int pipe_w,int oldprotocol)
 	lirc_t data,tdata;
 	fd_set read_set;
 	struct timeval tv,trailtime,currtime;
-	unsigned long eusec;
+	__u32 eusec;
 	tv.tv_sec = 0; tv.tv_usec=1000;
 	FD_ZERO(&read_set);
 
@@ -675,7 +675,7 @@ char *tira_rec (struct ir_remote *remotes)
 		code =  code << 8;
 	}
 
-	LOGPRINTF(1," -> %0llx",(unsigned long long) code);
+	LOGPRINTF(1," -> %0llx",(__u64) code);
 
 	m = decode_all(remotes);
 	return m;

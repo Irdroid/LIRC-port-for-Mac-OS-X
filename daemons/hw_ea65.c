@@ -181,7 +181,7 @@ char *ea65_receive(struct ir_remote *remote)
 		break;
 	}
 	logprintf(LOG_INFO, "EA65: receive code: %llx",
-		  (unsigned long long) code);
+		  (__u64) code);
 
 	gettimeofday(&end, NULL);
 

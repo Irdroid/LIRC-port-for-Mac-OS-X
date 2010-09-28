@@ -235,7 +235,7 @@ int main(int argc, char **argv)
 	int xfd, maxfd;
       
 	int fd;
-	unsigned long mode;
+	__u32 mode;
 	lirc_t data;
 	lirc_t x1,y1,x2,y2;
 	int result;

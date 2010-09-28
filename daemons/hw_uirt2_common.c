@@ -279,11 +279,11 @@ static int command(uirt2_t *dev, const byte_t *buf, int len)
 }
 
 
-static unsigned long calc_bits_length(remstruct1_data_t *buf)
+static __u32 calc_bits_length(remstruct1_data_t *buf)
 {
 	int i;
 	byte_t b = 0;
-	unsigned long len = 0;
+	__u32 len = 0;
     
 	for (i = 0; i < buf->bBits; i++) {
 		int bit;
@@ -316,11 +316,11 @@ static unsigned long calc_bits_length(remstruct1_data_t *buf)
 }
 
 
-static unsigned long calc_struct1_length(int repeat, remstruct1_data_t *buf)
+static __u32 calc_struct1_length(int repeat, remstruct1_data_t *buf)
 {
 	int bISDly = unit * (buf->bISDlyLo + 256 * buf->bISDlyHi);
 	int bHdr = unit * (buf->bHdr1 + buf->bHdr0);
-	unsigned long bBitLength = calc_bits_length(buf);
+	__u32 bBitLength = calc_bits_length(buf);
 
 	LOGPRINTF(1, "bBitLength %lu repeat %d", bBitLength, repeat);
 
@@ -689,7 +689,7 @@ int uirt2_send_struct1(uirt2_t *dev, int freq, int bRepeatCount,
 		       remstruct1_data_t *buf)
 {
 	int res;
-	unsigned long delay;
+	__u32 delay;
         remstruct1_t rem;
         remstruct1_ext_t rem_ext;
 	

@@ -304,10 +304,10 @@ static inline lirc_t lower_limit(struct ir_remote *remote, lirc_t val)
 }
 
 /* only works if last <= current */
-static inline unsigned long time_elapsed(struct timeval *last,
-					 struct timeval *current)
+static inline __u32 time_elapsed(struct timeval *last,
+				 struct timeval *current)
 {
-	unsigned long secs,diff;
+	__u32 secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
 	
@@ -369,10 +369,9 @@ struct ir_ncode *get_code_by_name(struct ir_remote *remote,char *name);
 struct ir_ncode *get_code(struct ir_remote *remote,
 			  ir_code pre,ir_code code,ir_code post,
 			  ir_code *toggle_bit_mask_state);
-unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
-			    ir_code toggle_bit_mask_state,int repeat_flag,
-			    lirc_t min_remaining_gap,
-			    lirc_t max_remaining_gap);
+__u64 set_code(struct ir_remote *remote,struct ir_ncode *found,
+		ir_code toggle_bit_mask_state,int repeat_flag,
+		lirc_t min_remaining_gap, lirc_t max_remaining_gap);
 int write_message(char *buffer, size_t size, const char *remote_name,
 		  const char *button_name, const char *button_suffix,
 		  ir_code code, int reps);

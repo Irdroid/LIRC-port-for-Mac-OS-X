@@ -122,7 +122,7 @@ static struct timeval start, end, last;
 static lirc_t signal_length;
 
 // The code of the pressed key and the previous one.
-// Type ir_code is unsigned long or unsigned long long.
+// Type ir_code is __u64.
 static ir_code code, last_code = 0;
 
 

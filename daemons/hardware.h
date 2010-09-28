@@ -20,10 +20,10 @@ struct hardware
 {
 	char *device;
 	int fd;
-	unsigned long features;
-	unsigned long send_mode;
-	unsigned long rec_mode;
-	unsigned long code_length;
+	__u32 features;
+	__u32 send_mode;
+	__u32 rec_mode;
+	__u32 code_length;
 	int (*init_func)(void);
 	int (*deinit_func)(void);
 	int (*send_func)(struct ir_remote *remote,struct ir_ncode *code);

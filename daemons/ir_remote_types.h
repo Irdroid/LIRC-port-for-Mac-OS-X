@@ -23,11 +23,7 @@
 
 #include "drivers/lirc.h"
 
-#ifdef LONG_IR_CODE
-typedef unsigned long long ir_code;
-#else
-typedef unsigned long ir_code;
-#endif
+typedef __u64 ir_code;
 
 struct ir_code_node
 {

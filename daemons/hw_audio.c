@@ -104,7 +104,7 @@ static void addCode( lirc_t data)
 */
 
 static int recordCallback( const void *inputBuffer, void *outputBuffer,
-                           unsigned long framesPerBuffer,
+                           __u32 framesPerBuffer,
                            const PaStreamCallbackTimeInfo* outTime,
                            PaStreamCallbackFlags status,
                            void *userData )

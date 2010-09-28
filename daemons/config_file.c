@@ -111,51 +111,28 @@ inline ir_code s_strtocode(const char *val)
 	char *endptr;
 
 	errno=0;
-#       ifdef LONG_IR_CODE
 	code=strtoull(val,&endptr,0);
-	if((code==(unsigned long long) -1 && errno==ERANGE) ||
+	if((code==(__u64) -1 && errno==ERANGE) ||
 	    strlen(endptr)!=0 || strlen(val)==0)
 	{
 		logprintf(LOG_ERR,"error in configfile line %d:",line);
-		logprintf(LOG_ERR,"\"%s\": must be a valid (unsigned long "
-			  "long) number",val);
+		logprintf(LOG_ERR,"\"%s\": must be a valid (__u64) number",val);
 		parse_error=1;
 		return(0);
 	}
-#       else
-	code=strtoul(val,&endptr,0);
-	if(code==ULONG_MAX && errno==ERANGE)
-	{
-		logprintf(LOG_ERR,"error in configfile line %d:",line);
-		logprintf(LOG_ERR,"code is out of range");
-		logprintf(LOG_ERR,"try compiling lircd with the LONG_IR_CODE "
-			  "option");
-		parse_error=1;
-		return(0);
-	}
-	else if(strlen(endptr)!=0 || strlen(val)==0)
-	{
-		logprintf(LOG_ERR,"error in configfile line %d:",line);
-		logprintf(LOG_ERR,"\"%s\": must be a valid (unsigned long) "
-			  "number",val);
-		parse_error=1;
-		return(0);
-	}
-#       endif
 	return(code);
 }
 
-unsigned long s_strtoul(char *val)
+__u32 s_strtou32(char *val)
 {
-	unsigned long n;
+	__u32 n;
 	char *endptr;
 
 	n=strtoul(val,&endptr,0);
 	if(!*val || *endptr)
 	{
 		logprintf(LOG_ERR,"error in configfile line %d:",line);
-		logprintf(LOG_ERR,"\"%s\": must be a valid (unsigned long) "
-			  "number",val);
+		logprintf(LOG_ERR,"\"%s\": must be a valid (__u32) number",val);
 		parse_error=1;
 		return(0);
 	}
@@ -184,12 +161,12 @@ int s_strtoi(char *val)
 unsigned int s_strtoui(char *val)
 {
 	char *endptr;
-	unsigned long n;
+	__u32 n;
 	unsigned int h;
 
 	n=strtoul(val,&endptr,0);
 	h=(unsigned int) n;
-	if(!*val || *endptr || n!=((unsigned long) h))
+	if(!*val || *endptr || n!=((__u32) h))
 	{
 		logprintf(LOG_ERR,"error in configfile line %d:",line);
 		logprintf(LOG_ERR,"\"%s\": must be a valid (unsigned int) "
@@ -202,13 +179,13 @@ unsigned int s_strtoui(char *val)
 
 lirc_t s_strtolirc_t(char *val)
 {
-	unsigned long n;
+	__u32 n;
 	lirc_t h;
 	char *endptr;
 
 	n=strtoul(val,&endptr,0);
 	h=(lirc_t) n;
-	if(!*val || *endptr || n!=((unsigned long) h))
+	if(!*val || *endptr || n!=((__u32) h))
 	{
 		logprintf(LOG_ERR,"error in configfile line %d:",line);
 		logprintf(LOG_ERR,"\"%s\": must be a valid (lirc_t) "
@@ -256,11 +233,7 @@ struct ir_ncode *defineCode(char *key, char *val, struct ir_ncode *code)
 	memset(code, 0, sizeof(*code));
         code->name=s_strdup(key);
         code->code=s_strtocode(val);
-#       ifdef LONG_IR_CODE
         LOGPRINTF(3,"      %-20s 0x%016llX",code->name, code->code);
-#       else
-        LOGPRINTF(3,"      %-20s 0x%016lX",code->name, code->code);
-#       endif
         return(code);
 }
 
@@ -274,11 +247,7 @@ struct ir_code_node *defineNode(struct ir_ncode *code, const char *val)
 	node->code=s_strtocode(val);
 	node->next=NULL;
 
-#       ifdef LONG_IR_CODE
         LOGPRINTF(3,"                           0x%016llX", node->code);
-#       else
-        LOGPRINTF(3,"                           0x%016lX", node->code);
-#       endif
 
 	if(code->current==NULL)
 	{
@@ -410,13 +379,13 @@ int defineRemote(char * key, char * val, char *val2, struct ir_remote *rem)
 	else if (strcasecmp("gap",key)==0){
 		if(val2 != NULL)
 		{
-			rem->gap2=s_strtoul(val2);
+			rem->gap2=s_strtou32(val2);
 		}
-		rem->gap=s_strtoul(val);
+		rem->gap=s_strtou32(val);
 		return(val2 != NULL ? 2:1);
 	}
 	else if (strcasecmp("repeat_gap",key)==0){
-		rem->repeat_gap=s_strtoul(val);
+		rem->repeat_gap=s_strtou32(val);
 		return(1);
 	}
 	/* obsolete: use toggle_bit_mask instead */

@@ -1379,8 +1379,8 @@ static int check_irsend_commandir(unsigned char *command)
 	if(commandir_code > 0xef)
 	{
 		// It's a settransmitters command; convert channel number to bitmask
-		unsigned long channel = 0x01 << (commandir_code & 0x0f);
-		set_convert_int_bitmask_to_list_of_enabled_bits(&channel, sizeof(unsigned long));
+		__u32 channel = 0x01 << (commandir_code & 0x0f);
+		set_convert_int_bitmask_to_list_of_enabled_bits(&channel, sizeof(__u32));
 		return commandir_code;
 	}
 	
@@ -2383,16 +2383,16 @@ static void update_tx_available(struct commandir_device * pcd)
 }
 
 static void set_convert_int_bitmask_to_list_of_enabled_bits(
-	unsigned long * bitmask, int bitmask_len)
+	__u32 * bitmask, int bitmask_len)
 {
 	int x, set_next_list_item, bitnum = 1;
-	unsigned long tmp_mask = *bitmask;
+	__u32 tmp_mask = *bitmask;
 	int * list_of_bits;
 	
 	list_of_bits = malloc(sizeof(int) * bitmask_len);	
 	set_next_list_item = 0;
 	
-	for(x=0; x<(sizeof(unsigned long) * 8); x++)
+	for(x=0; x<(sizeof(__u32) * 8); x++)
 	{
 		if(tmp_mask & 0x01)
 		{
@@ -2407,7 +2407,7 @@ static void set_convert_int_bitmask_to_list_of_enabled_bits(
 
 
 static void set_all_next_tx_mask(int * ar_new_tx_mask_list, int new_tx_len, 
-	unsigned long raw_tx_mask)
+	__u32 raw_tx_mask)
 {
 	static int * ar_current_tx_mask_list = NULL;
 	int x = 0;

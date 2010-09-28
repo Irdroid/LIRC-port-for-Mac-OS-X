@@ -96,7 +96,7 @@ extern struct ir_ncode *repeat_code;
 
 static int repeat_fd=-1;
 static char *repeat_message=NULL;
-static unsigned int repeat_max = REPEAT_MAX_DEFAULT;
+static __u32 repeat_max = REPEAT_MAX_DEFAULT;
 
 extern struct hardware hw;
 
@@ -186,7 +186,7 @@ static int useuinput=0;
 static sig_atomic_t term=0,hup=0,alrm=0;
 static int termsig;
 
-static unsigned int setup_min_freq=0, setup_max_freq=0;
+static __u32 setup_min_freq=0, setup_max_freq=0;
 static lirc_t setup_max_gap=0;
 static lirc_t setup_min_pulse=0, setup_min_space=0;
 static lirc_t setup_max_pulse=0, setup_max_space=0;
@@ -197,7 +197,7 @@ inline int use_hw()
 }
 
 /* set_transmitters only supports 32 bit int */
-#define MAX_TX (CHAR_BIT*sizeof(unsigned long))
+#define MAX_TX (CHAR_BIT*sizeof(__u32))
 
 inline int max(int a,int b)
 {
@@ -474,7 +474,7 @@ int setup_uinputfd(const char *name)
 
 static int setup_frequency()
 {
-	unsigned int freq;
+	__u32 freq;
 	
 	if(!(hw.features&LIRC_CAN_SET_REC_CARRIER))
 	{
@@ -556,7 +556,7 @@ static int setup_timeout()
 	}
 	else
 	{
-		unsigned int enable = 1;
+		__u32 enable = 1;
 		hw.ioctl_func(LIRC_SET_REC_TIMEOUT_REPORTS, &enable);
 	}
 	return 1;
@@ -1502,8 +1502,8 @@ int send_remote(int fd,char *message,struct ir_remote *remote)
 		/* It seems you can't print 64-bit longs on glibc */
 		
 		len=snprintf(buffer,PACKET_SIZE+1,"%08lx%08lx %s\n",
-			     (unsigned long) (codes->code>>32),
-			     (unsigned long) (codes->code&0xFFFFFFFF),
+			     (__u32) (codes->code>>32),
+			     (__u32) (codes->code&0xFFFFFFFF),
 			     codes->name);
 #else
 		len=snprintf(buffer,PACKET_SIZE,"%016llx %s\n",
@@ -1533,8 +1533,8 @@ int send_name(int fd,char *message,struct ir_ncode *code)
 	/* It seems you can't print 64-bit longs on glibc */
 	
 	len=snprintf(buffer,PACKET_SIZE+1,"1\n%08lx%08lx %s\n",
-		     (unsigned long) (code->code>>32),
-		     (unsigned long) (code->code&0xFFFFFFFF),
+		     (__u32) (code->code>>32),
+		     (__u32) (code->code&0xFFFFFFFF),
 		     code->name);
 #else
 	len=snprintf(buffer,PACKET_SIZE,"1\n%016llx %s\n",
@@ -1573,9 +1573,9 @@ int list(int fd,char *message,char *arguments)
 int set_transmitters(int fd,char *message,char *arguments)
 {
 	char *next_arg=NULL,*end_ptr;
-	unsigned long next_tx_int;
-	unsigned long next_tx_hex;
-	unsigned int channels=0;
+	__u32 next_tx_int = 0;
+	__u32 next_tx_hex = 0;
+	__u32 channels=0;
 	int retval=0;
 	int i;
 	
@@ -1593,7 +1593,6 @@ int set_transmitters(int fd,char *message,char *arguments)
 	if (next_arg==NULL) goto string_error;
 	do
 	{
-		next_tx_int=-1;
 		next_tx_int = strtoul(next_arg,&end_ptr,10);
 		if(*end_ptr || next_tx_int == 0 || (next_tx_int == ULONG_MAX && errno == ERANGE))
 		{

@@ -1975,7 +1975,7 @@ int lirc_send_command(int sockfd, const char *command, char *buf, size_t *buf_le
 	char *endptr;
 	enum packet_state state;
 	int status,n;
-	unsigned long data_n=0;
+	__u32 data_n=0;
 	size_t written=0, max=0, len;
 
 	if(buf_len!=NULL)
@@ -2059,7 +2059,7 @@ int lirc_send_command(int sockfd, const char *command, char *buf, size_t *buf_le
 			goto bad_packet;
 		case P_N:
 			errno=0;
-			data_n=strtoul(string,&endptr,0);
+			data_n=(__u32)strtoul(string,&endptr,0);
 			if(!*string || *endptr)
 			{
 				goto bad_packet;

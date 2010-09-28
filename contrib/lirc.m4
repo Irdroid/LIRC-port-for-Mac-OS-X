@@ -127,7 +127,7 @@ char *get_version(int fd,const char *packet)
 	char *endptr;
 	enum packet_state state;
 	int status,n;
-	unsigned long data_n;
+	__u32 data_n;
 	unsigned int major,minor,micro;
 	static char version[100];
 

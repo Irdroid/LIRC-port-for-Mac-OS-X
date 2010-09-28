@@ -681,7 +681,7 @@ static int irctl_ioctl(struct inode *inode, struct file *file,
 static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 {
-	unsigned long mode;
+	__u32 mode;
 	int result;
 	struct irctl *ir = file->private_data;
 
@@ -711,10 +711,10 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
-		result = put_user(ir->d.features, (unsigned long *)arg);
+		result = put_user(ir->d.features, (__u32 *)arg);
 		break;
 	case LIRC_GET_LENGTH:
-		result = put_user(ir->d.code_length, (unsigned long *) arg);
+		result = put_user(ir->d.code_length, (__u32 *) arg);
 		break;
 	case LIRC_GET_MIN_TIMEOUT:
 		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
@@ -736,7 +736,7 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 		result = put_user(LIRC_REC2MODE
 				  (ir->d.features & LIRC_CAN_REC_MASK),
-				  (unsigned long *)arg);
+				  (__u32 *)arg);
 		break;
 	case LIRC_GET_SEND_MODE:
 		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
@@ -744,7 +744,7 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 		result = put_user(LIRC_SEND2MODE
 				  (ir->d.features & LIRC_CAN_SEND_MASK),
-				  (unsigned long *)arg);
+				  (__u32 *)arg);
 		break;
 
 	/*obsolete */
@@ -752,7 +752,7 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (!(ir->d.features & LIRC_CAN_REC_MASK))
 			return -ENOSYS;
 
-		result = get_user(mode, (unsigned long *)arg);
+		result = get_user(mode, (__u32 *)arg);
 		if (!result && !(LIRC_MODE2REC(mode) & ir->d.features))
 			result = -EINVAL;
 		break;
@@ -760,7 +760,7 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
 			return -ENOSYS;
 
-		result = get_user(mode, (unsigned long *)arg);
+		result = get_user(mode, (__u32 *)arg);
 		if (!result && !(LIRC_MODE2SEND(mode) & ir->d.features))
 			result = -EINVAL;
 		break;

@@ -97,11 +97,11 @@ int usbx_decode (struct ir_remote *remote, ir_code *prep, ir_code *codep,
 
 	LOGPRINTF(1, "repeat_flagp: %d",*repeat_flagp);
 	LOGPRINTF(1, "remote->gap range:      %lu %lu\n",
-		  (unsigned long) min_gap(remote),
-		  (unsigned long) max_gap(remote));
+		  (__u32) min_gap(remote),
+		  (__u32) max_gap(remote));
 	LOGPRINTF(1,"rem: %lu %lu",
-		  (unsigned long) remote->min_remaining_gap,
-		  (unsigned long) remote->max_remaining_gap);
+		  (__u32) remote->min_remaining_gap,
+		  (__u32) remote->max_remaining_gap);
 	return 1;
 }
 
@@ -175,7 +175,7 @@ char *usbx_rec (struct ir_remote *remotes)
 		code |= ((ir_code) b[i]);
 	}
 
-	LOGPRINTF(1," -> %0llx",(unsigned long long) code);
+	LOGPRINTF(1," -> %0llx",(__u64) code);
 
 	m = decode_all(remotes);
 	return m;

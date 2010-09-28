@@ -15,6 +15,11 @@
 #define LIRC_CLIENT_H
 
 #include <stddef.h>
+#include <stdint.h>
+
+#ifndef __u32
+typedef uint32_t __u32;
+#endif
 
 #ifdef __cplusplus
 extern "C" {

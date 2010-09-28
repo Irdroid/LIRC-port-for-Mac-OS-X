@@ -192,7 +192,7 @@ extern char *progname;
 struct send_tx_mask {
 	unsigned char numBytes[2];
 	unsigned char idByte;
-	unsigned long new_tx_mask;
+	__u32 new_tx_mask;
 };
 
 
@@ -306,9 +306,9 @@ static void commandir_2_transmit_next(struct commandir_device * pcd);
 static int get_hardware_tx_bitmask(struct commandir_device * pcd);
 
 static void set_convert_int_bitmask_to_list_of_enabled_bits(
-	unsigned long * bitmask, int bitmask_len);
+	__u32 * bitmask, int bitmask_len);
 static void set_all_next_tx_mask(int * ar_new_tx_mask, int new_tx_len, 
-	unsigned long bitmask);
+	__u32 bitmask);
 static void set_new_signal_bitmasks(struct commandir_device * pcd, 
 	struct tx_signal * ptx);
 

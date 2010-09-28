@@ -221,7 +221,7 @@ int fill_struct(struct ir_remote *r,FILE *f,char **desc)
 			}
 			else if(strcasecmp(buffer,"carrier")==0)
 			{
-				r->freq=(unsigned long) atof(eq);
+				r->freq=(__u32) atof(eq);
 				continue;
 			}
 			else if(strcasecmp(buffer,"repeat")==0)
@@ -527,11 +527,7 @@ void get_pre_data(struct ir_remote *remote)
 		codes++;
 	}
 	count=0;
-#ifdef LONG_IR_CODE
 	while(mask&0x8000000000000000LL)
-#else
-	while(mask&0x80000000L)
-#endif
 	{
 		count++;
 		mask=mask<<1;

@@ -137,11 +137,11 @@ int main(int argc,char **argv)
 	int fd;
 	char buffer[sizeof(ir_code)];
 	lirc_t data;
-	unsigned long mode;
+	__u32 mode;
 	char *device=LIRC_DRIVER_DEVICE;
 	struct stat s;
 	int dmode=0;
-	unsigned long code_length;
+	__u32 code_length;
 	size_t count=sizeof(lirc_t);
 	int i;
 	int use_raw_access = 0;
@@ -353,14 +353,14 @@ int main(int argc,char **argv)
 		if (!dmode)
 		{
 			printf("%s %lu\n",(data&PULSE_BIT)?"pulse":"space",
-			       (unsigned long) (data&PULSE_MASK));
+			       (__u32) (data&PULSE_MASK));
 		}
 		else
 		{
 			static int bitno = 1;
 			
 			/* print output like irrecord raw config file data */
-			printf(" %8lu" , (unsigned long) data&PULSE_MASK);
+			printf(" %8lu" , (__u32) data&PULSE_MASK);
 			++bitno;
 			if (data&PULSE_BIT)
 			{

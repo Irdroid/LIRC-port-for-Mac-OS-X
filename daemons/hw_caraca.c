@@ -91,7 +91,7 @@ int caraca_decode(struct ir_remote *remote,
 	
 	*min_remaining_gapp=0;
 	*max_remaining_gapp=0;
-	LOGPRINTF(1,"code: %llx",(unsigned long long) *codep);
+	LOGPRINTF(1,"code: %llx",(__u64) *codep);
 	return(1);
 }
 

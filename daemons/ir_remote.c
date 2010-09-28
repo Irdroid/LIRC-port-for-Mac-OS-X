@@ -40,7 +40,7 @@ extern struct hardware hw;
 static inline lirc_t time_left(struct timeval *current,struct timeval *last,
 			lirc_t gap)
 {
-	unsigned long secs,diff;
+	__u32 secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
 	
@@ -196,9 +196,9 @@ int map_code(struct ir_remote *remote,
 	all>>=remote->bits;
 	*prep=(all&gen_mask(remote->pre_data_bits));
 	
-	LOGPRINTF(1,"pre: %llx", (unsigned long long) *prep);
-	LOGPRINTF(1,"code: %llx", (unsigned long long) *codep);
-	LOGPRINTF(1,"post: %llx", (unsigned long long) *postp);
+	LOGPRINTF(1,"pre: %llx", (__u64) *prep);
+	LOGPRINTF(1,"code: %llx", (__u64) *codep);
+	LOGPRINTF(1,"post: %llx", (__u64) *postp);
 	LOGPRINTF(1, "code:                   %016llx\n", code);
 	
 	return(1);
@@ -265,18 +265,18 @@ void map_gap(struct ir_remote *remote,
 	LOGPRINTF(1, "repeat_flagp:           %d", *repeat_flagp);
 	LOGPRINTF(1, "is_const(remote):       %d", is_const(remote));
 	LOGPRINTF(1, "remote->gap range:      %lu %lu",
-		  (unsigned long) min_gap(remote),
-		  (unsigned long) max_gap(remote));
+		  (__u32) min_gap(remote),
+		  (__u32) max_gap(remote));
 	LOGPRINTF(1, "remote->remaining_gap:  %lu %lu",
-		  (unsigned long) remote->min_remaining_gap,
-		  (unsigned long) remote->max_remaining_gap);
+		  (__u32) remote->min_remaining_gap,
+		  (__u32) remote->max_remaining_gap);
 	LOGPRINTF(1, "signal length:          %lu",
-		  (unsigned long) signal_length);
+		  (__u32) signal_length);
 	LOGPRINTF(1, "gap:                    %lu",
-		  (unsigned long) gap);
+		  (__u32) gap);
 	LOGPRINTF(1, "extim. remaining_gap:   %lu %lu",
-		  (unsigned long) *min_remaining_gapp,
-		  (unsigned long) *max_remaining_gapp);
+		  (__u32) *min_remaining_gapp,
+		  (__u32) *max_remaining_gapp);
 	
 }
 
@@ -349,11 +349,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		if((pre|pre_mask)!=(remote->pre_data|pre_mask))
 		{
 			LOGPRINTF(1,"bad pre data");
-#                       ifdef LONG_IR_CODE
 			LOGPRINTF(2,"%llx %llx",pre,remote->pre_data);
-#                       else
-			LOGPRINTF(2,"%lx %lx",pre,remote->pre_data);
-#                       endif
 			return(0);
 		}
 		LOGPRINTF(1,"pre");
@@ -364,11 +360,7 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 		if((post|post_mask)!=(remote->post_data|post_mask))
 		{
 			LOGPRINTF(1,"bad post data");
-#                       ifdef LONG_IR_CODE
 			LOGPRINTF(2,"%llx %llx",post,remote->post_data);
-#                       else
-			LOGPRINTF(2,"%lx %lx",post,remote->post_data);
-#                       endif
 			return(0);
 		}
 		LOGPRINTF(1,"post");
@@ -506,11 +498,11 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 	return(found);
 }
 
-unsigned long long set_code(struct ir_remote *remote,struct ir_ncode *found,
+__u64 set_code(struct ir_remote *remote,struct ir_ncode *found,
 			    ir_code toggle_bit_mask_state,int repeat_flag,
 			    lirc_t min_remaining_gap, lirc_t max_remaining_gap)
 {
-	unsigned long long code;
+	__u64 code;
 	struct timeval current;
 	static struct ir_remote *last_decoded = NULL;
 
@@ -616,8 +608,8 @@ int write_message(char *buffer, size_t size, const char *remote_name,
 	/* It seems you can't print 64-bit longs on glibc */
 			
 	len=snprintf(buffer, size,"%08lx%08lx %02x %s%s %s\n",
-		     (unsigned long) (code>>32),
-		     (unsigned long) (code&0xFFFFFFFF),
+		     (__u32) (code>>32),
+		     (__u32) (code&0xFFFFFFFF),
 		     reps,
 		     button_name, button_suffix,
 		     remote_name);
@@ -733,7 +725,7 @@ int send_ir_ncode(struct ir_remote *remote,struct ir_ncode *code)
 	if(remote->last_code!=NULL)
 	{
 		struct timeval current;
-		unsigned long usecs;
+		__u32 usecs;
 		
 		gettimeofday(&current,NULL);
 		usecs = time_left(&current, &remote->last_send,

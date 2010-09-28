@@ -199,7 +199,7 @@ static char *uirt2_rec(struct ir_remote *remotes)
         code=code<<8;
         code|=((ir_code) b[5]);
 	
-	LOGPRINTF(1,"code: %llx",(unsigned long long) code);
+	LOGPRINTF(1,"code: %llx",(__u64) code);
 
 	m=decode_all(remotes);
 	return(m);

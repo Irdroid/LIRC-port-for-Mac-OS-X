@@ -536,7 +536,7 @@ static int uirt2_send_mode2_struct1(uirt2_t *dev,
 
 		if(len > UCHAR_MAX)
 		{
-			LOGPRINTF(0, "signal too long for transmission %lu", (unsigned long) buf[i]);
+			LOGPRINTF(0, "signal too long for transmission %lu", (__u32) buf[i]);
 			return 0;
 		}
                 if (i == 0)

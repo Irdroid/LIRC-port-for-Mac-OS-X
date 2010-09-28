@@ -76,7 +76,7 @@ inline void * get_void_array(struct void_array *ar);
 void * s_malloc(size_t size);
 char * s_strdup(char * string);
 ir_code s_strtocode(const char *val);
-unsigned long  s_strtoul(char *val);
+__u32 s_strtou32(char *val);
 int s_strtoi(char *val);
 unsigned int s_strtoui(char *val);
 lirc_t s_strtolirc_t(char *val);

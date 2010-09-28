@@ -1,5 +1,7 @@
 0.9.0-git: UNDER DEVELOPMENT
   * adapt to using lirc.h as merged in the upstream linux kernel
+  * non-LONG_IR_CODE option dropped, its been the default for years
+  * use portable type definitions all over the place
 
 0.8.7: 09/06/10
   * improved usb-uirt support for FreeBSD (John Wehle)

@@ -411,7 +411,7 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 #endif
 {
 	int retval = 0;
-	unsigned long value = 0;
+	__u32 value = 0;
 #ifdef LIRC_ON_SA1100
 	unsigned int ivalue;
 
@@ -437,12 +437,12 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	case LIRC_GET_FEATURES:
 	case LIRC_GET_SEND_MODE:
 	case LIRC_GET_REC_MODE:
-		retval = put_user(value, (unsigned long *) arg);
+		retval = put_user(value, (__u32 *) arg);
 		break;
 
 	case LIRC_SET_SEND_MODE:
 	case LIRC_SET_REC_MODE:
-		retval = get_user(value, (unsigned long *) arg);
+		retval = get_user(value, (__u32 *) arg);
 		break;
 #ifdef LIRC_ON_SA1100
 	case LIRC_SET_SEND_DUTY_CYCLE:

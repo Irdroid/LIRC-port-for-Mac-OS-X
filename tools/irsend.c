@@ -42,6 +42,12 @@
 #include <signal.h>
 #include <limits.h>
 
+#include <stdint.h>
+
+#ifndef __u32
+typedef uint32_t __u32;
+#endif
+
 #define PACKET_SIZE 256
 /* three seconds */
 #define TIMEOUT 3
@@ -127,7 +133,7 @@ int send_packet(int fd,const char *packet)
 	char *endptr;
 	enum packet_state state;
 	int status,n;
-	unsigned long data_n=0;
+	__u32 data_n=0;
 
 	todo=strlen(packet);
 	data=packet;
@@ -206,7 +212,7 @@ int send_packet(int fd,const char *packet)
 			goto bad_packet;
 		case P_N:
 			errno=0;
-			data_n=strtoul(string,&endptr,0);
+			data_n=(__u32)strtoul(string,&endptr,0);
 			if(!*string || *endptr)
 			{
 				goto bad_packet;

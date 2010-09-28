@@ -48,7 +48,7 @@ static lirc_t get_next_rec_buffer_internal(lirc_t maxusec)
 	{
 		LOGPRINTF(3,"<%c%lu",
 			  rec_buffer.data[rec_buffer.rptr]&PULSE_BIT ?
-			  'p':'s', (unsigned long)
+			  'p':'s', (__u32)
 			  rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK));
 		rec_buffer.sum+=rec_buffer.data[rec_buffer.rptr]&(PULSE_MASK);
 		return(rec_buffer.data[rec_buffer.rptr++]);
@@ -68,7 +68,7 @@ static lirc_t get_next_rec_buffer_internal(lirc_t maxusec)
 			if(LIRC_IS_TIMEOUT(data))
 			{
 				LOGPRINTF(1,"timeout received: %lu",
-					  (unsigned long) LIRC_VALUE(data));
+					  (__u32) LIRC_VALUE(data));
 				if(LIRC_VALUE(data) < maxusec)
 				{
 					return get_next_rec_buffer_internal(maxusec - LIRC_VALUE(data));
@@ -84,7 +84,7 @@ static lirc_t get_next_rec_buffer_internal(lirc_t maxusec)
                         rec_buffer.rptr++;
 			LOGPRINTF(3,"+%c%lu",
 				  rec_buffer.data[rec_buffer.rptr-1]&
-				  PULSE_BIT ? 'p':'s', (unsigned long)
+				  PULSE_BIT ? 'p':'s', (__u32)
 				  rec_buffer.data[rec_buffer.rptr-1]
 				  &(PULSE_MASK));
                         return(rec_buffer.data[rec_buffer.rptr-1]);
@@ -158,7 +158,7 @@ int clear_rec_buffer(void)
 			rec_buffer.wptr=0;
 			data=hw.readdata(0);
 			
-			LOGPRINTF(3,"c%lu",(unsigned long) data&(PULSE_MASK));
+			LOGPRINTF(3,"c%lu",(__u32) data&(PULSE_MASK));
 			
 			rec_buffer.data[rec_buffer.wptr]=data;
 			rec_buffer.wptr++;
@@ -639,7 +639,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 				return((ir_code) -1);
 			}
 			sum=deltap+deltas;
-			LOGPRINTF(3,"rcmm: sum %ld",(unsigned long) sum);
+			LOGPRINTF(3,"rcmm: sum %ld",(__u32) sum);
 			if(expect(remote,sum,remote->pzero+remote->szero))
 			{
 				code|=0;
@@ -693,7 +693,7 @@ ir_code get_data(struct ir_remote *remote,int bits,int done)
 				return((ir_code) -1);
 			}
 			sum=deltas+deltap;
-			LOGPRINTF(3,"grundig: sum %ld",(unsigned long) sum);
+			LOGPRINTF(3,"grundig: sum %ld",(__u32) sum);
 			if(expect(remote,sum,remote->szero+remote->pzero))
 			{
 				state=0;
@@ -1240,11 +1240,7 @@ int receive_decode(struct ir_remote *remote,
  			lirc_t sum;
 			ir_code decoded = rec_buffer.decoded;
 
-#                       ifdef LONG_IR_CODE
 			LOGPRINTF(1,"decoded: %llx", decoded);
-#                       else
-			LOGPRINTF(1,"decoded: %lx", decoded);
-#                       endif
 			if(hw.rec_mode==LIRC_MODE_LIRCCODE && 
 			   hw.code_length!=bit_count(remote))
 			{
@@ -1287,11 +1283,7 @@ int receive_decode(struct ir_remote *remote,
 					LOGPRINTF(1,"failed on pre");
 					return(0);
 				}
-#                               ifdef LONG_IR_CODE
 				LOGPRINTF(1,"pre: %llx",pre);
-#                               else
-				LOGPRINTF(1,"pre: %lx",pre);
-#                               endif
 			}
 			
 			code=get_data(remote,remote->bits,
@@ -1301,11 +1293,7 @@ int receive_decode(struct ir_remote *remote,
 				LOGPRINTF(1,"failed on code");
 				return(0);
 			}
-#                       ifdef LONG_IR_CODE
 			LOGPRINTF(1,"code: %llx",code);
-#                       else
-			LOGPRINTF(1,"code: %lx",code);
-#                       endif
 			
 			if(has_post(remote))
 			{
@@ -1315,11 +1303,7 @@ int receive_decode(struct ir_remote *remote,
 					LOGPRINTF(1,"failed on post");
 					return(0);
 				}
-#                               ifdef LONG_IR_CODE
 				LOGPRINTF(1,"post: %llx",post);
-#                               else
-				LOGPRINTF(1,"post: %lx",post);
-#                               endif
 			}
 			if(!get_trail(remote))
 			{

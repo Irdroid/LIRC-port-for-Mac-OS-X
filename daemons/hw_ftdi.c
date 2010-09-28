@@ -70,7 +70,7 @@ static const char *usb_desc = NULL;
 static const char *usb_serial = NULL;
 
 static int laststate = -1;
-static unsigned long rxctr = 0;
+static __u32 rxctr = 0;
 extern struct ir_remote *repeat_remote;
 
 static int pipe_main2tx[2] = { -1, -1 };
@@ -456,10 +456,10 @@ static lirc_t hwftdi_readdata(lirc_t timeout)
 
 static int hwftdi_send(struct ir_remote *remote, struct ir_ncode *code)
 {
-	unsigned long f_sample	= tx_baud_rate*8;
-	unsigned long f_carrier =
+	__u32 f_sample	= tx_baud_rate*8;
+	__u32 f_carrier =
 		remote->freq == 0 ? DEFAULT_FREQ : remote->freq;
-	unsigned long div_carrier;
+	__u32 div_carrier;
 	int val_carrier;
 	lirc_t *pulseptr;
 	lirc_t pulse;
@@ -495,7 +495,7 @@ static int hwftdi_send(struct ir_remote *remote, struct ir_ncode *code)
 		
 		/* compute the pulsewidth (in # samples) */
 		pulsewidth = f_sample * 
-			((unsigned long) (pulse & PULSE_MASK)) / 1000000ul;
+			((__u32) (pulse & PULSE_MASK)) / 1000000ul;
 		
 		/* toggle pulse / space */
 		sendpulse = sendpulse ? 0:1;

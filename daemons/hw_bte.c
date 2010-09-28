@@ -343,7 +343,7 @@ char *bte_automaton()
 		code |= key_release << 15;
 
 		LOGPRINTF(1, "bte_automaton: code 0x%llx",
-			  (unsigned long long) code);
+			  (__u64) code);
 
 		if ( key_release )
 		{ 
@@ -409,6 +409,6 @@ int bte_decode(struct ir_remote *remote,
 	*codep=code;
 	*postp=0;
 
-	LOGPRINTF(1,"bte_decode: %llx",(unsigned long long) *codep);
+	LOGPRINTF(1,"bte_decode: %llx",(__u64) *codep);
 	return(1);
 }

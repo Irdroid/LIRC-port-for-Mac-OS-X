@@ -312,9 +312,6 @@ AH_TEMPLATE([LIRC_TIMER],
 AH_TEMPLATE([LOCALSTATEDIR],
 	[modifiable single-machine data])
 
-AH_TEMPLATE([LONG_IR_CODE],
-	[Define to use long long IR codes])
-
 AH_TEMPLATE([MAINTAINER_MODE],
 	[define in maintainer mode])
 
@@ -1601,11 +1598,6 @@ AC_ARG_WITH(moduledir,
 [  --with-moduledir=DIR    kernel modules in DIR (/lib/modules/`uname -r`/misc)], 
 moduledir=${withval},
 moduledir=${default_moduledir})
-
-AC_ARG_ENABLE(long-codes,
-[  --disable-long-codes    use this if your compiler won't do long long],
-test x${enableval} = xyes && AC_DEFINE(LONG_IR_CODE),
-AC_DEFINE(LONG_IR_CODE))
 
 AC_ARG_ENABLE(dyncodes,
 [  --enable-dyncodes       use dynamic codes],

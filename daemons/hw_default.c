@@ -40,7 +40,7 @@
 
 extern struct ir_remote *repeat_remote;
 
-static unsigned long supported_send_modes[]=
+static __u32 supported_send_modes[]=
 {
 	/* LIRC_CAN_SEND_LIRCCODE, */
 	/* LIRC_CAN_SEND_MODE2, this one would be very easy */
@@ -48,7 +48,7 @@ static unsigned long supported_send_modes[]=
 	/* LIRC_CAN_SEND_RAW, */
 	0
 };
-static unsigned long supported_rec_modes[]=
+static __u32 supported_rec_modes[]=
 {
 	LIRC_CAN_REC_LIRCCODE,
 	LIRC_CAN_REC_MODE2,
@@ -100,7 +100,7 @@ lirc_t default_readdata(lirc_t timeout)
 #if defined(SIM_REC) && !defined(DAEMONIZE)
 	while(1)
 	{
-		unsigned long scan;
+		__u32 scan;
 
 		ret=fscanf(stdin,"space %ld\n",&scan);
 		if(ret==1)
@@ -247,9 +247,9 @@ int default_init()
 		{
 			logprintf(LOG_ERR, "major number of %s is %lu",
 				  hw.device,
-				  (unsigned long) major(s.st_rdev));
+				  (__u32) major(s.st_rdev));
 			logprintf(LOG_ERR, "LIRC major number is %lu",
-				  (unsigned long) LIRC_MAJOR);
+				  (__u32) LIRC_MAJOR);
 			logprintf(LOG_ERR, "check if %s is a LIRC device",
 				  hw.device);
 		}
@@ -386,9 +386,9 @@ static int write_send_buffer(int lirc)
 	}
 	for(i=0;;)
 	{
-		printf("pulse %lu\n",(unsigned long) send_buffer.data[i++]);
+		printf("pulse %lu\n",(__u32) send_buffer.data[i++]);
 		if(i>=send_buffer.wptr) break;
-		printf("space %lu\n",(unsigned long) send_buffer.data[i++]);
+		printf("space %lu\n",(__u32) send_buffer.data[i++]);
 	}
 	return(send_buffer.wptr*sizeof(lirc_t));
 #else
@@ -446,7 +446,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 	else
 	{
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
-		printf("space %lu\n",(unsigned long) remote->min_remaining_gap);
+		printf("space %lu\n",(__u32) remote->min_remaining_gap);
 #endif
 	}
 	return(1);

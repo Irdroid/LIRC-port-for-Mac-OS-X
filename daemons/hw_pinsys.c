@@ -329,7 +329,7 @@ char *pinsys_rec(struct ir_remote *remotes)
 	code = b[2];
 #endif
 
-	LOGPRINTF(1," -> %016lx",(unsigned long) code);
+	LOGPRINTF(1," -> %016lx",(__u32) code);
 	m=decode_all(remotes);
 	return(m);
 }

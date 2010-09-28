@@ -56,7 +56,7 @@
 
 void flushhw(void);
 int resethw(void);
-int waitfordata(unsigned long maxusec);
+int waitfordata(__u32 maxusec);
 int availabledata(void);
 int get_toggle_bit_mask(struct ir_remote *remote);
 void set_toggle_bit_mask(struct ir_remote *remote,ir_code xor);
@@ -642,13 +642,13 @@ int main(int argc,char **argv)
 #               ifdef DEBUG
 		printf("%d %lu %lu %lu %lu %lu %d %d %d %lu\n",
 		       remote.bits,
-		       (unsigned long) remote.pone,
-		       (unsigned long) remote.sone,
-		       (unsigned long) remote.pzero,
-		       (unsigned long) remote.szero,
-		       (unsigned long) remote.ptrail,
+		       (__u32) remote.pone,
+		       (__u32) remote.sone,
+		       (__u32) remote.pzero,
+		       (__u32) remote.szero,
+		       (__u32) remote.ptrail,
 		       remote.flags,remote.eps,remote.aeps,
-		       (unsigned long) remote.gap);
+		       (__u32) remote.gap);
 #               endif
 		break;
 	case LIRC_MODE_LIRCCODE:
@@ -762,7 +762,7 @@ int main(int argc,char **argv)
 			count=0;sum=0;
 			while(count<MAX_SIGNALS)
 			{
-				unsigned long timeout;
+				__u32 timeout;
 				
 				if(count==0) timeout=10000000;
 				else timeout=remote.gap*5;
@@ -1033,7 +1033,7 @@ int resethw(void)
 	return(1);
 }
 
-int waitfordata(unsigned long maxusec)
+int waitfordata(__u32 maxusec)
 {
 	fd_set fds;
 	int ret;
@@ -1232,7 +1232,7 @@ int get_toggle_bit_mask(struct ir_remote *remote)
 		if(remote->toggle_bit_mask>0)
 		{
 			printf("\nToggle bit mask is 0x%llx.\n",
-			       (unsigned long long) remote->toggle_bit_mask);
+			       (__u64) remote->toggle_bit_mask);
 		}
 		else if(remote->toggle_mask!=0)
 		{
@@ -1312,11 +1312,7 @@ void get_pre_data(struct ir_remote *remote)
 		codes++;
 	}
 	count=0;
-#ifdef LONG_IR_CODE
 	while(mask&0x8000000000000000LL)
-#else
-	while(mask&0x80000000L)
-#endif
 	{
 		count++;
 		mask=mask<<1;
@@ -1704,8 +1700,8 @@ struct lengths *first_signal_length=NULL;
 struct lengths *first_headerp=NULL,*first_headers=NULL;
 struct lengths *first_1lead=NULL,*first_3lead=NULL,*first_trail=NULL;
 struct lengths *first_repeatp=NULL,*first_repeats=NULL;
-unsigned long lengths[MAX_SIGNALS];
-unsigned long first_length,first_lengths,second_lengths;
+__u32 lengths[MAX_SIGNALS];
+__u32 first_length,first_lengths,second_lengths;
 unsigned int count,count_spaces,count_3repeats,count_5repeats,count_signals;
 
 inline lirc_t calc_signal(struct lengths *len)
@@ -1796,7 +1792,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 						{
 							remote->gap=calc_signal(scan);
 							remote->flags|=CONST_LENGTH;
-							i_printf(interactive, "\nFound const length: %lu\n",(unsigned long) remote->gap);
+							i_printf(interactive, "\nFound const length: %lu\n",(__u32) remote->gap);
 							break;
 						}
 						scan=scan->next;
@@ -1811,7 +1807,7 @@ int get_lengths(struct ir_remote *remote, int force, int interactive)
 							if(scan->count>SAMPLES)
 							{
 								remote->gap=calc_signal(scan);
-								i_printf(interactive, "\nFound gap: %lu\n",(unsigned long) remote->gap);
+								i_printf(interactive, "\nFound gap: %lu\n",(__u32) remote->gap);
 								break;
 							}
 							scan=scan->next;
@@ -2098,7 +2094,7 @@ void free_lengths(struct lengths **firstp)
 void merge_lengths(struct lengths *first)
 {
 	struct lengths *l,*inner,*last;
-	unsigned long new_sum;
+	__u32 new_sum;
 	int new_count;
 
 	l=first;
@@ -2144,9 +2140,9 @@ void merge_lengths(struct lengths *first)
 	while(l!=NULL)
 	{
 		printf("%d x %lu [%lu,%lu]\n",l->count,
-		       (unsigned long) calc_signal(l),
-		       (unsigned long) l->min,
-		       (unsigned long) l->max);
+		       (__u32) calc_signal(l),
+		       (__u32) l->min,
+		       (__u32) l->max);
 		l=l->next;
 	}
 #       endif
@@ -2250,7 +2246,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 	
 #       ifdef DEBUG
 	if(first->count>0) printf("%u x %lu\n", first->count,
-				  (unsigned long) calc_signal(first));
+				  (__u32) calc_signal(first));
 #       endif
 	scan=first->next;
 	while(scan)
@@ -2262,7 +2258,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 		sum+=scan->count;
 #               ifdef DEBUG
 		if(scan->count>0) printf("%u x %lu\n",scan->count,
-					 (unsigned long) calc_signal(scan));
+					 (__u32) calc_signal(scan));
 #               endif
 		scan=scan->next;
 	}
@@ -2285,7 +2281,7 @@ int get_trail_length(struct ir_remote *remote, int interactive)
 	if(max_count>=sum*TH_TRAIL/100)
 	{
 		i_printf(interactive, "Found trail pulse: %lu\n",
-			(unsigned long) calc_signal(max_length));
+			(__u32) calc_signal(max_length));
 		remote->ptrail=calc_signal(max_length);
 		return(1);
 	}
@@ -2311,7 +2307,7 @@ int get_lead_length(struct ir_remote *remote, int interactive)
 	if(max_count>=sum*TH_LEAD/100)
 	{
 		i_printf(interactive, "Found lead pulse: %lu\n",
-		       (unsigned long) calc_signal(max_length));
+		       (__u32) calc_signal(max_length));
 		remote->plead=calc_signal(max_length);
 		return(1);
 	}
@@ -2328,7 +2324,7 @@ int get_lead_length(struct ir_remote *remote, int interactive)
 	if(abs(2*a-b)<b*eps/100 || abs(2*a-b)<aeps)
 	{
 		i_printf(interactive, "Found hidden lead pulse: %lu\n",
-		       (unsigned long) a);
+		       (__u32) a);
 		remote->plead=a;
 		return(1);
 	}
@@ -2370,8 +2366,8 @@ int get_header_length(struct ir_remote *remote, int interactive)
 			headers=calc_signal(max_slength);
 
 			i_printf(interactive, "Found possible header: %lu %lu\n",
-				(unsigned long) headerp,
-				(unsigned long) headers);
+				(__u32) headerp,
+				(__u32) headers);
 			remote->phead=headerp;
 			remote->shead=headers;
 			if(first_lengths<second_lengths)
@@ -2436,8 +2432,8 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 			repeats=calc_signal(max_slength);
 			
 			i_printf(interactive, "Found repeat code: %lu %lu\n",
-				(unsigned long) repeatp,
-				(unsigned long) repeats);
+				(__u32) repeatp,
+				(__u32) repeats);
 			remote->prepeat=repeatp;
 			remote->srepeat=repeats;
 			if(!(remote->flags&CONST_LENGTH))
@@ -2446,7 +2442,7 @@ int get_repeat_length(struct ir_remote *remote, int interactive)
 							   NULL);
 				repeat_gap=calc_signal(max_slength);
 				i_printf(interactive, "Found repeat gap: %lu\n",
-					(unsigned long) repeat_gap);
+					(__u32) repeat_gap);
 				remote->repeat_gap=repeat_gap;
 				
 			}
@@ -2514,9 +2510,9 @@ int get_data_length(struct ir_remote *remote, int interactive)
 #               ifdef DEBUG
 		printf("Pulse canditates: ");
 		printf("%u x %lu",max_plength->count,
-		       (unsigned long) calc_signal(max_plength));
+		       (__u32) calc_signal(max_plength));
 		if(max2_plength) printf(", %u x %lu",max2_plength->count,
-					(unsigned long)
+					(__u32)
 					calc_signal(max2_plength));
 		printf("\n");
 #               endif
@@ -2541,10 +2537,10 @@ int get_data_length(struct ir_remote *remote, int interactive)
 #                       ifdef DEBUG
 			printf("Space canditates: ");
 			printf("%u x %lu",max_slength->count,
-			       (unsigned long) calc_signal(max_slength));
+			       (__u32) calc_signal(max_slength));
 			if(max2_slength) printf(", %u x %lu",
 						max2_slength->count,
-						(unsigned long) calc_signal(max2_slength));
+						(__u32) calc_signal(max2_slength));
 			printf("\n");
 #                       endif
 
@@ -2712,7 +2708,7 @@ int get_gap_length(struct ir_remote *remote)
 				{
 					remote->gap=calc_signal(scan);
 					printf("\nFound gap length: %lu\n",
-					       (unsigned long) remote->gap);
+					       (__u32) remote->gap);
 					free_lengths(&gaps);
 					return(1);
 				}

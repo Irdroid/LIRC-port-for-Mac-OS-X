@@ -82,7 +82,7 @@ livedrive_decode(struct ir_remote *remote,
 	}
 
 	LOGPRINTF(1, "repeat_flag: %d", *repeat_flagp);
-	LOGPRINTF(1, "gap: %lu", (unsigned long) gap);
+	LOGPRINTF(1, "gap: %lu", (__u32) gap);
 
 	return (1);
 }

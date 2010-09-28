@@ -83,12 +83,12 @@ void fprint_remote_gap(FILE *f, struct ir_remote *rem)
 	if(rem->gap2 != 0)
 	{
 		fprintf(f, "  gap          %lu %lu\n",
-			(unsigned long) rem->gap,
-			(unsigned long) rem->gap2);
+			(__u32) rem->gap,
+			(__u32) rem->gap2);
 	}
 	else
 	{
-		fprintf(f, "  gap          %lu\n", (unsigned long) rem->gap);
+		fprintf(f, "  gap          %lu\n", (__u32) rem->gap);
 	}
 }
 
@@ -108,87 +108,79 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		if(has_header(rem))
 		{
 			fprintf(f, "  header      %5lu %5lu\n",
-				(unsigned long) rem->phead,
-				(unsigned long) rem->shead);
+				(__u32) rem->phead,
+				(__u32) rem->shead);
 		}
 		if(rem->pthree!=0 || rem->sthree!=0)
 			fprintf(f, "  three       %5lu %5lu\n",
-				(unsigned long) rem->pthree,
-				(unsigned long) rem->sthree);
+				(__u32) rem->pthree,
+				(__u32) rem->sthree);
 		if(rem->ptwo!=0 || rem->stwo!=0)
 			fprintf(f, "  two         %5lu %5lu\n",
-				(unsigned long) rem->ptwo,
-				(unsigned long)  rem->stwo);
+				(__u32) rem->ptwo,
+				(__u32)  rem->stwo);
 		fprintf(f, "  one         %5lu %5lu\n",
-			(unsigned long) rem->pone,
-			(unsigned long) rem->sone);
+			(__u32) rem->pone,
+			(__u32) rem->sone);
 		fprintf(f, "  zero        %5lu %5lu\n",
-			(unsigned long) rem->pzero,
-			(unsigned long)  rem->szero);
+			(__u32) rem->pzero,
+			(__u32)  rem->szero);
 	}
 	if(rem->ptrail!=0)
 	{
 		fprintf(f, "  ptrail      %5lu\n",
-			(unsigned long) rem->ptrail);
+			(__u32) rem->ptrail);
 	}
 	if(!is_raw(rem))
 	{
 		if(rem->plead!=0)
 		{
 			fprintf(f, "  plead       %5lu\n",
-				(unsigned long) rem->plead);
+				(__u32) rem->plead);
 		}
 		if(has_foot(rem))
 		{
 			fprintf(f, "  foot        %5lu %5lu\n",
-				(unsigned long) rem->pfoot,
-				(unsigned long) rem->sfoot);
+				(__u32) rem->pfoot,
+				(__u32) rem->sfoot);
 		}
 	}
 	if(has_repeat(rem))
 	{
 		fprintf(f, "  repeat      %5lu %5lu\n",
-			(unsigned long) rem->prepeat,
-			(unsigned long) rem->srepeat);
+			(__u32) rem->prepeat,
+			(__u32) rem->srepeat);
 	}
 	if(!is_raw(rem))
 	{
 		if(rem->pre_data_bits>0)
 		{
 			fprintf(f, "  pre_data_bits   %d\n",rem->pre_data_bits);
-#                       ifdef LONG_IR_CODE
 			fprintf(f, "  pre_data       0x%llX\n",rem->pre_data);
-#                       else
-			fprintf(f, "  pre_data       0x%lX\n",rem->pre_data);
-#                       endif
 		}
 		if(rem->post_data_bits>0)
 		{
 			fprintf(f, "  post_data_bits  %d\n",rem->post_data_bits);
-#                       ifdef LONG_IR_CODE
 			fprintf(f, "  post_data      0x%llX\n",rem->post_data);
-#                       else
-			fprintf(f, "  post_data      0x%lX\n",rem->post_data);
-#                       endif
 		}
 		if(rem->pre_p!=0 && rem->pre_s!=0)
 		{
 			fprintf(f, "  pre         %5lu %5lu\n",
-				(unsigned long) rem->pre_p,
-				(unsigned long) rem->pre_s);
+				(__u32) rem->pre_p,
+				(__u32) rem->pre_s);
 		}
 		if(rem->post_p!=0 && rem->post_s!=0)
 		{
 			fprintf(f, "  post        %5lu %5lu\n",
-				(unsigned long) rem->post_p,
-				(unsigned long) rem->post_s);
+				(__u32) rem->post_p,
+				(__u32) rem->post_s);
 		}
 	}
 	fprint_remote_gap(f, rem);
 	if(has_repeat_gap(rem))
 	{
 		fprintf(f, "  repeat_gap   %lu\n",
-			(unsigned long) rem->repeat_gap);
+			(__u32) rem->repeat_gap);
 	}
 	if(rem->suppress_repeat>0)
 	{
@@ -210,42 +202,22 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 			fprintf(f, "  min_code_repeat %d\n",
 				rem->min_code_repeat);
 		}
-#               ifdef LONG_IR_CODE
 		fprintf(f, "  toggle_bit_mask 0x%llX\n",
 			rem->toggle_bit_mask);
-#               else
-		fprintf(f, "  toggle_bit_mask 0x%lX\n",
-			rem->toggle_bit_mask);
-#               endif
 		if(has_toggle_mask(rem))
 		{
-#                       ifdef LONG_IR_CODE
 			fprintf(f, "  toggle_mask    0x%llX\n",
 				rem->toggle_mask);
-#                       else
-			fprintf(f, "  toggle_mask    0x%lX\n",
-				rem->toggle_mask);
-#                       endif
 		}
 		if(rem->rc6_mask!=0)
 		{
-#                       ifdef LONG_IR_CODE
 			fprintf(f, "  rc6_mask    0x%llX\n",
 				rem->rc6_mask);
-#                       else
-			fprintf(f, "  rc6_mask    0x%lX\n",
-				rem->rc6_mask);
-#                       endif
 		}
 		if(has_ignore_mask(rem))
 		{
-#                       ifdef LONG_IR_CODE
 			fprintf(f, "  ignore_mask 0x%llX\n",
 				rem->ignore_mask);
-#                       else
-			fprintf(f, "  ignore_mask 0x%lX\n",
-				rem->ignore_mask);
-#                       endif
 		}
 		if(is_serial(rem))
 		{
@@ -297,13 +269,8 @@ void fprint_remote_signal(FILE *f,struct ir_remote *rem, struct ir_ncode *codes)
 		char format[30];
 		struct ir_code_node *loop;
 		
-#               ifdef LONG_IR_CODE
 		sprintf(format,	"          %%-24s 0x%%0%dllX",
 			(rem->bits+3)/4);
-#               else
-		sprintf(format, "          %%-24s 0x%%0%dlX",
-			(rem->bits+3)/4);
-#               endif
 		fprintf(f, format, codes->name, codes->code);
 		sprintf(format, " 0x%%0%dlX", (rem->bits+3)/4);
 		for(loop=codes->next; loop!=NULL; loop=loop->next)
@@ -320,13 +287,13 @@ void fprint_remote_signal(FILE *f,struct ir_remote *rem, struct ir_ncode *codes)
 		for(i=0;i<codes->length;i++){
 			if (j==0){
 				fprintf(f, "          %7lu",
-					(unsigned long) codes->signals[i]);
+					(__u32) codes->signals[i]);
 			}else if (j<5){
 				fprintf(f, " %7lu",
-					(unsigned long) codes->signals[i]);
+					(__u32) codes->signals[i]);
 			}else{
 				fprintf(f, " %7lu\n",
-					(unsigned long) codes->signals[i]);
+					(__u32) codes->signals[i]);
 				j=-1;
 			}
 			j++;
