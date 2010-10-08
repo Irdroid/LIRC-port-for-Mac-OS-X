@@ -413,7 +413,6 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	int retval = 0;
 	__u32 value = 0;
 #ifdef LIRC_ON_SA1100
-	unsigned int ivalue;
 
 	if (cmd == LIRC_GET_FEATURES)
 		value = LIRC_CAN_SEND_PULSE |
@@ -446,13 +445,13 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 #ifdef LIRC_ON_SA1100
 	case LIRC_SET_SEND_DUTY_CYCLE:
-		retval = get_user(ivalue, (unsigned int *) arg);
+		retval = get_user(value, (__u32 *) arg);
 		if (retval)
 			return retval;
-		if (ivalue <= 0 || ivalue > 100)
+		if (value <= 0 || value > 100)
 			return -EINVAL;
-		/* (ivalue/100)*(1000000/freq) */
-		duty_cycle = ivalue;
+		/* (value/100)*(1000000/freq) */
+		duty_cycle = value;
 		pulse_width = (unsigned long) duty_cycle*10000/freq;
 		space_width = (unsigned long) 1000000L/freq-pulse_width;
 		if (pulse_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
@@ -461,12 +460,12 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 			space_width -= LIRC_ON_SA1100_TRANSMITTER_LATENCY;
 		break;
 	case LIRC_SET_SEND_CARRIER:
-		retval = get_user(ivalue, (unsigned int *) arg);
+		retval = get_user(value, (__u32 *) arg);
 		if (retval)
 			return retval;
-		if (ivalue > 500000 || ivalue < 20000)
+		if (value > 500000 || value < 20000)
 			return -EINVAL;
-		freq = ivalue;
+		freq = value;
 		pulse_width = (unsigned long) duty_cycle*10000/freq;
 		space_width = (unsigned long) 1000000L/freq-pulse_width;
 		if (pulse_width >= LIRC_ON_SA1100_TRANSMITTER_LATENCY)
