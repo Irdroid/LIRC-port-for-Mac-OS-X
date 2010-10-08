@@ -57,9 +57,22 @@ static lirc_t get_next_rec_buffer_internal(lirc_t maxusec)
 	{
 		if(rec_buffer.wptr<RBUF_SIZE)
 		{
-			lirc_t data;
-			
-			data=hw.readdata(maxusec);
+			lirc_t data = 0;
+			unsigned long elapsed = 0;
+
+			if(timerisset(&rec_buffer.last_signal_time))
+			{
+				struct timeval current;
+
+				gettimeofday(&current, NULL);
+				elapsed = time_elapsed
+					(&rec_buffer.last_signal_time,
+					&current);
+			}
+			if(elapsed < maxusec)
+			{
+				data=hw.readdata(maxusec - elapsed);
+			}
 			if(!data)
 			{
 				LOGPRINTF(3,"timeout: %u", maxusec);
@@ -121,6 +134,7 @@ int clear_rec_buffer(void)
 {
 	int move,i;
 
+	timerclear(&rec_buffer.last_signal_time);
 	if(hw.rec_mode==LIRC_MODE_LIRCCODE)
 	{
 		unsigned char buffer[sizeof(ir_code)];

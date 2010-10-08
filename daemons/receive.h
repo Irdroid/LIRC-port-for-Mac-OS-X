@@ -33,6 +33,7 @@ struct rbuf
 	lirc_t pendingp;
 	lirc_t pendings;
 	lirc_t sum;
+	struct timeval last_signal_time;
 };
 
 static inline lirc_t receive_timeout(lirc_t usec)
