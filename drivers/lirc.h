@@ -6,8 +6,15 @@
 #ifndef _LINUX_LIRC_H
 #define _LINUX_LIRC_H
 
+#if defined(__linux__)
 #include <linux/types.h>
 #include <linux/ioctl.h>
+#elif defined(_NetBSD_)
+#include <sys/ioctl.h>
+#elif defined(_CYGWIN_)
+#define __USE_LINUX_IOCTL_DEFS
+#include <sys/ioctl.h>
+#endif
 
 #define PULSE_BIT       0x01000000
 #define PULSE_MASK      0x00FFFFFF
