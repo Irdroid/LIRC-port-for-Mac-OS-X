@@ -468,6 +468,12 @@ int lirc_unregister_driver(int minor)
 
 	ir = irctls[minor];
 
+	if (!ir) {
+		printk(KERN_ERR "lirc_dev: %s: failed to get irctl struct for "
+		       "minor %d!\n", __func__, minor);
+		return -ENOENT;
+	}
+
 	mutex_lock(&lirc_dev_lock);
 
 	if (ir->d.minor != minor) {
@@ -688,6 +694,11 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #else
 	struct irctl *ir = file->private_data;
 #endif
+
+	if (!ir) {
+		printk(KERN_ERR "lirc_dev: %s: no irctl found!\n", __func__);
+		return -ENODEV;
+	}
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
 		ir->d.name, ir->d.minor, cmd);
