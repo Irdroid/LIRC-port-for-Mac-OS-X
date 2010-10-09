@@ -683,7 +683,11 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	__u32 mode;
 	int result;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+	struct irctl *ir = irctls[iminor(inode)];
+#else
 	struct irctl *ir = file->private_data;
+#endif
 
 	dprintk(LOGHEAD "ioctl called (0x%x)\n",
 		ir->d.name, ir->d.minor, cmd);
