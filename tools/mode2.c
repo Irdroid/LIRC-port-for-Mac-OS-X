@@ -299,7 +299,7 @@ int main(int argc,char **argv)
 		}
 		if(code_length>sizeof(ir_code)*CHAR_BIT)
 		{
-			fprintf(stderr, "%s: cannot handle %lu bit codes\n",
+			fprintf(stderr, "%s: cannot handle %u bit codes\n",
 				progname, code_length);
 			close(fd);
 			exit(EXIT_FAILURE);
@@ -352,7 +352,7 @@ int main(int argc,char **argv)
 
 		if (!dmode)
 		{
-			printf("%s %lu\n",(data&PULSE_BIT)?"pulse":"space",
+			printf("%s %u\n",(data&PULSE_BIT)?"pulse":"space",
 			       (__u32) (data&PULSE_MASK));
 		}
 		else
@@ -360,7 +360,7 @@ int main(int argc,char **argv)
 			static int bitno = 1;
 			
 			/* print output like irrecord raw config file data */
-			printf(" %8lu" , (__u32) data&PULSE_MASK);
+			printf(" %8u" , (__u32) data&PULSE_MASK);
 			++bitno;
 			if (data&PULSE_BIT)
 			{

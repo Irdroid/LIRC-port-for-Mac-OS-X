@@ -82,13 +82,13 @@ void fprint_remote_gap(FILE *f, struct ir_remote *rem)
 {
 	if(rem->gap2 != 0)
 	{
-		fprintf(f, "  gap          %lu %lu\n",
+		fprintf(f, "  gap          %u %u\n",
 			(__u32) rem->gap,
 			(__u32) rem->gap2);
 	}
 	else
 	{
-		fprintf(f, "  gap          %lu\n", (__u32) rem->gap);
+		fprintf(f, "  gap          %u\n", (__u32) rem->gap);
 	}
 }
 
@@ -107,47 +107,47 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 	{
 		if(has_header(rem))
 		{
-			fprintf(f, "  header      %5lu %5lu\n",
+			fprintf(f, "  header      %5u %5u\n",
 				(__u32) rem->phead,
 				(__u32) rem->shead);
 		}
 		if(rem->pthree!=0 || rem->sthree!=0)
-			fprintf(f, "  three       %5lu %5lu\n",
+			fprintf(f, "  three       %5u %5u\n",
 				(__u32) rem->pthree,
 				(__u32) rem->sthree);
 		if(rem->ptwo!=0 || rem->stwo!=0)
-			fprintf(f, "  two         %5lu %5lu\n",
+			fprintf(f, "  two         %5u %5u\n",
 				(__u32) rem->ptwo,
 				(__u32)  rem->stwo);
-		fprintf(f, "  one         %5lu %5lu\n",
+		fprintf(f, "  one         %5u %5u\n",
 			(__u32) rem->pone,
 			(__u32) rem->sone);
-		fprintf(f, "  zero        %5lu %5lu\n",
+		fprintf(f, "  zero        %5u %5u\n",
 			(__u32) rem->pzero,
 			(__u32)  rem->szero);
 	}
 	if(rem->ptrail!=0)
 	{
-		fprintf(f, "  ptrail      %5lu\n",
+		fprintf(f, "  ptrail      %5u\n",
 			(__u32) rem->ptrail);
 	}
 	if(!is_raw(rem))
 	{
 		if(rem->plead!=0)
 		{
-			fprintf(f, "  plead       %5lu\n",
+			fprintf(f, "  plead       %5u\n",
 				(__u32) rem->plead);
 		}
 		if(has_foot(rem))
 		{
-			fprintf(f, "  foot        %5lu %5lu\n",
+			fprintf(f, "  foot        %5u %5u\n",
 				(__u32) rem->pfoot,
 				(__u32) rem->sfoot);
 		}
 	}
 	if(has_repeat(rem))
 	{
-		fprintf(f, "  repeat      %5lu %5lu\n",
+		fprintf(f, "  repeat      %5u %5u\n",
 			(__u32) rem->prepeat,
 			(__u32) rem->srepeat);
 	}
@@ -165,13 +165,13 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 		}
 		if(rem->pre_p!=0 && rem->pre_s!=0)
 		{
-			fprintf(f, "  pre         %5lu %5lu\n",
+			fprintf(f, "  pre         %5u %5u\n",
 				(__u32) rem->pre_p,
 				(__u32) rem->pre_s);
 		}
 		if(rem->post_p!=0 && rem->post_s!=0)
 		{
-			fprintf(f, "  post        %5lu %5lu\n",
+			fprintf(f, "  post        %5u %5u\n",
 				(__u32) rem->post_p,
 				(__u32) rem->post_s);
 		}
@@ -179,8 +179,7 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 	fprint_remote_gap(f, rem);
 	if(has_repeat_gap(rem))
 	{
-		fprintf(f, "  repeat_gap   %lu\n",
-			(__u32) rem->repeat_gap);
+		fprintf(f, "  repeat_gap   %u\n", (__u32) rem->repeat_gap);
 	}
 	if(rem->suppress_repeat>0)
 	{
@@ -199,25 +198,20 @@ void fprint_remote_head(FILE *f, struct ir_remote *rem)
 	{
 		if(rem->min_code_repeat>0)
 		{
-			fprintf(f, "  min_code_repeat %d\n",
-				rem->min_code_repeat);
+			fprintf(f, "  min_code_repeat %d\n", rem->min_code_repeat);
 		}
-		fprintf(f, "  toggle_bit_mask 0x%llX\n",
-			rem->toggle_bit_mask);
+		fprintf(f, "  toggle_bit_mask 0x%llX\n", rem->toggle_bit_mask);
 		if(has_toggle_mask(rem))
 		{
-			fprintf(f, "  toggle_mask    0x%llX\n",
-				rem->toggle_mask);
+			fprintf(f, "  toggle_mask    0x%llX\n", rem->toggle_mask);
 		}
 		if(rem->rc6_mask!=0)
 		{
-			fprintf(f, "  rc6_mask    0x%llX\n",
-				rem->rc6_mask);
+			fprintf(f, "  rc6_mask    0x%llX\n", rem->rc6_mask);
 		}
 		if(has_ignore_mask(rem))
 		{
-			fprintf(f, "  ignore_mask 0x%llX\n",
-				rem->ignore_mask);
+			fprintf(f, "  ignore_mask 0x%llX\n", rem->ignore_mask);
 		}
 		if(is_serial(rem))
 		{
@@ -286,13 +280,13 @@ void fprint_remote_signal(FILE *f,struct ir_remote *rem, struct ir_ncode *codes)
 		j=0;
 		for(i=0;i<codes->length;i++){
 			if (j==0){
-				fprintf(f, "          %7lu",
+				fprintf(f, "          %7u",
 					(__u32) codes->signals[i]);
 			}else if (j<5){
-				fprintf(f, " %7lu",
+				fprintf(f, " %7u",
 					(__u32) codes->signals[i]);
 			}else{
-				fprintf(f, " %7lu\n",
+				fprintf(f, " %7u\n",
 					(__u32) codes->signals[i]);
 				j=-1;
 			}

@@ -224,7 +224,7 @@ void* atwf83_repeat()
 *  specific code.
 */
 
-char *atwf83_rec(struct ir_remote *remotes)
+static char *atwf83_rec(struct ir_remote *remotes)
 {
 	unsigned ev;
 	int rd;

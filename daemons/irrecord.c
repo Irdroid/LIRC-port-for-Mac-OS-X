@@ -640,7 +640,7 @@ int main(int argc,char **argv)
 		}
 		
 #               ifdef DEBUG
-		printf("%d %lu %lu %lu %lu %lu %d %d %d %lu\n",
+		printf("%d %u %u %u %u %u %d %d %d %u\n",
 		       remote.bits,
 		       (__u32) remote.pone,
 		       (__u32) remote.sone,
@@ -2139,7 +2139,7 @@ void merge_lengths(struct lengths *first)
 	l=first;
 	while(l!=NULL)
 	{
-		printf("%d x %lu [%lu,%lu]\n",l->count,
+		printf("%d x %u [%u,%u]\n",l->count,
 		       (__u32) calc_signal(l),
 		       (__u32) l->min,
 		       (__u32) l->max);
@@ -2160,12 +2160,12 @@ void get_scheme(struct ir_remote *remote, int interactive)
 		}
 		sum+=lengths[i];
 #               ifdef DEBUG
-		if(lengths[i]>0) printf("%u: %lu\n",i,lengths[i]);
+		if(lengths[i]>0) printf("%u: %u\n",i,lengths[i]);
 #               endif
 	}
 #       ifdef DEBUG
-	printf("get_scheme(): sum: %u length: %u signals: %lu\n"
-	       "first_lengths: %lu second_lengths: %lu\n",
+	printf("get_scheme(): sum: %u length: %u signals: %u\n"
+	       "first_lengths: %u second_lengths: %u\n",
 	       sum,length+1,lengths[length],first_lengths,second_lengths);
 #       endif
 	/* FIXME !!! this heuristic is too bad */
@@ -2245,7 +2245,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 	sum=first->count;
 	
 #       ifdef DEBUG
-	if(first->count>0) printf("%u x %lu\n", first->count,
+	if(first->count>0) printf("%u x %u\n", first->count,
 				  (__u32) calc_signal(first));
 #       endif
 	scan=first->next;
@@ -2257,7 +2257,7 @@ struct lengths *get_max_length(struct lengths *first,unsigned int *sump)
 		}
 		sum+=scan->count;
 #               ifdef DEBUG
-		if(scan->count>0) printf("%u x %lu\n",scan->count,
+		if(scan->count>0) printf("%u x %u\n",scan->count,
 					 (__u32) calc_signal(scan));
 #               endif
 		scan=scan->next;
@@ -2509,9 +2509,9 @@ int get_data_length(struct ir_remote *remote, int interactive)
 
 #               ifdef DEBUG
 		printf("Pulse canditates: ");
-		printf("%u x %lu",max_plength->count,
+		printf("%u x %u",max_plength->count,
 		       (__u32) calc_signal(max_plength));
-		if(max2_plength) printf(", %u x %lu",max2_plength->count,
+		if(max2_plength) printf(", %u x %u",max2_plength->count,
 					(__u32)
 					calc_signal(max2_plength));
 		printf("\n");
@@ -2536,9 +2536,9 @@ int get_data_length(struct ir_remote *remote, int interactive)
 			
 #                       ifdef DEBUG
 			printf("Space canditates: ");
-			printf("%u x %lu",max_slength->count,
+			printf("%u x %u",max_slength->count,
 			       (__u32) calc_signal(max_slength));
-			if(max2_slength) printf(", %u x %lu",
+			if(max2_slength) printf(", %u x %u",
 						max2_slength->count,
 						(__u32) calc_signal(max2_slength));
 			printf("\n");
@@ -2707,7 +2707,7 @@ int get_gap_length(struct ir_remote *remote)
 				if(scan->count>SAMPLES)
 				{
 					remote->gap=calc_signal(scan);
-					printf("\nFound gap length: %lu\n",
+					printf("\nFound gap length: %u\n",
 					       (__u32) remote->gap);
 					free_lengths(&gaps);
 					return(1);

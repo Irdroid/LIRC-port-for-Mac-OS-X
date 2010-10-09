@@ -102,13 +102,13 @@ lirc_t default_readdata(lirc_t timeout)
 	{
 		__u32 scan;
 
-		ret=fscanf(stdin,"space %ld\n",&scan);
+		ret=fscanf(stdin,"space %u\n",&scan);
 		if(ret==1)
 		{
 			data=(lirc_t) scan;
 			break;
 		}
-		ret=fscanf(stdin,"pulse %ld\n",&scan);
+		ret=fscanf(stdin,"pulse %u\n",&scan);
 		if(ret==1)
 		{
 			data=(lirc_t) scan|PULSE_BIT;
@@ -386,9 +386,9 @@ static int write_send_buffer(int lirc)
 	}
 	for(i=0;;)
 	{
-		printf("pulse %lu\n",(__u32) send_buffer.data[i++]);
+		printf("pulse %u\n",(__u32) send_buffer.data[i++]);
 		if(i>=send_buffer.wptr) break;
-		printf("space %lu\n",(__u32) send_buffer.data[i++]);
+		printf("space %u\n",(__u32) send_buffer.data[i++]);
 	}
 	return(send_buffer.wptr*sizeof(lirc_t));
 #else
@@ -446,7 +446,7 @@ int default_send(struct ir_remote *remote,struct ir_ncode *code)
 	else
 	{
 #if defined(SIM_SEND) && !defined(DAEMONIZE)
-		printf("space %lu\n",(__u32) remote->min_remaining_gap);
+		printf("space %u\n",(__u32) remote->min_remaining_gap);
 #endif
 	}
 	return(1);

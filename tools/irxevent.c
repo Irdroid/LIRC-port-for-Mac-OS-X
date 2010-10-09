@@ -216,9 +216,9 @@ static Window find_sub_sub_window(Window top,int *x, int *y)
 {
   Window base;
   Window *children,foo,target=0;
+  int rel_x, rel_y, new_x = 1, new_y = 1;
   unsigned int nc,
-    rel_x,rel_y,width,height,border,depth,
-    new_x=1,new_y=1,
+    width,height,border,depth,
     targetsize=1000000;
 
   base=top;
@@ -260,9 +260,9 @@ static Window find_sub_window(Window top,char *name,int *x, int *y)
 {
   Window base;
   Window *children,foo,target=0;
+  int rel_x, rel_y, new_x = 1, new_y = 1;
   unsigned int nc,
-    rel_x,rel_y,width,height,border,depth,
-    new_x=1,new_y=1,
+    width,height,border,depth,
     targetsize=1000000;
 
   base=find_window(top, name);
