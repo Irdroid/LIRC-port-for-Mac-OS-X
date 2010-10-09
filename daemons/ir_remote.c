@@ -40,7 +40,7 @@ extern struct hardware hw;
 static inline lirc_t time_left(struct timeval *current,struct timeval *last,
 			lirc_t gap)
 {
-	__u32 secs,diff;
+	unsigned long secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
 	
@@ -499,8 +499,8 @@ struct ir_ncode *get_code(struct ir_remote *remote,
 }
 
 __u64 set_code(struct ir_remote *remote,struct ir_ncode *found,
-			    ir_code toggle_bit_mask_state,int repeat_flag,
-			    lirc_t min_remaining_gap, lirc_t max_remaining_gap)
+		ir_code toggle_bit_mask_state,int repeat_flag,
+		lirc_t min_remaining_gap, lirc_t max_remaining_gap)
 {
 	__u64 code;
 	struct timeval current;
@@ -603,23 +603,12 @@ int write_message(char *buffer, size_t size, const char *remote_name,
 		  ir_code code, int reps)
 {
 	int len;
-	
-#ifdef __GLIBC__
-	/* It seems you can't print 64-bit longs on glibc */
-			
-	len=snprintf(buffer, size,"%08lx%08lx %02x %s%s %s\n",
-		     (__u32) (code>>32),
-		     (__u32) (code&0xFFFFFFFF),
-		     reps,
-		     button_name, button_suffix,
-		     remote_name);
-#else
+
 	len=snprintf(buffer, size, "%016llx %02x %s%s %s\n",
-		     code,
-		     reps,
+		     code, reps,
 		     button_name, button_suffix,
 		     remote_name);
-#endif
+
 	return len;
 }
 
@@ -725,7 +714,7 @@ int send_ir_ncode(struct ir_remote *remote,struct ir_ncode *code)
 	if(remote->last_code!=NULL)
 	{
 		struct timeval current;
-		__u32 usecs;
+		unsigned long usecs;
 		
 		gettimeofday(&current,NULL);
 		usecs = time_left(&current, &remote->last_send,

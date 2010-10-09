@@ -1498,18 +1498,9 @@ int send_remote(int fd,char *message,struct ir_remote *remote)
 	codes=remote->codes;
 	while(codes->name!=NULL)
 	{
-#ifdef __GLIBC__
-		/* It seems you can't print 64-bit longs on glibc */
-		
-		len=snprintf(buffer,PACKET_SIZE+1,"%08lx%08lx %s\n",
-			     (__u32) (codes->code>>32),
-			     (__u32) (codes->code&0xFFFFFFFF),
-			     codes->name);
-#else
 		len=snprintf(buffer,PACKET_SIZE,"%016llx %s\n",
 			     codes->code,
 			     codes->name);
-#endif
 		if(len>=PACKET_SIZE+1)
 		{
 			len=sprintf(buffer,"code_too_long\n");
@@ -1529,18 +1520,9 @@ int send_name(int fd,char *message,struct ir_ncode *code)
 	     write_socket_len(fd,message) &&
 	     write_socket_len(fd,protocol_string[P_SUCCESS]) && 
 	     write_socket_len(fd,protocol_string[P_DATA]))) return(0);
-#ifdef __GLIBC__
-	/* It seems you can't print 64-bit longs on glibc */
-	
-	len=snprintf(buffer,PACKET_SIZE+1,"1\n%08lx%08lx %s\n",
-		     (__u32) (code->code>>32),
-		     (__u32) (code->code&0xFFFFFFFF),
-		     code->name);
-#else
 	len=snprintf(buffer,PACKET_SIZE,"1\n%016llx %s\n",
 		     code->code,
 		     code->name);
-#endif
 	if(len>=PACKET_SIZE+1)
 	{
 		len=sprintf(buffer,"1\ncode_too_long\n");

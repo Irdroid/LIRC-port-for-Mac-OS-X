@@ -133,9 +133,9 @@ struct ir_remote
 	lirc_t pre_p,pre_s;         /* signal between pre_data and keycode */
 	lirc_t post_p, post_s;      /* signal between keycode and post_code */
 
-	lirc_t gap;                 /* time between signals in usecs */
-	lirc_t gap2;                /* time between signals in usecs */
-	lirc_t repeat_gap;          /* time between two repeat codes
+	__u32 gap;                 /* time between signals in usecs */
+	__u32 gap2;                /* time between signals in usecs */
+	__u32 repeat_gap;          /* time between two repeat codes
 				       if different from gap */
 	int toggle_bit;             /* obsolete */
 	ir_code toggle_bit_mask;    /* previously only one bit called

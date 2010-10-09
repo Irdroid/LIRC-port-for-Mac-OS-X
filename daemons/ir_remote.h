@@ -304,10 +304,10 @@ static inline lirc_t lower_limit(struct ir_remote *remote, lirc_t val)
 }
 
 /* only works if last <= current */
-static inline __u32 time_elapsed(struct timeval *last,
-				 struct timeval *current)
+static inline unsigned long time_elapsed(struct timeval *last,
+					 struct timeval *current)
 {
-	__u32 secs,diff;
+	unsigned long secs,diff;
 	
 	secs=current->tv_sec-last->tv_sec;
 	
