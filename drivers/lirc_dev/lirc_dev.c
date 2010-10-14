@@ -185,7 +185,7 @@ static int lirc_thread(void *irctl)
 
 	if (ir->t_notify != NULL)
 		complete(ir->t_notify);
-	
+
 #endif
 	dprintk(LOGHEAD "poll thread started\n", ir->d.name, ir->d.minor);
 
@@ -563,6 +563,12 @@ static int irctl_open(struct inode *inode, struct file *file)
 	}
 
 	ir = irctls[iminor(inode)];
+	if (!ir) {
+		retval = -ENODEV;
+		goto error;
+	}
+
+	file->private_data = ir;
 
 	dprintk(LOGHEAD "open called\n", ir->d.name, ir->d.minor);
 
@@ -607,8 +613,6 @@ static int irctl_open(struct inode *inode, struct file *file)
 	} else {
 		retval = -ENODEV;
 	}
-
-	file->private_data = ir;
 
  error:
 	if (ir)
