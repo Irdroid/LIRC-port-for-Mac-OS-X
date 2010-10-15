@@ -46,22 +46,7 @@
 #define BUF_CHUNK_SIZE	sizeof(lirc_t)
 #define BUF_SIZE	(128*BUF_CHUNK_SIZE)
 
-/*
- * The ITE8709 device seems to be the combination of IT8512 superIO chip and
- * a specific firmware running on the IT8512's embedded micro-controller.
- * In addition of the embedded micro-controller, the IT8512 chip contains a
- * CIR module and several other modules. A few modules are directly accessible
- * by the host CPU, but most of them are only accessible by the
- * micro-controller. The CIR module is only accessible by the micro-controller.
- * The battery-backed SRAM module is accessible by the host CPU and the
- * micro-controller. So one of the MC's firmware role is to act as a bridge
- * between the host CPU and the CIR module. The firmware implements a kind of
- * communication protocol using the SRAM module as a shared memory. The IT8512
- * specification is publicly available on ITE's web site, but the communication
- * protocol is not, so it was reverse-engineered.
- */
-
-/* ITE8709 Registers addresses and values (reverse-engineered) */
+/* IT85 Register addresses and values (reverse-engineered) */
 #define IT85_MODE		0x1a
 #define IT85_REG_ADR		0x1b
 #define IT85_REG_VAL		0x1c
@@ -69,42 +54,48 @@
 #define IT85_RFSR		0x1f  /* Receiver FIFO status register */
 #define IT85_FIFO_START		0x20
 
-#define IT85_MODE_READY		0X00
-#define IT85_MODE_WRITE		0X01
-#define IT85_MODE_READ		0X02
-#define IT85_IIR_RDAI		0x02  /* Receiver data available interrupt */
-#define IT85_IIR_RFOI		0x04  /* Receiver FIFO overrun interrupt */
-#define IT85_RFSR_MASK		0x3f  /* FIFO byte count mask */
+#define IT85_MODE_READY		0x00
+#define IT85_MODE_WRITE		0x01
+#define IT85_MODE_READ		0x02
 
 /*
  * IT8512 CIR-module registers addresses and values
- * (from IT8512 E/F specification v0.4.1)
+ * (from IT8512 N specification v0.7.8.4)
  */
-#define IT8512_REG_MSTCR	0x01  /* Master control register */
-#define IT8512_REG_IER		0x02  /* Interrupt enable register */
-#define IT8512_REG_CFR		0x04  /* Carrier frequency register */
-#define IT8512_REG_RCR		0x05  /* Receive control register */
-#define IT8512_REG_BDLR		0x08  /* Baud rate divisor low byte register */
-#define IT8512_REG_BDHR		0x09  /* Baud rate divisor high byte register */
+#define IT85_REG_DR		0x00  /* Data Read */
+#define IT85_REG_MSTCR		0x01  /* Master control register */
+#define IT85_REG_IER		0x02  /* Interrupt enable register */
+#define IT85_REG_IIR		0x03  /* Interrupt identification register */
+#define IT85_REG_RFSR		0x04  /* Receive FIFO status register */
+#define IT85_REG_RCR		0x05  /* Receive control register */
+#define IT85_REG_TCR		0x07
+#define IT85_REG_BDLR		0x09  /* Baud rate divisor low byte register */
+#define IT85_REG_BDHR		0x0a  /* Baud rate divisor high byte register */
+#define IT85_REG_CFR		0x0c  /* Carrier frequency register */
+#define IT85_REG_CSCRR		0x10
 
-#define IT8512_MSTCR_RESET	0x01  /* Reset registers to default value */
-#define IT8512_MSTCR_FIFOCLR	0x02  /* Clear FIFO */
-#define IT8512_MSTCR_FIFOTL_7	0x04  /* FIFO threshold level : 7 */
-#define IT8512_MSTCR_FIFOTL_25	0x0c  /* FIFO threshold level : 25 */
-#define IT8512_IER_RDAIE	0x02  /* Enable data interrupt request */
-#define IT8512_IER_RFOIE	0x04  /* Enable FIFO overrun interrupt req */
-#define IT8512_IER_IEC		0x80  /* Enable interrupt request */
-#define IT8512_CFR_CF_36KHZ	0x09  /* Carrier freq : low speed, 36kHz */
-#define IT8512_RCR_RXDCR_1	0x01  /* Demodulation carrier range : 1 */
-#define IT8512_RCR_RXACT	0x08  /* Receiver active */
-#define IT8512_RCR_RXEN		0x80  /* Receiver enable */
-#define IT8512_BDR_6		6     /* Baud rate divisor : 6 */
+#define IT85_IIR_RDAI		0x02  /* Receiver data available interrupt */
+#define IT85_IIR_RFOI		0x04  /* Receiver FIFO overrun interrupt */
+#define IT85_RFSR_MASK		0x3f  /* FIFO byte count mask */
+#define IT85_MSTCR_RESET	0x01  /* Reset registers to default value */
+#define IT85_MSTCR_FIFOCLR	0x02  /* Clear FIFO */
+#define IT85_MSTCR_FIFOTL_7	0x04  /* FIFO threshold level : 7 */
+#define IT85_MSTCR_FIFOTL_25	0x0c  /* FIFO threshold level : 25 */
+#define IT85_IER_RDAIE		0x02  /* Enable data interrupt request */
+#define IT85_IER_RFOIE		0x04  /* Enable FIFO overrun interrupt req */
+#define IT85_IER_IEC		0x80  /* Enable interrupt request */
+#define IT85_CFR_CF_36KHZ	0x09  /* Carrier freq : low speed, 36kHz */
+#define IT85_RCR_RXDCR_1	0x01  /* Demodulation carrier range : 1 */
+#define IT85_RCR_RXACT		0x08  /* Receiver active */
+#define IT85_RCR_RXEN		0x80  /* Receiver enable */
+#define IT85_BDR_1		0x01  /* Baud rate divisor : 1 */
+#define IT85_BDR_6		0x06  /* Baud rate divisor : 6 */
 
 /* Actual values used by this driver */
-#define CFG_FIFOTL	IT8512_MSTCR_FIFOTL_25
-#define CFG_CR_FREQ	IT8512_CFR_CF_36KHZ
-#define CFG_DCR		IT8512_RCR_RXDCR_1
-#define CFG_BDR		IT8512_BDR_6
+#define CFG_FIFOTL	IT85_MSTCR_FIFOTL_25
+#define CFG_CR_FREQ	IT85_CFR_CF_36KHZ
+#define CFG_DCR		IT85_RCR_RXDCR_1
+#define CFG_BDR		IT85_BDR_6
 #define CFG_TIMEOUT	100000 /* Rearm interrupt when a space is > 100 ms */
 
 static int debug;
@@ -124,6 +115,7 @@ struct it85_device {
 	char force_rearm;
 	char rearmed;
 	char device_busy;
+	char *pnp_id;
 };
 
 #define dprintk(fmt, args...)					\
@@ -178,16 +170,16 @@ static void it85_init_hardware(struct it85_device *dev)
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	it85_write_register(dev, IT8512_REG_BDHR, (CFG_BDR >> 8) & 0xff);
-	it85_write_register(dev, IT8512_REG_BDLR, CFG_BDR & 0xff);
-	it85_write_register(dev, IT8512_REG_CFR, CFG_CR_FREQ);
-	it85_write_register(dev, IT8512_REG_IER,
-			IT8512_IER_IEC | IT8512_IER_RFOIE | IT8512_IER_RDAIE);
-	it85_write_register(dev, IT8512_REG_RCR, CFG_DCR);
-	it85_write_register(dev, IT8512_REG_MSTCR,
-					CFG_FIFOTL | IT8512_MSTCR_FIFOCLR);
-	it85_write_register(dev, IT8512_REG_RCR,
-				IT8512_RCR_RXEN | IT8512_RCR_RXACT | CFG_DCR);
+	it85_write_register(dev, IT85_REG_BDHR, (CFG_BDR >> 8) & 0xff);
+	it85_write_register(dev, IT85_REG_BDLR, CFG_BDR & 0xff);
+	it85_write_register(dev, IT85_REG_CFR, CFG_CR_FREQ);
+	it85_write_register(dev, IT85_REG_IER,
+			IT85_IER_IEC | IT85_IER_RFOIE | IT85_IER_RDAIE);
+	it85_write_register(dev, IT85_REG_RCR, CFG_DCR);
+	it85_write_register(dev, IT85_REG_MSTCR,
+					CFG_FIFOTL | IT85_MSTCR_FIFOCLR);
+	it85_write_register(dev, IT85_REG_RCR,
+				IT85_RCR_RXEN | IT85_RCR_RXACT | CFG_DCR);
 
 	spin_lock_irq(&dev->hardware_lock);
 	dev->device_busy = 0;
@@ -204,9 +196,9 @@ static void it85_drop_hardware(struct it85_device *dev)
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	it85_write_register(dev, IT8512_REG_RCR, 0);
-	it85_write_register(dev, IT8512_REG_MSTCR,
-				IT8512_MSTCR_RESET | IT8512_MSTCR_FIFOCLR);
+	it85_write_register(dev, IT85_REG_RCR, 0);
+	it85_write_register(dev, IT85_REG_MSTCR,
+				IT85_MSTCR_RESET | IT85_MSTCR_FIFOCLR);
 
 	spin_lock_irq(&dev->hardware_lock);
 	dev->device_busy = 0;
@@ -360,12 +352,12 @@ static void it85_rearm_irq(unsigned long data)
 
 	if (dev->force_rearm || dev->acc_space > CFG_TIMEOUT) {
 		dprintk("rearming IRQ\n");
-		it85_write_register(dev, IT8512_REG_RCR,
-						IT8512_RCR_RXACT | CFG_DCR);
-		it85_write_register(dev, IT8512_REG_MSTCR,
-					CFG_FIFOTL | IT8512_MSTCR_FIFOCLR);
-		it85_write_register(dev, IT8512_REG_RCR,
-				IT8512_RCR_RXEN | IT8512_RCR_RXACT | CFG_DCR);
+		it85_write_register(dev, IT85_REG_RCR,
+						IT85_RCR_RXACT | CFG_DCR);
+		it85_write_register(dev, IT85_REG_MSTCR,
+					CFG_FIFOTL | IT85_MSTCR_FIFOCLR);
+		it85_write_register(dev, IT85_REG_RCR,
+				IT85_RCR_RXEN | IT85_RCR_RXACT | CFG_DCR);
 		if (!dev->force_rearm)
 			dev->rearmed = 1;
 		dev->force_rearm = 0;
@@ -437,6 +429,8 @@ static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 	it85_dev->force_rearm = 0;
 	it85_dev->rearmed = 0;
 	it85_dev->device_busy = 0;
+
+	it85_dev->pnp_id = &dev_id->id;
 
 	/* Initialize driver struct */
 	driver = &it85_dev->driver;
