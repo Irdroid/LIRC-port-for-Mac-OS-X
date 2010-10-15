@@ -36,6 +36,7 @@ extern int mplay_decode(struct ir_remote *remote,
                         lirc_t *max_remaining_gapp);
 
 extern int mplay_init(void);
+extern int mplay2_init(void);
 extern int mplay_deinit(void);
 extern char *mplay_rec(struct ir_remote *remotes);
 

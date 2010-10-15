@@ -660,6 +660,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	mplay)
 		hw_module="${hw_module} hw_mplay.o serial.o"
 		;;
+	mplay2)
+		hw_module="${hw_module} hw_mplay.o serial.o"
+		;;
 	pcmak*)
 		hw_module="${hw_module} hw_pcmak.o serial.o"
 		;;
@@ -1229,6 +1232,13 @@ if test "$driver" = "mplay"; then
   lirc_driver="none"
   hw_module="hw_mplay.o serial.o"
   HW_DEFAULT="hw_mplay"
+  lircd_conf="vlsystem/lircd.conf.mplay"
+fi
+
+if test "$driver" = "mplay2"; then
+  lirc_driver="none"
+  hw_module="hw_mplay.o serial.o"
+  HW_DEFAULT="hw_mplay2"
   lircd_conf="vlsystem/lircd.conf.mplay"
 fi
 

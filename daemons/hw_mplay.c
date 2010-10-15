@@ -133,6 +133,28 @@ struct hardware hw_mplay = {
 };
 
 /**************************************************************************
+ * Definition of the standard internal hardware interface
+ * use by lirc for the mplay v2 (Monueal Moncaso) devices
+ **************************************************************************/
+struct hardware hw_mplay2 = {
+        LIRC_IRTTY,             /* default device */
+        -1,                     /* fd */
+        LIRC_CAN_REC_LIRCCODE,  /* features */
+        0,                      /* send_mode */
+        LIRC_MODE_LIRCCODE,     /* rec_mode */
+        MPLAY_CODE_LENGTH,      /* code_length */
+        mplay2_init,            /* init_func */
+        mplay_deinit,           /* deinit_func */
+        NULL,                   /* send_func */
+        mplay_rec,              /* rec_func */
+        mplay_decode,           /* decode_func */
+        NULL,                   /* ioctl_func */
+        NULL,                   /* readdata */
+        "mplay2"
+};
+
+
+/**************************************************************************
  * Lock and initialize the serial port.
  * This function is called by the LIRC daemon when the first client
  * registers itself.
@@ -166,6 +188,106 @@ int mplay_init(void)
                 mplay_deinit();
         }
         return result;
+}
+
+int mplay2_init(void)
+{
+	struct termios portset;
+	signed int len;
+	char buf = 0x96;
+	char psResponse [11];
+
+	LOGPRINTF(1, "Entering mplay_init()");
+	/* Creation of a lock file for the port */
+	if (!tty_create_lock(hw.device)) {
+		logprintf(LOG_ERR, "Could not create the lock file");
+		LOGPRINTF(1, "Could not create the lock file");
+		return 0;
+	}
+
+	LOGPRINTF(0, "open serial port");
+	/* Try to open serial port (Monueal Moncaso 312 device doesn't like O_NONBLOCK */
+	if ((hw.fd = open(hw.device, O_RDWR | O_NOCTTY )) < 0) {
+		logprintf(LOG_ERR, "Could not open the serial port");
+		LOGPRINTF(1, "Could not open the serial port");
+		tty_delete_lock();
+		return 0;
+	}
+
+	/* Get serial device parameters */
+	if (tcgetattr(hw.fd, &portset) < 0) {
+		logprintf(LOG_ERR, "Could not get serial port attributes");
+		LOGPRINTF(1, "Could not get serial port attributes");
+		mplay_deinit();
+		return 0;
+	}
+
+	/* use own termios struct instead of using tty_reset , Moncaso doesn't like TCSAFLUSH */
+	portset.c_cflag &= ~PARENB;
+	portset.c_cflag &= ~CSTOPB;
+	portset.c_cflag &= ~CSIZE;
+	portset.c_cflag = B57600 | CS8;
+	portset.c_cflag |= (CLOCAL | CREAD);
+	portset.c_iflag |= (IXON | IXOFF | IXANY);
+	portset.c_oflag &= ~OPOST;
+	portset.c_lflag &= ~(ICANON | ECHOE| ECHO | ISIG);
+	portset.c_cc[VSTART] = 0x11;
+	portset.c_cc[VSTOP]  = 0x13;
+	portset.c_cc[VEOF]   = 0x20;
+	portset.c_cc[VMIN]   = 1;
+	portset.c_cc[VTIME]  = 3;
+
+	if (tcsetattr(hw.fd, TCSANOW, &portset) < 0) {
+		logprintf(LOG_ERR, "Error setting TCSANOW mode of serial device");
+		LOGPRINTF(1, "Error setting TCSANOW mode of serial device");
+		mplay_deinit();
+		return 0;
+	}
+
+	len = write(hw.fd, &buf, 1);
+	if (len < 0) {
+		LOGPRINTF(LOG_ERR,"couldn't write to device");
+		mplay_deinit();
+		return 0;
+	}
+
+	len = read(hw.fd, &psResponse,11);
+	if (len < 0) {
+		LOGPRINTF(1,"No data recieved during reading");
+		mplay_deinit();
+		return 0;
+	} else
+		LOGPRINTF(1,"read chars: %s", psResponse);
+
+	if (tcgetattr(hw.fd, &portset) < 0) {
+		logprintf(LOG_ERR, "Could not get serial port attributes");
+		LOGPRINTF(1, "Could not get serial port attributes");
+		mplay_deinit();
+		return 0;
+	}
+
+	portset.c_cflag &= ~PARENB;
+	portset.c_cflag &= ~CSTOPB;
+	portset.c_cflag &= ~CSIZE;
+	portset.c_cflag = B57600 | CS8;
+	portset.c_cflag |= (CLOCAL | CREAD);
+	portset.c_iflag |= (IXON | IXOFF | IXANY);
+	portset.c_oflag &= ~OPOST;
+	portset.c_lflag &= ~(ICANON | ECHOE| ECHO | ISIG);
+	portset.c_cc[VSTART] = 0x11;
+	portset.c_cc[VSTOP]  = 0x13;
+	portset.c_cc[VEOF]   = 0x1C;
+	portset.c_cc[VMIN]   = 1;
+	portset.c_cc[VTIME]  = 3;
+
+	if (tcsetattr(hw.fd, TCSANOW, &portset) < 0) {
+	logprintf(LOG_ERR, "Error setting TCSANOW mode of serial device");
+		LOGPRINTF(1, "Error setting TCSANOW mode of serial device");
+		mplay_deinit();
+		return 0;
+	}
+
+	return 1;
 }
 
 /**************************************************************************
