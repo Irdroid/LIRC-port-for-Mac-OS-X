@@ -1,7 +1,8 @@
 /*
- * LIRC driver for ITE8709 CIR port
+ * LIRC driver for ITE IT85xx CIR port (PNP ID ITE8709)
  *
  * Copyright (C) 2008 Grégory Lardière <spmf2004-lirc@yahoo.fr>
+ * Copyright (C) 2010 Yan-Min Lin <yanmin067@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,7 +41,7 @@
 #include "drivers/lirc_dev/lirc_dev.h"
 #endif
 
-#define LIRC_DRIVER_NAME "lirc_ite8709"
+#define LIRC_DRIVER_NAME "lirc_it85"
 
 #define BUF_CHUNK_SIZE	sizeof(lirc_t)
 #define BUF_SIZE	(128*BUF_CHUNK_SIZE)
@@ -61,19 +62,19 @@
  */
 
 /* ITE8709 Registers addresses and values (reverse-engineered) */
-#define ITE8709_MODE		0x1a
-#define ITE8709_REG_ADR		0x1b
-#define ITE8709_REG_VAL		0x1c
-#define ITE8709_IIR		0x1e  /* Interrupt identification register */
-#define ITE8709_RFSR		0x1f  /* Receiver FIFO status register */
-#define ITE8709_FIFO_START	0x20
+#define IT85_MODE		0x1a
+#define IT85_REG_ADR		0x1b
+#define IT85_REG_VAL		0x1c
+#define IT85_IIR		0x1e  /* Interrupt identification register */
+#define IT85_RFSR		0x1f  /* Receiver FIFO status register */
+#define IT85_FIFO_START		0x20
 
-#define ITE8709_MODE_READY	0X00
-#define ITE8709_MODE_WRITE	0X01
-#define ITE8709_MODE_READ	0X02
-#define ITE8709_IIR_RDAI	0x02  /* Receiver data available interrupt */
-#define ITE8709_IIR_RFOI	0x04  /* Receiver FIFO overrun interrupt */
-#define ITE8709_RFSR_MASK	0x3f  /* FIFO byte count mask */
+#define IT85_MODE_READY		0X00
+#define IT85_MODE_WRITE		0X01
+#define IT85_MODE_READ		0X02
+#define IT85_IIR_RDAI		0x02  /* Receiver data available interrupt */
+#define IT85_IIR_RFOI		0x04  /* Receiver FIFO overrun interrupt */
+#define IT85_RFSR_MASK		0x3f  /* FIFO byte count mask */
 
 /*
  * IT8512 CIR-module registers addresses and values
@@ -108,7 +109,7 @@
 
 static int debug;
 
-struct ite8709_device {
+struct it85_device {
 	int use_count;
 	int io;
 	int irq;
@@ -133,21 +134,21 @@ struct ite8709_device {
 	} while (0)
 
 
-static unsigned char ite8709_read(struct ite8709_device *dev,
+static unsigned char it85_read(struct it85_device *dev,
 					unsigned char port)
 {
 	outb(port, dev->io);
 	return inb(dev->io+1);
 }
 
-static void ite8709_write(struct ite8709_device *dev, unsigned char port,
+static void it85_write(struct it85_device *dev, unsigned char port,
 				unsigned char data)
 {
 	outb(port, dev->io);
 	outb(data, dev->io+1);
 }
 
-static void ite8709_wait_device(struct ite8709_device *dev)
+static void it85_wait_device(struct it85_device *dev)
 {
 	int i = 0;
 	/*
@@ -156,36 +157,36 @@ static void ite8709_wait_device(struct ite8709_device *dev)
 	 */
 	for (i = 0; i < 15000; i++) {
 		udelay(2);
-		if (ite8709_read(dev, ITE8709_MODE) == ITE8709_MODE_READY)
+		if (it85_read(dev, IT85_MODE) == IT85_MODE_READY)
 			break;
 	}
 }
 
-static void ite8709_write_register(struct ite8709_device *dev,
+static void it85_write_register(struct it85_device *dev,
 				unsigned char reg_adr, unsigned char reg_value)
 {
-	ite8709_wait_device(dev);
+	it85_wait_device(dev);
 
-	ite8709_write(dev, ITE8709_REG_VAL, reg_value);
-	ite8709_write(dev, ITE8709_REG_ADR, reg_adr);
-	ite8709_write(dev, ITE8709_MODE, ITE8709_MODE_WRITE);
+	it85_write(dev, IT85_REG_VAL, reg_value);
+	it85_write(dev, IT85_REG_ADR, reg_adr);
+	it85_write(dev, IT85_MODE, IT85_MODE_WRITE);
 }
 
-static void ite8709_init_hardware(struct ite8709_device *dev)
+static void it85_init_hardware(struct it85_device *dev)
 {
 	spin_lock_irq(&dev->hardware_lock);
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	ite8709_write_register(dev, IT8512_REG_BDHR, (CFG_BDR >> 8) & 0xff);
-	ite8709_write_register(dev, IT8512_REG_BDLR, CFG_BDR & 0xff);
-	ite8709_write_register(dev, IT8512_REG_CFR, CFG_CR_FREQ);
-	ite8709_write_register(dev, IT8512_REG_IER,
+	it85_write_register(dev, IT8512_REG_BDHR, (CFG_BDR >> 8) & 0xff);
+	it85_write_register(dev, IT8512_REG_BDLR, CFG_BDR & 0xff);
+	it85_write_register(dev, IT8512_REG_CFR, CFG_CR_FREQ);
+	it85_write_register(dev, IT8512_REG_IER,
 			IT8512_IER_IEC | IT8512_IER_RFOIE | IT8512_IER_RDAIE);
-	ite8709_write_register(dev, IT8512_REG_RCR, CFG_DCR);
-	ite8709_write_register(dev, IT8512_REG_MSTCR,
+	it85_write_register(dev, IT8512_REG_RCR, CFG_DCR);
+	it85_write_register(dev, IT8512_REG_MSTCR,
 					CFG_FIFOTL | IT8512_MSTCR_FIFOCLR);
-	ite8709_write_register(dev, IT8512_REG_RCR,
+	it85_write_register(dev, IT8512_REG_RCR,
 				IT8512_RCR_RXEN | IT8512_RCR_RXACT | CFG_DCR);
 
 	spin_lock_irq(&dev->hardware_lock);
@@ -195,7 +196,7 @@ static void ite8709_init_hardware(struct ite8709_device *dev)
 	tasklet_enable(&dev->tasklet);
 }
 
-static void ite8709_drop_hardware(struct ite8709_device *dev)
+static void it85_drop_hardware(struct it85_device *dev)
 {
 	tasklet_disable(&dev->tasklet);
 
@@ -203,8 +204,8 @@ static void ite8709_drop_hardware(struct ite8709_device *dev)
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	ite8709_write_register(dev, IT8512_REG_RCR, 0);
-	ite8709_write_register(dev, IT8512_REG_MSTCR,
+	it85_write_register(dev, IT8512_REG_RCR, 0);
+	it85_write_register(dev, IT8512_REG_MSTCR,
 				IT8512_MSTCR_RESET | IT8512_MSTCR_FIFOCLR);
 
 	spin_lock_irq(&dev->hardware_lock);
@@ -212,28 +213,28 @@ static void ite8709_drop_hardware(struct ite8709_device *dev)
 	spin_unlock_irq(&dev->hardware_lock);
 }
 
-static int ite8709_set_use_inc(void *data)
+static int it85_set_use_inc(void *data)
 {
-	struct ite8709_device *dev;
+	struct it85_device *dev;
 	MOD_INC_USE_COUNT;
 	dev = data;
 	if (dev->use_count == 0)
-		ite8709_init_hardware(dev);
+		it85_init_hardware(dev);
 	dev->use_count++;
 	return 0;
 }
 
-static void ite8709_set_use_dec(void *data)
+static void it85_set_use_dec(void *data)
 {
-	struct ite8709_device *dev;
+	struct it85_device *dev;
 	MOD_DEC_USE_COUNT;
 	dev = data;
 	dev->use_count--;
 	if (dev->use_count == 0)
-		ite8709_drop_hardware(dev);
+		it85_drop_hardware(dev);
 }
 
-static void ite8709_add_read_queue(struct ite8709_device *dev, int flag,
+static void it85_add_read_queue(struct it85_device *dev, int flag,
 					__u64 val)
 {
 	lirc_t value;
@@ -251,10 +252,10 @@ static void ite8709_add_read_queue(struct ite8709_device *dev, int flag,
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
-static irqreturn_t ite8709_interrupt(int irq, void *dev_id,
+static irqreturn_t it85_interrupt(int irq, void *dev_id,
 					struct pt_regs *regs)
 #else
-static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
+static irqreturn_t it85_interrupt(int irq, void *dev_id)
 #endif
 {
 	unsigned char data;
@@ -266,7 +267,7 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 	/* Bit duration in microseconds */
 	const unsigned long bit_duration = 1000000ul / (115200 / CFG_BDR);
 
-	struct ite8709_device *dev;
+	struct it85_device *dev;
 	dev = dev_id;
 
 	/*
@@ -280,19 +281,19 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 		return IRQ_RETVAL(IRQ_HANDLED);
 	}
 
-	iir = ite8709_read(dev, ITE8709_IIR);
+	iir = it85_read(dev, IT85_IIR);
 
 	switch (iir) {
-	case ITE8709_IIR_RFOI:
+	case IT85_IIR_RFOI:
 		dprintk("fifo overrun, scheduling forced rearm just in case\n");
 		dev->force_rearm = 1;
 		tasklet_schedule(&dev->tasklet);
 		spin_unlock(&dev->hardware_lock);
 		return IRQ_RETVAL(IRQ_HANDLED);
 
-	case ITE8709_IIR_RDAI:
-		rfsr = ite8709_read(dev, ITE8709_RFSR);
-		fifo = rfsr & ITE8709_RFSR_MASK;
+	case IT85_IIR_RDAI:
+		rfsr = it85_read(dev, IT85_RFSR);
+		fifo = rfsr & IT85_RFSR_MASK;
 		if (fifo > 32)
 			fifo = 32;
 		dprintk("iir: 0x%x rfsr: 0x%x fifo: %d\n", iir, rfsr, fifo);
@@ -305,21 +306,21 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 			dev->rearmed = 0;
 		}
 		for (i = 0; i < fifo; i++) {
-			data = ite8709_read(dev, i+ITE8709_FIFO_START);
+			data = it85_read(dev, i+IT85_FIFO_START);
 			data = ~data;
 			/* Loop through */
 			for (bit = 0; bit < 8; ++bit) {
 				if ((data >> bit) & 1) {
 					dev->acc_pulse += bit_duration;
 					if (dev->lastbit == 0) {
-						ite8709_add_read_queue(dev, 0,
+						it85_add_read_queue(dev, 0,
 							dev->acc_space);
 						dev->acc_space = 0;
 					}
 				} else {
 					dev->acc_space += bit_duration;
 					if (dev->lastbit == 1) {
-						ite8709_add_read_queue(dev, 1,
+						it85_add_read_queue(dev, 1,
 							dev->acc_pulse);
 						dev->acc_pulse = 0;
 					}
@@ -327,7 +328,7 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 				dev->lastbit = (data >> bit) & 1;
 			}
 		}
-		ite8709_write(dev, ITE8709_RFSR, 0);
+		it85_write(dev, IT85_RFSR, 0);
 
 		if (dev->acc_space > CFG_TIMEOUT) {
 			dprintk("scheduling rearm IRQ\n");
@@ -347,11 +348,11 @@ static irqreturn_t ite8709_interrupt(int irq, void *dev_id)
 	}
 }
 
-static void ite8709_rearm_irq(unsigned long data)
+static void it85_rearm_irq(unsigned long data)
 {
-	struct ite8709_device *dev;
+	struct it85_device *dev;
 	unsigned long flags;
-	dev = (struct ite8709_device *) data;
+	dev = (struct it85_device *) data;
 
 	spin_lock_irqsave(&dev->hardware_lock, flags);
 	dev->device_busy = 1;
@@ -359,11 +360,11 @@ static void ite8709_rearm_irq(unsigned long data)
 
 	if (dev->force_rearm || dev->acc_space > CFG_TIMEOUT) {
 		dprintk("rearming IRQ\n");
-		ite8709_write_register(dev, IT8512_REG_RCR,
+		it85_write_register(dev, IT8512_REG_RCR,
 						IT8512_RCR_RXACT | CFG_DCR);
-		ite8709_write_register(dev, IT8512_REG_MSTCR,
+		it85_write_register(dev, IT8512_REG_MSTCR,
 					CFG_FIFOTL | IT8512_MSTCR_FIFOCLR);
-		ite8709_write_register(dev, IT8512_REG_RCR,
+		it85_write_register(dev, IT8512_REG_RCR,
 				IT8512_RCR_RXEN | IT8512_RCR_RXACT | CFG_DCR);
 		if (!dev->force_rearm)
 			dev->rearmed = 1;
@@ -375,7 +376,7 @@ static void ite8709_rearm_irq(unsigned long data)
 	spin_unlock_irqrestore(&dev->hardware_lock, flags);
 }
 
-static int ite8709_cleanup(struct ite8709_device *dev, int stage, int errno,
+static int it85_cleanup(struct it85_device *dev, int stage, int errno,
 				char *msg)
 {
 	if (msg != NULL)
@@ -384,7 +385,7 @@ static int ite8709_cleanup(struct ite8709_device *dev, int stage, int errno,
 	switch (stage) {
 	case 6:
 		if (dev->use_count > 0)
-			ite8709_drop_hardware(dev);
+			it85_drop_hardware(dev);
 	case 5:
 		free_irq(dev->irq, dev);
 	case 4:
@@ -402,127 +403,127 @@ static int ite8709_cleanup(struct ite8709_device *dev, int stage, int errno,
 	return errno;
 }
 
-static int __devinit ite8709_pnp_probe(struct pnp_dev *dev,
+static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 					const struct pnp_device_id *dev_id)
 {
 	struct lirc_driver *driver;
-	struct ite8709_device *ite8709_dev;
+	struct it85_device *it85_dev;
 	int ret;
 
 	/* Check resources validity */
 	if (!pnp_irq_valid(dev, 0))
-		return ite8709_cleanup(NULL, 0, -ENODEV, "invalid IRQ");
+		return it85_cleanup(NULL, 0, -ENODEV, "invalid IRQ");
 	if (!pnp_port_valid(dev, 2))
-		return ite8709_cleanup(NULL, 0, -ENODEV, "invalid IO port");
+		return it85_cleanup(NULL, 0, -ENODEV, "invalid IO port");
 
 	/* Allocate memory for device struct */
-	ite8709_dev = kzalloc(sizeof(struct ite8709_device), GFP_KERNEL);
-	if (ite8709_dev == NULL)
-		return ite8709_cleanup(NULL, 0, -ENOMEM, "kzalloc failed");
-	pnp_set_drvdata(dev, ite8709_dev);
+	it85_dev = kzalloc(sizeof(struct it85_device), GFP_KERNEL);
+	if (it85_dev == NULL)
+		return it85_cleanup(NULL, 0, -ENOMEM, "kzalloc failed");
+	pnp_set_drvdata(dev, it85_dev);
 
 	/* Initialize device struct */
-	ite8709_dev->use_count = 0;
-	ite8709_dev->irq = pnp_irq(dev, 0);
-	ite8709_dev->io = pnp_port_start(dev, 2);
-	ite8709_dev->hardware_lock =
-		__SPIN_LOCK_UNLOCKED(ite8709_dev->hardware_lock);
-	ite8709_dev->acc_pulse = 0;
-	ite8709_dev->acc_space = 0;
-	ite8709_dev->lastbit = 0;
-	do_gettimeofday(&ite8709_dev->last_tv);
-	tasklet_init(&ite8709_dev->tasklet, ite8709_rearm_irq,
-							(long) ite8709_dev);
-	ite8709_dev->force_rearm = 0;
-	ite8709_dev->rearmed = 0;
-	ite8709_dev->device_busy = 0;
+	it85_dev->use_count = 0;
+	it85_dev->irq = pnp_irq(dev, 0);
+	it85_dev->io = pnp_port_start(dev, 2);
+	it85_dev->hardware_lock =
+		__SPIN_LOCK_UNLOCKED(it85_dev->hardware_lock);
+	it85_dev->acc_pulse = 0;
+	it85_dev->acc_space = 0;
+	it85_dev->lastbit = 0;
+	do_gettimeofday(&it85_dev->last_tv);
+	tasklet_init(&it85_dev->tasklet, it85_rearm_irq,
+							(long) it85_dev);
+	it85_dev->force_rearm = 0;
+	it85_dev->rearmed = 0;
+	it85_dev->device_busy = 0;
 
 	/* Initialize driver struct */
-	driver = &ite8709_dev->driver;
+	driver = &it85_dev->driver;
 	strcpy(driver->name, LIRC_DRIVER_NAME);
 	driver->minor = -1;
 	driver->code_length = sizeof(lirc_t) * 8;
 	driver->sample_rate = 0;
 	driver->features = LIRC_CAN_REC_MODE2;
-	driver->data = ite8709_dev;
+	driver->data = it85_dev;
 	driver->add_to_buf = NULL;
 #ifndef LIRC_REMOVE_DURING_EXPORT
 	driver->get_queue = NULL;
 #endif
-	driver->rbuf = &ite8709_dev->buffer;
-	driver->set_use_inc = ite8709_set_use_inc;
-	driver->set_use_dec = ite8709_set_use_dec;
+	driver->rbuf = &it85_dev->buffer;
+	driver->set_use_inc = it85_set_use_inc;
+	driver->set_use_dec = it85_set_use_dec;
 	driver->fops = NULL;
 	driver->dev = &dev->dev;
 	driver->owner = THIS_MODULE;
 
 	/* Initialize LIRC buffer */
 	if (lirc_buffer_init(driver->rbuf, BUF_CHUNK_SIZE, BUF_SIZE))
-		return ite8709_cleanup(ite8709_dev, 1, -ENOMEM,
+		return it85_cleanup(it85_dev, 1, -ENOMEM,
 				       "lirc_buffer_init() failed");
 
 	/* Register LIRC driver */
 	ret = lirc_register_driver(driver);
 	if (ret < 0)
-		return ite8709_cleanup(ite8709_dev, 2, ret,
+		return it85_cleanup(it85_dev, 2, ret,
 					"lirc_register_driver() failed");
 
 	/* Reserve I/O port access */
-	if (!request_region(ite8709_dev->io, 2, LIRC_DRIVER_NAME))
-		return ite8709_cleanup(ite8709_dev, 3, -EBUSY,
+	if (!request_region(it85_dev->io, 2, LIRC_DRIVER_NAME))
+		return it85_cleanup(it85_dev, 3, -EBUSY,
 						"i/o port already in use");
 
 	/* Reserve IRQ line */
-	ret = request_irq(ite8709_dev->irq, ite8709_interrupt, 0,
-					LIRC_DRIVER_NAME, ite8709_dev);
+	ret = request_irq(it85_dev->irq, it85_interrupt, 0,
+					LIRC_DRIVER_NAME, it85_dev);
 	if (ret < 0)
-		return ite8709_cleanup(ite8709_dev, 4, ret,
+		return it85_cleanup(it85_dev, 4, ret,
 						"IRQ already in use");
 
 	/* Initialize hardware */
-	ite8709_drop_hardware(ite8709_dev); /* Shutdown hw until first use */
+	it85_drop_hardware(it85_dev); /* Shutdown hw until first use */
 
 	printk(KERN_INFO LIRC_DRIVER_NAME ": device found : irq=%d io=0x%x\n",
-					ite8709_dev->irq, ite8709_dev->io);
+					it85_dev->irq, it85_dev->io);
 
 	return 0;
 }
 
-static void __devexit ite8709_pnp_remove(struct pnp_dev *dev)
+static void __devexit it85_pnp_remove(struct pnp_dev *dev)
 {
-	struct ite8709_device *ite8709_dev;
-	ite8709_dev = pnp_get_drvdata(dev);
+	struct it85_device *it85_dev;
+	it85_dev = pnp_get_drvdata(dev);
 
-	ite8709_cleanup(ite8709_dev, 6, 0, NULL);
+	it85_cleanup(it85_dev, 6, 0, NULL);
 
 	printk(KERN_INFO LIRC_DRIVER_NAME ": device removed\n");
 }
 
 #ifdef CONFIG_PM
-static int ite8709_pnp_suspend(struct pnp_dev *dev, pm_message_t state)
+static int it85_pnp_suspend(struct pnp_dev *dev, pm_message_t state)
 {
-	struct ite8709_device *ite8709_dev;
-	ite8709_dev = pnp_get_drvdata(dev);
+	struct it85_device *it85_dev;
+	it85_dev = pnp_get_drvdata(dev);
 
-	if (ite8709_dev->use_count > 0)
-		ite8709_drop_hardware(ite8709_dev);
+	if (it85_dev->use_count > 0)
+		it85_drop_hardware(it85_dev);
 
 	return 0;
 }
 
-static int ite8709_pnp_resume(struct pnp_dev *dev)
+static int it85_pnp_resume(struct pnp_dev *dev)
 {
-	struct ite8709_device *ite8709_dev;
-	ite8709_dev = pnp_get_drvdata(dev);
+	struct it85_device *it85_dev;
+	it85_dev = pnp_get_drvdata(dev);
 
-	if (ite8709_dev->use_count > 0)
-		ite8709_init_hardware(ite8709_dev);
+	if (it85_dev->use_count > 0)
+		it85_init_hardware(it85_dev);
 
 	return 0;
 }
 #else
-#define ite8709_pnp_suspend NULL
-#define ite8709_pnp_resume NULL
+#define it85_pnp_suspend NULL
+#define it85_pnp_resume NULL
 #endif
 
 static const struct pnp_device_id pnp_dev_table[] = {
@@ -532,27 +533,27 @@ static const struct pnp_device_id pnp_dev_table[] = {
 
 MODULE_DEVICE_TABLE(pnp, pnp_dev_table);
 
-static struct pnp_driver ite8709_pnp_driver = {
+static struct pnp_driver it85_pnp_driver = {
 	.name           = LIRC_DRIVER_NAME,
-	.probe          = ite8709_pnp_probe,
-	.remove         = __devexit_p(ite8709_pnp_remove),
-	.suspend        = ite8709_pnp_suspend,
-	.resume         = ite8709_pnp_resume,
+	.probe          = it85_pnp_probe,
+	.remove         = __devexit_p(it85_pnp_remove),
+	.suspend        = it85_pnp_suspend,
+	.resume         = it85_pnp_resume,
 	.id_table       = pnp_dev_table,
 };
 
 int init_module(void)
 {
-	return pnp_register_driver(&ite8709_pnp_driver);
+	return pnp_register_driver(&it85_pnp_driver);
 }
 
 void cleanup_module(void)
 {
-	pnp_unregister_driver(&ite8709_pnp_driver);
+	pnp_unregister_driver(&it85_pnp_driver);
 }
 
-MODULE_DESCRIPTION("LIRC driver for ITE8709 CIR port");
-MODULE_AUTHOR("Grégory Lardière");
+MODULE_DESCRIPTION("LIRC driver for ITE IT85xx CIR port (PNP ID ITE8709)");
+MODULE_AUTHOR("Grégory Lardière, Yan-Min Lin");
 MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
