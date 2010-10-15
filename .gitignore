@@ -14,6 +14,7 @@ drivers/*/Module.symvers
 drivers/*/modules.order
 drivers/*/*.o
 drivers/*/*.ko
+drivers/*/*.ko.unsigned
 drivers/*/*.mod.*
 
 contrib/hal/20-ircontrol-lirc.fdi
