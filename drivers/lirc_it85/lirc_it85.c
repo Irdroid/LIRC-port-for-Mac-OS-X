@@ -68,14 +68,20 @@
 #define IT85_REG_IIR		0x03  /* Interrupt identification register */
 #define IT85_REG_RFSR		0x04  /* Receive FIFO status register */
 #define IT85_REG_RCR		0x05  /* Receive control register */
+#define IT85_REG_TFSR		0x06
 #define IT85_REG_TCR		0x07
+#define IT85_REG_WCSSR		0x08
 #define IT85_REG_BDLR		0x09  /* Baud rate divisor low byte register */
 #define IT85_REG_BDHR		0x0a  /* Baud rate divisor high byte register */
+#define IT85_REG_SCK		0x0b
 #define IT85_REG_CFR		0x0c  /* Carrier frequency register */
+#define IT85_REG_WCL		0x0d
+#define IT85_REG_WCR		0x0e
+#define IT85_REG_WPS		0x0f
 #define IT85_REG_CSCRR		0x10
 
-#define IT85_IIR_RDAI		0x02  /* Receiver data available interrupt */
-#define IT85_IIR_RFOI		0x04  /* Receiver FIFO overrun interrupt */
+#define IT85_IIR_RDAI		0x02  /* Receive data available interrupt */
+#define IT85_IIR_RFOI		0x04  /* Receive FIFO overrun interrupt */
 #define IT85_RFSR_MASK		0x3f  /* FIFO byte count mask */
 #define IT85_MSTCR_RESET	0x01  /* Reset registers to default value */
 #define IT85_MSTCR_FIFOCLR	0x02  /* Clear FIFO */
@@ -86,8 +92,8 @@
 #define IT85_IER_IEC		0x80  /* Enable interrupt request */
 #define IT85_CFR_CF_36KHZ	0x09  /* Carrier freq : low speed, 36kHz */
 #define IT85_RCR_RXDCR_1	0x01  /* Demodulation carrier range : 1 */
-#define IT85_RCR_RXACT		0x08  /* Receiver active */
-#define IT85_RCR_RXEN		0x80  /* Receiver enable */
+#define IT85_RCR_RXACT		0x08  /* Receive active */
+#define IT85_RCR_RXEN		0x80  /* Receive enable */
 #define IT85_BDR_1		0x01  /* Baud rate divisor : 1 */
 #define IT85_BDR_6		0x06  /* Baud rate divisor : 6 */
 
@@ -126,42 +132,50 @@ struct it85_device {
 	} while (0)
 
 
-static unsigned char it85_read(struct it85_device *dev,
-					unsigned char port)
+static unsigned char it85_ec_read(struct it85_device *dev,
+					unsigned char offset)
 {
-	outb(port, dev->io);
-	return inb(dev->io+1);
-}
+	unsigned char val, tmp;
 
-static void it85_write(struct it85_device *dev, unsigned char port,
-				unsigned char data)
-{
-	outb(port, dev->io);
-	outb(data, dev->io+1);
-}
-
-static void it85_wait_device(struct it85_device *dev)
-{
-	int i = 0;
-	/*
-	 * loop until device tells it's ready to continue
-	 * iterations count is usually ~750 but can sometimes achieve 13000
-	 */
-	for (i = 0; i < 15000; i++) {
-		udelay(2);
-		if (it85_read(dev, IT85_MODE) == IT85_MODE_READY)
-			break;
+	if (offset < IT85_REG_WCSSR) {
+		val = inb(dev->io + offset);
+	} else if (offset < IT85_REG_CSCRR) {
+		tmp = it85_ec_read(dev, IT85_REG_TCR) | 0x80;
+		outb(tmp, dev->io + IT85_REG_TCR);
+		val = inb(dev->io + offset - IT85_REG_WCSSR);
+		tmp = it85_ec_read(dev, IT85_REG_TCR) & 0x7f;
+		outb(tmp, dev->io + IT85_REG_TCR);
+	} else {
+		tmp = it85_ec_read(dev, IT85_REG_TCR);
+		outb(tmp, dev->io + IT85_REG_TCR);
+		outb(tmp, dev->io + IT85_REG_TCR);
+		val = inb(dev->io + offset - IT85_REG_CSCRR);
+		outb(tmp & 0x7f, dev->io + IT85_REG_TCR);
 	}
+
+	return val;
 }
 
-static void it85_write_register(struct it85_device *dev,
-				unsigned char reg_adr, unsigned char reg_value)
+static void it85_ec_write(struct it85_device *dev, unsigned char offset,
+			  unsigned char data)
 {
-	it85_wait_device(dev);
+	unsigned char tmp;
 
-	it85_write(dev, IT85_REG_VAL, reg_value);
-	it85_write(dev, IT85_REG_ADR, reg_adr);
-	it85_write(dev, IT85_MODE, IT85_MODE_WRITE);
+	if (offset < IT85_REG_WCSSR) {
+		outb(data, dev->io + offset);
+	} else if (offset < IT85_REG_CSCRR) {
+		tmp = it85_ec_read(dev, IT85_REG_TCR) | 0x80;
+		outb(tmp, dev->io + IT85_REG_TCR);
+		outb(data, dev->io + offset - IT85_REG_WCSSR);
+		tmp = it85_ec_read(dev, IT85_REG_TCR) & 0x7f;
+		outb(tmp, dev->io + IT85_REG_TCR);
+	} else {
+		tmp = it85_ec_read(dev, IT85_REG_TCR);
+		outb(tmp, dev->io + IT85_REG_TCR);
+		outb(tmp, dev->io + IT85_REG_TCR);
+		outb(data, dev->io + offset - IT85_REG_CSCRR);
+		outb(tmp & 0x7f, dev->io + IT85_REG_TCR);
+	}
 }
 
 static void it85_init_hardware(struct it85_device *dev)
@@ -170,15 +184,15 @@ static void it85_init_hardware(struct it85_device *dev)
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	it85_write_register(dev, IT85_REG_BDHR, (CFG_BDR >> 8) & 0xff);
-	it85_write_register(dev, IT85_REG_BDLR, CFG_BDR & 0xff);
-	it85_write_register(dev, IT85_REG_CFR, CFG_CR_FREQ);
-	it85_write_register(dev, IT85_REG_IER,
+	it85_ec_write(dev, IT85_REG_BDHR, (CFG_BDR >> 8) & 0xff);
+	it85_ec_write(dev, IT85_REG_BDLR, CFG_BDR & 0xff);
+	it85_ec_write(dev, IT85_REG_CFR, CFG_CR_FREQ);
+	it85_ec_write(dev, IT85_REG_IER,
 			IT85_IER_IEC | IT85_IER_RFOIE | IT85_IER_RDAIE);
-	it85_write_register(dev, IT85_REG_RCR, CFG_DCR);
-	it85_write_register(dev, IT85_REG_MSTCR,
+	it85_ec_write(dev, IT85_REG_RCR, CFG_DCR);
+	it85_ec_write(dev, IT85_REG_MSTCR,
 					CFG_FIFOTL | IT85_MSTCR_FIFOCLR);
-	it85_write_register(dev, IT85_REG_RCR,
+	it85_ec_write(dev, IT85_REG_RCR,
 				IT85_RCR_RXEN | IT85_RCR_RXACT | CFG_DCR);
 
 	spin_lock_irq(&dev->hardware_lock);
@@ -196,8 +210,8 @@ static void it85_drop_hardware(struct it85_device *dev)
 	dev->device_busy = 1;
 	spin_unlock_irq(&dev->hardware_lock);
 
-	it85_write_register(dev, IT85_REG_RCR, 0);
-	it85_write_register(dev, IT85_REG_MSTCR,
+	it85_ec_write(dev, IT85_REG_RCR, 0);
+	it85_ec_write(dev, IT85_REG_MSTCR,
 				IT85_MSTCR_RESET | IT85_MSTCR_FIFOCLR);
 
 	spin_lock_irq(&dev->hardware_lock);
@@ -243,6 +257,29 @@ static void it85_add_read_queue(struct it85_device *dev, int flag,
 	}
 }
 
+#define pr_reg(text, reg) \
+	printk(KERN_INFO KBUILD_MODNAME ": " text, reg, it85_ec_read(dev, reg))
+
+void it85_print_regs(struct it85_device *dev)
+{
+	pr_reg("DR[%02x]    = %x\n", IT85_REG_DR);
+	pr_reg("MSTCR[%02x] = %x\n", IT85_REG_MSTCR);
+	pr_reg("IER[%02x]   = %x\n", IT85_REG_IER);
+	pr_reg("IIR[%02x]   = %x\n", IT85_REG_IIR);
+	pr_reg("RFSR[%02x]  = %x\n", IT85_REG_RFSR);
+	pr_reg("RCR[%02x]   = %x\n", IT85_REG_RCR);
+	pr_reg("TFSR[%02x]  = %x\n", IT85_REG_TFSR);
+	pr_reg("TCR[%02x]   = %x\n", IT85_REG_TCR);
+	pr_reg("WCSSR[%02x] = %x\n", IT85_REG_WCSSR);
+	pr_reg("BDLR[%02x]  = %x\n", IT85_REG_BDLR);
+	pr_reg("BDHR[%02x]  = %x\n", IT85_REG_BDHR);
+	pr_reg("SCK[%02x]   = %x\n", IT85_REG_SCK);
+	pr_reg("CFR[%02x]   = %x\n", IT85_REG_CFR);
+	pr_reg("WCL[%02x]   = %x\n", IT85_REG_WCL);
+	pr_reg("WCR[%02x]   = %x\n", IT85_REG_WCR);
+	pr_reg("WPS[%02x]   = %x\n", IT85_REG_WPS);
+}
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static irqreturn_t it85_interrupt(int irq, void *dev_id,
 					struct pt_regs *regs)
@@ -273,7 +310,7 @@ static irqreturn_t it85_interrupt(int irq, void *dev_id)
 		return IRQ_RETVAL(IRQ_HANDLED);
 	}
 
-	iir = it85_read(dev, IT85_IIR);
+	iir = it85_ec_read(dev, IT85_REG_IIR);
 
 	switch (iir) {
 	case IT85_IIR_RFOI:
@@ -284,7 +321,7 @@ static irqreturn_t it85_interrupt(int irq, void *dev_id)
 		return IRQ_RETVAL(IRQ_HANDLED);
 
 	case IT85_IIR_RDAI:
-		rfsr = it85_read(dev, IT85_RFSR);
+		rfsr = it85_ec_read(dev, IT85_REG_RFSR);
 		fifo = rfsr & IT85_RFSR_MASK;
 		if (fifo > 32)
 			fifo = 32;
@@ -298,7 +335,8 @@ static irqreturn_t it85_interrupt(int irq, void *dev_id)
 			dev->rearmed = 0;
 		}
 		for (i = 0; i < fifo; i++) {
-			data = it85_read(dev, i+IT85_FIFO_START);
+			data = it85_ec_read(dev, IT85_REG_DR);
+			dprintk("%x", data);
 			data = ~data;
 			/* Loop through */
 			for (bit = 0; bit < 8; ++bit) {
@@ -320,7 +358,8 @@ static irqreturn_t it85_interrupt(int irq, void *dev_id)
 				dev->lastbit = (data >> bit) & 1;
 			}
 		}
-		it85_write(dev, IT85_RFSR, 0);
+		dprintk("\n");
+		it85_ec_write(dev, IT85_REG_RFSR, 0);
 
 		if (dev->acc_space > CFG_TIMEOUT) {
 			dprintk("scheduling rearm IRQ\n");
@@ -352,11 +391,11 @@ static void it85_rearm_irq(unsigned long data)
 
 	if (dev->force_rearm || dev->acc_space > CFG_TIMEOUT) {
 		dprintk("rearming IRQ\n");
-		it85_write_register(dev, IT85_REG_RCR,
+		it85_ec_write(dev, IT85_REG_RCR,
 						IT85_RCR_RXACT | CFG_DCR);
-		it85_write_register(dev, IT85_REG_MSTCR,
+		it85_ec_write(dev, IT85_REG_MSTCR,
 					CFG_FIFOTL | IT85_MSTCR_FIFOCLR);
-		it85_write_register(dev, IT85_REG_RCR,
+		it85_ec_write(dev, IT85_REG_RCR,
 				IT85_RCR_RXEN | IT85_RCR_RXACT | CFG_DCR);
 		if (!dev->force_rearm)
 			dev->rearmed = 1;
@@ -405,7 +444,7 @@ static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 	/* Check resources validity */
 	if (!pnp_irq_valid(dev, 0))
 		return it85_cleanup(NULL, 0, -ENODEV, "invalid IRQ");
-	if (!pnp_port_valid(dev, 2))
+	if (!pnp_port_valid(dev, 0))
 		return it85_cleanup(NULL, 0, -ENODEV, "invalid IO port");
 
 	/* Allocate memory for device struct */
@@ -417,7 +456,7 @@ static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 	/* Initialize device struct */
 	it85_dev->use_count = 0;
 	it85_dev->irq = pnp_irq(dev, 0);
-	it85_dev->io = pnp_port_start(dev, 2);
+	it85_dev->io = pnp_port_start(dev, 0);
 	it85_dev->hardware_lock =
 		__SPIN_LOCK_UNLOCKED(it85_dev->hardware_lock);
 	it85_dev->acc_pulse = 0;
@@ -473,6 +512,9 @@ static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 	if (ret < 0)
 		return it85_cleanup(it85_dev, 4, ret,
 						"IRQ already in use");
+
+	if (debug)
+		it85_print_regs(it85_dev);
 
 	/* Initialize hardware */
 	it85_drop_hardware(it85_dev); /* Shutdown hw until first use */
