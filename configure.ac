@@ -169,8 +169,8 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_igorplugusb) \
 	(lirc_dev lirc_ttusbir) \
 	(lirc_dev lirc_imon) \
+	(lirc_dev lirc_it85) \
 	(lirc_dev lirc_it87) \
-	(lirc_dev lirc_ite8709) \
 	(lirc_dev lirc_mceusb) \
 	(lirc_dev lirc_parallel) \
 	(lirc_dev lirc_sasem) \
@@ -444,7 +444,7 @@ AC_ARG_WITH(driver,
                           igorplugusb, iguanaIR, imon, imon_24g,
                           imon_knob, imon_lcd, imon_pad, imon_rsc,
                           irdeo, irdeo_remote, irlink, irman, irreal,
-                          it87, ite8709, knc_one, kworld,
+                          it85, it87, knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
                           lptX, macmini, mceusb, mediafocusI,
@@ -614,9 +614,9 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		;;
 	lirc_dev-lirc_imon)
 		;;
-	lirc_dev-lirc_it87)
+	lirc_dev-lirc_it85)
 		;;
-	lirc_dev-lirc_ite8709)
+	lirc_dev-lirc_it87)
 		;;
 	lirc_dev-lirc_mceusb)
 		;;
@@ -1110,12 +1110,12 @@ if test "$driver" = "irreal"; then
   HW_DEFAULT="hw_irreal"
 fi
 
-if test "$driver" = "it87"; then
-  lirc_driver="lirc_dev lirc_it87"
+if test "$driver" = "it85"; then
+  lirc_driver="lirc_dev lirc_it85"
 fi
 
-if test "$driver" = "ite8709"; then
-  lirc_driver="lirc_dev lirc_ite8709"
+if test "$driver" = "it87"; then
+  lirc_driver="lirc_dev lirc_it87"
 fi
 
 if test "$driver" = "knc_one"; then
@@ -1549,8 +1549,8 @@ elif test "$lirc_driver" = "all"; then
 	lirc_i2c \
 	lirc_igorplugusb \
 	lirc_imon \
+	lirc_it85 \
 	lirc_it87 \
-	lirc_ite8709 \
 	lirc_mceusb \
 	lirc_parallel \
 	lirc_sasem \
@@ -1826,8 +1826,8 @@ AC_CONFIG_FILES([
   drivers/lirc_igorplugusb/Makefile
   drivers/lirc_ttusbir/Makefile
   drivers/lirc_imon/Makefile
+  drivers/lirc_it85/Makefile
   drivers/lirc_it87/Makefile
-  drivers/lirc_ite8709/Makefile
   drivers/lirc_mceusb/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_sasem/Makefile
