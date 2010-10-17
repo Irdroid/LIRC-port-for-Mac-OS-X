@@ -242,8 +242,8 @@ param_type: \
 	imon_knob \
 	imon_pad \
 	imon_rsc \
+	it85 \
 	it87 \
-	ite8709 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
@@ -319,8 +319,8 @@ default_param: \
 	imon_knob \
 	imon_pad \
 	imon_rsc \
+	it85 \
 	it87 \
-	ite8709 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
@@ -428,8 +428,8 @@ remote: \
 	imon \
 	irdeo \
 	irdeo_remote \
+	it85 \
 	it87 \
-	ite8709 \
 	mceusb \
 	nslu2 \
 	packard_bell \
