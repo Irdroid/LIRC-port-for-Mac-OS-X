@@ -249,6 +249,12 @@ int lirc_register_driver(struct lirc_driver *d)
 		goto out;
 	}
 
+	if (!d->dev) {
+		printk(KERN_ERR "%s: dev pointer not filled in!\n", __func__);
+		err = -EINVAL;
+		goto out;
+	}
+
 	if (MAX_IRCTL_DEVICES <= d->minor) {
 		printk(KERN_ERR "lirc_dev: lirc_register_driver: "
 		       "\"minor\" must be between 0 and %d (%d)!\n",
@@ -344,6 +350,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	}
 	lirc_irctl_init(ir);
 	irctls[minor] = ir;
+	d->minor = minor;
 
 	if (d->sample_rate) {
 		ir->jiffies_to_wait = HZ / d->sample_rate;
@@ -378,7 +385,6 @@ int lirc_register_driver(struct lirc_driver *d)
 		d->features = LIRC_CAN_REC_LIRCCODE;
 
 	ir->d = *d;
-	ir->d.minor = minor;
 
 #if defined(LIRC_HAVE_DEVFS_24)
 	sprintf(name, DEV_LIRC "/%d", ir->d.minor);
@@ -626,6 +632,11 @@ static int irctl_close(struct inode *inode, struct file *file)
 {
 	struct irctl *ir = irctls[iminor(inode)];
 
+	if (!ir) {
+		printk(KERN_ERR "%s: called with invalid irctl\n", __func__);
+		return -EINVAL;
+	}
+
 	dprintk(LOGHEAD "close called\n", ir->d.name, ir->d.minor);
 
 	/* if the driver has a close function use it instead */
@@ -635,7 +646,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 	if (mutex_lock_interruptible(&lirc_dev_lock))
 		return -ERESTARTSYS;
 
-	--ir->open;
+	ir->open--;
 	if (ir->attached) {
 		ir->d.set_use_dec(ir->d.data);
 		module_put(ir->d.owner);
@@ -654,6 +665,11 @@ static unsigned int irctl_poll(struct file *file, poll_table *wait)
 {
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 	unsigned int ret;
+
+	if (!ir) {
+		printk(KERN_ERR "%s: called with invalid irctl\n", __func__);
+		return POLLERR;
+	}
 
 	dprintk(LOGHEAD "poll called\n", ir->d.name, ir->d.minor);
 
@@ -808,12 +824,21 @@ static ssize_t irctl_read(struct file *file,
 			  loff_t *ppos)
 {
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
-	unsigned char buf[ir->chunk_size];
+	unsigned char *buf;
 	int ret = 0, written = 0;
 	int unlock = 1;
 	DECLARE_WAITQUEUE(wait, current);
 
+	if (!ir) {
+		printk(KERN_ERR "%s: called with invalid irctl\n", __func__);
+		return -ENODEV;
+	}
+
 	dprintk(LOGHEAD "read called\n", ir->d.name, ir->d.minor);
+
+	buf = kzalloc(ir->chunk_size, GFP_KERNEL);
+	if (!buf)
+		return -ENOMEM;
 
 	/* if the driver has a specific read function use it instead */
 	if (ir->d.fops && ir->d.fops->read)
@@ -891,6 +916,8 @@ static ssize_t irctl_read(struct file *file,
 	dprintk(LOGHEAD "read result = %s (%d)\n",
 		ir->d.name, ir->d.minor, ret ? "-EFAULT" : "OK", ret);
 
+	kfree(buf);
+
 	return ret ? ret : written;
 }
 
@@ -915,6 +942,11 @@ static ssize_t irctl_write(struct file *file, const char *buffer,
 			   size_t length, loff_t *ppos)
 {
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
+
+	if (!ir) {
+		printk(KERN_ERR "%s: called with invalid irctl\n", __func__);
+		return -ENODEV;
+	}
 
 	dprintk(LOGHEAD "write called\n", ir->d.name, ir->d.minor);
 
