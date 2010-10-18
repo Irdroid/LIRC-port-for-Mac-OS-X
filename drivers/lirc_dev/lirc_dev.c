@@ -112,7 +112,7 @@ struct irctl {
 static DEFINE_MUTEX(lirc_dev_lock);
 
 static struct irctl *irctls[MAX_IRCTL_DEVICES];
-static struct file_operations fops;
+static struct file_operations lirc_dev_fops;
 
 /* Only used for sysfs but defined to void otherwise */
 static lirc_class_t *lirc_class;
@@ -120,7 +120,7 @@ static lirc_class_t *lirc_class;
 /*  helper function
  *  initializes the irctl structure
  */
-static void init_irctl(struct irctl *ir)
+static void lirc_irctl_init(struct irctl *ir)
 {
 	mutex_init(&ir->buffer_lock);
 	ir->d.minor = NOPLUG;
@@ -129,7 +129,7 @@ static void init_irctl(struct irctl *ir)
 #endif
 }
 
-static void cleanup(struct irctl *ir)
+static void lirc_irctl_cleanup(struct irctl *ir)
 {
 	dprintk(LOGHEAD "cleaning up\n", ir->d.name, ir->d.minor);
 
@@ -144,7 +144,7 @@ static void cleanup(struct irctl *ir)
  *  reads key codes from driver and puts them into buffer
  *  returns 0 on success
  */
-static int add_to_buf(struct irctl *ir)
+static int lirc_add_to_buf(struct irctl *ir)
 {
 	if (ir->d.add_to_buf) {
 		int res = -ENODATA;
@@ -206,7 +206,7 @@ static int lirc_thread(void *irctl)
 			if (kthread_should_stop())
 #endif
 				break;
-			if (!add_to_buf(ir))
+			if (!lirc_add_to_buf(ir))
 				wake_up_interruptible(&ir->buf->wait_poll);
 		} else {
 			set_current_state(TASK_INTERRUPTIBLE);
@@ -342,7 +342,7 @@ int lirc_register_driver(struct lirc_driver *d)
 		err = -ENOMEM;
 		goto out_lock;
 	}
-	init_irctl(ir);
+	lirc_irctl_init(ir);
 	irctls[minor] = ir;
 
 	if (d->sample_rate) {
@@ -385,7 +385,7 @@ int lirc_register_driver(struct lirc_driver *d)
 	ir->devfs_handle = devfs_register(NULL, name, DEVFS_FL_DEFAULT,
 					  IRCTL_DEV_MAJOR, ir->d.minor,
 					  S_IFCHR | S_IRUSR | S_IWUSR,
-					  &fops, NULL);
+					  &lirc_dev_fops, NULL);
 #elif defined(LIRC_HAVE_DEVFS_26)
 	devfs_mk_cdev(MKDEV(IRCTL_DEV_MAJOR, ir->d.minor),
 			S_IFCHR|S_IRUSR|S_IWUSR,
@@ -523,7 +523,7 @@ int lirc_unregister_driver(int minor)
 		module_put(ir->d.owner);
 		mutex_unlock(&ir->buffer_lock);
 	} else {
-		cleanup(ir);
+		lirc_irctl_cleanup(ir);
 		irctls[minor] = NULL;
 		kfree(ir);
 	}
@@ -567,8 +567,6 @@ static int irctl_open(struct inode *inode, struct file *file)
 		retval = -ENODEV;
 		goto error;
 	}
-
-	file->private_data = ir;
 
 	dprintk(LOGHEAD "open called\n", ir->d.name, ir->d.minor);
 
@@ -642,7 +640,7 @@ static int irctl_close(struct inode *inode, struct file *file)
 		ir->d.set_use_dec(ir->d.data);
 		module_put(ir->d.owner);
 	} else {
-		cleanup(ir);
+		lirc_irctl_cleanup(ir);
 		irctls[ir->d.minor] = NULL;
 		kfree(ir);
 	}
@@ -696,7 +694,7 @@ static long irctl_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
 	struct irctl *ir = irctls[iminor(inode)];
 #else
-	struct irctl *ir = file->private_data;
+	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 #endif
 
 	if (!ir) {
@@ -931,7 +929,7 @@ static ssize_t irctl_write(struct file *file, const char *buffer,
 }
 
 
-static struct file_operations fops = {
+static struct file_operations lirc_dev_fops = {
 	.owner		= THIS_MODULE,
 	.read		= irctl_read,
 	.write		= irctl_write,
@@ -950,7 +948,7 @@ static struct file_operations fops = {
 
 static int __init lirc_dev_init(void)
 {
-	if (register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &fops)) {
+	if (register_chrdev(IRCTL_DEV_MAJOR, IRCTL_DEV_NAME, &lirc_dev_fops)) {
 		printk(KERN_ERR "lirc_dev: register_chrdev failed\n");
 		goto out;
 	}
