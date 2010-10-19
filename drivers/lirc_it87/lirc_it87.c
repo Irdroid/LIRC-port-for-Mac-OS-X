@@ -736,14 +736,6 @@ static void terminate_send(unsigned long len)
 }
 
 
-/* This mostly a dummy function, its sole purpose is to fill in dev right now */
-static int it87_probe(struct pnp_dev *pdev, const struct pnp_device_id *dev_id)
-{
-	driver.dev = &pdev->dev;
-	return 0;
-}
-
-
 static int init_hardware(void)
 {
 	unsigned long flags;
@@ -977,17 +969,15 @@ static int init_lirc_it87(void)
 }
 
 
-static int __init lirc_it87_init(void)
+static int it87_probe(struct pnp_dev *pdev, const struct pnp_device_id *dev_id)
 {
 	int retval;
 
-	retval = pnp_register_driver(&it87_pnp_driver);
-	if (retval < 0)
-		return retval;
+	driver.dev = &pdev->dev;
 
 	retval = init_chrdev();
 	if (retval < 0)
-		goto init_chrdev_failed;
+		return retval;
 
 	retval = init_lirc_it87();
 	if (retval)
@@ -998,9 +988,13 @@ static int __init lirc_it87_init(void)
  init_lirc_it87_failed:
 	drop_chrdev();
 
- init_chrdev_failed:
-	pnp_unregister_driver(&it87_pnp_driver);
 	return retval;
+}
+
+
+static int __init lirc_it87_init(void)
+{
+	return pnp_register_driver(&it87_pnp_driver);
 }
 
 
