@@ -736,6 +736,14 @@ static void terminate_send(unsigned long len)
 }
 
 
+/* This mostly a dummy function, its sole purpose is to fill in dev right now */
+static int it87_probe(struct pnp_dev *pdev, const struct pnp_device_id *dev_id)
+{
+	driver.dev = &pdev->dev;
+	return 0;
+}
+
+
 static int init_hardware(void)
 {
 	unsigned long flags;
@@ -1017,6 +1025,7 @@ MODULE_DEVICE_TABLE(pnp, pnp_dev_table);
 static struct pnp_driver it87_pnp_driver = {
 	.name           = LIRC_DRIVER_NAME,
 	.id_table       = pnp_dev_table,
+	.probe		= it87_probe,
 };
 
 module_init(lirc_it87_init);
