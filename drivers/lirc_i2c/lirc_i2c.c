@@ -354,7 +354,6 @@ static int set_use_inc(void *data)
 		return ret;
 #endif
 
-	MOD_INC_USE_COUNT;
 	return 0;
 }
 
@@ -365,7 +364,6 @@ static void set_use_dec(void *data)
 	dprintk("%s called\n", __func__);
 
 	i2c_release_client(&ir->c);
-	MOD_DEC_USE_COUNT;
 }
 
 static struct lirc_driver lirc_template = {
@@ -782,6 +780,5 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_init(lirc_i2c_init);
 module_exit(lirc_i2c_exit);
-EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */

@@ -61,7 +61,7 @@ MODULE_LICENSE("GPL");
 /* function declarations */
 static int probe(struct usb_interface *intf, const struct usb_device_id *id);
 static void disconnect(struct usb_interface *intf);
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void urb_complete(struct urb *urb, struct pt_regs *pt_regs);
 #else
 static void urb_complete(struct urb *urb);
@@ -187,7 +187,7 @@ const unsigned char map_table[] =
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void urb_complete(struct urb *urb, struct pt_regs *pt_regs)
 #else
 static void urb_complete(struct urb *urb)

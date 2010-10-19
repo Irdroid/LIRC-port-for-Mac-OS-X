@@ -184,7 +184,6 @@ static int lirc_open(struct inode *inode, struct file *file)
 		spin_unlock(&dev_lock);
 		return -EBUSY;
 	}
-	MOD_INC_USE_COUNT;
 	spin_unlock(&dev_lock);
 	return 0;
 }
@@ -192,7 +191,6 @@ static int lirc_open(struct inode *inode, struct file *file)
 
 static int lirc_close(struct inode *inode, struct file *file)
 {
-	MOD_DEC_USE_COUNT;
 	return 0;
 }
 
@@ -376,6 +374,7 @@ static struct file_operations lirc_fops = {
 #else
 	.unlocked_ioctl	= lirc_ioctl,
 #endif
+	.compat_ioctl	= lirc_ioctl,
 	.open		= lirc_open,
 	.release	= lirc_close,
 };
@@ -1064,4 +1063,3 @@ MODULE_PARM_DESC(it87_freq,
 MODULE_PARM_DESC(it87_freq,
     "Carrier demodulator frequency (kHz), (default: 38)");
 #endif
-EXPORT_NO_SYMBOLS;

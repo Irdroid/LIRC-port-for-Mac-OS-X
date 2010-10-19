@@ -26,11 +26,6 @@
 #endif
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
-#error "**********************************************************"
-#error " Sorry, this driver needs kernel version 2.2.18 or higher "
-#error "**********************************************************"
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
@@ -51,9 +46,6 @@
 #include <linux/uaccess.h>
 #include <linux/errno.h>
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#include <linux/wrapper.h>
-#endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
@@ -61,7 +53,7 @@
 #endif
 
 /* SysFS header */
-#if defined(LIRC_HAVE_SYSFS)
+#ifdef LIRC_HAVE_SYSFS
 #include <linux/device.h>
 #endif
 
@@ -103,10 +95,6 @@ struct irctl {
 	struct task_struct *task;
 #endif
 	long jiffies_to_wait;
-
-#ifdef LIRC_HAVE_DEVFS_24
-	devfs_handle_t devfs_handle;
-#endif
 };
 
 static DEFINE_MUTEX(lirc_dev_lock);
@@ -237,9 +225,6 @@ int lirc_register_driver(struct lirc_driver *d)
 	int bytes_in_key;
 	unsigned int buffer_size;
 	int err;
-#ifdef LIRC_HAVE_DEVFS_24
-	char name[16];
-#endif
 	DECLARE_COMPLETION(tn);
 
 	if (!d) {
@@ -386,13 +371,7 @@ int lirc_register_driver(struct lirc_driver *d)
 
 	ir->d = *d;
 
-#if defined(LIRC_HAVE_DEVFS_24)
-	sprintf(name, DEV_LIRC "/%d", ir->d.minor);
-	ir->devfs_handle = devfs_register(NULL, name, DEVFS_FL_DEFAULT,
-					  IRCTL_DEV_MAJOR, ir->d.minor,
-					  S_IFCHR | S_IRUSR | S_IWUSR,
-					  &lirc_dev_fops, NULL);
-#elif defined(LIRC_HAVE_DEVFS_26)
+#ifdef LIRC_HAVE_DEVFS_26
 	devfs_mk_cdev(MKDEV(IRCTL_DEV_MAJOR, ir->d.minor),
 			S_IFCHR|S_IRUSR|S_IWUSR,
 			DEV_LIRC "/%u", ir->d.minor);
@@ -429,13 +408,6 @@ int lirc_register_driver(struct lirc_driver *d)
 	ir->attached = 1;
 	mutex_unlock(&lirc_dev_lock);
 
-/*
- * Recent kernels should handle this autmatically by increasing/decreasing
- * use count when a dependant module is loaded/unloaded.
- */
-#ifndef KERNEL_2_5
-	MOD_INC_USE_COUNT;
-#endif
 	dprintk("lirc_dev: driver %s registered at minor number = %d\n",
 		ir->d.name, ir->d.minor);
 	d->minor = minor;
@@ -444,9 +416,6 @@ int lirc_register_driver(struct lirc_driver *d)
 out_sysfs:
 	lirc_device_destroy(lirc_class,
 			    MKDEV(IRCTL_DEV_MAJOR, ir->d.minor));
-#ifdef LIRC_HAVE_DEVFS_24
-	devfs_unregister(ir->devfs_handle);
-#endif
 #ifdef LIRC_HAVE_DEVFS_26
 	devfs_remove(DEV_LIRC "/%i", ir->d.minor);
 #endif
@@ -492,20 +461,15 @@ int lirc_unregister_driver(int minor)
 	/* end up polling thread */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 	if (ir->tpid >= 0) {
+		struct task_struct *p;
+
 		ir->t_notify = &tn;
 		ir->t_notify2 = &tn2;
 		ir->shutdown = 1;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-		{
-			struct task_struct *p;
 
-			p = find_task_by_pid(ir->tpid);
-			wake_up_process(p);
-		}
-#else
-		/* 2.2.x does not export wake_up_process() */
-		wake_up_interruptible(ir->d.get_queue(ir->d.data));
-#endif
+		p = find_task_by_pid(ir->tpid);
+		wake_up_process(p);
+
 		complete(&tn2);
 		wait_for_completion(&tn);
 		ir->t_notify = NULL;
@@ -534,9 +498,6 @@ int lirc_unregister_driver(int minor)
 		kfree(ir);
 	}
 
-#ifdef LIRC_HAVE_DEVFS_24
-	devfs_unregister(ir->devfs_handle);
-#endif
 #ifdef LIRC_HAVE_DEVFS_26
 	devfs_remove(DEV_LIRC "/%u", ir->d.minor);
 #endif
@@ -544,14 +505,6 @@ int lirc_unregister_driver(int minor)
 			    MKDEV(IRCTL_DEV_MAJOR, ir->d.minor));
 
 	mutex_unlock(&lirc_dev_lock);
-
-/*
- * Recent kernels should handle this autmatically by increasing/decreasing
- * use count when a dependant module is loaded/unloaded.
- */
-#ifndef KERNEL_2_5
-	MOD_DEC_USE_COUNT;
-#endif
 
 	return 0;
 }
@@ -970,6 +923,7 @@ static struct file_operations lirc_dev_fops = {
 	.ioctl		= irctl_ioctl,
 #else
 	.unlocked_ioctl	= irctl_ioctl,
+	.compat_ioctl	= irctl_ioctl,
 #endif
 	.open		= irctl_open,
 	.release	= irctl_close

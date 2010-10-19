@@ -30,25 +30,14 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 4)
-#error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.2.4 or higher"
-#error "*******************************************************"
-#endif
 
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/kmod.h>
 #include <linux/sched.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#include <linux/wrapper.h>
-#endif
 #include <linux/errno.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#include "../drivers/char/bttv.h"
-#include "../drivers/char/bttvp.h"
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 17)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 17)
 #include "../drivers/media/video/bttv.h"
 #include "../drivers/media/video/bttvp.h"
 #else
@@ -396,13 +385,11 @@ static int add_to_buf(void *data, struct lirc_buffer *buf)
 
 static int set_use_inc(void *data)
 {
-	MOD_INC_USE_COUNT;
 	return 0;
 }
 
 static void set_use_dec(void *data)
 {
-	MOD_DEC_USE_COUNT;
 }
 
 static wait_queue_head_t *get_queue(void *data)
@@ -613,7 +600,5 @@ MODULE_PARM_DESC(bttv_id, "BTTV card type");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-
-EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */

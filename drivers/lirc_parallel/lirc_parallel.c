@@ -28,11 +28,6 @@
 # include <config.h>
 #endif
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
-#error "**********************************************************"
-#error " Sorry, this driver needs kernel version 2.2.18 or higher "
-#error "**********************************************************"
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
@@ -60,9 +55,7 @@
 #include <linux/irq.h>
 #include <linux/uaccess.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #include <asm/div64.h>
-#endif
 
 #include <linux/poll.h>
 #include <linux/parport.h>
@@ -334,15 +327,11 @@ static void irq_handler(void *blah)
 
 	if (signal != 0) {
 		/* adjust value to usecs */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 		__u64 helper;
 
 		helper = ((__u64) signal)*1000000;
 		do_div(helper, timer);
 		signal = (long) helper;
-#else
-		signal = (long) ((((double) signal)*1000000)/timer);
-#endif
 
 		if (signal > LIRC_SFH506_DELAY)
 			data = signal - LIRC_SFH506_DELAY;
@@ -442,15 +431,11 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 
 	/* adjust values from usecs */
 	for (i = 0; i < count; i++) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 		__u64 helper;
 
 		helper = ((__u64) wbuf[i])*timer;
 		do_div(helper, 1000000);
 		wbuf[i] = (lirc_t) helper;
-#else
-		wbuf[i] = (lirc_t) (((double) wbuf[i])*timer/1000000);
-#endif
 	}
 
 	local_irq_save(flags);
@@ -572,7 +557,6 @@ static int lirc_open(struct inode *node, struct file *filep)
 	wptr = 0;
 	lost_irqs = 0;
 
-	MOD_INC_USE_COUNT;
 	is_open = 1;
 	return 0;
 }
@@ -584,7 +568,6 @@ static int lirc_close(struct inode *node, struct file *filep)
 		parport_release(ppdevice);
 	}
 	is_open = 0;
-	MOD_DEC_USE_COUNT;
 	return 0;
 }
 
@@ -599,6 +582,7 @@ static struct file_operations lirc_fops = {
 #else
 	.unlocked_ioctl	= lirc_ioctl,
 #endif
+	.compat_ioctl	= lirc_ioctl,
 	.open		= lirc_open,
 	.release	= lirc_close
 };
@@ -771,5 +755,4 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_param(check_pselecd, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Check for printer (default: 0)");
-EXPORT_NO_SYMBOLS;
 #endif /* MODULE */

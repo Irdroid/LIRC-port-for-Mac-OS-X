@@ -19,9 +19,6 @@
 */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#error "This driver needs kernel version 2.4.0 or higher"
-#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
@@ -83,11 +80,6 @@ static struct lirc_driver atir_driver;
 static struct pci_dev *do_pci_probe(void)
 {
 	struct pci_dev *my_dev;
-#ifndef KERNEL_2_5
-	/* unnecessary with recent kernels */
-	if (!pci_present())
-		printk(KERN_ERR DRIVER_NAME ": no pci in this kernel\n");
-#endif
 	my_dev = pci_get_device(PCI_VENDOR_ID_ATI,
 				PCI_DEVICE_ID_ATI_264VT, NULL);
 	if (my_dev) {
@@ -126,14 +118,12 @@ static int atir_add_to_buf(void *data, struct lirc_buffer *buf)
 
 static int atir_set_use_inc(void *data)
 {
-	MOD_INC_USE_COUNT;
 	dprintk("driver is opened\n");
 	return 0;
 }
 
 static void atir_set_use_dec(void *data)
 {
-	MOD_DEC_USE_COUNT;
 	dprintk("driver is closed\n");
 }
 
@@ -404,4 +394,3 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
-EXPORT_NO_SYMBOLS;

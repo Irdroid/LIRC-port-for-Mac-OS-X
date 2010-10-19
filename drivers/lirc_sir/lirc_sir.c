@@ -34,11 +34,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
-#error "**********************************************************"
-#error " Sorry, this driver needs kernel version 2.2.18 or higher "
-#error "**********************************************************"
-#endif
 #include <linux/module.h>
 
 #ifdef HAVE_CONFIG_H
@@ -303,14 +298,12 @@ static int lirc_open(struct inode *inode, struct file *file)
 		spin_unlock(&dev_lock);
 		return -EBUSY;
 	}
-	MOD_INC_USE_COUNT;
 	spin_unlock(&dev_lock);
 	return 0;
 }
 
 static int lirc_close(struct inode *inode, struct file *file)
 {
-	MOD_DEC_USE_COUNT;
 	return 0;
 }
 
@@ -535,6 +528,7 @@ static struct file_operations lirc_fops = {
 #else
 	.unlocked_ioctl	= lirc_ioctl,
 #endif
+	.compat_ioctl	= lirc_ioctl,
 	.open		= lirc_open,
 	.release	= lirc_close,
 };
@@ -1369,7 +1363,5 @@ MODULE_PARM_DESC(threshold, "space detection threshold (3)");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-
-EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */

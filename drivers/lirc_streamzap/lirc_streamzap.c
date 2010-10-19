@@ -30,11 +30,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.4.0 or higher"
-#error "*******************************************************"
-#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
@@ -167,19 +162,12 @@ struct usb_streamzap {
 
 
 /* local function prototypes */
-#ifdef KERNEL_2_5
 static int streamzap_probe(struct usb_interface *interface,
 			   const struct usb_device_id *id);
 static void streamzap_disconnect(struct usb_interface *interface);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs);
 #else
-static void usb_streamzap_irq(struct urb *urb);
-#endif
-#else
-static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
-			     const struct usb_device_id *id);
-static void streamzap_disconnect(struct usb_device *dev, void *ptr);
 static void usb_streamzap_irq(struct urb *urb);
 #endif
 static int streamzap_use_inc(void *data);
@@ -191,10 +179,8 @@ static int streamzap_ioctl(struct inode *node, struct file *filep,
 static long streamzap_ioctl(struct file *filep, unsigned int cmd,
 			    unsigned long arg);
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int streamzap_suspend(struct usb_interface *intf, pm_message_t message);
 static int streamzap_resume(struct usb_interface *intf);
-#endif
 
 /* usb specific object needed to register this driver with the usb subsystem */
 
@@ -203,10 +189,8 @@ static struct usb_driver streamzap_driver = {
 	.name =		DRIVER_NAME,
 	.probe =	streamzap_probe,
 	.disconnect =	streamzap_disconnect,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	.suspend =	streamzap_suspend,
 	.resume =	streamzap_resume,
-#endif
 	.id_table =	streamzap_table,
 };
 
@@ -387,7 +371,7 @@ static void push_half_space(struct usb_streamzap *sz,
  * This procedure is invoked on reception of data from
  * the usb remote.
  */
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_streamzap_irq(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_streamzap_irq(struct urb *urb)
@@ -471,9 +455,7 @@ static void usb_streamzap_irq(struct urb *urb)
 		}
 	}
 
-#ifdef KERNEL_2_5
 	usb_submit_urb(urb, GFP_ATOMIC);
-#endif
 
 	return;
 }
@@ -495,19 +477,11 @@ static struct file_operations streamzap_fops = {
  *	On any failure the return value is the ERROR
  *	On success return 0
  */
-#ifdef KERNEL_2_5
 static int streamzap_probe(struct usb_interface *interface,
 			   const struct usb_device_id *id)
 {
 	struct usb_device *udev = interface_to_usbdev(interface);
 	struct usb_host_interface *iface_host;
-#else
-static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
-			     const struct usb_device_id *id)
-{
-	struct usb_interface *interface = &udev->actconfig->interface[ifnum];
-	struct usb_interface_descriptor *iface_host;
-#endif
 	int retval = -ENOMEM;
 	struct usb_streamzap *sz = NULL;
 	char buf[63], name[128] = "";
@@ -527,27 +501,14 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	iface_host = interface->cur_altsetting;
 #endif
 
-#ifdef KERNEL_2_5
 	if (iface_host->desc.bNumEndpoints != 1) {
-#else
-	if (iface_host->bNumEndpoints != 1) {
-#endif
-#ifdef KERNEL_2_5
 		err("%s: Unexpected desc.bNumEndpoints (%d)", __func__,
 		    iface_host->desc.bNumEndpoints);
-#else
-		err("%s: Unexpected desc.bNumEndpoints (%d)", __func__,
-		    iface_host->bNumEndpoints);
-#endif
 		retval = -ENODEV;
 		goto error;
 	}
 
-#ifdef KERNEL_2_5
 	sz->endpoint = &(iface_host->endpoint[0].desc);
-#else
-	sz->endpoint = &(iface_host->endpoint[0]);
-#endif
 	if ((sz->endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
 	    != USB_DIR_IN) {
 		err("%s: endpoint doesn't match input device 02%02x",
@@ -573,21 +534,12 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	/* Allocate the USB buffer and IRQ URB */
 
 	sz->buf_in_len = sz->endpoint->wMaxPacketSize;
-#ifdef KERNEL_2_5
 	sz->buf_in = usb_alloc_coherent(sz->udev, sz->buf_in_len,
 					GFP_ATOMIC, &sz->dma_in);
-#else
-	sz->buf_in = kmalloc(sz->buf_in_len, GFP_KERNEL);
-#endif
 	if (sz->buf_in == NULL)
 		goto error;
 
-#ifdef KERNEL_2_5
 	sz->urb_in = usb_alloc_urb(0, GFP_KERNEL);
-#else
-
-	sz->urb_in = usb_alloc_urb(0);
-#endif
 	if (sz->urb_in == NULL)
 		goto error;
 
@@ -639,10 +591,8 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		usb_rcvintpipe(udev, sz->endpoint->bEndpointAddress),
 		sz->buf_in, sz->buf_in_len, usb_streamzap_irq, sz,
 		sz->endpoint->bInterval);
-#ifdef KERNEL_2_5
 	sz->urb_in->transfer_dma = sz->dma_in;
 	sz->urb_in->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-#endif
 
 	if (udev->descriptor.iManufacturer
 	    && usb_string(udev, udev->descriptor.iManufacturer,
@@ -659,9 +609,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 	       sz->driver.minor, name,
 	       udev->bus->busnum, sz->udev->devnum);
 
-#ifdef KERNEL_2_5
 	usb_set_intfdata(interface, sz);
-#endif
 
 	if (lirc_register_driver(&sz->driver) < 0) {
 		lirc_buffer_free(&sz->delay_buf);
@@ -669,11 +617,7 @@ static void *streamzap_probe(struct usb_device *udev, unsigned int ifnum,
 		goto error;
 	}
 
-#ifdef KERNEL_2_5
 	return 0;
-#else
-	return sz;
-#endif
 
 error:
 
@@ -688,21 +632,11 @@ error:
 
 	if (sz) {
 		usb_free_urb(sz->urb_in);
-#ifdef KERNEL_2_5
 		usb_free_coherent(udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#else
-		if (sz->buf_in) {
-			kfree(sz->buf_in);
-		}
-#endif
 		kfree(sz);
 	}
 
-#ifdef KERNEL_2_5
 	return retval;
-#else
-	return NULL;
-#endif
 }
 
 static int streamzap_use_inc(void *data)
@@ -714,7 +648,6 @@ static int streamzap_use_inc(void *data)
 		return -EINVAL;
 	}
 	dprintk("set use inc", sz->driver.minor);
-	MOD_INC_USE_COUNT;
 
 	lirc_buffer_clear(&sz->lirc_buf);
 	lirc_buffer_clear(&sz->delay_buf);
@@ -726,14 +659,9 @@ static int streamzap_use_inc(void *data)
 	sz->timeout_enabled = 0;
 
 	sz->urb_in->dev = sz->udev;
-#ifdef KERNEL_2_5
 	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC)) {
-#else
-	if (usb_submit_urb(sz->urb_in)) {
-#endif
 		dprintk("open result = -EIO error submitting urb",
 			sz->driver.minor);
-		MOD_DEC_USE_COUNT;
 		return -EIO;
 	}
 	sz->in_use++;
@@ -760,7 +688,6 @@ static void streamzap_use_dec(void *data)
 
 	stop_timer(sz);
 
-	MOD_DEC_USE_COUNT;
 	sz->in_use--;
 }
 
@@ -813,21 +740,13 @@ static long streamzap_ioctl(struct file *filep, unsigned int cmd,
  * active urbs.  Unfortunately, usb_bulk_msg(), used in streamzap_read(),
  * does not provide any way to do this.
  */
-#ifdef KERNEL_2_5
 static void streamzap_disconnect(struct usb_interface *interface)
-#else
-static void streamzap_disconnect(struct usb_device *dev, void *ptr)
-#endif
 {
 	struct usb_streamzap *sz;
 	int errnum;
 	int minor;
 
-#ifdef KERNEL_2_5
 	sz = usb_get_intfdata(interface);
-#else
-	sz = ptr;
-#endif
 
 	/* unregister from the LIRC sub-system */
 
@@ -843,11 +762,7 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 
 	usb_free_urb(sz->urb_in);
 
-#ifdef KERNEL_2_5
 	usb_free_coherent(sz->udev, sz->buf_in_len, sz->buf_in, sz->dma_in);
-#else
-	kfree(sz->buf_in);
-#endif
 
 	minor = sz->driver.minor;
 	kfree(sz);
@@ -855,7 +770,6 @@ static void streamzap_disconnect(struct usb_device *dev, void *ptr)
 	printk(KERN_INFO DRIVER_NAME "[%d]: disconnected\n", minor);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int streamzap_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct usb_streamzap *sz = usb_get_intfdata(intf);
@@ -887,20 +801,14 @@ static int streamzap_resume(struct usb_interface *intf)
 		add_timer(&sz->flush_timer);
 
 		sz->urb_in->dev = sz->udev;
-#ifdef KERNEL_2_5
 		if (usb_submit_urb(sz->urb_in, GFP_ATOMIC)) {
-#else
-		if (usb_submit_urb(sz->urb_in)) {
-#endif
 			dprintk("open result = -EIO error submitting urb",
 				sz->driver.minor);
-			MOD_DEC_USE_COUNT;
 			return -EIO;
 		}
 	}
 	return 0;
 }
-#endif
 
 #ifdef MODULE
 /**
@@ -941,5 +849,4 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-EXPORT_NO_SYMBOLS;
 #endif /* MODULE */

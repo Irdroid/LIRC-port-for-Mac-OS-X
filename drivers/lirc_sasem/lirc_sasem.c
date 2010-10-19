@@ -37,10 +37,6 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 22)
-#error "*** Sorry, this driver requires kernel version 2.4.22 or higher"
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
@@ -87,7 +83,6 @@
 /*** P R O T O T Y P E S ***/
 
 /* USB Callback prototypes */
-#ifdef KERNEL_2_5
 static int sasem_probe(struct usb_interface *interface,
 			const struct usb_device_id *id);
 static void sasem_disconnect(struct usb_interface *interface);
@@ -95,13 +90,6 @@ static void sasem_disconnect(struct usb_interface *interface);
 static void usb_rx_callback(struct urb *urb, struct pt_regs *regs);
 static void usb_tx_callback(struct urb *urb, struct pt_regs *regs);
 #else
-static void usb_rx_callback(struct urb *urb);
-static void usb_tx_callback(struct urb *urb);
-#endif
-#else
-static void *sasem_probe(struct usb_device *dev, unsigned int intf,
-				const struct usb_device_id *id);
-static void sasem_disconnect(struct usb_device *dev, void *data);
 static void usb_rx_callback(struct urb *urb);
 static void usb_tx_callback(struct urb *urb);
 #endif
@@ -133,10 +121,6 @@ struct sasem_context {
 	struct usb_device *dev;
 	int vfd_isopen;			/* VFD port has been opened       */
 	unsigned int vfd_contrast;	/* VFD contrast		   */
-#if !defined(KERNEL_2_5)
-	int subminor;			/* index into minor_table	 */
-	devfs_handle_t devfs;
-#endif
 	int ir_isopen;			/* IR port has been opened	*/
 	int dev_present;		/* USB device presence	    */
 	struct mutex lock;		/* to lock this object	    */
@@ -192,13 +176,8 @@ static struct usb_driver sasem_driver = {
 	.probe		= sasem_probe,
 	.disconnect	= sasem_disconnect,
 	.id_table	= sasem_usb_id_table,
-#if !defined(KERNEL_2_5)
-	.fops		= &vfd_fops,
-	.minor		= VFD_MINOR_BASE,
-#endif
 };
 
-#ifdef KERNEL_2_5
 static struct usb_class_driver sasem_class = {
 	.name		= DEVFS_NAME,
 	.fops		= &vfd_fops,
@@ -207,22 +186,11 @@ static struct usb_class_driver sasem_class = {
 #endif
 	.minor_base	= VFD_MINOR_BASE,
 };
-#endif
 
 /* to prevent races between open() and disconnect() */
 static DEFINE_MUTEX(disconnect_lock);
 
 static int debug;
-
-#if !defined(KERNEL_2_5)
-
-#define MAX_DEVICES	4	/* In case there's more than one Sasem device */
-static struct sasem_context *minor_table [MAX_DEVICES];
-
-/* the global usb devfs handle */
-extern devfs_handle_t usb_devfs_handle;
-
-#endif
 
 /*** M O D U L E   C O D E ***/
 
@@ -266,9 +234,7 @@ static void deregister_from_lirc(struct sasem_context *context)
  */
 static int vfd_open(struct inode *inode, struct file *file)
 {
-#ifdef KERNEL_2_5
 	struct usb_interface *interface;
-#endif
 	struct sasem_context *context = NULL;
 	int subminor;
 	int retval = 0;
@@ -276,7 +242,6 @@ static int vfd_open(struct inode *inode, struct file *file)
 	/* prevent races with disconnect */
 	mutex_lock(&disconnect_lock);
 
-#ifdef KERNEL_2_5
 	subminor = iminor(inode);
 	interface = usb_find_interface(&sasem_driver, subminor);
 	if (!interface) {
@@ -286,15 +251,6 @@ static int vfd_open(struct inode *inode, struct file *file)
 		goto exit;
 	}
 	context = usb_get_intfdata(interface);
-#else
-	subminor = MINOR(inode->i_rdev) - VFD_MINOR_BASE;
-	if (subminor < 0 || subminor >= MAX_DEVICES) {
-		err("%s: no record of minor %d", __func__, subminor);
-		retval = -ENODEV;
-		goto exit;
-	}
-	context = minor_table [subminor];
-#endif
 
 	if (!context) {
 		err("%s: no context found for minor %d",
@@ -309,7 +265,6 @@ static int vfd_open(struct inode *inode, struct file *file)
 		err("%s: VFD port is already open", __func__);
 		retval = -EBUSY;
 	} else {
-		MOD_INC_USE_COUNT;
 		context->vfd_isopen = 1;
 		file->private_data = context;
 		printk(KERN_INFO "VFD port opened\n");
@@ -383,7 +338,6 @@ static int vfd_close(struct inode *inode, struct file *file)
 		retval = -EIO;
 	} else {
 		context->vfd_isopen = 0;
-		MOD_DEC_USE_COUNT;
 		printk(KERN_INFO "VFD port closed\n");
 		if (!context->dev_present && !context->ir_isopen) {
 
@@ -411,9 +365,7 @@ static int send_packet(struct sasem_context *context)
 
 	pipe = usb_sndintpipe(context->dev,
 			context->tx_endpoint->bEndpointAddress);
-#ifdef KERNEL_2_5
 	interval = context->tx_endpoint->bInterval;
-#endif	/* Use 0 for 2.4 kernels */
 
 	usb_fill_int_urb(context->tx_urb, context->dev, pipe,
 		context->usb_tx_buf, sizeof(context->usb_tx_buf),
@@ -424,11 +376,7 @@ static int send_packet(struct sasem_context *context)
 	init_completion(&context->tx.finished);
 	atomic_set(&(context->tx.busy), 1);
 
-#ifdef KERNEL_2_5
 	retval =  usb_submit_urb(context->tx_urb, GFP_KERNEL);
-#else
-	retval =  usb_submit_urb(context->tx_urb);
-#endif
 	if (retval) {
 		atomic_set(&(context->tx.busy), 0);
 		err("%s: error submitting urb (%d)", __func__, retval);
@@ -543,7 +491,7 @@ exit:
 /**
  * Callback function for USB core API: transmit data
  */
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_tx_callback(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_tx_callback(struct urb *urb)
@@ -593,17 +541,12 @@ static int ir_open(void *data)
 		context->usb_rx_buf, sizeof(context->usb_rx_buf),
 		usb_rx_callback, context, context->rx_endpoint->bInterval);
 
-#ifdef KERNEL_2_5
 	retval = usb_submit_urb(context->rx_urb, GFP_KERNEL);
-#else
-	retval = usb_submit_urb(context->rx_urb);
-#endif
 
 	if (retval)
 		err("%s: usb_submit_urb failed for ir_open (%d)",
 		    __func__, retval);
 	else {
-		MOD_INC_USE_COUNT;
 		context->ir_isopen = 1;
 		printk(KERN_INFO "IR port opened\n");
 	}
@@ -632,7 +575,6 @@ static void ir_close(void *data)
 
 	usb_kill_urb(context->rx_urb);
 	context->ir_isopen = 0;
-	MOD_DEC_USE_COUNT;
 	printk(KERN_INFO "IR port closed\n");
 
 	if (!context->dev_present) {
@@ -727,7 +669,7 @@ static void incoming_packet(struct sasem_context *context,
 /**
  * Callback function for USB core API: receive data
  */
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_rx_callback(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_rx_callback(struct urb *urb)
@@ -757,9 +699,7 @@ static void usb_rx_callback(struct urb *urb)
 		break;
 	}
 
-#ifdef KERNEL_2_5
 	usb_submit_urb(context->rx_urb, GFP_ATOMIC);
-#endif
 	return;
 }
 
@@ -768,23 +708,11 @@ static void usb_rx_callback(struct urb *urb)
 /**
  * Callback function for USB core API: Probe
  */
-#ifdef KERNEL_2_5
 static int sasem_probe(struct usb_interface *interface,
 			const struct usb_device_id *id)
-#else
-static void *sasem_probe(struct usb_device *dev, unsigned int intf,
-			const struct usb_device_id *id)
-#endif
 {
-#ifdef KERNEL_2_5
 	struct usb_device *dev = NULL;
 	struct usb_host_interface *iface_desc = NULL;
-#else
-	struct usb_interface *interface = NULL;
-	struct usb_interface_descriptor *iface_desc = NULL;
-	char name [10];
-	int subminor = 0;
-#endif
 	struct usb_endpoint_descriptor *rx_endpoint = NULL;
 	struct usb_endpoint_descriptor *tx_endpoint = NULL;
 	struct urb *rx_urb = NULL;
@@ -802,28 +730,9 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 
 	printk(KERN_INFO "%s: found Sasem device\n", __func__);
 
-#if !defined(KERNEL_2_5)
-	for (subminor = 0; subminor < MAX_DEVICES; ++subminor) {
-		if (minor_table [subminor] == NULL)
-			break;
-	}
-	if (subminor == MAX_DEVICES) {
-		err("%s: allowed number of devices already present",
-		    __func__);
-		retval = -ENOMEM;
-		goto exit;
-	}
-#endif
-
-#ifdef KERNEL_2_5
 	dev = usb_get_dev(interface_to_usbdev(interface));
 	iface_desc = interface->cur_altsetting;
 	num_endpoints = iface_desc->desc.bNumEndpoints;
-#else
-	interface = &dev->actconfig->interface [intf];
-	iface_desc = &interface->altsetting [interface->act_altsetting];
-	num_endpoints = iface_desc->bNumEndpoints;
-#endif
 
 	/*
 	 * Scan the endpoint list and set:
@@ -839,11 +748,7 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		struct usb_endpoint_descriptor *ep;
 		int ep_dir;
 		int ep_type;
-#ifdef KERNEL_2_5
 		ep = &iface_desc->endpoint [i].desc;
-#else
-		ep = &iface_desc->endpoint [i];
-#endif
 		ep_dir = ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK;
 		ep_type = ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK;
 
@@ -908,22 +813,14 @@ static void *sasem_probe(struct usb_device *dev, unsigned int intf,
 		alloc_status = 4;
 		goto alloc_status_switch;
 	}
-#ifdef KERNEL_2_5
 	rx_urb = usb_alloc_urb(0, GFP_KERNEL);
-#else
-	rx_urb = usb_alloc_urb(0);
-#endif
 	if (!rx_urb) {
 		err("%s: usb_alloc_urb failed for IR urb", __func__);
 		alloc_status = 5;
 		goto alloc_status_switch;
 	}
 	if (vfd_ep_found) {
-#ifdef KERNEL_2_5
 		tx_urb = usb_alloc_urb(0, GFP_KERNEL);
-#else
-		tx_urb = usb_alloc_urb(0);
-#endif
 		if (!tx_urb) {
 			err("%s: usb_alloc_urb failed for VFD urb", __func__);
 			alloc_status = 6;
@@ -995,35 +892,16 @@ alloc_status_switch:
 	}
 	context->driver = driver;
 
-#ifdef KERNEL_2_5
 	usb_set_intfdata(interface, context);
-#else
-	minor_table [subminor] = context;
-	context->subminor = subminor;
-#endif
 
 	if (vfd_ep_found) {
 
-#ifdef KERNEL_2_5
 		if (debug)
 			printk(KERN_INFO "Registering VFD with sysfs\n");
 		if (usb_register_dev(interface, &sasem_class))
 			/* Not a fatal error, so ignore */
 			printk(KERN_INFO "%s: could not get a minor number "
 			       "for VFD\n", __func__);
-#else
-		if (debug)
-			printk(KERN_INFO "Registering VFD with devfs\n");
-		sprintf(name, DEVFS_NAME, subminor);
-		context->devfs = devfs_register(usb_devfs_handle, name,
-				 DEVFS_FL_DEFAULT,
-				 USB_MAJOR, VFD_MINOR_BASE + subminor,
-				 DEVFS_MODE, &vfd_fops, NULL);
-		if (!context->devfs)
-			/* not a fatal error so ignore */
-			printk(KERN_INFO "%s: devfs register failed for VFD\n",
-					__func__);
-#endif
 	}
 
 	printk(KERN_INFO "%s: Sasem device on usb<%d:%d> initialized\n",
@@ -1031,41 +909,25 @@ alloc_status_switch:
 
 	mutex_unlock(&context->lock);
 exit:
-#ifdef KERNEL_2_5
 	return retval;
-#else
-	return (!retval) ? context : NULL;
-#endif
 }
 
 /**
  * Callback function for USB core API: disonnect
  */
-#ifdef KERNEL_2_5
 static void sasem_disconnect(struct usb_interface *interface)
-#else
-static void sasem_disconnect(struct usb_device *dev, void *data)
-#endif
 {
 	struct sasem_context *context;
 
 	/* prevent races with ir_open()/vfd_open() */
 	mutex_lock(&disconnect_lock);
 
-#ifdef KERNEL_2_5
 	context = usb_get_intfdata(interface);
-#else
-	context = (struct sasem_context *)data;
-#endif
 	mutex_lock(&context->lock);
 
 	printk(KERN_INFO "%s: Sasem device disconnected\n", __func__);
 
-#ifdef KERNEL_2_5
 	usb_set_intfdata(interface, NULL);
-#else
-	minor_table [context->subminor] = NULL;
-#endif
 	context->dev_present = 0;
 
 	/* Stop reception */
@@ -1082,12 +944,7 @@ static void sasem_disconnect(struct usb_device *dev, void *data)
 	if (!context->ir_isopen)
 		deregister_from_lirc(context);
 
-#ifdef KERNEL_2_5
 	usb_deregister_dev(interface, &sasem_class);
-#else
-	if (context->devfs)
-		devfs_unregister(context->devfs);
-#endif
 
 	mutex_unlock(&context->lock);
 
@@ -1121,7 +978,3 @@ static void __exit sasem_exit(void)
 
 module_init(sasem_init);
 module_exit(sasem_exit);
-
-#if !defined(KERNEL_2_5)
-EXPORT_NO_SYMBOLS;
-#endif

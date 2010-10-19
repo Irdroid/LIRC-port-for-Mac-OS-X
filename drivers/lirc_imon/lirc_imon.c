@@ -26,10 +26,6 @@
 #include <config.h>
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-#error "*** Sorry, this driver requires a 2.6 kernel"
-#endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
@@ -516,7 +512,6 @@ static int display_open(struct inode *inode, struct file *file)
 		err("%s: display port is already open", __func__);
 		retval = -EBUSY;
 	} else {
-		MOD_INC_USE_COUNT;
 		context->display_isopen = 1;
 		file->private_data = context;
 		printk(KERN_INFO "display port opened\n");
@@ -555,7 +550,6 @@ static int display_close(struct inode *inode, struct file *file)
 		retval = -EIO;
 	} else {
 		context->display_isopen = 0;
-		MOD_DEC_USE_COUNT;
 		printk(KERN_INFO "display port closed\n");
 		if (!context->dev_present_intf0 && !context->ir_isopen) {
 			/*
@@ -1204,7 +1198,6 @@ static void ir_close(void *data)
 
 	context->ir_isopen = 0;
 	context->ir_isassociating = 0;
-	MOD_DEC_USE_COUNT;
 	printk(KERN_INFO MOD_NAME ": IR port closed\n");
 
 	if (!context->dev_present_intf0) {

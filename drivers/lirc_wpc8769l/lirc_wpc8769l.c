@@ -31,11 +31,6 @@
 #endif
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 2, 18)
-#error "**********************************************************"
-#error " Sorry, this driver needs kernel version 2.2.18 or higher "
-#error "**********************************************************"
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
@@ -856,7 +851,6 @@ static int set_use_inc(void *data)
 	/* Enable hardware interrupts. */
 	wpc8769l_enable_interrupts();
 
-	MOD_INC_USE_COUNT;
 	return 0;
 }
 
@@ -878,8 +872,6 @@ static void set_use_dec(void *data)
 
 	/* Free the RX buffer. */
 	lirc_buffer_free(&rbuf);
-
-	MOD_DEC_USE_COUNT;
 }
 
 static struct lirc_driver driver = {
@@ -1179,8 +1171,6 @@ module_param(rc_wakeup_mask, uint, S_IRUGO);
 MODULE_PARM_DESC(rc_wakeup_mask,
 	"Define the RC code mask for wake up functions (default: 0xff000fff).");
 #endif
-
-EXPORT_NO_SYMBOLS;
 
 #endif /* MODULE */
 

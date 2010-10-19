@@ -930,6 +930,7 @@ static const struct file_operations ene_fops = {
 #else
 	.unlocked_ioctl	= ene_ioctl,
 #endif
+	.compat_ioctl	= ene_ioctl,
 };
 
 /* main load function */

@@ -37,11 +37,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.4.0 or higher"
-#error "*******************************************************"
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
@@ -212,9 +207,7 @@ struct in_endpt {
 	/* buffers and dma */
 	unsigned char *buf;
 	unsigned int len;
-#ifdef KERNEL_2_5
 	dma_addr_t dma;
-#endif
 
 	/* handle repeats */
 	unsigned char old[USB_BUFF_LEN];
@@ -228,9 +221,7 @@ struct out_endpt {
 
 	/* buffers and dma */
 	unsigned char *buf;
-#ifdef KERNEL_2_5
 	dma_addr_t dma;
-#endif
 
 	/* handle sending (init strings) */
 	int send_flags;
@@ -304,11 +295,7 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 	set_current_state(TASK_INTERRUPTIBLE);
 	add_wait_queue(&oep->wait, &wait);
 
-#ifdef KERNEL_2_5
 	if (usb_submit_urb(oep->urb, GFP_ATOMIC)) {
-#else
-	if (usb_submit_urb(oep->urb)) {
-#endif
 		set_current_state(TASK_RUNNING);
 		remove_wait_queue(&oep->wait, &wait);
 		mutex_unlock(&ir->lock);
@@ -326,9 +313,7 @@ static void send_packet(struct out_endpt *oep, u16 cmd, unsigned char *data)
 
 	set_current_state(TASK_RUNNING);
 	remove_wait_queue(&oep->wait, &wait);
-#ifdef KERNEL_2_5
 	oep->urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 	usb_unlink_urb(oep->urb);
 }
 
@@ -360,8 +345,6 @@ static int set_use_inc(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
 
-	MOD_INC_USE_COUNT;
-
 	mutex_lock(&ir->lock);
 	if (!ir->connected) {
 		if (!ir->usbdev) {
@@ -377,17 +360,12 @@ static int set_use_inc(void *data)
 			iep->urb->dev = ir->usbdev;
 			dprintk(DRIVER_NAME "[%d]: linking iep 0x%02x (%p)\n",
 				ir->devnum, iep->ep->bEndpointAddress, iep);
-#ifdef KERNEL_2_5
 			rtn = usb_submit_urb(iep->urb, GFP_ATOMIC);
-#else
-			rtn = usb_submit_urb(iep->urb);
-#endif
 			if (rtn) {
 				printk(DRIVER_NAME "[%d]: open result = %d "
 				       "error submitting urb\n",
 				       ir->devnum, rtn);
 				mutex_unlock(&ir->lock);
-				MOD_DEC_USE_COUNT;
 				return -EIO;
 			}
 		}
@@ -422,7 +400,6 @@ static void set_use_dec(void *data)
 		ir->connected = 0;
 	}
 	mutex_unlock(&ir->lock);
-	MOD_DEC_USE_COUNT;
 }
 
 static void print_data(struct in_endpt *iep, char *buf, int len)
@@ -691,7 +668,7 @@ static int code_check_xbox(struct in_endpt *iep, int len)
 	return 0;
 }
 
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_remote_recv(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_recv(struct urb *urb)
@@ -704,9 +681,7 @@ static void usb_remote_recv(struct urb *urb)
 		return;
 	iep = urb->context;
 	if (!iep) {
-#ifdef KERNEL_2_5
 		urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -740,9 +715,7 @@ static void usb_remote_recv(struct urb *urb)
 	case -ECONNRESET:
 	case -ENOENT:
 	case -ESHUTDOWN:
-#ifdef KERNEL_2_5
 		urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 		usb_unlink_urb(urb);
 		return;
 
@@ -751,12 +724,10 @@ static void usb_remote_recv(struct urb *urb)
 		break;
 	}
 
-#ifdef KERNEL_2_5
 	usb_submit_urb(urb, GFP_ATOMIC);
-#endif
 }
 
-#if defined(KERNEL_2_5) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 static void usb_remote_send(struct urb *urb, struct pt_regs *regs)
 #else
 static void usb_remote_send(struct urb *urb)
@@ -768,9 +739,7 @@ static void usb_remote_send(struct urb *urb)
 		return;
 	oep = urb->context;
 	if (!oep) {
-#ifdef KERNEL_2_5
 		urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 		usb_unlink_urb(urb);
 		return;
 	}
@@ -818,9 +787,7 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 			"from list\n", ir->devnum, iep->ep->bEndpointAddress);
 	case 4:
 		if (iep->urb) {
-#ifdef KERNEL_2_5
 			iep->urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 			usb_unlink_urb(iep->urb);
 			usb_free_urb(iep->urb);
 			iep->urb = 0;
@@ -828,11 +795,7 @@ static void free_in_endpt(struct in_endpt *iep, int mem_failure)
 			dprintk(DRIVER_NAME "[%d]: free_in_endpt null urb!\n",
 				ir->devnum);
 	case 3:
-#ifdef KERNEL_2_5
 		usb_free_coherent(iep->ir->usbdev, iep->len, iep->buf, iep->dma);
-#else
-		kfree(iep->buf);
-#endif
 		iep->buf = 0;
 	case 2:
 		kfree(iep);
@@ -873,21 +836,13 @@ static struct in_endpt *new_in_endpt(struct atirf_dev *ir,
 	iep->ep = ep;
 	iep->len = len;
 
-#ifdef KERNEL_2_5
 	iep->buf = usb_alloc_coherent(dev, len, GFP_ATOMIC, &iep->dma);
-#else
-	iep->buf = kmalloc(len, GFP_KERNEL);
-#endif
 	if (!iep->buf) {
 		mem_failure = 2;
 		goto new_in_endpt_failure_check;
 	}
 
-#ifdef KERNEL_2_5
 	iep->urb = usb_alloc_urb(0, GFP_KERNEL);
-#else
-	iep->urb = usb_alloc_urb(0);
-#endif
 	if (!iep->urb)
 		mem_failure = 3;
 
@@ -924,9 +879,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 	case FREE_ALL:
 	case 4:
 		if (oep->urb) {
-#ifdef KERNEL_2_5
 			oep->urb->transfer_flags |= URB_ASYNC_UNLINK;
-#endif
 			usb_unlink_urb(oep->urb);
 			usb_free_urb(oep->urb);
 			oep->urb = 0;
@@ -935,12 +888,8 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 				ir->devnum);
 		}
 	case 3:
-#ifdef KERNEL_2_5
 		usb_free_coherent(oep->ir->usbdev, USB_OUTLEN,
 				  oep->buf, oep->dma);
-#else
-		kfree(oep->buf);
-#endif
 		oep->buf = 0;
 	case 2:
 		kfree(oep);
@@ -951,9 +900,7 @@ static void free_out_endpt(struct out_endpt *oep, int mem_failure)
 static struct out_endpt *new_out_endpt(struct atirf_dev *ir,
 				       struct usb_endpoint_descriptor *ep)
 {
-#ifdef KERNEL_2_5
 	struct usb_device *dev = ir->usbdev;
-#endif
 	struct out_endpt *oep;
 	int mem_failure;
 
@@ -969,20 +916,12 @@ static struct out_endpt *new_out_endpt(struct atirf_dev *ir,
 		oep->ep = ep;
 		init_waitqueue_head(&oep->wait);
 
-#ifdef KERNEL_2_5
 		oep->buf = usb_alloc_coherent(dev, USB_OUTLEN,
 					      GFP_ATOMIC, &oep->dma);
-#else
-		oep->buf = kmalloc(USB_OUTLEN, GFP_KERNEL);
-#endif
 		if (!oep->buf)
 			mem_failure = 2;
 		else {
-#ifdef KERNEL_2_5
 			oep->urb = usb_alloc_urb(0, GFP_KERNEL);
-#else
-			oep->urb = usb_alloc_urb(0);
-#endif
 			if (!oep->urb)
 				mem_failure = 3;
 		}
@@ -1190,10 +1129,8 @@ static void send_outbound_init(struct atirf_dev *ir)
 			usb_sndintpipe(ir->usbdev, oep->ep->bEndpointAddress),
 			oep->buf, USB_OUTLEN, usb_remote_send,
 			oep, oep->ep->bInterval);
-#ifdef KERNEL_2_5
 		oep->urb->transfer_dma = oep->dma;
 		oep->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-#endif
 
 		send_packet(oep, 0x8004, init1);
 		send_packet(oep, 0x8007, init2);
@@ -1218,19 +1155,11 @@ static void log_usb_dev_info(struct usb_device *dev)
 }
 
 
-#ifdef KERNEL_2_5
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
 	struct usb_host_interface *idesc;
-#else
-static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
-				const struct usb_device_id *id)
-{
-	struct usb_interface *intf = &dev->actconfig->interface[ifnum];
-	struct usb_interface_descriptor *idesc;
-#endif
 	struct usb_endpoint_descriptor *ep;
 	struct in_endpt *iep;
 	struct atirf_dev *ir;
@@ -1251,11 +1180,7 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	if (!ir) {
 		ir = new_irctl(intf);
 		if (!ir)
-#ifdef KERNEL_2_5
 			return -ENOMEM;
-#else
-			return NULL;
-#endif
 	}
 	type = ir->remote_type;
 
@@ -1263,13 +1188,8 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	 * step through the endpoints to find first in and first out endpoint
 	 * of type interrupt transfer
 	 */
-#ifdef KERNEL_2_5
 	for (i = 0; i < idesc->desc.bNumEndpoints; ++i) {
 		ep = &idesc->endpoint[i].desc;
-#else
-	for (i = 0; i < idesc->bNumEndpoints; ++i) {
-		ep = &idesc->endpoint[i];
-#endif
 		dprintk(DRIVER_NAME "[%d]: processing endpoint %d\n",
 			dev->devnum, i);
 		if (((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK) ==
@@ -1285,11 +1205,9 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 						iep->ep->bEndpointAddress),
 					iep->buf, iep->len, usb_remote_recv,
 					iep, iep->ep->bInterval);
-#ifdef KERNEL_2_5
 				iep->urb->transfer_dma = iep->dma;
 				iep->urb->transfer_flags |=
 					URB_NO_TRANSFER_DMA_MAP;
-#endif
 			}
 		}
 
@@ -1304,21 +1222,13 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		printk(DRIVER_NAME "[%d]: inbound endpoint not found\n",
 		       ir->devnum);
 		free_irctl(ir, FREE_ALL);
-#ifdef KERNEL_2_5
 		return -ENODEV;
-#else
-		return NULL;
-#endif
 	}
 	if (ir->dev_refcount == 1) {
 		ir->d->minor = lirc_register_driver(ir->d);
 		if (ir->d->minor < 0) {
 			free_irctl(ir, FREE_ALL);
-#ifdef KERNEL_2_5
 			return -ENODEV;
-#else
-			return NULL;
-#endif
 		}
 
 		/* Note new driver registration in kernel logs */
@@ -1328,25 +1238,15 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		send_outbound_init(ir);
 	}
 
-#ifdef KERNEL_2_5
 	usb_set_intfdata(intf, ir);
 	return 0;
-#else
-	return ir;
-#endif
 }
 
-#ifdef KERNEL_2_5
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	/* struct usb_device *dev = interface_to_usbdev(intf); */
 	struct atirf_dev *ir = usb_get_intfdata(intf);
 	usb_set_intfdata(intf, NULL);
-#else
-static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
-{
-	struct atirf_dev *ir = ptr;
-#endif
 
 	dprintk(DRIVER_NAME ": disconnecting remote %d:\n",
 		(ir ? ir->devnum : -1));
@@ -1455,5 +1355,3 @@ MODULE_PARM_DESC(emit_modekeys, "emit keycodes for aux1-aux4, pc, and mouse "
 module_param(mgradient, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mgradient, "rw2 mouse: 1000*gradient from E to NE (default: "
 		 "500 => .5 => ~27 degrees)");
-
-EXPORT_NO_SYMBOLS;

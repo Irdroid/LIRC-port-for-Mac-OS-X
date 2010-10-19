@@ -41,11 +41,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.4.0 or higher"
-#error "*******************************************************"
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
@@ -69,10 +64,6 @@
 #else
 #include "drivers/lirc.h"
 #include "drivers/lirc_dev/lirc_dev.h"
-#endif
-
-#if !defined(KERNEL_2_5)
-#define USB_CTRL_GET_TIMEOUT    5
 #endif
 
 /* module identification */
@@ -231,9 +222,7 @@ struct igorplug {
 	int in_space;
 	struct timeval last_time;
 
-#if defined(KERNEL_2_5)
 	dma_addr_t dma_in;
-#endif
 
 	/* lirc */
 	struct lirc_driver *d;
@@ -253,8 +242,6 @@ static int set_use_inc(void *data)
 	}
 	dprintk("[%d]: set use inc\n", ir->devnum);
 
-	MOD_INC_USE_COUNT;
-
 	if (!ir->usbdev)
 		return -ENODEV;
 
@@ -271,8 +258,6 @@ static void set_use_dec(void *data)
 		return;
 	}
 	dprintk("[%d]: set use dec\n", ir->devnum);
-
-	MOD_DEC_USE_COUNT;
 }
 
 static void send_fragment(struct igorplug *ir, struct lirc_buffer *buf,
@@ -380,21 +365,12 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 
 
 
-#if defined(KERNEL_2_5)
 static int usb_remote_probe(struct usb_interface *intf,
 				const struct usb_device_id *id)
 {
 	struct usb_device *dev = NULL;
 	struct usb_host_interface *idesc = NULL;
 	struct usb_host_endpoint *ep_ctl2;
-#else
-static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
-				const struct usb_device_id *id)
-{
-	struct usb_interface *intf;
-	struct usb_interface_descriptor *idesc;
-	struct usb_endpoint_descriptor *ep_ctl2;
-#endif
 	struct igorplug *ir = NULL;
 	struct lirc_driver *driver = NULL;
 	int devnum, pipe, maxp;
@@ -405,7 +381,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 
 	dprintk(": usb probe called.\n");
 
-#if defined(KERNEL_2_5)
 	dev = interface_to_usbdev(intf);
 
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
@@ -423,19 +398,6 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 	    != USB_ENDPOINT_XFER_CONTROL)
 		return -ENODEV;
 	pipe = usb_rcvctrlpipe(dev, ep_ctl2->desc.bEndpointAddress);
-#else
-	intf = &dev->actconfig->interface[ifnum];
-	idesc = &intf->altsetting[intf->act_altsetting];
-	if (idesc->bNumEndpoints != 1)
-		return NULL;
-	ep_ctl2 = idesc->endpoint;
-	if (((ep_ctl2->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
-	    != USB_DIR_IN)
-	    || (ep_ctl2->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
-	    != USB_ENDPOINT_XFER_CONTROL)
-		return NULL;
-	pipe = usb_rcvctrlpipe(dev, ep_ctl2->bEndpointAddress);
-#endif
 	devnum = dev->devnum;
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
@@ -456,14 +418,9 @@ static void *usb_remote_probe(struct usb_device *dev, unsigned int ifnum,
 		goto mem_failure_switch;
 	}
 
-#if defined(KERNEL_2_5)
 	ir->buf_in = usb_alloc_coherent(dev,
 			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
 			      GFP_ATOMIC, &ir->dma_in);
-#else
-	ir->buf_in = kmalloc(DEVICE_BUFLEN+DEVICE_HEADERLEN,
-			     GFP_KERNEL);
-#endif
 	if (!ir->buf_in) {
 		mem_failure = 3;
 		goto mem_failure_switch;
@@ -492,12 +449,8 @@ mem_failure_switch:
 
 	switch (mem_failure) {
 	case 9:
-#if defined(KERNEL_2_5)
 		usb_free_coherent(dev, DEVICE_BUFLEN+DEVICE_HEADERLEN,
 			ir->buf_in, ir->dma_in);
-#else
-		kfree(ir->buf_in);
-#endif
 	case 3:
 		kfree(driver);
 	case 2:
@@ -505,11 +458,7 @@ mem_failure_switch:
 	case 1:
 		printk(KERN_ERR DRIVER_NAME "[%d]: out of memory (code=%d)\n",
 			devnum, mem_failure);
-#if defined(KERNEL_2_5)
 		return -ENOMEM;
-#else
-		return NULL;
-#endif
 	}
 
 	driver->minor = minor;
@@ -542,25 +491,15 @@ mem_failure_switch:
 		       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
 			devnum, ret);
 
-#if defined(KERNEL_2_5)
 	usb_set_intfdata(intf, ir);
 	return 0;
-#else
-	return ir;
-#endif
 }
 
 
-#if defined(KERNEL_2_5)
 static void usb_remote_disconnect(struct usb_interface *intf)
 {
 	struct usb_device *dev = interface_to_usbdev(intf);
 	struct igorplug *ir = usb_get_intfdata(intf);
-#else
-static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
-{
-	struct igorplug *ir = ptr;
-#endif
 
 	if (!ir || !ir->d)
 		return;
@@ -572,11 +511,7 @@ static void usb_remote_disconnect(struct usb_device *dev, void *ptr)
 	kfree(ir->d);
 
 
-#if defined(KERNEL_2_5)
 	usb_free_coherent(dev, ir->len_in, ir->buf_in, ir->dma_in);
-#else
-	kfree(ir->buf_in);
-#endif
 
 	kfree(ir);
 }
@@ -625,17 +560,16 @@ static void __exit usb_remote_exit(void)
 module_init(usb_remote_init);
 module_exit(usb_remote_exit);
 
-#if defined(KERNEL_2_5)
-#include <linux/vermagic.h>
-MODULE_INFO(vermagic, VERMAGIC_STRING);
-#endif
-
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
 MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
 
+#include <linux/vermagic.h>
+MODULE_INFO(vermagic, VERMAGIC_STRING);
+
 module_param(sample_rate, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(sample_rate, "Sampling rate in Hz (default: 100)");
 
-EXPORT_NO_SYMBOLS;
+module_param(debug, bool, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(debug, "Debug enabled or not");

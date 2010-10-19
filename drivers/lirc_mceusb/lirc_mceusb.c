@@ -622,7 +622,6 @@ static int mceusb_ir_open(void *data)
 	}
 	dprintk(DRIVER_NAME "[%d]: mceusb IR device opened\n", ir->devnum);
 
-	MOD_INC_USE_COUNT;
 	if (!ir->flags.connected) {
 		if (!ir->usbdev)
 			return -ENOENT;
@@ -648,7 +647,6 @@ static void mceusb_ir_close(void *data)
 		ir->flags.connected = 0;
 		mutex_unlock(&ir->dev_lock);
 	}
-	MOD_DEC_USE_COUNT;
 }
 
 static void send_packet_to_lirc(struct mceusb_dev *ir)
@@ -1310,7 +1308,6 @@ static void __devexit mceusb_dev_disconnect(struct usb_interface *intf)
 	unregister_from_lirc(ir);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int mceusb_dev_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct mceusb_dev *ir = usb_get_intfdata(intf);
@@ -1327,19 +1324,16 @@ static int mceusb_dev_resume(struct usb_interface *intf)
 		return -EIO;
 	return 0;
 }
-#endif
 
 static struct usb_driver mceusb_dev_driver = {
 	LIRC_THIS_MODULE(.owner = THIS_MODULE)
 	.name =		DRIVER_NAME,
 	.probe =	mceusb_dev_probe,
 	.disconnect =	mceusb_dev_disconnect,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	.suspend =	mceusb_dev_suspend,
 	.resume =	mceusb_dev_resume,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
 	.reset_resume =	mceusb_dev_resume,
-#endif
 #endif
 	.id_table =	mceusb_dev_table
 };
@@ -1378,5 +1372,3 @@ MODULE_ALIAS("lirc_mceusb2");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not");
-
-EXPORT_NO_SYMBOLS;

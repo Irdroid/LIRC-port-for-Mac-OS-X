@@ -222,7 +222,6 @@ static void it85_drop_hardware(struct it85_device *dev)
 static int it85_set_use_inc(void *data)
 {
 	struct it85_device *dev;
-	MOD_INC_USE_COUNT;
 	dev = data;
 	if (dev->use_count == 0)
 		it85_init_hardware(dev);
@@ -233,7 +232,6 @@ static int it85_set_use_inc(void *data)
 static void it85_set_use_dec(void *data)
 {
 	struct it85_device *dev;
-	MOD_DEC_USE_COUNT;
 	dev = data;
 	dev->use_count--;
 	if (dev->use_count == 0)
@@ -594,4 +592,3 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Enable debugging messages");
-EXPORT_NO_SYMBOLS;
