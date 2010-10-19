@@ -293,12 +293,12 @@ static void set_use_dec(void *data)
 }
 
 static void send_fragment(struct igorplug *ir, struct lirc_buffer *buf,
-			   int i, int max)
+			   int start, int max)
 {
-	int code;
+	int i, code;
 
 	/* MODE2: pulse/space (PULSE_BIT) in 1us units */
-	while (i < max) {
+	for (i = start; i < max; i++) {
 		/* 1 Igor-tick = 85.333333 us */
 		code = (unsigned int)ir->buf_in[i] * 85 +
 			(unsigned int)ir->buf_in[i] / 3;
@@ -308,7 +308,6 @@ static void send_fragment(struct igorplug *ir, struct lirc_buffer *buf,
 		lirc_buffer_write(buf, (unsigned char *)&code);
 		/* 1 chunk = CODE_LENGTH bytes */
 		ir->in_space ^= 1;
-		++i;
 	}
 }
 
