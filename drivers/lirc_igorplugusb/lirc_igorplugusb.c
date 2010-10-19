@@ -50,11 +50,8 @@
 #include <linux/kmod.h>
 #include <linux/sched.h>
 #include <linux/errno.h>
-#include <linux/ioctl.h>
 #include <linux/fs.h>
 #include <linux/usb.h>
-#include <linux/poll.h>
-#include <linux/smp_lock.h>
 #include <linux/time.h>
 
 #include "drivers/kcompat.h"
@@ -66,11 +63,12 @@
 #include "drivers/lirc_dev/lirc_dev.h"
 #endif
 
+
 /* module identification */
 #define DRIVER_VERSION		"0.2"
 #define DRIVER_AUTHOR		\
 	"Jan M. Hochstein <hochstein@algo.informatik.tu-darmstadt.de>"
-#define DRIVER_DESC		"USB remote driver for LIRC"
+#define DRIVER_DESC		"Igorplug USB remote driver for LIRC"
 #define DRIVER_NAME		"lirc_igorplugusb"
 
 /* debugging support */
@@ -83,11 +81,11 @@ static int debug;
 #define dprintk(fmt, args...)					\
 	do {							\
 		if (debug)					\
-			printk(KERN_DEBUG DRIVER_NAME fmt, ## args);	\
+			printk(KERN_DEBUG fmt, ## args);	\
 	} while (0)
 
 /* One mode2 pulse/space has 4 bytes. */
-#define CODE_LENGTH	     sizeof(lirc_t)
+#define CODE_LENGTH	     sizeof(int)
 
 /* Igor's firmware cannot record bursts longer than 36. */
 #define DEVICE_BUFLEN	   36
@@ -214,7 +212,6 @@ struct igorplug {
 
 	/* usb */
 	struct usb_device *usbdev;
-	struct urb *urb_in;
 	int devnum;
 
 	unsigned char *buf_in;
@@ -231,19 +228,52 @@ struct igorplug {
 	int send_flags;
 };
 
+static int unregister_from_lirc(struct igorplug *ir)
+{
+	struct lirc_driver *d;
+	int devnum;
+
+	if (!ir) {
+		printk(KERN_ERR "%s: called with NULL device struct!\n",
+		       __func__);
+		return -EINVAL;
+	}
+
+	devnum = ir->devnum;
+	d = ir->d;
+
+	if (!d) {
+		printk(KERN_ERR "%s: called with NULL lirc driver struct!\n",
+		       __func__);
+		return -EINVAL;
+	}
+
+	dprintk(DRIVER_NAME "[%d]: calling lirc_unregister_driver\n", devnum);
+	lirc_unregister_driver(d->minor);
+
+	kfree(d);
+	ir->d = NULL;
+	kfree(ir);
+
+	return devnum;
+}
+
 static int set_use_inc(void *data)
 {
 	struct igorplug *ir = data;
 
 	if (!ir) {
-		printk(KERN_ERR DRIVER_NAME
-		       "[?]: set_use_inc called with no context\n");
+		printk(DRIVER_NAME "[?]: set_use_inc called with no context\n");
 		return -EIO;
 	}
-	dprintk("[%d]: set use inc\n", ir->devnum);
+
+	dprintk(DRIVER_NAME "[%d]: set use inc\n", ir->devnum);
 
 	if (!ir->usbdev)
 		return -ENODEV;
+
+	if (try_module_get(ir->d->owner))
+		return -EIO;
 
 	return 0;
 }
@@ -253,25 +283,29 @@ static void set_use_dec(void *data)
 	struct igorplug *ir = data;
 
 	if (!ir) {
-		printk(KERN_ERR DRIVER_NAME
-		       "[?]: set_use_dec called with no context\n");
+		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
 		return;
 	}
-	dprintk("[%d]: set use dec\n", ir->devnum);
+
+	module_put(ir->d->owner);
+
+	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 }
 
 static void send_fragment(struct igorplug *ir, struct lirc_buffer *buf,
 			   int i, int max)
 {
+	int code;
+
 	/* MODE2: pulse/space (PULSE_BIT) in 1us units */
 	while (i < max) {
 		/* 1 Igor-tick = 85.333333 us */
-		lirc_t code = (unsigned int)ir->buf_in[i] * 85 +
+		code = (unsigned int)ir->buf_in[i] * 85 +
 			(unsigned int)ir->buf_in[i] / 3;
 		ir->last_time.tv_usec += code;
 		if (ir->in_space)
 			code |= PULSE_BIT;
-		lirc_buffer_write_n(buf, (unsigned char *)&code, 1);
+		lirc_buffer_write(buf, (unsigned char *)&code);
 		/* 1 chunk = CODE_LENGTH bytes */
 		ir->in_space ^= 1;
 		++i;
@@ -284,31 +318,30 @@ static void send_fragment(struct igorplug *ir, struct lirc_buffer *buf,
  * -ENODATA if none was available. This should add some number of bits
  * evenly divisible by code_length to the buffer
  */
-static int usb_remote_poll(void *data, struct lirc_buffer *buf)
+static int igorplugusb_remote_poll(void *data, struct lirc_buffer *buf)
 {
 	int ret;
 	struct igorplug *ir = (struct igorplug *)data;
 
-	if (!ir->usbdev)  /* Has the device been removed? */
+	if (!ir || !ir->usbdev)  /* Has the device been removed? */
 		return -ENODEV;
 
 	memset(ir->buf_in, 0, ir->len_in);
 
-	ret = usb_control_msg(
-	      ir->usbdev, usb_rcvctrlpipe(ir->usbdev, 0),
-	      GET_INFRACODE, USB_TYPE_VENDOR|USB_DIR_IN,
-	      0/* offset */, /*unused*/0,
-	      ir->buf_in, ir->len_in,
-	      /*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
+	ret = usb_control_msg(ir->usbdev, usb_rcvctrlpipe(ir->usbdev, 0),
+			      GET_INFRACODE, USB_TYPE_VENDOR | USB_DIR_IN,
+			      0/* offset */, /*unused*/0,
+			      ir->buf_in, ir->len_in,
+			      /*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
 	if (ret > 0) {
-		lirc_t code, timediff;
+		int code, timediff;
 		struct timeval now;
 
 		/* ACK packet has 1 byte --> ignore */
 		if (ret < DEVICE_HEADERLEN)
 			return -ENODATA;
 
-		dprintk(": Got %d bytes. Header: %02x %02x %02x\n",
+		dprintk(DRIVER_NAME ": Got %d bytes. Header: %02x %02x %02x\n",
 			ret, ir->buf_in[0], ir->buf_in[1], ir->buf_in[2]);
 
 		do_gettimeofday(&now);
@@ -338,8 +371,7 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 			ir->buf_in[2] %= ret - DEVICE_HEADERLEN; /* sanitize */
 			/* keep even-ness to not desync pulse/pause */
 			send_fragment(ir, buf, DEVICE_HEADERLEN +
-				      ir->buf_in[2] - (ir->buf_in[2] & 1),
-				      ret);
+				      ir->buf_in[2] - (ir->buf_in[2] & 1), ret);
 			send_fragment(ir, buf, DEVICE_HEADERLEN,
 				      DEVICE_HEADERLEN + ir->buf_in[2]);
 		}
@@ -351,13 +383,11 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 		      /*dummy*/ir->buf_in, /*dummy*/ir->len_in,
 		      /*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
 		if (ret < 0)
-			printk(KERN_WARNING DRIVER_NAME
-			       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
-			       ir->devnum, ret);
+			printk(DRIVER_NAME "[%d]: SET_INFRABUFFER_EMPTY: "
+			       "error %d\n", ir->devnum, ret);
 		return 0;
 	} else if (ret < 0)
-		printk(KERN_WARNING DRIVER_NAME
-		       "[%d]: GET_INFRACODE: error %d\n",
+		printk(DRIVER_NAME "[%d]: GET_INFRACODE: error %d\n",
 			ir->devnum, ret);
 
 	return -ENODATA;
@@ -365,12 +395,12 @@ static int usb_remote_poll(void *data, struct lirc_buffer *buf)
 
 
 
-static int usb_remote_probe(struct usb_interface *intf,
-				const struct usb_device_id *id)
+static int igorplugusb_remote_probe(struct usb_interface *intf,
+				    const struct usb_device_id *id)
 {
 	struct usb_device *dev = NULL;
 	struct usb_host_interface *idesc = NULL;
-	struct usb_host_endpoint *ep_ctl2;
+	struct usb_endpoint_descriptor *ep;
 	struct igorplug *ir = NULL;
 	struct lirc_driver *driver = NULL;
 	int devnum, pipe, maxp;
@@ -379,31 +409,32 @@ static int usb_remote_probe(struct usb_interface *intf,
 	int mem_failure = 0;
 	int ret;
 
-	dprintk(": usb probe called.\n");
+	dprintk(DRIVER_NAME ": usb probe called.\n");
 
 	dev = interface_to_usbdev(intf);
 
-#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
-	idesc = &intf->altsetting[intf->act_altsetting];  /* in 2.6.4 */
-#  else
-	idesc = intf->cur_altsetting;  /* in 2.6.6 */
-#  endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
+	idesc = &intf->altsetting[intf->act_altsetting];
+#else
+	idesc = intf->cur_altsetting;
+#endif
 
 	if (idesc->desc.bNumEndpoints != 1)
 		return -ENODEV;
-	ep_ctl2 = idesc->endpoint;
-	if (((ep_ctl2->desc.bEndpointAddress & USB_ENDPOINT_DIR_MASK)
+
+	ep = &idesc->endpoint->desc;
+	if (((ep->bEndpointAddress & USB_ENDPOINT_DIR_MASK)
 	    != USB_DIR_IN)
-	    || (ep_ctl2->desc.bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
+	    || (ep->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK)
 	    != USB_ENDPOINT_XFER_CONTROL)
 		return -ENODEV;
-	pipe = usb_rcvctrlpipe(dev, ep_ctl2->desc.bEndpointAddress);
+
+	pipe = usb_rcvctrlpipe(dev, ep->bEndpointAddress);
 	devnum = dev->devnum;
 	maxp = usb_maxpacket(dev, pipe, usb_pipeout(pipe));
 
-	dprintk(DRIVER_NAME "[%d]: bytes_in_key=%d maxp=%d\n",
+	dprintk(DRIVER_NAME "[%d]: bytes_in_key=%zu maxp=%d\n",
 		devnum, CODE_LENGTH, maxp);
-
 
 	mem_failure = 0;
 	ir = kzalloc(sizeof(struct igorplug), GFP_KERNEL);
@@ -411,16 +442,14 @@ static int usb_remote_probe(struct usb_interface *intf,
 		mem_failure = 1;
 		goto mem_failure_switch;
 	}
-
 	driver = kzalloc(sizeof(struct lirc_driver), GFP_KERNEL);
 	if (!driver) {
 		mem_failure = 2;
 		goto mem_failure_switch;
 	}
 
-	ir->buf_in = usb_alloc_coherent(dev,
-			      DEVICE_BUFLEN+DEVICE_HEADERLEN,
-			      GFP_ATOMIC, &ir->dma_in);
+	ir->buf_in = usb_alloc_coherent(dev, DEVICE_BUFLEN + DEVICE_HEADERLEN,
+					GFP_ATOMIC, &ir->dma_in);
 	if (!ir->buf_in) {
 		mem_failure = 3;
 		goto mem_failure_switch;
@@ -435,7 +464,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
 	driver->sample_rate = sample_rate;    /* per second */
-	driver->add_to_buf = &usb_remote_poll;
+	driver->add_to_buf = &igorplugusb_remote_poll;
 #ifdef LIRC_HAVE_SYSFS
 	driver->dev = &intf->dev;
 #endif
@@ -449,14 +478,14 @@ mem_failure_switch:
 
 	switch (mem_failure) {
 	case 9:
-		usb_free_coherent(dev, DEVICE_BUFLEN+DEVICE_HEADERLEN,
+		usb_free_coherent(dev, DEVICE_BUFLEN + DEVICE_HEADERLEN,
 			ir->buf_in, ir->dma_in);
 	case 3:
 		kfree(driver);
 	case 2:
 		kfree(ir);
 	case 1:
-		printk(KERN_ERR DRIVER_NAME "[%d]: out of memory (code=%d)\n",
+		printk(DRIVER_NAME "[%d]: out of memory (code=%d)\n",
 			devnum, mem_failure);
 		return -ENOMEM;
 	}
@@ -465,7 +494,7 @@ mem_failure_switch:
 	ir->d = driver;
 	ir->devnum = devnum;
 	ir->usbdev = dev;
-	ir->len_in = DEVICE_BUFLEN+DEVICE_HEADERLEN;
+	ir->len_in = DEVICE_BUFLEN + DEVICE_HEADERLEN;
 	ir->in_space = 1; /* First mode2 event is a space. */
 	do_gettimeofday(&ir->last_time);
 
@@ -477,7 +506,7 @@ mem_failure_switch:
 	    && usb_string(dev, dev->descriptor.iProduct, buf, sizeof(buf)) > 0)
 		snprintf(name + strlen(name), sizeof(name) - strlen(name),
 			 " %s", buf);
-	printk(KERN_INFO DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
+	printk(DRIVER_NAME "[%d]: %s on usb%d:%d\n", devnum, name,
 	       dev->bus->busnum, devnum);
 
 	/* clear device buffer */
@@ -487,8 +516,7 @@ mem_failure_switch:
 		/*dummy*/ir->buf_in, /*dummy*/ir->len_in,
 		/*timeout*/HZ * USB_CTRL_GET_TIMEOUT);
 	if (ret < 0)
-		printk(KERN_WARNING DRIVER_NAME
-		       "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
+		printk(DRIVER_NAME "[%d]: SET_INFRABUFFER_EMPTY: error %d\n",
 			devnum, ret);
 
 	usb_set_intfdata(intf, ir);
@@ -496,27 +524,28 @@ mem_failure_switch:
 }
 
 
-static void usb_remote_disconnect(struct usb_interface *intf)
+static void igorplugusb_remote_disconnect(struct usb_interface *intf)
 {
-	struct usb_device *dev = interface_to_usbdev(intf);
+	struct usb_device *usbdev = interface_to_usbdev(intf);
 	struct igorplug *ir = usb_get_intfdata(intf);
+	struct device *dev = &intf->dev;
+	int devnum;
+
+	usb_set_intfdata(intf, NULL);
 
 	if (!ir || !ir->d)
 		return;
 
-	printk(KERN_INFO DRIVER_NAME
-	       "[%d]: usb remote disconnected\n", ir->devnum);
+	ir->usbdev = NULL;
 
-	lirc_unregister_driver(ir->d->minor);
-	kfree(ir->d);
+	usb_free_coherent(usbdev, ir->len_in, ir->buf_in, ir->dma_in);
 
+	devnum = unregister_from_lirc(ir);
 
-	usb_free_coherent(dev, ir->len_in, ir->buf_in, ir->dma_in);
-
-	kfree(ir);
+	dev_info(dev, DRIVER_NAME "[%d]: %s done\n", devnum, __func__);
 }
 
-static struct usb_device_id usb_remote_id_table [] = {
+static struct usb_device_id igorplugusb_remote_id_table[] = {
 	/* Igor Plug USB (Atmel's Manufact. ID) */
 	{ USB_DEVICE(0x03eb, 0x0002) },
 	/* Fit PC2 Infrared Adapter */
@@ -526,47 +555,41 @@ static struct usb_device_id usb_remote_id_table [] = {
 	{ }
 };
 
-static struct usb_driver usb_remote_driver = {
-	LIRC_THIS_MODULE(.owner = THIS_MODULE)
+static struct usb_driver igorplugusb_remote_driver = {
 	.name =		DRIVER_NAME,
-	.probe =	usb_remote_probe,
-	.disconnect =	usb_remote_disconnect,
-	.id_table =	usb_remote_id_table
+	.probe =	igorplugusb_remote_probe,
+	.disconnect =	igorplugusb_remote_disconnect,
+	.id_table =	igorplugusb_remote_id_table
 };
 
-static int __init usb_remote_init(void)
+static int __init igorplugusb_remote_init(void)
 {
-	int i;
+	int ret = 0;
 
-	printk(KERN_INFO DRIVER_NAME ": " DRIVER_DESC " v" DRIVER_VERSION "\n");
-	printk(KERN_INFO DRIVER_NAME ": " DRIVER_AUTHOR "\n");
-	dprintk(": debug mode enabled\n");
+	dprintk(DRIVER_NAME ": loaded, debug mode enabled\n");
 
-	i = usb_register(&usb_remote_driver);
-	if (i < 0) {
-		printk(KERN_ERR DRIVER_NAME
-		       ": usb register failed, result = %d\n", i);
-		return -ENODEV;
-	}
+	ret = usb_register(&igorplugusb_remote_driver);
+	if (ret)
+		printk(DRIVER_NAME ": usb register failed!\n");
 
-	return 0;
+	return ret;
 }
 
-static void __exit usb_remote_exit(void)
+static void __exit igorplugusb_remote_exit(void)
 {
-	usb_deregister(&usb_remote_driver);
+	usb_deregister(&igorplugusb_remote_driver);
 }
 
-module_init(usb_remote_init);
-module_exit(usb_remote_exit);
+module_init(igorplugusb_remote_init);
+module_exit(igorplugusb_remote_exit);
+
+#include <linux/vermagic.h>
+MODULE_INFO(vermagic, VERMAGIC_STRING);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_LICENSE("GPL");
-MODULE_DEVICE_TABLE(usb, usb_remote_id_table);
-
-#include <linux/vermagic.h>
-MODULE_INFO(vermagic, VERMAGIC_STRING);
+MODULE_DEVICE_TABLE(usb, igorplugusb_remote_id_table);
 
 module_param(sample_rate, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(sample_rate, "Sampling rate in Hz (default: 100)");
