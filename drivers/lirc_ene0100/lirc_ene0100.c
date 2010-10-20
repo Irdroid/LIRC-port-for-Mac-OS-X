@@ -743,7 +743,8 @@ static int ene_ioctl(struct inode *node, struct file *file,
 static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 {
-	int lvalue = 0, retval = 0, tmp;
+	__u32 value = 0, tmp;
+	int retval = 0;
 	unsigned long flags;
 	struct ene_device *dev = lirc_get_pdata(file);
 
@@ -760,15 +761,15 @@ static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		/* Fall through */
 	case LIRC_SET_REC_TIMEOUT:
 	case LIRC_SET_REC_TIMEOUT_REPORTS:
-		retval = get_user(lvalue, (unsigned int *) arg);
+		retval = get_user(value, (__u32 *) arg);
 		if (retval)
 			return retval;
 	}
 
 	switch (cmd) {
 	case LIRC_SET_SEND_CARRIER:
-		ene_dbg("TX: attempt to set tx carrier to %d kHz", lvalue);
-		tmp = 1000000 / lvalue; /* (1 / freq) (* # usec in 1 sec) */
+		ene_dbg("TX: attempt to set tx carrier to %d kHz", value);
+		tmp = 1000000 / value; /* (1 / freq) (* # usec in 1 sec) */
 
 		if (tmp && (tmp > ENE_TX_PERIOD_MAX ||
 				tmp < ENE_TX_PERIOD_MIN)) {
@@ -780,39 +781,39 @@ static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			tmp = 32; /* this is just a coincidence!!! */
 		}
-		ene_dbg("TX: set carrier to %d kHz", lvalue);
+		ene_dbg("TX: set carrier to %u kHz", value);
 
 		spin_lock_irqsave(&dev->hw_lock, flags);
 		dev->tx_period = tmp;
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		break;
 	case LIRC_SET_SEND_DUTY_CYCLE:
-		ene_dbg("TX: attempt to set duty cycle to %d%%", lvalue);
+		ene_dbg("TX: attempt to set duty cycle to %u%%", value);
 
-		if ((lvalue >= 100) || (lvalue <= 0)) {
+		if ((value >= 100) || (value == 0)) {
 			retval = -EINVAL;
 			break;
 		}
 		spin_lock_irqsave(&dev->hw_lock, flags);
-		dev->tx_duty_cycle = lvalue;
+		dev->tx_duty_cycle = value;
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		break;
 	case LIRC_SET_TRANSMITTER_MASK:
-		ene_dbg("TX: attempt to set transmitter mask %02x", lvalue);
+		ene_dbg("TX: attempt to set transmitter mask %02x", value);
 
 		/* invalid txmask */
-		if (!lvalue || lvalue & ~0x3) {
+		if (!value || value & ~0x3) {
 			ene_dbg("TX: invalid mask");
 			/* this supposed to return num of transmitters */
 			retval =  2;
 			break;
 		}
 		spin_lock_irqsave(&dev->hw_lock, flags);
-		dev->transmitter_mask = lvalue;
+		dev->transmitter_mask = value;
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		break;
 	case LIRC_SET_REC_CARRIER:
-		tmp = (lvalue > ENE_NORMAL_RX_HI || lvalue < ENE_NORMAL_RX_LOW);
+		tmp = (value > ENE_NORMAL_RX_HI || value < ENE_NORMAL_RX_LOW);
 
 		if (tmp != dev->learning_enabled) {
 			spin_lock_irqsave(&dev->hw_lock, flags);
@@ -823,32 +824,36 @@ static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		break;
 	case LIRC_SET_REC_TIMEOUT:
 		spin_lock_irqsave(&dev->hw_lock, flags);
-		dev->rx_timeout = lvalue;
+		dev->rx_timeout = value;
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		ene_dbg("RX: set rx report timeout to %d", dev->rx_timeout);
 		break;
 	case LIRC_SET_REC_TIMEOUT_REPORTS:
 		spin_lock_irqsave(&dev->hw_lock, flags);
-		dev->rx_send_timeout_packet = lvalue;
+		dev->rx_send_timeout_packet = value;
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		ene_dbg("RX: %sable timeout reports",
 				dev->rx_send_timeout_packet ? "en" : "dis");
 		break;
 	case LIRC_SET_MEASURE_CARRIER_MODE:
-		if (dev->rx_carrier_sense == lvalue)
+		if (dev->rx_carrier_sense == value)
 			break;
 		spin_lock_irqsave(&dev->hw_lock, flags);
-		dev->rx_carrier_sense = lvalue;
+		dev->rx_carrier_sense = value;
 		ene_rx_set_inputs(dev);
 		spin_unlock_irqrestore(&dev->hw_lock, flags);
 		break;
 	case LIRC_GET_REC_RESOLUTION:
 		tmp = dev->rx_fan_input_inuse ?
 			ENE_SAMPLE_PERIOD_FAN : sample_period;
-		retval = put_user(tmp, (unsigned long *) arg);
+		retval = put_user(tmp, (__u32 *) arg);
 		break;
 	default:
-		retval = -ENOIOCTLCMD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+		retval = lirc_dev_fop_ioctl(node, filep, cmd, arg);
+#else
+		retval = lirc_dev_fop_ioctl(filep, cmd, arg);
+#endif
 		break;
 	}
 
@@ -927,6 +932,10 @@ static const struct file_operations ene_fops = {
 	.unlocked_ioctl	= ene_ioctl,
 #endif
 	.compat_ioctl	= ene_ioctl,
+	.read		= lirc_dev_fop_read,
+	.poll		= lirc_dev_fop_poll,
+	.open		= lirc_dev_fop_open,
+	.release	= lirc_dev_fop_close,
 };
 
 /* main load function */

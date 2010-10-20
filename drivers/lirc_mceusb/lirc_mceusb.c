@@ -921,7 +921,7 @@ static long mceusb_lirc_ioctl(struct file *filep, unsigned int cmd,
 #endif
 {
 	int result;
-	unsigned int ivalue;
+	__u32 value;
 	struct mceusb_dev *ir = NULL;
 
 	/* Retrieve lirc_driver data for the device */
@@ -933,47 +933,55 @@ static long mceusb_lirc_ioctl(struct file *filep, unsigned int cmd,
 	switch (cmd) {
 	case LIRC_SET_TRANSMITTER_MASK:
 
-		result = get_user(ivalue, (unsigned int *) arg);
+		result = get_user(value, (__u32 *) arg);
 		if (result)
 			return result;
-		switch (ivalue) {
+		switch (value) {
 		case 0x01: /* Transmitter 1     => 0x04 */
 		case 0x02: /* Transmitter 2     => 0x02 */
 		case 0x03: /* Transmitter 1 & 2 => 0x06 */
-			set_transmitter_mask(ir, ivalue);
+			set_transmitter_mask(ir, value);
 			break;
 
 		default: /* Unsupported transmitter mask */
 			return MCE_MAX_CHANNELS;
 		}
 
-		dprintk(DRIVER_NAME ": SET_TRANSMITTERS mask=%d\n", ivalue);
+		dprintk(DRIVER_NAME ": SET_TRANSMITTERS mask=%d\n", value);
 		break;
 
 	case LIRC_SET_SEND_CARRIER:
 
-		result = get_user(ivalue, (unsigned int *) arg);
+		result = get_user(value, (__u32 *) arg);
 		if (result)
 			return result;
 
-		set_send_carrier(ir, ivalue);
+		set_send_carrier(ir, value);
 		break;
 
 	default:
-		return -ENOIOCTLCMD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+		return lirc_dev_fop_ioctl(node, filep, cmd, arg);
+#else
+		return lirc_dev_fop_ioctl(filep, cmd, arg);
+#endif
 	}
 
 	return 0;
 }
 
 static struct file_operations lirc_fops = {
-	.owner	= THIS_MODULE,
-	.write	= mceusb_transmit_ir,
+	.owner		= THIS_MODULE,
+	.write		= mceusb_transmit_ir,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-	.ioctl	= mceusb_lirc_ioctl,
+	.ioctl		= mceusb_lirc_ioctl,
 #else
 	.unlocked_ioctl	= mceusb_lirc_ioctl,
 #endif
+	.read		= lirc_dev_fop_read,
+	.poll		= lirc_dev_fop_poll,
+	.open		= lirc_dev_fop_open,
+	.release	= lirc_dev_fop_close,
 };
 
 static void mceusb_gen1_init(struct mceusb_dev *ir)

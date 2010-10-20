@@ -533,7 +533,11 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		tx_mask = value;
 		break;
 	default:
-		return -ENOIOCTLCMD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+		return lirc_dev_fop_ioctl(node, filep, cmd, arg);
+#else
+		return lirc_dev_fop_ioctl(filep, cmd, arg);
+#endif
 	}
 	return 0;
 }

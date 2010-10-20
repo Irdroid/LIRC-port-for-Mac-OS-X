@@ -463,6 +463,11 @@ static struct file_operations streamzap_fops = {
 #else
 	.unlocked_ioctl	= streamzap_ioctl,
 #endif
+	.read		= lirc_dev_fop_read,
+	.write		= lirc_dev_fop_write,
+	.poll		= lirc_dev_fop_poll,
+	.open		= lirc_dev_fop_open,
+	.release	= lirc_dev_fop_close,
 };
 
 
@@ -690,16 +695,16 @@ static long streamzap_ioctl(struct file *filep, unsigned int cmd,
 #endif
 {
 	int result = 0;
-	lirc_t val;
+	__u32 val;
 	unsigned int flag = 0;
 	struct usb_streamzap *sz = lirc_get_pdata(filep);
 
 	switch (cmd) {
 	case LIRC_GET_REC_RESOLUTION:
-		result = put_user(STREAMZAP_RESOLUTION, (unsigned int *) arg);
+		result = put_user(STREAMZAP_RESOLUTION, (__u32 *) arg);
 		break;
 	case LIRC_SET_REC_TIMEOUT:
-		result = get_user(val, (lirc_t *)arg);
+		result = get_user(val, (__u32 *)arg);
 		if (result == 0) {
 			if (val != STREAMZAP_TIMEOUT * STREAMZAP_RESOLUTION)
 				result = -EINVAL;
@@ -715,7 +720,11 @@ static long streamzap_ioctl(struct file *filep, unsigned int cmd,
 		}
 		break;
 	default:
-		return -ENOIOCTLCMD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+		return lirc_dev_fop_ioctl(node, filep, cmd, arg);
+#else
+		return lirc_dev_fop_ioctl(filep, cmd, arg);
+#endif
 	}
 	return result;
 }

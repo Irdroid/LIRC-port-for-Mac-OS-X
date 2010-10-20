@@ -1115,7 +1115,11 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 
 	default:
-		return -ENOIOCTLCMD;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+		return lirc_dev_fop_ioctl(node, filep, cmd, arg);
+#else
+		return lirc_dev_fop_ioctl(filep, cmd, arg);
+#endif
 	}
 	return 0;
 }
@@ -1129,6 +1133,10 @@ static struct file_operations lirc_fops = {
 	.unlocked_ioctl	= lirc_ioctl,
 #endif
 	.compat_ioctl	= lirc_ioctl,
+	.read		= lirc_dev_fop_read,
+	.poll		= lirc_dev_fop_poll,
+	.open		= lirc_dev_fop_open,
+	.release	= lirc_dev_fop_close,
 };
 
 static struct lirc_driver driver = {

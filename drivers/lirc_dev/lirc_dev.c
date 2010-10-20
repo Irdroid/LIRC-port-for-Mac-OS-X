@@ -689,7 +689,6 @@ long lirc_dev_fop_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 #else
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 #endif
-
 	if (!ir) {
 		printk(KERN_ERR "lirc_dev: %s: no irctl found!\n", __func__);
 		return -ENODEV;
@@ -710,56 +709,50 @@ long lirc_dev_fop_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	case LIRC_GET_FEATURES:
 		result = put_user(ir->d.features, (__u32 *)arg);
 		break;
-	case LIRC_GET_LENGTH:
-		result = put_user(ir->d.code_length, (__u32 *) arg);
-		break;
-	case LIRC_GET_MIN_TIMEOUT:
-		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
-		    ir->d.min_timeout == 0)
-			return -ENOSYS;
-
-		result = put_user(ir->d.min_timeout, (__u32 *) arg);
-		break;
-	case LIRC_GET_MAX_TIMEOUT:
-		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
-		    ir->d.max_timeout == 0)
-			return -ENOSYS;
-
-		result = put_user(ir->d.max_timeout, (__u32 *) arg);
-		break;
 	case LIRC_GET_REC_MODE:
-		if (!(ir->d.features & LIRC_CAN_REC_MASK))
-			return -ENOSYS;
+		if (!(ir->d.features & LIRC_CAN_REC_MASK)) {
+			result = -ENOSYS;
+			break;
+		}
 
 		result = put_user(LIRC_REC2MODE
 				  (ir->d.features & LIRC_CAN_REC_MASK),
 				  (__u32 *)arg);
 		break;
-	case LIRC_GET_SEND_MODE:
-		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
-			return -ENOSYS;
-
-		result = put_user(LIRC_SEND2MODE
-				  (ir->d.features & LIRC_CAN_SEND_MASK),
-				  (__u32 *)arg);
-		break;
-
-	/*obsolete */
 	case LIRC_SET_REC_MODE:
-		if (!(ir->d.features & LIRC_CAN_REC_MASK))
-			return -ENOSYS;
+		if (!(ir->d.features & LIRC_CAN_REC_MASK)) {
+			result = -ENOSYS;
+			break;
+		}
 
 		result = get_user(mode, (__u32 *)arg);
 		if (!result && !(LIRC_MODE2REC(mode) & ir->d.features))
 			result = -EINVAL;
+		/*
+		 * FIXME: We should actually set the mode somehow but
+		 * for now, lirc_serial doesn't support mode changing either
+		 */
 		break;
-	case LIRC_SET_SEND_MODE:
-		if (!(ir->d.features & LIRC_CAN_SEND_MASK))
-			return -ENOSYS;
+	case LIRC_GET_LENGTH:
+		result = put_user(ir->d.code_length, (__u32 *) arg);
+		break;
+	case LIRC_GET_MIN_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.min_timeout == 0) {
+			result = -ENOSYS;
+			break;
+		}
 
-		result = get_user(mode, (__u32 *)arg);
-		if (!result && !(LIRC_MODE2SEND(mode) & ir->d.features))
-			result = -EINVAL;
+		result = put_user(ir->d.min_timeout, (__u32 *) arg);
+		break;
+	case LIRC_GET_MAX_TIMEOUT:
+		if (!(ir->d.features & LIRC_CAN_SET_REC_TIMEOUT) ||
+		    ir->d.max_timeout == 0) {
+			result = -ENOSYS;
+			break;
+		}
+
+		result = put_user(ir->d.max_timeout, (__u32 *) arg);
 		break;
 	default:
 		result = -EINVAL;
