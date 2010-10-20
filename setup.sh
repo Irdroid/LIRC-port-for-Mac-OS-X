@@ -20,7 +20,6 @@ LPT2_IRQ=5
 LPT3_IRQ=none
 
 LIRC_DRIVER="serial"
-LIRC_MAJOR=61
 SELECTED_DRIVER=""
 DRIVER_PARAMETER="com1"
 DRIVER_PARAM_TYPE=""
@@ -317,7 +316,6 @@ SaveConfig ()
     echo "LIRC_DRIVER=$LIRC_DRIVER" >$CONFIG
     echo "LIRC_PORT=$LIRC_PORT" >>$CONFIG
     echo "LIRC_IRQ=$LIRC_IRQ" >>$CONFIG
-    echo "LIRC_MAJOR=$LIRC_MAJOR" >>$CONFIG
     echo "IRTTY=$IRTTY" >>$CONFIG
     echo "DRIVER_PARAM_TYPE=$DRIVER_PARAM_TYPE" >>$CONFIG
     echo "DRIVER_PARAMETER=$DRIVER_PARAMETER" >>$CONFIG
@@ -361,7 +359,6 @@ SaveConfig ()
     if test "$USE_SYSLOG" = "on"; then echo "--with-syslog \\" >>$START; fi
     if test "$DYNCODES" = "on"; then echo "--enable-dyncodes \\" >>$START; fi
     echo "--with-driver=$LIRC_DRIVER \\" >>$START
-    echo "--with-major=$LIRC_MAJOR \\" >>$START
     echo "--with-port=$LIRC_PORT \\" >>$START
     echo "--with-irq=$LIRC_IRQ \\" >>$START
     echo "\"\$@\"" >>$START

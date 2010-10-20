@@ -243,20 +243,13 @@ int default_init()
 				  "driver instead of the %s driver?",
 				  hw.name);
 		}
-		else if(major(s.st_rdev) != LIRC_MAJOR)
-		{
-			logprintf(LOG_ERR, "major number of %s is %lu",
-				  hw.device,
-				  (__u32) major(s.st_rdev));
-			logprintf(LOG_ERR, "LIRC major number is %lu",
-				  (__u32) LIRC_MAJOR);
-			logprintf(LOG_ERR, "check if %s is a LIRC device",
-				  hw.device);
-		}
 		else
 		{
-			logprintf(LOG_ERR,"make sure you use a current "
-				  "version of the driver");
+			logprintf(LOG_ERR, "major number of %s is %lu",
+				  hw.device, (__u32) major(s.st_rdev));
+			logprintf(LOG_ERR, "make sure %s is a LIRC device and "
+				  "use a current version of the driver",
+				  hw.device);
 		}
 		default_deinit();
 		return(0);

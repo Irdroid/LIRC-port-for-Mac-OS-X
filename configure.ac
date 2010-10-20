@@ -261,9 +261,6 @@ AH_TEMPLATE([LIRC_IRTTY],
 AH_TEMPLATE([LIRC_IT87_DIGIMATRIX],
 	[Define if you want to use lirc_it87 with an Asus Digimatrix])
 
-AH_TEMPLATE([LIRC_MAJOR],
-	[Set the device major for the lirc driver])
-
 AH_TEMPLATE([LIRC_ON_SA1100],
 	[Define if you want to cross-compile for the SA1100])
 
@@ -1753,7 +1750,6 @@ AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
 
 AC_DEFINE_UNQUOTED(LIRC_DRIVER, "$driver")
-AC_DEFINE_UNQUOTED(LIRC_MAJOR, $lirc_major)
 if test "$port" != ""; then
   AC_DEFINE_UNQUOTED(LIRC_PORT, $port)
 fi
