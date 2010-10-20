@@ -272,9 +272,6 @@ static int set_use_inc(void *data)
 	if (!ir->usbdev)
 		return -ENODEV;
 
-	if (try_module_get(ir->d->owner))
-		return -EIO;
-
 	return 0;
 }
 
@@ -286,8 +283,6 @@ static void set_use_dec(void *data)
 		printk(DRIVER_NAME "[?]: set_use_dec called with no context\n");
 		return;
 	}
-
-	module_put(ir->d->owner);
 
 	dprintk(DRIVER_NAME "[%d]: set use dec\n", ir->devnum);
 }
