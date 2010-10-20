@@ -44,17 +44,10 @@
 #include <linux/mm.h>
 #include <linux/delay.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/io.h>
-#include <asm/signal.h>
-#include <asm/irq.h>
-#include <asm/uaccess.h>
-#else
 #include <linux/io.h>
 #include <linux/signal.h>
 #include <linux/irq.h>
 #include <linux/uaccess.h>
-#endif
 #include <asm/div64.h>
 
 #include <linux/poll.h>
@@ -642,16 +635,7 @@ static void kf(void *handle)
 
 static int __init lirc_parallel_init(void)
 {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 3)
 	pport = parport_find_base(io);
-#else
-	pport = parport_enumerate();
-	while (pport != NULL) {
-		if (pport->base == io)
-			break;
-		pport = pport->next;
-	}
-#endif
 	if (pport == NULL) {
 		printk(KERN_NOTICE "%s: no port at %x found\n",
 		       LIRC_DRIVER_NAME, io);
@@ -659,9 +643,7 @@ static int __init lirc_parallel_init(void)
 	}
 	ppdevice = parport_register_device(pport, LIRC_DRIVER_NAME,
 					   pf, kf, irq_handler, 0, NULL);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 3)
 	parport_put_port(pport);
-#endif
 	if (ppdevice == NULL) {
 		printk(KERN_NOTICE "%s: parport_register_device() failed\n",
 		       LIRC_DRIVER_NAME);

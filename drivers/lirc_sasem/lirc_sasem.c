@@ -46,11 +46,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#else
 #include <linux/uaccess.h>
-#endif
 #include <linux/usb.h>
 
 #include "drivers/kcompat.h"
@@ -70,9 +66,6 @@
 #define MOD_VERSION	"0.5"
 
 #define VFD_MINOR_BASE	144	/* Same as LCD */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
-#define DEVFS_MODE S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
-#endif
 #define DEVFS_NAME	LIRC_DEVFS_PREFIX "lcd%d"
 
 #define BUF_CHUNK_SIZE	8
@@ -181,9 +174,6 @@ static struct usb_driver sasem_driver = {
 static struct usb_class_driver sasem_class = {
 	.name		= DEVFS_NAME,
 	.fops		= &vfd_fops,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 15)
-	.mode		= DEVFS_MODE,
-#endif
 	.minor_base	= VFD_MINOR_BASE,
 };
 

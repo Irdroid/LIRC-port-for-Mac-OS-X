@@ -42,11 +42,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
-#error "*******************************************************"
-#error "Sorry, this driver needs kernel version 2.6.5 or higher"
-#error "*******************************************************"
-#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
@@ -58,11 +53,7 @@
 #include <linux/kmod.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#else
 #include <linux/uaccess.h>
-#endif
 #include <linux/usb.h>
 #include <linux/wait.h>
 #include <linux/time.h>
@@ -346,20 +337,6 @@ static char GET_RX_SENSOR[]	= {0x9f, 0x15};
 //static char SET_RX_TIMEOUT[]	= {0x9f, 0x0c, 0x00, 0x00};
 //static char SET_RX_SENSOR[]	= {0x9f, 0x14, 0x00};
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
-static unsigned long usecs_to_jiffies(const unsigned int u)
-{
-	if (u > jiffies_to_usecs(MAX_JIFFY_OFFSET))
-		return MAX_JIFFY_OFFSET;
-#if HZ <= USEC_PER_SEC && !(USEC_PER_SEC % HZ)
-	return (u + (USEC_PER_SEC / HZ) - 1) / (USEC_PER_SEC / HZ);
-#elif HZ > USEC_PER_SEC && !(HZ % USEC_PER_SEC)
-	return u * (HZ / USEC_PER_SEC);
-#else
-	return (u * HZ + USEC_PER_SEC - 1) / USEC_PER_SEC;
-#endif
-}
-#endif
 static void mceusb_dev_printdata(struct mceusb_dev *ir, char *buf,
 				 int len, bool out)
 {

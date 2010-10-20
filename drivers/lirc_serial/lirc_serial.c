@@ -85,21 +85,11 @@
 #include <linux/mm.h>
 #include <linux/delay.h>
 #include <linux/poll.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 #include <linux/platform_device.h>
-#endif
 
 #include <asm/system.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#else
 #include <linux/uaccess.h>
-#endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-#include <asm/io.h>
-#else
 #include <linux/io.h>
-#endif
 #include <linux/irq.h>
 #include <linux/fcntl.h>
 
@@ -957,12 +947,7 @@ static int init_port(void)
 	/* If pin is high, then this must be an active low receiver. */
 	if (sense == -1) {
 		/* wait 1/2 sec for the power supply */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
 		msleep(500);
-#else
-		set_current_state(TASK_INTERRUPTIBLE);
-		schedule_timeout(HZ/2);
-#endif
 
 		/*
 		 * probe 9 times every 0.04s, collect "votes" for
@@ -975,11 +960,7 @@ static int init_port(void)
 				nlow++;
 			else
 				nhigh++;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
 			msleep(40);
-#else
-			schedule_timeout(HZ/25);
-#endif
 		}
 		sense = (nlow >= nhigh ? 1 : 0);
 		printk(KERN_INFO  LIRC_DRIVER_NAME  ": auto-detected active "
@@ -1170,7 +1151,6 @@ static struct lirc_driver driver = {
 
 #ifdef MODULE
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 static struct platform_device *lirc_serial_dev;
 
 static int __devinit lirc_serial_probe(struct platform_device *dev)
@@ -1266,17 +1246,14 @@ static void __exit lirc_serial_exit(void)
 	platform_device_unregister(lirc_serial_dev);
 	platform_driver_unregister(&lirc_serial_driver);
 }
-#endif
 
 static int __init lirc_serial_init_module(void)
 {
 	int result;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	result = lirc_serial_init();
 	if (result)
 		return result;
-#endif
 	switch (type) {
 	case LIRC_HOMEBREW:
 	case LIRC_IRDEO:
@@ -1329,17 +1306,13 @@ static int __init lirc_serial_init_module(void)
 exit_release:
 	release_region(io, 8);
 exit_serial_exit:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_serial_exit();
-#endif
 	return result;
 }
 
 static void __exit lirc_serial_exit_module(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_serial_exit();
-#endif
 #ifdef LIRC_ALLOW_MMAPPED_IO
 	if (iommap != 0)
 		release_mem_region(iommap, 8 << ioshift);

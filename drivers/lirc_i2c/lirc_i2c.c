@@ -394,15 +394,10 @@ static const struct i2c_device_id ir_receiver_id[] = {
 #endif
 
 static struct i2c_driver driver = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-	.name		= "i2c ir driver",
-	.flags		= I2C_DF_NOTIFY,
-#else
 	.driver = {
 		.owner	= THIS_MODULE,
 		.name	= "i2c ir driver",
 	},
-#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 	.id		= I2C_DRIVERID_EXP3, /* FIXME */
 	.attach_adapter	= ir_probe,

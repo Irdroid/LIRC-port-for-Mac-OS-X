@@ -412,11 +412,7 @@ static int igorplugusb_remote_probe(struct usb_interface *intf,
 
 	dev = interface_to_usbdev(intf);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
-	idesc = &intf->altsetting[intf->act_altsetting];
-#else
 	idesc = intf->cur_altsetting;
-#endif
 
 	if (idesc->desc.bNumEndpoints != 1)
 		return -ENODEV;

@@ -40,11 +40,7 @@
 #include <linux/module.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#else
 #include <linux/uaccess.h>
-#endif
 #include <linux/usb.h>
 
 #include "drivers/kcompat.h"
@@ -495,11 +491,7 @@ static int streamzap_probe(struct usb_interface *interface,
 	sz->interface = interface;
 
 	/* Check to ensure endpoint information matches requirements */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
-	iface_host = &interface->altsetting[interface->act_altsetting];
-#else
 	iface_host = interface->cur_altsetting;
-#endif
 
 	if (iface_host->desc.bNumEndpoints != 1) {
 		err("%s: Unexpected desc.bNumEndpoints (%d)", __func__,

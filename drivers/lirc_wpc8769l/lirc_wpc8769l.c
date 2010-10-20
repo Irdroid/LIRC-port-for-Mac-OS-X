@@ -48,18 +48,12 @@
 
 #include <linux/bitops.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-#include <asm/io.h>
-#else
 #include <linux/io.h>
-#endif
 #include <linux/irq.h>
 
 #include <linux/acpi.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 #include <linux/platform_device.h>
-#endif
 
 #include "drivers/kcompat.h"
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)
@@ -935,7 +929,6 @@ static int wpc8769l_acpi_detect(void)
 }
 
 #ifdef MODULE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 static struct platform_device *lirc_wpc8769l_platform_dev;
 
 static int __devinit lirc_wpc8769l_probe(struct platform_device *dev)
@@ -1015,7 +1008,6 @@ static void __exit lirc_wpc8769l_platform_exit(void)
 	platform_device_unregister(lirc_wpc8769l_platform_dev);
 	platform_driver_unregister(&lirc_wpc8769l_platform_driver);
 }
-#endif
 
 static int __init lirc_wpc8769l_module_init(void)
 {
@@ -1063,12 +1055,10 @@ static int __init lirc_wpc8769l_module_init(void)
 		}
 	}
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	/* Register the platform driver and device. */
 	rc = lirc_wpc8769l_platform_init();
 	if (rc)
 		goto exit_release_region_2;
-#endif
 
 	/* Prepare the hardware. */
 	wpc8769l_prepare_hardware();
@@ -1090,11 +1080,9 @@ static int __init lirc_wpc8769l_module_init(void)
 	return 0; /* Everything OK. */
 
 exit_platform_exit:
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	lirc_wpc8769l_platform_exit();
 
 exit_release_region_2:
-#endif
 	if (baseport2)
 		release_region(baseport2, WPC8769L_IO_REGION_2_SIZE);
 
@@ -1108,10 +1096,8 @@ module_init(lirc_wpc8769l_module_init);
 
 static void __exit lirc_wpc8769l_module_exit(void)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
 	/* Unregister the platform driver and device. */
 	lirc_wpc8769l_platform_exit();
-#endif
 
 	/* Unregister the LIRC driver. */
 	lirc_unregister_driver(driver.minor);

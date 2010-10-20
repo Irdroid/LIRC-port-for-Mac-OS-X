@@ -28,10 +28,6 @@
 #include <linux/uaccess.h>
 #include "lirc_ene0100.h"
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 16)
-#error "Sorry, this driver needs kernel version 2.6.16 or higher"
-#endif
-
 static int sample_period = -1;
 static int enable_idle = 1;
 static int enable_duty_carrier;

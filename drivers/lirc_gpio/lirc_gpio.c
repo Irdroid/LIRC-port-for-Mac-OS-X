@@ -37,21 +37,8 @@
 #include <linux/sched.h>
 #include <linux/errno.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 17)
-#include "../drivers/media/video/bttv.h"
-#include "../drivers/media/video/bttvp.h"
-#else
 #include "../drivers/media/video/bt8xx/bttv.h"
 #include "../drivers/media/video/bt8xx/bttvp.h"
-#endif
-
-#if BTTV_VERSION_CODE < KERNEL_VERSION(0, 7, 45)
-#error "*******************************************************"
-#error " Sorry, this driver needs bttv version 0.7.45 or       "
-#error " higher. If you are using the bttv package, copy it to "
-#error " the kernel					    "
-#error "*******************************************************"
-#endif
 
 #include "drivers/kcompat.h"
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 35)

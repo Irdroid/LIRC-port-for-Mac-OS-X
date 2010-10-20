@@ -50,11 +50,7 @@
 #include <linux/kmod.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#else
 #include <linux/uaccess.h>
-#endif
 #include <linux/usb.h>
 #include <linux/poll.h>
 #include <linux/wait.h>
@@ -1168,11 +1164,7 @@ static int usb_remote_probe(struct usb_interface *intf,
 	dprintk(DRIVER_NAME "[%d]: usb_remote_probe: dev:%p, intf:%p, id:%p)\n",
 		dev->devnum, dev, intf, id);
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 5)
-	idesc = &intf->altsetting[intf->act_altsetting];
-#else
 	idesc = intf->cur_altsetting;
-#endif
 
 	/* Check if a usb remote has already been registered for this device */
 	ir = get_prior_reg_ir(dev);

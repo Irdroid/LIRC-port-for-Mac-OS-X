@@ -39,13 +39,8 @@
 #include <linux/poll.h>
 #include <linux/smp_lock.h>
 #include <linux/completion.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-#include <asm/uaccess.h>
-#include <asm/errno.h>
-#else
 #include <linux/uaccess.h>
 #include <linux/errno.h>
-#endif
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
