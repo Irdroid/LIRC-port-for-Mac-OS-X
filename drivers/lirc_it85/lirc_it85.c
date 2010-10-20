@@ -478,9 +478,6 @@ static int __devinit it85_pnp_probe(struct pnp_dev *dev,
 	driver->features = LIRC_CAN_REC_MODE2;
 	driver->data = it85_dev;
 	driver->add_to_buf = NULL;
-#ifndef LIRC_REMOVE_DURING_EXPORT
-	driver->get_queue = NULL;
-#endif
 	driver->rbuf = &it85_dev->buffer;
 	driver->set_use_inc = it85_set_use_inc;
 	driver->set_use_dec = it85_set_use_dec;

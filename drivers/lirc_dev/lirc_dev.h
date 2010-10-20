@@ -170,9 +170,6 @@ struct lirc_driver {
 	int min_timeout;
 	int max_timeout;
 	int (*add_to_buf) (void *data, struct lirc_buffer *buf);
-#ifndef LIRC_REMOVE_DURING_EXPORT
-	wait_queue_head_t* (*get_queue) (void *data);
-#endif
 	struct lirc_buffer *rbuf;
 	int (*set_use_inc) (void *data);
 	void (*set_use_dec) (void *data);
@@ -193,8 +190,7 @@ struct lirc_driver {
  * length of the remote control key code expressed in bits
  *
  * sample_rate equal to 0 means that no polling will be performed and
- * add_to_buf will be triggered by external events (through task queue
- * returned by get_queue)
+ * add_to_buf will be triggered by external events
  *
  * data:
  * it may point to any driver data and this pointer will be passed to
@@ -207,10 +203,6 @@ struct lirc_driver {
  * routine should return 0 if data was added to the buffer and
  * -ENODATA if none was available. This should add some number of bits
  * evenly divisible by code_length to the buffer
- *
- * get_queue:
- * this callback should return a pointer to the task queue which will
- * be used for external event waiting
  *
  * rbuf:
  * if not NULL, it will be used as a read buffer, you will have to

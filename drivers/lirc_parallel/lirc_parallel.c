@@ -600,9 +600,6 @@ static struct lirc_driver driver = {
        .sample_rate	= 0,
        .data		= NULL,
        .add_to_buf	= NULL,
-#ifndef LIRC_REMOVE_DURING_EXPORT
-       .get_queue	= NULL,
-#endif
        .set_use_inc	= set_use_inc,
        .set_use_dec	= set_use_dec,
        .fops		= &lirc_fops,

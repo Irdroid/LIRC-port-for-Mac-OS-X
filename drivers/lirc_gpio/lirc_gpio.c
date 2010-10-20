@@ -379,15 +379,9 @@ static void set_use_dec(void *data)
 {
 }
 
-static wait_queue_head_t *get_queue(void *data)
-{
-	return bttv_get_gpio_queue(card);
-}
-
 static struct lirc_driver driver = {
 	.name		= "lirc_gpio  ",
 	.add_to_buf	= add_to_buf,
-	.get_queue	= get_queue,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,
 	.dev		= NULL,

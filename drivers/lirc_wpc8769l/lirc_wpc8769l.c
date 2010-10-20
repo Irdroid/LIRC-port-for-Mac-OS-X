@@ -875,7 +875,6 @@ static struct lirc_driver driver = {
 	.sample_rate	= 0,
 	.data		= NULL,
 	.add_to_buf	= NULL,
-	.get_queue	= NULL,
 	.rbuf		= &rbuf,
 	.set_use_inc	= set_use_inc,
 	.set_use_dec	= set_use_dec,

@@ -318,9 +318,6 @@ static int probe(struct usb_interface *intf, const struct usb_device_id *id)
 	ttusbir->driver.sample_rate = 0;
 	ttusbir->driver.data = ttusbir;
 	ttusbir->driver.add_to_buf = NULL;
-#ifndef LIRC_REMOVE_DURING_EXPORT
-	ttusbir->driver.get_queue = NULL;
-#endif
 	ttusbir->driver.rbuf = &ttusbir->rbuf;
 	ttusbir->driver.set_use_inc = set_use_inc;
 	ttusbir->driver.set_use_dec = set_use_dec;
