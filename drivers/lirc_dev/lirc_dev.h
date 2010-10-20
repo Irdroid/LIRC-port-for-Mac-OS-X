@@ -1,10 +1,8 @@
 /*
  * LIRC base driver
  *
- * (L) by Artur Lipowski <alipowski@interia.pl>
+ * by Artur Lipowski <alipowski@interia.pl>
  *        This code is licensed under GNU GPL
- *
- * $Id: lirc_dev.h,v 1.41 2010/04/25 08:33:52 lirc Exp $
  *
  */
 
@@ -18,6 +16,8 @@
 
 #include <linux/slab.h>
 #include <linux/fs.h>
+#include <linux/ioctl.h>
+#include <linux/poll.h>
 #include <linux/kfifo.h>
 
 #include "drivers/lirc.h"
@@ -33,8 +33,8 @@ struct lirc_buffer {
 	struct kfifo *fifo;
 #else
 	struct kfifo fifo;
-	u8 fifo_initialized;
 #endif
+	u8 fifo_initialized;
 };
 
 static inline void lirc_buffer_clear(struct lirc_buffer *buf)
@@ -49,9 +49,12 @@ static inline void lirc_buffer_clear(struct lirc_buffer *buf)
 		spin_lock_irqsave(&buf->fifo_lock, flags);
 		kfifo_reset(&buf->fifo);
 		spin_unlock_irqrestore(&buf->fifo_lock, flags);
-	}
+	} else
+		WARN(1, "calling %s on an uninitialized lirc_buffer\n",
+		     __func__);
 #endif
 }
+
 static inline int lirc_buffer_init(struct lirc_buffer *buf,
 				    unsigned int chunk_size,
 				    unsigned int size)
@@ -74,6 +77,7 @@ static inline int lirc_buffer_init(struct lirc_buffer *buf,
 
 	return ret;
 }
+
 static inline void lirc_buffer_free(struct lirc_buffer *buf)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
@@ -83,7 +87,9 @@ static inline void lirc_buffer_free(struct lirc_buffer *buf)
 	if (buf->fifo_initialized) {
 		kfifo_free(&buf->fifo);
 		buf->fifo_initialized = 0;
-	}
+	} else
+		WARN(1, "calling %s on an uninitialized lirc_buffer\n",
+		     __func__);
 #endif
 }
 
@@ -103,17 +109,17 @@ static inline int lirc_buffer_len(struct lirc_buffer *buf)
 #endif
 }
 
-static inline int  lirc_buffer_full(struct lirc_buffer *buf)
+static inline int lirc_buffer_full(struct lirc_buffer *buf)
 {
 	return lirc_buffer_len(buf) == buf->size * buf->chunk_size;
 }
 
-static inline int  lirc_buffer_empty(struct lirc_buffer *buf)
+static inline int lirc_buffer_empty(struct lirc_buffer *buf)
 {
 	return !lirc_buffer_len(buf);
 }
 
-static inline int  lirc_buffer_available(struct lirc_buffer *buf)
+static inline int lirc_buffer_available(struct lirc_buffer *buf)
 {
 	return buf->size - (lirc_buffer_len(buf) / buf->chunk_size);
 }
@@ -132,32 +138,18 @@ static inline unsigned int lirc_buffer_read(struct lirc_buffer *buf,
 #endif
 
 	return ret;
+
 }
 
 static inline unsigned int lirc_buffer_write(struct lirc_buffer *buf,
 					     unsigned char *orig)
 {
-	unsigned int ret = 0;
+	unsigned int ret;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 	ret = kfifo_put(buf->fifo, orig, buf->chunk_size);
 #else
 	ret = kfifo_in_locked(&buf->fifo, orig, buf->chunk_size,
-			      &buf->fifo_lock);
-#endif
-
-	return ret;
-}
-
-static inline unsigned int lirc_buffer_write_n(struct lirc_buffer *buf,
-					       unsigned char *orig, int count)
-{
-	unsigned int ret = 0;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
-	ret = kfifo_put(buf->fifo, orig, count * buf->chunk_size);
-#else
-	ret = kfifo_in_locked(&buf->fifo, orig, count * buf->chunk_size,
 			      &buf->fifo_lock);
 #endif
 
@@ -171,9 +163,12 @@ struct lirc_driver {
 	unsigned int buffer_size; /* in chunks holding one code each */
 	int sample_rate;
 	__u32 features;
+
+	unsigned int chunk_size;
+
 	void *data;
-	lirc_t min_timeout;
-	lirc_t max_timeout;
+	int min_timeout;
+	int max_timeout;
 	int (*add_to_buf) (void *data, struct lirc_buffer *buf);
 #ifndef LIRC_REMOVE_DURING_EXPORT
 	wait_queue_head_t* (*get_queue) (void *data);
@@ -197,7 +192,6 @@ struct lirc_driver {
  * code_length:
  * length of the remote control key code expressed in bits
  *
- * sample_rate:
  * sample_rate equal to 0 means that no polling will be performed and
  * add_to_buf will be triggered by external events (through task queue
  * returned by get_queue)
@@ -258,5 +252,22 @@ extern int lirc_unregister_driver(int minor);
  * associated with the given device file pointer.
  */
 void *lirc_get_pdata(struct file *file);
+
+/* default file operations
+ * used by drivers if they override only some operations
+ */
+int lirc_dev_fop_open(struct inode *inode, struct file *file);
+int lirc_dev_fop_close(struct inode *inode, struct file *file);
+unsigned int lirc_dev_fop_poll(struct file *file, poll_table *wait);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
+int lirc_dev_fop_ioctl(struct inode *inode, struct file *file,
+			unsigned int cmd, unsigned long arg);
+#else
+long lirc_dev_fop_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+#endif
+ssize_t lirc_dev_fop_read(struct file *file, char *buffer, size_t length,
+			  loff_t *ppos);
+ssize_t lirc_dev_fop_write(struct file *file, const char *buffer, size_t length,
+			   loff_t *ppos);
 
 #endif
