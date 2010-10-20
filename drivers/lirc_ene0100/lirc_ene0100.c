@@ -850,9 +850,9 @@ static long ene_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		break;
 	default:
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-		retval = lirc_dev_fop_ioctl(node, filep, cmd, arg);
+		retval = lirc_dev_fop_ioctl(node, file, cmd, arg);
 #else
-		retval = lirc_dev_fop_ioctl(filep, cmd, arg);
+		retval = lirc_dev_fop_ioctl(file, cmd, arg);
 #endif
 		break;
 	}
