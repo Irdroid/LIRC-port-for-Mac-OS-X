@@ -27,8 +27,6 @@
 
 #include <linux/device.h>
 
-#define LIRC_HAVE_SYSFS
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 26)
 
 #define lirc_device_create(cs, parent, dev, drvdata, fmt, args...) \
@@ -68,23 +66,6 @@ typedef struct class lirc_class_t;
 #endif
 
 #include <linux/moduleparam.h>
-
-/* DevFS header */
-#ifdef LIRC_HAVE_DEVFS
-#include <linux/devfs_fs_kernel.h>
-#endif
-
-#ifndef LIRC_HAVE_SYSFS
-#define class_destroy(x) do { } while (0)
-#define class_create(x, y) NULL
-#define lirc_device_destroy(x, y) do { } while (0)
-#define lirc_device_create(x, y, z, xx, yy, zz) 0
-#define IS_ERR(x) 0
-typedef struct class_simple
-{
-	int notused;
-} lirc_class_t;
-#endif /* No SYSFS */
 
 #include <linux/interrupt.h>
 #ifndef IRQ_RETVAL

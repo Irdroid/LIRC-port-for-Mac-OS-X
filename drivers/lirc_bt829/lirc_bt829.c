@@ -146,9 +146,7 @@ int init_module(void)
 	atir_driver.add_to_buf  = atir_add_to_buf;
 	atir_driver.set_use_inc = atir_set_use_inc;
 	atir_driver.set_use_dec = atir_set_use_dec;
-#ifdef LIRC_HAVE_SYSFS
 	atir_driver.dev         = &pdev->dev;
-#endif
 	atir_driver.owner       = THIS_MODULE;
 
 	atir_minor = lirc_register_driver(&atir_driver);

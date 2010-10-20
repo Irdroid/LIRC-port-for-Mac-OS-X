@@ -1992,9 +1992,7 @@ static int imon_probe(struct usb_interface *interface,
 		driver->rbuf = rbuf;
 		driver->set_use_inc = ir_open;
 		driver->set_use_dec = ir_close;
-#ifdef LIRC_HAVE_SYSFS
 		driver->dev = &interface->dev;
-#endif
 		driver->owner = THIS_MODULE;
 
 		mutex_lock(&context->lock);

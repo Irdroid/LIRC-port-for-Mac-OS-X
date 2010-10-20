@@ -1060,9 +1060,7 @@ static struct atirf_dev *new_irctl(struct usb_interface *intf)
 	driver->data = ir;
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
-#ifdef LIRC_HAVE_SYSFS
 	driver->dev = &intf->dev;
-#endif
 	driver->owner = THIS_MODULE;
 	ir->usbdev = dev;
 	ir->remote_type = type;

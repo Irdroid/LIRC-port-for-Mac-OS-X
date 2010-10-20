@@ -561,9 +561,7 @@ static int streamzap_probe(struct usb_interface *interface,
 	sz->driver.set_use_inc = &streamzap_use_inc;
 	sz->driver.set_use_dec = &streamzap_use_dec;
 	sz->driver.fops = &streamzap_fops;
-#ifdef LIRC_HAVE_SYSFS
 	sz->driver.dev = &interface->dev;
-#endif
 	sz->driver.owner = THIS_MODULE;
 
 	sz->idle = 1;

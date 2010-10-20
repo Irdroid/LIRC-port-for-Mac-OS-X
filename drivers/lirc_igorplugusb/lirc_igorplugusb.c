@@ -460,9 +460,7 @@ static int igorplugusb_remote_probe(struct usb_interface *intf,
 	driver->set_use_dec = &set_use_dec;
 	driver->sample_rate = sample_rate;    /* per second */
 	driver->add_to_buf = &igorplugusb_remote_poll;
-#ifdef LIRC_HAVE_SYSFS
 	driver->dev = &intf->dev;
-#endif
 	driver->owner = THIS_MODULE;
 
 	minor = lirc_register_driver(driver);
