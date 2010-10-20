@@ -450,6 +450,7 @@ static int igorplugusb_remote_probe(struct usb_interface *intf,
 	driver->code_length = CODE_LENGTH * 8; /* in bits */
 	driver->features = LIRC_CAN_REC_MODE2;
 	driver->data = ir;
+	driver->chunk_size = CODE_LENGTH;
 	driver->buffer_size = DEVICE_BUFLEN + ADDITIONAL_LIRC_BYTES;
 	driver->set_use_inc = &set_use_inc;
 	driver->set_use_dec = &set_use_dec;
