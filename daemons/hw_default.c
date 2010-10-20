@@ -89,61 +89,57 @@ static int write_send_buffer(int lirc);
  *
  **********************************************************************/
 
-lirc_t default_readdata(lirc_t timeout)
+int default_readdata(lirc_t timeout)
 {
-	lirc_t data;
-	int ret;
+	int data, ret;
 
 	if (!waitfordata((long) timeout))
 		return 0;
 
 #if defined(SIM_REC) && !defined(DAEMONIZE)
-	while(1)
+	while (1)
 	{
 		__u32 scan;
 
-		ret=fscanf(stdin,"space %u\n",&scan);
-		if(ret==1)
-		{
-			data=(lirc_t) scan;
+		ret = fscanf(stdin, "space %u\n", &scan);
+		if (ret == 1) {
+			data = (int)scan;
 			break;
 		}
-		ret=fscanf(stdin,"pulse %u\n",&scan);
-		if(ret==1)
-		{
-			data=(lirc_t) scan|PULSE_BIT;
+
+		ret = fscanf(stdin, "pulse %u\n", &scan);
+		if (ret == 1) {
+			data = (int)scan | PULSE_BIT;
 			break;
 		}
-		ret=fscanf(stdin,"%*s\n");
-		if(ret==EOF)
-		{
+
+		ret = fscanf(stdin, "%*s\n");
+		if (ret == EOF)
 			dosigterm(SIGTERM);
-		}
 	}
 #else
-	ret=read(hw.fd,&data,sizeof(data));
-	if(ret!=sizeof(data))
-	{
-		logprintf(LOG_ERR, "error reading from %s", hw.device);
+	ret = read(hw.fd, &data, sizeof(data));
+	if (ret != sizeof(data)) {
+		logprintf(LOG_ERR, "error reading from %s (ret %d, expected %d)",
+			  hw.device, ret, sizeof(data));
 		logperror(LOG_ERR, NULL);
 		default_deinit();
+
 		return 0;
 	}
-	if(data == 0)
-	{
+
+	if (data == 0) {
 		static int data_warning = 1;
 
-		if(data_warning)
-		{
-			logprintf(LOG_WARNING, 
-				  "read invalid data from device %s",
+		if (data_warning) {
+			logprintf(LOG_WARNING, "read invalid data from device %s",
 				  hw.device);
 			data_warning = 0;
 		}
 		data = 1;
 	}
 #endif
-	return(data);
+	return data ;
 }
 
 /*
