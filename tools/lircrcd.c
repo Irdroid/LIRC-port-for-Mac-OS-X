@@ -224,14 +224,14 @@ inline int read_timeout(int fd, char *buf, int len, int timeout)
 	while (ret == -1 && errno == EINTR);
 	if (ret == -1) {
 		logprintf(LOG_ERR, "select() failed");
-		logperror(LOG_ERR, NULL);
+		logperror(LOG_ERR, "");
 		return (-1);
 	} else if (ret == 0)
 		return (0);	/* timeout */
 	n = read(fd, buf, len);
 	if (n == -1) {
 		logprintf(LOG_ERR, "read() failed");
-		logperror(LOG_ERR, NULL);
+		logperror(LOG_ERR, "");
 		return (-1);
 	}
 	return (n);
@@ -312,7 +312,7 @@ void add_client(int sock)
 	fd = accept(sock, (struct sockaddr *)&client_addr, &clilen);
 	if (fd == -1) {
 		logprintf(LOG_ERR, "accept() failed for new client");
-		logperror(LOG_ERR, NULL);
+		logperror(LOG_ERR, "");
 		return;
 	};
 
@@ -665,7 +665,7 @@ static void loop(int sockfd, int lircdfd)
 
 			if (ret == -1 && errno != EINTR) {
 				logprintf(LOG_ERR, "select() failed");
-				logperror(LOG_ERR, NULL);
+				logperror(LOG_ERR, "");
 				raise(SIGTERM);
 				continue;
 			}
