@@ -30,7 +30,12 @@ static int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * cod
 			 lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 static void *atwf83_repeat();
 
+/** Max number of repetitions */
+const unsigned max_repeat_count = 500;
+/** Code that triggers key release */
 const unsigned release_code = 0x00000000;
+/** Code that triggers device remove  */
+const unsigned remove_code =0x00FFFFFF;
 /** Time to wait before first repetition */
 const unsigned repeat_time1_us = 500000;
 /** Time to wait between two repetitions */
@@ -66,7 +71,7 @@ struct hardware hw_atwf83 = {
 	"atwf83"		/* name */
 };
 
-int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+static int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
 		  lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
 	LOGPRINTF(1, "atwf83_decode");
@@ -82,13 +87,15 @@ int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_
 	return 1;
 }
 
-int atwf83_init()
+static int atwf83_init()
 {
 	logprintf(LOG_INFO, "initializing '%s'", hw.device);
 	if ((fd_hidraw = open(hw.device, O_RDONLY)) < 0) {
 		logprintf(LOG_ERR, "unable to open '%s'", hw.device);
 		return 0;
 	}
+	hw.fd = fd_hidraw;
+
 	/* Create pipe so that events sent by the repeat thread will
 	   trigger main thread */
 	if (pipe(fd_pipe) != 0) {
@@ -105,21 +112,24 @@ int atwf83_init()
 	return 1;
 }
 
-int atwf83_deinit()
+static int atwf83_deinit()
 {
 	pthread_cancel(repeat_thread);
 	if (fd_hidraw != -1) {
+		// Close device if it is open
 		logprintf(LOG_INFO, "closing '%s'", hw.device);
 		close(fd_hidraw);
 		fd_hidraw = -1;
 	}
-	if (fd_pipe[0] >= 0) {
-		close(fd_pipe[0]);
-		fd_pipe[0] = -1;
-	}
+	// Close pipe input
 	if (fd_pipe[1] >= 0) {
 		close(fd_pipe[1]);
 		fd_pipe[1] = -1;
+	}
+	// Close pipe output
+	if (fd_pipe[0] >= 0) {
+		close(fd_pipe[0]);
+		fd_pipe[0] = -1;
 	}
 	hw.fd = -1;
 	return 1;
@@ -129,8 +139,9 @@ int atwf83_deinit()
  *	Runtime that reads device, forwards codes to main thread
  *	and simulates repetitions.
  */
-void *atwf83_repeat()
+static void *atwf83_repeat()
 {
+	int repeat_count = 0;
 	unsigned ev[2];
 	unsigned current_code;
 	int rd, sel;
@@ -162,6 +173,7 @@ void *atwf83_repeat()
 			if ((rd == 8 && ev[0] != 0) || (rd == 6 && ev[0] > 2)) {
 				// Key code : forward it to main thread
 				pressed = 1;
+				repeat_count = 0;
 				delay.tv_sec = 0;
 				delay.tv_usec = repeat_time1_us;
 				current_code = ev[0];
@@ -172,6 +184,12 @@ void *atwf83_repeat()
 			}
 			break;
 		case 0:
+			repeat_count++;
+			if (repeat_count >= max_repeat_count) {
+				// Too many repetitions, something must have gone wrong
+				logprintf(LOG_ERR,"(%s) too many repetitions", __FUNCTION__);
+				goto exit_loop;
+			}
 			// Timeout : send current_code again to main
 			//           thread to simulate repetition
 			delay.tv_sec = 0;
@@ -187,8 +205,9 @@ void *atwf83_repeat()
 	}
 exit_loop:
 
-	fd_pipe[1] = -1;
-	close(fd);
+	// Wake up main thread with special key code
+	current_code = remove_code;
+	write(fd, &current_code, sizeof(current_code));
 	return NULL;
 }
 
@@ -212,9 +231,13 @@ static char *atwf83_rec(struct ir_remote *remotes)
 		return 0;
 	}
 
-	if (ev == 0) {
+	if (ev == release_code) {
 		// Release code
 		main_code = 0;
+		return 0;
+	} else if (ev == remove_code) {
+		// Device has been removed
+		atwf83_deinit();
 		return 0;
 	}
 
