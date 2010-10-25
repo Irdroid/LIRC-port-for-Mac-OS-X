@@ -112,7 +112,7 @@ int usbx_init(void)
 	LOGPRINTF(1, "device '%s' opened", hw.device);
 
 	if (!tty_reset(hw.fd) || !tty_setbaud(hw.fd, 300000) || !tty_setrtscts(hw.fd, 1)) {
-		logprintf(LOG_ERR, "could not configure the serial port for " "'%s'", hw.device);
+		logprintf(LOG_ERR, "could not configure the serial port for '%s'", hw.device);
 		usbx_deinit();
 		return 0;
 	}

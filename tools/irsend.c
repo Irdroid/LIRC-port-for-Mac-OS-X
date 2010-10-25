@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 			printf("\t -h --help\t\t\tdisplay usage summary\n");
 			printf("\t -v --version\t\t\tdisplay version\n");
 			printf("\t -d --device\t\t\tuse given lircd socket [%s]\n", LIRCD);
-			printf("\t -a --address=host[:port]\tconnect to " "lircd at this address\n");
+			printf("\t -a --address=host[:port]\tconnect to lircd at this address\n");
 			printf("\t -# --count=n\t\t\tsend command n times\n");
 			return (EXIT_SUCCESS);
 		case 'v':
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 				if (p != NULL) {
 					val = strtoul(p + 1, &end, 10);
 					if (!(*(p + 1)) || *end || val < 1 || val > USHRT_MAX) {
-						fprintf(stderr, "%s: invalid port number: " "%s\n", progname, p + 1);
+						fprintf(stderr, "%s: invalid port number: %s\n", progname, p + 1);
 						return (EXIT_FAILURE);
 					}
 					port = (unsigned short)val;
@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 
 				count = strtoul(optarg, &end, 10);
 				if (!*optarg || *end) {
-					fprintf(stderr, "%s: invalid count value: " "%s\n", progname, optarg);
+					fprintf(stderr, "%s: invalid count value: %s\n", progname, optarg);
 					return (EXIT_FAILURE);
 				}
 				break;

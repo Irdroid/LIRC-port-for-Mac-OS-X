@@ -121,7 +121,7 @@ char *pixelview_rec(struct ir_remote *remotes)
 	for (i = 0; i < 3; i++) {
 		if (i > 0) {
 			if (!waitfordata(50000)) {
-				logprintf(LOG_ERR, "timeout reading " "byte %d", i);
+				logprintf(LOG_ERR, "timeout reading byte %d", i);
 				return (NULL);
 			}
 		}

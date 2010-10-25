@@ -178,7 +178,7 @@ int pinsys_init(void)
 		char auto_lirc_device[] = "/dev/ttyS_";
 
 		tty_delete_lock();
-		logprintf(LOG_WARNING, "could not open %s, " "autodetecting on /dev/ttyS[0-3]", hw.device);
+		logprintf(LOG_WARNING, "could not open %s, autodetecting on /dev/ttyS[0-3]", hw.device);
 		logperror(LOG_WARNING, "pinsys_init()");
 		/* it can also mean you compiled serial support as a
 		   module and it isn't inserted, but that's unlikely
@@ -196,7 +196,7 @@ int pinsys_init(void)
 			hw.device = auto_lirc_device;
 			if ((hw.fd = open(hw.device, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
 				/* unlikely, but hey. */
-				logprintf(LOG_ERR, "couldn't open " "autodetected device \"%s\"", hw.device);
+				logprintf(LOG_ERR, "couldn't open autodetected device \"%s\"", hw.device);
 				logperror(LOG_ERR, "pinsys_init()");
 				tty_delete_lock();
 				return (0);

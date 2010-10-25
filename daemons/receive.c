@@ -127,7 +127,7 @@ int clear_rec_buffer(void)
 			count++;
 
 		if (read(hw.fd, buffer, count) != count) {
-			logprintf(LOG_ERR, "reading in mode " "LIRC_MODE_LIRCCODE failed");
+			logprintf(LOG_ERR, "reading in mode LIRC_MODE_LIRCCODE failed");
 			return (0);
 		}
 		for (i = 0, rec_buffer.decoded = 0; i < count; i++) {
@@ -745,7 +745,7 @@ ir_code get_data(struct ir_remote * remote, int bits, int done)
 
 					if ((remote->parity == IR_PARITY_EVEN && parity)
 					    || (remote->parity == IR_PARITY_ODD && !parity)) {
-						LOGPRINTF(1, "parity error " "after %d bits", received + 1);
+						LOGPRINTF(1, "parity error after %d bits", received + 1);
 						return ((ir_code) - 1);
 					}
 					parity = 0;
@@ -757,7 +757,7 @@ ir_code get_data(struct ir_remote * remote, int bits, int done)
 										   remote->bits_in_byte);
 
 					if (space && delta == 0) {
-						LOGPRINTF(1, "failed at stop " "bit after %d bits", received + 1);
+						LOGPRINTF(1, "failed at stop bit after %d bits", received + 1);
 						return ((ir_code) - 1);
 					}
 					LOGPRINTF(3, "awaiting stop bit");
@@ -766,7 +766,7 @@ ir_code get_data(struct ir_remote * remote, int bits, int done)
 				}
 			} else {
 				if (delta == origdelta) {
-					LOGPRINTF(1, "framing error after " "%d bits", received + 1);
+					LOGPRINTF(1, "framing error after %d bits", received + 1);
 					return ((ir_code) - 1);
 				}
 				delta = 0;
@@ -952,14 +952,14 @@ int receive_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir
 		if (has_repeat(remote) && last_remote == remote) {
 			if (remote->flags & REPEAT_HEADER && has_header(remote)) {
 				if (!get_header(remote)) {
-					LOGPRINTF(1, "failed on repeat " "header");
+					LOGPRINTF(1, "failed on repeat header");
 					return (0);
 				}
 				LOGPRINTF(1, "repeat header");
 			}
 			if (get_repeat(remote)) {
 				if (remote->last_code == NULL) {
-					logprintf(LOG_NOTICE, "repeat code " "without last_code " "received");
+					logprintf(LOG_NOTICE, "repeat code without last_code received");
 					return (0);
 				}
 

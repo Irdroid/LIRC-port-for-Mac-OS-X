@@ -244,7 +244,7 @@ char *accent_rec(struct ir_remote *remotes)
 			if (waitfordata(45000) == 0) {
 				// waitfordata() timed out: the
 				// sequence is complete.
-				LOGPRINTF(LOG_INFO, "waitfordata() timeout " "waiting for byte %d", i);
+				LOGPRINTF(LOG_INFO, "waitfordata() timeout waiting for byte %d", i);
 				break;
 			}
 		}
@@ -275,7 +275,7 @@ char *accent_rec(struct ir_remote *remotes)
 			m = decode_all(remotes);
 			return (m);
 		} else {
-			LOGPRINTF(LOG_INFO, "Previos code not set, " "invalid repeat key");
+			LOGPRINTF(LOG_INFO, "Previos code not set, invalid repeat key");
 			last_code = 0;
 			return (NULL);
 		}
@@ -335,10 +335,10 @@ char *accent_rec(struct ir_remote *remotes)
 		}
 		if (j == ACCENT_MAX_READ_BYTES) {
 			// All the received bytes are zeroes, without gaps.
-			logprintf(LOG_WARNING, "Receiver jam! " "Reopening the serial port");
+			logprintf(LOG_WARNING, "Receiver jam! Reopening the serial port");
 			close(hw.fd);
 			if ((hw.fd = accent_open_serial_port(hw.device)) < 0) {
-				logprintf(LOG_ERR, "Could not reopen the " "serial port");
+				logprintf(LOG_ERR, "Could not reopen the serial port");
 				raise(SIGTERM);
 			}
 			last_code = 0;

@@ -225,7 +225,7 @@ error:		unlink(tmp_name);
 				alsa_hw.channel = 1;
 			} else {
 				logperror(LOG_WARNING,
-					  "dont understand which channel " "to use - defaulting to left\n");
+					  "dont understand which channel to use - defaulting to left\n");
 			}
 		}
 

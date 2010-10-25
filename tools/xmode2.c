@@ -326,15 +326,15 @@ int main(int argc, char **argv)
 			/* can't do ioctls on a pipe */
 		} else if ((fstat(fd, &s) != -1) && (!S_ISCHR(s.st_mode))) {
 			fprintf(stderr, "%s: %s is not a character device\n", progname, device);
-			fprintf(stderr, "%s: use the -d option to specify " "the correct device\n", progname);
+			fprintf(stderr, "%s: use the -d option to specify the correct device\n", progname);
 			close(fd);
 			exit(EXIT_FAILURE);
 		} else if (ioctl(fd, LIRC_GET_REC_MODE, &mode) == -1) {
-			printf("This program is only intended for receivers " "supporting the pulse/space layer.\n");
+			printf("This program is only intended for receivers supporting the pulse/space layer.\n");
 			printf("Note that this is no error, but this program "
 			       "simply makes no sense for your\n" "receiver.\n");
 			printf("In order to test your setup run lircd with "
-			       "the --nodaemon option and \n" "then check if the remote works with the irw " "tool.\n");
+			       "the --nodaemon option and \n" "then check if the remote works with the irw tool.\n");
 			close(fd);
 			exit(EXIT_FAILURE);
 		}
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 				printf("Please use the --raw option to access "
 				       "the device directly instead through\n" "the abstraction layer.\n");
 			} else {
-				printf("This program does not work for this " "hardware yet\n");
+				printf("This program does not work for this hardware yet\n");
 			}
 			exit(EXIT_FAILURE);
 		}

@@ -480,7 +480,7 @@ final_check:
 	if (!check_send_buffer()) {
 		if (!sim) {
 			logprintf(LOG_ERR, "invalid send buffer");
-			logprintf(LOG_ERR, "this remote configuration cannot be used " "to transmit");
+			logprintf(LOG_ERR, "this remote configuration cannot be used to transmit");
 		}
 		return 0;
 	}

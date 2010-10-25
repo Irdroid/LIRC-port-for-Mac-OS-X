@@ -425,7 +425,7 @@ __u64 set_code(struct ir_remote * remote, struct ir_ncode * found, ir_code toggl
 	if (remote->release_detected) {
 		remote->release_detected = 0;
 		if (repeat_flag) {
-			LOGPRINTF(0, "repeat indicated although release was " "detected before");
+			LOGPRINTF(0, "repeat indicated although release was detected before");
 		}
 		repeat_flag = 0;
 	}

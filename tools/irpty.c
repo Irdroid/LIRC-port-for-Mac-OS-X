@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
 	       != EOF) {
 		switch (c) {
 		case 'h':
-			printf("Usage: %s [options] config_file -- " "program [args ...]\n", argv[0]);
+			printf("Usage: %s [options] config_file -- program [args ...]\n", argv[0]);
 			printf("\t -h --help \t\tdisplay usage summary\n");
 			printf("\t -V --version \t\tdisplay version\n");
 			printf("\t -e --no-echo \t\tdisable echo\n");

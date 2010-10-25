@@ -345,7 +345,7 @@ char *hiddev_rec(struct ir_remote *remotes)
 
 	/* Asus DH remote specific code */
 	else if (event.hid == 0xFF000000) {
-		LOGPRINTF(1, "This is an asus P5 DH remote, " "we read the other events");
+		LOGPRINTF(1, "This is an asus P5 DH remote, we read the other events");
 		asus_events[0] = event;
 		for (i = 1; i < 8; i++) {
 			if (!waitfordata(TIMEOUT)) {

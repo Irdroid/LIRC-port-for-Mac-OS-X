@@ -129,7 +129,7 @@ static int srm7500_init()
 
 	if (hw.device == NULL) {
 		logprintf(LOG_ERR,
-			  "no device options supplied, " "please read the documentation in "
+			  "no device options supplied, please read the documentation in "
 			  "philips/lircd.conf.srm7500libusb!");
 		return 0;
 	}
@@ -144,29 +144,29 @@ static int srm7500_init()
 			if (result == 2) {
 				got_macShortAddress = 1;
 			} else {
-				logprintf(LOG_ERR, "error parsing option " "macShortAddress");
+				logprintf(LOG_ERR, "error parsing option macShortAddress");
 			}
 		} else if (!strncmp(op_start, "macPANId=", 9)) {
 			result = sscanf(op_start + 9, "%hhx:%hhx", macPANId, macPANId + 1);
 			if (result == 2) {
 				got_macPANId = 1;
 			} else {
-				logprintf(LOG_ERR, "error parsing option " "macPANId");
+				logprintf(LOG_ERR, "error parsing option macPANId");
 			}
 		} else if (!strncmp(op_start, "LogicalChannel=", 15)) {
 			result = sscanf(op_start + 15, "%hhx", &LogicalChannel);
 			if (result == 1) {
 				if (LogicalChannel != 0x19)
-					logprintf(LOG_WARNING, "SRM7500 may not work on " "channels other than 0x19");
+					logprintf(LOG_WARNING, "SRM7500 may not work on channels other than 0x19");
 			} else {
-				logprintf(LOG_ERR, "error parsing option " "LogicalChannel");
+				logprintf(LOG_ERR, "error parsing option LogicalChannel");
 			}
 		} else if (!strncmp(op_start, "remoteShortAddress=", 19)) {
 			result = sscanf(op_start + 19, "%hhx:%hhx", remoteShortAddress, remoteShortAddress + 1);
 			if (result == 2) {
 				got_remoteShortAddress = 1;
 			} else {
-				logprintf(LOG_ERR, "error parsing option " "remoteShortAddress");
+				logprintf(LOG_ERR, "error parsing option remoteShortAddress");
 			}
 		} else if (!strncmp(op_start, "remoteExtendedAddress=", 22)) {
 			result = sscanf(op_start + 22, "%hhx:%hhx:%hhx:%hhx:"
@@ -177,7 +177,7 @@ static int srm7500_init()
 			if (result == 8) {
 				remoteExtendedAddressGiven = 1;
 			} else {
-				logprintf(LOG_ERR, "error parsing option " "remoteExtendedAddress");
+				logprintf(LOG_ERR, "error parsing option remoteExtendedAddress");
 			}
 		} else if (!strncmp(op_start, "macBeaconPayload=", 17)) {
 			strncpy((char *)macBeaconPayload, op_start + 17, op_end - (op_start + 17));
@@ -200,7 +200,7 @@ static int srm7500_init()
 		op_start = op_end + 1;
 	}
 	if (!(got_remoteShortAddress && got_macPANId && got_macShortAddress)) {
-		logprintf(LOG_ERR, "driver needs at least remoteShortAddress, " "macPANId and macShortAddress");
+		logprintf(LOG_ERR, "driver needs at least remoteShortAddress, macPANId and macShortAddress");
 		return 0;
 	}
 	if (!macBeaconPayloadGiven) {
@@ -561,7 +561,7 @@ static int philipsrf_input(philipsrf_incoming_t * buffer_in)
 
 	ret = usb_interrupt_read(dev_handle, dev_ep_in->bEndpointAddress, (char *)buffer_in, 64, USB_TIMEOUT);
 	if (ret > 0) {
-		LOGPRINTF(1, "in: time 0x%08x, length 0x%02x, " "type 0x%02x",
+		LOGPRINTF(1, "in: time 0x%08x, length 0x%02x, type 0x%02x",
 			  ((buffer_in->time[3] << 24) | (buffer_in->time[2] << 16) | (buffer_in->
 										      time[1] << 8) | (buffer_in->
 												       time[0])),
@@ -667,21 +667,21 @@ static struct usb_device *find_usb_device(void)
 			if (atoi(usb_bus->dirname) == requested_usb_bus_number)
 				break;
 		if (!usb_bus) {
-			logprintf(LOG_ERR, "requested USB bus %d does not " "exist", requested_usb_bus_number);
+			logprintf(LOG_ERR, "requested USB bus %d does not exist", requested_usb_bus_number);
 			return NULL;
 		}
 		for (dev = usb_bus->devices; dev; dev = dev->next)
 			if (dev->devnum == requested_usb_device_number)
 				break;
 		if (!dev) {
-			logprintf(LOG_ERR, "requested USB device %d:%d " "does not exist", requested_usb_bus_number,
+			logprintf(LOG_ERR, "requested USB device %d:%d does not exist", requested_usb_bus_number,
 				  requested_usb_device_number);
 			return NULL;
 		}
 		if (is_device_ok(dev)) {
 			return dev;
 		} else {
-			logprintf(LOG_ERR, "requested USB device %d:%d, but " "id %04x:%04x not handled by this driver",
+			logprintf(LOG_ERR, "requested USB device %d:%d, but id %04x:%04x not handled by this driver",
 				  requested_usb_bus_number, requested_usb_device_number, dev->descriptor.idVendor,
 				  dev->descriptor.idProduct);
 		}
@@ -751,7 +751,7 @@ static int usb_read_loop(int fd)
 			continue;
 
 		if (inret < 0) {
-			logprintf(LOG_ERR, "read error %d from usb dongle, " "aborting\n", inret);
+			logprintf(LOG_ERR, "read error %d from usb dongle, aborting\n", inret);
 			return 0;
 		}
 
@@ -887,7 +887,7 @@ static int usb_read_loop(int fd)
 			}
 			break;
 		default:
-			logprintf(LOG_INFO, "unhandled incoming usb packet " "0x%02x\n", packet_buffer_in.type);
+			logprintf(LOG_INFO, "unhandled incoming usb packet 0x%02x\n", packet_buffer_in.type);
 		}
 	}
 

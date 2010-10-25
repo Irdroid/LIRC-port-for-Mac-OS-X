@@ -310,7 +310,7 @@ int devinput_init()
 	exclusive = 1;
 	if (ioctl(hw.fd, EVIOCGRAB, 1) == -1) {
 		exclusive = 0;
-		logprintf(LOG_WARNING, "can't get exclusive access to events " "coming from `%s' interface", hw.device);
+		logprintf(LOG_WARNING, "can't get exclusive access to events coming from `%s' interface", hw.device);
 	}
 #endif
 	return 1;

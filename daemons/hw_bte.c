@@ -262,7 +262,7 @@ char *bte_automaton()
 	if (strcmp(msg, "ERROR") == 0)	// "ERROR" received
 	{
 		pending = 0;
-		logprintf(LOG_ERR, "bte_automaton: 'ERROR' received! " "Previous command: %s", prev_cmd);
+		logprintf(LOG_ERR, "bte_automaton: 'ERROR' received! Previous command: %s", prev_cmd);
 		return (NULL);
 	} else if (strcmp(msg, "OK") == 0)	// Check for next cmd to send
 	{

@@ -368,7 +368,7 @@ static void audio_parsedevicestr(char *api, char *device, int *rate, double *lat
 		}
 
 		logprintf(LOG_ERR,
-			  "malformed device string %s, " "syntax is api:device[@rate[:latency]] or @rate[:latency]",
+			  "malformed device string %s, syntax is api:device[@rate[:latency]] or @rate[:latency]",
 			  hw.device);
 	}
 
@@ -445,7 +445,7 @@ static void audio_choosedevice(PaStreamParameters * streamparameters, int input,
 
 	deviceinfo = Pa_GetDeviceInfo(chosendevice);
 	hostapiinfo = Pa_GetHostApiInfo(deviceinfo->hostApi);
-	logprintf(LOG_INFO, "Using %s %s device " "%i: %s:%s with %s latency %f", devicetype, direction, chosendevice,
+	logprintf(LOG_INFO, "Using %s %s device %i: %s:%s with %s latency %f", devicetype, direction, chosendevice,
 		  hostapiinfo->name, deviceinfo->name, latencytype, streamparameters->suggestedLatency);
 }
 

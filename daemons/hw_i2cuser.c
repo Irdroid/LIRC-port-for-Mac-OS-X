@@ -147,7 +147,7 @@ static int open_i2c_device(void)
 
 		if (strncmp(s, "bt878", 5) == 0) {
 			if (strncmp(de->d_name, "i2c-", 4) != 0) {
-				logprintf(LOG_ERR, "i2c adapter dir %s " "has unexpected name", de->d_name);
+				logprintf(LOG_ERR, "i2c adapter dir %s has unexpected name", de->d_name);
 				return -1;
 			}
 			found = atoi(de->d_name + 4);
@@ -252,7 +252,7 @@ static void i2cuser_read_loop(int out_fd)
 
 			rc = read(i2c_fd, &buf, sizeof buf);
 			if (rc < 0 && errno != EREMOTEIO) {
-				logprintf(LOG_ERR, "Error reading from i2c " "device: %s", strerror(errno));
+				logprintf(LOG_ERR, "Error reading from i2c device: %s", strerror(errno));
 				goto fail;
 			} else if (rc != sizeof buf) {
 				continue;

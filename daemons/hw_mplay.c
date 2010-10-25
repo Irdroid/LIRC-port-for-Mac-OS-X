@@ -175,8 +175,8 @@ int mplay_init(void)
 	}
 	/* Serial port configuration */
 	else if (!tty_reset(hw.fd) || !tty_setbaud(hw.fd, MPLAY_BAUD_RATE)) {
-		logprintf(LOG_ERR, "could not configure the serial port for " "'%s'", hw.device);
-		LOGPRINTF(1, "could not configure the serial port for " "'%s'", hw.device);
+		logprintf(LOG_ERR, "could not configure the serial port for '%s'", hw.device);
+		LOGPRINTF(1, "could not configure the serial port for '%s'", hw.device);
 		mplay_deinit();
 	}
 	return result;

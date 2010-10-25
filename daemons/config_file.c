@@ -163,7 +163,7 @@ unsigned int s_strtoui(char *val)
 	h = (unsigned int)n;
 	if (!*val || *endptr || n != ((__u32) h)) {
 		logprintf(LOG_ERR, "error in configfile line %d:", line);
-		logprintf(LOG_ERR, "\"%s\": must be a valid (unsigned int) " "number", val);
+		logprintf(LOG_ERR, "\"%s\": must be a valid (unsigned int) number", val);
 		parse_error = 1;
 		return (0);
 	}
@@ -180,7 +180,7 @@ lirc_t s_strtolirc_t(char *val)
 	h = (lirc_t) n;
 	if (!*val || *endptr || n != ((__u32) h)) {
 		logprintf(LOG_ERR, "error in configfile line %d:", line);
-		logprintf(LOG_ERR, "\"%s\": must be a valid (lirc_t) " "number", val);
+		logprintf(LOG_ERR, "\"%s\": must be a valid (lirc_t) number", val);
 		parse_error = 1;
 		return (0);
 	}
@@ -268,8 +268,8 @@ int parseFlags(char *val)
 		while (flaglptr->name != NULL) {
 			if (strcasecmp(flaglptr->name, flag) == 0) {
 				if (flaglptr->flag & IR_PROTOCOL_MASK && flags & IR_PROTOCOL_MASK) {
-					logprintf(LOG_ERR, "error in " "configfile line %d:", line);
-					logprintf(LOG_ERR, "multiple " "protocols given in flags: " "\"%s\"", flag);
+					logprintf(LOG_ERR, "error in configfile line %d:", line);
+					logprintf(LOG_ERR, "multiple protocols given in flags: \"%s\"", flag);
 					parse_error = 1;
 					return (0);
 				}
@@ -463,7 +463,7 @@ int defineRemote(char *key, char *val, char *val2, struct ir_remote *rem)
 		logprintf(LOG_ERR, "unknown definiton: \"%s %s %s\"", key, val, val2);
 	} else {
 		logprintf(LOG_ERR, "error in configfile line %d:", line);
-		logprintf(LOG_ERR, "unknown definiton or too few arguments: " "\"%s %s\"", key, val);
+		logprintf(LOG_ERR, "unknown definiton or too few arguments: \"%s %s\"", key, val);
 	}
 	parse_error = 1;
 	return (0);
@@ -482,7 +482,7 @@ static int sanityChecks(struct ir_remote *rem)
 		logprintf(LOG_WARNING, "you should specify a valid gap value");
 	}
 	if (has_repeat_gap(rem) && is_const(rem)) {
-		logprintf(LOG_WARNING, "repeat_gap will be ignored if " "CONST_LENGTH flag is set");
+		logprintf(LOG_WARNING, "repeat_gap will be ignored if CONST_LENGTH flag is set");
 	}
 
 	if (is_raw(rem))
@@ -503,7 +503,7 @@ static int sanityChecks(struct ir_remote *rem)
 		}
 		for (node = codes->next; node != NULL; node = node->next) {
 			if ((node->code & gen_mask(rem->bits)) != node->code) {
-				logprintf(LOG_WARNING, "invalid code found " "for %s: %s", rem->name, codes->name);
+				logprintf(LOG_WARNING, "invalid code found for %s: %s", rem->name, codes->name);
 				node->code &= gen_mask(rem->bits);
 			}
 		}
@@ -780,7 +780,7 @@ static struct ir_remote *read_config_recursive(FILE * f, const char *name, int d
 					parse_error = 1;
 				}
 				if (!parse_error && val2 != NULL) {
-					logprintf(LOG_WARNING, "garbage after " "'%s' token in line %d ignored", val,
+					logprintf(LOG_WARNING, "garbage after '%s' token in line %d ignored", val,
 						  line);
 				}
 			} else if (strcasecmp("end", key) == 0) {
@@ -1010,7 +1010,7 @@ static struct ir_remote *read_config_recursive(FILE * f, const char *name, int d
 			int all_bits = bit_count(rem);
 
 			if (has_toggle_bit_mask(rem)) {
-				logprintf(LOG_WARNING, "%s uses both toggle_bit and " "toggle_bit_mask", rem->name);
+				logprintf(LOG_WARNING, "%s uses both toggle_bit and toggle_bit_mask", rem->name);
 			} else {
 				rem->toggle_bit_mask = ((ir_code) 1) << (all_bits - rem->toggle_bit);
 			}
@@ -1127,13 +1127,13 @@ void calculate_signal_lengths(struct ir_remote *remote)
 		if (remote->min_total_signal_length > max_signal_length) {
 			remote->min_gap_length = remote->min_total_signal_length - max_signal_length;
 		} else {
-			logprintf(LOG_WARNING, "min_gap_length is 0 for " "'%s' remote", remote->name);
+			logprintf(LOG_WARNING, "min_gap_length is 0 for '%s' remote", remote->name);
 			remote->min_gap_length = 0;
 		}
 		if (remote->max_total_signal_length > min_signal_length) {
 			remote->max_gap_length = remote->max_total_signal_length - min_signal_length;
 		} else {
-			logprintf(LOG_WARNING, "max_gap_length is 0 for " "'%s' remote", remote->name);
+			logprintf(LOG_WARNING, "max_gap_length is 0 for '%s' remote", remote->name);
 			remote->max_gap_length = 0;
 		}
 	} else {

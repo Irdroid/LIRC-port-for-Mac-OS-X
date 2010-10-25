@@ -623,7 +623,7 @@ struct trans_mouse *read_config(FILE * fd)
 				}
 			}
 			if (name == NULL || strtok(NULL, WHITE_SPACE) != NULL) {
-				syslog(LOG_WARNING, "invalid line %d in config file " "ignored", line);
+				syslog(LOG_WARNING, "invalid line %d in config file ignored", line);
 				continue;
 			}
 			continue;
@@ -642,7 +642,7 @@ struct trans_mouse *read_config(FILE * fd)
 			if (number != NULL)
 				new_ms.acc_fak = atoi(number);
 			if (strtok(NULL, WHITE_SPACE) != NULL) {
-				syslog(LOG_WARNING, "invalid line %d in config file " "ignored", line);
+				syslog(LOG_WARNING, "invalid line %d in config file ignored", line);
 				new_ms.acc_start = ms.acc_start;
 				new_ms.acc_max = ms.acc_max;
 				new_ms.acc_fak = ms.acc_fak;

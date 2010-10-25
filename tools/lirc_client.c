@@ -281,7 +281,7 @@ static char lirc_parse_escape(char **s, const char *name, int line)
 		}
 		if (i > (1 << CHAR_BIT) - 1) {
 			i &= (1 << CHAR_BIT) - 1;
-			lirc_printf("%s: octal escape sequence " "out of range in %s:%d\n", lirc_prog, name, line);
+			lirc_printf("%s: octal escape sequence out of range in %s:%d\n", lirc_prog, name, line);
 		}
 		return ((char)i);
 	case 'x':
@@ -396,7 +396,7 @@ int lirc_mode(char *token, char *token2, char **mode,
 					*new_config = new_entry;
 				}
 			} else {
-				lirc_printf("%s: bad file format, " "%s:%d\n", lirc_prog, name, line);
+				lirc_printf("%s: bad file format, %s:%d\n", lirc_prog, name, line);
 				return (-1);
 			}
 		} else {
@@ -406,7 +406,7 @@ int lirc_mode(char *token, char *token2, char **mode,
 					return (-1);
 				}
 			} else {
-				lirc_printf("%s: bad file format, " "%s:%d\n", lirc_prog, name, line);
+				lirc_printf("%s: bad file format, %s:%d\n", lirc_prog, name, line);
 				return (-1);
 			}
 		}
@@ -415,7 +415,7 @@ int lirc_mode(char *token, char *token2, char **mode,
 			if (new_entry != NULL) {
 #if 0
 				if (new_entry->prog == NULL) {
-					lirc_printf("%s: prog missing in " "config before line %d\n", lirc_prog, line);
+					lirc_printf("%s: prog missing in config before line %d\n", lirc_prog, line);
 					lirc_freeconfigentries(new_entry);
 					*new_config = NULL;
 					return (-1);
@@ -440,7 +440,7 @@ int lirc_mode(char *token, char *token2, char **mode,
 				if (*mode != NULL) {
 					new_entry->mode = strdup(*mode);
 					if (new_entry->mode == NULL) {
-						lirc_printf("%s: out of " "memory\n", lirc_prog);
+						lirc_printf("%s: out of memory\n", lirc_prog);
 						return (-1);
 					}
 				}
@@ -462,13 +462,13 @@ int lirc_mode(char *token, char *token2, char **mode,
 					new_entry->rep_delay = new_entry->rep - 1;
 				}
 			} else {
-				lirc_printf("%s: %s:%d: 'end' without " "'begin'\n", lirc_prog, name, line);
+				lirc_printf("%s: %s:%d: 'end' without 'begin'\n", lirc_prog, name, line);
 				return (-1);
 			}
 		} else {
 			if (*mode != NULL) {
 				if (new_entry != NULL) {
-					lirc_printf("%s: %s:%d: missing " "'end' token\n", lirc_prog, name, line);
+					lirc_printf("%s: %s:%d: missing 'end' token\n", lirc_prog, name, line);
 					return (-1);
 				}
 				if (strcasecmp(*mode, token2) == 0) {
@@ -480,7 +480,7 @@ int lirc_mode(char *token, char *token2, char **mode,
 					return (-1);
 				}
 			} else {
-				lirc_printf("%s: %s:%d: 'end %s' without " "'begin'\n", lirc_prog, name, line, token2);
+				lirc_printf("%s: %s:%d: 'end %s' without 'begin'\n", lirc_prog, name, line, token2);
 				return (-1);
 			}
 		}
@@ -900,7 +900,7 @@ static int lirc_readconfig_only_internal(char *file,
 					    malloc(sizeof(struct lirc_code));
 					if (code == NULL) {
 						free(token2);
-						lirc_printf("%s: out of " "memory\n", lirc_prog);
+						lirc_printf("%s: out of memory\n", lirc_prog);
 						ret = -1;
 					} else {
 						code->remote = remote;
@@ -934,7 +934,7 @@ static int lirc_readconfig_only_internal(char *file,
 					if ((new_entry->rep_delay == ULONG_MAX && errno == ERANGE)
 					    || end[0] != 0 || strlen(token2) == 0) {
 						lirc_printf("%s: \"%s\" not"
-							    " a  valid number for " "delay\n", lirc_prog, token2);
+							    " a  valid number for delay\n", lirc_prog, token2);
 					}
 					free(token2);
 				} else if (strcasecmp(token, "repeat") == 0) {
@@ -945,7 +945,7 @@ static int lirc_readconfig_only_internal(char *file,
 					if ((new_entry->rep == ULONG_MAX && errno == ERANGE)
 					    || end[0] != 0 || strlen(token2) == 0) {
 						lirc_printf("%s: \"%s\" not"
-							    " a  valid number for " "repeat\n", lirc_prog, token2);
+							    " a  valid number for repeat\n", lirc_prog, token2);
 					}
 					free(token2);
 				} else if (strcasecmp(token, "config") == 0) {
@@ -955,7 +955,7 @@ static int lirc_readconfig_only_internal(char *file,
 					    malloc(sizeof(struct lirc_list));
 					if (new_list == NULL) {
 						free(token2);
-						lirc_printf("%s: out of " "memory\n", lirc_prog);
+						lirc_printf("%s: out of memory\n", lirc_prog);
 						ret = -1;
 					} else {
 						lirc_parse_string(token2, filestack->name, filestack->line);
@@ -991,7 +991,7 @@ static int lirc_readconfig_only_internal(char *file,
 	if (new_entry != NULL) {
 		if (ret == 0) {
 			ret = lirc_mode("end", NULL, &mode, &new_entry, &first, &last, check, "", 0);
-			lirc_printf("%s: warning: end token missing at end " "of file\n", lirc_prog);
+			lirc_printf("%s: warning: end token missing at end of file\n", lirc_prog);
 		} else {
 			lirc_freeconfigentries(new_entry);
 			new_entry = NULL;
@@ -999,7 +999,7 @@ static int lirc_readconfig_only_internal(char *file,
 	}
 	if (mode != NULL) {
 		if (ret == 0) {
-			lirc_printf("%s: warning: no end token found for mode " "\"%s\"\n", lirc_prog, mode);
+			lirc_printf("%s: warning: no end token found for mode \"%s\"\n", lirc_prog, mode);
 		}
 		free(mode);
 	}

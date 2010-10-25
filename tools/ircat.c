@@ -44,7 +44,7 @@
 #include "lirc_client.h"
 
 #define PROG_NAME "ircat"
-#define PROG_VERSION PROG_NAME " " VERSION
+#define PROG_VERSION PROG_NAME  VERSION
 
 void print_usage(char *prog_name)
 {

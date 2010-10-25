@@ -149,8 +149,8 @@ int main(int argc, char **argv)
 	if ((fstat(fd, &s) != -1) && (S_ISFIFO(s.st_mode))) {
 		/* can't do ioctls on a pipe */
 	} else if (ioctl(fd, LIRC_GET_REC_MODE, &mode) == -1 || mode != LIRC_MODE_MODE2) {
-		printf("This program is only intended for receivers " "supporting the pulse/space layer.\n");
-		printf("Note that this is no error, but this program simply " "makes no sense for your\nreceiver.\n");
+		printf("This program is only intended for receivers supporting the pulse/space layer.\n");
+		printf("Note that this is no error, but this program simply makes no sense for your\nreceiver.\n");
 		printf("In order to test your setup run lircd with the "
 		       "--nodaemon option and \n" "then check if the remote works with the irw tool.\n");
 		close(fd);

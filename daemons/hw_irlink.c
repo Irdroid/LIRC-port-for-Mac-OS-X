@@ -270,7 +270,7 @@ int irlink_init(void)
 		if (irlink_detect(hw.fd) == 0) {
 			return 1;
 		} else {
-			logprintf(LOG_ERR, "Failed to detect IRLink " "on '%s' device", hw.device);
+			logprintf(LOG_ERR, "Failed to detect IRLink on '%s' device", hw.device);
 			irlink_deinit();
 		}
 	}

@@ -148,7 +148,7 @@ int tira_setup_sixbytes(void)
 
 	logprintf(LOG_INFO, "Switching to 6bytes mode");
 	if (write(hw.fd, "IR", 2) != 2) {
-		logprintf(LOG_ERR, "failed switching device " "into six byte mode");
+		logprintf(LOG_ERR, "failed switching device into six byte mode");
 		return 0;
 	}
 	/* wait for the chars to be written */
@@ -156,7 +156,7 @@ int tira_setup_sixbytes(void)
 
 	i = read(hw.fd, response, 2);
 	if (i != 2) {
-		logprintf(LOG_ERR, "failed reading response " "to six byte mode command");
+		logprintf(LOG_ERR, "failed reading response to six byte mode command");
 		return 0;
 	}
 	if (strncmp(response, "OK", 2) != 0)
@@ -718,7 +718,7 @@ static int tira_send(struct ir_remote *remote, struct ir_ncode *code)
 		}
 
 		if (idx == -1) {
-			logprintf(LOG_ERR, "can't send ir signal with " "more than 12 different timings");
+			logprintf(LOG_ERR, "can't send ir signal with more than 12 different timings");
 			return retval;
 		}
 

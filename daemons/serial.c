@@ -326,13 +326,13 @@ tty_create_lock_retry:
 			if (read(lock, id, 10 + 1) == 10 + 1 && read(lock, id, 1) == 0
 			    && sscanf(id, "%d\n", &otherpid) > 0) {
 				if (kill(otherpid, 0) == -1 && errno == ESRCH) {
-					logprintf(LOG_WARNING, "detected stale " "lockfile %s", filename);
+					logprintf(LOG_WARNING, "detected stale lockfile %s", filename);
 					close(lock);
 					if (unlink(filename) != -1) {
-						logprintf(LOG_WARNING, "stale lockfile " "removed");
+						logprintf(LOG_WARNING, "stale lockfile removed");
 						goto tty_create_lock_retry;
 					} else {
-						logprintf(LOG_ERR, "could not remove " "stale lockfile");
+						logprintf(LOG_ERR, "could not remove stale lockfile");
 						logperror(LOG_ERR, NULL);
 					}
 					return (0);
@@ -389,7 +389,7 @@ tty_create_lock_retry:
 				logprintf(LOG_ERR, "getcwd() failed");
 				logperror(LOG_ERR, NULL);
 				if (unlink(filename) == -1) {
-					logprintf(LOG_ERR, "could not delete " "file \"%s\"", filename);
+					logprintf(LOG_ERR, "could not delete file \"%s\"", filename);
 					logperror(LOG_ERR, NULL);
 					/* FALLTHROUGH */
 				}
@@ -399,10 +399,10 @@ tty_create_lock_retry:
 			strcpy(dirname, name);
 			dirname[strlen(name) - strlen(last)] = 0;
 			if (chdir(dirname) == -1) {
-				logprintf(LOG_ERR, "chdir() to \"%s\" " "failed", dirname);
+				logprintf(LOG_ERR, "chdir() to \"%s\" failed", dirname);
 				logperror(LOG_ERR, NULL);
 				if (unlink(filename) == -1) {
-					logprintf(LOG_ERR, "could not delete " "file \"%s\"", filename);
+					logprintf(LOG_ERR, "could not delete file \"%s\"", filename);
 					logperror(LOG_ERR, NULL);
 					/* FALLTHROUGH */
 				}
@@ -411,7 +411,7 @@ tty_create_lock_retry:
 		}
 		if (tty_create_lock(symlink) == -1) {
 			if (unlink(filename) == -1) {
-				logprintf(LOG_ERR, "could not delete file " "\"%s\"", filename);
+				logprintf(LOG_ERR, "could not delete file \"%s\"", filename);
 				logperror(LOG_ERR, NULL);
 				/* FALLTHROUGH */
 			}
@@ -422,7 +422,7 @@ tty_create_lock_retry:
 				logprintf(LOG_ERR, "chdir() to \"%s\" failed", cwd);
 				logperror(LOG_ERR, NULL);
 				if (unlink(filename) == -1) {
-					logprintf(LOG_ERR, "could not delete " "file \"%s\"", filename);
+					logprintf(LOG_ERR, "could not delete file \"%s\"", filename);
 					logperror(LOG_ERR, NULL);
 					/* FALLTHROUGH */
 				}
@@ -471,13 +471,13 @@ int tty_delete_lock(void)
 			id[len] = 0;
 			pid = strtol(id, &endptr, 10);
 			if (!*id || (*endptr && *endptr != '\n')) {
-				logprintf(LOG_WARNING, "invalid lockfile (%s) " "detected", filename);
+				logprintf(LOG_WARNING, "invalid lockfile (%s) detected", filename);
 				retval = 0;
 				continue;
 			}
 			if (pid == getpid()) {
 				if (unlink(filename) == -1) {
-					logprintf(LOG_ERR, "could not delete " "file \"%s\"", filename);
+					logprintf(LOG_ERR, "could not delete file \"%s\"", filename);
 					logperror(LOG_ERR, NULL);
 					retval = 0;
 					continue;

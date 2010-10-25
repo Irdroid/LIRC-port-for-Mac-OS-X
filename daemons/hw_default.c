@@ -209,13 +209,13 @@ int default_init()
 	} else if (!S_ISCHR(s.st_mode)) {
 		default_deinit();
 		logprintf(LOG_ERR, "%s is not a character device!!!", hw.device);
-		logperror(LOG_ERR, "something went wrong during " "installation");
+		logperror(LOG_ERR, "something went wrong during installation");
 		return (0);
 	} else if (default_ioctl(LIRC_GET_FEATURES, &hw.features) == -1) {
 		logprintf(LOG_ERR, "could not get hardware features");
-		logprintf(LOG_ERR, "this device driver does not " "support the LIRC ioctl interface");
+		logprintf(LOG_ERR, "this device driver does not support the LIRC ioctl interface");
 		if (major(s.st_rdev) == 13) {
-			logprintf(LOG_ERR, "did you mean to use the devinput " "driver instead of the %s driver?",
+			logprintf(LOG_ERR, "did you mean to use the devinput driver instead of the %s driver?",
 				  hw.name);
 		} else {
 			logprintf(LOG_ERR, "major number of %s is %lu", hw.device, (__u32) major(s.st_rdev));
@@ -228,10 +228,10 @@ int default_init()
 #       ifdef DEBUG
 	else {
 		if (!(LIRC_CAN_SEND(hw.features) || LIRC_CAN_REC(hw.features))) {
-			LOGPRINTF(1, "driver supports neither " "sending nor receiving of IR signals");
+			LOGPRINTF(1, "driver supports neither sending nor receiving of IR signals");
 		}
 		if (LIRC_CAN_SEND(hw.features) && LIRC_CAN_REC(hw.features)) {
-			LOGPRINTF(1, "driver supports both sending and " "receiving");
+			LOGPRINTF(1, "driver supports both sending and receiving");
 		} else if (LIRC_CAN_SEND(hw.features)) {
 			LOGPRINTF(1, "driver supports sending");
 		} else if (LIRC_CAN_REC(hw.features)) {
@@ -250,7 +250,7 @@ int default_init()
 			}
 		}
 		if (supported_send_modes[i] == 0) {
-			logprintf(LOG_NOTICE, "the send method of the " "driver is not yet supported by lircd");
+			logprintf(LOG_NOTICE, "the send method of the driver is not yet supported by lircd");
 		}
 	}
 	hw.rec_mode = 0;
@@ -262,7 +262,7 @@ int default_init()
 			}
 		}
 		if (supported_rec_modes[i] == 0) {
-			logprintf(LOG_NOTICE, "the receive method of the " "driver is not yet supported by lircd");
+			logprintf(LOG_NOTICE, "the receive method of the driver is not yet supported by lircd");
 		}
 	}
 	if (hw.rec_mode == LIRC_MODE_MODE2) {
@@ -281,7 +281,7 @@ int default_init()
 			return (0);
 		}
 		if (hw.code_length > sizeof(ir_code) * CHAR_BIT) {
-			logprintf(LOG_ERR, "lircd can not handle %lu bit " "codes", hw.code_length);
+			logprintf(LOG_ERR, "lircd can not handle %lu bit codes", hw.code_length);
 			default_deinit();
 			return (0);
 		}
@@ -342,7 +342,7 @@ int default_send(struct ir_remote *remote, struct ir_ncode *code)
 
 		freq = remote->freq == 0 ? DEFAULT_FREQ : remote->freq;
 		if (default_ioctl(LIRC_SET_SEND_CARRIER, &freq) == -1) {
-			logprintf(LOG_ERR, "could not set modulation " "frequency");
+			logprintf(LOG_ERR, "could not set modulation frequency");
 			logperror(LOG_ERR, NULL);
 			return (0);
 		}

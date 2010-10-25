@@ -232,7 +232,7 @@ static int hwftdi_init()
 
 		value = strchr(p, '=');
 		if (value == NULL) {
-			logprintf(LOG_ERR, "device configuration option " "must contain an '=': '%s'", p);
+			logprintf(LOG_ERR, "device configuration option must contain an '=': '%s'", p);
 			goto fail_start;
 		}
 		*value++ = '\0';
@@ -254,7 +254,7 @@ static int hwftdi_init()
 		} else if (strcmp(p, "txbaud") == 0) {
 			tx_baud_rate = strtol(value, NULL, 0);
 		} else {
-			logprintf(LOG_ERR, "unrecognised device configuration " "option: '%s'", p);
+			logprintf(LOG_ERR, "unrecognised device configuration option: '%s'", p);
 			goto fail_start;
 		}
 
@@ -463,7 +463,7 @@ static int hwftdi_send(struct ir_remote *remote, struct ir_ncode *code)
 			/* flush txbuffer? */
 			/* note: be sure to have room for last '0' */
 			if (bufidx >= (TXBUFSZ - 1)) {
-				logprintf(LOG_ERR, "buffer overflow " "while generating IR pattern");
+				logprintf(LOG_ERR, "buffer overflow while generating IR pattern");
 				return 0;
 			}
 		}

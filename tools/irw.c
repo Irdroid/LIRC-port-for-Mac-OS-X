@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 			return (EXIT_SUCCESS);
 		case '?':
 			fprintf(stderr, "unrecognized option: -%c\n", optopt);
-			fprintf(stderr, "Try `%s --help' for more " "information.\n", progname);
+			fprintf(stderr, "Try `%s --help' for more information.\n", progname);
 			return (EXIT_FAILURE);
 		}
 	}

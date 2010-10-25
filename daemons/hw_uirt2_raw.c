@@ -517,7 +517,7 @@ static int uirt2_send_mode2_struct1(uirt2_t * dev, struct ir_remote *remote, lir
 		}
 
 		if (i - 2 > UIRT2_MAX_BITS) {
-			logprintf(LOG_ERR, "uirt2_raw: UIRT tried to send %d bits, " "max is %d", length - 2,
+			logprintf(LOG_ERR, "uirt2_raw: UIRT tried to send %d bits, max is %d", length - 2,
 				  UIRT2_MAX_BITS);
 
 			return 0;

@@ -106,7 +106,7 @@ int is_my_device(int fd, char *name)
 		usleep(10);
 	}
 	if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK) {
-		logprintf(LOG_ERR, "INQUIRY: SCSI status=0x%x host_status=0x%x " "driver_status=0x%x", io_hdr.status,
+		logprintf(LOG_ERR, "INQUIRY: SCSI status=0x%x host_status=0x%x driver_status=0x%x", io_hdr.status,
 			  io_hdr.host_status, io_hdr.driver_status);
 		return 0;
 	}
@@ -254,11 +254,11 @@ int creative_infracd_init(void)
 		close(fd);
 		fd = open("/proc/scsi/ide-scsi/0", O_RDONLY);
 		if (fd < 0) {
-			LOGPRINTF(LOG_ERR, "Probing: scsi support present " "but ide-scsi is not loaded");
+			LOGPRINTF(LOG_ERR, "Probing: scsi support present but ide-scsi is not loaded");
 		} else {
 			close(fd);
 			LOGPRINTF(LOG_ERR,
-				  "Probing: scsi in kernel, " "ide-scsi is loaded. Bad configuration or "
+				  "Probing: scsi in kernel, ide-scsi is loaded. Bad configuration or "
 				  "device not present");
 		}
 	}

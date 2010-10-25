@@ -617,7 +617,7 @@ void config(void)
 	} else {
 		LOGPRINTF(1, "config file read");
 		if (config_remotes == NULL) {
-			logprintf(LOG_WARNING, "config file contains no " "valid remote control definition");
+			logprintf(LOG_WARNING, "config file contains no valid remote control definition");
 		}
 		/* I cannot free the data structure
 		   as they could still be in use */
@@ -783,7 +783,7 @@ void connect_to_peers()
 			peers[i]->socket = socket(AF_INET, SOCK_STREAM, 0);
 			host = gethostbyname(peers[i]->host);
 			if (host == NULL) {
-				logprintf(LOG_ERR, "name lookup failure " "connecting to %s", peers[i]->host);
+				logprintf(LOG_ERR, "name lookup failure connecting to %s", peers[i]->host);
 				peers[i]->connection_failure++;
 				gettimeofday(&peers[i]->reconnect, NULL);
 				peers[i]->reconnect.tv_sec += 5 * peers[i]->connection_failure;
@@ -870,9 +870,9 @@ void start_server(mode_t permission, int nodaemon)
 		pid_t otherpid;
 
 		if (fscanf(pidf, "%d\n", &otherpid) > 0) {
-			fprintf(stderr, "%s: there seems to already be " "a lircd process with pid %d\n", progname,
+			fprintf(stderr, "%s: there seems to already be a lircd process with pid %d\n", progname,
 				otherpid);
-			fprintf(stderr, "%s: otherwise delete stale " "lockfile %s\n", progname, pidfile);
+			fprintf(stderr, "%s: otherwise delete stale lockfile %s\n", progname, pidfile);
 		} else {
 			fprintf(stderr, "%s: invalid %s encountered\n", progname, pidfile);
 		}
@@ -1379,9 +1379,9 @@ int set_transmitters(int fd, char *message, char *arguments)
 	if (arguments == NULL)
 		goto string_error;
 	if (hw.send_mode == 0)
-		return (send_error(fd, message, "hardware does not " "support sending\n"));
+		return (send_error(fd, message, "hardware does not support sending\n"));
 	if (hw.ioctl_func == NULL || !(hw.features & LIRC_CAN_SET_TRANSMITTER_MASK)) {
-		return (send_error(fd, message, "hardware does not support " "multiple transmitters\n"));
+		return (send_error(fd, message, "hardware does not support multiple transmitters\n"));
 	}
 
 	next_arg = strtok(arguments, WHITE_SPACE);
@@ -1393,7 +1393,7 @@ int set_transmitters(int fd, char *message, char *arguments)
 			return (send_error(fd, message, "invalid argument\n"));
 		}
 		if (next_tx_int > MAX_TX) {
-			return (send_error(fd, message, "cannot support more " "than %d transmitters\n", MAX_TX));
+			return (send_error(fd, message, "cannot support more than %d transmitters\n", MAX_TX));
 		}
 		next_tx_hex = 1;
 		for (i = 1; i < next_tx_int; i++)
@@ -1403,10 +1403,10 @@ int set_transmitters(int fd, char *message, char *arguments)
 
 	retval = hw.ioctl_func(LIRC_SET_TRANSMITTER_MASK, &channels);
 	if (retval < 0) {
-		return (send_error(fd, message, "error - could not set " "transmitters\n"));
+		return (send_error(fd, message, "error - could not set transmitters\n"));
 	}
 	if (retval > 0) {
-		return (send_error(fd, message, "error - maximum of %d " "transmitters\n", retval));
+		return (send_error(fd, message, "error - maximum of %d transmitters\n", retval));
 	}
 	return (send_success(fd, message));
 
@@ -1487,7 +1487,7 @@ int send_core(int fd, char *message, char *arguments, int once)
 	int err;
 
 	if (hw.send_mode == 0)
-		return (send_error(fd, message, "hardware does not " "support sending\n"));
+		return (send_error(fd, message, "hardware does not support sending\n"));
 
 	if (parse_rc(fd, message, arguments, &remote, &code, once ? &reps : NULL, 2, &err) == 0)
 		return (0);
@@ -1563,10 +1563,10 @@ int send_stop(int fd, char *message, char *arguments)
 	if (repeat_remote && repeat_code) {
 		int done;
 		if (remote && strcasecmp(remote->name, repeat_remote->name) != 0) {
-			return (send_error(fd, message, "specified remote " "does not match\n"));
+			return (send_error(fd, message, "specified remote does not match\n"));
 		}
 		if (code && strcasecmp(code->name, repeat_code->name) != 0) {
-			return (send_error(fd, message, "specified code " "does not match\n"));
+			return (send_error(fd, message, "specified code does not match\n"));
 		}
 
 		done = repeat_max - repeat_remote->repeat_countdown;
@@ -2222,12 +2222,12 @@ int main(int argc, char **argv)
 		hw.device = device;
 	}
 	if (strcmp(hw.name, "null") == 0 && peern == 0) {
-		fprintf(stderr, "%s: there's no hardware I can use and " "no peers are specified\n", progname);
+		fprintf(stderr, "%s: there's no hardware I can use and no peers are specified\n", progname);
 		return (EXIT_FAILURE);
 	}
 	if (hw.device != NULL && strcmp(hw.device, lircdfile) == 0) {
 		fprintf(stderr, "%s: refusing to connect to myself\n", progname);
-		fprintf(stderr, "%s: device and output must not be the " "same file: %s\n", progname, lircdfile);
+		fprintf(stderr, "%s: device and output must not be the same file: %s\n", progname, lircdfile);
 		return (EXIT_FAILURE);
 	}
 

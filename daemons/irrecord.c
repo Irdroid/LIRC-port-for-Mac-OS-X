@@ -421,7 +421,7 @@ int main(int argc, char **argv)
 		remotes = read_config(fin, filename);
 		fclose(fin);
 		if (remotes == (void *)-1 || remotes == NULL) {
-			fprintf(stderr, "%s: file \"%s\" does not contain valid " "data\n", progname, filename);
+			fprintf(stderr, "%s: file \"%s\" does not contain valid data\n", progname, filename);
 			exit(EXIT_FAILURE);
 		}
 		if (analyse) {
@@ -459,7 +459,7 @@ int main(int argc, char **argv)
 			remote.post_data_bits = 0;
 		}
 		if (remotes->next != NULL) {
-			fprintf(stderr, "%s: only first remote definition " "in file \"%s\" used\n", progname,
+			fprintf(stderr, "%s: only first remote definition in file \"%s\" used\n", progname,
 				filename);
 		}
 		filename_new = malloc(strlen(filename) + 10);
@@ -472,7 +472,7 @@ int main(int argc, char **argv)
 		filename = filename_new;
 	} else {
 		if (analyse) {
-			fprintf(stderr, "%s: no input file given, " "ignoring analyse flag\n", progname);
+			fprintf(stderr, "%s: no input file given, ignoring analyse flag\n", progname);
 			analyse = 0;
 		}
 	}
@@ -489,7 +489,7 @@ int main(int argc, char **argv)
 	if (hw.init_func) {
 		if (!hw.init_func()) {
 			fprintf(stderr,
-				"%s: could not init hardware" " (lircd running ? --> close it, " "check permissions)\n",
+				"%s: could not init hardware" " (lircd running ? --> close it, check permissions)\n",
 				progname);
 			fclose(fout);
 			unlink(filename);
@@ -641,8 +641,8 @@ int main(int argc, char **argv)
 			break;
 		}
 		if (!disable_namespace && !is_in_namespace(buffer)) {
-			printf("'%s' is not in name space (use " "--disable-namespace to disable checks)\n", buffer);
-			printf("Use '%s --list-namespace' to see a full list " "of valid button names\n", progname);
+			printf("'%s' is not in name space (use --disable-namespace to disable checks)\n", buffer);
+			printf("Use '%s --list-namespace' to see a full list of valid button names\n", progname);
 			printf("Please try again.\n");
 			continue;
 		}
@@ -680,7 +680,7 @@ int main(int argc, char **argv)
 				}
 				if (count == 0) {
 					if (!is_space(data) || data < remote.gap - remote.gap * remote.eps / 100) {
-						printf("Sorry, something " "went wrong.\n");
+						printf("Sorry, something went wrong.\n");
 						sleep(3);
 						printf("Try again.\n");
 						flushhw();
@@ -695,7 +695,7 @@ int main(int argc, char **argv)
 						printf("Got it.\n");
 						printf("Signal length is %d\n", count - 1);
 						if (count % 2) {
-							printf("That's weird because " "the signal length "
+							printf("That's weird because the signal length "
 							       "must be odd!\n");
 							sleep(3);
 							printf("Try again.\n");
@@ -771,12 +771,12 @@ int main(int argc, char **argv)
 					fflush(stdout);
 					sleep(3);
 					if (!resethw()) {
-						fprintf(stderr, "%s: Could not reset " "hardware.\n", progname);
+						fprintf(stderr, "%s: Could not reset hardware.\n", progname);
 						retval = EXIT_FAILURE;
 						break;
 					}
 					flushhw();
-					printf("Please try again. " "(%d retries left)\n", retries - 1);
+					printf("Please try again. (%d retries left)\n", retries - 1);
 				} else {
 					printf("\n");
 					printf("Try using the -f option.\n");
@@ -818,7 +818,7 @@ int main(int argc, char **argv)
 	remotes = read_config(fin, filename);
 	fclose(fin);
 	if (remotes == NULL) {
-		fprintf(stderr, "%s: config file contains no valid " "remote control definition\n", progname);
+		fprintf(stderr, "%s: config file contains no valid remote control definition\n", progname);
 		fprintf(stderr, "%s: this shouldn't ever happen!\n", progname);
 		if (hw.deinit_func)
 			hw.deinit_func();

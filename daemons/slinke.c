@@ -177,7 +177,7 @@ int fill_struct(struct ir_remote *r, FILE * f, char **desc)
 			if (strcasecmp(buffer, "desc") == 0) {
 				/* todo */
 				if (*desc != NULL) {
-					fprintf(stderr, "%s: mulitple " "descriptions\n", progname);
+					fprintf(stderr, "%s: mulitple descriptions\n", progname);
 					break;
 				}
 				*desc = strdup(eq);
@@ -329,7 +329,7 @@ int fill_struct(struct ir_remote *r, FILE * f, char **desc)
 
 				nf = fopen(eq, "r");
 				if (nf == NULL) {
-					fprintf(stderr, "%s: could not open " "file %s\n", progname, eq);
+					fprintf(stderr, "%s: could not open file %s\n", progname, eq);
 					perror(progname);
 					break;
 				}
@@ -546,8 +546,8 @@ int main(int argc, char **argv)
 			printf(usage, progname);
 			printf("\t -h --help\t\tdisplay this message\n");
 			printf("\t -v --version\t\tdisplay version\n\n");
-			printf("\t -b --brand\t\tremote control " "manufacturer\n");
-			printf("\t -m --model\t\tremote control model " "= name of new file\n");
+			printf("\t -b --brand\t\tremote control manufacturer\n");
+			printf("\t -m --model\t\tremote control model = name of new file\n");
 			exit(EXIT_SUCCESS);
 		case 'v':
 			printf("slinke-%s\n", VERSION);
@@ -587,7 +587,7 @@ int main(int argc, char **argv)
 		path = filename;
 		filename = help;
 		if (getcwd(cwd, PATH_MAX) == NULL) {
-			fprintf(stderr, "%s: can't get current " "work directory\n", progname);
+			fprintf(stderr, "%s: can't get current work directory\n", progname);
 			perror(progname);
 			return (EXIT_FAILURE);
 		}
