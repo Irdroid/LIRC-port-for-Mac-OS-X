@@ -27,7 +27,7 @@ char *livedrive_rec_midi(struct ir_remote *remotes)
 {
 	int i;
 	struct midi_packet midi;
-	unsigned char *bytep = (unsigned char *) &midi;
+	unsigned char *bytep = (unsigned char *)&midi;
 	unsigned char buf;
 	ir_code bit[4];
 
@@ -43,9 +43,9 @@ char *livedrive_rec_midi(struct ir_remote *remotes)
 
 	for (i = 0; i < sizeof(midi); i++) {
 		read(hw.fd, &buf, sizeof(buf));
-		if (midi.dev == NONREMOTE && i == 4)   /* skip 2 missing filler bytes for audigy2 non-infrared messages */
+		if (midi.dev == NONREMOTE && i == 4)	/* skip 2 missing filler bytes for audigy2 non-infrared messages */
 			i += 2;
-		*(bytep+i) = buf;
+		*(bytep + i) = buf;
 	}
 	gettimeofday(&end, NULL);
 
@@ -59,10 +59,8 @@ char *livedrive_rec_midi(struct ir_remote *remotes)
 	bit[2] = (midi.keygroup >> 1) & 0x1;
 	bit[3] = (midi.keygroup >> 0) & 0x1;
 
-	pre = reverse(midi.remote[0] |
-		      (midi.remote[1] << 8), 16) | (bit[0] << 8) | bit[1];
-	code = reverse(midi.key[0] |
-		       (midi.key[1] << 8), 16) | (bit[2] << 8) | bit[3];
+	pre = reverse(midi.remote[0] | (midi.remote[1] << 8), 16) | (bit[0] << 8) | bit[1];
+	code = reverse(midi.key[0] | (midi.key[1] << 8), 16) | (bit[2] << 8) | bit[3];
 
 	return (decode_all(remotes));
 }
@@ -79,7 +77,7 @@ struct hardware hw_livedrive_midi = {
 	NULL,			/* send_func */
 	livedrive_rec_midi,	/* rec_func */
 	livedrive_decode,	/* decode_func */
-	NULL,                   /* ioctl_func */
+	NULL,			/* ioctl_func */
 	NULL,
 	"livedrive_midi"
 };

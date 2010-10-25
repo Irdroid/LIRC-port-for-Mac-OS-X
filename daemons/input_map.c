@@ -15,24 +15,22 @@
 
 #include "input_map.h"
 
-struct
-{
+struct {
 	char *name;
 	linux_input_code code;
 
 } input_map[] = {
 #include "input_map.inc"
-	{NULL, 0}
+	{
+	NULL, 0}
 };
 
-int get_input_code(const char *name, linux_input_code *code)
+int get_input_code(const char *name, linux_input_code * code)
 {
 	int i;
-	
-	for(i=0; input_map[i].name != NULL; i++)
-	{
-		if(strcasecmp(name, input_map[i].name) == 0)
-		{
+
+	for (i = 0; input_map[i].name != NULL; i++) {
+		if (strcasecmp(name, input_map[i].name) == 0) {
 			*code = input_map[i].code;
 			return i;
 		}
@@ -40,12 +38,11 @@ int get_input_code(const char *name, linux_input_code *code)
 	return -1;
 }
 
-void fprint_namespace(FILE *f)
+void fprint_namespace(FILE * f)
 {
 	int i;
-	
-	for(i=0; input_map[i].name != NULL; i++)
-	{
+
+	for (i = 0; input_map[i].name != NULL; i++) {
 		fprintf(stdout, "%s\n", input_map[i].name);
 	}
 }
@@ -53,6 +50,6 @@ void fprint_namespace(FILE *f)
 int is_in_namespace(const char *name)
 {
 	linux_input_code dummy;
-	
+
 	return get_input_code(name, &dummy) == -1 ? 0 : 1;
 }

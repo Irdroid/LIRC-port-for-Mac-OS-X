@@ -15,11 +15,8 @@
 
 #include "drivers/lirc.h"
 
-int caraca_decode(struct ir_remote *remote,
-		  ir_code *prep,ir_code *codep,ir_code *postp,
-		  int *repeat_flagp,
-		  lirc_t *min_remaining_gapp,
-		  lirc_t *max_remaining_gapp);
+int caraca_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		  lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 int caraca_init(void);
 int caraca_deinit(void);
 char *caraca_rec(struct ir_remote *remotes);

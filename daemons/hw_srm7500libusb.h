@@ -36,29 +36,29 @@
 
 #pragma pack(1)
 typedef struct {
-	u_int8_t   time[4];
-	u_int8_t   length;
-	u_int8_t   type;
+	u_int8_t time[4];
+	u_int8_t length;
+	u_int8_t type;
 	union {
 		struct {
-			u_int8_t  SrcAddrMode;
-			u_int8_t  SrcPANId[2];
-			u_int8_t  SrcAddr[2];   //Note: only valid for SrcAddrMode==0x02
-			u_int8_t  DstAddrMode;
-			u_int8_t  DstPANId[2];
-			u_int8_t  DstAddr[2];   //Note: only valid for DstAddrMode==0x02
-			u_int8_t  msduLength;   // <= aMaxMACFrameSize, so it is most probably one byte
-			u_int8_t  data[PACKET_SIZE_MAX-6-10];
+			u_int8_t SrcAddrMode;
+			u_int8_t SrcPANId[2];
+			u_int8_t SrcAddr[2];	//Note: only valid for SrcAddrMode==0x02
+			u_int8_t DstAddrMode;
+			u_int8_t DstPANId[2];
+			u_int8_t DstAddr[2];	//Note: only valid for DstAddrMode==0x02
+			u_int8_t msduLength;	// <= aMaxMACFrameSize, so it is most probably one byte
+			u_int8_t data[PACKET_SIZE_MAX - 6 - 10];
 		} zig;
-		u_int8_t data[PACKET_SIZE_MAX-6];
+		u_int8_t data[PACKET_SIZE_MAX - 6];
 	};
 } philipsrf_incoming_t;
 
 typedef struct {
-	u_int8_t   length;
-	u_int8_t   type;
+	u_int8_t length;
+	u_int8_t type;
 	union {
-		u_int8_t data[PACKET_SIZE_MAX-2];
+		u_int8_t data[PACKET_SIZE_MAX - 2];
 	};
 } philipsrf_outgoing_t;
 #pragma pack()

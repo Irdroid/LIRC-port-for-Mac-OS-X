@@ -55,7 +55,6 @@ static int myfd = -1;
 #define BUFSIZE 20
 #define SAMPLE 47999
 
-
 lirc_t dsp_readdata(lirc_t timeout)
 {
 	lirc_t data;
@@ -65,15 +64,13 @@ lirc_t dsp_readdata(lirc_t timeout)
 	double energy = 0.0;
 	int state;
 
-	while(1) {
-		if (read(myfd, buf, BUFSIZE*2)!=BUFSIZE*2)
-		{
-			logperror(LOG_ERR,"could not read in simple...");
+	while (1) {
+		if (read(myfd, buf, BUFSIZE * 2) != BUFSIZE * 2) {
+			logperror(LOG_ERR, "could not read in simple...");
 		}
-	
-		for (i=0; i<BUFSIZE-1; i++) {
-			energy += ((double) buf[i]-buf[i+1])*
-				((double) buf[i]-buf[i+1]);
+
+		for (i = 0; i < BUFSIZE - 1; i++) {
+			energy += ((double)buf[i] - buf[i + 1]) * ((double)buf[i] - buf[i + 1]);
 		}
 		energy /= BUFSIZE;
 		energy /= 2E4;
@@ -85,12 +82,11 @@ lirc_t dsp_readdata(lirc_t timeout)
 			data = lastlength | (laststate ? PULSE_BIT : 0);
 			lastlength = ((1000000 / SAMPLE) * BUFSIZE);
 			laststate = state;
-			LOGPRINTF(1,"Pulse came %8x,  %8d...",
-				  data, data & ~PULSE_BIT);
+			LOGPRINTF(1, "Pulse came %8x,  %8d...", data, data & ~PULSE_BIT);
 			return data;
 		}
 
-		timeout -= BUFSIZE*1000000 / SAMPLE;
+		timeout -= BUFSIZE * 1000000 / SAMPLE;
 		if (timeout <= 0)
 			return 0;
 	}
@@ -103,74 +99,69 @@ lirc_t dsp_readdata(lirc_t timeout)
 
 int dsp_init()
 {
-        int speed = SAMPLE, fmt = AFMT_S16_LE;
-	
-	logprintf(LOG_INFO,"Initializing %s...",hw.device);
+	int speed = SAMPLE, fmt = AFMT_S16_LE;
+
+	logprintf(LOG_INFO, "Initializing %s...", hw.device);
 	init_rec_buffer();
-	if((hw.fd=open(hw.device,O_RDONLY))<0)
-	{
-		logprintf(LOG_ERR,"could not open %s",hw.device);
-		logperror(LOG_ERR,"dsp_init()");
-		return(0);
+	if ((hw.fd = open(hw.device, O_RDONLY)) < 0) {
+		logprintf(LOG_ERR, "could not open %s", hw.device);
+		logperror(LOG_ERR, "dsp_init()");
+		return (0);
 	}
 
-        if (ioctl(hw.fd, SNDCTL_DSP_SPEED, &speed)<0)
-	{
-		logprintf(LOG_ERR,"could not ioctl(SPEED) on %s",hw.device);
-		logperror(LOG_ERR,"dsp_init()");
-		return(0);
+	if (ioctl(hw.fd, SNDCTL_DSP_SPEED, &speed) < 0) {
+		logprintf(LOG_ERR, "could not ioctl(SPEED) on %s", hw.device);
+		logperror(LOG_ERR, "dsp_init()");
+		return (0);
 	}
-	if (speed != SAMPLE)
-	{
-		logprintf(LOG_ERR,"wrong speed handshaked on %s",hw.device);
-		logperror(LOG_ERR,"dsp_init()");
-		return(0);
+	if (speed != SAMPLE) {
+		logprintf(LOG_ERR, "wrong speed handshaked on %s", hw.device);
+		logperror(LOG_ERR, "dsp_init()");
+		return (0);
 	}
-        if (ioctl(hw.fd, SNDCTL_DSP_SETFMT, &fmt)<0)
-	{
-		logprintf(LOG_ERR,"could not ioctl(SETFMT) on %s",hw.device);
-		logperror(LOG_ERR,"dsp_init()");
-		return(0);
+	if (ioctl(hw.fd, SNDCTL_DSP_SETFMT, &fmt) < 0) {
+		logprintf(LOG_ERR, "could not ioctl(SETFMT) on %s", hw.device);
+		logperror(LOG_ERR, "dsp_init()");
+		return (0);
 	}
-	if (fmt != AFMT_S16_LE)
-	{
-		logprintf(LOG_ERR,"wrong format handshaked on %s",hw.device);
-		logperror(LOG_ERR,"dsp_init()");
-		return(0);
+	if (fmt != AFMT_S16_LE) {
+		logprintf(LOG_ERR, "wrong format handshaked on %s", hw.device);
+		logperror(LOG_ERR, "dsp_init()");
+		return (0);
 	}
 	myfd = hw.fd;
 	/* select on soundcard does not work */
 	hw.fd = open("/dev/zero", O_RDONLY);
-	return(1);
+	return (1);
 }
 
 int dsp_deinit(void)
 {
 	close(hw.fd);
 	close(myfd);
-	return(1);
+	return (1);
 }
 
 char *dsp_rec(struct ir_remote *remotes)
 {
-	if(!clear_rec_buffer()) return(NULL);
-	return(decode_all(remotes));
+	if (!clear_rec_buffer())
+		return (NULL);
+	return (decode_all(remotes));
 }
 
-struct hardware hw_dsp=
-{
-	"/dev/dsp",	    /* simple device */
-	-1,                 /* fd */
-	LIRC_CAN_REC_MODE2, /* features */
-	0,                  /* send_mode */
-	LIRC_MODE_MODE2,    /* rec_mode */
-	0,                  /* code_length */
-	dsp_init,           /* init_func */
-	dsp_deinit,         /* deinit_func */
-	NULL,               /* send_func */
-	dsp_rec,            /* rec_func */
-	receive_decode,     /* decode_func */
-	NULL,               /* ioctl_func */
+struct hardware hw_dsp = {
+	"/dev/dsp",		/* simple device */
+	-1,			/* fd */
+	LIRC_CAN_REC_MODE2,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_MODE2,	/* rec_mode */
+	0,			/* code_length */
+	dsp_init,		/* init_func */
+	dsp_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	dsp_rec,		/* rec_func */
+	receive_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
 	dsp_readdata,
 	"dsp"
 };

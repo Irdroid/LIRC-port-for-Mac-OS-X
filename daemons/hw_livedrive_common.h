@@ -22,16 +22,14 @@
 #ifndef HW_LIVEDRIVE_COMMON_H
 #define HW_LIVEDRIVE_COMMON_H
 
-struct sequencer_packet
-{
+struct sequencer_packet {
 	unsigned char type;
 	unsigned char data;
 	unsigned char device;
 	unsigned char filler;
 };
 
-struct midi_packet
-{
+struct midi_packet {
 	unsigned char vendor_id[3];
 	unsigned char dev;
 	unsigned char filler[2];
@@ -45,11 +43,8 @@ struct midi_packet
 #define REMOTE    0x60
 #define NONREMOTE 0x61
 
-int livedrive_decode(struct ir_remote *remote,
-		     ir_code * prep, ir_code * codep, ir_code * postp,
-		     int *repeat_flagp,
-		     lirc_t * min_remaining_gapp,
-		     lirc_t * max_remaining_gapp);
+int livedrive_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		     lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 int livedrive_init(void);
 int livedrive_deinit(void);
 

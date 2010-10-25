@@ -30,7 +30,6 @@
  *
  */
 
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -47,8 +46,7 @@
 #define PROG_NAME "ircat"
 #define PROG_VERSION PROG_NAME " " VERSION
 
-
-void print_usage (char *prog_name)
+void print_usage(char *prog_name)
 {
 	printf("Usage: %s [options] <prog>\n", prog_name);
 	printf("\t -h --help\t\tdisplay usage summary\n");
@@ -93,7 +91,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (lirc_init(argv[argc-1], 1) == -1) exit(EXIT_FAILURE);
+	if (lirc_init(argv[argc - 1], 1) == -1)
+		exit(EXIT_FAILURE);
 
 	if (lirc_readconfig(config_file, &config, NULL) == 0) {
 		char *code;
@@ -101,14 +100,15 @@ int main(int argc, char *argv[])
 		int ret;
 
 		while (lirc_nextcode(&code) == 0) {
-			if (code == NULL) continue;
-			while ((ret = lirc_code2char(config, code, &c)) == 0 &&
-			      c != NULL) {
+			if (code == NULL)
+				continue;
+			while ((ret = lirc_code2char(config, code, &c)) == 0 && c != NULL) {
 				printf("%s\n", c);
 				fflush(stdout);
 			}
 			free(code);
-			if (ret == -1) break;
+			if (ret == -1)
+				break;
 		}
 		lirc_freeconfig(config);
 	}

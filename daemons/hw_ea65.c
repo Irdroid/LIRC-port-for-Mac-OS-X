@@ -53,81 +53,72 @@
 struct timeval start, end, last;
 ir_code code;
 
-struct hardware hw_ea65 =
-{
-	LIRC_IRTTY,            /* default device */
-	-1,                    /* fd             */
-	LIRC_CAN_REC_LIRCCODE, /* features       */
-	0,                     /* send_mode      */
-	LIRC_MODE_LIRCCODE,    /* rec_mode       */
-	CODE_LENGTH,           /* code_length    */
-	ea65_init,             /* init_func      */
-	ea65_release,          /* deinit_func    */
-	NULL,                  /* send_func      */
-	ea65_receive,          /* rec_func       */
-	ea65_decode,           /* decode_func    */
-	NULL,                  /* ioctl_func     */
-	NULL,                  /* readdata       */
+struct hardware hw_ea65 = {
+	LIRC_IRTTY,		/* default device */
+	-1,			/* fd             */
+	LIRC_CAN_REC_LIRCCODE,	/* features       */
+	0,			/* send_mode      */
+	LIRC_MODE_LIRCCODE,	/* rec_mode       */
+	CODE_LENGTH,		/* code_length    */
+	ea65_init,		/* init_func      */
+	ea65_release,		/* deinit_func    */
+	NULL,			/* send_func      */
+	ea65_receive,		/* rec_func       */
+	ea65_decode,		/* decode_func    */
+	NULL,			/* ioctl_func     */
+	NULL,			/* readdata       */
 	"ea65"
 };
 
-int ea65_decode(struct ir_remote *remote,
-		ir_code *prep,ir_code *codep,ir_code *postp,
-		int *repeat_flagp,
-		lirc_t *min_remaining_gapp,
-		lirc_t *max_remaining_gapp)
+int ea65_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
 	lirc_t d = 0;
 
-	if (!map_code(remote, prep, codep, postp,
-			0, 0, CODE_LENGTH, code, 0, 0))
+	if (!map_code(remote, prep, codep, postp, 0, 0, CODE_LENGTH, code, 0, 0))
 		return 0;
 
 	if (start.tv_sec - last.tv_sec >= 2) {
 		*repeat_flagp = 0;
 	} else {
-		d = (start.tv_sec - last.tv_sec) * 1000000 +
-			start.tv_usec - last.tv_usec;
-		if (d < 960000)
-		{
+		d = (start.tv_sec - last.tv_sec) * 1000000 + start.tv_usec - last.tv_usec;
+		if (d < 960000) {
 			*repeat_flagp = 1;
-		}
-		else
-		{
+		} else {
 			*repeat_flagp = 0;
 		}
 	}
-	
+
 	*min_remaining_gapp = 0;
 	*max_remaining_gapp = 0;
-	
+
 	return 1;
 }
 
 int ea65_init(void)
 {
-	logprintf(LOG_INFO, "EA65: device %s", hw.device); 
+	logprintf(LOG_INFO, "EA65: device %s", hw.device);
 
 	if (!tty_create_lock(hw.device)) {
-		logprintf(LOG_ERR,"EA65: could not create lock files");
+		logprintf(LOG_ERR, "EA65: could not create lock files");
 		return 0;
 	}
 
 	hw.fd = open(hw.device, O_RDWR | O_NONBLOCK | O_NOCTTY);
 	if (hw.fd < 0) {
-		logprintf(LOG_ERR,"EA65: could not open %s",hw.device);
+		logprintf(LOG_ERR, "EA65: could not open %s", hw.device);
 		tty_delete_lock();
 		return 0;
 	}
 
 	if (!tty_reset(hw.fd)) {
-		logprintf(LOG_ERR,"EA65: could not reset tty");
+		logprintf(LOG_ERR, "EA65: could not reset tty");
 		ea65_release();
 		return 0;
 	}
 
 	if (!tty_setbaud(hw.fd, 9600)) {
-		logprintf(LOG_ERR,"EA65: could not set baud rate");
+		logprintf(LOG_ERR, "EA65: could not set baud rate");
 		ea65_release();
 		return 0;
 	}
@@ -150,7 +141,7 @@ char *ea65_receive(struct ir_remote *remote)
 
 	last = end;
 	gettimeofday(&start, NULL);
-	
+
 	if (!waitfordata(TIMEOUT)) {
 		logprintf(LOG_ERR, "EA65: timeout reading code data");
 		return NULL;
@@ -158,13 +149,11 @@ char *ea65_receive(struct ir_remote *remote)
 
 	r = read(hw.fd, data, sizeof(data));
 	if (r < 4) {
-		logprintf(LOG_ERR, "EA65: read failed. %s(%d)",
-			  strerror(r), r);
+		logprintf(LOG_ERR, "EA65: read failed. %s(%d)", strerror(r), r);
 		return NULL;
 	}
 
-	LOGPRINTF(1, "EA65: data(%d): %02x %02x %02x %02x %02x", r,
-			data[0], data[1], data[2], data[3], data[4]);
+	LOGPRINTF(1, "EA65: data(%d): %02x %02x %02x %02x %02x", r, data[0], data[1], data[2], data[3], data[4]);
 
 	if (data[0] != 0xa0)
 		return NULL;
@@ -180,8 +169,7 @@ char *ea65_receive(struct ir_remote *remote)
 		code = (0xff << 16) | (data[2] << 8) | data[3];
 		break;
 	}
-	logprintf(LOG_INFO, "EA65: receive code: %llx",
-		  (__u64) code);
+	logprintf(LOG_INFO, "EA65: receive code: %llx", (__u64) code);
 
 	gettimeofday(&end, NULL);
 

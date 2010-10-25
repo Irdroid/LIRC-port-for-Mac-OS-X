@@ -30,20 +30,13 @@
 
 #include "drivers/lirc.h"
 
-int     tira_decode                  (struct ir_remote   *remote,
-				      ir_code            *prep,
-				      ir_code            *codep,
-				      ir_code            *postp,
-				      int                *repeat_flagp,
-				      lirc_t             *min_remaining_gapp,
-				      lirc_t             *max_remaining_gapp);
-int     tira_init                    (void);
-int     tira_deinit                  (void);
-char    *tira_rec                    (struct ir_remote   *remotes);
-char    *tira_rec_mode2              (struct ir_remote   *remotes);
+int tira_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
+int tira_init(void);
+int tira_deinit(void);
+char *tira_rec(struct ir_remote *remotes);
+char *tira_rec_mode2(struct ir_remote *remotes);
 static int tira_send(struct ir_remote *remote, struct ir_ncode *code);
-lirc_t	tira_readdata(lirc_t timeout);
+lirc_t tira_readdata(lirc_t timeout);
 
 #endif
-
-

@@ -18,8 +18,7 @@
 #include "ir_remote.h"
 #include "lircd.h"
 
-enum
-{
+enum {
 	RPT_NO = 0,
 	RPT_YES = 1,
 };
@@ -27,20 +26,18 @@ enum
 static int atwf83_init();
 static int atwf83_deinit();
 static char *atwf83_rec(struct ir_remote *remotes);
-static int atwf83_decode(struct ir_remote *remote,
-			 ir_code *prep, ir_code *codep, ir_code *postp,
-			 int *repeat_flagp,
-			 lirc_t *min_remaining_gapp,
-			 lirc_t *max_remaining_gapp);
-static void* atwf83_repeat();
+static int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+			 lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
+static void *atwf83_repeat();
 
-const unsigned release_code =0x00000000;
+const unsigned release_code = 0x00000000;
 /** Time to wait before first repetition */
 const unsigned repeat_time1_us = 500000;
 /** Time to wait between two repetitions */
 const unsigned repeat_time2_us = 100000;
 /** Pipe between main thread and repetition thread */
-static int fd_pipe[2] = {-1,-1};
+static int fd_pipe[2] = { -1, -1 };
+
 /** Thread that simulates repetitions */
 static pthread_t repeat_thread;
 /** File descriptor for the real device */
@@ -48,12 +45,11 @@ static int fd_hidraw;
 
 const int main_code_length = 32;
 static signed int main_code = 0;
-static struct timeval start,end,last;
+static struct timeval start, end, last;
 static int repeat_state = RPT_NO;
 
 /* Aureal USB iR Receiver */
-struct hardware hw_atwf83=
-{
+struct hardware hw_atwf83 = {
 	"/dev/hidraw0",		/* "device" */
 	-1,			/* fd (device) */
 	LIRC_CAN_REC_LIRCCODE,	/* features */
@@ -70,22 +66,16 @@ struct hardware hw_atwf83=
 	"atwf83"		/* name */
 };
 
-int atwf83_decode(struct ir_remote *remote,
-		  ir_code *prep, ir_code *codep, ir_code *postp,
-		  int *repeat_flagp,
-		  lirc_t *min_remaining_gapp,
-		  lirc_t *max_remaining_gapp)
+int atwf83_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		  lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
 	LOGPRINTF(1, "atwf83_decode");
 
-	if(!map_code(remote,prep,codep,postp,0,0,
-		     main_code_length,main_code,0,0))
-	{
+	if (!map_code(remote, prep, codep, postp, 0, 0, main_code_length, main_code, 0, 0)) {
 		return 0;
 	}
 
-	map_gap(remote, &start, &last, 0, repeat_flagp,
-		min_remaining_gapp, max_remaining_gapp);
+	map_gap(remote, &start, &last, 0, repeat_flagp, min_remaining_gapp, max_remaining_gapp);
 	/* override repeat */
 	*repeat_flagp = repeat_state;
 
@@ -95,23 +85,20 @@ int atwf83_decode(struct ir_remote *remote,
 int atwf83_init()
 {
 	logprintf(LOG_INFO, "initializing '%s'", hw.device);
-	if ((fd_hidraw = open(hw.device, O_RDONLY)) < 0)
-	{
+	if ((fd_hidraw = open(hw.device, O_RDONLY)) < 0) {
 		logprintf(LOG_ERR, "unable to open '%s'", hw.device);
 		return 0;
 	}
 	/* Create pipe so that events sent by the repeat thread will
 	   trigger main thread */
-	if (pipe(fd_pipe) != 0)
-	{
+	if (pipe(fd_pipe) != 0) {
 		logperror(LOG_ERR, "couldn't open pipe");
 		close(fd_hidraw);
 		return 0;
 	}
 	hw.fd = fd_pipe[0];
 	/* Create thread to simulate repetitions */
-	if (pthread_create(&repeat_thread, NULL, atwf83_repeat, NULL))
-	{
+	if (pthread_create(&repeat_thread, NULL, atwf83_repeat, NULL)) {
 		logprintf(LOG_ERR, "Could not create \"repeat thread\"");
 		return 0;
 	}
@@ -121,19 +108,16 @@ int atwf83_init()
 int atwf83_deinit()
 {
 	pthread_cancel(repeat_thread);
-	if(fd_hidraw != -1)
-	{
+	if (fd_hidraw != -1) {
 		logprintf(LOG_INFO, "closing '%s'", hw.device);
 		close(fd_hidraw);
-		fd_hidraw=-1;
+		fd_hidraw = -1;
 	}
-	if (fd_pipe[0] >= 0)
-	{
+	if (fd_pipe[0] >= 0) {
 		close(fd_pipe[0]);
 		fd_pipe[0] = -1;
 	}
-	if (fd_pipe[1] >= 0)
-	{
+	if (fd_pipe[1] >= 0) {
 		close(fd_pipe[1]);
 		fd_pipe[1] = -1;
 	}
@@ -145,53 +129,43 @@ int atwf83_deinit()
  *	Runtime that reads device, forwards codes to main thread
  *	and simulates repetitions.
  */
-void* atwf83_repeat()
+void *atwf83_repeat()
 {
 	unsigned ev[2];
 	unsigned current_code;
 	int rd, sel;
 	fd_set files;
 	struct timeval delay;
-	int pressed=0;
+	int pressed = 0;
 	int fd = fd_pipe[1];
 
-	while(1)
-	{
+	while (1) {
 		// Initialize set to monitor device's events
 		FD_ZERO(&files);
 		FD_SET(fd_hidraw, &files);
-		if (pressed)
-		{
+		if (pressed) {
 			sel = select(FD_SETSIZE, &files, NULL, NULL, &delay);
-		}
-		else
-		{
+		} else {
 			sel = select(FD_SETSIZE, &files, NULL, NULL, NULL);
 		}
 
-		switch (sel)
-		{
+		switch (sel) {
 		case 1:
 			// Data ready in device's file
 			rd = read(fd_hidraw, ev, sizeof(ev));
-			
-			if (rd==-1)
-			{
+
+			if (rd == -1) {
 				// Error
-				logprintf(LOG_ERR, "(%s) Could not read %s",
-					  __FUNCTION__, hw.device);
+				logprintf(LOG_ERR, "(%s) Could not read %s", __FUNCTION__, hw.device);
 				goto exit_loop;
 			}
-			if ((rd==8 && ev[0]!=0) || (rd==6 && ev[0]>2) )	
-			{
+			if ((rd == 8 && ev[0] != 0) || (rd == 6 && ev[0] > 2)) {
 				// Key code : forward it to main thread
 				pressed = 1;
 				delay.tv_sec = 0;
 				delay.tv_usec = repeat_time1_us;
 				current_code = ev[0];
-			}
-			else
-			{
+			} else {
 				// Release code : stop repetitions
 				pressed = 0;
 				current_code = release_code;
@@ -205,15 +179,14 @@ void* atwf83_repeat()
 			break;
 		default:
 			// Error
-			logprintf(LOG_ERR,"(%s) select() failed",
-				  __FUNCTION__);
+			logprintf(LOG_ERR, "(%s) select() failed", __FUNCTION__);
 			goto exit_loop;
 		}
 		// Send code to main thread through pipe
 		write(fd, &current_code, sizeof(current_code));
 	}
- exit_loop:
-	
+exit_loop:
+
 	fd_pipe[1] = -1;
 	close(fd);
 	return NULL;
@@ -229,19 +202,17 @@ static char *atwf83_rec(struct ir_remote *remotes)
 	unsigned ev;
 	int rd;
 	last = end;
-	gettimeofday(&start,NULL);
+	gettimeofday(&start, NULL);
 	rd = read(hw.fd, &ev, sizeof(ev));
 
-	if (rd==-1)
-	{
+	if (rd == -1) {
 		// Error
-		logprintf(LOG_ERR,"(%s) could not read pipe", __FUNCTION__);
+		logprintf(LOG_ERR, "(%s) could not read pipe", __FUNCTION__);
 		atwf83_deinit();
 		return 0;
 	}
 
-	if (ev == 0)
-	{
+	if (ev == 0) {
 		// Release code
 		main_code = 0;
 		return 0;
@@ -249,15 +220,12 @@ static char *atwf83_rec(struct ir_remote *remotes)
 
 	LOGPRINTF(1, "atwf83 : %x", ev);
 	// Record the code and check for repetition
-	if (main_code == ev)
-	{
+	if (main_code == ev) {
 		repeat_state = RPT_YES;
-	}
-	else
-	{
+	} else {
 		main_code = ev;
 		repeat_state = RPT_NO;
 	}
-	gettimeofday(&end,NULL);
+	gettimeofday(&end, NULL);
 	return decode_all(remotes);
 }

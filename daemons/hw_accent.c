@@ -116,7 +116,7 @@
 static unsigned char b[ACCENT_MAX_READ_BYTES];
 
 // Timestamps of keypress start, keypress end and last pressed key.
-static struct timeval start, end, last; 
+static struct timeval start, end, last;
 
 // Time (us) of a signal received from the remote control.
 static lirc_t signal_length;
@@ -125,24 +125,22 @@ static lirc_t signal_length;
 // Type ir_code is __u64.
 static ir_code code, last_code = 0;
 
-
 struct hardware hw_accent = {
-	LIRC_IRTTY,               /* default device */
-	-1,                       /* fd */
-	LIRC_CAN_REC_LIRCCODE,    /* features */
-	0,                        /* send_mode */
-	LIRC_MODE_LIRCCODE,       /* rec_mode */
-	ACCENT_CODE_LENGTH,       /* code_length */
-	accent_init,              /* init_func */
-	accent_deinit,            /* deinit_func */
-	NULL,                     /* send_func */
-	accent_rec,               /* rec_func */
-	accent_decode,            /* decode_func */
-	NULL,                     /* ioctl_func */
-	NULL,                     /* readdata */
+	LIRC_IRTTY,		/* default device */
+	-1,			/* fd */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	ACCENT_CODE_LENGTH,	/* code_length */
+	accent_init,		/* init_func */
+	accent_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	accent_rec,		/* rec_func */
+	accent_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
+	NULL,			/* readdata */
 	"accent"
 };
-
 
 //-------------------------------------------------------------------------
 // This function is called by the LIRC daemon during the transform of a
@@ -151,36 +149,27 @@ struct hardware hw_accent = {
 // It gets the global variable code (remote keypress code).
 //
 // It returns:
-//	prep		Code prefix (zero for this LIRC driver)
-//      codep		Code of keypress
-//	postp		Trailing code (zero for this LIRC dirver)
-//      repeat_flagp	True if the keypress is a repeated keypress
-//      remaining_gapp	Extimated time gap remaining before next code?
+//      prep            Code prefix (zero for this LIRC driver)
+//      codep           Code of keypress
+//      postp           Trailing code (zero for this LIRC dirver)
+//      repeat_flagp    True if the keypress is a repeated keypress
+//      remaining_gapp  Extimated time gap remaining before next code?
 //-------------------------------------------------------------------------
-int accent_decode (struct ir_remote *remote,
-		   ir_code *prep,
-		   ir_code *codep,
-		   ir_code *postp,
-		   int *repeat_flagp,
-		   lirc_t *min_remaining_gapp,
-		   lirc_t *max_remaining_gapp)
+int accent_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		  lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
-	LOGPRINTF(1, "Entering accent_decode(), code = %016llx\n",
-		  code);
-	
+	LOGPRINTF(1, "Entering accent_decode(), code = %016llx\n", code);
+
 	LOGPRINTF(1, "accent_decode() is calling map_code()");
-	if (!map_code(remote, prep, codep, postp,
-		      0, 0, ACCENT_CODE_LENGTH, code, 0, 0))
-	{
-		return(0);
+	if (!map_code(remote, prep, codep, postp, 0, 0, ACCENT_CODE_LENGTH, code, 0, 0)) {
+		return (0);
 	}
 
-	map_gap(remote, &start, &last, signal_length, repeat_flagp,
-		min_remaining_gapp, max_remaining_gapp);
-	
+	map_gap(remote, &start, &last, signal_length, repeat_flagp, min_remaining_gapp, max_remaining_gapp);
+
 	LOGPRINTF(1, "Exiting accent_decode()");
 
-	return(1);
+	return (1);
 }
 
 //-------------------------------------------------------------------------
@@ -191,26 +180,25 @@ int accent_decode (struct ir_remote *remote,
 //-------------------------------------------------------------------------
 int accent_init(void)
 {
-	
+
 	LOGPRINTF(1, "Entering accent_init()");
-	
+
 	// Calculate the time length of a remote signal (in microseconds):
 	// (bits + total_stop_bits) * 1000000 / bitrate
-	signal_length = (hw.code_length + (hw.code_length / 8)) * 1000000
-		/ ACCENT_BAUD_RATE;
-	
+	signal_length = (hw.code_length + (hw.code_length / 8)) * 1000000 / ACCENT_BAUD_RATE;
+
 	if (!tty_create_lock(hw.device)) {
-		logprintf(LOG_ERR,   "Could not create the lock file");
+		logprintf(LOG_ERR, "Could not create the lock file");
 		LOGPRINTF(LOG_EMERG, "Could not create the lock file");
-		return(0);
+		return (0);
 	}
 	if ((hw.fd = accent_open_serial_port(hw.device)) < 0) {
-		logprintf(LOG_ERR,   "Could not open the serial port");
+		logprintf(LOG_ERR, "Could not open the serial port");
 		LOGPRINTF(LOG_EMERG, "Could not open the serial port");
 		accent_deinit();
-		return(0);
+		return (0);
 	}
-	return(1);
+	return (1);
 }
 
 //-------------------------------------------------------------------------
@@ -221,7 +209,7 @@ int accent_deinit(void)
 	LOGPRINTF(1, "Entering accent_deinit()");
 	close(hw.fd);
 	tty_delete_lock();
-	return(1);
+	return (1);
 }
 
 //-------------------------------------------------------------------------
@@ -233,14 +221,14 @@ char *accent_rec(struct ir_remote *remotes)
 {
 	char *m;
 	int i, j;
-	
+
 	LOGPRINTF(1, "Entering accent_rec()");
-	
+
 	// Timestamp of the last pressed key.
 	last = end;
 	// Timestamp of key press start.
 	gettimeofday(&start, NULL);
-	
+
 	// Loop untill read ACCENT_MAX_READ_BYTES or sequence timeout.
 	for (i = 0; i < ACCENT_MAX_READ_BYTES; i++) {
 		// The function accent_rec() is called when some data
@@ -256,8 +244,7 @@ char *accent_rec(struct ir_remote *remotes)
 			if (waitfordata(45000) == 0) {
 				// waitfordata() timed out: the
 				// sequence is complete.
-				LOGPRINTF(LOG_INFO, "waitfordata() timeout "
-					  "waiting for byte %d", i);
+				LOGPRINTF(LOG_INFO, "waitfordata() timeout " "waiting for byte %d", i);
 				break;
 			}
 		}
@@ -265,18 +252,18 @@ char *accent_rec(struct ir_remote *remotes)
 		if (read(hw.fd, &b[i], 1) == -1) {
 			logprintf(LOG_ERR, "read() failed at byte %d", i);
 			logperror(LOG_ERR, "read() failed");
-			return(NULL);
+			return (NULL);
 		} else {
 			LOGPRINTF(LOG_INFO, "read() byte %d: %02x", i, b[i]);
 		}
-	} // End for
-	
-	// Timestamp of key press end.	
+	}			// End for
+
+	// Timestamp of key press end.  
 	gettimeofday(&end, NULL);
-	
+
 	// The bytes sequence is complete, check its validity.
 	LOGPRINTF(LOG_INFO, "Received a sequence of %d bytes", i);
-	
+
 	// Just one byte with zero value: repeated keypress?
 	if (i == 1 && b[0] == 0) {
 		if (last_code && (start.tv_sec - last.tv_sec < 2)) {
@@ -286,41 +273,48 @@ char *accent_rec(struct ir_remote *remotes)
 			code = last_code;
 			tcflush(hw.fd, TCIFLUSH);
 			m = decode_all(remotes);
-			return(m);
+			return (m);
 		} else {
-			LOGPRINTF(LOG_INFO, "Previos code not set, "
-				  "invalid repeat key");
+			LOGPRINTF(LOG_INFO, "Previos code not set, " "invalid repeat key");
 			last_code = 0;
-			return(NULL);
+			return (NULL);
 		}
 	}
-	
 	// Sequence too short?
 	if (i < ACCENT_MEANING_BYTES) {
 		logprintf(LOG_NOTICE, "Invalid sequence: too short");
 		last_code = 0;
-		return(NULL);
+		return (NULL);
 	}
-	
 	// A valid code begins with bytes 0x90 0x46 0x42
 	// and it is long not more than ACCENT_MEANING_BYTES.
 	if (b[0] == 0x90 && b[1] == 0x46 && b[2] == 0x42) {
 		code = 0;
 		if (sizeof(code) >= ACCENT_MEANING_BYTES) {
 			// We have plenty of space to store the full sequence.
-			code |= b[0]; code <<= 8;
-			code |= b[1]; code <<= 8;
-			code |= b[2]; code <<= 8;
-			code |= b[3]; code <<= 8;
-			code |= b[4]; code <<= 8;
-			code |= b[5]; code <<= 8;
-			code |= b[6]; code <<= 8;
+			code |= b[0];
+			code <<= 8;
+			code |= b[1];
+			code <<= 8;
+			code |= b[2];
+			code <<= 8;
+			code |= b[3];
+			code <<= 8;
+			code |= b[4];
+			code <<= 8;
+			code |= b[5];
+			code <<= 8;
+			code |= b[6];
+			code <<= 8;
 			code |= b[7];
 		} else {
 			// No much space, keep only the differentiating part.
-			code |= b[3]; code <<= 8;
-			code |= b[4]; code <<= 8;
-			code |= b[5]; code <<= 8;
+			code |= b[3];
+			code <<= 8;
+			code |= b[4];
+			code <<= 8;
+			code |= b[5];
+			code <<= 8;
 			code |= b[6];
 		}
 		LOGPRINTF(LOG_INFO, "sizeof(code) = %d", sizeof(code));
@@ -328,83 +322,75 @@ char *accent_rec(struct ir_remote *remotes)
 		last_code = code;
 		tcflush(hw.fd, TCIFLUSH);
 		m = decode_all(remotes);
-		return(m);
+		return (m);
 	}
-	
 	// Sometimes the receiver goes crazy, it starts to send to the
 	// serial line a sequence of zeroes with no pauses at all.
 	// This jam terminates only if the user press a new button on
 	// the remote or if we close and re-open the serial port.
 	if (i == ACCENT_MAX_READ_BYTES) {
-		for (j = 0; j < ACCENT_MAX_READ_BYTES; j++)
-		{
-			if (b[j] != 0) break;
+		for (j = 0; j < ACCENT_MAX_READ_BYTES; j++) {
+			if (b[j] != 0)
+				break;
 		}
 		if (j == ACCENT_MAX_READ_BYTES) {
 			// All the received bytes are zeroes, without gaps.
-			logprintf(LOG_WARNING, "Receiver jam! "
-				  "Reopening the serial port");
+			logprintf(LOG_WARNING, "Receiver jam! " "Reopening the serial port");
 			close(hw.fd);
 			if ((hw.fd = accent_open_serial_port(hw.device)) < 0) {
-				logprintf(LOG_ERR, "Could not reopen the "
-					  "serial port");
+				logprintf(LOG_ERR, "Could not reopen the " "serial port");
 				raise(SIGTERM);
 			}
 			last_code = 0;
-			return(NULL);
+			return (NULL);
 		}
 	}
-	
 	// Should never reach this point.
 	logprintf(LOG_NOTICE, "Received an invalid sequence");
-	for (j = 0; j < i; j++)
-	{
+	for (j = 0; j < i; j++) {
 		LOGPRINTF(LOG_NOTICE, " b[%d] = %02x", j, b[j]);
 	}
 	last_code = 0;
-	return(NULL);
+	return (NULL);
 }
 
 //-------------------------------------------------------------------------
 // Open the serial line and set the discipline (do the low level work).
 // Return the file descriptor or -1 on error.
 //-------------------------------------------------------------------------
-int accent_open_serial_port(char *device) 
+int accent_open_serial_port(char *device)
 {
 	int fd;
 	struct termios options;
-	
-	logprintf(1, "Entering accent_open_serial_port(), device = %s",
-		  device);
-	
+
+	logprintf(1, "Entering accent_open_serial_port(), device = %s", device);
+
 	// Open the serial device.
 	if ((fd = open(device, O_RDWR | O_NONBLOCK | O_NOCTTY | O_SYNC)) < 0) {
 		logprintf(LOG_ERR, "Could not open the serial port");
 		logperror(LOG_ERR, "open() failed");
-		return(-1);
+		return (-1);
 	}
 	// Get the parameters associated with the serial line.
 	if (tcgetattr(fd, &options) < 0) {
 		logprintf(LOG_ERR, "Could not get serial port attributes");
 		logperror(LOG_ERR, "tcgetattr() failed");
-		return(-1);
+		return (-1);
 	}
 	// Set the line in raw mode (no control chars, etc.)
 	cfmakeraw(&options);
 	// Apply the changes after all the output has been transmitted.
 	// Discard input before the change is made.
 	if (tcsetattr(fd, TCSAFLUSH, &options) < 0) {
-		logprintf(LOG_ERR,
-			  "Could not set serial port with cfmakeraw()");
+		logprintf(LOG_ERR, "Could not set serial port with cfmakeraw()");
 		logperror(LOG_ERR, "tcsetattr() failed");
-		return(-1);
+		return (-1);
 	}
-	
 	// Gets the parameters associated with the serial line.
 	if (tcgetattr(fd, &options) < 0) {
 		logprintf(LOG_ERR, "Could not get serial port attributes");
 		logperror(LOG_ERR, "tcgetattr() failed");
-		return(-1);
+		return (-1);
 	}
 	// Set input and output baud rate to 1200.
 	cfsetispeed(&options, ACCENT_BAUD_RATE_CONST);
@@ -420,18 +406,16 @@ int accent_open_serial_port(char *device)
 	// Disable parity checking for input.
 	options.c_cflag &= ~PARENB;
 	if (tcsetattr(fd, TCSAFLUSH, &options) < 0) {
-		logprintf(LOG_ERR,
-			  "Could not set serial port line discipline");
+		logprintf(LOG_ERR, "Could not set serial port line discipline");
 		logperror(LOG_ERR, "tcsetattr() failed");
-		return(-1);
+		return (-1);
 	}
-	
 	// Discards data received but not read.
 	if (tcflush(fd, TCIFLUSH) < 0) {
 		logprintf(LOG_ERR, "Could not flush input buffer");
 		logperror(LOG_ERR, "tcflush() failed");
-		return(-1);
+		return (-1);
 	}
-	
-	return(fd);
+
+	return (fd);
 }

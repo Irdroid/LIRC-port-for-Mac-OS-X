@@ -16,7 +16,6 @@
 extern struct ir_remote *repeat_remote;
 extern char *progname;
 
-
 #define TRUE	0
 #define FALSE	1
 
@@ -86,7 +85,6 @@ extern char *progname;
 #define RX_HEADER_DATA 		0x01
 #define RX_HEADER_EVENTS 	0x02
 #define RX_HEADER_TXAVAIL 	0x03
-
 
 // We keep CommandIR's OPEN even on -deinit for speed and to monitor
 // Other non-LIRC events (plugin, suspend, etc) - and settings!
@@ -182,7 +180,6 @@ extern char *progname;
 #define COMMANDIR_RX_EVENTS 		0x02
 #define COMMANDIR_RX_DATA			0x01
 
-
 /**********************************************************************
  *
  * internal function prototypes
@@ -195,21 +192,17 @@ struct send_tx_mask {
 	__u32 new_tx_mask;
 };
 
-
-
-struct tx_signal
-{
-	char * raw_signal;
+struct tx_signal {
+	char *raw_signal;
 	int raw_signal_len;
 	int raw_signal_tx_bitmask;
-	int * bitmask_emitters_list;
+	int *bitmask_emitters_list;
 	int num_bitmask_emitters_list;
 	int raw_signal_frequency;
-	struct tx_signal * next;
+	struct tx_signal *next;
 };
 
-struct commandir_3_tx_signal
-{
+struct commandir_3_tx_signal {
 	unsigned short tx_bit_mask1;
 	unsigned short tx_bit_mask2;
 	unsigned short tx_min_gap;
@@ -218,8 +211,7 @@ struct commandir_3_tx_signal
 	unsigned short pwm_offset;
 };
 
-struct commandir_device
-{
+struct commandir_device {
 	usb_dev_handle *cmdir_udev;
 	int interface;
 	int hw_type;
@@ -234,27 +226,27 @@ struct commandir_device
 	int tx_jack_sense;
 	unsigned char rx_jack_sense;
 	unsigned char rx_data_available;
-	
-	int * next_enabled_emitters_list;
+
+	int *next_enabled_emitters_list;
 	int num_next_enabled_emitters;
 	char signalid;
-	
-	struct tx_signal * next_tx_signal;
-	struct tx_signal * last_tx_signal;
-	
+
+	struct tx_signal *next_tx_signal;
+	struct tx_signal *last_tx_signal;
+
 	unsigned char lastSendSignalID;
 	unsigned char commandir_last_signal_id;
 	unsigned char flush_buffer;
-	
+
 	// CommandIR Mini Specific:
 	int mini_freq;
-	
-	unsigned char commandir_tx_start[MAX_TX_TIMERS*4];
-	unsigned char commandir_tx_end[MAX_TX_TIMERS*4];
+
+	unsigned char commandir_tx_start[MAX_TX_TIMERS * 4];
+	unsigned char commandir_tx_end[MAX_TX_TIMERS * 4];
 	unsigned char commandir_tx_available[MAX_TX_TIMERS];
 	unsigned char tx_timer_to_channel_map[MAX_TX_TIMERS];
-	
-	struct commandir_device * next_commandir_device;
+
+	struct commandir_device *next_commandir_device;
 };
 
 struct commandirIII_status {
@@ -265,59 +257,50 @@ struct commandirIII_status {
 	unsigned char expansionByte;
 };
 
-static void hardware_disconnect(struct commandir_device * a);
+static void hardware_disconnect(struct commandir_device *a);
 
 /*** Parent Thread Functions ***/
 static int commandir_init();
-static int commandir_send(struct ir_remote *remote,struct ir_ncode *code);
+static int commandir_send(struct ir_remote *remote, struct ir_ncode *code);
 static char *commandir_rec(struct ir_remote *remotes);
 static int commandir_ioctl(unsigned int cmd, void *arg);
 static lirc_t commandir_readdata(lirc_t timeout);
 static int commandir_deinit(void);
-static int commandir_receive_decode(struct ir_remote *remote,
-                   ir_code *prep,ir_code *codep,ir_code *postp,
-                   int *repeat_flagp,
-                   lirc_t *min_remaining_gapp, lirc_t *max_remaining_gapp);
+static int commandir_receive_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp,
+				    int *repeat_flagp, lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 
 /*** USB Thread Functions ***/
 static void commandir_child_init();
 int do_we_know_device(unsigned int bus_num, int devnum);
-int claim_and_setup_commandir(unsigned int bus_num, int devnum, 
-	struct usb_device *dev);
+int claim_and_setup_commandir(unsigned int bus_num, int devnum, struct usb_device *dev);
 static void hardware_scan();
 static void hardware_setorder();
-static void hardware_disconnect(struct commandir_device * a);
+static void hardware_disconnect(struct commandir_device *a);
 static void software_disconnects();
 static void set_detected(unsigned int bus_num, int devnum);
 static void commandir_read_loop();
 static void shutdown_usb();
 
 /*** Processing Functions ***/
-static void add_to_tx_pipeline(unsigned char *buffer, int bytes,
-	unsigned int frequency);
+static void add_to_tx_pipeline(unsigned char *buffer, int bytes, unsigned int frequency);
 static int check_irsend_commandir(unsigned char *command);
-static void recalc_tx_available(struct commandir_device * pcd);
+static void recalc_tx_available(struct commandir_device *pcd);
 static int cmdir_convert_RX(unsigned char *orig_rxbuffer);
-static int commandir2_convert_RX(unsigned short *bufferrx,
-	unsigned char numvalues);
-static void pipeline_check(struct commandir_device * pcd);
-static void commandir_2_transmit_next(struct commandir_device * pcd);
+static int commandir2_convert_RX(unsigned short *bufferrx, unsigned char numvalues);
+static void pipeline_check(struct commandir_device *pcd);
+static void commandir_2_transmit_next(struct commandir_device *pcd);
 
-static int get_hardware_tx_bitmask(struct commandir_device * pcd);
+static int get_hardware_tx_bitmask(struct commandir_device *pcd);
 
-static void set_convert_int_bitmask_to_list_of_enabled_bits(
-	__u32 * bitmask, int bitmask_len);
-static void set_all_next_tx_mask(int * ar_new_tx_mask, int new_tx_len, 
-	__u32 bitmask);
-static void set_new_signal_bitmasks(struct commandir_device * pcd, 
-	struct tx_signal * ptx);
+static void set_convert_int_bitmask_to_list_of_enabled_bits(__u32 * bitmask, int bitmask_len);
+static void set_all_next_tx_mask(int *ar_new_tx_mask, int new_tx_len, __u32 bitmask);
+static void set_new_signal_bitmasks(struct commandir_device *pcd, struct tx_signal *ptx);
 
-static void update_tx_available(struct commandir_device * pcd);
+static void update_tx_available(struct commandir_device *pcd);
 static int commandir_read();
 
 /** CommandIR III Specific **/
-static int commandir3_convert_RX(unsigned char *rxBuffer,
-	int numNewValues);
+static int commandir3_convert_RX(unsigned char *rxBuffer, int numNewValues);
 static void raise_event(unsigned int eventid);
 
 #define MAX_FIRMWARE_PACKET 64
@@ -344,8 +327,7 @@ struct pulse_timestamps {
 #define USB_RX_SPACE_DEMOD 35
 #define USB_NO_DATA_BYTE 36
 
-struct commandir3_tx_signal
-{
+struct commandir3_tx_signal {
 	unsigned short tx_bit_mask1;
 	unsigned short tx_bit_mask2;
 	unsigned short tx_min_gap;
@@ -354,25 +336,23 @@ struct commandir3_tx_signal
 	unsigned short pwm_offset;
 };
 
-
-
 struct usb_rx_space3 {
- unsigned short pca_overflow_count;
- unsigned short pca_offset;
+	unsigned short pca_overflow_count;
+	unsigned short pca_offset;
 };
 
 struct usb_rx_pulse3 {
- unsigned short t0_count;
+	unsigned short t0_count;
 };
 
 struct usb_rx_pulse_def3 {
- unsigned short frequency;
- unsigned short pwm;
+	unsigned short frequency;
+	unsigned short pwm;
 };
 
 struct usb_rx_demod_pulse {
- unsigned short pca_overflow_count;
- unsigned short pca_offset;
+	unsigned short pca_overflow_count;
+	unsigned short pca_offset;
 };
 
 #endif

@@ -90,46 +90,43 @@
  * of the driver.
  **************************************************************************/
 static struct {
-        /* the last receive code */
-        ir_code rc_code;
-        /* Int wich indicate that the last reception was a repetition */
-        int repeat_flag;
-        /* Date of the last reception */
-        struct timeval last_reception_time;
-        /* Flag wich indicate a timeout between the reception of repetition
-           Some time the receiver lost a key code and only recieved
-           the associated repetition code. Then the driver interpret
-           this repetition as a repetition of the last receive key code
-           and not the lost one (ex: you press Volume+ after Volume-
-           and the sound continu to go down). To avoid this problem
-           we set a max time between two repetition. */
-        int timeout_repetition_flag;
+	/* the last receive code */
+	ir_code rc_code;
+	/* Int wich indicate that the last reception was a repetition */
+	int repeat_flag;
+	/* Date of the last reception */
+	struct timeval last_reception_time;
+	/* Flag wich indicate a timeout between the reception of repetition
+	   Some time the receiver lost a key code and only recieved
+	   the associated repetition code. Then the driver interpret
+	   this repetition as a repetition of the last receive key code
+	   and not the lost one (ex: you press Volume+ after Volume-
+	   and the sound continu to go down). To avoid this problem
+	   we set a max time between two repetition. */
+	int timeout_repetition_flag;
 } mplay_local_data = {
-        0,
-        0,
-        {0, 0},
-        0
-};
+	0, 0, {
+0, 0}, 0};
 
 /**************************************************************************
  * Definition of the standard internal hardware interface
  * use by lirc for the mplay device
  **************************************************************************/
 struct hardware hw_mplay = {
-        LIRC_IRTTY,             /* default device */
-        -1,                     /* fd */
-        LIRC_CAN_REC_LIRCCODE,  /* features */
-        0,                      /* send_mode */
-        LIRC_MODE_LIRCCODE,     /* rec_mode */
-        MPLAY_CODE_LENGTH,      /* code_length */
-        mplay_init,             /* init_func */
-        mplay_deinit,           /* deinit_func */
-        NULL,                   /* send_func */
-        mplay_rec,              /* rec_func */
-        mplay_decode,           /* decode_func */
-        NULL,                   /* ioctl_func */
-        NULL,                   /* readdata */
-        "mplay"
+	LIRC_IRTTY,		/* default device */
+	-1,			/* fd */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	MPLAY_CODE_LENGTH,	/* code_length */
+	mplay_init,		/* init_func */
+	mplay_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	mplay_rec,		/* rec_func */
+	mplay_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
+	NULL,			/* readdata */
+	"mplay"
 };
 
 /**************************************************************************
@@ -137,22 +134,21 @@ struct hardware hw_mplay = {
  * use by lirc for the mplay v2 (Monueal Moncaso) devices
  **************************************************************************/
 struct hardware hw_mplay2 = {
-        LIRC_IRTTY,             /* default device */
-        -1,                     /* fd */
-        LIRC_CAN_REC_LIRCCODE,  /* features */
-        0,                      /* send_mode */
-        LIRC_MODE_LIRCCODE,     /* rec_mode */
-        MPLAY_CODE_LENGTH,      /* code_length */
-        mplay2_init,            /* init_func */
-        mplay_deinit,           /* deinit_func */
-        NULL,                   /* send_func */
-        mplay_rec,              /* rec_func */
-        mplay_decode,           /* decode_func */
-        NULL,                   /* ioctl_func */
-        NULL,                   /* readdata */
-        "mplay2"
+	LIRC_IRTTY,		/* default device */
+	-1,			/* fd */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	MPLAY_CODE_LENGTH,	/* code_length */
+	mplay2_init,		/* init_func */
+	mplay_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	mplay_rec,		/* rec_func */
+	mplay_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
+	NULL,			/* readdata */
+	"mplay2"
 };
-
 
 /**************************************************************************
  * Lock and initialize the serial port.
@@ -162,32 +158,28 @@ struct hardware hw_mplay2 = {
  **************************************************************************/
 int mplay_init(void)
 {
-        int result = 1;
-        LOGPRINTF(1, "Entering mplay_init()");
-        /* Creation of a lock file for the port */
-        if (!tty_create_lock(hw.device)) {
-                logprintf(LOG_ERR,   "Could not create the lock file");
-                LOGPRINTF(1, "Could not create the lock file");
-                result = 0;
-        }
-        /* Try to open serial port */
-        else if ((hw.fd = open(hw.device, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0)
-	{
-                logprintf(LOG_ERR,   "Could not open the serial port");
-                LOGPRINTF(1, "Could not open the serial port");
-                mplay_deinit();
-                result = 0;
-        }
-        /* Serial port configuration */
-        else if (!tty_reset(hw.fd) || !tty_setbaud(hw.fd, MPLAY_BAUD_RATE))
-        {
-                logprintf(LOG_ERR,   "could not configure the serial port for "
-			  "'%s'", hw.device);
-                LOGPRINTF(1, "could not configure the serial port for "
-                        "'%s'", hw.device);
-                mplay_deinit();
-        }
-        return result;
+	int result = 1;
+	LOGPRINTF(1, "Entering mplay_init()");
+	/* Creation of a lock file for the port */
+	if (!tty_create_lock(hw.device)) {
+		logprintf(LOG_ERR, "Could not create the lock file");
+		LOGPRINTF(1, "Could not create the lock file");
+		result = 0;
+	}
+	/* Try to open serial port */
+	else if ((hw.fd = open(hw.device, O_RDWR | O_NONBLOCK | O_NOCTTY)) < 0) {
+		logprintf(LOG_ERR, "Could not open the serial port");
+		LOGPRINTF(1, "Could not open the serial port");
+		mplay_deinit();
+		result = 0;
+	}
+	/* Serial port configuration */
+	else if (!tty_reset(hw.fd) || !tty_setbaud(hw.fd, MPLAY_BAUD_RATE)) {
+		logprintf(LOG_ERR, "could not configure the serial port for " "'%s'", hw.device);
+		LOGPRINTF(1, "could not configure the serial port for " "'%s'", hw.device);
+		mplay_deinit();
+	}
+	return result;
 }
 
 int mplay2_init(void)
@@ -195,7 +187,7 @@ int mplay2_init(void)
 	struct termios portset;
 	signed int len;
 	char buf = 0x96;
-	char psResponse [11];
+	char psResponse[11];
 
 	LOGPRINTF(1, "Entering mplay_init()");
 	/* Creation of a lock file for the port */
@@ -207,7 +199,7 @@ int mplay2_init(void)
 
 	LOGPRINTF(0, "open serial port");
 	/* Try to open serial port (Monueal Moncaso 312 device doesn't like O_NONBLOCK */
-	if ((hw.fd = open(hw.device, O_RDWR | O_NOCTTY )) < 0) {
+	if ((hw.fd = open(hw.device, O_RDWR | O_NOCTTY)) < 0) {
 		logprintf(LOG_ERR, "Could not open the serial port");
 		LOGPRINTF(1, "Could not open the serial port");
 		tty_delete_lock();
@@ -230,12 +222,12 @@ int mplay2_init(void)
 	portset.c_cflag |= (CLOCAL | CREAD);
 	portset.c_iflag |= (IXON | IXOFF | IXANY);
 	portset.c_oflag &= ~OPOST;
-	portset.c_lflag &= ~(ICANON | ECHOE| ECHO | ISIG);
+	portset.c_lflag &= ~(ICANON | ECHOE | ECHO | ISIG);
 	portset.c_cc[VSTART] = 0x11;
-	portset.c_cc[VSTOP]  = 0x13;
-	portset.c_cc[VEOF]   = 0x20;
-	portset.c_cc[VMIN]   = 1;
-	portset.c_cc[VTIME]  = 3;
+	portset.c_cc[VSTOP] = 0x13;
+	portset.c_cc[VEOF] = 0x20;
+	portset.c_cc[VMIN] = 1;
+	portset.c_cc[VTIME] = 3;
 
 	if (tcsetattr(hw.fd, TCSANOW, &portset) < 0) {
 		logprintf(LOG_ERR, "Error setting TCSANOW mode of serial device");
@@ -246,18 +238,18 @@ int mplay2_init(void)
 
 	len = write(hw.fd, &buf, 1);
 	if (len < 0) {
-		LOGPRINTF(LOG_ERR,"couldn't write to device");
+		LOGPRINTF(LOG_ERR, "couldn't write to device");
 		mplay_deinit();
 		return 0;
 	}
 
-	len = read(hw.fd, &psResponse,11);
+	len = read(hw.fd, &psResponse, 11);
 	if (len < 0) {
-		LOGPRINTF(1,"No data recieved during reading");
+		LOGPRINTF(1, "No data recieved during reading");
 		mplay_deinit();
 		return 0;
 	} else
-		LOGPRINTF(1,"read chars: %s", psResponse);
+		LOGPRINTF(1, "read chars: %s", psResponse);
 
 	if (tcgetattr(hw.fd, &portset) < 0) {
 		logprintf(LOG_ERR, "Could not get serial port attributes");
@@ -273,15 +265,15 @@ int mplay2_init(void)
 	portset.c_cflag |= (CLOCAL | CREAD);
 	portset.c_iflag |= (IXON | IXOFF | IXANY);
 	portset.c_oflag &= ~OPOST;
-	portset.c_lflag &= ~(ICANON | ECHOE| ECHO | ISIG);
+	portset.c_lflag &= ~(ICANON | ECHOE | ECHO | ISIG);
 	portset.c_cc[VSTART] = 0x11;
-	portset.c_cc[VSTOP]  = 0x13;
-	portset.c_cc[VEOF]   = 0x1C;
-	portset.c_cc[VMIN]   = 1;
-	portset.c_cc[VTIME]  = 3;
+	portset.c_cc[VSTOP] = 0x13;
+	portset.c_cc[VEOF] = 0x1C;
+	portset.c_cc[VMIN] = 1;
+	portset.c_cc[VTIME] = 3;
 
 	if (tcsetattr(hw.fd, TCSANOW, &portset) < 0) {
-	logprintf(LOG_ERR, "Error setting TCSANOW mode of serial device");
+		logprintf(LOG_ERR, "Error setting TCSANOW mode of serial device");
 		LOGPRINTF(1, "Error setting TCSANOW mode of serial device");
 		mplay_deinit();
 		return 0;
@@ -295,11 +287,11 @@ int mplay2_init(void)
  **************************************************************************/
 int mplay_deinit(void)
 {
-        LOGPRINTF(1, "Entering mplay_deinit()");
-        close(hw.fd);
-        tty_delete_lock();
-        hw.fd = -1;
-        return(1);
+	LOGPRINTF(1, "Entering mplay_deinit()");
+	close(hw.fd);
+	tty_delete_lock();
+	hw.fd = -1;
+	return (1);
 }
 
 /**************************************************************************
@@ -311,68 +303,53 @@ int mplay_deinit(void)
  **************************************************************************/
 char *mplay_rec(struct ir_remote *remotes)
 {
-        unsigned char rc_code;
-        signed int len;
-        struct timeval current_time;
-        LOGPRINTF(1, "Entering mplay_rec()");
-        len = read(hw.fd, &rc_code, 1);
-        gettimeofday(&current_time, NULL);
-        if (len != 1) 
-        {
-                /* Something go wrong during the read, we close the device 
-                   for prevent endless looping when the device 
-                   is disconnected */
-                LOGPRINTF(1, "Reading error in mplay_rec()");
-                mplay_deinit();
-                return NULL;
-        }
-        else
-        {
-                /* We have received a code */
-                if (rc_code == MPLAY_REPEAT_CODE)
-                {
-                        if (mplay_local_data.timeout_repetition_flag == 1)
-                        {
-                               /* We ignore the repetition */ 
-                               return NULL;
-                        }
-                        else
-                        {
-                               if (time_elapsed(&mplay_local_data.last_reception_time, 
-                                                &current_time) <= 
-                                                MAX_TIME_BETWEEN_TWO_REPETITION_CODE)
-                               {
-                                       /* This reception is a repeat */
-                                       mplay_local_data.repeat_flag = 1;
-                                       /* We save the reception time */
-                                       mplay_local_data.last_reception_time = current_time;
-                               }
-                               else
-                               {
-                                       /* To much time between repetition, 
-                                          the receiver have  probably miss 
-                                          a valide key code. We ignore the 
-                                          repetition */ 
-                                       mplay_local_data.timeout_repetition_flag = 1;
-                                       mplay_local_data.repeat_flag = 0;
-                                       return NULL;
-                               }
-                        }
-                }
-                else
-                {
-                       /* This is a new code */
-                       mplay_local_data.rc_code = rc_code;
-                       mplay_local_data.repeat_flag = 0;
-                       mplay_local_data.timeout_repetition_flag = 0;
-                       mplay_local_data.last_reception_time = current_time;
-                }
-                LOGPRINTF(1, 
-                       "code: %u",
-                       (unsigned int) mplay_local_data.rc_code);
-                LOGPRINTF(1, "repeat_flag: %d", mplay_local_data.repeat_flag);
-                return decode_all(remotes);
-        }
+	unsigned char rc_code;
+	signed int len;
+	struct timeval current_time;
+	LOGPRINTF(1, "Entering mplay_rec()");
+	len = read(hw.fd, &rc_code, 1);
+	gettimeofday(&current_time, NULL);
+	if (len != 1) {
+		/* Something go wrong during the read, we close the device 
+		   for prevent endless looping when the device 
+		   is disconnected */
+		LOGPRINTF(1, "Reading error in mplay_rec()");
+		mplay_deinit();
+		return NULL;
+	} else {
+		/* We have received a code */
+		if (rc_code == MPLAY_REPEAT_CODE) {
+			if (mplay_local_data.timeout_repetition_flag == 1) {
+				/* We ignore the repetition */
+				return NULL;
+			} else {
+				if (time_elapsed(&mplay_local_data.last_reception_time, &current_time) <=
+				    MAX_TIME_BETWEEN_TWO_REPETITION_CODE) {
+					/* This reception is a repeat */
+					mplay_local_data.repeat_flag = 1;
+					/* We save the reception time */
+					mplay_local_data.last_reception_time = current_time;
+				} else {
+					/* To much time between repetition, 
+					   the receiver have  probably miss 
+					   a valide key code. We ignore the 
+					   repetition */
+					mplay_local_data.timeout_repetition_flag = 1;
+					mplay_local_data.repeat_flag = 0;
+					return NULL;
+				}
+			}
+		} else {
+			/* This is a new code */
+			mplay_local_data.rc_code = rc_code;
+			mplay_local_data.repeat_flag = 0;
+			mplay_local_data.timeout_repetition_flag = 0;
+			mplay_local_data.last_reception_time = current_time;
+		}
+		LOGPRINTF(1, "code: %u", (unsigned int)mplay_local_data.rc_code);
+		LOGPRINTF(1, "repeat_flag: %d", mplay_local_data.repeat_flag);
+		return decode_all(remotes);
+	}
 }
 
 /**************************************************************************
@@ -389,34 +366,16 @@ char *mplay_rec(struct ir_remote *remotes)
  *  min_remaining_gapp  Min extimated time gap remaining before next code
  *  max_remaining_gapp  Max extimated time gap remaining before next code
  **************************************************************************/
-int mplay_decode(
-    struct ir_remote *remote,
-    ir_code *prep,
-    ir_code *codep,
-    ir_code *postp,
-    int *repeat_flagp,
-    lirc_t *min_remaining_gapp,
-    lirc_t *max_remaining_gapp)
+int mplay_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		 lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
-        LOGPRINTF(1, "Entering mplay_decode(), code = %u\n",
-		  (unsigned int)mplay_local_data.rc_code);
+	LOGPRINTF(1, "Entering mplay_decode(), code = %u\n", (unsigned int)mplay_local_data.rc_code);
 
-        if(!map_code(
-                remote,
-                prep,
-                codep,
-                postp,
-                0,
-                0,
-                MPLAY_CODE_LENGTH,
-                mplay_local_data.rc_code,
-                0,
-                0))
-        {
-                return(0);
-        }
-        *repeat_flagp = mplay_local_data.repeat_flag;
-        *min_remaining_gapp = 0;
-        *max_remaining_gapp = 0;
-        return 1;
+	if (!map_code(remote, prep, codep, postp, 0, 0, MPLAY_CODE_LENGTH, mplay_local_data.rc_code, 0, 0)) {
+		return (0);
+	}
+	*repeat_flagp = mplay_local_data.repeat_flag;
+	*min_remaining_gapp = 0;
+	*max_remaining_gapp = 0;
+	return 1;
 }

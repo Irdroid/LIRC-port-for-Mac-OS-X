@@ -25,15 +25,11 @@
 
 #include "drivers/lirc.h"
 
-int     irlink_decode                (struct ir_remote   *remote,
-				                      ir_code            *prep,
-				                      ir_code            *codep,
-				                      ir_code            *postp,
-				                      int                *repeat_flagp,
-				                      lirc_t             *remaining_gapp);
-int     irlink_init                   (void);
-int     irlink_deinit                 (void);
-char    *irlink_rec                   (struct ir_remote   *remotes);
-lirc_t  irlink_readdata               (lirc_t timeout);
+int irlink_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		  lirc_t * remaining_gapp);
+int irlink_init(void);
+int irlink_deinit(void);
+char *irlink_rec(struct ir_remote *remotes);
+lirc_t irlink_readdata(lirc_t timeout);
 
 #endif

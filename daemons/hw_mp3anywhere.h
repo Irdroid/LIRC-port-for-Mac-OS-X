@@ -17,11 +17,8 @@
 
 #include "drivers/lirc.h"
 
-int mp3anywhere_decode(struct ir_remote *remote,
-		       ir_code *prep,ir_code *codep,ir_code *postp,
-		       int *repeat_flagp,
-		       lirc_t *min_remaining_gapp,
-		       lirc_t *max_remaining_gapp);
+int mp3anywhere_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		       lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 int mp3anywhere_init(void);
 int mp3anywhere_deinit(void);
 char *mp3anywhere_rec(struct ir_remote *remotes);

@@ -61,8 +61,7 @@
  */
 
 /* The following structure contains current sound card setup */
-static struct
-{
+static struct {
 	/* ALSA PCM handle */
 	snd_pcm_t *handle;
 	/* Sampling rate */
@@ -79,45 +78,38 @@ static struct
 	unsigned char num_channels;
 	/* Value indicating which channel to look for signal 0=right 1=left */
 	unsigned char channel;
-} alsa_hw =
-{
+} alsa_hw = {
 	NULL,
-	/* Desired sampling frequency */
-	8000,
-	/* Desired PCM format */
-	SND_PCM_FORMAT_U8,
-	/* Reserve buffer for 0.1 secs of sampled data.
-	 * If we use a larger buffer, our routine is called too seldom,
-	 * and record.c thinks there is a time gap between data (and drops
-	 * the repeat count).
-	 */
-	100000,
-	-1,
-	NULL,
-	1,
-	0  /*Use left channel by default */
+	    /* Desired sampling frequency */
+	    8000,
+	    /* Desired PCM format */
+	    SND_PCM_FORMAT_U8,
+	    /* Reserve buffer for 0.1 secs of sampled data.
+	     * If we use a larger buffer, our routine is called too seldom,
+	     * and record.c thinks there is a time gap between data (and drops
+	     * the repeat count).
+	     */
+	    100000, -1, NULL, 1, 0	/*Use left channel by default */
 };
 
 /* Return the absolute difference between two unsigned 8-bit samples */
 #define U8_ABSDIFF(s1,s2) (((s1) >= (s2)) ? ((s1) - (s2)) : ((s2) - (s1)))
 
 /* Forward declarations */
-int audio_alsa_deinit (void);
-static void alsa_sig_io (snd_async_handler_t *h);
+int audio_alsa_deinit(void);
+static void alsa_sig_io(snd_async_handler_t * h);
 
-static int alsa_error (const char *errstr, int errcode)
+static int alsa_error(const char *errstr, int errcode)
 {
-	if (errcode < 0)
-	{
-		logprintf (LOG_ERR, "ALSA function snd_pcm_%s returned error: %s",
-			   errstr, snd_strerror (errcode));
-		logperror (LOG_ERR, errstr);
+	if (errcode < 0) {
+		logprintf(LOG_ERR, "ALSA function snd_pcm_%s returned error: %s", errstr, snd_strerror(errcode));
+		logperror(LOG_ERR, errstr);
 		return -1;
 	}
 	return 0;
 }
 
-static int alsa_set_hwparams ()
+static int alsa_set_hwparams()
 {
 	snd_pcm_hw_params_t *hwp;
 	snd_pcm_sw_params_t *swp;
@@ -125,197 +117,170 @@ static int alsa_set_hwparams ()
 	unsigned period_time;
 	snd_pcm_uframes_t buffer_size, period_size;
 
-	snd_pcm_hw_params_alloca (&hwp);
-	snd_pcm_sw_params_alloca (&swp);
+	snd_pcm_hw_params_alloca(&hwp);
+	snd_pcm_sw_params_alloca(&swp);
 
 	// ALSA bug? If we request 44100 Hz, it rounds the value up to 48000...
 	alsa_hw.rate--;
 
-	if (alsa_error ("hw_params_any",
-			snd_pcm_hw_params_any (alsa_hw.handle, hwp))
-	 || alsa_error ("hw_params_set_format",
-			snd_pcm_hw_params_set_format (alsa_hw.handle, hwp, alsa_hw.format))
-	 || alsa_error ("hw_params_set_channels",
-			snd_pcm_hw_params_set_channels (alsa_hw.handle, hwp, alsa_hw.num_channels))
-	 || alsa_error ("hw_params_set_rate_near",
-			snd_pcm_hw_params_set_rate_near (alsa_hw.handle, hwp, &alsa_hw.rate, &dir))
-	 || alsa_error ("hw_params_set_access",
-			snd_pcm_hw_params_set_access (alsa_hw.handle, hwp, SND_PCM_ACCESS_RW_INTERLEAVED))
-	 || alsa_error ("hw_params_set_buffer_time_near",
-			snd_pcm_hw_params_set_buffer_time_near (alsa_hw.handle, hwp, &alsa_hw.buffer_time, 0)))
+	if (alsa_error("hw_params_any", snd_pcm_hw_params_any(alsa_hw.handle, hwp))
+	    || alsa_error("hw_params_set_format", snd_pcm_hw_params_set_format(alsa_hw.handle, hwp, alsa_hw.format))
+	    || alsa_error("hw_params_set_channels",
+			  snd_pcm_hw_params_set_channels(alsa_hw.handle, hwp, alsa_hw.num_channels))
+	    || alsa_error("hw_params_set_rate_near",
+			  snd_pcm_hw_params_set_rate_near(alsa_hw.handle, hwp, &alsa_hw.rate, &dir))
+	    || alsa_error("hw_params_set_access",
+			  snd_pcm_hw_params_set_access(alsa_hw.handle, hwp, SND_PCM_ACCESS_RW_INTERLEAVED))
+	    || alsa_error("hw_params_set_buffer_time_near",
+			  snd_pcm_hw_params_set_buffer_time_near(alsa_hw.handle, hwp, &alsa_hw.buffer_time, 0)))
 		return -1;
 
 	/* How often to call our SIGIO handler (~40Hz) */
 	period_time = alsa_hw.buffer_time / 4;
-	if (alsa_error ("hw_params_set_period_time_near",
-			snd_pcm_hw_params_set_period_time_near (alsa_hw.handle, hwp, &period_time, &dir))
-	 || alsa_error ("hw_params_get_buffer_size",
-			snd_pcm_hw_params_get_buffer_size (hwp, &buffer_size))
-	 || alsa_error ("hw_params_get_period_size",
-			snd_pcm_hw_params_get_period_size (hwp, &period_size, 0))
-	 || alsa_error ("hw_params",
-			snd_pcm_hw_params (alsa_hw.handle, hwp)))
+	if (alsa_error
+	    ("hw_params_set_period_time_near",
+	     snd_pcm_hw_params_set_period_time_near(alsa_hw.handle, hwp, &period_time, &dir))
+	    || alsa_error("hw_params_get_buffer_size", snd_pcm_hw_params_get_buffer_size(hwp, &buffer_size))
+	    || alsa_error("hw_params_get_period_size", snd_pcm_hw_params_get_period_size(hwp, &period_size, 0))
+	    || alsa_error("hw_params", snd_pcm_hw_params(alsa_hw.handle, hwp)))
 		return -1;
 
-	snd_pcm_sw_params_current (alsa_hw.handle, swp);
-	if (alsa_error ("sw_params_set_start_threshold",
-			snd_pcm_sw_params_set_start_threshold (alsa_hw.handle, swp, period_size))
-	 || alsa_error ("sw_params_set_avail_min",
-			snd_pcm_sw_params_set_avail_min (alsa_hw.handle, swp, period_size))
-	 || alsa_error ("sw_params",
-			snd_pcm_sw_params (alsa_hw.handle, swp)))
+	snd_pcm_sw_params_current(alsa_hw.handle, swp);
+	if (alsa_error
+	    ("sw_params_set_start_threshold", snd_pcm_sw_params_set_start_threshold(alsa_hw.handle, swp, period_size))
+	    || alsa_error("sw_params_set_avail_min", snd_pcm_sw_params_set_avail_min(alsa_hw.handle, swp, period_size))
+	    || alsa_error("sw_params", snd_pcm_sw_params(alsa_hw.handle, swp)))
 		return -1;
 
 	return 0;
 }
 
-int audio_alsa_init ()
+int audio_alsa_init()
 {
-	int fd,err;
+	int fd, err;
 	char *pcm_rate;
-	char tmp_name [20];
+	char tmp_name[20];
 
-	init_rec_buffer ();
+	init_rec_buffer();
 
 	/* Create a temporary filename for our FIFO,
 	 * Use mkstemp() instead of mktemp() although we need a FIFO not a
 	 * regular file. We do this since glibc barfs at mktemp() and this
 	 * scares the users :-)
 	 */
-	strcpy (tmp_name, "/tmp/lircXXXXXX");
-	fd = mkstemp (tmp_name);
-	close (fd);
+	strcpy(tmp_name, "/tmp/lircXXXXXX");
+	fd = mkstemp(tmp_name);
+	close(fd);
 
 	/* Start the race! */
-	unlink (tmp_name);
-	if (mknod (tmp_name, S_IFIFO | S_IRUSR | S_IWUSR, 0))
-	{
-		logprintf (LOG_ERR, "could not create FIFO %s", tmp_name);
-		logperror (LOG_ERR, "audio_alsa_init ()");
+	unlink(tmp_name);
+	if (mknod(tmp_name, S_IFIFO | S_IRUSR | S_IWUSR, 0)) {
+		logprintf(LOG_ERR, "could not create FIFO %s", tmp_name);
+		logperror(LOG_ERR, "audio_alsa_init ()");
 		return 0;
 	}
 	/* Phew, we won the race ... */
 
 	/* Open the pipe and hand it to LIRC ... */
-	hw.fd = open (tmp_name, O_RDWR);
-	if (hw.fd < 0)
-	{
-		logprintf (LOG_ERR, "could not open pipe %s", tmp_name);
-		logperror (LOG_ERR, "audio_alsa_init ()");
-error:		unlink (tmp_name);
-		audio_alsa_deinit ();
+	hw.fd = open(tmp_name, O_RDWR);
+	if (hw.fd < 0) {
+		logprintf(LOG_ERR, "could not open pipe %s", tmp_name);
+		logperror(LOG_ERR, "audio_alsa_init ()");
+error:		unlink(tmp_name);
+		audio_alsa_deinit();
 		return 0;
 	}
 
 	/* Open the other end of the pipe and hand it to ALSA code.
 	 * We're opening it in non-blocking mode to avoid lockups.
 	 */
-	alsa_hw.fd = open (tmp_name, O_RDWR | O_NONBLOCK);
+	alsa_hw.fd = open(tmp_name, O_RDWR | O_NONBLOCK);
 	/* Ok, we don't need the FIFO visible in the filesystem anymore ... */
-	unlink (tmp_name);
+	unlink(tmp_name);
 
 	/* Examine the device name, if it contains a sample rate */
-        strncpy (tmp_name, hw.device, sizeof (tmp_name));
-	pcm_rate = strchr (tmp_name, '@');
-	if (pcm_rate)
-	{
+	strncpy(tmp_name, hw.device, sizeof(tmp_name));
+	pcm_rate = strchr(tmp_name, '@');
+	if (pcm_rate) {
 		int rate;
-                char* stereo_channel;
-                
-                /* Examine if we need to capture in stereo
-                 * looking for an 'l' or 'r' character to indicate
-                 * which channel to look at.*/
-                stereo_channel = strchr(pcm_rate,',');
-                
-                if(stereo_channel)
-		{
-                
+		char *stereo_channel;
+
+		/* Examine if we need to capture in stereo
+		 * looking for an 'l' or 'r' character to indicate
+		 * which channel to look at.*/
+		stereo_channel = strchr(pcm_rate, ',');
+
+		if (stereo_channel) {
+
 			/* Syntax in device string indicates we need
 			   to use stereo */
-			alsa_hw.num_channels=2;                    
+			alsa_hw.num_channels = 2;
 			/* As we are requesting stereo now, use the
-			   more common signed 16bit samples*/
+			   more common signed 16bit samples */
 			alsa_hw.format = SND_PCM_FORMAT_S16_LE;
-                    
-			if(stereo_channel[1]=='l')
-			{
-				alsa_hw.channel=0;
-			}
-			else if(stereo_channel[1]=='r')
-			{
-				alsa_hw.channel=1;
-			}
-			else
-			{
+
+			if (stereo_channel[1] == 'l') {
+				alsa_hw.channel = 0;
+			} else if (stereo_channel[1] == 'r') {
+				alsa_hw.channel = 1;
+			} else {
 				logperror(LOG_WARNING,
-					  "dont understand which channel "
-					  "to use - defaulting to left\n");                                                                   
+					  "dont understand which channel " "to use - defaulting to left\n");
 			}
-                }
-     
+		}
+
 		/* Remove the sample rate from device name (and
 		   channel indicator if present) */
 		*pcm_rate++ = 0;
-                /* See if rate is meaningful */
-		rate = atoi (pcm_rate);
-		if (rate > 0)
-		{
+		/* See if rate is meaningful */
+		rate = atoi(pcm_rate);
+		if (rate > 0) {
 			alsa_hw.rate = rate;
 		}
 	}
 
 	/* Open the audio card in non-blocking mode */
-	err = snd_pcm_open (&alsa_hw.handle, tmp_name, SND_PCM_STREAM_CAPTURE,
-			    SND_PCM_NONBLOCK);
-	if (err < 0)
-	{
-		logprintf (LOG_ERR, "could not open audio device %s: %s",
-			   hw.device, snd_strerror (err));
-		logperror (LOG_ERR, "audio_alsa_init ()");
+	err = snd_pcm_open(&alsa_hw.handle, tmp_name, SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK);
+	if (err < 0) {
+		logprintf(LOG_ERR, "could not open audio device %s: %s", hw.device, snd_strerror(err));
+		logperror(LOG_ERR, "audio_alsa_init ()");
 		goto error;
 	}
 
 	/* Set up the I/O signal handler */
-	if (alsa_error ("async_add_handler",
-			snd_async_add_pcm_handler (&alsa_hw.sighandler,
-						   alsa_hw.handle,
-						   alsa_sig_io, NULL)))
+	if (alsa_error
+	    ("async_add_handler", snd_async_add_pcm_handler(&alsa_hw.sighandler, alsa_hw.handle, alsa_sig_io, NULL)))
 		goto error;
 
 	/* Set sampling parameters */
-	if (alsa_set_hwparams (alsa_hw.handle))
+	if (alsa_set_hwparams(alsa_hw.handle))
 		goto error;
 
-	LOGPRINTF (LOG_INFO, "hw_audio_alsa: Using device '%s', sampling rate %dHz\n",
-		   tmp_name, alsa_hw.rate);
+	LOGPRINTF(LOG_INFO, "hw_audio_alsa: Using device '%s', sampling rate %dHz\n", tmp_name, alsa_hw.rate);
 
 	/* Start sampling data */
-	if (alsa_error ("start", snd_pcm_start (alsa_hw.handle)))
+	if (alsa_error("start", snd_pcm_start(alsa_hw.handle)))
 		goto error;
 
 	return 1;
 }
 
-int audio_alsa_deinit (void)
+int audio_alsa_deinit(void)
 {
-	if (alsa_hw.sighandler)
-	{
-		snd_async_del_handler (alsa_hw.sighandler);
+	if (alsa_hw.sighandler) {
+		snd_async_del_handler(alsa_hw.sighandler);
 		alsa_hw.sighandler = NULL;
 	}
-	if (alsa_hw.handle)
-	{
-		snd_pcm_close (alsa_hw.handle);
+	if (alsa_hw.handle) {
+		snd_pcm_close(alsa_hw.handle);
 		alsa_hw.handle = NULL;
 	}
-	if (alsa_hw.fd != -1)
-	{
-		close (alsa_hw.fd);
+	if (alsa_hw.fd != -1) {
+		close(alsa_hw.fd);
 		alsa_hw.fd = -1;
 	}
-	if (hw.fd != -1)
-	{
-		close (hw.fd);
+	if (hw.fd != -1) {
+		close(hw.fd);
 		hw.fd = -1;
 	}
 	return 1;
@@ -348,7 +313,7 @@ int audio_alsa_deinit (void)
 
 #define READ_BUFFER_SIZE (2*4096)
 
-static void alsa_sig_io (snd_async_handler_t *h)
+static void alsa_sig_io(snd_async_handler_t * h)
 {
 	/* Previous sample */
 	static unsigned char ps = 0x80;
@@ -363,13 +328,12 @@ static void alsa_sig_io (snd_async_handler_t *h)
 	static unsigned char signal_max = 0x80, signal_min = 0x80;
 	/* Non-zero if we're in zero crossing waiting state */
 	static char waiting_zerox = 0;
-        /* Store sample size, as our sample buffer will represent
+	/* Store sample size, as our sample buffer will represent
 	   shorts or chars */
-        unsigned char bytes_per_sample = 
-		(alsa_hw.format == SND_PCM_FORMAT_S16_LE ? 2 : 1);
+	unsigned char bytes_per_sample = (alsa_hw.format == SND_PCM_FORMAT_S16_LE ? 2 : 1);
 
 	int i, err;
-	char buff [READ_BUFFER_SIZE];
+	char buff[READ_BUFFER_SIZE];
 	snd_pcm_sframes_t count;
 
 	/* The value to multiply with number of samples to get microseconds
@@ -382,20 +346,19 @@ static void alsa_sig_io (snd_async_handler_t *h)
 	/* First of all, check for underrun. This happens, for example, when
 	 * the X11 server starts. If we won't, recording will stop forever.
 	 */
-	snd_pcm_state_t state = snd_pcm_state (alsa_hw.handle);
-	switch (state)
-	{
+	snd_pcm_state_t state = snd_pcm_state(alsa_hw.handle);
+	switch (state) {
 	case SND_PCM_STATE_SUSPENDED:
-		while ((err = snd_pcm_resume (alsa_hw.handle)) == -EAGAIN)
+		while ((err = snd_pcm_resume(alsa_hw.handle)) == -EAGAIN)
 			/* wait until the suspend flag is released */
-			sleep (1);
+			sleep(1);
 		if (err >= 0)
 			goto var_reset;
 		/* Fallthrough */
 	case SND_PCM_STATE_XRUN:
-		alsa_error ("prepare", snd_pcm_prepare (alsa_hw.handle));
-		alsa_error ("start", snd_pcm_start (alsa_hw.handle));
-var_reset:	/* Reset variables */
+		alsa_error("prepare", snd_pcm_prepare(alsa_hw.handle));
+		alsa_error("start", snd_pcm_start(alsa_hw.handle));
+var_reset:			/* Reset variables */
 		sample_count = 0;
 		waiting_zerox = 0;
 		signal_level = 0;
@@ -408,33 +371,30 @@ var_reset:	/* Reset variables */
 	}
 
 	/* Read all available data */
-	if ((count = snd_pcm_avail_update (alsa_hw.handle)) > 0)
-	{
-		if (count > (READ_BUFFER_SIZE / (bytes_per_sample*alsa_hw.num_channels)))
-			count = READ_BUFFER_SIZE / (bytes_per_sample*alsa_hw.num_channels);
+	if ((count = snd_pcm_avail_update(alsa_hw.handle)) > 0) {
+		if (count > (READ_BUFFER_SIZE / (bytes_per_sample * alsa_hw.num_channels)))
+			count = READ_BUFFER_SIZE / (bytes_per_sample * alsa_hw.num_channels);
 		count = snd_pcm_readi(alsa_hw.handle, buff, count);
-                                 
-                /*Loop around samples, if stereo we are
-                 *only interested in one channel*/
-		for (i = 0; i < count; i++)
-		{
-			/* cs == current sample */
-                        unsigned char cs, as, sl, sz, xz;
 
-                        if(bytes_per_sample == 2){                              
-				cs = ((*(short*)&buff[i*bytes_per_sample*alsa_hw.num_channels +
-						      bytes_per_sample*alsa_hw.channel]) >> 8);
-				cs ^= 0x80;                            
-                        }
-                        else{
+		/*Loop around samples, if stereo we are
+		 *only interested in one channel*/
+		for (i = 0; i < count; i++) {
+			/* cs == current sample */
+			unsigned char cs, as, sl, sz, xz;
+
+			if (bytes_per_sample == 2) {
+				cs = ((*(short *)
+				       &buff[i * bytes_per_sample * alsa_hw.num_channels +
+					     bytes_per_sample * alsa_hw.channel]) >> 8);
+				cs ^= 0x80;
+			} else {
 				cs = buff[i];
-                            
+
 				/* Convert signed samples to unsigned */
-				if(alsa_hw.format == SND_PCM_FORMAT_S8)
-				{
+				if (alsa_hw.format == SND_PCM_FORMAT_S8) {
 					cs ^= 0x80;
 				}
-                        }
+			}
 
 			/* Track signal middle value (it could differ from 0x80) */
 			sz = (signal_min + signal_max) / 2;
@@ -444,14 +404,15 @@ var_reset:	/* Reset variables */
 				signal_max = (signal_max * 7 + cs) / 8;
 
 			/* Compute the absolute signal deviation from middle */
-                        as = U8_ABSDIFF (cs, sz);
+			as = U8_ABSDIFF(cs, sz);
 
 			/* Integrate incoming signal (auto level adjustment) */
 			signal_level = (signal_level * 7 + as) / 8;
 
 			/* Don't let too low signal levels as it makes us sensible to noise */
 			sl = signal_level;
-			if (sl < 16) sl = 16;
+			if (sl < 16)
+				sl = 16;
 
 			/* Detect crossing current "zero" level */
 			xz = ((cs - sz) ^ (ps - sz)) & 0x80;
@@ -461,23 +422,19 @@ var_reset:	/* Reset variables */
 				waiting_zerox--;
 
 			/* Detect significant signal level changes */
-			if ((abs (cs - ps) > sl/2) && xz)
+			if ((abs(cs - ps) > sl / 2) && xz)
 				waiting_zerox = 2;
 
 			/* If we have crossed zero with a substantial level change, go */
-			if (waiting_zerox && xz)
-			{
+			if (waiting_zerox && xz) {
 				lirc_t x;
 
 				waiting_zerox = 0;
 
-				if (sample_count >= maxcount)
-				{
+				if (sample_count >= maxcount) {
 					x = PULSE_MASK;
 					sample_count = 0;
-				}
-				else
-				{
+				} else {
 					/**
 					 * Try to interpolate the samples and determine where exactly
 					 * the zero crossing point was. This is required as the
@@ -512,16 +469,15 @@ var_reset:	/* Reset variables */
 				/* Consider impossible pulses with length greater than
 				 * 0.02 seconds, thus it is a space (desynchronization).
 				 */
-				if ((x > 20000) && signal_state)
-				{
+				if ((x > 20000) && signal_state) {
 					signal_state = 0;
-					LOGPRINTF (1, "Pulse/space desynchronization fixed - len %u",x);
+					LOGPRINTF(1, "Pulse/space desynchronization fixed - len %u", x);
 				}
 
 				x |= signal_state;
 
 				/* Write the LIRC code to the FIFO */
-				write (alsa_hw.fd, &x, sizeof (x));
+				write(alsa_hw.fd, &x, sizeof(x));
 
 				signal_state ^= PULSE_BIT;
 			}
@@ -540,49 +496,47 @@ var_reset:	/* Reset variables */
 	}
 }
 
-lirc_t audio_alsa_readdata (lirc_t timeout)
+lirc_t audio_alsa_readdata(lirc_t timeout)
 {
 	lirc_t data;
 	int ret;
 
-	if (!waitfordata ((long) timeout))
+	if (!waitfordata((long)timeout))
 		return 0;
 
-	ret = read (hw.fd, &data, sizeof (data));
+	ret = read(hw.fd, &data, sizeof(data));
 
-	if (ret != sizeof (data))
-	{
-		LOGPRINTF (1, "error reading from lirc device");
-		LOGPERROR (1, NULL);
+	if (ret != sizeof(data)) {
+		LOGPRINTF(1, "error reading from lirc device");
+		LOGPERROR(1, NULL);
 		raise(SIGTERM);
 		return 0;
 	}
 	return data;
 }
 
-char *audio_alsa_rec (struct ir_remote *remotes)
+char *audio_alsa_rec(struct ir_remote *remotes)
 {
-	if (!clear_rec_buffer ())
+	if (!clear_rec_buffer())
 		return NULL;
-	return decode_all (remotes);
+	return decode_all(remotes);
 }
 
 #define audio_alsa_decode receive_decode
 
-struct hardware hw_audio_alsa=
-{
-	"hw",               /* default device */
-	-1,                 /* fd */
-	LIRC_CAN_REC_MODE2, /* features */
-	0,                  /* send_mode */
-	LIRC_MODE_MODE2,    /* rec_mode */
-	0,                  /* code_length */
-	audio_alsa_init,    /* init_func */
-	audio_alsa_deinit,  /* deinit_func */
-	NULL,               /* send_func */
-	audio_alsa_rec,     /* rec_func */
-	audio_alsa_decode,  /* decode_func */
-	NULL,               /* ioctl_func */
+struct hardware hw_audio_alsa = {
+	"hw",			/* default device */
+	-1,			/* fd */
+	LIRC_CAN_REC_MODE2,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_MODE2,	/* rec_mode */
+	0,			/* code_length */
+	audio_alsa_init,	/* init_func */
+	audio_alsa_deinit,	/* deinit_func */
+	NULL,			/* send_func */
+	audio_alsa_rec,		/* rec_func */
+	audio_alsa_decode,	/* decode_func */
+	NULL,			/* ioctl_func */
 	audio_alsa_readdata,
 	"audio_alsa"
 };

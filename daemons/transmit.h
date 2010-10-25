@@ -17,8 +17,7 @@
 
 #define WBUF_SIZE (256)
 
-struct sbuf
-{
+struct sbuf {
 	lirc_t *data;
 	lirc_t _data[WBUF_SIZE];
 	int wptr;
@@ -30,9 +29,9 @@ struct sbuf
 };
 
 void init_send_buffer(void);
-inline void set_bit(ir_code *code,int bit,int data);
-int init_send(struct ir_remote *remote,struct ir_ncode *code);
-int init_sim(struct ir_remote *remote,struct ir_ncode *code,int repeat_preset);
+inline void set_bit(ir_code * code, int bit, int data);
+int init_send(struct ir_remote *remote, struct ir_ncode *code);
+int init_sim(struct ir_remote *remote, struct ir_ncode *code, int repeat_preset);
 
 extern struct sbuf send_buffer;
 

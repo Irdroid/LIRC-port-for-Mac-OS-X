@@ -57,15 +57,11 @@ int livedrive_deinit(void)
 	return (1);
 }
 
-int
-livedrive_decode(struct ir_remote *remote,
-		 ir_code * prep, ir_code * codep, ir_code * postp,
-		 int *repeat_flagp,
-		 lirc_t * min_remaining_gapp,
-		 lirc_t * max_remaining_gapp)
+int livedrive_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		     lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp)
 {
 	lirc_t gap;
-	
+
 	if (!map_code(remote, prep, codep, postp, 16, pre, 16, code, 0, 0))
 		return (0);
 

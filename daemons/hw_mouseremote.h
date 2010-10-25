@@ -18,11 +18,8 @@
 
 #include "drivers/lirc.h"
 
-int mouseremote_decode(struct ir_remote *remote,
-		       ir_code *prep,ir_code *codep,ir_code *postp,
-		       int *repeat_flagp,
-		       lirc_t *min_remaining_gapp,
-		       lirc_t *max_remaining_gapp);
+int mouseremote_decode(struct ir_remote *remote, ir_code * prep, ir_code * codep, ir_code * postp, int *repeat_flagp,
+		       lirc_t * min_remaining_gapp, lirc_t * max_remaining_gapp);
 int mouseremote_init(void);
 int mouseremote_ps2_init(void);
 int mouseremote_deinit(void);

@@ -53,7 +53,7 @@
 #include <time.h>
 #include <signal.h>
 #include <linux/i2c-dev.h>
-#ifndef I2C_SLAVE /* hack */
+#ifndef I2C_SLAVE		/* hack */
 #include <linux/i2c.h>
 #endif
 
@@ -78,18 +78,18 @@ static void i2cuser_read_loop(int fd);
 static char *i2cuser_rec(struct ir_remote *remotes);
 
 struct hardware hw_i2cuser = {
-	NULL,                   /* determine device by probing */
-	-1,                     /* fd */
-	LIRC_CAN_REC_LIRCCODE,  /* features */
-	0,                      /* send_mode */
-	LIRC_MODE_LIRCCODE,     /* rec_mode */
-	CODE_SIZE_BITS,         /* code_length */
-	i2cuser_init,           /* init_func */
-	i2cuser_deinit,         /* deinit_func */
-	NULL,                   /* send_func */
-	i2cuser_rec,            /* rec_func */
-	receive_decode,         /* decode_func */
-	NULL,                   /* ioctl_func */
+	NULL,			/* determine device by probing */
+	-1,			/* fd */
+	LIRC_CAN_REC_LIRCCODE,	/* features */
+	0,			/* send_mode */
+	LIRC_MODE_LIRCCODE,	/* rec_mode */
+	CODE_SIZE_BITS,		/* code_length */
+	i2cuser_init,		/* init_func */
+	i2cuser_deinit,		/* deinit_func */
+	NULL,			/* send_func */
+	i2cuser_rec,		/* rec_func */
+	receive_decode,		/* decode_func */
+	NULL,			/* ioctl_func */
 	NULL,
 	"i2cuser"
 };
@@ -103,15 +103,15 @@ char device_name[256];
 static pid_t child = -1;
 
 /* Hunt for the appropriate i2c device and open it. */
-static int open_i2c_device(void) {
+static int open_i2c_device(void)
+{
 	const char *adapter_dir = "/sys/class/i2c-adapter";
 	DIR *dir;
 	int found;
 
 	dir = opendir(adapter_dir);
 	if (dir == NULL) {
-		logprintf(LOG_ERR, "Cannot list i2c-adapter dir %s",
-		          adapter_dir);
+		logprintf(LOG_ERR, "Cannot list i2c-adapter dir %s", adapter_dir);
 		return -1;
 	}
 	found = -1;
@@ -128,14 +128,12 @@ static int open_i2c_device(void) {
 			continue;
 
 		/* Kernels 2.6.22 and later had the name here: */
-		snprintf(s, sizeof s, "%s/%s/name",
-			 adapter_dir, de->d_name);
-		
+		snprintf(s, sizeof s, "%s/%s/name", adapter_dir, de->d_name);
+
 		f = fopen(s, "r");
 		if (f == NULL) {
 			/* ... and kernels prior to 2.6.22 have it here: */
-			snprintf(s, sizeof s, "%s/%s/device/name",
-				 adapter_dir, de->d_name);
+			snprintf(s, sizeof s, "%s/%s/device/name", adapter_dir, de->d_name);
 
 			f = fopen(s, "r");
 		}
@@ -149,8 +147,7 @@ static int open_i2c_device(void) {
 
 		if (strncmp(s, "bt878", 5) == 0) {
 			if (strncmp(de->d_name, "i2c-", 4) != 0) {
-				logprintf(LOG_ERR, "i2c adapter dir %s "
-				          "has unexpected name", de->d_name);
+				logprintf(LOG_ERR, "i2c adapter dir %s " "has unexpected name", de->d_name);
 				return -1;
 			}
 			found = atoi(de->d_name + 4);
@@ -170,7 +167,8 @@ static int open_i2c_device(void) {
 	return open(device_name, O_RDWR);
 }
 
-static int i2cuser_init(void) {
+static int i2cuser_init(void)
+{
 	int pipe_fd[2] = { -1, -1 };
 
 	if (pipe(pipe_fd) != 0) {
@@ -192,8 +190,7 @@ static int i2cuser_init(void) {
 
 	child = fork();
 	if (child == -1) {
-		logprintf(LOG_ERR, "Cannot fork child process: %s",
-		          strerror(errno));
+		logprintf(LOG_ERR, "Cannot fork child process: %s", strerror(errno));
 		goto fail;
 	} else if (child == 0) {
 		close(pipe_fd[0]);
@@ -214,7 +211,8 @@ fail:
 	return 0;
 }
 
-static int i2cuser_deinit(void) {
+static int i2cuser_deinit(void)
+{
 	if (child != -1) {
 		if (kill(child, SIGTERM) == -1)
 			return 0;
@@ -228,7 +226,8 @@ static int i2cuser_deinit(void) {
 	return 1;
 }
 
-static void i2cuser_read_loop(int out_fd) {
+static void i2cuser_read_loop(int out_fd)
+{
 	ir_code last_code = 0;
 	double last_time = 0.0;
 
@@ -248,13 +247,12 @@ static void i2cuser_read_loop(int out_fd) {
 
 		do {
 			/* Poll 20 times per second. */
-			struct timespec ts = {0, 50000000};
+			struct timespec ts = { 0, 50000000 };
 			nanosleep(&ts, NULL);
 
 			rc = read(i2c_fd, &buf, sizeof buf);
 			if (rc < 0 && errno != EREMOTEIO) {
-				logprintf(LOG_ERR, "Error reading from i2c "
-				          "device: %s", strerror(errno));
+				logprintf(LOG_ERR, "Error reading from i2c " "device: %s", strerror(errno));
 				goto fail;
 			} else if (rc != sizeof buf) {
 				continue;
@@ -283,8 +281,7 @@ static void i2cuser_read_loop(int out_fd) {
 			new_code >>= 8;
 		}
 		if (write(out_fd, code_buf, CODE_SIZE) != CODE_SIZE) {
-			logprintf(LOG_ERR, "Write to i2cuser pipe failed: %s",
-			          strerror(errno));
+			logprintf(LOG_ERR, "Write to i2cuser pipe failed: %s", strerror(errno));
 			goto fail;
 		}
 	}
@@ -293,7 +290,9 @@ fail:
 	_exit(1);
 }
 
-static char *i2cuser_rec(struct ir_remote *remotes) {
-	if (!clear_rec_buffer()) return NULL;
+static char *i2cuser_rec(struct ir_remote *remotes)
+{
+	if (!clear_rec_buffer())
+		return NULL;
 	return decode_all(remotes);
 }
