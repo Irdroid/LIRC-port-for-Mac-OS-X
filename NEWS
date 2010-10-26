@@ -1,4 +1,13 @@
 0.9.0-git: UNDER DEVELOPMENT
+  * fix oops unplugging igorplugusb receiver while in use (special
+    thanks to Timo Boettcher for providing hardware)
+  * more error-checking for NULL irctl in various lirc_dev paths
+  * add support for Monueal Moncaso IR to mplay driver (123justme)
+  * add another PNP device ID to lirc_it87 (Jochen Kühner)
+  * drop references to static chardev major number 61, we use dynamic
+  * resync lirc_dev with what was merged in the kernel
+  * reformat code using indent to look more like Linux kernel code
+  * drop explicit support for kernels older than 2.6.18
   * adapt to using lirc.h as merged in the upstream linux kernel
   * non-LONG_IR_CODE option dropped, its been the default for years
   * use portable type definitions all over the place
