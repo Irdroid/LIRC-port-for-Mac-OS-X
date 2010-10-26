@@ -38,79 +38,79 @@ begin remote
 
       begin codes
           CD_DOWN                  0x000000000000DB24
-          CD_UP                    0x0000000000005BA4
+          KEY_CD                    0x0000000000005BA4
           TV_DOWN                  0x000000000000DC23
-          TV_UP                    0x0000000000005CA3
+          KEY_TV                    0x0000000000005CA3
           PHONE_DOWN               0x000000000000DD22
-          PHONE_UP                 0x0000000000005DA2
+          KEY_PHONE                 0x0000000000005DA2
           RADIO_DOWN               0x000000000000DE21
-          RADIO_UP                 0x0000000000005EA1
+          KEY_RADIO                 0x0000000000005EA1
           VIDEO_DOWN               0x000000000000DF20
-          VIDEO_UP                 0x0000000000005FA0
+          KEY_VIDEO                 0x0000000000005FA0
           AUX1_DOWN                0x000000000000E01F
-          AUX1_UP                  0x000000000000609F
+          KEY_AUX                  0x000000000000609F
           MAIL_DOWN                0x000000000000E11E
-          MAIL_UP                  0x000000000000619E
+          KEY_MAIL                  0x000000000000619E
           AUX2_DOWN                0x000000000000E21D
           AUX2_UP                  0x000000000000629D
           POWER_DOWN               0x000000000000E31C
-          POWER_UP                 0x000000000000639C
+          KEY_POWER                 0x000000000000639C
           LEFT_MOUSE_BUTTON_TOUCH_DOWN 0x000000000000E41B
           LEFT_MOUSE_BUTTON_TOUCH_UP 0x000000000000649B
           REWIND_DOWN              0x000000000000E51A
-          REWIND_UP                0x000000000000659A
+          KEY_REWIND                0x000000000000659A
           PLAY_DOWN                0x000000000000E619
-          PLAY_UP                  0x0000000000006699
+          KEY_PLAY                  0x0000000000006699
           FORWARD_DOWN             0x000000000000E718
-          FORWARD_UP               0x0000000000006798
+          KEY_FORWARD               0x0000000000006798
           SKIP_BACKWARD_DOWN       0x000000000000E817
           SKIP_BACKWARD            0x0000000000006897
           STOP_DOWN                0x000000000000E916
-          STOP_UP                  0x0000000000006996
+          KEY_STOP                  0x0000000000006996
           SKIP_FORWARD_DOWN        0x000000000000EA15
           SKIP_FORWARD_UP          0x0000000000006A95
           CHANNEL_UP_DOWN          0x000000000000EB14
-          CHANNEL_UP_UP            0x0000000000006B94
+          KEY_CHANNELUP            0x0000000000006B94
           MENU_DOWN                0x000000000000EC13
-          MENU_UP                  0x0000000000006C93
+          KEY_MENU                  0x0000000000006C93
           VOLUME_UP_DOWN           0x000000000000ED12
-          VOLUME_UP_UP             0x0000000000006D92
+          KEY_VOLUMEUP             0x0000000000006D92
           BLUE_BUTTON_DOWN         0x000000000000EE11
-          BLUE_BUTTON_UP           0x0000000000006E91
+          KEY_BLUE           0x0000000000006E91
           MUTE_DOWN                0x000000000000EF10
-          MUTE_UP                  0x0000000000006F90
+          KEY_MUTE                  0x0000000000006F90
           VOLUME_DOWN_DOWN         0x000000000000F00F
-          VOLUME_DOWN_UP           0x000000000000708F
+          KEY_VOLUMEDOWN           0x000000000000708F
           RED_BUTTON_DOWN          0x000000000000F10E
-          RED_BUTTON_UP            0x000000000000718E
+          KEY_RED            0x000000000000718E
           GREEN_BUTTON_DOWN        0x000000000000F20D
-          GREEN_BUTTON_UP          0x000000000000728D
+          KEY_GREEN          0x000000000000728D
           CHANNEL_DOWN_DOWN        0x000000000000F30C
-          CHANNEL_DOWN_UP          0x000000000000738C
+          KEY_CHANNELDOWN          0x000000000000738C
           1_DOWN                   0x000000000000F40B
-          1_UP                     0x000000000000748B
+          KEY_1                     0x000000000000748B
           2_DOWN                   0x000000000000F50A
-          2_UP                     0x000000000000758A
+          KEY_2                     0x000000000000758A
           3_DOWN                   0x000000000000F609
-          3_UP                     0x0000000000007689
+          KEY_3                     0x0000000000007689
           4_DOWN                   0x000000000000F708
-          4_UP                     0x0000000000007788
+          KEY_4                     0x0000000000007788
           5_DOWN                   0x000000000000F807
-          5_UP                     0x0000000000007887
+          KEY_5                     0x0000000000007887
           6_DOWN                   0x000000000000F906
-          6_UP                     0x0000000000007986
+          KEY_6                     0x0000000000007986
           7_DOWN                   0x000000000000FA05
-          7_UP                     0x0000000000007A85
+          KEY_7                     0x0000000000007A85
           8_DOWN                   0x000000000000FB04
-          8_UP                     0x0000000000007B84
+          KEY_8                     0x0000000000007B84
           9_DOWN                   0x000000000000FC03
-          9_UP                     0x0000000000007C83
+          KEY_9                     0x0000000000007C83
           SLASH_DOWN               0x000000000000FD02
-          SLASH_UP                 0x0000000000007D82
+          KEY_SLASH                 0x0000000000007D82
           0_DOWN                   0x000000000000FE01
-          0_UP                     0x0000000000007E81
+          KEY_0                     0x0000000000007E81
           MINUS_DOWN               0x000000000000FF00
-          MINUS_UP                 0x0000000000007F80
+          KEY_KPMINUS                 0x0000000000007F80
       end codes
 
 end remote

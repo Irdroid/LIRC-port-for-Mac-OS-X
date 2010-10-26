@@ -28,60 +28,60 @@ begin remote
 
       begin codes
 ### Standard keyboard report, type 1
-          OK                       0x70028
-          Right                    0x7004f
-          Left                     0x70050
-          Up                       0x70052
-          Down                     0x70051
+          KEY_OK                       0x70028
+          KEY_RIGHT                    0x7004f
+          KEY_LEFT                     0x70050
+          KEY_UP                       0x70052
+          KEY_DOWN                     0x70051
 
 ### Standard generic desktop report, type 3
-          Power                    0x10001
+          KEY_POWER                    0x10001
 
 ### Propietary Samsung report, type 4
-          Mute                     0xffcc0001
-          Video_Archive            0xffcc0002
-          1                        0xffcc0003
-          2                        0xffcc0004
-          3                        0xffcc0005
-          Sleep                    0xffcc0006
-          4                        0xffcc0007
-          5                        0xffcc0008
-          6                        0xffcc0009
-          Last                     0xffcc000a
-          7                        0xffcc000b
-          8                        0xffcc000c
-          9                        0xffcc000d
-          Subtitle                 0xffcc000e
-          Full                     0xffcc000f
-          0                        0xffcc0010
-          PIP                      0xffcc0011
-          Timer                    0xffcc0012
-          Source                   0xffcc0013
-          TV_Menu                  0xffcc0014
-          EPG                      0xffcc0015
-          Text                     0xffcc0016
+          KEY_MUTE                     0xffcc0001
+          Video_Archive                0xffcc0002
+          KEY_1                        0xffcc0003
+          KEY_2                        0xffcc0004
+          KEY_3                        0xffcc0005
+          Sleep                        0xffcc0006
+          KEY_4                        0xffcc0007
+          KEY_5                        0xffcc0008
+          KEY_6                        0xffcc0009
+          Last                         0xffcc000a
+          KEY_7                        0xffcc000b
+          KEY_8                        0xffcc000c
+          KEY_9                        0xffcc000d
+          KEY_SUBTITLE                 0xffcc000e
+          Full                         0xffcc000f
+          KEY_0                        0xffcc0010
+          PIP                          0xffcc0011
+          Timer                        0xffcc0012
+          Source                       0xffcc0013
+          TV_Menu                      0xffcc0014
+          KEY_EPG                      0xffcc0015
+          KEY_TEXT                     0xffcc0016
 # gap 17..1b: probably cursor keys were previously planned here
-          TV                       0xffcc001c
-          Radio                    0xffcc001d
-          DVD                      0xffcc001e
-          Ch+                      0xffcc001f
-          Menu                     0xffcc0020
-          Vol+                     0xffcc0021
-          Ch-                      0xffcc0022
-          Back                     0xffcc0023
-          Vol-                     0xffcc0024
-          Play                     0xffcc0025
-          Pause                    0xffcc0026
-          Stop                     0xffcc0027
-          Record                   0xffcc0028
-          Prev                     0xffcc0029
-          Rewind                   0xffcc002a
-          Forward                  0xffcc002b
-          Next                     0xffcc002c
-          Red                      0xffcc002d
-          Green                    0xffcc002e
-          Yellow                   0xffcc002f
-          Blue                     0xffcc0030
+          KEY_TV                       0xffcc001c
+          KEY_RADIO                    0xffcc001d
+          KEY_DVD                      0xffcc001e
+          KEY_CHANNELUP                0xffcc001f
+          KEY_MENU                     0xffcc0020
+          KEY_VOLUMEUP                 0xffcc0021
+          KEY_CHANNELDOWN              0xffcc0022
+          KEY_BACK                     0xffcc0023
+          KEY_VOLUMEDOWN               0xffcc0024
+          KEY_PLAY                     0xffcc0025
+          KEY_PAUSE                    0xffcc0026
+          KEY_STOP                     0xffcc0027
+          KEY_RECORD                   0xffcc0028
+          KEY_PREVIOUS                 0xffcc0029
+          KEY_REWIND                   0xffcc002a
+          KEY_FORWARD                  0xffcc002b
+          KEY_NEXT                     0xffcc002c
+          KEY_RED                      0xffcc002d
+          KEY_GREEN                    0xffcc002e
+          KEY_YELLOW                   0xffcc002f
+          KEY_BLUE                     0xffcc0030
       end codes
 
 end remote

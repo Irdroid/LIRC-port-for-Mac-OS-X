@@ -26,50 +26,50 @@ begin remote
   toggle_bit_mask 0x0
 
       begin codes
-          Power                    0x02FD5BA400
-          Mute                     0x02FD5FA000
-          1                        0x02FD57A800
-          2                        0x02FD4FB000
-          3                        0x02FD53AC00
-          4                        0x02FD56A900
-          5                        0x02FD4EB100
-          6                        0x02FD5EA100
-          7                        0x02FD54AB00
-          8                        0x02FD4CB300
-          9                        0x02FD5CA300
-          Jump                     0x02FD55AA00
-          0                        0x02FD4DB200
+          KEY_POWER                    0x02FD5BA400
+          KEY_MUTE                     0x02FD5FA000
+          KEY_1                        0x02FD57A800
+          KEY_2                        0x02FD4FB000
+          KEY_3                        0x02FD53AC00
+          KEY_4                        0x02FD56A900
+          KEY_5                        0x02FD4EB100
+          KEY_6                        0x02FD5EA100
+          KEY_7                        0x02FD54AB00
+          KEY_8                        0x02FD4CB300
+          KEY_9                        0x02FD5CA300
+          Jump                         0x02FD55AA00
+          KEY_0                        0x02FD4DB200
           Search                   0x02FD5DA200
-          Guide                    0x02FD17E800
-          Up                       0x02FD0FF000
-          Menu                     0x02FD1FE000
-          Left                     0x02FD16E900
-          Enter                    0x02FD0EF100
-          Right                    0x02FD1EE100
-          Info                     0x02FD5AA500
-          Down                     0x02FD46B900
-          Exit                     0x02FD52AD00
-          Replay                   0x02FD59A600
-          Skip                     0x02FD51AE00
-          Rewind                   0x02FD58A700
-          Play                     0x02FD44BB00
-          Forward                  0x02FD50AF00
-          Stop                     0x02FD07F800
-          Record                   0x02FD1BE400
+          GUIDE                    0x02FD17E800
+          KEY_UP                       0x02FD0FF000
+          KEY_MENU                     0x02FD1FE000
+          KEY_LEFT                     0x02FD16E900
+          KEY_ENTER                    0x02FD0EF100
+          KEY_RIGHT                    0x02FD1EE100
+          KEY_INFO                     0x02FD5AA500
+          KEY_DOWN                     0x02FD46B900
+          KEY_EXIT                     0x02FD52AD00
+          KEY_AGAIN                   0x02FD59A600
+          KEY_NEXT                     0x02FD51AE00
+          KEY_REWIND                   0x02FD58A700
+          KEY_PLAY                     0x02FD44BB00
+          KEY_FORWARD                  0x02FD50AF00
+          KEY_STOP                     0x02FD07F800
+          KEY_RECORD                   0x02FD1BE400
           Live                     0x02FD13EC00
-          A                        0x02FD0AF500
-          DVD                      0x02FD06F900
-          B                        0x02FD12ED00
+          KEY_A                        0x02FD0AF500
+          KEY_DVD                      0x02FD06F900
+          KEY_B                        0x02FD12ED00
           Photo                    0x02FD48B700
-          Video                    0x02FD40BF00
-          Music                    0x02FD19E600
-          Ch+                      0x02FD0BF400
-          Ch-                      0x02FD08F700
+          KEY_VIDEO                    0x02FD40BF00
+          KEY_AUDIO                    0x02FD19E600
+          KEY_CHANNELUP                      0x02FD0BF400
+          KEY_CHANNELDOWN                      0x02FD08F700
           S1                       0x02FD03FC00
           S2                       0x02FD01FE00
           S3                       0x02FD00FF00
-          Vol+                     0x02FD15EA00
-          Vol-                     0x02FD1CE300
+          KEY_VOLUMEUP                     0x02FD15EA00
+          KEY_VOLUMEDOWN                     0x02FD1CE300
       end codes
 
 end remote

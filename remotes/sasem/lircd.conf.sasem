@@ -33,47 +33,47 @@ begin remote
 
 
       begin codes
-          1                        0x08F7
-          2                        0x09F6
-          3                        0x0AF5
-          4                        0x10EF
-          5                        0x11EE
-          6                        0x12ED
-          7                        0x18E7
-          8                        0x19E6
-          9                        0x1AE5
+          KEY_1                        0x08F7
+          KEY_2                        0x09F6
+          KEY_3                        0x0AF5
+          KEY_4                        0x10EF
+          KEY_5                        0x11EE
+          KEY_6                        0x12ED
+          KEY_7                        0x18E7
+          KEY_8                        0x19E6
+          KEY_9                        0x1AE5
           start                    0x40BF
-          0                        0x41BE
+          KEY_0                        0x41BE
           full_down                0x06F9
-          vol-                     0x0FF0
-          vol+                     0x0EF1
-          esc                      0x05FA
-          up                       0x0BF4
-          close                    0x07F8
-          left                     0x03FC
-          enter                    0x13EC
-          right                    0x1BE4
-          prev                     0x0CF3
-          down                     0x43BC
-          next                     0x01FE
-          mute                     0x0DF2
+          KEY_VOLUMEDOWN                     0x0FF0
+          KEY_VOLUMEUP                     0x0EF1
+          KEY_ESC                      0x05FA
+          KEY_UP                       0x0BF4
+          KEY_CLOSE                    0x07F8
+          KEY_LEFT                     0x03FC
+          KEY_ENTER                    0x13EC
+          KEY_RIGHT                    0x1BE4
+          KEY_PREVIOUS                     0x0CF3
+          KEY_DOWN                     0x43BC
+          KEY_NEXT                     0x01FE
+          KEY_MUTE                     0x0DF2
           step                     0x04FB
-          play_pause               0x49B6
-          stop                     0x48B7
+          KEY_PLAYPAUSE               0x49B6
+          KEY_STOP                     0x48B7
           winamp                   0x1EE1
           media_player             0x15EA
           hdtv                     0x17E8
-          cd_player                0x16E9
+          KEY_CD                0x16E9
           win_dvd                  0x44BB
           power_dvd                0x14EB
-          internet                 0x46B9
+          KEY_WWW                 0x46B9
           email                    0x47B8
-          a                        0x45BA
-          b                        0x1DE2
-          c                        0x1CE3
-          d                        0x1FE0
-          eject                    0x02FD
-          power                    0x00FF
+          KEY_A                        0x45BA
+          KEY_B                        0x1DE2
+          KEY_C                        0x1CE3
+          KEY_D                        0x1FE0
+          KEY_EJECTCD                    0x02FD
+          KEY_POWER                    0x00FF
       end codes
 
 end remote

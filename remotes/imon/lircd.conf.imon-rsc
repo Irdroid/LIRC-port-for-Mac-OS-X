@@ -27,48 +27,48 @@ begin remote
   gap          100000
 
       begin codes
-          App.Exit           0x00000000000008F7
-          Power              0x000000000000F40B
+          KEY_EXIT           0x00000000000008F7
+          KEY_POWER              0x000000000000F40B
           ScreenSaver        0x00000000000052AD
           Timer              0x000000000000926D
-          1                  0x0000000000002AD5
-          2                  0x000000000000AA55
-          3                  0x0000000000006A95
-          4                  0x000000000000EA15
-          5                  0x0000000000001AE5
-          6                  0x0000000000009A65
-          7                  0x0000000000005AA5
-          8                  0x000000000000DA25
-          9                  0x0000000000003AC5
-          0                  0x000000000000BA45
+          KEY_1                  0x0000000000002AD5
+          KEY_2                  0x000000000000AA55
+          KEY_3                  0x0000000000006A95
+          KEY_4                  0x000000000000EA15
+          KEY_5                  0x0000000000001AE5
+          KEY_6                  0x0000000000009A65
+          KEY_7                  0x0000000000005AA5
+          KEY_8                  0x000000000000DA25
+          KEY_9                  0x0000000000003AC5
+          KEY_0                  0x000000000000BA45
           Desktop            0x000000000000817E
-          Max/Res            0x00000000000041BE
-          Esc                0x00000000000012ED
+          KEY_MAX            0x00000000000041BE
+          KEY_ESC                0x00000000000012ED
           Windows            0x000000000000D22D
-          Menu               0x000000000000C13E
+          KEY_MENU               0x000000000000C13E
           App.Launcher       0x000000000000A25D
           Function           0x00000000000021DE
           Task.Switcher      0x000000000000629D
-          Backspace          0x000000000000A15E
+          KEY_BACKSPACE          0x000000000000A15E
           Mouse/Keyboard     0x000000000000619E
-          Space              0x000000000000E11E
+          KEY_SPACE              0x000000000000E11E
           Shift.Tab          0x0000000000007887
-          Enter              0x00000000000019E6
-          Tab                0x000000000000F807
-          L.Click            0x000000000000d827
+          KEY_ENTER              0x00000000000019E6
+          KEY_TAB                0x000000000000F807
+          BTN_LEFT            0x000000000000d827
           DragNDrop          0x0000000000006897
-          R.Click            0x000000000000b847
-          Mute               0x00000000000011ee
-          Vol-               0x0000000000007a85
-          Vol+               0x000000000000fa05
-          Play               0x00000000000032cd
-          Pause              0x000000000000b24d
-          Open               0x000000000000f20d
-          Prev               0x0000000000000af5
-          Next               0x0000000000008a75
-          Stop               0x000000000000728d
-          Rew                0x0000000000004ab5
-          F.Fwd              0x000000000000ca35
+          BTN_RIGHT            0x000000000000b847
+          KEY_MUTE               0x00000000000011ee
+          KEY_VOLUMEDOWN               0x0000000000007a85
+          KEY_VOLUMEUP               0x000000000000fa05
+          KEY_PLAY               0x00000000000032cd
+          KEY_PAUSE              0x000000000000b24d
+          KEY_OPEN               0x000000000000f20d
+          KEY_PREVIOUS               0x0000000000000af5
+          KEY_NEXT               0x0000000000008a75
+          KEY_STOP               0x000000000000728d
+          KEY_REWIND                0x0000000000004ab5
+          KEY_FORWARD              0x000000000000ca35
           Full.Screen        0x000000000000916e
       end codes
 

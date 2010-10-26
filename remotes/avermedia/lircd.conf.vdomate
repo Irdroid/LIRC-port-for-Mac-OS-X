@@ -27,33 +27,33 @@ begin remote
 
 
       begin codes
-          power                    0x0000000040BF00FF
-          one                      0x0000000040BFA05F
-          two                      0x0000000040BF609F
-          three                    0x0000000040BFE01F
-          four                     0x0000000040BF906F
-          five                     0x0000000040BF50AF
-          six                      0x0000000040BFD02F
-          seven                    0x0000000040BFB04F
-          eight                    0x0000000040BF708F
-          nine                     0x0000000040BFF00F
-          zero                     0x0000000040BF8877
-          video                    0x0000000040BF20DF
+          KEY_POWER                    0x0000000040BF00FF
+          KEY_1                      0x0000000040BFA05F
+          KEY_2                      0x0000000040BF609F
+          KEY_3                    0x0000000040BFE01F
+          KEY_4                     0x0000000040BF906F
+          KEY_5                     0x0000000040BF50AF
+          KEY_6                      0x0000000040BFD02F
+          KEY_7                    0x0000000040BFB04F
+          KEY_8                    0x0000000040BF708F
+          KEY_9                     0x0000000040BFF00F
+          KEY_0                     0x0000000040BF8877
+          KEY_VIDEO                    0x0000000040BF20DF
           fullscreen               0x0000000040BF30CF
           display                  0x0000000040BF48B7
           color                    0x0000000040BFC837
           loop                     0x0000000040BF08F7
           coloup                   0x0000000040BF6897
           colordn                  0x0000000040BFE817
-          preview                  0x0000000040BF28D7
+          KEY_PREVIOUS                  0x0000000040BF28D7
           autoscan                 0x0000000040BF9867
           freeze                   0x0000000040BF58A7
           capture                  0x0000000040BFD827
-          mute                     0x0000000040BF18E7
-          volumeup                 0x0000000040BF7887
-          volumedown               0x0000000040BFF807
-          chnldown                 0x00000000C03F40BF
-          chnlup                   0x00000000C03FC03F
+          KEY_MUTE                     0x0000000040BF18E7
+          KEY_VOLUMEUP                 0x0000000040BF7887
+          KEY_VOLUMEDOWN               0x0000000040BFF807
+          KEY_CHANNELDOWN                 0x00000000C03F40BF
+          KEY_CHANNELUP                   0x00000000C03FC03F
       end codes
 
 end remote

@@ -22,42 +22,42 @@ begin remote
   toggle_bit     0
 
       begin codes
-          1                        0x00000000000011F9
-          2                        0x00000000000012F9
-          3                        0x00000000000013F9
-          4                        0x00000000000014F9
-          5                        0x00000000000015F9
-          6                        0x00000000000016F9
-          7                        0x00000000000017F9
-          8                        0x00000000000018F9
-          9                        0x00000000000019F9
-          0                        0x00000000000010F9
-          power                    0x0000000000000AF9
+          KEY_1                        0x00000000000011F9
+          KEY_2                        0x00000000000012F9
+          KEY_3                        0x00000000000013F9
+          KEY_4                        0x00000000000014F9
+          KEY_5                        0x00000000000015F9
+          KEY_6                        0x00000000000016F9
+          KEY_7                        0x00000000000017F9
+          KEY_8                        0x00000000000018F9
+          KEY_9                        0x00000000000019F9
+          KEY_0                        0x00000000000010F9
+          KEY_POWER                    0x0000000000000AF9
           pcoff                    0x0000000000000CF9
-          camera                   0x0000000000001AF9
-          record                   0x0000000000001BF9
-          chup                     0x00000000000000F9
-          chdown                   0x00000000000001F9
-          volup                    0x00000000000002F9
-          voldown                  0x00000000000003F9
-          playpause                0x0000000000001FF9
-          rew                      0x0000000000001CF9
-          stop                     0x0000000000001EF9
-          ff                       0x0000000000001DF9
-          folder                   0x00000000000040F9
+          KEY_CAMERA                   0x0000000000001AF9
+          KEY_RECORD                   0x0000000000001BF9
+          KEY_CHANNELUP                     0x00000000000000F9
+          KEY_CHANNELDOWN                   0x00000000000001F9
+          KEY_VOLUMEUP                    0x00000000000002F9
+          KEY_VOLUMEDOWN                  0x00000000000003F9
+          KEY_PLAYPAUSE                0x0000000000001FF9
+          KEY_REWIND                      0x0000000000001CF9
+          KEY_STOP                     0x0000000000001EF9
+          KEY_FASTFORWARD                       0x0000000000001DF9
+          KEY_DIRECTORY                   0x00000000000040F9
           atvdtv                   0x00000000000006F9
           dvhs                     0x00000000000041F9
-          menu                     0x00000000000008F9
+          KEY_MENU                     0x00000000000008F9
           aspect                   0x00000000000007F9
-          zoom                     0x00000000000004F9
-          epg                      0x0000000000000BF9
-          mute                     0x0000000000000DF9
-          back                     0x0000000000000EF9
+          KEY_ZOOM                     0x00000000000004F9
+          KEY_EPG                      0x0000000000000BF9
+          KEY_MUTE                     0x0000000000000DF9
+          KEY_BACK                     0x0000000000000EF9
           hd                       0x0000000000000FF9
-          red                      0x00000000000005F9
-          green                    0x00000000000009F9
-          yellow                   0x00000000000042F9
-          blue                     0x00000000000043F9
+          KEY_RED                      0x00000000000005F9
+          KEY_GREEN                    0x00000000000009F9
+          KEY_YELLOW                   0x00000000000042F9
+          KEY_BLUE                     0x00000000000043F9
       end codes
 
 end remote

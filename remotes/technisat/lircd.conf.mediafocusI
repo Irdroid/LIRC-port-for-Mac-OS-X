@@ -30,11 +30,11 @@ begin remote
   duty_cycle   33
 
       begin codes
-          MUTE                     0x0000000000000046
-          VOL+                     0x000000000000006E
-          VOL-                     0x000000000000006F
-          CH+                      0x0000000000000047
-          CH-                      0x0000000000000048
+          KEY_MUTE                     0x0000000000000046
+          KEY_VOLUMEUP                     0x000000000000006E
+          KEY_VOLUMEDOWN                     0x000000000000006F
+          KEY_CHANNELUP                      0x0000000000000047
+          KEY_CHANNELDOWN                      0x0000000000000048
       end codes
 
 end remote

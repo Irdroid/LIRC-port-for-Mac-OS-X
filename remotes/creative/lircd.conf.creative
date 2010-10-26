@@ -23,30 +23,30 @@ begin remote
   toggle_bit      0
 
       begin codes
-          play                     0x19e6
-          stop                     0x1ae5
-          pause                    0x1be4
-          eject                    0x1ce3
+          KEY_PLAY                     0x19e6
+          KEY_STOP                     0x1ae5
+          KEY_PAUSE                    0x1be4
+          KEY_EJECTCD                    0x1ce3
           last                     0x1de2
           rrev                     0x1ee1
-          ffwd                     0x1fe0
-          next                     0x20df
-          1                        0x21de
-          2                        0x22dd
-          3                        0x23dc
+          KEY_FASTFORWARD                     0x1fe0
+          KEY_NEXT                     0x20df
+          KEY_1                        0x21de
+          KEY_2                        0x22dd
+          KEY_3                        0x23dc
           shift                    0x24db
-          4                        0x25da
-          5                        0x26d9
-          6                        0x27d8
+          KEY_4                        0x25da
+          KEY_5                        0x26d9
+          KEY_6                        0x27d8
           mouse                    0x28d7
-          7                        0x29d6
-          8                        0x2ad5
-          9                        0x2bd4
-          vol+                     0x2cd3
+          KEY_7                        0x29d6
+          KEY_8                        0x2ad5
+          KEY_9                        0x2bd4
+          KEY_VOLUMEUP                     0x2cd3
           start                    0x2dd2
-          0                        0x2ed1
-          mute                     0x2fd0
-          vol-                     0x30cf
+          KEY_0                        0x2ed1
+          KEY_MUTE                     0x2fd0
+          KEY_VOLUMEDOWN                     0x30cf
       end codes
 
 end remote
