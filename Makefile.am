@@ -39,8 +39,7 @@ dist-hook:
 	(cd $(srcdir)/contrib/hal/ && ./gen-hal-fdi.pl)
 	for f in contrib remotes; do \
 		cp -pr $(srcdir)/$$f $(distdir)/$$f; done
-	rm -r `find $(distdir) -name "CVS"`
-	-rcs2log >$(distdir)/ChangeLog
+	git log >$(distdir)/ChangeLog
 
 DISTCLEANFILES = configure.sh .setup.config
 
