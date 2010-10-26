@@ -278,14 +278,14 @@ end remote
 #
 # contributed by Matthew Wright
 #
-# brand:  Hauppauge (HRV-1600 RT Remote)
+# brand:  Hauppauge (HVR-1600 RT Remote)
 # model no. of remote control: A415-HPG-A
 # devices being controlled by this remote:
 #
 
 begin remote
 
-  name  Hauppauge
+  name  Hauppauge_HVR_1600
   bits           13
   flags RC5|CONST_LENGTH
   eps            30

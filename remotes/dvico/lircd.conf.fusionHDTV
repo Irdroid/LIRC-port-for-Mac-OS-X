@@ -153,7 +153,7 @@ end remote
 
 begin remote
 
-  name  DVICO_MCE
+  name  DVICO_MCE2
   bits            8
   eps            30
   aeps          100

@@ -1865,7 +1865,7 @@ end remote
 
 begin remote
 
-  name  Medion_X10
+  name  Medion_X10_V2
   bits           16
   eps            30
   aeps          100
@@ -1943,7 +1943,7 @@ end remote
 
 begin remote
 
-  name  Medion_X10
+  name  Medion_X10_V3
   bits           16
   eps            30
   aeps          100
