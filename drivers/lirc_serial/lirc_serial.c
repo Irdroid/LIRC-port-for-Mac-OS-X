@@ -1289,6 +1289,7 @@ static int __init lirc_serial_init_module(void)
 	if (result < 0)
 		goto exit_serial_exit;
 	driver.features = hardware[type].features;
+	driver.dev = &lirc_serial_dev->dev;
 	driver.minor = lirc_register_driver(&driver);
 	if (driver.minor < 0) {
 		printk(KERN_ERR  LIRC_DRIVER_NAME
