@@ -1560,14 +1560,12 @@ static void commandir_2_transmit_next(struct commandir_device *pcd)
 				packet[packetCounter++] = (tx_value >> 8) | (pulse_toggle << 7);
 				pulse_toggle = !pulse_toggle;
 			}
-			if (packetCounter > sizeof(struct commandir_3_tx_signal)) {
-				send_status =
-				    usb_bulk_write(pcd->cmdir_udev, 2, (char *)packet, packetCounter, USB_TIMEOUT_MS);
-				packetCounter = 0;
-				if (send_status < 0) {
-					hardware_scan();
-					return;
-				}
+			send_status =
+			    usb_bulk_write(pcd->cmdir_udev, 2, (char *)packet, packetCounter, USB_TIMEOUT_MS);
+			packetCounter = 0;
+			if (send_status < 0) {
+				hardware_scan();
+				return;
 			}
 		}
 		break;
