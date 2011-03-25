@@ -146,7 +146,6 @@ hw_menu_entry: @hw-usb
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
 	mplay: "VLSystem MPlay Mini"
-	mceusb: "Windows Media Center Transceivers/Remotes (all)"
 
 param_type: \
 	act200l \
@@ -244,7 +243,6 @@ param_type: \
 	livedrive_midi \
 	livedrive_seq \
 	macmini \
-	mceusb \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
@@ -317,7 +315,6 @@ default_param: \
 	livedrive_midi \
 	livedrive_seq \
 	macmini \
-	mceusb \
 	mediafocusI \
 	mouseremote_ps2 \
 	none \
@@ -414,7 +411,6 @@ remote: \
 	imon \
 	irdeo \
 	irdeo_remote \
-	mceusb \
 	nslu2 \
 	packard_bell \
 	parallel \

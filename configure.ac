@@ -168,7 +168,6 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_igorplugusb) \
 	(lirc_dev lirc_ttusbir) \
 	(lirc_dev lirc_imon) \
-	(lirc_dev lirc_mceusb) \
 	(lirc_dev lirc_parallel) \
 	(lirc_dev lirc_sasem) \
 	(lirc_dev lirc_serial) \
@@ -437,7 +436,7 @@ AC_ARG_WITH(driver,
                           knc_one, kworld,
                           leadtek_0007, leadtek_0010, leadtek_pvr2000,
                           livedrive_midi, livedrive_seq, logitech,
-                          lptX, macmini, mceusb, mediafocusI,
+                          lptX, macmini, mediafocusI,
                           mouseremote, mouseremote_ps2, mp3anywhere,
                           mplay, nslu2,packard_bell, parallel, pcmak,
                           pcmak_usb, pctv, pixelview_bt878,
@@ -601,8 +600,6 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	lirc_dev-lirc_ttusbir)
 		;;
 	lirc_dev-lirc_imon)
-		;;
-	lirc_dev-lirc_mceusb)
 		;;
 	lirc_dev-lirc_parallel)
 		;;
@@ -1158,11 +1155,6 @@ if test "$driver" = "macmini"; then
   lircd_conf="apple/lircd.conf.macmini"
 fi
 
-if test "$driver" = "mceusb"; then
-  lirc_driver="lirc_dev lirc_mceusb"
-  lircd_conf="mceusb/lircd.conf.mceusb"
-fi
-
 if test "$driver" = "mediafocusI"; then
   lirc_driver="none"
   lircd_conf="technisat/lircd.conf.mediafocusI"
@@ -1517,7 +1509,6 @@ elif test "$lirc_driver" = "all"; then
 	lirc_i2c \
 	lirc_igorplugusb \
 	lirc_imon \
-	lirc_mceusb \
 	lirc_parallel \
 	lirc_sasem \
 	lirc_serial \
@@ -1789,7 +1780,6 @@ AC_CONFIG_FILES([
   drivers/lirc_igorplugusb/Makefile
   drivers/lirc_ttusbir/Makefile
   drivers/lirc_imon/Makefile
-  drivers/lirc_mceusb/Makefile
   drivers/lirc_parallel/Makefile
   drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile
