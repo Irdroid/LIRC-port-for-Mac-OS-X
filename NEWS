@@ -1,4 +1,9 @@
-0.9.0-git: UNDER DEVELOPMENT
+0.9.1-git: UNDER DEVELOPMENT
+  * TBD
+
+0.9.0: 03/25/11
+  * Remove mceusb, streamzap, it8x, ene0100 drivers, as they're
+    now redundant with upstream kernel drivers
   * fix oops unplugging igorplugusb receiver while in use (special
     thanks to Timo Boettcher for providing hardware)
   * more error-checking for NULL irctl in various lirc_dev paths
@@ -13,7 +18,6 @@
   * use portable type definitions all over the place
   * drop an old GLIBC work-around for printing 64-bit values
   * fix timing-specific repeat-after-release issue (Christoph Bartelmus)
-  * renamed lirc_ite8709 to lirc_it85 and updated (Yan-Min Lin, ITE)
 
 0.8.7: 09/06/10
   * improved usb-uirt support for FreeBSD (John Wehle)
