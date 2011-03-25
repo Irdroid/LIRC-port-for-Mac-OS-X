@@ -1339,7 +1339,7 @@ static void imon_incoming_packet(struct imon_context *context,
 	char rel_x = 0x00, rel_y = 0x00;
 	int octet, bit;
 	unsigned char mask;
-	int i, chunk_num;
+	int i, chunk_num = 0;
 	int ts_input = 0;
 	int dir = 0;
 	u16 timeout, threshold;
