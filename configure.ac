@@ -163,7 +163,6 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev) \
 	(lirc_dev lirc_atiusb) \
 	(lirc_dev lirc_bt829) \
-	(lirc_dev lirc_ene0100) \
 	(lirc_dev lirc_gpio) \
 	(lirc_dev lirc_i2c) \
 	(lirc_dev lirc_igorplugusb) \
@@ -435,7 +434,7 @@ AC_ARG_WITH(driver,
                           bte, bw6130, caraca, chronos, commandir,
                           comX, cph06x, creative, creative_infracd,
                           devinput, dfclibusb, digimatrix, dsp, dvico, ea65,
-                          ene0100, exaudio, flyvideo, ftdi, gvbctv5pci,
+                          exaudio, flyvideo, ftdi, gvbctv5pci,
                           hauppauge, hauppauge_dvb,
                           hercules_smarttv_stereo, i2cuser,
                           igorplugusb, iguanaIR, imon, imon_24g,
@@ -596,8 +595,6 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 		#hw_module="${hw_module} hw_irreal.o serial.o receive.o transmit.o"
 		;;
 	lirc_dev-lirc_atiusb)
-		;;
-	lirc_dev-lirc_ene0100)
 		;;
 	lirc_dev-lirc_gpio)
 		#lirc_driver="${lirc_driver} lirc_dev lirc_gpio"
@@ -978,10 +975,6 @@ if test "$driver" = "ea65"; then
   hw_module="hw_ea65.o  serial.o"
   HW_DEFAULT="hw_ea65"
   lircd_conf="ea65/lircd.conf.ea65"
-fi
-
-if test "$driver" = "ene0100"; then
-  lirc_driver="lirc_dev lirc_ene0100"
 fi
 
 if test "$driver" = "exaudio"; then
@@ -1552,7 +1545,6 @@ elif test "$lirc_driver" = "all"; then
   lirc_driver="lirc_dev \
 	lirc_atiusb \
 	lirc_bt829 \
-	lirc_ene0100 \
 	lirc_i2c \
 	lirc_igorplugusb \
 	lirc_imon \
@@ -1825,7 +1817,6 @@ AC_CONFIG_FILES([
   drivers/Makefile
   drivers/lirc_atiusb/Makefile
   drivers/lirc_bt829/Makefile
-  drivers/lirc_ene0100/Makefile
   drivers/lirc_dev/Makefile
   drivers/lirc_gpio/Makefile
   drivers/lirc_i2c/Makefile

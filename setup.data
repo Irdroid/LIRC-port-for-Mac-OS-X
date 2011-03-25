@@ -102,7 +102,6 @@ hw_menu_entry: @hw-irda
 	act200l: "Actisys Act200L SIR driver support"
 	act220l: "Actisys Act220L(+) SIR driver support"
 	digimatrix: "Asus Digimatrix IT87xx CIR port"
-	ene0100: "ENE KB3926 B/C/D (ENE0100) CIR port"
 	it85: "IT85xx (PNP ID ITE8709) CIR port"
 	it87: "ITE IT8704/05/12/18/20 CIR port"
 	sir: "SIR IrDA (built-in IR ports)"
@@ -225,7 +224,6 @@ param_type: \
 	digimatrix \
 	dsp \
 	dvico \
-	ene0100 \
 	exaudio \
 	flyvideo \
 	ftdi \
@@ -302,7 +300,6 @@ default_param: \
 	digimatrix \
 	dsp \
 	dvico \
-	ene0100 \
 	exaudio \
 	flyvideo \
 	ftdi \
@@ -422,7 +419,6 @@ remote: \
 	dfclibusb \
 	digimatrix \
 	dsp \
-	ene0100 \
 	ftdi \
 	iguanaIR \
 	imon \

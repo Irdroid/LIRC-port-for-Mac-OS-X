@@ -11,7 +11,6 @@ DIST_SUBDIRS = \
 	lirc_dev \
 	lirc_atiusb \
 	lirc_bt829 \
-	lirc_ene0100 \
 	lirc_gpio \
 	lirc_i2c \
 	lirc_igorplugusb \
