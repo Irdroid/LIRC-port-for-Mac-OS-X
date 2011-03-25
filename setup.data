@@ -101,9 +101,6 @@ hw_menu_entry: @hw-tv-card
 hw_menu_entry: @hw-irda
 	act200l: "Actisys Act200L SIR driver support"
 	act220l: "Actisys Act220L(+) SIR driver support"
-	digimatrix: "Asus Digimatrix IT87xx CIR port"
-	it85: "IT85xx (PNP ID ITE8709) CIR port"
-	it87: "ITE IT8704/05/12/18/20 CIR port"
 	sir: "SIR IrDA (built-in IR ports)"
 	tekram: "Tekram Irmate 210 (16x50 UART compatible serial port)"
 	wpc8769l: "Winbond 8769L CIR port (e.g. Acer Aspire 6530G)"
@@ -240,8 +237,6 @@ param_type: \
 	imon_knob \
 	imon_pad \
 	imon_rsc \
-	it85 \
-	it87 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
@@ -316,8 +311,6 @@ default_param: \
 	imon_knob \
 	imon_pad \
 	imon_rsc \
-	it85 \
-	it87 \
 	knc_one \
 	kworld \
 	leadtek_0007 \
@@ -424,8 +417,6 @@ remote: \
 	imon \
 	irdeo \
 	irdeo_remote \
-	it85 \
-	it87 \
 	mceusb \
 	nslu2 \
 	packard_bell \

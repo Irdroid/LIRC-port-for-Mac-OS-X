@@ -15,8 +15,6 @@ DIST_SUBDIRS = \
 	lirc_i2c \
 	lirc_igorplugusb \
 	lirc_imon \
-	lirc_it85 \
-	lirc_it87 \
 	lirc_mceusb \
 	lirc_parallel \
 	lirc_sasem \
