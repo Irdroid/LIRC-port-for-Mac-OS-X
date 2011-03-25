@@ -173,7 +173,6 @@ if test x${no_kernel} != xyes; then
 	(lirc_dev lirc_sasem) \
 	(lirc_dev lirc_serial) \
 	(lirc_dev lirc_sir) \
-	(lirc_dev lirc_streamzap) \
 	(lirc_dev lirc_wpc8769l)"
 fi
 
@@ -445,7 +444,7 @@ AC_ARG_WITH(driver,
                           pixelview_pak, pixelview_pro, provideo,
                           realmagic, remotemaster, sa1100, samsung,
                           sasem, sb0540, serial, silitek, sir, slinke,
-                          srm7500libusb, streamzap, tekram,
+                          srm7500libusb, tekram,
                           tekram_bt829, tira, tira_raw, ttusbir,
                           tuxbox, tvbox, udp, uirt2, uirt2_raw,
                           usb_uirt_raw, usbx, wpc8769l],
@@ -612,8 +611,6 @@ if test "$driver" = "userspace" -o "$driver" = "all"; then
 	lirc_dev-lirc_serial)
 		;;
 	lirc_dev-lirc_sir)
-		;;
-	lirc_dev-lirc_streamzap)
 		;;
 	lirc_dev-lirc_wpc8769l)
 		;;
@@ -1348,11 +1345,6 @@ if test "$driver" = "srm7500libusb"; then
   fi
 fi
 
-if test "$driver" = "streamzap"; then
-  lirc_driver="lirc_dev lirc_streamzap"
-  lircd_conf="streamzap/lircd.conf.streamzap"
-fi
-
 if test "$driver" = "tekram"; then
   lirc_driver="lirc_dev lirc_sir"
   AC_DEFINE(LIRC_SIR_TEKRAM)
@@ -1530,7 +1522,6 @@ elif test "$lirc_driver" = "all"; then
 	lirc_sasem \
 	lirc_serial \
 	lirc_sir \
-	lirc_streamzap \
 	lirc_ttusbir \
 	lirc_wpc8769l"
 fi
@@ -1803,7 +1794,6 @@ AC_CONFIG_FILES([
   drivers/lirc_sasem/Makefile
   drivers/lirc_serial/Makefile
   drivers/lirc_sir/Makefile
-  drivers/lirc_streamzap/Makefile
   drivers/lirc_wpc8769l/Makefile
   daemons/Makefile
   tools/Makefile

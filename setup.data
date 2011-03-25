@@ -142,7 +142,6 @@ hw_menu_entry: @hw-usb
 	imon_knob: "Soundgraph iMON Knob"
 	imon_pad: "Soundgraph iMON PAD IR/VFD"
 	imon_rsc: "Soundgraph iMON RSC"
-	streamzap: "Streamzap PC Remote"
 	ttusbir: "TechnoTrend USB IR receiver"
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
@@ -259,7 +258,6 @@ param_type: \
 	sasem \
 	sb0540 \
 	srm7500libusb \
-	streamzap \
 	tekram_bt829 \
 	ttusbir \
 	tvbox \
@@ -332,7 +330,6 @@ default_param: \
 	sasem \
 	sb0540 \
 	srm7500libusb \
-	streamzap \
 	tekram_bt829 \
 	ttusbir \
 	tvbox \
@@ -425,7 +422,6 @@ remote: \
 	serial \
 	sir \
 	slinke \
-	streamzap \
 	tekram \
 	tira \
 	tira_raw \

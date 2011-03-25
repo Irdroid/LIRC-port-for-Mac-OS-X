@@ -20,7 +20,6 @@ DIST_SUBDIRS = \
 	lirc_sasem \
 	lirc_serial \
 	lirc_sir \
-	lirc_streamzap \
 	lirc_ttusbir \
 	lirc_wpc8769l
 
