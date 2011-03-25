@@ -43,16 +43,6 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 33)
 #include <linux/autoconf.h>
 #endif
-#if !defined(CONFIG_SERIAL_MODULE)
-#if !defined(LIRC_ON_SA1100)
-#warning "******************************************"
-#warning " Your serial port driver is compiled into "
-#warning " the kernel. You will have to release the "
-#warning " port you want to use for LIRC with:      "
-#warning "    setserial /dev/ttySx uart none        "
-#warning "******************************************"
-#endif
-#endif
 
 #include <linux/sched.h>
 #include <linux/errno.h>
@@ -257,12 +247,12 @@ static void off(void)
 	PPSR &= ~PPC_TXD2;
 }
 #else
-static unsigned int sinp(int offset)
+__attribute__ ((unused)) static unsigned int sinp(int offset)
 {
 	return inb(io + offset);
 }
 
-static void soutp(int offset, int value)
+__attribute__ ((unused)) static void soutp(int offset, int value)
 {
 	outb(value, io + offset);
 }
@@ -525,8 +515,10 @@ static struct file_operations lirc_fops = {
 	.ioctl		= lirc_ioctl,
 #else
 	.unlocked_ioctl	= lirc_ioctl,
-#endif
+#ifdef CONFIG_COMPAT
 	.compat_ioctl	= lirc_ioctl,
+#endif
+#endif
 	.open		= lirc_open,
 	.release	= lirc_close,
 };
