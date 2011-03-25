@@ -1,4 +1,3 @@
-/*      $Id: lirc_parallel.c,v 5.55 2010/08/16 20:20:47 jarodwilson Exp $      */
 /*
  * lirc_parallel.c
  *
@@ -45,7 +44,6 @@
 #include <linux/delay.h>
 
 #include <linux/io.h>
-#include <linux/signal.h>
 #include <linux/irq.h>
 #include <linux/uaccess.h>
 #include <asm/div64.h>
@@ -88,11 +86,9 @@ unsigned int timer;
 unsigned int default_timer = LIRC_TIMER;
 #endif
 
-#define WBUF_SIZE (256)
 #define RBUF_SIZE (256) /* this must be a power of 2 larger than 1 */
 
-static lirc_t wbuf[WBUF_SIZE];
-static lirc_t rbuf[RBUF_SIZE];
+static int rbuf[RBUF_SIZE];
 
 DECLARE_WAIT_QUEUE_HEAD(lirc_wait);
 
@@ -228,7 +224,7 @@ static int lirc_claim(void)
 
 /*** interrupt handler ***/
 
-static void rbuf_write(lirc_t signal)
+static void rbuf_write(int signal)
 {
 	unsigned int nwptr;
 
@@ -255,11 +251,11 @@ static void irq_handler(void *blah)
 	static struct timeval lasttv;
 	static int init;
 	long signal;
-	lirc_t data;
+	int data;
 	unsigned int level, newlevel;
 	unsigned int timeout;
 
-	if (!MOD_IN_USE)
+	if (!is_open)
 		return;
 
 	if (!is_claimed)
@@ -267,8 +263,8 @@ static void irq_handler(void *blah)
 
 #if 0
 	/* disable interrupt */
-	disable_irq(irq);
-	out(LIRC_PORT_IRQ, in(LIRC_PORT_IRQ) & (~LP_PINTEN));
+	  disable_irq(irq);
+	  out(LIRC_PORT_IRQ, in(LIRC_PORT_IRQ) & (~LP_PINTEN));
 #endif
 	if (check_pselecd && (in(1) & LP_PSELECD))
 		return;
@@ -282,7 +278,7 @@ static void irq_handler(void *blah)
 			/* really long time */
 			data = PULSE_MASK;
 		else
-			data = (lirc_t) (signal*1000000 +
+			data = (int) (signal*1000000 +
 					 tv.tv_usec - lasttv.tv_usec +
 					 LIRC_SFH506_DELAY);
 
@@ -319,7 +315,7 @@ static void irq_handler(void *blah)
 	} while (lirc_get_signal());
 
 	if (signal != 0) {
-		/* adjust value to usecs */
+		/* ajust value to usecs */
 		__u64 helper;
 
 		helper = ((__u64) signal)*1000000;
@@ -359,7 +355,7 @@ static ssize_t lirc_read(struct file *filep, char *buf, size_t n, loff_t *ppos)
 	int count = 0;
 	DECLARE_WAITQUEUE(wait, current);
 
-	if (n % sizeof(lirc_t))
+	if (n % sizeof(int))
 		return -EINVAL;
 
 	add_wait_queue(&lirc_wait, &wait);
@@ -367,12 +363,12 @@ static ssize_t lirc_read(struct file *filep, char *buf, size_t n, loff_t *ppos)
 	while (count < n) {
 		if (rptr != wptr) {
 			if (copy_to_user(buf+count, (char *) &rbuf[rptr],
-					 sizeof(lirc_t))) {
+					 sizeof(int))) {
 				result = -EFAULT;
 				break;
 			}
 			rptr = (rptr + 1) & (RBUF_SIZE - 1);
-			count += sizeof(lirc_t);
+			count += sizeof(int);
 		} else {
 			if (filep->f_flags & O_NONBLOCK) {
 				result = -EAGAIN;
@@ -398,28 +394,30 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 	unsigned int i;
 	unsigned int level, newlevel;
 	unsigned long flags;
-	lirc_t counttimer;
+	int counttimer;
+	int *wbuf;
+	ssize_t ret;
 
 	if (!is_claimed)
 		return -EBUSY;
 
-	if (n % sizeof(lirc_t))
+	count = n / sizeof(int);
+
+	if (n % sizeof(int) || count % 2 == 0)
 		return -EINVAL;
 
-	count = n / sizeof(lirc_t);
-
-	if (count > WBUF_SIZE || count % 2 == 0)
-		return -EINVAL;
-
-	if (copy_from_user(wbuf, buf, n))
-		return -EFAULT;
+	wbuf = memdup_user(buf, n);
+	if (IS_ERR(wbuf))
+		return PTR_ERR(wbuf);
 
 #ifdef LIRC_TIMER
 	if (timer == 0) {
 		/* try again if device is ready */
 		timer = init_lirc_timer();
-		if (timer == 0)
-			return -EIO;
+		if (timer == 0) {
+			ret = -EIO;
+			goto out;
+		}
 	}
 
 	/* adjust values from usecs */
@@ -428,7 +426,7 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 
 		helper = ((__u64) wbuf[i])*timer;
 		do_div(helper, 1000000);
-		wbuf[i] = (lirc_t) helper;
+		wbuf[i] = (int) helper;
 	}
 
 	local_irq_save(flags);
@@ -445,7 +443,8 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 			if (check_pselecd && (in(1) & LP_PSELECD)) {
 				lirc_off();
 				local_irq_restore(flags);
-				return -EIO;
+				ret = -EIO;
+				goto out;
 			}
 		} while (counttimer < wbuf[i]);
 		i++;
@@ -461,7 +460,8 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 			level = newlevel;
 			if (check_pselecd && (in(1) & LP_PSELECD)) {
 				local_irq_restore(flags);
-				return -EIO;
+				ret = -EIO;
+				goto out;
 			}
 		} while (counttimer < wbuf[i]);
 		i++;
@@ -470,7 +470,11 @@ static ssize_t lirc_write(struct file *filep, const char *buf, size_t n,
 #else
 	/* place code that handles write without external timer here */
 #endif
-	return n;
+	ret = n;
+out:
+	kfree(wbuf);
+
+	return ret;
 }
 
 static unsigned int lirc_poll(struct file *file, poll_table *wait)
@@ -533,18 +537,14 @@ static long lirc_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		tx_mask = value;
 		break;
 	default:
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 35)
-		return lirc_dev_fop_ioctl(node, filep, cmd, arg);
-#else
-		return lirc_dev_fop_ioctl(filep, cmd, arg);
-#endif
+		return -ENOIOCTLCMD;
 	}
 	return 0;
 }
 
 static int lirc_open(struct inode *node, struct file *filep)
 {
-	if (MOD_IN_USE || !lirc_claim())
+	if (is_open || !lirc_claim())
 		return -EBUSY;
 
 	parport_enable_irq(pport);
@@ -568,7 +568,7 @@ static int lirc_close(struct inode *node, struct file *filep)
 	return 0;
 }
 
-static struct file_operations lirc_fops = {
+static const struct file_operations lirc_fops = {
 	.owner		= THIS_MODULE,
 	.llseek		= lirc_lseek,
 	.read		= lirc_read,
@@ -578,8 +578,10 @@ static struct file_operations lirc_fops = {
 	.ioctl		= lirc_ioctl,
 #else
 	.unlocked_ioctl	= lirc_ioctl,
-#endif
+#ifdef CONFIG_COMPAT
 	.compat_ioctl	= lirc_ioctl,
+#endif
+#endif
 	.open		= lirc_open,
 	.release	= lirc_close
 };
@@ -607,7 +609,6 @@ static struct lirc_driver driver = {
        .owner		= THIS_MODULE,
 };
 
-#ifdef MODULE
 static int pf(void *handle);
 static void kf(void *handle);
 
@@ -716,4 +717,3 @@ MODULE_PARM_DESC(debug, "Enable debugging messages");
 
 module_param(check_pselecd, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Check for printer (default: 0)");
-#endif /* MODULE */

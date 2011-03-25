@@ -1,4 +1,4 @@
-/*      $Id: lirc_parallel.h,v 5.2 2007/01/25 04:32:05 lirc Exp $      */
+/* lirc_parallel.h */
 
 #ifndef _LIRC_PARALLEL_H
 #define _LIRC_PARALLEL_H
