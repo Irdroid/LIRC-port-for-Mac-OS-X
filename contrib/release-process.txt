@@ -22,7 +22,7 @@ Steps for a pre-release snapshot:
 4) Switch back to master:
 	git checkout master
 5) Clean checkout in new directory:
-	git clone -b lirc-<version>-preX-branch git://lirc.git.sourceforge.net/gitroot/lirc/lirc
+	git clone -b lirc-<version>-preX-branch git://lirc.git.sourceforge.net/gitroot/lirc/lirc lirc-<version>-preX
 6) Create tarball:
 	./autogen.sh
 	cp INSTALL.txt INSTALL
@@ -45,7 +45,7 @@ Steps for a new release:
 4) Switch back to master:
 	git checkout master
 5) Clean checkout in new directory:
-	git clone -b lirc-<version>-branch git://lirc.git.sourceforge.net/gitroot/lirc/lirc
+	git clone -b lirc-<version>-branch git://lirc.git.sourceforge.net/gitroot/lirc/lirc lirc-<version>
 6) Create tarball:
 	./autogen.sh
 	cp INSTALL.txt INSTALL
