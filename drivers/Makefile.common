@@ -8,7 +8,7 @@ LIRC_DEVDIR = $(PWD)
 # some magic for using linux kernel settings
 # when compiling module(s)
 KBUILD_VERBOSE = 1
-LIRC_EXTRA_CFLAGS = -DIRCTL_DEV_MAJOR=$(lirc_major) -DEXPORT_SYMTAB $(DEFS) \
+LIRC_EXTRA_CFLAGS = -DEXPORT_SYMTAB $(DEFS) \
 		$(DEFAULT_INCLUDES) -I$(LIRC_DEVDIR)/$(srcdir) -I$(LIRC_DEVDIR)/$(builddir) \
 		-I$(LIRC_DEVDIR)/$(top_srcdir) -I$(LIRC_DEVDIR)/$(top_builddir) \
 		-I$(KERNEL_LOCATION)/include/ \
@@ -44,18 +44,6 @@ uninstall-moduleDATA:
 	  echo " rm -f $(DESTDIR)$(moduledir)/$$f"; \
 	  rm -f $(DESTDIR)$(moduledir)/$$f; \
 	done
-
-if SANDBOXED
-else
-install-exec-local: mkdev
-uninstall-local: rmdev
-endif
-
-mkdev:
-	test -e $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
-
-rmdev:
-	-test -c $(DESTDIR)$(devdir)/lirc && $(RM) $(DESTDIR)$(devdir)/lirc
 
 if SANDBOXED
 else

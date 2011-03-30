@@ -1559,11 +1559,6 @@ AC_ARG_ENABLE(dyncodes,
 [  --enable-dyncodes       use dynamic codes],
 test x${enableval} = xyes && AC_DEFINE(DYNCODES))
 
-AC_ARG_WITH(major,
-[  --with-major=value      specify the device major for the driver (61)],
-lirc_major=${withval},
-lirc_major=61)
-
 AC_ARG_WITH(port,
 [  --with-port=port        specify the port number for the lirc device.],
 port=${withval}
@@ -1678,7 +1673,6 @@ AC_SUBST(devdir)
 AC_SUBST(sysconfdir)
 AC_SUBST(varrundir)
 AC_SUBST(moduledir)
-AC_SUBST(lirc_major)
 AC_SUBST(driver)
 AC_SUBST(lirc_driver)
 AC_SUBST(hw_module_libs)

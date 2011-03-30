@@ -904,7 +904,7 @@ static int __init lirc_dev_init(void)
 	}
 
 	printk(KERN_INFO "lirc_dev: IR Remote Control driver registered, "
-	       "major %d \n", IRCTL_DEV_MAJOR);
+	       "major %d \n", MAJOR(lirc_base_dev));
 
 error:
 	return retval;

@@ -26,14 +26,3 @@ SUBDIRS = @lirc_driver@
 
 CLEANFILES = *~
 
-if SANDBOXED
-else
-install-exec-local: mkdev
-uninstall-local: mkdev
-endif
-
-mkdev:
-	test "@driver@" != "mediafocusI" || test -c $(DESTDIR)$(devdir)/lirc || ($(mkinstalldirs) $(DESTDIR)$(devdir) && @mknod@ $(DESTDIR)$(devdir)/lirc c @lirc_major@ 0)
-
-rmdev:
-	-test "@driver@" != "mediafocusI" || test -c $(DESTDIR)$(devdir)/lirc || $(RM) $(DESTDIR)$(devdir)/lirc
