@@ -203,8 +203,6 @@ static int debug;
 /* SECTION: Prototypes */
 
 /* Communication with user-space */
-static int lirc_open(struct inode *inode, struct file *file);
-static int lirc_close(struct inode *inode, struct file *file);
 static unsigned int lirc_poll(struct file *file, poll_table *wait);
 static ssize_t lirc_read(struct file *file, char *buf, size_t count,
 		loff_t *ppos);
@@ -274,22 +272,6 @@ static void safe_udelay(unsigned long usecs)
 }
 
 /* SECTION: Communication with user-space */
-
-static int lirc_open(struct inode *inode, struct file *file)
-{
-	spin_lock(&dev_lock);
-	if (MOD_IN_USE) {
-		spin_unlock(&dev_lock);
-		return -EBUSY;
-	}
-	spin_unlock(&dev_lock);
-	return 0;
-}
-
-static int lirc_close(struct inode *inode, struct file *file)
-{
-	return 0;
-}
 
 static unsigned int lirc_poll(struct file *file, poll_table *wait)
 {
@@ -519,8 +501,8 @@ static struct file_operations lirc_fops = {
 	.compat_ioctl	= lirc_ioctl,
 #endif
 #endif
-	.open		= lirc_open,
-	.release	= lirc_close,
+	.open		= lirc_dev_fop_open,
+	.release	= lirc_dev_fop_close,
 };
 
 static int set_use_inc(void *data)
