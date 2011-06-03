@@ -1048,7 +1048,7 @@ static struct atirf_dev *new_irctl(struct usb_interface *intf)
 		goto new_irctl_failure_check;
 	}
 
-	if (lirc_buffer_init(driver->rbuf, dclen, 1)) {
+	if (lirc_buffer_init(driver->rbuf, dclen, 2)) {
 		mem_failure = 4;
 		goto new_irctl_failure_check;
 	}
