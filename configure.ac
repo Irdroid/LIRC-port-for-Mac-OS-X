@@ -20,11 +20,11 @@ AC_PROG_MAKE_SET
 AC_PATH_PROG(mknod, mknod, /bin/mknod)
 AC_PATH_PROG(mkfifo, mkfifo, /usr/bin/mkfifo)
 AC_PATH_PROG(depmod, depmod, /sbin/depmod, $PATH:/sbin)
-AC_PATH_PROG(LIBUSB_CONFIG, libusb-config)
 AC_PROG_LN_S
 AC_PROG_LIBTOOL
 AM_PATH_PYTHON(,, [:])
 AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != ""])
+LIBUSB_CONFIG="pkg-config libusb"
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -310,14 +310,13 @@ AH_TEMPLATE([SYSCONFDIR],
 AH_TEMPLATE([USE_SYSLOG],
 	[define if you want to log to syslog instead of logfile])
 
-if test -n "${LIBUSB_CONFIG}"; then
-  AC_DEFINE(HAVE_LIBUSB)
-  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (dfclibusb) (commandir) (srm7500libusb)" 
-fi
-
 AC_CHECK_LIB(caraca_client, caraca_init,
   AC_DEFINE(HAVE_LIBCARACA)
   possible_drivers="${possible_drivers} (caraca)"
+)
+AC_CHECK_HEADER(usb.h,
+  AC_DEFINE(HAVE_LIBUSB)
+  possible_drivers="${possible_drivers} (atilibusb) (awlibusb) (dfclibusb) (commandir) (srm7500libusb)" 
 )
 AC_CHECK_HEADER(ftdi.h,
   AC_DEFINE(HAVE_FTDI)
@@ -1449,7 +1448,7 @@ Get it at:
 Or install these packages from your distro:
 
    libusb
-   libusb-dev
+   libusb-devel
 
 ])
     ;;
