@@ -1708,7 +1708,9 @@ AC_DEFINE_UNQUOTED(LIRC_SYSLOG, $facility)
 
 AH_TOP([
 /* device file names - beneath DEVDIR (default /dev) */
-#define DEV_LIRC	"lirc"
+#define DEV_LIRC	"lirc0"
+
+/* daemon socket file names - beneath $varrundir (default /var/run/lirc) */
 #define DEV_LIRCD	"lircd"
 #define DEV_LIRCM	"lircm"
 
