@@ -583,6 +583,8 @@ error:
 
 	mutex_unlock(&lirc_dev_lock);
 
+	nonseekable_open(inode, file);
+
 	return retval;
 }
 EXPORT_SYMBOL(lirc_dev_fop_open);
