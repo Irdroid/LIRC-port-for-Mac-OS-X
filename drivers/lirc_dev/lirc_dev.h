@@ -257,9 +257,9 @@ int lirc_dev_fop_ioctl(struct inode *inode, struct file *file,
 #else
 long lirc_dev_fop_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 #endif
-ssize_t lirc_dev_fop_read(struct file *file, char *buffer, size_t length,
+ssize_t lirc_dev_fop_read(struct file *file, char __user *buffer, size_t length,
 			  loff_t *ppos);
-ssize_t lirc_dev_fop_write(struct file *file, const char *buffer, size_t length,
-			   loff_t *ppos);
+ssize_t lirc_dev_fop_write(struct file *file, const char __user *buffer,
+			   size_t length, loff_t *ppos);
 
 #endif

@@ -748,10 +748,8 @@ long lirc_dev_fop_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 }
 EXPORT_SYMBOL(lirc_dev_fop_ioctl);
 
-ssize_t lirc_dev_fop_read(struct file *file,
-			  char *buffer,
-			  size_t length,
-			  loff_t *ppos)
+ssize_t lirc_dev_fop_read(struct file *file, char __user *buffer,
+			  size_t length, loff_t *ppos)
 {
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
 	unsigned char *buf;
@@ -870,7 +868,7 @@ void *lirc_get_pdata(struct file *file)
 EXPORT_SYMBOL(lirc_get_pdata);
 
 
-ssize_t lirc_dev_fop_write(struct file *file, const char *buffer,
+ssize_t lirc_dev_fop_write(struct file *file, const char __user *buffer,
 			   size_t length, loff_t *ppos)
 {
 	struct irctl *ir = irctls[iminor(file->f_dentry->d_inode)];
