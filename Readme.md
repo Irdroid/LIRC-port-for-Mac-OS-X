@@ -1,6 +1,6 @@
 # Working LIRC port for Mac OS X
 
-This is a working and tested LIRC port for Mac OS X . 
+This is a working and tested LIRC port for Mac OS X . Tested with Mac OS X Mountain Lion and Mac OS X Mavericks.
 
 ### Features:
 
@@ -9,9 +9,9 @@ This is a working and tested LIRC port for Mac OS X .
 
 ### Version
 0.9.3 git
-### Grab a sample of the USB IR Transceiver below
+### Used hardware to test the port
 
-You can grab a sample board from http://www.irdroid.com/irdroid-usb-ir-transceiver/
+- Irdroid USB Infrared Transceiver from http://www.irdroid.com/irdroid-usb-ir-transceiver/
 
 ### Tech
 
@@ -25,7 +25,7 @@ License
 ----
 GPL 2.0
 
-### MISC // portaudio and LIRC on Mac OS X
+### Portaudio and LIRC on Mac OS X
 
 To compile the portaudio driver in MAC OS X you need to pass the following to the command line
 1. Download and install portaudio library - needed to build the LIRC port Audio driver
