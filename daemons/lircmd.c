@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <getopt.h>
 
-#include <sys/types.h>
+#include "my_linux_types.h"
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>

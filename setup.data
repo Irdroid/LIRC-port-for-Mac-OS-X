@@ -119,6 +119,7 @@ hw_menu_entry: @hw-usb
 	awlibusb: "Awox RF/IR Remote (userspace)"
 	sb0540: "Creative USB IR Receiver (SB0540)"
 	commandir: "CommandIR Multi-IR Transceiver (userspace)"
+	usb_irtoy: "Dangerous Prototypes USB Infrared Toy"
 	dfclibusb: "DFC USB InfraRed Remote Control (userspace)"
 	sasem: "Dign HV5 HTPC IR/VFD Module"
 	dvico: "DViCO USB Remote"
@@ -146,6 +147,7 @@ hw_menu_entry: @hw-usb
 	usb_uirt_raw: "USB-UIRT"
 	mplay: "VLSystem MPlay Blast"
 	mplay: "VLSystem MPlay Mini"
+
 
 param_type: \
 	act200l \
@@ -189,6 +191,9 @@ param_type: \
 	usb_uirt_raw \
 	usbx
 	ttyUSB:
+
+param_type: usb_irtoy 
+	ttyACM:
 
 param_type: \
 	adaptec \
@@ -390,6 +395,10 @@ default_param: \
 	usbx
 	ttyUSB1:
 
+default_param: usb_irtoy 
+	ttyACM1:
+
+
 remote: \
 	hauppauge \
 	hauppauge_dvb \
@@ -424,6 +433,7 @@ remote: \
 	ttusbir \
 	uirt2_raw \
 	udp \
+	usb_irtoy \
 	usb_uirt_raw \
 	wpc8769l
 	any:

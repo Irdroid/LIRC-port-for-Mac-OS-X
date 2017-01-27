@@ -14,7 +14,7 @@
 #ifndef IR_REMOTE_TYPES_H
 #define IR_REMOTE_TYPES_H
 
-#include <sys/types.h>
+#include "my_linux_types.h"
 #include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
